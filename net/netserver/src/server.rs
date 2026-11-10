@@ -11,7 +11,7 @@
 
 use std::io;
 use std::net::TcpStream;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::thread;
 use std::time::Duration;
@@ -21,7 +21,7 @@ use tokio::runtime::{Builder, Handle};
 use tokio::sync::{Notify, oneshot};
 use tracing::info;
 
-use crate::ifs::{IfsShare, IfsWorker, MakeClient};
+use crate::ifs::{IfsShare, IfsWorker, LeaseLink, MakeClient, Observer};
 use crate::print::drivers::{self, DRIVER_STORE, PRINT_DOLLAR};
 use crate::print::spoolss::{SpoolPrinter, Spoolss};
 use crate::print::{OutQueue, PrintShare, Printer};
@@ -194,6 +194,9 @@ pub struct NetServer {
     profile: Arc<Mutex<Option<String>>>,
     stop: Option<oneshot::Sender<()>>,
     driver: Option<thread::JoinHandle<()>>,
+    leases: Arc<LeaseLink>,
+    /// Ends the thread polling for lease break orders.
+    stopping: Arc<AtomicBool>,
 }
 
 impl NetServer {
@@ -213,6 +216,7 @@ impl NetServer {
             let _ = rt.block_on(stopped);
         })?;
         let io = Arc::new(IfsWorker::start(ifs));
+        let leases = LeaseLink::new(io.clone());
         let profile: Arc<Mutex<Option<String>>> = Arc::default();
         let mut b = SmbServer::builder()
             .listen("127.0.0.1:0".parse().expect("address"))
@@ -227,12 +231,18 @@ impl NetServer {
             .max_write_size(cfg.max_write)
             .min_dialect(cfg.min_dialect)
             .durable_handle_timeout(cfg.durable_timeout)
-            .logon_throttle(0, Duration::from_secs(1));
+            .logon_throttle(0, Duration::from_secs(1))
+            .lease_observer(Observer(leases.clone()));
         for s in &cfg.file_shares {
             let (tx, rx) = mpsc::channel();
             let (io2, path, ro) = (io.clone(), s.path.clone(), s.read_only);
+            let link = s.leases.then(|| leases.clone());
             handle.spawn(async move {
-                let _ = tx.send(IfsShare::new(io2, &path, ro).await);
+                let share = IfsShare::new(io2, &path, ro).await;
+                let _ = tx.send(share.map(|sh| match link {
+                    Some(l) => sh.with_leases(l),
+                    None => sh,
+                }));
             });
             let backend = rx
                 .recv()
@@ -290,7 +300,36 @@ impl NetServer {
             profile,
             stop: Some(stop),
             driver: Some(driver),
+            leases,
+            stopping: Arc::default(),
         })
+    }
+
+    /// Puts the job's leases in the IFS's lease table, so other jobs'
+    /// changes break them (`docs/NETSERVER.md` section 6): from now on
+    /// each lease is reserved there before it is granted, and a thread
+    /// of its own polls for break orders over the client `orders` makes
+    /// (a second link of the job). Call it once, before serving. Without
+    /// it a job's leases are broken only by its own opens.
+    ///
+    /// # Errors
+    ///
+    /// The thread could not be started.
+    pub fn start_leases(&self, orders: MakeClient) -> io::Result<()> {
+        let (smb, handle, link, stop) = (self.smb.clone(), self.handle.clone(), self.leases.clone(), self.stopping.clone());
+        link.start();
+        thread::Builder::new().name("netserver-leases".into()).spawn(move || {
+            let client = orders();
+            link.serve_orders(&*client, &stop, |tag, keep, link| {
+                let smb = smb.clone();
+                handle.spawn(async move {
+                    if !smb.break_leases(tag, keep).await {
+                        link.none_open(tag);
+                    }
+                });
+            });
+        })?;
+        Ok(())
     }
 
     /// Serves one connection until it closes. May be called from several
@@ -379,6 +418,7 @@ impl NetServer {
 
 impl Drop for NetServer {
     fn drop(&mut self) {
+        self.stopping.store(true, Ordering::SeqCst);
         if let Some(stop) = self.stop.take() {
             let _ = stop.send(());
         }

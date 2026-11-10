@@ -17,11 +17,14 @@
 //!   `*READONLY`, `*HIDDEN`, `*SYSTEM` and `*PCARCHIVE`.
 //! - File IDs: the IFS file ID (number and generation); a handle finds its
 //!   object by it after a rename.
+//! - Leases: the job's are in the IFS's lease table ([`lease`]), so an
+//!   open, write, rename or removal by another job breaks them.
 //! - No change events: the IFS has none, so clients hear only of changes
 //!   made through this job's connections.
 
 mod handle;
 pub mod info;
+pub mod lease;
 pub mod pattern;
 pub mod worker;
 
@@ -45,6 +48,7 @@ pub use handle::IfsHandle;
 use handle::Fd;
 use info::smb_error;
 pub use worker::{IfsWorker, MakeClient};
+pub use lease::{LeaseLink, Observer};
 
 /// `FILE_SHARE_READ`.
 const SHARE_READ: u32 = 0x1;
@@ -57,6 +61,7 @@ pub struct IfsShare {
     root: String,
     read_only: bool,
     case_sensitive: bool,
+    leases: Option<Arc<LeaseLink>>,
 }
 
 impl IfsShare {
@@ -80,7 +85,14 @@ impl IfsShare {
             })
             .await
             .map_err(smb_error)?;
-        Ok(Self { io, root, read_only, case_sensitive })
+        Ok(Self { io, root, read_only, case_sensitive, leases: None })
+    }
+
+    /// Its leases go to the IFS's lease table through `link`.
+    #[must_use]
+    pub fn with_leases(mut self, link: Arc<LeaseLink>) -> Self {
+        self.leases = Some(link);
+        self
     }
 
     /// The IFS path of a share path.
@@ -216,6 +228,8 @@ impl ShareBackend for IfsShare {
             is_dir: opened.is_dir,
             fd: Mutex::new(opened.fd),
             root: self.root.clone(),
+            leases: self.leases.clone(),
+            reserved: Mutex::default(),
         };
         Ok((Box::new(handle), opened.action))
     }

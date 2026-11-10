@@ -20,7 +20,8 @@ use ifs::auth::MemEnv;
 use ifs::backend::mem::MemBackend;
 use ifs::client::{IfsClient, LocalIfs};
 use ifs::ops::audit::MemAudit;
-use ifs::ops::{Attr, Config as IfsConfig, Ctx, Ifs, Owner};
+use ifs::ops::flags::{O_CREAT, O_RDWR};
+use ifs::ops::{Attr, Config as IfsConfig, Ctx, Ifs, OpenArgs, Owner};
 use ifs::vfs::qsys::{MemQsys, MemberData};
 use md4::{Digest, Md4};
 use netserver::print::{OutQueue, PrintError, PrintJob, Printer};
@@ -97,12 +98,17 @@ impl Fs {
     }
 
     fn client(&self, user: &str) -> LocalIfs<MemBackend> {
+        self.client_as(user, self.owner.fetch_add(1, Ordering::SeqCst))
+    }
+
+    /// A client as `owner`: a job's second link has its first one's.
+    fn client_as(&self, user: &str, owner: u64) -> LocalIfs<MemBackend> {
         LocalIfs {
             ifs: self.ifs.clone(),
             env: self.env.clone(),
             audit: self.audit.clone(),
             principal: principal(user),
-            owner: Owner(self.owner.fetch_add(1, Ordering::SeqCst)),
+            owner: Owner(owner),
             job_ccsid: 37,
         }
     }
@@ -181,16 +187,26 @@ struct Job {
 }
 
 fn job(fs: &Arc<Fs>, user: &str) -> Job {
+    job_as(fs, user, false)
+}
+
+/// A job whose leases are in the IFS's lease table when `leases`.
+fn job_as(fs: &Arc<Fs>, user: &str, leases: bool) -> Job {
     let printed: Printed = Arc::default();
+    let owner = fs.owner.fetch_add(1, Ordering::SeqCst);
     let f = fs.clone();
     let u = user.to_owned();
     let server = NetServer::build(
         &config(),
-        Box::new(move || Box::new(f.client(&u)) as Box<dyn IfsClient>),
+        Box::new(move || Box::new(f.client_as(&u, owner)) as Box<dyn IfsClient>),
         Arc::new(Profiles),
         &(Arc::new(Spool(printed.clone())) as Arc<dyn Printer>),
     )
     .unwrap();
+    if leases {
+        let (f, u) = (fs.clone(), user.to_owned());
+        server.start_leases(Box::new(move || Box::new(f.client_as(&u, owner)) as Box<dyn IfsClient>)).unwrap();
+    }
     let server = Arc::new(server);
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap();
@@ -589,4 +605,158 @@ async fn without_a_driver_store_there_is_no_print_dollar() {
     let l = login_with(&mut s, 1, 0, "alice", "password", LoginOptions::default()).await;
     let t = request(&mut s, Command::TreeConnect, 3, l.session_id, 0, &tree_connect_body(r"\\QSTEST\print$")).await;
     assert_eq!(status(&t), STATUS_BAD_NETWORK_NAME);
+}
+
+const BREAK_WAIT: Duration = Duration::from_secs(10);
+
+/// A lease on `name` with key `key` in state `state` through `c`.
+async fn leased_open(c: &mut Client, name: &str, key: [u8; 16], state: u32, durable: bool) -> smb_server::wire::messages::CreateResponse {
+    let mut list = vec![lease_v1(key, state)];
+    if durable {
+        list.push(dhnq());
+    }
+    c.create(Create { oplock: OPLOCK_LEVEL_LEASE, contexts: contexts(&list), ..mk(name) }).await.unwrap()
+}
+
+fn granted(resp: &smb_server::wire::messages::CreateResponse) -> u32 {
+    smbc::lease::lease_reply(resp).expect("a lease").state
+}
+
+/// Two jobs with their leases in the IFS's table: another job's open
+/// breaks the first job's client's write caching and waits for the
+/// write-back; its write breaks the rest.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_lease_breaks_for_another_jobs_open_and_write() {
+    const RH: u32 = RWH & !smbc::lease::LEASE_WRITE_CACHING;
+    let fs = Fs::new();
+    let (a, b) = (job_as(&fs, "ALICE", true), job_as(&fs, "ALICE", true));
+    let mut c1 = alice(a.addr, "PUB").await;
+    let mut c2 = smbc::durable::user_client(b.addr, SignIn { share: "PUB", user: "alice", client_guid: [0xB2; 16], ..SignIn::default() }).await;
+    let r = leased_open(&mut c1, "f.txt", [1; 16], RWH, false).await;
+    assert_eq!(granted(&r), RWH);
+    // The other job's open waits for the cached writes to come back.
+    let opening = tokio::spawn(async move {
+        let id = c2.open("f.txt", FILE_GENERIC_READ | FILE_GENERIC_WRITE, SHARE_ALL).await;
+        (c2, id)
+    });
+    let n = c1.next_break(BREAK_WAIT).await.expect("a break for the other job's open");
+    assert_eq!((n.current_lease_state, n.new_lease_state), (RWH, RH));
+    c1.write(r.file_id, 0, b"cached").await.unwrap();
+    assert_eq!(c1.ack([1; 16], RH).await, STATUS_SUCCESS);
+    let (mut c2, id) = opening.await.unwrap();
+    let id = id.unwrap();
+    assert_eq!(c2.read(id, 0, 6).await.unwrap(), b"cached");
+    // Its write takes what is left.
+    c2.write(id, 0, b"C").await.unwrap();
+    let n = c1.next_break(BREAK_WAIT).await.expect("a break for the other job's write");
+    assert_eq!((n.current_lease_state, n.new_lease_state), (RH, 0));
+    assert_eq!(c1.ack([1; 16], 0).await, STATUS_SUCCESS);
+    assert_eq!(c1.read(r.file_id, 0, 6).await.unwrap(), b"Cached");
+    c2.close(id).await;
+    c1.close(r.file_id).await;
+}
+
+/// A plain IFS writer (no SMB at all), as FTP or a program is, breaks a
+/// job's lease and waits for the write-back.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_plain_ifs_writer_breaks_a_lease() {
+    const RH: u32 = RWH & !smbc::lease::LEASE_WRITE_CACHING;
+    let fs = Fs::new();
+    let a = job_as(&fs, "ALICE", true);
+    let mut c1 = alice(a.addr, "PUB").await;
+    let r = leased_open(&mut c1, "g.txt", [2; 16], RWH, false).await;
+    assert_eq!(granted(&r), RWH);
+    let f = fs.clone();
+    let writer = std::thread::spawn(move || {
+        let me = f.client("ALICE");
+        let fd = me.open("/pub/g.txt", OpenArgs::new(O_RDWR)).unwrap();
+        me.pwrite(fd, b"plain", 0).unwrap();
+        me.close(fd).unwrap();
+        me.release();
+    });
+    let n = c1.next_break(BREAK_WAIT).await.expect("a break for the plain writer");
+    assert_eq!((n.current_lease_state, n.new_lease_state), (RWH, RH));
+    c1.write(r.file_id, 5, b"!").await.unwrap();
+    assert_eq!(c1.ack([2; 16], RH).await, STATUS_SUCCESS);
+    let n = c1.next_break(BREAK_WAIT).await.expect("a break for its write");
+    assert_eq!(n.new_lease_state, 0);
+    assert_eq!(c1.ack([2; 16], 0).await, STATUS_SUCCESS);
+    writer.join().unwrap();
+    assert_eq!(c1.read(r.file_id, 0, 6).await.unwrap(), b"plain!");
+}
+
+/// While another job has the file open a lease caches no writes.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_lease_caches_no_writes_while_another_job_has_the_file_open() {
+    let fs = Fs::new();
+    let a = job_as(&fs, "ALICE", true);
+    let me = fs.client("ALICE");
+    let fd = me.open("/pub/h.txt", OpenArgs::new(O_RDWR | O_CREAT).mode(0o666)).unwrap();
+    let mut c = alice(a.addr, "PUB").await;
+    let r = leased_open(&mut c, "h.txt", [3; 16], RWH, false).await;
+    assert_eq!(granted(&r), RWH & !smbc::lease::LEASE_WRITE_CACHING);
+    me.close(fd).unwrap();
+    me.release();
+}
+
+/// A durable open taken back on a new connection keeps its lease in the
+/// table: another job's write breaks it there, and the client reads what
+/// was written.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_reconnected_durable_handle_sees_another_jobs_write() {
+    let fs = Fs::new();
+    let a = job_as(&fs, "ALICE", true);
+    let mut c = alice(a.addr, "PUB").await;
+    let r = leased_open(&mut c, "d.txt", [4; 16], RWH, true).await;
+    assert_eq!(granted(&r), RWH);
+    c.write(r.file_id, 0, b"before").await.unwrap();
+    reset(c);
+    for _ in 0..200 {
+        if a.server.disconnected_opens() == 1 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let mut c = alice(a.addr, "PUB").await;
+    let back = c
+        .create(Create { contexts: contexts(&[lease_v1([4; 16], RWH), dhnc(r.file_id)]), oplock: OPLOCK_LEVEL_LEASE, ..mk("d.txt") })
+        .await;
+    let back = back.expect("the durable open back").file_id;
+    let f = fs.clone();
+    let writer = std::thread::spawn(move || {
+        let me = f.client("ALICE");
+        let fd = me.open("/pub/d.txt", OpenArgs::new(O_RDWR)).unwrap();
+        me.pwrite(fd, b"AFTER!", 0).unwrap();
+        me.close(fd).unwrap();
+        me.release();
+    });
+    let n = c.next_break(BREAK_WAIT).await.expect("a break on the new connection");
+    assert_eq!(n.current_lease_state, RWH);
+    assert_eq!(c.ack([4; 16], n.new_lease_state).await, STATUS_SUCCESS);
+    if n.new_lease_state != 0 {
+        let n = c.next_break(BREAK_WAIT).await.expect("a break for the write");
+        assert_eq!(c.ack([4; 16], n.new_lease_state).await, STATUS_SUCCESS);
+    }
+    writer.join().unwrap();
+    assert_eq!(c.read(back, 0, 6).await.unwrap(), b"AFTER!");
+}
+
+/// A job that ends with leases held leaves nothing waiting.
+#[tokio::test(flavor = "multi_thread")]
+async fn an_ended_job_releases_its_leases() {
+    let fs = Fs::new();
+    let a = job_as(&fs, "ALICE", true);
+    let mut c = alice(a.addr, "PUB").await;
+    let r = leased_open(&mut c, "e.txt", [5; 16], RWH, false).await;
+    assert_eq!(granted(&r), RWH);
+    // The job's connection to the service closes: its owner is released.
+    let st = fs.client("ALICE").stat("/pub/e.txt", true).unwrap();
+    let owner = fs.ifs.leases().on(ifs::lock::ObjKey { fs: st.dev, ino: st.ino });
+    assert_eq!(owner.len(), 1);
+    fs.ifs.release_owner(owner[0].0);
+    let me = fs.client("ALICE");
+    let fd = me.open("/pub/e.txt", OpenArgs::new(O_RDWR)).unwrap();
+    me.pwrite(fd, b"x", 0).unwrap();
+    me.close(fd).unwrap();
+    me.release();
 }

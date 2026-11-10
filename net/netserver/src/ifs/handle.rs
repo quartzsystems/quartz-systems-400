@@ -16,8 +16,9 @@ use ifs::lock::range::RangeKind;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{F_SETLK, O_RDONLY, O_SHARE_RDWR, SEEK_SET};
 use ifs::ops::OpenArgs;
-use smb_server::{DirEntry, FileInfo, FileTimes, Handle, SmbError, SmbResult};
+use smb_server::{DirEntry, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
 
+use super::lease::LeaseLink;
 use super::info::{attr_changes, file_info, nanos, smb_error, stat_path};
 use super::pattern::matches;
 use super::worker::IfsWorker;
@@ -39,10 +40,14 @@ pub struct IfsHandle {
     pub(super) fd: Mutex<Option<Fd>>,
     /// Its share's root, to name the root itself.
     pub(super) root: String,
+    /// The job's leases in the IFS's table, when the share has leases.
+    pub(super) leases: Option<Arc<LeaseLink>>,
+    /// Leases this open reserved there.
+    pub(super) reserved: Mutex<Vec<[u8; 32]>>,
 }
 
 /// Where the object is now: by file ID, else by the path opened.
-fn locate(c: &dyn IfsClient, id: Option<FileId>, path: &str) -> String {
+pub(super) fn locate(c: &dyn IfsClient, id: Option<FileId>, path: &str) -> String {
     id.and_then(|id| c.path_from_file_id(id).ok()).unwrap_or_else(|| path.to_owned())
 }
 
@@ -261,6 +266,13 @@ impl Handle for IfsHandle {
             .map_err(|e| if e == Errno::EAGAIN { SmbError::Sharing } else { smb_error(e) })
     }
 
+    async fn lease_limit(&self, lease: LeaseKey, want: u32) -> u32 {
+        match &self.leases {
+            Some(link) => link.limit(self.id, self.path(), lease, want, &self.reserved).await,
+            None => want,
+        }
+    }
+
     async fn unlock_range(&self, offset: u64, len: u64) -> SmbResult<()> {
         let (Ok(start), Ok(len)) = (i64::try_from(offset), i64::try_from(len)) else {
             return Ok(());
@@ -276,6 +288,12 @@ impl Handle for IfsHandle {
 
 impl Drop for IfsHandle {
     fn drop(&mut self) {
+        if let Some(link) = &self.leases {
+            let keys = std::mem::take(&mut *self.reserved.lock().unwrap_or_else(PoisonError::into_inner));
+            if !keys.is_empty() {
+                link.closed(self.id, &keys);
+            }
+        }
         if let Some(Fd { fd, .. }) = self.fd.lock().unwrap_or_else(PoisonError::into_inner).take() {
             self.io.post(move |c| {
                 let _ = c.close(fd);
