@@ -27,8 +27,23 @@ use crate::userland::RUST_TARGET;
 
 const C_BUILDERS: &[&str] = &["cc", "cmake", "bindgen", "pkg-config", "vcpkg"];
 
-/// Crates outside the workspace with their own lockfile, checked the same way.
-const STANDALONE: &[&str] = &["tools/smbtest/Cargo.toml"];
+/// A crate outside the workspace with its own lockfile, checked the same
+/// way under `deny.toml` plus advisories ignored for its graph only.
+struct Standalone {
+    manifest: &'static str,
+    /// `(advisory, reason)` ignored in this graph alone.
+    ignore: &'static [(&'static str, &'static str)],
+}
+
+const STANDALONE: &[Standalone] = &[Standalone {
+    manifest: "tools/smbtest/Cargo.toml",
+    // `rsa` comes only through the `smb` client's sspi/picky, which pin a
+    // release candidate; the host test client signs on with NTLM only.
+    ignore: &[(
+        "RUSTSEC-2023-0071",
+        "rsa only via sspi/picky in the host test client tools/smbtest (NTLM, no RSA use)",
+    )],
+}];
 
 /// `build deny`.
 pub fn deny(ctx: &Ctx) -> Result<()> {
@@ -37,27 +52,66 @@ pub fn deny(ctx: &Ctx) -> Result<()> {
         bail!("cargo-deny not installed: cargo install cargo-deny --locked");
     }
     check_graph(ctx, &cargo, None)?;
-    for manifest in STANDALONE {
-        check_graph(ctx, &cargo, Some(manifest))?;
+    for s in STANDALONE {
+        check_graph(ctx, &cargo, Some(s))?;
     }
     Ok(())
 }
 
+/// `deny.toml` with `ignores` in place of its empty advisory ignore list.
+fn standalone_config(root: &str, ignores: &[(&str, &str)]) -> Result<String> {
+    let list: Vec<String> = ignores
+        .iter()
+        .map(|(id, why)| format!("    {{ id = \"{id}\", reason = \"{why}\" }},"))
+        .collect();
+    let line = format!("ignore = [\n{}\n]", list.join("\n"));
+    let mut found = false;
+    let out: Vec<String> = root
+        .lines()
+        .map(|l| {
+            if l.trim() == "ignore = []" && !found {
+                found = true;
+                line.clone()
+            } else {
+                l.to_owned()
+            }
+        })
+        .collect();
+    if !found {
+        bail!("deny.toml has no `ignore = []` under [advisories]");
+    }
+    Ok(out.join("\n") + "\n")
+}
+
 /// One graph: the workspace (`None`) or a standalone manifest.
-fn check_graph(ctx: &Ctx, cargo: &OsString, manifest: Option<&str>) -> Result<()> {
+fn check_graph(ctx: &Ctx, cargo: &OsString, standalone: Option<&Standalone>) -> Result<()> {
+    let manifest = standalone.map(|s| s.manifest);
     let what = manifest.unwrap_or("workspace");
     let scope: Vec<&str> = match manifest {
         Some(m) => vec!["--manifest-path", m],
         None => vec![],
     };
+    // The workspace uses ./deny.toml; a standalone graph a copy of it with
+    // its own advisory ignores.
+    let config = match standalone {
+        Some(s) if !s.ignore.is_empty() => {
+            let root = std::fs::read_to_string(ctx.paths.repo.join("deny.toml"))
+                .context("read deny.toml")?;
+            let path = ctx.paths.target.join("deny-standalone.toml");
+            std::fs::create_dir_all(&ctx.paths.target).context("create target dir")?;
+            std::fs::write(&path, standalone_config(&root, s.ignore)?)
+                .context("write the standalone deny config")?;
+            Some(path)
+        }
+        _ => None,
+    };
     info!("{what}: cargo deny check");
-    // cargo-deny reads ./deny.toml (the repository's) for every graph.
-    Cmd::new(cargo, "cargo-deny")
-        .cwd(&ctx.paths.repo)
-        .arg("deny")
-        .args(&scope)
-        .arg("check")
-        .run(ctx)?;
+    let mut deny = Cmd::new(cargo, "cargo-deny");
+    deny.cwd(&ctx.paths.repo).arg("deny").args(&scope);
+    if let Some(c) = &config {
+        deny.arg("--config").arg(c);
+    }
+    deny.arg("check").run(ctx)?;
 
     let json = Cmd::new(cargo, "cargo-metadata")
         .cwd(&ctx.paths.repo)
