@@ -195,6 +195,10 @@ impl SystemHost for SqlHost {
         })
     }
 
+    fn server_shares(&self) -> Option<Result<Vec<host::ServerShare>, String>> {
+        with_system(super::netsvr::sql_shares)
+    }
+
     fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {
         use ptf::status::{Action, Status};
         with_system(|system| {

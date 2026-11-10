@@ -261,6 +261,54 @@ impl Host for SvcHost<'_> {
     }
 }
 
+/// `SERVER_SHARE_INFO`'s rows.
+pub fn sql_shares(
+    system: &mut System,
+) -> Result<Vec<sql::exec::catalog::services::host::ServerShare>, String> {
+    use sql::exec::catalog::services::host::ServerShare;
+    let c = load(system)?;
+    let t = table();
+    Ok(c.shares
+        .values()
+        .map(|s| {
+            let current =
+                i32::try_from(netsvrcfg::fmt::zlsl::current_users(&t, &s.name)).unwrap_or(i32::MAX);
+            let mut r = ServerShare {
+                name: s.name.clone(),
+                text: s.text.clone(),
+                encryption: s.encryption_required,
+                autl: s.autl.clone(),
+                current,
+                ..ServerShare::default()
+            };
+            match &s.kind {
+                netsvrcfg::Kind::File(f) => {
+                    r.path.clone_from(&f.path);
+                    r.read_only = f.permission == netsvrcfg::Permission::ReadOnly;
+                    r.max_users = f.max_users;
+                    r.text_conversion = f.text_conversion;
+                    r.text_ccsid = f.text_ccsid;
+                    r.extension_count = i32::try_from(f.extensions.len()).unwrap_or(0);
+                    for e in &f.extensions {
+                        r.extensions
+                            .extend(i32::try_from(e.len().min(46)).unwrap_or(0).to_be_bytes());
+                        r.extensions.extend(netsvrcfg::fmt::text::fixed(e, 46));
+                    }
+                }
+                netsvrcfg::Kind::Print(p) => {
+                    r.print = true;
+                    r.spool_type = p.spool_type.special().trim_start_matches('*').into();
+                    r.outq = (p.outq.library.clone(), p.outq.name.clone());
+                    r.driver.clone_from(&p.driver);
+                    r.printer_file = (p.printer_file.library.clone(), p.printer_file.name.clone());
+                    r.publish = p.publish;
+                }
+            }
+            r
+        })
+        .collect())
+}
+
 /// A `QZLS*` API for the caller `me`.
 pub fn call(
     system: &mut System,

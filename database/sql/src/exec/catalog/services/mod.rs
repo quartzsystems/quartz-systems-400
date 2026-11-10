@@ -32,6 +32,7 @@ mod libl;
 mod locks;
 mod msgfdata;
 mod netstat;
+mod netsvr;
 mod objects;
 pub mod plancache;
 pub mod procs;
@@ -229,6 +230,12 @@ const VIEWS: &[View] = &[
         name: "SCHEDULED_JOB_INFO",
         no_value: &[],
         rows: wmobj::schedule,
+    },
+    View {
+        schema: "QSYS2",
+        name: "SERVER_SHARE_INFO",
+        no_value: &[],
+        rows: netsvr::shares,
     },
     View {
         schema: "QSYS2",

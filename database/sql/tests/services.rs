@@ -306,6 +306,29 @@ impl SystemHost for Mock {
         }]))
     }
 
+    fn server_shares(&self) -> Option<Result<Vec<host::ServerShare>, String>> {
+        Some(Ok(vec![
+            host::ServerShare {
+                name: "LASER".into(),
+                print: true,
+                spool_type: "USERASCII".into(),
+                outq: ("QUSRSYS".into(), "PRT01".into()),
+                driver: "HP LaserJet 4".into(),
+                current: 1,
+                ..host::ServerShare::default()
+            },
+            host::ServerShare {
+                name: "QIBM".into(),
+                text: "Product data".into(),
+                path: "/QIBM".into(),
+                max_users: -1,
+                extension_count: 1,
+                extensions: vec![0, 0, 0, 3, 0xE3, 0xE7, 0xE3],
+                ..host::ServerShare::default()
+            },
+        ]))
+    }
+
     fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {
         Some(Ok(vec![host::Ptf {
             id: "QS00001".into(),
@@ -1089,6 +1112,19 @@ fn products_and_ptfs() {
     assert_eq!(
         db.rows("SELECT PTF_IDENTIFIER, PTF_PRODUCT_ID, PTF_LOADED_STATUS, PTF_IPL_ACTION, PTF_ACTION_PENDING FROM QSYS2.PTF_INFO"),
         vec![row(&["QS00001", "QS00SS1", "APPLIED", "NONE", "NO"])]
+    );
+}
+
+#[test]
+fn server_share_info() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT SERVER_SHARE_NAME, SHARE_TYPE, ENCRYPTION_REQUIRED, SPOOLED_FILE_TYPE, OUTPUT_QUEUE, PUBLISH_PRINT_SHARE, CURRENT_CONNECTIONS FROM QSYS2.SERVER_SHARE_INFO WHERE SHARE_TYPE = 'PRINT'"),
+        vec![row(&["LASER", "PRINT", "NO", "USERASCII", "PRT01", "NO", "1"])]
+    );
+    assert_eq!(
+        db.rows("SELECT PATH_NAME, PERMISSIONS, COALESCE(MAXIMUM_CONNECTIONS, -9), FILE_EXTENSION_COUNT, LENGTH(FILE_EXTENSIONS), COALESCE(OUTPUT_QUEUE, '-') FROM QSYS2.SERVER_SHARE_INFO WHERE SERVER_SHARE_NAME = 'QIBM'"),
+        vec![row(&["/QIBM", "RW", "-9", "1", "7", "-"])]
     );
 }
 

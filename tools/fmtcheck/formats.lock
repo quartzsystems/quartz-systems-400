@@ -64,6 +64,11 @@ frozen_at = "V1R1M0"
 version = "1/1/1/1"
 hash = "34fb656580befedecd6ddc0fc13d155d52fc0a7e56a5de5ca0789c7bafc84223"
 
+[format.netserver-config]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "b4a8cc84b3bb248013aef805f628a25807551372292e4c9e9c185190a2a4e331"
+
 [format.oracle-fixtures]
 frozen_at = "V1R1M0"
 version = "1/1"

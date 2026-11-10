@@ -124,6 +124,33 @@ fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
         ),
         (
             "QSYS",
+            "QZLSPJ",
+            JobD {
+                rtgdta: "QZLSSTART".into(),
+                inqmsgrpy: "*DFT".into(),
+                logoutput: "*PND".into(),
+                jobmsgqmx: Some(4),
+                jobmsgqfl: "*WRAP".into(),
+                text: "NetServer file prestart job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
+            "QZLSSERVER",
+            JobD {
+                user: "QPGMR".into(),
+                rtgdta: "QZLSSTART".into(),
+                inqmsgrpy: "*DFT".into(),
+                logoutput: "*PND".into(),
+                jobmsgqmx: Some(8),
+                jobmsgqfl: "*WRAP".into(),
+                text: "NetServer server job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
             "QSYSSCD",
             JobD {
                 user: "QSYS".into(),

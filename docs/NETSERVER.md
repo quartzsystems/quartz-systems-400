@@ -37,7 +37,7 @@ built and proven.
 | Configuration | `net/netsvrcfg` | the server attributes (current and pending), file and print shares, validation, the `QAZLSCFG` and `QAZLSSHR` codecs, the `ZLSL*` and `ZLSS*` formats of the APIs, the reason codes |
 | Test client | `tools/smbtest` | an SMB2/3 client written separately from the server (it does not depend on `net/netserver`, so one codec bug cannot hide in both) and its scenarios |
 | Profiles | `security/sec` | the NT hash password form, the `QPWDLVL` rules for it, the NetServer-disabled state, the guest profile check |
-| Storage service side | `lic/slic/src/stgsvc/netsvr.rs`, `lic/slic/src/cpp/netsvr.rs` | the configuration files over the IFS, the session table, the API and SQL data |
+| Storage service side | `lic/slic/src/stgsvc/netsvr.rs` (NS-2: `nslogon.rs`) | the configuration files over the IFS, the session table, the API and SQL data |
 | Jobs | `work/qsjob/src/work/netsvr/` | `QZLSSERVER` (the listener) and `QZLSFILE` (one client connection), implementing the backend traits over the job's IFS client, the security calls and the spooler |
 | APIs | `runtime/sysapi/src/netsvr.rs` | `QZLSADFS`, `QZLSADPS`, `QZLSCHFS`, `QZLSCHPS`, `QZLSCHSG`, `QZLSCHSI`, `QZLSCHSN`, `QZLSENDS`, `QZLSENSS`, `QZLSLSTI`, `QZLSOLST`, `QZLSRMS`, `QZLSSTRS` |
 | SQL | `database/sql/src/exec/catalog/services/` | `QSYS2.SERVER_SHARE_INFO` (the 20 columns of the 7.5 view), `USER_INFO.NETSERVER_DISABLED` filled |
@@ -104,61 +104,169 @@ a routed connection never runs under another user's authority. The
 routing table and the job wiring are `QZLSSERVER`'s and `QZLSFILE`'s
 (`work/qsjob/src/work/netsvr/`).
 
-## 4. Configuration (design)
+## 4. Configuration
+
+Built in `net/netsvrcfg` (the model, the files, the formats, the APIs
+over bytes) and `lic/slic/src/stgsvc/netsvr.rs` (the files over the
+IFS, the session table, the requests).
 
 ### Persistence
 
 As on IBM i, two stream files under `/QIBM/UserData/OS400/NetServer/`:
-`QAZLSCFG` (server attributes) and `QAZLSSHR` (shares), owned by `QSYS`,
-`*PUBLIC *EXCLUDE`, CCSID tag 37. They are saved and restored with `SAV`
-and `RST` of `/QIBM/UserData` (`GO SAVE` 21 and 23), as IBM's are; not by
-`SAVSECDTA` or `SAVCFG`. The content is QS/400's own format (IBM's is
-undocumented), specified in section 4.4, a frozen format from its first
-release, registered in `tools/fmtcheck/formats.toml`. Only the storage
-service writes them.
+`QAZLSCFG` (server attributes) and `QAZLSSHR` (shares). The storage
+service makes them at first use (any API call, the `netsvr` request's
+`Config`, or `SERVER_SHARE_INFO`) with IBM's defaults and the shipped
+`QIBM` share, as `QSYS`, mode `0600` (owner `QSYS`, `*PUBLIC *EXCLUDE`);
+new directories on the way are `0700`. Each file is replaced whole
+(written beside it, then renamed over it). They are saved and restored
+with `SAV` and `RST` of `/QIBM/UserData` (`GO SAVE` 21 and 23), as IBM's
+are; not by `SAVSECDTA` or `SAVCFG`. The content is QS/400's own format
+(IBM's is undocumented: the primary's are binary records with UTF-16
+strings), specified in 4.4. Only the storage service writes them; the
+`QZLSSERVER` and `QZLSFILE` jobs read them through the `netsvr` request
+(`Config`, the two files' bytes, decoded with `netsvrcfg::file::read`).
 
 ### Server attributes
 
-Each attribute has a current value (in effect) and a pending value
-(taken at the next start with reset, or the next IPL), as `QZLSCHSI`
-and `ZLSL0101` define:
+Each attribute has a current value (in effect) and a pending value.
+`QZLSCHSN`, `QZLSCHSG` and `QZLSCHSI` (`ZLSS0100`) change only the
+pending value; it becomes current at a `QZLSSTRS` with reset `1` that
+the server control accepts, or at the first read of the configuration
+after an IPL (the service applies pending values once per IPL). The
+defaults are the primary's (`zlsl/olst-ZLSL0201-ALL.txt`).
 
-| Attribute | Default | Notes |
-|---|---|---|
-| Server name | the system name (`QSYS2.SYSTEM_STATUS` `HOST_NAME`'s first 15 characters, upper case) | the primary shows the plain system name; `QZLSCHSN` changes it |
-| Domain (workgroup) | the server name's workgroup default as IBM sets it | `QZLSCHSN` |
-| Text | `QS/400` | |
-| Allow NetBIOS | `*NO` | 139, 137, 138 |
-| WINS | none | WINS server addresses and scope are refused (`CPFB68B`-style reason, section 10) |
-| Guest profile | none | `QZLSCHSG`; off by default |
-| Idle time-out | IBM's default | sessions with no open files end after it |
-| CCSID | 0 (the job's) | for file-name translation of `QSYS.LIB` text |
-| Message authentication (signing) | optional | required, optional, disabled |
-| Encryption | not required | required per server or per share |
-| Opportunistic locking | `*YES` | leases and oplocks |
-| SMB2 minimum dialect | 2.0.2 | 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1 |
-| Log sign-on messages | off | `CPIB691` to `QSYSOPR` |
+| Attribute | Default | `ZLSL0201` / `ZLSS0100` | Notes |
+|---|---|---|---|
+| Server name | the system name (`QSYSNAME`), upper case, 15 characters | `serverName` | `QZLSCHSN`; the primary's equals its system name |
+| Domain (workgroup) | blank | `domainName` | `QZLSCHSN`; the primary has one set |
+| Text | `QS/400` | `textDescription` | the primary's is `OS/400` |
+| Guest profile | none | `guestLogonUserProfile`, `guestLogonSupport` 0/1 | `QZLSCHSG` |
+| Code page | 0 (the job's) | `codePage` | the OEM code page of NetBIOS names; 0 or a code page with a CCSID QS/400 converts |
+| Idle time-out | 6000 seconds | `idleTimeOut` | -1 never; above 0 |
+| Oplock time-out | 30 seconds | `oplockTimeOut` | -1 turns leases and oplocks off; 1 to 600 |
+| Browse interval | 720000 ms | `browsingInterval` | 0 to 720000; for the NetBIOS announcements when NetBIOS is allowed |
+| WINS primary, secondary, scope, proxy | none | as named | refused when set (section 10) |
+| Allow system name | `0` | `systemNameAccess` | the server also answers to the system name |
+| Authentication method | `0` (passwords) | `authMethod` | `1`, `2` (Kerberos) refused |
+| Logon server role | 0 | `serverRole`, `domainLogonSupport` | 1 refused |
+| Message authentication | 0 | `messageAuthMode` | 0 and 1: signing offered, not required (SMB2 cannot turn it off); 2: required |
+| Minimum message severity | -1 | `minMessageSeverity` | only -1 (no administrative alerts in SMB2) |
+| LAN Manager authentication | 0 | `LanmanAuth` | 1 refused |
+| Encrypted connections | 0 | `encryptedConnectionEnforcement` | 0 not required, 1 required for every connection |
+| Server authorization list | none | `serverAuthorizationList` | users need `*USE` to it to connect; must exist |
+| Allow NetBIOS | no | (QS/400 only) | 139, 137, 138 |
+| SMB2 minimum dialect | 2.0.2 | (QS/400 only) | 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1 |
+| Log sign-on messages | no | (QS/400 only) | `CPIB691` to `QSYSOPR` |
 
-Fields IBM has that QS/400 refuses (WINS, Kerberos, browsing master,
-LAN Manager authentication) are listed in section 10.
+The QS/400-only attributes have no API yet; Navigator and the file set
+them. Autostart is the server table's (`*NETSVR`).
 
 ### Shares
 
-File shares: name (12 characters), path, text, permission (read only,
-read/write), maximum users (-1 no maximum), CCSID, text conversion and
-its file extensions, encryption required, an authorization list.
-Print shares: name, output queue (library, name), printer driver text,
-spooled file type (`*AUTO`, `*USERASCII`, `*AFP`, `*SCS`), printer file,
-publish. The shipped share is `QIBM` (`/QIBM`, with QS/400's own
-text). `QDIRSRV` is not shipped (no Directory Services).
+File shares: name (12 characters, upper case), path (begins with `/`,
+up to 1024 bytes, trailing `/` dropped), text (50), permission (1 read
+only, 2 read/write), maximum users (-1 no maximum, else above 0), text
+CCSID (0 or a CCSID QS/400 converts), text conversion, its extensions
+(up to 100, each up to 46 bytes, upper case, a leading `.` dropped),
+encryption required, an authorization list (must exist). Print shares:
+name, output queue (library, name), printer driver text (50), spooled
+file type (1 `*USERASCII`, 2 `*AFP`, 3 `*SCS`, 4 `*AUTO`), printer
+file, publish (always off: QS/400 has no directory server), encryption,
+authorization list. Share changes take effect at once.
+
+Share names may not begin with a blank or hold a control character or
+`\ / : * ? " < > | [ ] ; = + ,` (`CPFB68B`); server and domain names
+take only A-Z, 0-9, `#`, `$`, `@` and embedded blanks, as `CPFB68B`
+states. `NEEDS-CODY`: whether IBM accepts more in share names (only an
+add call shows it: `CALL QZLSADFS ('A-B_C' '/tmp' 4 0 ' ' 1 -1 errc)`
+on a test system, then `QZLSRMS`).
+
+The shipped share is `QIBM` (`/QIBM`, read/write, no maximum, QS/400's
+own text), as on the primary. `QDIRSRV` is not shipped (no Directory
+Services).
 
 ### 4.4 The files' format
 
-`netsvrcfg::file` writes both files as: an 8-byte magic (`QSZLSCFG`
-or `QSZLSSHR`), a 2-byte big-endian format version (1), a 2-byte record
-count, then records of a 2-byte tag, a 4-byte length and the value,
-UTF-8 text; unknown tags are kept and written back. The agent building
-`netsvrcfg` fills in the tag table here.
+Frozen at V1R2M0 (`tools/fmtcheck/formats.toml`, format
+`netserver-config`; version `netsvrcfg::file::FORMAT_VERSION`).
+
+Both files: an 8-byte ASCII magic (`QSZLSCFG` or `QSZLSSHR`), a 2-byte
+big-endian format version (1), a 2-byte record count, then records of
+a 2-byte tag, a 4-byte length and the value. Values are UTF-8 text;
+integers are decimal text, flags `0` or `1`. A newer version is refused;
+unknown tags are kept and written back (in `QAZLSSHR`, an unknown tag
+inside a share stays with that share; one before the first share stays
+at the head). Bytes after the last record, a short record or a value
+not valid for its tag make the file unreadable (the API fails with
+`CPFB681`).
+
+`QAZLSCFG`: each attribute twice, the current value under its tag and
+the pending value under the tag with bit 15 set (`0x8000`). A missing
+attribute takes the default.
+
+| Tag | Attribute | Value |
+|---|---|---|
+| `0x0001` | server name | text |
+| `0x0002` | domain | text |
+| `0x0003` | text | text |
+| `0x0004` | guest profile | text, empty for none |
+| `0x0005` | code page | integer |
+| `0x0006` | idle time-out | integer |
+| `0x0007` | oplock time-out | integer |
+| `0x0008` | browse interval | integer |
+| `0x0009` | WINS primary | text |
+| `0x000A` | WINS secondary | text |
+| `0x000B` | scope | text |
+| `0x000C` | WINS proxy | flag |
+| `0x000D` | allow system name | flag |
+| `0x000E` | authentication method | integer 0-2 |
+| `0x000F` | logon server role | integer |
+| `0x0010` | message authentication | integer |
+| `0x0011` | minimum message severity | integer |
+| `0x0012` | LAN Manager authentication | integer |
+| `0x0013` | encrypted connections | integer |
+| `0x0014` | server authorization list | text |
+| `0x0015` | allow NetBIOS | flag |
+| `0x0016` | SMB2 minimum dialect | `2.0.2`, `2.1`, `3.0`, `3.0.2`, `3.1.1` |
+| `0x0017` | log sign-on messages | flag |
+
+`QAZLSSHR`: each share is its name record followed by its attributes,
+until the next name record, in name order.
+
+| Tag | Attribute | Value |
+|---|---|---|
+| `0x0100` | share name (starts a share) | text |
+| `0x0101` | type | `FILE` or `PRINT` |
+| `0x0102` | text | text |
+| `0x0103` | encryption required | flag |
+| `0x0104` | authorization list | text, empty for none |
+| `0x0110` | file: path | text |
+| `0x0111` | file: permission | integer 1, 2 |
+| `0x0112` | file: maximum users | integer |
+| `0x0113` | file: text CCSID | integer |
+| `0x0114` | file: text conversion | flag |
+| `0x0115` | file: an extension (one record each, in order) | text |
+| `0x0120` | print: output queue | `LIB/NAME` |
+| `0x0121` | print: printer driver | text |
+| `0x0122` | print: spooled file type | integer 1-4 |
+| `0x0123` | print: printer file | `LIB/NAME`, empty for none |
+| `0x0124` | print: publish | flag |
+
+### The session table
+
+The storage service holds one table per IPL (`netsvrcfg::SessionTable`):
+sessions (identifier, workstation name, expanded name, user, the
+serving job, guest, start, last request, the end mark) with their tree
+connections (identifier, share, type 0 disk, 1 print, 3 IPC, open
+files, start), and the `ZLSL0400` counters. The jobs report through the
+`netsvr` request (tag 1511): `Started`, `Register` (the reply is the
+session's identifier; the service fills in the job), `Unregister`
+(normal or idle end), `Connect`, `Disconnect`, `Opens`, `Touch`,
+`Count` (a counter and an amount), `JobEnded` (the job's sessions go,
+counted as errors). Only jobs named `QZLSSERVER` or `QZLSFILE` may
+change it; any job may `List` and ask `Ending` (whether `QZLSENSS`
+marked a session to end, which the serving job then ends and
+unregisters).
 
 ## 5. Security
 
@@ -531,15 +639,94 @@ form.
 
 ## 8. Messages
 
-NetServer's IDs in `QCPFMSG`, with QS/400's own text in
-`runtime/msgf/msgs/qcpfmsg.toml`: `CPIB680` started, `CPIB681` ended,
-`CPIB682` user disabled for NetServer, `CPIB683`/`CPIB686` unable to
-start, `CPIB684` error ending, `CPIB685` request error, `CPIB687`/`CPIB689`
-started with an error, `CPIB68A`-`CPIB68E` sign-on failures (no profile,
-disabled, expired, no password, disabled for NetServer), `CPIB68F`
-enabled, `CPIB690` password expires soon, `CPIB691` connected,
-`CPIB692` Kerberos error; `CPFB680`-`CPFB695` the API errors, `CPDB680`.
-Severities as `messages.txt`.
+Every NetServer identifier of `QCPFMSG` (`tools/conformance/oracle/netserver/messages.txt`)
+is in `runtime/msgf/msgs/qcpfmsg.toml` with QS/400's own first- and
+second-level text, IBM's severity, and IBM's substitution layout (the
+primary's `QMHRTVM RTVM0300` gave the variables' types and lengths;
+its text was read to learn what each reason code means and is not
+kept). `CPIB682` carries the profile (`*CHAR 10`) and the client's
+address (`*CHAR 46`), as NS-2's sign-on sends it to `QSYSOPR`.
+
+| ID | Sev | Meaning | Data |
+|---|---|---|---|
+| `CPIB680`, `CPIB681` | 0 | NetServer started, ended | server name 15 |
+| `CPIB682` | 0 | user disabled for NetServer | profile 10, client address 46 |
+| `CPIB683`, `CPIB684` | 40 | unable to start, error ending | reason, return code, ... |
+| `CPIB685` | 40 | a request's conversion failed | CCSIDs, return code, item, share |
+| `CPIB686` | 40 | a share's extensions unreadable | share 12 |
+| `CPIB687`, `CPIB689` | 0 | started with an error | reason, ... |
+| `CPIB688` | 0 | a user shared a directory (home share) | user, workstation, share, path, client |
+| `CPIB68A`-`CPIB68E` | 40 | sign-on refused: no profile, profile disabled, password expired, no password form, disabled for NetServer | user 37 |
+| `CPIB68F` | 10 | user enabled again | user 37 |
+| `CPIB690` | 20 | password expires in &2 days | user 37, days `*BIN 2` |
+| `CPIB691` | 10 | user signed on | user 37 |
+| `CPIB692` | 40 | Kerberos error | user 37, code |
+| `CPDB680` | 40 | not authorized to enable a user | profile 10 |
+| `CPFB680` | 40 | `QZLSSERVER` not active | none |
+| `CPFB681` | 40 | internal error | none |
+| `CPFB682`-`CPFB695` | 40 | the API errors | the APIs section |
+
+The help audit (`tools/helpaudit`) reads the help of every message; each
+of these has its own.
+
+## APIs
+
+Natives of `QSYS` (`runtime/sysapi/src/netsvr.rs`): each gathers its
+parameters' bytes in `netsvrcfg::api`'s order and sends them to the
+storage service (`netsvr_api`, tag 1510), which runs
+`netsvrcfg::api::call` over the configuration files, the caller's
+principal, the object store and the session table; the receiver, list
+information, user space and error code (`ERRC0100`/`ERRC0200`, or an
+escape when the error code is 0 bytes) are filled in the job. The error
+data are laid out as the primary's: every message's data starts with the
+API's name (10).
+
+| API | Parameters (after IBM's header) | Authority | Errors (reasons) |
+|---|---|---|---|
+| `QZLSADFS`, `QZLSCHFS` | share 12, path, path length, path CCSID (0, 37, 1200, 13488, 1208 or any QS/400 converts), text 50, permission, maximum users, errc; optional text CCSID, text conversion, extension table, extension count, encryption required, authorization list | `*IOSYSCFG`, or ownership of the path (`CPFB684` 3 missing, 4 not owner; `QZLSCHFS` checks the old and the new path) | `CPFB68A` 1 duplicate, 2 missing, 3 permission, 4 maximum users, 7 path, 8 a print share, 10 text conversion or CCSID; `CPFB68B` name characters; `CPFB68D` path length (1 to 1024, 2048 in UTF-16), extension count or length; `CPFB683` path CCSID; `CPF2283` no such authorization list |
+| `QZLSADPS`, `QZLSCHPS` | share 12, output queue 20, text 50, spooled file type, driver 50, errc; optional printer file 20, publish, encryption, authorization list | `*IOSYSCFG`, or ownership of the output queue | `CPFB68A` 1, 2, 5 spooled file type, 8 a file share, 11 publish value; publish `1`: the share is added or changed unpublished and `CPFB682` 6 is returned |
+| `QZLSRMS` | share 12, errc | `*IOSYSCFG`, or ownership of the path or queue | `CPFB68A` 2 |
+| `QZLSCHSN` | server name 15, domain 15, text 50, errc; optional allow system name | `*IOSYSCFG` (`CPFB684` 1) | `CPFB68B` parameter 1, 2 or 4 |
+| `QZLSCHSG` | guest 10 (blanks or `*NONE`: no guest), errc | `*IOSYSCFG` and `*SECADM` (`CPFB684` 2) | `CPFB687` (no profile, or no `*USE` to it), `CPFB68C` (it or a group has a special authority) |
+| `QZLSCHSI` | request, length, format, errc | `ZLSS0100`: `*IOSYSCFG`; `ZLSS0200`: `*OBJMGT` and `*USE` to each profile | `CPFB690` 1 format; `CPFB68D` length (`ZLSS0100` 296 to 310: the 7.1 layout, then encryption, then the authorization list; fields past the length keep their pending values); `CPFB686` 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18 (4 above); `CPF2283`; `ZLSS0200`: `CPFB694` with the count not enabled (enabling calls `sec::netsvr::enable_netserver_user`) |
+| `QZLSSTRS` | reset 1 (`0` or `1`), errc | `*IOSYSCFG` | `CPFB685` 5 reset value, 2 active already; then the server control's answer |
+| `QZLSENDS` | errc | `*IOSYSCFG` | the server control's answer |
+| `QZLSENSS` | workstation 15 (a name, `*SESSID`), errc; optional session identifier 8 | `*IOSYSCFG` | `CPFB68E` 1 no session, 2 not active, 4 identifier without `*SESSID`, 5 no such identifier, 6 `*EXPANDED` (the prototype has no expanded name parameter) |
+| `QZLSLSTI` | qualified user space 20, format, qualifier 15, errc; optional session user 10, session identifier 8 | none | `CPFB68F` 1 format, 3 user space, 7 qualifier, 9 `*SESSID` rules, 10 `ZLSL0900` needs a blank qualifier, 11 `*EXPANDED` |
+| `QZLSOLST` | receiver, length, list information 64, format, qualifier, errc; optional session user, session identifier | none | `CPFB688` 1 format, 2 `QZLSLSTI`'s refusal; `CPFB68D` negative length |
+
+Qualifiers, as the primary takes them: `ZLSL0100`, `ZLSL0101`,
+`ZLSL0800` a share name, `*ALL` or blanks (a missing share is an empty
+list); `ZLSL0200`, `ZLSL0201` anything; `ZLSL0300`, `ZLSL0600` a
+workstation, `*ALL`, blanks or `*SESSID`; `ZLSL0700` a share, `*ALL`
+or blanks; `ZLSL0400` `*ALL` only; `ZLSL0900` blanks only.
+
+Formats: QS/400 returns the 7.5 layouts (`ZLSL0101` 209 fixed bytes,
+`ZLSL0201` 800 bytes); `netsvrcfg::fmt::zlsl::Level::V7R1` writes the
+primary's (198, 772), and `net/netsvrcfg/tests/captures.rs` compares
+both APIs' receivers, user spaces (generic header of 576 bytes, level
+`0300`, the input section at 576, the list at 619) and error data with
+the captures byte for byte. Path offsets: `ZLSL0100` in a receiver
+from the record, otherwise from the buffer's start; paths are in the
+job's CCSID. `ZLSL0101`'s extension table follows the path (offset 0
+when there is none; `NEEDS-CODY`: the primary has no share with
+extensions to show the placement). `ZLSL0300`'s logon type is `1` for a
+user and `0` for the guest, the encrypted-password flag always `1`,
+the workstation `*EXPANDED` (type 1) when its name passes 15
+characters (`NEEDS-CODY`: no live session was captured).
+
+The server control (`netsvrcfg::api::ServerControl`): `QZLSSERVER`
+counts as active when the job table has it in `QSERVER`. Start, end and
+ending a session belong to the `QZLSSERVER` job and answer `CPFB680`
+until it lands (`BLOCKED(rel)` in `lic/slic/src/stgsvc/netsvr.rs`). A
+reset applies the pending values only after the server control accepts
+the start.
+
+`NEEDS-CODY` (change APIs are never called on the oracles): the exact
+`CPFB68D` bounds of `QZLSCHSI`
+(`CALL QZLSCHSI (x'00' 1 'ZLSS0100' errc)` shows them without changing
+anything only if IBM checks the length first), and IBM's checks of
+`QZLSADFS` on a share name with `-` and `_` (above).
 
 ## 9. Protocol coverage (built: the library's)
 
@@ -593,6 +780,14 @@ Severities as `messages.txt`.
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
 | Leases broken by other jobs | the IFS has no change events and the lease table is per job | none; turn leases off on shares several clients change |
+| WINS servers, scope, WINS proxy | no WINS client | `QZLSCHSI` `CPFB686` reason 6 or 7, return code 3440 |
+| Kerberos authentication method (`1`, `2`) | no Kerberos | `QZLSCHSI` `CPFB686` reason 15 |
+| Logon server role, domain logon | no domain logons | `QZLSCHSI` `CPFB686` reason 13 |
+| Administrative alerts (minimum severity not -1) | SMB2 has no messenger service | `QZLSCHSI` `CPFB686` reason 17 |
+| LAN Manager authentication | weak | `QZLSCHSI` `CPFB686` reason 18 |
+| Publishing print shares | no directory server | the share is kept unpublished; `CPFB682` reason 6 |
+| Home (temporary) shares | not built | none are made; `CPIB688` is never sent |
+| `CPDB680` diagnostics per user from `ZLSS0200` | the API answers over the link with one error | only `CPFB694` with the count |
 
 ## 11. Tests
 

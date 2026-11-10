@@ -151,6 +151,49 @@ pub struct Product {
     pub text: String,
 }
 
+/// A share as `SERVER_SHARE_INFO` shows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)] // one per column
+pub struct ServerShare {
+    /// The share name.
+    pub name: String,
+    /// A print share (else a file share).
+    pub print: bool,
+    /// Its text.
+    pub text: String,
+    /// Clients must encrypt.
+    pub encryption: bool,
+    /// The authorization list; empty for none.
+    pub autl: String,
+    /// File: the path.
+    pub path: String,
+    /// File: read only.
+    pub read_only: bool,
+    /// File: maximum connections, -1 for no maximum.
+    pub max_users: i32,
+    /// Connections now.
+    pub current: i32,
+    /// File: text conversion on.
+    pub text_conversion: bool,
+    /// File: the text CCSID.
+    pub text_ccsid: i32,
+    /// File: the extension table as the API formats hold it (a 4-byte
+    /// length and 46 bytes each).
+    pub extensions: Vec<u8>,
+    /// File: how many extensions.
+    pub extension_count: i32,
+    /// Print: `USERASCII`, `AFP`, `SCS` or `AUTO`.
+    pub spool_type: String,
+    /// Print: the output queue's library and name.
+    pub outq: (String, String),
+    /// Print: the driver.
+    pub driver: String,
+    /// Print: the printer file's library and name; empty for none.
+    pub printer_file: (String, String),
+    /// Print: published.
+    pub publish: bool,
+}
+
 /// A PTF as the PTF database has it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Ptf {
@@ -527,6 +570,11 @@ pub trait SystemHost {
 
     /// The installed product loads.
     fn products(&self) -> Option<Result<Vec<Product>, String>> {
+        None
+    }
+
+    /// The `QZLS*` shares (`SERVER_SHARE_INFO`).
+    fn server_shares(&self) -> Option<Result<Vec<ServerShare>, String>> {
         None
     }
 

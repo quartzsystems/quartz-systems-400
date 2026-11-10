@@ -431,6 +431,18 @@ files = [
     "net/certs/src/store/format.rs",
 ]
 
+# NetServer's QAZLSCFG and QAZLSSHR (docs/NETSERVER.md 4.4).
+[[format]]
+name = "netserver-config"
+frozen_at = "V1R2M0"
+doc = "docs/NETSERVER.md"
+version = ["net/netsvrcfg/src/file/mod.rs::FORMAT_VERSION"]
+files = [
+    "net/netsvrcfg/src/file/tlv.rs",
+    "net/netsvrcfg/src/file/cfg.rs",
+    "net/netsvrcfg/src/file/shr.rs",
+]
+
 # --- Oracle fixtures (no credentials; the account is `{user}`) ---
 
 [[format]]
