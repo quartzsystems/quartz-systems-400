@@ -236,13 +236,12 @@ impl NetServer {
         for s in &cfg.file_shares {
             let (tx, rx) = mpsc::channel();
             let (io2, path, ro) = (io.clone(), s.path.clone(), s.read_only);
-            let link = s.leases.then(|| leases.clone());
+            // Watches too go through the link; a share without leases asks
+            // for none (the library's `Share::leases`).
+            let link = leases.clone();
             handle.spawn(async move {
                 let share = IfsShare::new(io2, &path, ro).await;
-                let _ = tx.send(share.map(|sh| match link {
-                    Some(l) => sh.with_leases(l),
-                    None => sh,
-                }));
+                let _ = tx.send(share.map(|sh| sh.with_leases(link)));
             });
             let backend = rx
                 .recv()

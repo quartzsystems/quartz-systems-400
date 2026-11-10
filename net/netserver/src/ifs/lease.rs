@@ -15,6 +15,8 @@
 //!   client and has the library break the file's leases
 //!   ([`LeaseLink::serve_orders`]); the library's report then completes
 //!   the break.
+//! - the same poll brings the changes of the directories the job's
+//!   clients watch ([`super::watch`]).
 //!
 //! Until [`LeaseLink::start`] the link is off and leases are the job's
 //! own, as without it.
@@ -30,6 +32,7 @@ use ifs::ops::audit::FileId;
 use smb_server::{LeaseKey, LeaseObserver};
 
 use super::info::file_index;
+use super::watch::Watches;
 use super::worker::IfsWorker;
 
 /// How long one poll for orders waits, in milliseconds.
@@ -54,13 +57,14 @@ pub struct LeaseLink {
     io: Arc<IfsWorker>,
     state: AtomicU8,
     inner: Mutex<Inner>,
+    watches: Arc<Watches>,
 }
 
 impl LeaseLink {
     /// A link over the job's IFS thread, off.
     #[must_use]
     pub fn new(io: Arc<IfsWorker>) -> Arc<Self> {
-        Arc::new(Self { io, state: AtomicU8::new(OFF), inner: Mutex::default() })
+        Arc::new(Self { io, state: AtomicU8::new(OFF), inner: Mutex::default(), watches: Arc::default() })
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
@@ -71,6 +75,12 @@ impl LeaseLink {
     #[must_use]
     pub fn is_on(&self) -> bool {
         self.state.load(Ordering::SeqCst) == ON
+    }
+
+    /// The job's directory watches, fed by the same poll.
+    #[must_use]
+    pub fn watches(&self) -> &Arc<Watches> {
+        &self.watches
     }
 
     /// Turn the link on: leases from now on go to the table.
@@ -173,8 +183,11 @@ impl LeaseLink {
     pub fn serve_orders(self: &Arc<Self>, client: &dyn IfsClient, stop: &AtomicBool, mut spawn: impl FnMut(u64, u32, Arc<Self>)) {
         while !stop.load(Ordering::SeqCst) {
             match client.lease_orders(POLL_MS) {
-                Ok(orders) => {
-                    for (tag, keep) in orders {
+                Ok(news) => {
+                    for (id, events) in news.changes {
+                        self.watches.deliver(id, events);
+                    }
+                    for (tag, keep) in news.breaks {
                         if stop.load(Ordering::SeqCst) {
                             return;
                         }

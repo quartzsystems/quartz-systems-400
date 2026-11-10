@@ -19,12 +19,13 @@
 //!   object by it after a rename.
 //! - Leases: the job's are in the IFS's lease table ([`lease`]), so an
 //!   open, write, rename or removal by another job breaks them.
-//! - No change events: the IFS has none, so clients hear only of changes
-//!   made through this job's connections.
+//! - Change notify: every job's changes to a watched directory (and below
+//!   it) come from the IFS ([`watch`]).
 
 mod handle;
 pub mod info;
 pub mod lease;
+pub mod watch;
 pub mod pattern;
 pub mod worker;
 

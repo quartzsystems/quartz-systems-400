@@ -16,7 +16,7 @@ use ifs::lock::range::RangeKind;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{F_SETLK, O_RDONLY, O_SHARE_RDWR, SEEK_SET};
 use ifs::ops::OpenArgs;
-use smb_server::{DirEntry, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
+use smb_server::{DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
 
 use super::lease::LeaseLink;
 use super::info::{attr_changes, file_info, nanos, smb_error, stat_path};
@@ -271,6 +271,18 @@ impl Handle for IfsHandle {
             Some(link) => link.limit(self.id, self.path(), lease, want, &self.reserved).await,
             None => want,
         }
+    }
+
+    async fn watch(&self) -> SmbResult<Option<Box<dyn DirWatch>>> {
+        let Some(link) = self.leases.as_ref().filter(|l| self.is_dir && l.is_on()) else {
+            return Ok(None);
+        };
+        // A tree watch: the library gives tree watches what lies below.
+        let (id, path) = (self.id, self.path());
+        let Ok(watch) = self.io.call(move |c| c.watch_add(&locate(c, id, &path), true)).await else {
+            return Ok(None);
+        };
+        Ok(Some(Box::new(link.watches().watcher(watch, self.io.clone()))))
     }
 
     async fn unlock_range(&self, offset: u64, len: u64) -> SmbResult<()> {

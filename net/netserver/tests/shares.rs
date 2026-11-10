@@ -760,3 +760,104 @@ async fn an_ended_job_releases_its_leases() {
     me.close(fd).unwrap();
     me.release();
 }
+
+/// A `CHANGE_NOTIFY` for file and directory names on `dir`.
+fn notify_body(dir: smb_server::wire::messages::FileId, tree: bool) -> Vec<u8> {
+    use smb_server::wire::messages::ChangeNotifyRequest;
+    let mut body = Vec::new();
+    ChangeNotifyRequest {
+        structure_size: 32,
+        flags: if tree { ChangeNotifyRequest::FLAG_WATCH_TREE } else { 0 },
+        output_buffer_length: 4096,
+        file_id: dir,
+        completion_filter: 0x3, // FILE_NAME | DIR_NAME
+        reserved: 0,
+    }
+    .write_to(&mut body)
+    .unwrap();
+    body
+}
+
+/// (action, name) of each entry of a `CHANGE_NOTIFY` response body.
+fn notify_entries(body: &[u8]) -> Vec<(u32, String)> {
+    let buf = smb_server::wire::messages::ChangeNotifyResponse::parse(body).unwrap().buffer;
+    let mut out = Vec::new();
+    let mut at = 0;
+    while at + 12 <= buf.len() {
+        let field = |o: usize| u32::from_le_bytes(buf[at + o..at + o + 4].try_into().unwrap());
+        let (next, action, len) = (field(0) as usize, field(4), field(8) as usize);
+        let units: Vec<u16> = buf[at + 12..at + 12 + len].chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+        out.push((action, String::from_utf16(&units).unwrap()));
+        if next == 0 {
+            break;
+        }
+        at += next;
+    }
+    out
+}
+
+/// Arms a `CHANGE_NOTIFY` on `dir` and waits for its interim response.
+async fn arm(c: &mut Client, dir: smb_server::wire::messages::FileId, tree: bool) -> u64 {
+    let mid = c.send_no_wait(Command::ChangeNotify, &notify_body(dir, tree)).await;
+    tokio::time::timeout(BREAK_WAIT, c.recv_interim(mid)).await.expect("an interim response");
+    mid
+}
+
+/// What the armed `CHANGE_NOTIFY` `mid` answers.
+async fn notified(c: &mut Client, mid: u64) -> Vec<(u32, String)> {
+    let (status, body) = tokio::time::timeout(BREAK_WAIT, c.recv(mid, Command::ChangeNotify)).await.expect("an answer");
+    assert_eq!(status, STATUS_SUCCESS);
+    notify_entries(&body)
+}
+
+const ADDED: u32 = 1;
+
+/// A watch hears what other jobs and plain IFS callers do in its
+/// directory, and with a tree watch below it; the job's own changes once.
+#[tokio::test(flavor = "multi_thread")]
+async fn change_notify_hears_other_jobs_and_plain_ifs_changes() {
+    let fs = Fs::new();
+    let (a, b) = (job_as(&fs, "ALICE", true), job_as(&fs, "ALICE", true));
+    let me = fs.client("ALICE");
+    me.mkdir("/pub/w", 0o777).unwrap();
+    me.mkdir("/pub/w/sub", 0o777).unwrap();
+    let mut c = alice(a.addr, "PUB").await;
+    let dir = c.open_dir("w").await;
+    // A plain IFS caller (FTP, a program).
+    let mid = arm(&mut c, dir, false).await;
+    let fd = me.open("/pub/w/plain.txt", OpenArgs::new(O_RDWR | O_CREAT).mode(0o666)).unwrap();
+    me.close(fd).unwrap();
+    assert_eq!(notified(&mut c, mid).await, [(ADDED, "plain.txt".to_owned())]);
+    // Another job's client.
+    let mut other = smbc::durable::user_client(b.addr, SignIn { share: "PUB", user: "alice", client_guid: [0xB3; 16], ..SignIn::default() }).await;
+    let mid = arm(&mut c, dir, false).await;
+    let id = other.create(Create { disposition: FILE_CREATE, ..mk(r"w\other.txt") }).await.unwrap().file_id;
+    other.close(id).await;
+    assert_eq!(notified(&mut c, mid).await, [(ADDED, "other.txt".to_owned())]);
+    // The job's own client: heard once, not again from the IFS.
+    let mut own = alice(a.addr, "PUB").await;
+    let mid = arm(&mut c, dir, false).await;
+    let id = own.create(Create { disposition: FILE_CREATE, ..mk(r"w\own.txt") }).await.unwrap().file_id;
+    own.close(id).await;
+    assert_eq!(notified(&mut c, mid).await, [(ADDED, "own.txt".to_owned())]);
+    tokio::time::sleep(Duration::from_millis(400)).await;
+    let mid = arm(&mut c, dir, false).await;
+    me.mkdir("/pub/w/later", 0o777).unwrap();
+    assert_eq!(notified(&mut c, mid).await, [(ADDED, "later".to_owned())]);
+    me.release();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_tree_watch_hears_other_jobs_changes_below() {
+    let fs = Fs::new();
+    let a = job_as(&fs, "ALICE", true);
+    let me = fs.client("ALICE");
+    me.mkdir("/pub/t", 0o777).unwrap();
+    me.mkdir("/pub/t/sub", 0o777).unwrap();
+    let mut c = alice(a.addr, "PUB").await;
+    let dir = c.open_dir("t").await;
+    let mid = arm(&mut c, dir, true).await;
+    me.mkdir("/pub/t/sub/deep", 0o777).unwrap();
+    assert_eq!(notified(&mut c, mid).await, [(ADDED, r"sub\deep".to_owned())]);
+    me.release();
+}
