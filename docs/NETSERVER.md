@@ -386,7 +386,8 @@ control (section 3).
 A file share's maximum users is enforced here, across every `QZLSFILE`:
 each TREE_CONNECT is admitted by the job (a library patch,
 `smb_server::TreeAdmission`) through `Admit`, which refuses when the
-share already has that many tree connections in the table; the client
+share already has that many users (sessions with a tree connection to
+it; a session's second tree to the share is no new user); the client
 gets `STATUS_REQUEST_NOT_ACCEPTED` and the job logs `TXT0E30`'s text. The
 connection is in the table the moment it is admitted, so two jobs never
 both take the last place.
