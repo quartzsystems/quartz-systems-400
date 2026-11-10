@@ -10,3 +10,6 @@ never prose.
 
 `H/QSZCRTPL.txt` came from the primary oracle (IBM i 7.1) over FTP on
 2026-11-03: the `DIRI0100` directory list of `QSZCRTPL`.
+
+`H/QZLS*.txt` came from pub400 (IBM i 7.5) over JDBC on 2026-11-09: the
+NetServer APIs and `QZLS`, for `docs/NETSERVER.md`.
