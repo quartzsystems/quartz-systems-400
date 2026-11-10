@@ -668,7 +668,8 @@ pub fn request(
             if autostart && (!autostarts(system) || server_active(system)) {
                 return NsReply::Done;
             }
-            let parms = vec![if reset { b"1".to_vec() } else { b"0".to_vec() }];
+            // The reset flag as the API takes it: EBCDIC '1' or '0'.
+            let parms = vec![vec![if reset { 0xF1 } else { 0xF0 }]];
             return match run_api(system, me, 37, "QZLSSTRS", &parms, autostart) {
                 Ok(_) => NsReply::Done,
                 Err(e) => refused(system, &e),

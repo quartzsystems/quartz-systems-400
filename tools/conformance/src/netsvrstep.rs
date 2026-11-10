@@ -140,8 +140,18 @@ fn detail<'a>(out: &'a str, name: &str, prefix: &str) -> Option<&'a str> {
 impl Suite {
     /// Step 166: `STRTCPSVR SERVER(*NETSVR)`, the server job and a prestart job.
     pub(crate) fn netsvr_start(&self, s: &mut Session) -> Result<String, String> {
-        s.command("STRTCPSVR SERVER(*NETSVR)", CMD)?;
-        let server = job_line(s, "QZLSSERVER")?;
+        let started = s.command("STRTCPSVR SERVER(*NETSVR)", CMD)?;
+        let server = match job_line(s, "QZLSSERVER") {
+            Ok(l) => l,
+            Err(e) => {
+                let opr = s.command("DSPMSG MSGQ(QSYSOPR)", CMD).unwrap_or_default()
+                    + &s.command("WRKJOBQ JOBQ(QSYS/QPWFSERVER)", CMD).unwrap_or_default();
+                return Err(format!("{e}
+STRTCPSVR: {started}
+QSYSOPR:
+{opr}"));
+            }
+        };
         let file = job_line(s, "QZLSFILE")?;
         for (line, kind) in [(&server, "BCH"), (&file, "PJ")] {
             if !line.split_whitespace().any(|w| w == kind) {
