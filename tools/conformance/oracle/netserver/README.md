@@ -91,6 +91,11 @@ or SMB3 on the wire, so that part of QS/400 is built from [MS-SMB2],
 - The job descriptions (`jobd-primary.txt`): both `RTGDTA(QZLSSTART)`,
   `LOG(4 0 *NOLIST)`, `LOGOUTPUT(*PND)`, `JOBQ(QGPL/QBATCH)`; `QZLSPJ`
   `USER(*RQD) JOBMSGQMX(4)`, `QZLSSERVER` `USER(QPGMR) JOBMSGQMX(8)`.
+- No printer driver store (2026-11-09, an FTP listing as the primary's
+  account, read only): `/QIBM/UserData/OS400/NetServer` holds only
+  `QAZLSCFG` and `QAZLSSHR`, and `/QIBM/ProdData/OS400` has no `NetServer`
+  directory. IBM i NetServer has no `print$`; QS/400's driver store
+  (`docs/NETSERVER.md` section 7) is its own.
 
 [MS-SMB2]: https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2
 [MS-NLMP]: https://learn.microsoft.com/openspecs/windows_protocols/ms-nlmp

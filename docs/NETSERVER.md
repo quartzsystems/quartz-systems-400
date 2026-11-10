@@ -622,10 +622,38 @@ driver locally and connects with no download. A share whose driver has
 files names them per environment (`PrinterInfo::driver_files`, paths
 inside `print$`, e.g. `x64\3\unidrv.dll`), and the DRIVER_INFO levels
 point the client to `\\NAME\print$\...`; an environment with no files
-is then `ERROR_UNKNOWN_PRINTER_DRIVER`. The read-only `print$` disk
-share and the IFS directory it serves (the `W32X86` and `x64` layout,
-filled by an administrator with an IFS copy) are not built yet: they
-come with the netserver crate's print shares. Since Microsoft's 2021 point-and-print
+is then `ERROR_UNKNOWN_PRINTER_DRIVER`.
+
+In the job (`net/netserver/src/print/`): `spoolss::Spoolss` is the
+library's print service over the job's `Printer`, the same one the
+share's CREATE and WRITE use, so a document printed through
+`\pipe\spoolss` becomes a spooled file on the share's output queue as
+the signed-on profile, exactly as one copied to the share does. Its
+printers are the job's print shares (`PrintShareCfg`, with `driver`
+from the share's printer driver attribute), for every signed-on profile
+(none for anonymous sessions); the port column shows the output queue,
+`LIB/NAME`; documents start on Letter. `RpcAbortPrinter`, and a pipe
+closed with a document open, call `PrintJob::abort`, which deletes the
+spooled file. The jobs `RpcEnumJobs` shows are the profile's documents
+being written through this job (`JOB_STATUS_SPOOLING`); once ended they
+are on the output queue, where `WRKSPLF` and Navigator show them.
+
+The driver store (`print::drivers`): the read-only `print$` disk share
+serves the IFS directory `/QIBM/UserData/OS400/NetServer/print$`
+(`NetServerConfig::driver_store`), when it exists and the job has print
+shares. IBM i has no such directory (the primary's
+`/QIBM/UserData/OS400/NetServer` holds only `QAZLSCFG` and `QAZLSSHR`,
+`tools/conformance/oracle/netserver/README.md`), so the path is QS/400's
+choice, beside IBM's files. Its layout is Windows': `x64`, `W32X86` and
+`ARM64`, each with `3` and `4` for the driver version. For a driver
+named `NAME`, the administrator copies the driver's files into, say,
+`x64/3` and writes `x64/3/NAME.qsdrv` beside them, lines of
+`key=value`: `driver`, `data` and `config` once each, `help` at most
+once, `file` for each dependent file, every value a file name in that
+directory (`#` lines are comments). The newest version with a manifest
+is the one an environment is answered with; a manifest that does not
+parse is left out and logged. The files are
+read when the job starts. Since Microsoft's 2021 point-and-print
 hardening (KB5005652, `RestrictDriverInstallationToAdministrators`),
 Windows lets only administrators install a driver downloaded from a
 server unless the client's policy allows it; that is client policy, and
@@ -823,6 +851,11 @@ anything only if IBM checks the length first), and IBM's checks of
   refusals; OpenPrinterEx, GetPrinter 2, GetPrinterDriver2, StartDoc, a
   20 000-byte WritePrinter in fragments, EndDoc and ClosePrinter over a
   connection, the bytes arriving at a test print service.
+- `cargo test -p netserver --test shares`: a spoolss document lands on
+  the print share's queue as the profile, as a CREATE does; `print$`
+  serves the driver store read-only and GetPrinterDriver2 names its
+  files; no store, no `print$`. `cargo test -p netserver --lib`: the
+  driver manifests.
 - Fuzz targets: the SMB2 header and commands, NTLMSSP, SPNEGO, the
   NetBIOS session service and name service, DCE/RPC, the spoolss request
   decoder (`smb_server::fuzzing::spoolss_request`).
