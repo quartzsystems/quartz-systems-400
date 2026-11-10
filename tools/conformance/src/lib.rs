@@ -56,6 +56,7 @@ mod medlib;
 mod navstep;
 mod netauto;
 mod netinst;
+mod netsvrstep;
 mod nettools;
 mod nlsstep;
 pub mod ossnet;

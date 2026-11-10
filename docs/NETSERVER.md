@@ -426,11 +426,103 @@ Severities as `messages.txt`.
   `cargo test -p sql --test services user_info`: `NETSERVER_DISABLED`.
 - `cargo test -p netsvrcfg`: attributes, shares, file round trips,
   `ZLSL*` formats against the `QSYSINC` layouts.
-- `cargo test -p smbtest`: the client against the server over loopback.
-- `cargo test -p smbtest --test interop -- --ignored`: Samba's
-  `smbclient` and the Linux kernel CIFS client against the server (WSL).
+- `tools/smbtest` (the test client and its scenarios, below).
 - QEMU steps from 166: the server started, every `smbtest` scenario
   against the guest, the APIs, the SQL view, a 1 GB copy (MB/s here).
+
+### The test client (`tools/smbtest`)
+
+The client is the published pure-Rust `smb` crate 0.12.1 (afiffon/smb-rs,
+MIT), other authors than the vendored server library, so one misreading of
+[MS-SMB2] cannot hide in both; `smbtest` does not depend on
+`net/netserver`. The crate sits **outside the workspace with its own
+`Cargo.lock`** (root `Cargo.toml` `exclude`): `smb` pulls `sspi` 0.21.3,
+which pins `curve25519-dalek` `=5.0.0-rc.1` for macOS targets, and that
+cannot share a lockfile with `tools/build`'s `ed25519-dalek` 3.0.0.
+`cargo run -p build -- deny` checks its graph as well as the workspace's.
+
+```
+cargo test  --manifest-path tools/smbtest/Cargo.toml        # unit tests and tests/loopback.rs
+cargo clippy --manifest-path tools/smbtest/Cargo.toml --all-targets
+cargo run   --manifest-path tools/smbtest/Cargo.toml -- HOST PORT USER PASSWORD SHARE SCRATCH \
+    [--only A,B] [--copy-bytes N[K|M|G]] [--large-bytes N] [--print-share NAME] [--no-bad-signon] [--list]
+cargo run   --manifest-path tools/smbtest/Cargo.toml -- probe HOST PORT   # NEGOTIATE only, no sign-on
+```
+
+`PASSWORD` `-` reads `SMBTEST_PASSWORD`. Each scenario prints `ok NAME`
+with indented detail lines, `fail NAME: why`, or `skip NAME: why` (the
+client crate cannot express it; never faked). The exit status is 1 when
+any scenario failed. Every writing scenario works under a run directory
+`SCRATCH\smbtest-PID-MILLIS` that `cleanup` removes.
+
+| Scenario | What it proves |
+|---|---|
+| `negotiate-2.0.2` .. `negotiate-3.1.1` | each dialect offered alone is chosen; signing algorithm and maximum sizes printed |
+| `negotiate-multiprotocol` | the SMB1 negotiate with the SMB2 dialect strings is upgraded to 3.1.1 |
+| `signon-good`, `signon-wrong-password`, `signon-unknown-user` | NTLMv2 over SPNEGO; a wrong password (once) and an unknown user are both `STATUS_LOGON_FAILURE` (`--no-bad-signon` leaves the two out) |
+| `share-enum` | `NetShareEnumAll` over `IPC$` lists the share (and `--print-share`) |
+| `signing` | a signed round trip on every dialect: HMAC-SHA256 on 2.x, AES-CMAC on 3.x (the client signs every request and checks every response) |
+| `encrypt-3.0`, `encrypt-3.0.2`, `encrypt-3.1.1` | encryption required by the client: a sealed round trip; the cipher (AES-128-CCM implied on 3.0 and 3.0.2, the server's choice on 3.1.1) |
+| `file-round-trip`, `dir-list`, `rename`, `delete` | text and every byte value through a new open; a listing of mixed-case names and a directory; rename on an open handle (old name `STATUS_OBJECT_NAME_NOT_FOUND`); delete on close |
+| `change-notify` | a watch from one connection sees `Added` for a file another connection creates |
+| `large-io` | several requests at the negotiated maximum read and write sizes, checked |
+| `copy` | `--copy-bytes` (64 MiB by default) written and read with 8 requests of up to 1 MiB in flight; `in:` and `out:` in MB/s (10^6 bytes) |
+
+What smb 0.12.1 cannot express, printed as `skip`: byte-range locks
+(`lock-conflict`: no LOCK request), leases and oplocks (`lease-break`,
+`oplock-break`: every CREATE asks for none), one cipher at a time
+(`encrypt-each-cipher`: all four are offered together), print shares
+(`print-write`: the crate panics opening one). `share-enum` is also a
+`skip` against a server that, like the vendored library, accepts only NDR
+2.0 for `srvsvc`: the crate binds with NDR64 only (Windows, macOS and Samba
+clients offer NDR 2.0). These are covered by `tests/interop.rs`.
+
+Facts the client found:
+
+- With its encryption disabled, the crate sends 3.1.1 an
+  `SMB2_ENCRYPTION_CAPABILITIES` context with `CipherCount` 0. Windows'
+  own server (`tools/conformance/oracle/netserver/windows-negotiate.txt`,
+  NEGOTIATE only) and the vendored server both answer
+  `STATUS_INVALID_PARAMETER`, so the scenarios leave encryption at the
+  server's choice except in `encrypt-*`; `tests/loopback.rs` holds the
+  server to Windows' answer.
+- Windows gives 2.0.2 64 KiB maximum sizes and later dialects 8 MiB; the
+  vendored server gives 1 MiB on every dialect.
+
+`tests/loopback.rs` runs every scenario against the vendored server in the
+test process on 127.0.0.1, over a temporary directory, with a
+`LogonVerifier` checking NTLMv2 as the storage service will and signing
+required; a second server requires encryption (2.1 is refused, 3.x sealed
+round trips pass); the probe answers as Windows does; bad sign-ons are
+`STATUS_LOGON_FAILURE`.
+
+`tests/interop.rs` (`#[ignore]`, Linux): Samba's `smbclient` (`-L` over
+NDR 2.0, a put, get, rename, list and delete on every dialect signed and
+sealed, `print` to `SMBTEST_PRINT_SHARE`, a wrong password) and the kernel
+CIFS client (two `nosharesock` mounts per dialect: one mount's writes,
+renames and deletes seen from the other; `flock` on one mount refused on
+the other, which the kernel sends as an SMB2 LOCK). WSL's Ubuntu has none
+of it; `NEEDS-CODY`: `sudo apt install smbclient cifs-utils` and `sudo
+modprobe cifs`, then
+
+```
+SMBTEST_HOST=127.0.0.1 SMBTEST_PORT=4450 SMBTEST_USER=NSUSER SMBTEST_PASSWORD=... \
+SMBTEST_SHARE=SMBTEST SMBTEST_SCRATCH=smbtest [SMBTEST_PRINT_SHARE=PRT01] \
+cargo test --manifest-path tools/smbtest/Cargo.toml --test interop -- --ignored --test-threads 1
+```
+
+(the kernel tests mount, so as root or with `sudo -n`).
+
+QEMU steps 166-168 (`tools/conformance/src/netsvrstep.rs`) are
+registered only with `QS400_NETSVR_STEPS=1` until `QZLSSERVER` and
+`QZLSFILE` exist: 166 `STRTCPSVR SERVER(*NETSVR)` and both jobs in
+`WRKACTJOB` (`BCH`, `PJ`); 167 a user `NSUSER`, a read/write share
+`SMBTEST` over `/home/NSUSER` added with `QZLSADFS` from the console,
+and every scenario through a forward to the guest's 445 (16 MiB copy);
+168 `--only copy,cleanup --copy-bytes 1G`, MB/s in and out in the step's
+detail. They run the `smbtest` binary from `QS400_SMBTEST`, or build it
+(`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`
+into `$QS400_TARGET_DIR/smbtest`).
 - Fuzz targets: the SMB2 header and commands, NTLMSSP, SPNEGO, the
   NetBIOS session service and name service, DCE/RPC.
 - `NEEDS-CODY`: Windows 11, macOS and a Linux kernel client map a share,
