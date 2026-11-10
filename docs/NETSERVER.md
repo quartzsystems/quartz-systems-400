@@ -500,7 +500,7 @@ Severities as `messages.txt`.
   open and save with Notepad, Word and Excel, print to a print share; a
   wrong password `QMAXSIGN` times disables the user for NetServer.
 - `NEEDS-CODY`: point and print from Windows 11: Add Printer by
-  `\SERVER\SHARE` on a share with the "Microsoft PCL6 Class Driver"
+  `\\SERVER\SHARE` on a share with the "Microsoft PCL6 Class Driver"
   connects with no download, prints a test page and an Office document
   into the share's output queue, and the printer's queue window shows the
   user's jobs.
