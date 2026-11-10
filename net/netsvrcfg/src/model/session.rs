@@ -272,7 +272,7 @@ impl SessionTable {
             Counter::Opens => st.opens = st.opens.saturating_add(n32),
             Counter::PrintJobs => st.print_jobs = st.print_jobs.saturating_add(n32),
             Counter::AutoDisconnects => {
-                st.auto_disconnects = st.auto_disconnects.saturating_add(n32)
+                st.auto_disconnects = st.auto_disconnects.saturating_add(n32);
             }
             Counter::DuplicateSessions => {
                 st.duplicate_sessions = st.duplicate_sessions.saturating_add(n32);
