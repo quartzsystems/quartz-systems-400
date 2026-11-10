@@ -71,6 +71,26 @@ fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
     }
 }
 
+/// Waits up to two minutes for every `QZLSFILE` job to be back in its
+/// pool (`PSRW`): no client is served.
+fn no_client_job(s: &mut Session) -> Result<(), String> {
+    let end = Instant::now() + Duration::from_secs(120);
+    loop {
+        let out = s.command("wrkactjob", CMD)?;
+        let busy = out
+            .lines()
+            .any(|l| l.split_whitespace().next() == Some("QZLSFILE") && !l.contains("PSRW"));
+        if !busy {
+            return Ok(());
+        }
+        if Instant::now() > end {
+            return Err(format!("a QZLSFILE job still serves a client:
+{out}"));
+        }
+        std::thread::sleep(Duration::from_secs(2));
+    }
+}
+
 /// The output of `cmd`, which must hold every one of `want`.
 fn expect(s: &mut Session, cmd: &str, want: &[&str]) -> Result<String, String> {
     let out = s.command(cmd, CMD)?;
@@ -209,7 +229,8 @@ impl Suite {
     pub(crate) fn netsvr_files(&self, s: &mut Session) -> Result<String, String> {
         share_setup(s)?;
         let port = forward_port(self, GUEST, 445)?;
-        // QS400_NETSVR_ONLY runs only those scenarios (`copy,cleanup`).
+        // Every scenario; QS400_NETSVR_ONLY, when set, runs only those it names
+        // (`copy,cleanup`).
         let only = std::env::var("QS400_NETSVR_ONLY").ok();
         let mut args = vec!["--copy-bytes", "16M"];
         if let Some(o) = &only {
@@ -306,6 +327,9 @@ impl Suite {
         }
         // One user may connect: a single sign-on and tree connect still
         // does (refusing the next is proven in memory, the netserver tests).
+        // The previous step's client counts as a user until its job is
+        // released (its last durable opens and sessions gone): wait for it.
+        no_client_job(s)?;
         let port = forward_port(self, GUEST, 445)?;
         smbtest(port, &["--only", "signon-good", "--no-bad-signon"])?;
         s.command(&share_call("QZLSCHFS", -1), SLOW)?;
