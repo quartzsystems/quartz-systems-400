@@ -173,8 +173,15 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
                 }
             })
         };
+        let mut last = std::time::Instant::now();
         while !released.load(Ordering::Acquire) {
-            std::thread::sleep(Duration::from_secs(1));
+            // Released is seen within a tenth of a second, so the routes go
+            // at once; the report runs once a second.
+            std::thread::sleep(Duration::from_millis(100));
+            if last.elapsed() < Duration::from_secs(1) {
+                continue;
+            }
+            last = std::time::Instant::now();
             let now = ns.sessions();
             {
                 let mut p = peers.lock().unwrap_or_else(PoisonError::into_inner);

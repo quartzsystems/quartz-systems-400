@@ -618,8 +618,10 @@ fn table_op(
         }
         NsOp::Lookup { guid, peer } => {
             let r = routes();
+            // The newest registration first: a job still being released
+            // may hold the client's guid a moment longer.
             let by_guid = if guid.len() == 16 {
-                r.iter().find(|x| x.guids.contains(&guid))
+                r.iter().rev().find(|x| x.guids.contains(&guid))
             } else {
                 None
             };
@@ -627,7 +629,7 @@ fn table_op(
                 if peer.is_empty() {
                     None
                 } else {
-                    r.iter().find(|x| x.peers.contains(&peer))
+                    r.iter().rev().find(|x| x.peers.contains(&peer))
                 }
             });
             NsReply::Target {
