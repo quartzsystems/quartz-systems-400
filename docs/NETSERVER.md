@@ -295,3 +295,4 @@ Severities as `messages.txt`.
 [MS-SPNG]: https://learn.microsoft.com/openspecs/windows_protocols/ms-spng
 [MS-SRVS]: https://learn.microsoft.com/openspecs/windows_protocols/ms-srvs
 [MS-WKST]: https://learn.microsoft.com/openspecs/windows_protocols/ms-wkst
+[MS-RPRN]: https://learn.microsoft.com/openspecs/windows_protocols/ms-rprn
