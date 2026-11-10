@@ -99,6 +99,8 @@ members = [
     "net/regfac",
     "net/cmncfg",
     "net/sshd",
+    "net/netserver",
+    "net/netsvrcfg",
 
     "net/tcpcfg",
     "net/dhcp",
@@ -146,6 +148,7 @@ members = [
     "tools/pesign",
     "tools/helpaudit",
     "tools/textaudit",
+    "tools/smbtest",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",
