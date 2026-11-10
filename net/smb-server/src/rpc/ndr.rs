@@ -1,4 +1,5 @@
-//! NDR 2.0 (C706 chapter 14), little-endian, for the srvsvc calls. Every
+//! NDR 2.0 (C706 chapter 14), little-endian, for the srvsvc and spoolss
+//! calls. Every
 //! item is aligned to its size from the start of the stub; padding is
 //! written as zeros and not checked on input.
 
@@ -37,14 +38,15 @@ impl<'a> NdrReader<'a> {
     /// its terminating NUL when it has one. The offset must be 0, and the
     /// string must hold 1 to 1024 units, no more than its maximum count.
     pub(crate) fn string(&mut self) -> Option<Vec<u16>> {
+        self.string_up_to(MAX_STRING_UNITS)
+    }
+
+    /// QS/400: [`NdrReader::string`] holding up to `limit` units.
+    pub(crate) fn string_up_to(&mut self, limit: u32) -> Option<Vec<u16>> {
         let max_count = self.u32()?;
         let offset = self.u32()?;
         let actual_count = self.u32()?;
-        if offset != 0
-            || actual_count == 0
-            || actual_count > max_count
-            || actual_count > MAX_STRING_UNITS
-        {
+        if offset != 0 || actual_count == 0 || actual_count > max_count || actual_count > limit {
             return None;
         }
         let len = actual_count as usize * 2;
@@ -58,6 +60,49 @@ impl<'a> NdrReader<'a> {
             units.pop();
         }
         Some(units)
+    }
+}
+
+/// QS/400: the reads spoolss needs.
+impl<'a> NdrReader<'a> {
+    pub(crate) fn u16(&mut self) -> Option<u16> {
+        let at = self.at.next_multiple_of(2);
+        let bytes = self.stub.get(at..at + 2)?;
+        self.at = at + 2;
+        Some(u16::from_le_bytes(bytes.try_into().ok()?))
+    }
+
+    /// A context handle (C706 14.4.1, MS-RPCE 2.2.4.2): 20 bytes.
+    pub(crate) fn handle(&mut self) -> Option<[u8; 20]> {
+        let at = self.at.next_multiple_of(4);
+        let bytes = self.stub.get(at..at + 20)?;
+        self.at = at + 20;
+        bytes.try_into().ok()
+    }
+
+    /// A conformant array of bytes (C706 14.3.3.2) of at most `limit`.
+    pub(crate) fn bytes(&mut self, limit: usize) -> Option<&'a [u8]> {
+        let count = self.u32()? as usize;
+        if count > limit {
+            return None;
+        }
+        let bytes = self.stub.get(self.at..self.at + count)?;
+        self.at += count;
+        Some(bytes)
+    }
+
+    /// A unique pointer to a string, as text; `None` inside for NULL.
+    pub(crate) fn unique_string(&mut self) -> Option<Option<String>> {
+        Some(if self.pointer()? {
+            Some(String::from_utf16_lossy(&self.string()?))
+        } else {
+            None
+        })
+    }
+
+    /// Whether every byte was read.
+    pub(crate) fn at_end(&self) -> bool {
+        self.at >= self.stub.len()
     }
 }
 
@@ -105,6 +150,23 @@ impl NdrWriter {
 
     pub(crate) fn finish(self) -> Vec<u8> {
         self.stub
+    }
+
+    /// QS/400: a context handle.
+    pub(crate) fn handle(&mut self, handle: &[u8; 20]) {
+        self.stub.resize(self.stub.len().next_multiple_of(4), 0);
+        self.stub.extend_from_slice(handle);
+    }
+
+    /// QS/400: bytes as they are, after an array's count.
+    pub(crate) fn raw(&mut self, bytes: &[u8]) {
+        self.stub.extend_from_slice(bytes);
+    }
+
+    /// QS/400: a conformant array of bytes.
+    pub(crate) fn bytes(&mut self, bytes: &[u8]) {
+        self.u32(u32::try_from(bytes.len()).expect("a short array"));
+        self.stub.extend_from_slice(bytes);
     }
 }
 

@@ -43,7 +43,10 @@ impl LogonVerifier for OneProfile {
         let key = hmac(&nt, &[&utf16(&format!("{}{domain}", user.to_uppercase()))]);
         let (proof, blob) = resp.split_at(16);
         let computed = hmac(&key, &[challenge, blob]);
-        (proof == computed).then(|| Logon { user: "QSUSER".into(), session_base_key: hmac(&key, &[&computed]) })
+        (proof == computed).then(|| Logon {
+            user: "QSUSER".into(),
+            session_base_key: hmac(&key, &[&computed]),
+        })
     }
 }
 
@@ -54,7 +57,17 @@ fn builder(td: &tempfile::TempDir, access: Access) -> smb_server::SmbServerBuild
 }
 
 async fn tree(s: &mut TcpStream, mid: u64, sid: u64) -> u32 {
-    status(&request(s, Command::TreeConnect, mid, sid, 0, &tree_connect_body(r"\\srv\data")).await)
+    status(
+        &request(
+            s,
+            Command::TreeConnect,
+            mid,
+            sid,
+            0,
+            &tree_connect_body(r"\\srv\data"),
+        )
+        .await,
+    )
 }
 
 #[tokio::test]
@@ -74,21 +87,26 @@ async fn verifier_refuses_a_wrong_password() {
     let (addr, _h) = start_server(builder(&td, Access::ReadWrite)).await;
     let mut s = TcpStream::connect(addr).await.unwrap();
     negotiate(&mut s).await;
-    assert_eq!(spnego_login(&mut s, 1, 0, "qsuser", "wrong").await.status, STATUS_LOGON_FAILURE);
+    assert_eq!(
+        spnego_login(&mut s, 1, 0, "qsuser", "wrong").await.status,
+        STATUS_LOGON_FAILURE
+    );
     let mut s = TcpStream::connect(addr).await.unwrap();
     negotiate(&mut s).await;
-    assert_eq!(spnego_login(&mut s, 1, 0, "nobody", "secret").await.status, STATUS_LOGON_FAILURE);
+    assert_eq!(
+        spnego_login(&mut s, 1, 0, "nobody", "secret").await.status,
+        STATUS_LOGON_FAILURE
+    );
 }
 
 #[tokio::test]
 async fn any_user_grant_without_a_verifier() {
     let td = tempfile::tempdir().unwrap();
-    let (addr, _h) = start_server(
-        SmbServer::builder()
-            .user("alice", "pw")
-            .share(Share::new("data", LocalFsBackend::new(td.path()).unwrap()).any_user(Access::Read)),
-    )
-    .await;
+    let (addr, _h) =
+        start_server(SmbServer::builder().user("alice", "pw").share(
+            Share::new("data", LocalFsBackend::new(td.path()).unwrap()).any_user(Access::Read),
+        ))
+        .await;
     let mut s = TcpStream::connect(addr).await.unwrap();
     negotiate(&mut s).await;
     let login = spnego_login(&mut s, 1, 0, "alice", "pw").await;
@@ -103,20 +121,29 @@ async fn closed_share_still_refuses_others() {
         SmbServer::builder()
             .user("alice", "pw")
             .user("bob", "pw")
-            .share(Share::new("data", LocalFsBackend::new(td.path()).unwrap()).user("alice", Access::Read)),
+            .share(
+                Share::new("data", LocalFsBackend::new(td.path()).unwrap())
+                    .user("alice", Access::Read),
+            ),
     )
     .await;
     let mut s = TcpStream::connect(addr).await.unwrap();
     negotiate(&mut s).await;
     let login = spnego_login(&mut s, 1, 0, "bob", "pw").await;
     assert_eq!(login.status, STATUS_SUCCESS);
-    assert_eq!(tree(&mut s, 3, login.session_id).await, STATUS_ACCESS_DENIED);
+    assert_eq!(
+        tree(&mut s, 3, login.session_id).await,
+        STATUS_ACCESS_DENIED
+    );
 }
 
 #[tokio::test]
 async fn serve_connection_serves_one_handed_over_socket() {
     let td = tempfile::tempdir().unwrap();
-    let server = builder(&td, Access::ReadWrite).listen("127.0.0.1:0".parse().unwrap()).build().unwrap();
+    let server = builder(&td, Access::ReadWrite)
+        .listen("127.0.0.1:0".parse().unwrap())
+        .build()
+        .unwrap();
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr: SocketAddr = listener.local_addr().unwrap();
     let task = tokio::spawn(async move {

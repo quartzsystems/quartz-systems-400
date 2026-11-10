@@ -27,7 +27,7 @@ use crate::proto::messages::{
     QueryDirectoryRequest, QueryInfoRequest, QueryInfoResponse, ReadRequest, ReadResponse,
     SetInfoRequest, WriteRequest, WriteResponse,
 };
-use crate::rpc::SRVSVC_PIPE;
+use crate::rpc::Interface;
 use crate::rpc::pipe::{MAX_PIPES_PER_CONNECTION, Pipe, Read};
 use crate::server::{Caller, ServerState};
 use crate::utils::utf16le_to_units;
@@ -158,7 +158,8 @@ async fn find(tree: &Arc<RwLock<TreeConnect>>, file_id: FileId) -> Option<Arc<Pi
 
 /// MS-SMB2 3.3.5.9 for a pipe. Every open is a new instance of the pipe;
 /// only `srvsvc`, compared ignoring ASCII case, exists, and only while
-/// share listing is on. The pipe answers for the session: its user and
+/// share listing is on, and (QS/400) `spoolss` with a print service. The
+/// pipe answers for the session: its user and
 /// whether it can encrypt. FileAttributes,
 /// ShareAccess and CreateDisposition are ignored, and so is every create
 /// context but a durable handle reconnect, which names no pipe. The
@@ -189,10 +190,10 @@ async fn create(
         return HandlerResponse::err(ntstatus::STATUS_INVALID_PARAMETER);
     };
     let name = String::from_utf16_lossy(&units);
-    if !server.config.share_listing || !name.eq_ignore_ascii_case(SRVSVC_PIPE) {
+    let Some(iface) = served(server, &name) else {
         debug!(name = %name, "no such pipe");
         return HandlerResponse::err(ntstatus::STATUS_OBJECT_NAME_NOT_FOUND);
-    }
+    };
     let Some(access) = granted_access(req.desired_access, PIPE_ACCESS) else {
         debug!(desired = req.desired_access, "pipe access refused");
         return HandlerResponse::err(ntstatus::STATUS_ACCESS_DENIED);
@@ -211,7 +212,7 @@ async fn create(
         return HandlerResponse::err(ntstatus::STATUS_NETWORK_NAME_DELETED);
     }
     let file_id = tree.alloc_file_id();
-    let Some(pipe) = Pipe::new(file_id, access, caller, slot, &conn.pipe_budget) else {
+    let Some(pipe) = Pipe::new(file_id, access, iface, caller, slot, &conn.pipe_budget) else {
         warn!(limit = MAX_PIPES_PER_CONNECTION, "pipe limit reached");
         return HandlerResponse::err(ntstatus::STATUS_INSUFFICIENT_RESOURCES);
     };
@@ -457,15 +458,25 @@ async fn pipe_wait(
         Ok(input) => input,
         Err(status) => return HandlerResponse::err(status),
     };
-    if !server.config.share_listing || !wait_names_srvsvc(input) {
+    if !wait_names_served(server, input) {
         return HandlerResponse::err(ntstatus::STATUS_OBJECT_NAME_NOT_FOUND);
     }
     ioctl::response(Fsctl::PIPE_WAIT, FileId::any(), Vec::new())
 }
 
+/// QS/400: the interface of the pipe `name` when the server serves it:
+/// srvsvc while share listing is on, spoolss with a print service.
+fn served(server: &ServerState, name: &str) -> Option<Interface> {
+    match Interface::of_pipe(name)? {
+        Interface::Srvsvc if server.config.share_listing => Some(Interface::Srvsvc),
+        Interface::Spoolss if server.config.print_service.is_some() => Some(Interface::Spoolss),
+        _ => None,
+    }
+}
+
 /// Whether an FSCTL_PIPE_WAIT_REQUEST (MS-FSCC 2.3.49) is well formed and
-/// names the srvsvc pipe.
-fn wait_names_srvsvc(input: &[u8]) -> bool {
+/// names a pipe the server serves.
+fn wait_names_served(server: &ServerState, input: &[u8]) -> bool {
     let Some(len) = input.get(8..12) else {
         return false;
     };
@@ -477,7 +488,7 @@ fn wait_names_srvsvc(input: &[u8]) -> bool {
     else {
         return false;
     };
-    String::from_utf16_lossy(&units).eq_ignore_ascii_case(SRVSVC_PIPE)
+    served(server, &String::from_utf16_lossy(&units)).is_some()
 }
 
 /// The checks MS-SMB2 3.3.5.15 makes on every IOCTL; returns its input.

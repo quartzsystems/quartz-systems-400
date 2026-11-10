@@ -13,7 +13,7 @@ use tracing::{debug, warn};
 
 use super::association::{Association, Step};
 use super::pdu::Header;
-use super::srvsvc;
+use super::{Interface, spoolss, srvsvc};
 use crate::files::OpenSlot;
 use crate::ntstatus;
 use crate::proto::messages::FileId;
@@ -58,6 +58,8 @@ pub(crate) struct Pipe {
     pub(crate) file_id: FileId,
     /// Open.GrantedAccess.
     pub(crate) granted_access: u32,
+    /// QS/400: the interface the pipe serves.
+    iface: Interface,
     /// The session that opened the pipe.
     caller: Caller,
     state: Mutex<State>,
@@ -75,6 +77,8 @@ pub(crate) struct Pipe {
 
 struct State {
     assoc: Association,
+    /// QS/400: the spoolss handles of the pipe.
+    spoolss: spoolss::Session,
     /// Reply messages not read yet, oldest first.
     outbox: VecDeque<Vec<u8>>,
     /// Bytes in `outbox`.
@@ -97,12 +101,13 @@ pub(crate) enum Read {
 }
 
 impl Pipe {
-    /// A new pipe for `caller`, counted by `open` and against `budget`, or
-    /// `None` when the connection already holds
+    /// A new pipe serving `iface` for `caller`, counted by `open` and
+    /// against `budget`, or `None` when the connection already holds
     /// [`MAX_PIPES_PER_CONNECTION`] pipes.
     pub(crate) fn new(
         file_id: FileId,
         granted_access: u32,
+        iface: Interface,
         caller: Caller,
         open: OpenSlot,
         budget: &Arc<PipeBudget>,
@@ -111,9 +116,11 @@ impl Pipe {
         Some(Self {
             file_id,
             granted_access,
+            iface,
             caller,
             state: Mutex::new(State {
-                assoc: Association::default(),
+                assoc: Association::new(iface),
+                spoolss: spoolss::Session::default(),
                 outbox: VecDeque::new(),
                 queued: 0,
                 budget: Arc::clone(budget),
@@ -218,7 +225,16 @@ impl Pipe {
             match step {
                 Step::Send(pdu) => state.push(pdu),
                 Step::Call(call) => {
-                    let result = srvsvc::serve(server, &self.caller, call.opnum, &call.stub).await;
+                    let result = match self.iface {
+                        Interface::Srvsvc => {
+                            srvsvc::serve(server, &self.caller, call.opnum, &call.stub).await
+                        }
+                        Interface::Spoolss => {
+                            let session = &mut state.spoolss;
+                            spoolss::serve(server, &self.caller, session, call.opnum, &call.stub)
+                                .await
+                        }
+                    };
                     debug!(opnum = call.opnum, ok = result.is_ok(), "rpc call");
                     for reply in state.assoc.reply(&call, result) {
                         state.push(reply);
@@ -313,7 +329,14 @@ mod tests {
             identity: crate::proto::auth::ntlm::Identity::Anonymous,
             can_encrypt: false,
         };
-        Pipe::new(FileId::new(1, 1), 0x0012_019F, caller, open, budget)
+        Pipe::new(
+            FileId::new(1, 1),
+            0x0012_019F,
+            Interface::Srvsvc,
+            caller,
+            open,
+            budget,
+        )
     }
 
     fn pipe() -> Pipe {

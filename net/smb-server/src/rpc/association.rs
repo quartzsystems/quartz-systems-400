@@ -7,15 +7,13 @@
 
 use tracing::debug;
 
+use super::Interface;
 use super::pdu::{
     self, Body, ContextElem, ContextResult, FAULT_ACCESS_DENIED, Header, MAX_FRAG, NCA_PROTO_ERROR,
     NCA_SERVER_TOO_BUSY, NCA_UNK_IF, NDR, PFC_DID_NOT_EXECUTE, PFC_FIRST_FRAG, PFC_LAST_FRAG,
     PTYPE_ALTER_CONTEXT, PTYPE_ALTER_CONTEXT_RESP, PTYPE_BIND, PTYPE_BIND_ACK, RESPONSE_HEADER_LEN,
-    Request, SRVSVC, SyntaxId,
+    Request, SyntaxId,
 };
-
-/// Largest request stub one call may reassemble.
-const MAX_REQUEST_STUB: usize = 64 << 10;
 
 /// Presentation contexts one association may bind.
 const MAX_CONTEXTS: usize = 8;
@@ -26,9 +24,6 @@ const MIN_FRAG: u16 = 2048;
 /// How far behind the highest call_id seen a stray request fragment may be
 /// and still be dropped quietly (MS-RPCE 3.3.3.5.6).
 const OLD_CALL_WINDOW: u32 = 150;
-
-/// The secondary address of a bind_ack (MS-RPCE 3.3.1.5.5).
-const SECONDARY_ADDRESS: &str = "\\PIPE\\srvsvc";
 
 /// Bind time features the server supports: KeepConnectionOnOrphan
 /// (MS-RPCE 2.2.2.14). Orphaned PDUs never end the association.
@@ -76,6 +71,8 @@ pub(crate) enum Step {
 }
 
 pub(crate) struct Association {
+    /// QS/400: the interface the pipe serves.
+    iface: Interface,
     bound: bool,
     closed: bool,
     /// Largest fragment either side sends, once bound.
@@ -93,7 +90,15 @@ pub(crate) struct Association {
 
 impl Default for Association {
     fn default() -> Self {
+        Self::new(Interface::Srvsvc)
+    }
+}
+
+impl Association {
+    /// QS/400: an association on a pipe that serves `iface`.
+    pub(crate) fn new(iface: Interface) -> Self {
         Self {
+            iface,
             bound: false,
             closed: false,
             max_frag: MIN_FRAG,
@@ -104,9 +109,7 @@ impl Default for Association {
             inbox: Vec::new(),
         }
     }
-}
 
-impl Association {
     /// Whether the association has ended.
     pub(crate) fn is_closed(&self) -> bool {
         self.closed
@@ -331,7 +334,7 @@ impl Association {
             header.call_id,
             self.max_frag,
             self.assoc_group_id,
-            SECONDARY_ADDRESS,
+            self.iface.secondary_address(),
             &results,
         ))
     }
@@ -390,7 +393,7 @@ impl Association {
                         transfer_syntax: SyntaxId::default(),
                     };
                 }
-                if c.abstract_syntax != SRVSVC {
+                if c.abstract_syntax != self.iface.syntax() {
                     return reject(ABSTRACT_SYNTAX_NOT_SUPPORTED);
                 }
                 if !c.transfer_syntaxes.contains(&NDR) {
@@ -444,7 +447,7 @@ impl Association {
                 return Some(self.protocol_error(header.call_id));
             }
         };
-        if call.stub.len() + request.stub.len() > MAX_REQUEST_STUB {
+        if call.stub.len() + request.stub.len() > self.iface.max_request_stub() {
             debug!(call_id = call.call_id, "rpc request too large");
             let fault = pdu::fault(
                 call.call_id,
@@ -505,8 +508,31 @@ mod tests {
     use crate::rpc::pdu::tests::{BIND_3CTX, NDR64, unhex};
     use crate::rpc::pdu::{
         NCA_OP_RNG_ERROR, NCA_SERVER_TOO_BUSY, PTYPE_ALTER_CONTEXT, PTYPE_BIND, PTYPE_BIND_NAK,
-        PTYPE_CO_CANCEL, PTYPE_FAULT, PTYPE_ORPHANED, PTYPE_REQUEST, PTYPE_RESPONSE,
+        PTYPE_CO_CANCEL, PTYPE_FAULT, PTYPE_ORPHANED, PTYPE_REQUEST, PTYPE_RESPONSE, SPOOLSS,
+        SRVSVC,
     };
+
+    const MAX_REQUEST_STUB: usize = 64 << 10;
+
+    #[test]
+    fn a_spoolss_association_binds_spoolss_only() {
+        let mut assoc = Association::new(Interface::Spoolss);
+        let bind = bind_pdu(
+            PTYPE_BIND,
+            1,
+            (4280, 4280),
+            0,
+            &[(0, SRVSVC, &[NDR]), (1, SPOOLSS, &[NDR])],
+        );
+        let steps = assoc.receive(&bind);
+        let [Step::Send(ack)] = &steps[..] else {
+            panic!("{steps:?}");
+        };
+        assert_eq!(ack[2], PTYPE_BIND_ACK);
+        let address = b"\\PIPE\\spoolss\0";
+        assert!(ack.windows(address.len()).any(|w| w == address));
+        assert_eq!(assoc.contexts, [1]);
+    }
 
     impl Association {
         /// Every step the PDUs in `data` ask for.

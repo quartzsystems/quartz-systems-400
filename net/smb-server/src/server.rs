@@ -211,6 +211,8 @@ pub struct ServerConfig {
     pub(crate) apple_copyfile: bool,
     /// QS/400: logons go to this verifier instead of the user table.
     pub(crate) verifier: Option<crate::verifier::VerifierRef>,
+    /// QS/400: the printers `\pipe\spoolss` serves; no pipe without.
+    pub(crate) print_service: Option<crate::print::PrintServiceRef>,
     /// The server is announced on the local network while it serves.
     #[cfg(feature = "discovery")]
     pub(crate) discovery: Option<crate::discovery::Settings>,

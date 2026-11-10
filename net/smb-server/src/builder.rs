@@ -100,7 +100,8 @@ impl Share {
     /// QS/400: grant `access` to every signed-on user not granted otherwise
     /// (see `QS400-PATCHES.md`).
     pub fn any_user(mut self, access: Access) -> Self {
-        self.users.insert(crate::verifier::ANY_USER.to_owned(), access);
+        self.users
+            .insert(crate::verifier::ANY_USER.to_owned(), access);
         self
     }
 
@@ -368,6 +369,7 @@ pub struct SmbServerBuilder {
     apple_model: String,
     apple_copyfile: bool,
     verifier: Option<crate::verifier::VerifierRef>,
+    print_service: Option<crate::print::PrintServiceRef>,
     #[cfg(feature = "discovery")]
     discovery: Option<crate::discovery::Discovery>,
 }
@@ -398,6 +400,7 @@ impl SmbServerBuilder {
             apple_model: DEFAULT_APPLE_MODEL.to_string(),
             apple_copyfile: true,
             verifier: None,
+            print_service: None,
             #[cfg(feature = "discovery")]
             discovery: None,
         }
@@ -421,6 +424,14 @@ impl SmbServerBuilder {
     /// given with [`Self::user`] (see `QS400-PATCHES.md`).
     pub fn logon_verifier(mut self, verifier: impl crate::verifier::LogonVerifier) -> Self {
         self.verifier = Some(crate::verifier::VerifierRef(Arc::new(verifier)));
+        self
+    }
+
+    /// QS/400: serves `\pipe\spoolss` on IPC$ from `service`, so clients
+    /// can connect its printers and print to them (see `QS400-PATCHES.md`).
+    /// Without it the pipe does not exist.
+    pub fn print_service(mut self, service: impl crate::print::PrintService) -> Self {
+        self.print_service = Some(crate::print::PrintServiceRef(Arc::new(service)));
         self
     }
 
@@ -781,6 +792,7 @@ impl SmbServerBuilder {
             apple_model: self.apple_extensions.then_some(self.apple_model),
             apple_copyfile: self.apple_copyfile,
             verifier: self.verifier,
+            print_service: self.print_service,
             #[cfg(feature = "discovery")]
             discovery,
         };
