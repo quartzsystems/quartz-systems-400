@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Share DOCS - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/nsshares" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/netsvr/shares/DOCS">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/netsvr/shares/DOCS">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NetServer &#62; File shares &#62; Share DOCS</div>
+<h1>Share DOCS</h1>
+
+<form method="post"><input type="hidden" name="csrf" value="CSRF"><table class="props" cellspacing="0">
+<tr><th>Share name</th><td><span class="mono">DOCS</span></td></tr>
+<tr><th>Path <span class="req">*</span></th><td><input type="text" name="path" value="/home/shared/docs" size="60"></td></tr>
+<tr><th>Text</th><td><input type="text" name="text" value="Department documents" size="50"></td></tr>
+<tr><th>Access</th><td><select name="perm"><option>Read only</option><option>Read/write</option></select></td></tr>
+<tr><th>Maximum users</th><td><input type="text" name="max" value="20" size="7"> <span class="small grey">*NOMAX or a number</span></td></tr>
+<tr><th>Text conversion</th><td><select name="conv"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Text CCSID</th><td><input type="text" name="ccsid" value="0" size="5"> <span class="small grey">0: the client's</span></td></tr>
+<tr><th>Extensions converted</th><td><input type="text" name="ext" value="TXT CSV" size="40"> <span class="small grey">separated by blanks</span></td></tr>
+<tr><th>Encryption required</th><td><select name="encrypt"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>Authorization list</th><td><input type="text" name="autl" value="NSUSERS" size="10"> <span class="small grey">*NONE or a list users need *USE to</span></td></tr>
+</table><div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

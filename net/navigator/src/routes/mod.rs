@@ -14,6 +14,7 @@ pub mod db;
 pub mod home;
 pub mod msgs;
 pub mod net;
+pub mod netsvr;
 pub mod perf;
 pub mod sec;
 pub mod shared;
@@ -288,6 +289,7 @@ pub fn dispatch(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
         ["users" | "user" | "groups" | "group" | "autl", ..] => users::route(&rq, &segs),
         ["sysval" | "disk" | "hdwrsc" | "time" | "power", ..] => config::route(&rq, &segs),
         ["tcp", ..] => net::route(&rq, &segs),
+        ["netsvr", ..] => netsvr::route(&rq, &segs),
         ["db" | "sql", ..] => db::route(&rq, &segs),
         ["audit", ..] => sec::route(&rq, &segs),
         ["licpgm" | "ptf" | "fixes", ..] => sw::route(&rq, &segs),

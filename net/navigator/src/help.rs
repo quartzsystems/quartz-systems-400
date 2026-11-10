@@ -234,6 +234,32 @@ pub const TOPICS: &[Topic] = &[
         title: "Servers",
         body: "<p>The TCP servers and the ports they listen on. <b>Start</b>, <b>End</b> and <b>Restart</b> run <span class=\"mono\">STRTCPSVR</span> and <span class=\"mono\">ENDTCPSVR</span>; <b>Properties</b> sets whether a server starts with TCP/IP. The HTTP server's instances are managed in HTTP Server Administration.</p>",
     },
+    // NetServer.
+    Topic {
+        key: "netsvr",
+        title: "NetServer",
+        body: "<p>NetServer shares directories and output queues with Windows, macOS and Linux clients over SMB. The page shows whether its job <span class=\"mono\">QZLSSERVER</span> runs, and its attributes.</p>\n<h2>Current and pending</h2>\n<p><b>Current</b> is what the server uses now. <b>Apply</b> makes the values you typed <b>pending</b>: they take effect when NetServer is started with <b>Start and apply pending values</b>, or at the next IPL. Each change is checked by the NetServer API that makes it, which needs special authority <span class=\"mono\">*IOSYSCFG</span>; the guest profile also needs <span class=\"mono\">*SECADM</span>.</p>\n<h2>Attributes</h2>\n<p>The server and domain names are what clients see. A <b>guest user profile</b> lets clients without a profile in; it may have no special authority. Sessions with no open files end after the <b>idle time-out</b>. <b>Message authentication</b> 2 requires signing, <b>encrypted connections</b> 1 requires SMB 3 encryption for every client, and the <b>server authorization list</b> limits NetServer to the users with <span class=\"mono\">*USE</span> to it. <b>Allow NetBIOS</b> also answers on port 139; the <b>SMB2 minimum dialect</b> refuses clients that offer only older dialects; <b>log sign-on messages</b> sends a message to <span class=\"mono\">QSYSOPR</span> at each sign-on.</p>\n<h2>Start and End</h2>\n<p><b>End...</b> ends the server and every session, after a confirmation. Starting it enables every user disabled for NetServer again.</p>",
+    },
+    Topic {
+        key: "nsshares",
+        title: "File shares",
+        body: "<p>The directories NetServer shares. <b>Properties</b> changes a share and <b>Remove</b> stops sharing it (the directory stays); <b>Add file share...</b> shares another. Changes take effect at once.</p>\n<h2>Who may share</h2>\n<p>Users with special authority <span class=\"mono\">*IOSYSCFG</span> may share any directory; others only directories they own.</p>\n<h2>Fields</h2>\n<p>The <b>share name</b> is up to 12 characters, without the characters Windows reserves. <b>Access</b> read only or read/write is the most a client gets; the directory's own authority still applies. <b>Maximum users</b> limits the connections at once (<span class=\"mono\">*NOMAX</span> for none). With <b>text conversion</b>, files with the <b>extensions</b> listed are converted between their CCSID and the <b>text CCSID</b> as clients read and write them. <b>Encryption required</b> admits only clients that encrypt; an <b>authorization list</b> admits only the users with <span class=\"mono\">*USE</span> to it.</p>",
+    },
+    Topic {
+        key: "nsprtshr",
+        title: "Print shares",
+        body: "<p>The output queues NetServer shares as printers. What a client prints becomes a spooled file on the <b>output queue</b>, of the <b>spooled file type</b> chosen (<span class=\"mono\">*AUTO</span> senses it from the data). The <b>printer driver</b> is the name clients are told to install; a <b>printer file</b> gives the spooled files its attributes. Users with special authority <span class=\"mono\">*IOSYSCFG</span> may share any output queue, others only queues they own.</p>",
+    },
+    Topic {
+        key: "nssessions",
+        title: "NetServer sessions",
+        body: "<p>Each client signed on to NetServer: its workstation name, the user, whether it came in as the guest, its connections to shares and the files open through them. <b>Connections</b> shows a session's shares and open files. <b>End</b> disconnects the client after a confirmation (special authority <span class=\"mono\">*IOSYSCFG</span>); files it has open are closed.</p>",
+    },
+    Topic {
+        key: "nsdisabled",
+        title: "Users disabled for NetServer",
+        body: "<p>After as many wrong passwords in a row as system value <span class=\"mono\">QMAXSIGN</span> allows, NetServer disables the user for NetServer only: 5250 and other sign-ons still work. <b>Enable</b> lets the user sign on to NetServer again; it needs <span class=\"mono\">*OBJMGT</span> and <span class=\"mono\">*USE</span> authority to the user profile. Starting NetServer enables every user again.</p>",
+    },
     // Performance.
     Topic {
         key: "perfsys",

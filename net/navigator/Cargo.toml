@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+netsvrcfg = { path = "../netsvrcfg", version = "0.1.0" }
 qsweb = { path = "../qsweb", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }

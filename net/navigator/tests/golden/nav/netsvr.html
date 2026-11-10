@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>NetServer - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/netsvr" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/netsvr">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/netsvr">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr" class="navcur">NetServer</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/netsvr">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NetServer</div>
+<h1>NetServer</h1>
+<div class="desc">SMB file and print serving (QZLSSERVER).</div>
+
+<div class="tabs"><b>Server</b> | <a href="/qs400/navigator/netsvr/shares">File shares</a> | <a href="/qs400/navigator/netsvr/prtshr">Print shares</a> | <a href="/qs400/navigator/netsvr/sessions">Sessions</a> | <a href="/qs400/navigator/netsvr/disabled">Disabled users</a></div><table class="status" cellspacing="0"><tr><td class="lbl">Status</td><td><span class="ok">Active</span></td></tr><tr><td class="lbl">Server job</td><td><span class="mono">123301/QSYS/QZLSSERVER</span></td></tr><tr><td class="lbl">Server name</td><td><span class="mono">QSHQ400</span></td></tr><tr><td class="lbl">Domain name</td><td><span class="mono">QSHDOM</span></td></tr><tr><td class="lbl">Sessions</td><td>3 &nbsp; <span class="grey">3 connections</span></td></tr></table><form method="post"><input type="hidden" name="csrf" value="CSRF"><div class="buttons"><input type="submit" name="end" value="End..."><input type="submit" name="refresh" value="Refresh"></div></form><h2>Attributes</h2><p class="small grey">Changes are pending: they take effect when NetServer is started with its pending values, or at the next IPL.</p><form method="post"><input type="hidden" name="csrf" value="CSRF"><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Attribute</th>
+<th>Current</th>
+<th>Pending</th>
+</tr>
+<tr>
+<td>Server name</td>
+<td><span class="mono">QSHQ400</span></td>
+<td><input type="text" name="name" value="QSHQ400" size="15"></td>
+</tr>
+<tr class="alt">
+<td>Domain name</td>
+<td><span class="mono">QSHDOM</span></td>
+<td><input type="text" name="domain" value="QSHDOM" size="15"></td>
+</tr>
+<tr>
+<td>Text description</td>
+<td>Quartz Systems head office</td>
+<td><input type="text" name="text" value="Quartz Systems head office" size="50"></td>
+</tr>
+<tr class="alt">
+<td>Allow system name</td>
+<td><span class="mono">*NO</span></td>
+<td><select name="sysname"><option>*NO</option><option>*YES</option></select></td>
+</tr>
+<tr>
+<td>Guest user profile</td>
+<td><span class="mono">QSHGUEST</span></td>
+<td><input type="text" name="guest" value="QSHGUEST" size="10"> <span class="small grey">*NONE: no guest access</span></td>
+</tr>
+<tr class="alt">
+<td>Code page</td>
+<td><span class="mono">0</span></td>
+<td><input type="text" name="codepage" value="0" size="5"> <span class="small grey">0: the job&#39;s</span></td>
+</tr>
+<tr>
+<td>Idle time-out (seconds)</td>
+<td><span class="mono">6000</span></td>
+<td><input type="text" name="idle" value="3600" size="7"> <span class="small grey">-1: never</span></td>
+</tr>
+<tr class="alt">
+<td>Oplock time-out (seconds)</td>
+<td><span class="mono">30</span></td>
+<td><input type="text" name="oplock" value="30" size="4"> <span class="small grey">1 to 600; -1: no leases</span></td>
+</tr>
+<tr>
+<td>Browse interval (milliseconds)</td>
+<td><span class="mono">720000</span></td>
+<td><input type="text" name="browse" value="720000" size="7"> <span class="small grey">0 to 720000</span></td>
+</tr>
+<tr class="alt">
+<td>Message authentication</td>
+<td><span class="mono">0</span></td>
+<td><select name="msgauth"><option>0</option><option>1</option><option>2</option></select> <span class="small grey">0, 1: signing offered; 2: required</span></td>
+</tr>
+<tr>
+<td>Encrypted connections</td>
+<td><span class="mono">0</span></td>
+<td><select name="encrypt"><option>0</option><option>1</option></select> <span class="small grey">1: required for every connection</span></td>
+</tr>
+<tr class="alt">
+<td>Server authorization list</td>
+<td><span class="mono">*NONE</span></td>
+<td><input type="text" name="autl" value="*NONE" size="10"></td>
+</tr>
+<tr>
+<td>Authentication method</td>
+<td>Passwords</td>
+<td>Passwords</td>
+</tr>
+<tr class="alt">
+<td>Allow NetBIOS</td>
+<td><span class="mono">*NO</span></td>
+<td><select name="netbios"><option>*NO</option><option>*YES</option></select></td>
+</tr>
+<tr>
+<td>SMB2 minimum dialect</td>
+<td><span class="mono">2.0.2</span></td>
+<td><select name="dialect"><option>2.0.2</option><option>2.1</option><option selected>3.0</option><option>3.0.2</option><option>3.1.1</option></select></td>
+</tr>
+<tr class="alt">
+<td>Log sign-on messages</td>
+<td><span class="mono">*NO</span></td>
+<td><select name="logon"><option>*NO</option><option>*YES</option></select></td>
+</tr>
+</table><div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

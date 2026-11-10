@@ -223,6 +223,16 @@ pub fn proto(url: &str) -> Option<String> {
         ["tcp", "ifc", ..] => "tcpip-interfaces".into(),
         ["tcp", "rte", ..] => "tcpip-routes".into(),
         ["tcp", "servers", ..] => "servers".into(),
+        // NetServer: approved pages of its own (tests/netsvr.rs).
+        ["netsvr", ..] if segs.last() == Some(&"confirm") => {
+            return Some("shared/confirm.html".into());
+        }
+        ["netsvr"] => "netsvr".into(),
+        ["netsvr", "shares" | "prtshr"] => "netsvr-shares".into(),
+        ["netsvr", "shares" | "prtshr", _] => "netsvr-share".into(),
+        ["netsvr", "sessions"] => "netsvr-sessions".into(),
+        ["netsvr", "sessions", _] => "netsvr-session".into(),
+        ["netsvr", "disabled"] => "netsvr-disabled".into(),
         // Database.
         ["sql", ..] => "run-sql".into(),
         ["db"] | ["db", _] => "schemas".into(),
@@ -263,6 +273,17 @@ pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
 /// [`assert_golden`] over golden text `g` already read (and cut) from
 /// `file`.
 pub fn assert_golden_text(served: &str, mut g: String, file: &str, fix: &[(&str, &str)]) {
+    // The Network group's NetServer item, which the prototype predates.
+    for cur in ["", " class=\"navcur\""] {
+        let servers =
+            format!("<div class=\"navitem\"><a href=\"servers.html\"{cur}>Servers</a></div>");
+        g = g.replace(
+            &servers,
+            &format!(
+                "{servers}\n<div class=\"navitem\"><a href=\"netsvr.html\">NetServer</a></div>"
+            ),
+        );
+    }
     for (from, to) in fix {
         assert!(
             g.contains(from),

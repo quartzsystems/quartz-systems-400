@@ -11,6 +11,7 @@ pub mod config;
 pub mod db;
 pub mod msgs;
 pub mod net;
+pub mod netsvr;
 pub mod perf;
 pub mod sec;
 pub mod sw;
@@ -250,6 +251,8 @@ pub struct Env {
     pub config: Arc<dyn config::Config>,
     /// TCP/IP and the TCP servers.
     pub net: Arc<dyn net::Net>,
+    /// `NetServer`.
+    pub netsvr: Arc<dyn netsvr::NetServer>,
     /// The database.
     pub db: Arc<dyn db::Db>,
     /// The audit journal.

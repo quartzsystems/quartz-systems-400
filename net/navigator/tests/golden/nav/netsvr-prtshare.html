@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Share PRT01 - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/nsprtshr" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/netsvr/prtshr/PRT01">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NetServer &#62; Print shares &#62; Share PRT01</div>
+<h1>Share PRT01</h1>
+
+<form method="post"><input type="hidden" name="csrf" value="CSRF"><table class="props" cellspacing="0">
+<tr><th>Share name</th><td><span class="mono">PRT01</span></td></tr>
+<tr><th>Output queue <span class="req">*</span></th><td><input type="text" name="outq" value="QUSRSYS/PRT01" size="21"> <span class="small grey">LIBRARY/QUEUE</span></td></tr>
+<tr><th>Text</th><td><input type="text" name="text" value="Second floor laser" size="50"></td></tr>
+<tr><th>Printer driver</th><td><input type="text" name="driver" value="Generic PCL 6" size="50"></td></tr>
+<tr><th>Spooled file type</th><td><select name="type"><option>*AUTO</option><option selected>*USERASCII</option><option>*AFP</option><option>*SCS</option></select></td></tr>
+<tr><th>Printer file</th><td><input type="text" name="prtf" value="*NONE" size="21"> <span class="small grey">LIBRARY/FILE or *NONE</span></td></tr>
+<tr><th>Encryption required</th><td><select name="encrypt"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>Authorization list</th><td><input type="text" name="autl" value="*NONE" size="10"> <span class="small grey">*NONE or a list users need *USE to</span></td></tr>
+</table><div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>
