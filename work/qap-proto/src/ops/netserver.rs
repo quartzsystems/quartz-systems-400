@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `NetServer` (version 9, draft): file and print shares, sessions,
+//! `NetServer` (version 10, draft): file and print shares, sessions,
 //! the server's attributes, users disabled for NetServer, start and
 //! end, each as the `QZLS*` API a program would call does it
 //! (docs/QAP.md, "Service 12 `NetServer`").

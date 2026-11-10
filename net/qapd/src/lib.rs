@@ -27,6 +27,8 @@
 //! - [`develop`], [`jobs`]: the `Develop` and `Jobs` services (version 8,
 //!   draft).
 //! - [`debug`]: the `Debug` service (version 9, draft) and its events.
+//! - [`netserver`]: the `NetServer` service (version 10, draft) over the
+//!   `QZLS*` APIs.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
@@ -40,6 +42,7 @@ pub mod frames;
 pub mod host;
 pub mod jobs;
 pub mod manage;
+pub mod netserver;
 pub mod sessions;
 pub mod spool;
 pub mod sql;

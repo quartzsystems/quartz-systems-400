@@ -392,7 +392,7 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 **Exit point.** Every `Manage` request passes the exit point `QS400_QAP_MGMT`, format `QAPX0100`, before it runs, as the host servers' requests pass theirs:
 
 - registered at the first IPL with the shipped points (`WRKREGINF`); no deregistration, change allowed, at most one program, as the host servers' points;
-- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT`, format CHAR(8) `QAPX0100`, operation BINARY(4) (the `Manage` op code), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
+- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT` (`*QAPNETSVR` for the `NetServer` service, version 10), format CHAR(8) `QAPX0100`, operation BINARY(4) (the op code within its service), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
 - a refusal is `NotAuthorized` with `TCP1A5E` naming the program, audited `GR` (`F`, the function refused), and the operation does nothing; a program that cannot be called or ends in an exception refuses, as for the host servers. A point with no program allows everything.
 
 **Audit journal.** Beside the `AF` and `GR` entries above, the entries are the commands' own: `SV` for a system value changed (old and new value, as `CHGSYSVAL` writes it), and the job entries the subsystem and power commands write with `*JOBDTA` and `*SYSMGT` auditing. QAP adds no entry type and no entry of its own.
@@ -572,6 +572,60 @@ Every operation but `Start` answers `Error` with `TCP1A71` when no session is ac
 
 `ServerMessage`s in bodies are in the job's language, as every message is.
 
+### Service 12 `NetServer`: NetServer administration (version 10, draft)
+
+**Draft until QS/400 ships it.** Version 10 is what a client needs to administer NetServer (docs/NETSERVER.md): its file and print shares, sessions, attributes and the users disabled for it. Nothing in versions 1 to 9 changes; a peer that negotiates 9 or less never sees `NetServer`.
+
+Every operation runs as the signed-on profile, concurrently on the connection's secondary threads (never in the lane), and is the `QZLS*` API a program would call (`netsvrcfg::client`): the API checks the authority, validates the values and words the refusal, exactly as for a program. Every request passes the exit point `QS400_QAP_MGMT` first, as `Manage`'s do, with server `*QAPNETSVR` and the operation's code below.
+
+- `ShareKind` enum: `File` 0, `Print` 1. `SpoolType` enum: `Auto` 0 (`*AUTO`), `UserAscii` 1, `Afp` 2, `Scs` 3. `ConnectionKind` enum: `Disk` 0, `Print` 1, `Ipc` 2. `Dialect` enum: `Smb202` 0, `Smb21` 1, `Smb30` 2, `Smb302` 3, `Smb311` 4.
+- `FileShare` = { `path` String, `read_only` flag, `max_users` Option of u32 (none: no maximum), `text_conversion` flag, `text_ccsid` u32 (0: the client's), `extensions` list of String }.
+- `PrintShare` = { `output_queue` ObjectName, `driver` String, `spool_type` SpoolType, `printer_file` Option of ObjectName }.
+- `ShareDetail` enum: `File` 0 { `file` FileShare }, `Print` 1 { `print` PrintShare }.
+- `Share` = { `name` String, `text` String, `encryption_required` flag, `authorization_list` Option of String, `current_users` u32 (connections now; ignored in requests), `detail` ShareDetail }.
+- `Connection` = { `share` String, `kind` ConnectionKind, `open_files` u32, `since` i64 }. `NetSession` = { `id` u64, `workstation` String, `expanded` String, `user` String, `guest` flag, `job` Option of JobId (the `QZLSFILE` job serving it), `since` i64, `last_active` i64, `connections` list of Connection }.
+- `ServerAttributes` = { `server_name` String, `domain` String, `text` String, `allow_system_name` flag, `guest` Option of String, `code_page` i32, `idle_timeout` i32 (-1 never), `oplock_timeout` i32 (-1 no leases), `browse_interval` i32, `message_auth` u8, `encryption_required` flag, `authorization_list` Option of String, `allow_netbios` flag, `min_dialect` Dialect, `log_signon` flag }.
+- `DisabledUser` = { `user` String, `since` i64 }.
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| NetServer | 1 `ListShares` | `kind` Option of ShareKind, `start` u32, `max` u32 | `total` u32, `shares` list of `Share` (by name) | no |
+| NetServer | 2 `GetShare` | `name` String | `Share` | no |
+| NetServer | 3 `AddShare` | `share` Share | — | no |
+| NetServer | 4 `ChangeShare` | `share` Share (the share whole, as it is to be) | — | no |
+| NetServer | 5 `RemoveShare` | `name` String | — | no |
+| NetServer | 6 `ListSessions` | `start` u32, `max` u32 | `total` u32, `sessions` list of `NetSession` (by identifier) | no |
+| NetServer | 7 `EndSession` | `id` u64 | — | no |
+| NetServer | 8 `GetServerAttributes` | — | `active` flag, `job` Option of JobId (`QZLSSERVER`), `current` ServerAttributes, `pending` ServerAttributes | no |
+| NetServer | 9 `ChangeServerAttributes` | `pending` ServerAttributes | `ServerAttributes` (the pending side as it now is) | no |
+| NetServer | 10 `ListDisabledUsers` | — | `users` list of `DisabledUser` (by name) | no |
+| NetServer | 11 `EnableUser` | `user` String | — | no |
+| NetServer | 12 `StartServer` | `reset` flag | — | no |
+| NetServer | 13 `EndServer` | — | — | no |
+
+| Op | Stands for | Statuses |
+| --- | --- | --- |
+| `ListShares`, `GetShare` | `QZLSOLST` `ZLSL0101` | `Ok`; `NotFound` (`GetShare`: `CPFB68A` reason 2) |
+| `AddShare` | `QZLSADFS`, `QZLSADPS` | `Ok`; `Exists` (`CPFB68A` 1); `NotAuthorized` (`CPFB684`: no `*IOSYSCFG` and not the owner of the directory or output queue); `Error` (the API's other messages: `CPFB68A`, `CPFB68B`, `CPFB68D`, `CPFB683`, `CPF2283`) |
+| `ChangeShare` | `QZLSCHFS`, `QZLSCHPS` | `Ok`; `NotFound` (`CPFB68A` 2); `NotAuthorized` (`CPFB684`); `Error` (`CPFB68A` 8: the share is of the other kind; the rest as `AddShare`) |
+| `RemoveShare` | `QZLSRMS` | `Ok`; `NotFound` (`CPFB68A` 2); `NotAuthorized` (`CPFB684`) |
+| `ListSessions` | the session table (`ZLSL0300`, `ZLSL0600`) | `Ok` |
+| `EndSession` | `QZLSENSS *SESSID` | `Ok`; `NotFound` (`CPFB68E` 5); `NotAuthorized` (`CPFB684`, `*IOSYSCFG`); `Error` (`CPFB68E` 2: the server is not active; `CPFB680`) |
+| `GetServerAttributes` | `QZLSOLST` `ZLSL0201` and `QSLL0100` | `Ok` |
+| `ChangeServerAttributes` | `QZLSCHSN`, `QZLSCHSG`, `QZLSCHSI` `ZLSS0100` and `QSLS0100`, each only when what it changes differs | `Ok`; `NotAuthorized` (`CPFB684`: `*IOSYSCFG`, and `*SECADM` for the guest); `Error` (`CPFB686` and its reason, `CPFB68B`, `CPFB687`, `CPFB68C`, `CPF2283`); what was called before a refusal stays |
+| `ListDisabledUsers` | `ZLSL0900`, with the time | `Ok` |
+| `EnableUser` | `QZLSCHSI` `ZLSS0200` | `Ok`; `Error` (`CPFB694`: not enabled, for want of `*OBJMGT` and `*USE` to the profile, or no such profile) |
+| `StartServer` | `QZLSSTRS` | `Ok`; `NotAuthorized` (`CPFB684`); `Error` (`CPFB685` 2: active already; `CPFB680` while the server control cannot start the jobs) |
+| `EndServer` | `QZLSENDS` | `Ok`; `NotAuthorized` (`CPFB684`); `Error` (`CPFB680`) |
+
+**Rules.**
+
+- Messages are the APIs' from `QCPFMSG`, their data laid out as the API lays it out (the API's name first).
+- `ChangeServerAttributes` takes the pending side whole: the attributes the protocol has no field for (WINS, the logon server role, the authentication method, minimum message severity, LAN Manager authentication) keep their pending values. Changes take effect at a `StartServer` with `reset`, or at the next IPL.
+- Share changes take effect at once, as the APIs make them.
+- The exit request's target is the share's name (`*ALL`, `*FILE` or `*PRINT` for `ListShares`), the session's identifier, the user, or blank; its detail the path or `LIB/OUTQ` of an added or changed share, `RESET(0)` or `RESET(1)` for `StartServer`.
+- No event: a client that follows sessions asks again.
+
 ### `SignOn` additions (version 2)
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
@@ -668,6 +722,10 @@ It introduces no status and no event: every status these operations answer exist
 ### Version 9 (draft)
 
 Version 9 is `Debug` (service 11) operations 1 `Start` to 10 `RemoveServiceEntry` and the events `Stopped` (100) and `DebugEnded` (101), with the types and rules above. It introduces no status: every status these operations answer exists in an earlier version. A version 1 to 8 peer never receives the `Debug` service, its events or any of its bodies, and its requests for them get `InvalidRequest`. The server accepts versions 1 to 9 and picks the highest both sides support. Until QS/400 ships version 9 its operations and bodies may still change.
+
+### Version 10 (draft)
+
+Version 10 is `NetServer` (service 12) operations 1 `ListShares` to 13 `EndServer`, with the types and rules above. It introduces no status and no event: every status these operations answer exists in an earlier version (`Exists` is version 5's). A version 1 to 9 peer never receives the `NetServer` service or any of its bodies, and its requests for them get `InvalidRequest`; `Hello` lists service 12 only at version 10 and above. The server accepts versions 1 to 10 and picks the highest both sides support. Until QS/400 ships version 10 its operations and bodies may still change.
 
 ## Open questions
 
@@ -1460,6 +1518,32 @@ Version 9, as built on 2026-11-07 (draft; decisions made in the build, for Cody 
 - QEMU steps 162 (`Own`, a version 8 connection's gate) and 163 (a
   service entry point stopping a 5250 session's job) run it end to end
   as `QAPTEST`.
+
+Version 10, as built on 2026-11-09 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 10 (`VERSION` 10, the `qap` lock bumped with
+  it, `ops/netserver.rs` the draft format `qap-netserver`). NetServer is
+  a version of its own, not an addition to version 9: the frozen `qap`
+  files (`kinds.rs`, `ops/mod.rs`) change with every new service, and
+  the format check takes that only with a version bump, as `Debug`'s
+  did for 9.
+- `net/qapd/src/netserver.rs` holds the whole service over the host's
+  `NetServerHost` (the API call, the session table, the disabled users,
+  `QZLSSERVER`'s job, a message by its data): the conversions between
+  the protocol's types and `netsvrcfg`'s model, the statuses from the
+  APIs' messages (`status_of`), and the calls through
+  `netsvrcfg::client`. The job's host
+  (`work/qsjob/src/work/qap/netserver.rs`) is the storage service's
+  `netsvr_api` (as the thread's profile), `netsvr` `List` and
+  `netsvr_disabled_users` (`work/qsjob/src/work/nsadmin.rs`, shared with
+  Navigator).
+- The exit point's request gains a server field: `*QAPMGMT` for
+  `Manage`, `*QAPNETSVR` for `NetServer`, whose operation codes are its
+  own 1 to 13.
+- The test system (`qapd::testing::netserver`) is the APIs over
+  `netsvrcfg::api::MemHost`, called as the signed-on profile;
+  `net/qapd/tests/netserver.rs` runs each operation, the authority
+  refusals, the exit point and version 9 without the service.
 
 ## Frozen at V1R1M0
 

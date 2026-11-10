@@ -1096,6 +1096,59 @@ impl ThreadHost for MemThread {
     fn debugger(&mut self) -> Option<&mut dyn crate::debug::DebugHost> {
         Some(self)
     }
+
+    fn netserver(&mut self) -> Option<&mut dyn crate::netserver::NetServerHost> {
+        Some(self)
+    }
+}
+
+impl crate::netserver::NetServerHost for MemThread {
+    fn api(
+        &mut self,
+        api: &str,
+        parms: Vec<Vec<u8>>,
+    ) -> Result<Vec<u8>, netsvrcfg::client::Failure> {
+        let me = self.me().unwrap_or_default();
+        let special = self.sys.get(&me).special;
+        let has = |s: &str| special.iter().any(|x| x == s);
+        let mut h = lock(&self.sys.netsvr);
+        h.caller.user.clone_from(&me);
+        h.caller.iosyscfg = has("*IOSYSCFG");
+        h.caller.secadm = has("*SECADM");
+        // Enabling needs *OBJMGT and *USE to the profile: SECOFR's.
+        h.not_manageable = if has("*SECADM") {
+            Vec::new()
+        } else {
+            h.profiles.iter().map(|(p, _)| p.clone()).collect()
+        };
+        netsvrcfg::client::Api::call(&mut *h, api, parms)
+    }
+
+    fn sessions(&mut self) -> Vec<netsvrcfg::Session> {
+        lock(&self.sys.netsvr).table.sessions().cloned().collect()
+    }
+
+    fn disabled(&mut self) -> Vec<(String, u64)> {
+        let h = lock(&self.sys.netsvr);
+        let mut v: Vec<(String, u64)> = h
+            .disabled
+            .iter()
+            .map(|u| (u.clone(), super::EPOCH - 120))
+            .collect();
+        v.sort();
+        v
+    }
+
+    fn server_job(&mut self) -> Option<String> {
+        lock(&self.sys.netsvr)
+            .server
+            .active
+            .then(|| "000200/QSYS/QZLSSERVER".to_string())
+    }
+
+    fn message(&mut self, id: &str, data: &[u8]) -> ServerMessage {
+        self.message_data(id, data)
+    }
 }
 
 impl MemThread {

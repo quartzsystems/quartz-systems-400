@@ -81,17 +81,22 @@ hash = "65af092686cc24c9ee04d6353b5604430d501058cf5cd9618c81876071f759f4"
 
 [format.qap]
 frozen_at = "V1R1M0"
-version = "9"
-hash = "6af090c1b03db73e631cd1c98bf26c5e0fb9b105ab8c0c1a04626daa0e5ce8de"
+version = "10"
+hash = "6a1f7bf6ef53df144d27bfc7f21915867679f773c7895d6824b32baeff0b2b7a"
 
 [format.qap-debug]
 frozen_at = "V1R1M0"
-version = "9"
+version = "10"
 hash = "24633796b2257e2e58f5bdb045b2381c43681f776c9320c92f2a66b84fb632de"
+
+[format.qap-netserver]
+frozen_at = "V1R1M0"
+version = "10"
+hash = "e219d0604e9a8bb25cc7d91a340d57cf4592369e24450e227ca32f4f71c05b40"
 
 [format.qap-v8]
 frozen_at = "V1R1M0"
-version = "9"
+version = "10"
 hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 
 [format.save]

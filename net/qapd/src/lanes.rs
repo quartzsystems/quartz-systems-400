@@ -298,6 +298,13 @@ fn operation(shared: &Arc<Shared>, host: &mut dyn ThreadHost, op: Op, req: &Enve
                 .unwrap_or_default();
             crate::manage::serve(host, &user, op, req)
         }
+        op if op.code().0 == Service::NetServer => {
+            let user = lock(&shared.session)
+                .as_ref()
+                .map(|(_, p)| p.clone())
+                .unwrap_or_default();
+            crate::netserver::serve(host, &user, op, req)
+        }
         Op::ListMessages => body(req, |b: ListMessages| ok(host.list_messages(&b))),
         Op::ReplyMessage => body(req, |b: ReplyMessage| done(host.reply_message(&b))),
         Op::RemoveMessages => body(req, |b: RemoveMessages| done(host.remove_messages(&b))),

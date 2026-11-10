@@ -207,6 +207,51 @@ and `Net::run` as the user, as in Work management.
   user's interval. A job's CPU bar spans 0 to 20 %. Units busy 70 % or
   more are named under Disk activity with the job doing most I/O.
 
+## NetServer
+
+`env::netsvr::NetServer` is NetServer through its APIs, as a program
+calling them has it (`netsvrcfg::client`): every list is `QZLSOLST`
+(`ZLSL0101` shares, `ZLSL0201` and QS/400's `QSLL0100` attributes) and
+every change the API that makes it (`QZLSADFS`, `QZLSCHFS`,
+`QZLSADPS`, `QZLSCHPS`, `QZLSRMS`, `QZLSCHSN`, `QZLSCHSG`, `QZLSCHSI`
+`ZLSS0100`, `ZLSS0200` and `QSLS0100`, `QZLSSTRS`, `QZLSENDS`,
+`QZLSENSS`), run as the user: the API checks the authority (`*IOSYSCFG`,
+or owning the directory or output queue shared; `*SECADM` for the
+guest; `*OBJMGT` and `*USE` to a profile to enable it), validates and
+words the refusal. Navigator checks `*IOSYSCFG` first only where the
+API always needs it (attributes, start, end, ending a session); an API
+refusal for authority (`CPFB684`, `CPDB680`) is the Not authorized page
+with an `AF` entry, any other its message on the page. The sessions are
+the service's table (`netsvr` `List`), the disabled users
+`netsvr_disabled_users`.
+
+- Routes (in the Network group, tabs Server, File shares, Print
+  shares, Sessions, Disabled users): `/netsvr` (status, Start, Start
+  and apply pending values, End..., the attributes current and
+  pending with Apply), `/netsvr/confirm?op=end`, `/netsvr/shares`,
+  `/netsvr/shares/add`, `/netsvr/shares/<name>[/confirm]` (Remove),
+  the same under `/netsvr/prtshr`, `/netsvr/sessions`,
+  `/netsvr/sessions/<id>[/confirm]` (connections and open files; End),
+  `/netsvr/disabled`, `/netsvr/disabled/<user>/confirm` (Enable).
+- Apply sends only what changed: `QZLSCHSN` for the names, text and
+  allow system name, `QZLSCHSG` for the guest, `ZLSS0100` for the
+  rest IBM's format has, `QSLS0100` for allow NetBIOS, the SMB2
+  minimum dialect and log sign-on messages. A number that does not
+  read goes to the API as a value it refuses, so the refusal is the
+  API's (`CPFB686` and its reason); the page keeps what was typed.
+- Confirmations show the equivalent `CALL PGM(QSYS/QZLS...)` with an
+  8-byte zero error code (an error is then an escape message).
+- The fixture (`fixture/netsvr.rs`) is the APIs themselves over
+  `netsvrcfg::api::MemHost`: shares `QIBM`, `HOME`, `DOCS` (read only,
+  extensions, list `NSUSERS`), print share `PRT01`; three sessions, one
+  the guest's; `TESTUSER` disabled; pending idle time-out and dialect
+  differing from current.
+- The pages have no prototype: their approved renderings are
+  `tests/golden/nav/netsvr*.html` (`QS400_UPDATE_GOLDEN=1 cargo test -p
+  navigator --test netsvr` rewrites them after a deliberate change);
+  `tests/netsvr.rs` drives every action. The prototype's Network pages
+  gain the tree's NetServer item (a fix every golden comparison applies).
+
 ## The live server
 
 Navigator is licensed program `QS00NAV` `*BASE` (docs/LICPGM.md),
@@ -237,6 +282,7 @@ escape (the diagnostic before `CPF0006`) the message.
 | Status, more | failed sign-ons: `DSPAUDJRNE ENTTYP(PW)`'s report (`exec`), its entries of the last 24 h; PTFs not applied: `sys2_panel PTF` rows `Loaded` (`DSPPTF`); servers down: the registry's servers set to autostart (`tcp Servers`) with no listener among `active_jobs`; machine type: the processor's type in `hw_table` |
 | Config | `sysval_panel_list` + `sysval_panel` (`WRKSYSVAL`, `DSPSYSVAL`) with shipped value, allowed values and IPL flag from the `lic/sysval` catalog, the category from its group (`httpnav/config.rs`); `panel2_data DSKSTS` (with `SIZEB`, `SERIAL`, `PROT`, `STATUS` per unit) and `SYSSTS`'s ASP figures; `hw_table` in `WRKHDWRSC *AHW` order (`hwrsrc::view`) and `hw_cfgds` per resource; `QTIMZON`, `QDATFMT`, `QDATSEP`, `QTIMSEP`, `QTIMADJ`, `sysval::tz::ZONES`, `CHGNTPA`'s `RMTSYS` (`tcp Servers`), `QTOTNTP` active |
 | Net | `tcp Snapshot` (interfaces, routes), `tcp HostConfig` (domain, host table), `tcp Netstat STS` (active since), `tcp Report attr` (forwarding), the server registry with `tcp Servers` and `active_jobs` |
+| NetServer | `netsvr_api` (the `QZLS*` APIs as the user, `work/qsjob/src/work/nsadmin.rs`), `netsvr` `List` (the session table), `netsvr_disabled_users`, `active_jobs` (`QZLSSERVER` in `QSERVER`) |
 | Perf | `panel2_data SYSACT` (`WRKSYSACT`), `SYSSTS RESET(*YES)`'s pools, `DSKSTS RESET(*YES)` |
 | Db | queries over the `QSYS2` catalog views through the interactive SQL session (`isql_start` `*SQL`/`*NONE`, `isql_run`): `SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST` + `SYSKEYCST`, `SYSINDEXES` + `SYSKEYS`, `SYSVIEWDEP`; creation times from `object`. Run SQL: `isql_start` with the naming and isolation, `SET SCHEMA`, `isql_run` (the row cap), `isql_end` commits; messages from `QSQLMSG` as Enter SQL Statements words them. No `SYSTRIGGERS`/`SYSROUTINES` (no triggers, procedures), no `QSQGNDDL` (Generate SQL answers `SQL0084`), no Explain (`SQL0084`) |
 | Security | `DSPAUDJRNE ... OUTPUT(*)` through `exec`, as its 5250 display runs it (whole UTC days, cut to the filter's seconds), `secaud_panel` (`DSPSECAUD`), the receiver's creation (`object *JRNRCV`) as its attach time |
@@ -338,6 +384,7 @@ of the golden page:
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 | `nav/tcpip.html` | `13 started` → `14 started` | the Servers page lists fourteen started |
 | `nav/tcpip-interfaces.html`, `nav/servers.html` | the two buttons get names `add`/`start` and `refresh` | two nameless buttons in one form cannot be told apart |
+| `nav/tcpip.html`, `nav/tcpip-interfaces.html`, `nav/tcpip-routes.html`, `nav/servers.html` | the tree's Network group gains NetServer after Servers (`tests/common` applies it to every page) | NetServer came after the prototype |
 | `nav/run-sql.html` | `SQL0100`'s text → the message file's (`No row was found for FETCH.`); Download as CSV `#` → `?csv=1` | the prototype quoted another vendor's message text; the link went nowhere |
 | `nav/table-columns.html` | Generate SQL (DDL) `#` → `/ddl` | the link went nowhere |
 | `nav/table-data.html` | the list is the table's first 25 rows, all 12 columns; `12 rows returned` → `412 rows returned`; CSV `#` → `?csv=1` | the prototype pasted Run SQL's 8-column, 12-row result under `SELECT *` of a 412-row table paged 25 at a time |
@@ -363,3 +410,4 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 25, 26 | Database | done (golden-clean; live `Db` pending) |
 | 27-29 | Security, software | done (golden-clean; live `Security`, `Software` pending) |
 | 30 | Performance | done (golden-clean; live `Perf` pending) |
+| 31 | NetServer | done (approved pages; live) |

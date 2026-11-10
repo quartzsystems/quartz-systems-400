@@ -27,12 +27,20 @@ pub const NO_MANAGE: &str = "TCP1A5D";
 /// The message when an exit program refuses a request.
 pub const EXIT_REFUSED: &str = "TCP1A5E";
 
+/// The server name `Manage` requests carry.
+pub const SERVER_MANAGE: &str = "*QAPMGMT";
+
 /// A request as the exit program sees it (`QAPX0100`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ExitRequest {
     /// The signed-on profile.
     pub user: String,
-    /// The operation's code within `Manage` (1 to 10).
+    /// The server field: [`SERVER_MANAGE`], or
+    /// `crate::netserver::SERVER` for the `NetServer` service; empty is
+    /// [`SERVER_MANAGE`].
+    pub server: String,
+    /// The operation's code within its service (`Manage` 1 to 10,
+    /// `NetServer` 1 to 13).
     pub op: u16,
     /// The operation's name (`EndSubsystem`).
     pub name: String,
@@ -52,13 +60,18 @@ fn char_field(s: &str, n: usize) -> Vec<u8> {
 
 impl ExitRequest {
     /// The `QAPX0100` layout: user CHAR(10), server CHAR(10)
-    /// `*QAPMGMT`, format CHAR(8), operation BINARY(4), operation name
+    /// (`*QAPMGMT`, `*QAPNETSVR`), format CHAR(8), operation BINARY(4), operation name
     /// CHAR(20), target CHAR(64), detail length BINARY(4), detail
     /// CHAR(*). Big-endian, CP037.
     #[must_use]
     pub fn format(&self) -> Vec<u8> {
         let mut b = char_field(&self.user, 10);
-        b.extend(char_field("*QAPMGMT", 10));
+        let server = if self.server.is_empty() {
+            SERVER_MANAGE
+        } else {
+            &self.server
+        };
+        b.extend(char_field(server, 10));
         b.extend(char_field(EXIT_FORMAT, 8));
         b.extend(u32::from(self.op).to_be_bytes());
         b.extend(char_field(&self.name, 20));
@@ -143,6 +156,7 @@ fn exit_request(user: &str, op: Op, req: &Envelope) -> Option<ExitRequest> {
     let (_, code) = op.code();
     Some(ExitRequest {
         user: user.to_string(),
+        server: SERVER_MANAGE.to_string(),
         op: code,
         name: format!("{op:?}"),
         target,
@@ -151,7 +165,7 @@ fn exit_request(user: &str, op: Op, req: &Envelope) -> Option<ExitRequest> {
 }
 
 /// A part of a list: `start` 0-based, `max` 0 for all.
-fn page<T>(all: Vec<T>, start: u32, max: u32) -> (u32, Vec<T>) {
+pub(crate) fn page<T>(all: Vec<T>, start: u32, max: u32) -> (u32, Vec<T>) {
     let total = u32::try_from(all.len()).unwrap_or(u32::MAX);
     let start = usize::try_from(start).unwrap_or(usize::MAX);
     let it = all.into_iter().skip(start);
@@ -228,6 +242,7 @@ mod tests {
     fn the_exit_layout() {
         let r = ExitRequest {
             user: "BOB".into(),
+            server: String::new(),
             op: 3,
             name: "EndSubsystem".into(),
             target: "QSYS/QBATCH".into(),

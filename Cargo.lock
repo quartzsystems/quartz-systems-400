@@ -2816,6 +2816,7 @@ dependencies = [
  "ifs",
  "ifscmd",
  "ipc",
+ "netsvrcfg",
  "qap-proto",
  "qdecimal",
  "sec",

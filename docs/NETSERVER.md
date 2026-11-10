@@ -158,8 +158,15 @@ defaults are the primary's (`zlsl/olst-ZLSL0201-ALL.txt`).
 | SMB2 minimum dialect | 2.0.2 | (QS/400 only) | 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1 |
 | Log sign-on messages | no | (QS/400 only) | `CPIB691` to `QSYSOPR` |
 
-The QS/400-only attributes have no API yet; Navigator and the file set
-them. Autostart is the server table's (`*NETSVR`).
+The QS/400-only attributes have QS/400's own formats of the IBM APIs:
+`QZLSCHSI` format `QSLS0100` makes new values pending (allow NetBIOS
+CHAR(1), the minimum dialect CHAR(8), log sign-on messages CHAR(1);
+`*IOSYSCFG`; length 10, else `CPFB68D`; a value not `0`/`1` or not a
+dialect `CPFB68B`), and `QZLSOLST`/`QZLSLSTI` format `QSLL0100` lists
+them (one 20-byte record: allow NetBIOS current and pending, the dialect
+current and pending, log sign-on current and pending;
+`netsvrcfg::fmt::qsl`). Navigator and QAP set them through these.
+Autostart is the server table's (`*NETSVR`).
 
 ### Shares
 
@@ -267,6 +274,36 @@ counted as errors). Only jobs named `QZLSSERVER` or `QZLSFILE` may
 change it; any job may `List` and ask `Ending` (whether `QZLSENSS`
 marked a session to end, which the serving job then ends and
 unregisters).
+
+### Navigator and QAP
+
+Both administer NetServer only through the `QZLS*` APIs, as a program
+calling them does (`net/netsvrcfg/src/client/`): every list is a
+`QZLSOLST` (`ZLSL0101` shares, `ZLSL0201` and `QSLL0100` attributes,
+`ZLSL0900` disabled users), every change the API that makes it, called
+through the storage service's `netsvr_api` (1510) as the signed-on
+profile. So authority (`*IOSYSCFG`, or owning the directory or output
+queue shared; `*SECADM` for the guest; `*OBJMGT` and `*USE` to enable a
+profile), validation and the refusal's message are the APIs' own,
+byte for byte. Besides the APIs they read only the session table
+(`netsvr` 1511 `List`, which any job may ask), the disabled users with
+their time (`netsvr_disabled_users`, 1503) and whether `QZLSSERVER` is
+active in `QSERVER` (the active job table, as the APIs count it). The
+job side of both is `work/qsjob/src/work/nsadmin.rs`.
+
+| | Navigator (`net/navigator`, docs/NAVIGATOR.md "NetServer") | QAP (`net/qapd`, docs/QAP.md "Service 12") |
+|---|---|---|
+| Where | Network > NetServer: `/netsvr` (status, Start, Start and apply pending values, End, the attributes current and pending), `/netsvr/shares`, `/netsvr/prtshr` (list, add, properties, remove), `/netsvr/sessions` (connections and open files, end), `/netsvr/disabled` (enable) | service 12 `NetServer`, protocol version 10 (draft): `ListShares`, `GetShare`, `AddShare`, `ChangeShare`, `RemoveShare`, `ListSessions`, `EndSession`, `GetServerAttributes`, `ChangeServerAttributes`, `ListDisabledUsers`, `EnableUser`, `StartServer`, `EndServer` |
+| Live | the `NAVIGATOR` job (`work/qsjob/src/work/httpnav/netsvr.rs`), swapped to the signed-on user | the connection job's threads (`work/qsjob/src/work/qap/netserver.rs`), as the signed-on profile; every request passes `QS400_QAP_MGMT` (server `*QAPNETSVR`) |
+| Refusals | `CPFB684`, `CPDB680`: the Not authorized page and an `AF` entry; other messages on the page, typed values kept | `NotAuthorized`, `NotFound` (`CPFB68A` 2, `CPFB68E` 1 or 5), `Exists` (`CPFB68A` 1), else `Error`, with the API's message |
+| Tests | `net/navigator/tests/netsvr.rs` (approved pages `tests/golden/nav/netsvr*.html`, every action), the crawler; the fixture is the APIs over `netsvrcfg::api::MemHost` | `net/qapd/tests/netserver.rs`, `work/qap-proto/tests/version10.rs`; the test system is the APIs over `MemHost` |
+
+Attribute changes send only the APIs whose fields changed (`QZLSCHSN`
+for names, text and allow system name, `QZLSCHSG` for the guest,
+`ZLSS0100` for the rest of IBM's, `QSLS0100` for QS/400's), so a user
+with `*IOSYSCFG` but not `*SECADM` can change everything but the guest.
+Start, end and ending a session answer `CPFB680` until the
+`QZLSSERVER` job's server control lands (section "APIs").
 
 ## 5. Security
 
@@ -784,6 +821,7 @@ API's name (10).
 | `QZLSENSS` | workstation 15 (a name, `*SESSID`), errc; optional session identifier 8 | `*IOSYSCFG` | `CPFB68E` 1 no session, 2 not active, 4 identifier without `*SESSID`, 5 no such identifier, 6 `*EXPANDED` (the prototype has no expanded name parameter) |
 | `QZLSLSTI` | qualified user space 20, format, qualifier 15, errc; optional session user 10, session identifier 8 | none | `CPFB68F` 1 format, 3 user space, 7 qualifier, 9 `*SESSID` rules, 10 `ZLSL0900` needs a blank qualifier, 11 `*EXPANDED` |
 | `QZLSOLST` | receiver, length, list information 64, format, qualifier, errc; optional session user, session identifier | none | `CPFB688` 1 format, 2 `QZLSLSTI`'s refusal; `CPFB68D` negative length |
+| `QZLSCHSI` `QSLS0100`, `QZLSOLST`/`QZLSLSTI` `QSLL0100` (QS/400) | as `ZLSS0100` and `ZLSL0201` | `*IOSYSCFG` to change; none to list | `CPFB68D` length not 10; `CPFB68B` a flag not `0`/`1` or an unknown dialect |
 
 Qualifiers, as the primary takes them: `ZLSL0100`, `ZLSL0101`,
 `ZLSL0800` a share name, `*ALL` or blanks (a missing share is an empty

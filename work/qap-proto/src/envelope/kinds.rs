@@ -55,7 +55,7 @@ pub enum Service {
     Jobs,
     /// The source debugger (version 9, draft).
     Debug,
-    /// `NetServer`: shares, sessions, attributes (version 9, draft).
+    /// `NetServer`: shares, sessions, attributes (version 10, draft).
     NetServer,
 }
 
@@ -105,7 +105,8 @@ impl Service {
             Service::Messages => 6,
             Service::Manage => 7,
             Service::Develop | Service::Jobs => 8,
-            Service::Debug | Service::NetServer => 9,
+            Service::Debug => 9,
+            Service::NetServer => 10,
         }
     }
 

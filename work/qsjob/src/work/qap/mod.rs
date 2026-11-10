@@ -16,4 +16,5 @@ pub mod jobs;
 pub mod listener;
 pub mod manage;
 pub mod messages;
+pub mod netserver;
 pub mod sql;

@@ -392,7 +392,7 @@ impl JobThread {
     }
 
     /// The thread's link, for one call.
-    fn link(&self) -> RefMut<'_, Link> {
+    pub(super) fn link(&self) -> RefMut<'_, Link> {
         self.shared.borrow_mut()
     }
 
@@ -731,6 +731,10 @@ impl ThreadHost for JobThread {
 
     fn debugger(&mut self) -> Option<&mut dyn qapd::debug::DebugHost> {
         Some(&mut self.debug)
+    }
+
+    fn netserver(&mut self) -> Option<&mut dyn qapd::netserver::NetServerHost> {
+        Some(self)
     }
 
     fn power_down(&mut self, req: &PowerDown) -> Result<(), Refusal> {

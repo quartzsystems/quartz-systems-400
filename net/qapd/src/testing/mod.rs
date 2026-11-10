@@ -53,6 +53,8 @@
 //!   source and variables, stops in the connection job's `CALL` and in
 //!   display sessions' jobs ([`System::interactive_job`],
 //!   [`System::call_in`]);
+//! - `NetServer` ([`netserver`], version 10, draft): the `QZLS*` APIs over
+//!   shares, two sessions and a disabled user, as the signed-on profile;
 //! - the ends a client must meet: the server ending ([`System::end`]:
 //!   every connection gets `ServerEnding` and the [`Listener`] refuses
 //!   connects until [`System::restart`]), an operator ending one job, a
@@ -70,6 +72,7 @@ pub mod jobs;
 mod listen;
 pub mod manage;
 pub mod messages;
+pub mod netserver;
 pub mod spool;
 pub mod sql;
 
@@ -201,6 +204,9 @@ pub struct System {
     pub jobs: Mutex<jobs::Jobs>,
     /// The debugger's sessions, service entry points and other jobs.
     pub debug: debug::Debugs,
+    /// `NetServer`'s configuration, sessions and disabled users
+    /// ([`netserver`]).
+    pub netsvr: Mutex<netserver::NetServer>,
     /// The commands running, by job, while they run.
     running: Mutex<HashMap<u32, String>>,
     started: Condvar,
@@ -268,6 +274,7 @@ impl System {
             develop: Mutex::new(develop::Develop::shipped()),
             jobs: Mutex::new(jobs::Jobs::shipped()),
             debug: debug::Debugs::default(),
+            netsvr: Mutex::new(netserver::shipped()),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
             sockets: Mutex::new(HashMap::new()),

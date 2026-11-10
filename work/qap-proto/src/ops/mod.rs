@@ -207,31 +207,31 @@ pub enum Op {
     SetServiceEntry,
     /// `Debug` 10: remove a service entry point (version 9).
     RemoveServiceEntry,
-    /// `NetServer` 1: shares, filtered (version 9).
+    /// `NetServer` 1: shares, filtered (version 10).
     ListShares,
-    /// `NetServer` 2: one share (version 9).
+    /// `NetServer` 2: one share (version 10).
     GetShare,
-    /// `NetServer` 3: add a share (version 9).
+    /// `NetServer` 3: add a share (version 10).
     AddShare,
-    /// `NetServer` 4: change a share (version 9).
+    /// `NetServer` 4: change a share (version 10).
     ChangeShare,
-    /// `NetServer` 5: remove a share (version 9).
+    /// `NetServer` 5: remove a share (version 10).
     RemoveShare,
-    /// `NetServer` 6: sessions and their connections (version 9).
+    /// `NetServer` 6: sessions and their connections (version 10).
     ListSessions,
-    /// `NetServer` 7: end a session (version 9).
+    /// `NetServer` 7: end a session (version 10).
     EndSession,
-    /// `NetServer` 8: the attributes, current and pending (version 9).
+    /// `NetServer` 8: the attributes, current and pending (version 10).
     GetServerAttributes,
-    /// `NetServer` 9: make attributes pending (version 9).
+    /// `NetServer` 9: make attributes pending (version 10).
     ChangeServerAttributes,
-    /// `NetServer` 10: users disabled for `NetServer` (version 9).
+    /// `NetServer` 10: users disabled for `NetServer` (version 10).
     ListDisabledUsers,
-    /// `NetServer` 11: enable a user for `NetServer` again (version 9).
+    /// `NetServer` 11: enable a user for `NetServer` again (version 10).
     EnableUser,
-    /// `NetServer` 12: start `NetServer` (version 9).
+    /// `NetServer` 12: start `NetServer` (version 10).
     StartServer,
-    /// `NetServer` 13: end `NetServer` (version 9).
+    /// `NetServer` 13: end `NetServer` (version 10).
     EndServer,
 }
 
@@ -551,8 +551,8 @@ impl Op {
             | Op::Variables
             | Op::Eval
             | Op::SetServiceEntry
-            | Op::RemoveServiceEntry
-            | Op::ListShares
+            | Op::RemoveServiceEntry => 9,
+            Op::ListShares
             | Op::GetShare
             | Op::AddShare
             | Op::ChangeShare
@@ -564,7 +564,7 @@ impl Op {
             | Op::ListDisabledUsers
             | Op::EnableUser
             | Op::StartServer
-            | Op::EndServer => 9,
+            | Op::EndServer => 10,
         }
     }
 

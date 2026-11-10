@@ -2,9 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The Quartz Access Protocol, versions 1 to 9 (docs/QAP.md; versions 7
-//! to 9, `Manage`, `Develop`, `Jobs` and `Debug`, are drafts until they
-//! ship): how QS/400
+//! The Quartz Access Protocol, versions 1 to 10 (docs/QAP.md; versions 7
+//! to 10, `Manage`, `Develop`, `Jobs`, `Debug` and `NetServer`, are
+//! drafts until they ship): how QS/400
 //! Access talks to QS/400. Every frame is one Wire-encoded [`Envelope`]
 //! in an `ipc` length-prefixed frame of at most [`MAX_FRAME`] bytes.
 //!
@@ -38,7 +38,7 @@ use std::time::Duration;
 
 /// The newest protocol version this crate speaks; the server accepts 1
 /// to it.
-pub const VERSION: u16 = 9;
+pub const VERSION: u16 = 10;
 /// The oldest.
 pub const MIN_VERSION: u16 = 1;
 /// The server's port unless configured otherwise.

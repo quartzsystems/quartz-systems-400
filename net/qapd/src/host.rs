@@ -502,6 +502,13 @@ pub trait ThreadHost {
     fn debugger(&mut self) -> Option<&mut dyn crate::debug::DebugHost> {
         None
     }
+
+    /// `NetServer`'s APIs, sessions and disabled users (version 10); `None`
+    /// for a host without them, whose `NetServer` operations answer
+    /// `Error` with [`crate::manage::NO_MANAGE`].
+    fn netserver(&mut self) -> Option<&mut dyn crate::netserver::NetServerHost> {
+        None
+    }
 }
 
 /// The message of a `Messages` operation a host without message queues
