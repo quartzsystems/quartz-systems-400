@@ -10,9 +10,13 @@
 //! for the image target. `Cargo.lock` and `cargo metadata` also list optional
 //! dependencies nobody activates (for example `rustls-webpki`'s `ring`);
 //! those are never downloaded or built.
+//!
+//! Two graphs are checked: the workspace, and `tools/smbtest`, which sits
+//! outside it with its own lockfile (see its `Cargo.toml`).
 
 use std::collections::{HashMap, HashSet};
 use std::env;
+use std::ffi::OsString;
 
 use anyhow::{Context, Result, bail};
 use tracing::info;
@@ -23,21 +27,42 @@ use crate::userland::RUST_TARGET;
 
 const C_BUILDERS: &[&str] = &["cc", "cmake", "bindgen", "pkg-config", "vcpkg"];
 
+/// Crates outside the workspace with their own lockfile, checked the same way.
+const STANDALONE: &[&str] = &["tools/smbtest/Cargo.toml"];
+
 /// `build deny`.
 pub fn deny(ctx: &Ctx) -> Result<()> {
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     if !on_path("cargo-deny") {
         bail!("cargo-deny not installed: cargo install cargo-deny --locked");
     }
-    info!("cargo deny check");
-    Cmd::new(&cargo, "cargo-deny")
+    check_graph(ctx, &cargo, None)?;
+    for manifest in STANDALONE {
+        check_graph(ctx, &cargo, Some(manifest))?;
+    }
+    Ok(())
+}
+
+/// One graph: the workspace (`None`) or a standalone manifest.
+fn check_graph(ctx: &Ctx, cargo: &OsString, manifest: Option<&str>) -> Result<()> {
+    let what = manifest.unwrap_or("workspace");
+    let scope: Vec<&str> = match manifest {
+        Some(m) => vec!["--manifest-path", m],
+        None => vec![],
+    };
+    info!("{what}: cargo deny check");
+    // cargo-deny reads ./deny.toml (the repository's) for every graph.
+    Cmd::new(cargo, "cargo-deny")
         .cwd(&ctx.paths.repo)
-        .args(["deny", "check"])
+        .arg("deny")
+        .args(&scope)
+        .arg("check")
         .run(ctx)?;
 
-    let json = Cmd::new(&cargo, "cargo-metadata")
+    let json = Cmd::new(cargo, "cargo-metadata")
         .cwd(&ctx.paths.repo)
         .args(["metadata", "--format-version", "1", "--locked"])
+        .args(&scope)
         .capture()?;
     let meta: serde_json::Value = serde_json::from_str(&json).context("cargo metadata output")?;
     let links: HashMap<String, String> = meta["packages"]
@@ -56,17 +81,11 @@ pub fn deny(ctx: &Ctx) -> Result<()> {
     let mut platforms = vec![host.as_str(), RUST_TARGET];
     platforms.dedup();
     for platform in platforms {
-        let tree = Cmd::new(&cargo, "cargo-tree")
+        let tree = Cmd::new(cargo, "cargo-tree")
             .cwd(&ctx.paths.repo)
-            .args([
-                "tree",
-                "--workspace",
-                "--locked",
-                "-e",
-                "normal,build",
-                "--prefix",
-                "none",
-            ])
+            .arg("tree")
+            .args(if manifest.is_some() { &scope[..] } else { &["--workspace"][..] })
+            .args(["--locked", "-e", "normal,build", "--prefix", "none"])
             .args(["--format", "{p}", "--target", platform])
             .capture()?;
         let active: HashSet<&str> = tree
@@ -86,12 +105,12 @@ pub fn deny(ctx: &Ctx) -> Result<()> {
         if !offenders.is_empty() {
             offenders.sort();
             bail!(
-                "{platform}: C-linking crates in the compiled graph:\n  {}",
+                "{what}, {platform}: C-linking crates in the compiled graph:\n  {}",
                 offenders.join("\n  ")
             );
         }
         info!(
-            "{platform}: {} crates compiled, no links keys, no C build helpers",
+            "{what}, {platform}: {} crates compiled, no links keys, no C build helpers",
             active.len()
         );
     }
