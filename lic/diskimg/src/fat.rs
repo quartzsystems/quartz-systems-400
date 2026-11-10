@@ -46,13 +46,21 @@ pub const MEDIA_ESP: Spec = Spec {
 };
 
 /// The ISO boot image for a UKI of `payload` bytes: [`MEDIA_ESP`] while
-/// the UKI fits, else grown in whole MiB with 2 MiB to spare (FAT16 at
+/// the UKI fits, then the whole 65 535 sectors El Torito can name while
+/// the UKI leaves half a MiB, else grown in whole MiB with 2 MiB to spare (FAT16 at
 /// 4 KiB clusters holds up to 255 MiB). Past 32 MiB the boot catalog
 /// cannot give the size, and firmware reads the volume's own.
 #[must_use]
 pub fn media_esp(payload: u64) -> Spec {
     const MIB: u64 = 1024 * 1024;
-    let need = (payload + 2 * MIB).div_ceil(MIB) * MIB;
+    /// The largest image El Torito's sector count gives.
+    const EL_TORITO: u64 = 65_535 * 512;
+    let mut need = (payload + 2 * MIB).div_ceil(MIB) * MIB;
+    // Just past 31 MiB the whole El Torito image still holds the UKI with
+    // half a MiB for the FATs and the directories.
+    if need > EL_TORITO && payload + MIB / 2 <= EL_TORITO {
+        need = EL_TORITO;
+    }
     Spec {
         bytes: need.max(MEDIA_ESP.bytes),
         ..MEDIA_ESP
@@ -230,6 +238,9 @@ mod tests {
         .unwrap();
         assert_eq!(&img[54..59], b"FAT16");
         assert_eq!(media_esp(1).bytes, MEDIA_ESP.bytes);
+        let edge = media_esp(30_622_720);
+        assert_eq!(edge.bytes, 65_535 * 512);
+        build(&edge, &[("EFI/BOOT/BOOTX64.EFI", &vec![7u8; 30_622_720])]).expect("fits");
         assert_eq!(
             build(&MEDIA_ESP, &[]).unwrap(),
             build(&MEDIA_ESP, &[]).unwrap()
