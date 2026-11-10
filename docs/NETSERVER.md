@@ -721,6 +721,11 @@ number):
 6. The lease calls are refused (`EPERM`) to any job but `QZLSFILE`. A
    job's leases and orders go when its connection to the service closes
    (`Ifs::release_owner`), and whatever waited on them goes on.
+   A `QZLSFILE` job serves one client after another, each with a
+   `NetServer` of its own; one that ends resets the job's leases and
+   watches in the table (`IfsClient::lease_reset`) and waits for its
+   poll to return, so no news for the next client's server reaches the
+   ended one.
 
 A job that waits for another job's break holds its own IFS calls (one IFS
 thread per job), so two jobs whose clients break each other's leases at
@@ -1242,9 +1247,10 @@ service's slow requests in the step's detail (168 makes the user and
 share itself when 167 has not, so `--only 166,168` runs); 169 port 445 in
 `NETSTAT *CNN` and in `QSYS2.NETSTAT_INFO`, a maximum of one user through
 `QZLSCHFS` seen in `QSYS2.SERVER_SHARE_INFO` and with a scenario run
-under it, then `ENDTCPSVR`, `QZLSSTRS`, `QZLSENDS` and `STRTCPSVR`, each
-seen in `WRKACTJOB`. `QS400_NETSVR_ONLY` limits 167 to the scenarios it
-names. The `QSYS2` services that read the system answered `SQL0443` at
+under it once every `QZLSFILE` job is back in its pool (the previous
+step's client counts as a user until its job is released), then `ENDTCPSVR`, `QZLSSTRS`, `QZLSENDS` and `STRTCPSVR`, each
+seen in `WRKACTJOB`. 167 runs every scenario; `QS400_NETSVR_ONLY`, when
+set, limits it to the scenarios it names. The `QSYS2` services that read the system answered `SQL0443` at
 `STRSQL` and at the console's `svc.sql` since V1R1M0 (not a regression:
 their host reaches the system only while a statement takes turns on a
 fiber, and only jobs' embedded statements did); STRSQL's and the
