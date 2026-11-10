@@ -23,6 +23,7 @@ pub mod lpd;
 pub mod menu;
 pub mod monitor;
 pub mod netsvc;
+pub mod nsadmin;
 pub mod ntp;
 pub mod pwdpgm;
 pub mod qap;

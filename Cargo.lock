@@ -2933,6 +2933,7 @@ dependencies = [
  "mi",
  "msgf",
  "navigator",
+ "netsvrcfg",
  "nettools",
  "ntp",
  "p256",
