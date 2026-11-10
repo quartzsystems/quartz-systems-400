@@ -795,6 +795,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | Every other `spoolss` operation (`RpcAddJob`, `RpcReadPrinter`, `RpcEnumPrinterDrivers`, `RpcGetPrinterDriverDirectory`, ports and monitors lists, ICs, `RpcFlushPrinter`, bidi, `RpcGetCorePrinterDrivers`, `RpcGetPrinterDriverPackagePath`, named job properties, IPP, branch office) | not needed to connect a printer and print | a fault `nca_op_rng_error` (`RPC_S_PROCNUM_OUT_OF_RANGE`); Windows falls back from the package-aware calls |
 | Data types other than `RAW` (EMF, XPS, TEXT) | the output queue takes the printer's own data | `ERROR_INVALID_DATATYPE`; printers are `PRINTER_ATTRIBUTE_RAW_ONLY` |
 | A document's output file | the job goes to the output queue | `ERROR_INVALID_PARAMETER` |
+| Writing to `print$` | drivers are put in the driver store with an IFS copy by an administrator | `STATUS_ACCESS_DENIED` (a read-only share) |
 | `,Job n`, `,XcvPort`, `,XcvMonitor` printer names | jobs are not opened by handle; ports and monitors are administration | `ERROR_INVALID_PRINTER_NAME` |
 | Resilient handles (`FSCTL_LMR_REQUEST_RESILIENCY`), persistent handles | the library has none | `STATUS_NOT_SUPPORTED`; the PERSISTENT flag of a DH2Q is ignored and the open is durable only |
 | Compression, RDMA | the library has none | not offered in NEGOTIATE |
