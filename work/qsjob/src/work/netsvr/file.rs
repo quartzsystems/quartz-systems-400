@@ -123,6 +123,18 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
     if let Err(e) = ns.start_leases(orders) {
         eprintln!("qsjob: QZLSFILE: leases across jobs not started: {e}");
     }
+    // The client's other connections come here from the start, not only
+    // once the first report runs: change notify, share modes and leases
+    // then see all of them in one job.
+    if let Some(g) = netserver::route::client_guid(&stream, Duration::from_secs(2)) {
+        link.borrow_mut().with(|l| {
+            l.netsvr(NsOp::Route {
+                relay: me.to_vec(),
+                guids: vec![g.to_vec()],
+                peers: Vec::new(),
+            })
+        });
+    }
     let ns = Arc::new(ns);
     let released = Arc::new(AtomicBool::new(false));
     {
