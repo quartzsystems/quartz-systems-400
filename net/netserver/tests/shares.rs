@@ -861,3 +861,67 @@ async fn a_tree_watch_hears_other_jobs_changes_below() {
     assert_eq!(notified(&mut c, mid).await, [(ADDED, r"sub\deep".to_owned())]);
     me.release();
 }
+
+/// One user per share, counted across every job (the service's table).
+struct OnePerShare(Arc<Mutex<Vec<String>>>);
+
+impl netserver::TreeAdmission for OnePerShare {
+    fn admit(&self, req: &netserver::TreeRequest<'_>) -> bool {
+        let mut taken = self.0.lock().unwrap();
+        if req.share.eq_ignore_ascii_case("IPC$") || !taken.iter().any(|s| s.eq_ignore_ascii_case(req.share)) {
+            taken.push(req.share.to_owned());
+            true
+        } else {
+            false
+        }
+    }
+}
+
+fn admitted_job(fs: &Arc<Fs>, user: &str, taken: &Arc<Mutex<Vec<String>>>) -> Job {
+    let f = fs.clone();
+    let u = user.to_owned();
+    let server = NetServer::build_admitted(
+        &config(),
+        Box::new(move || Box::new(f.client(&u)) as Box<dyn IfsClient>),
+        Arc::new(Profiles),
+        &(Arc::new(Spool(Arc::default())) as Arc<dyn Printer>),
+        Some(Arc::new(OnePerShare(taken.clone()))),
+    )
+    .unwrap();
+    let server = Arc::new(server);
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let s = server.clone();
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let Ok(stream) = stream else { break };
+            let s = s.clone();
+            std::thread::spawn(move || {
+                let _ = s.serve_one(stream);
+            });
+        }
+    });
+    Job { server, addr, printed: Arc::default() }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_share_s_maximum_users_hold_across_jobs_and_sessions_end() {
+    let fs = Fs::new();
+    let taken: Arc<Mutex<Vec<String>>> = Arc::default();
+    let one = admitted_job(&fs, "ALICE", &taken);
+    let two = admitted_job(&fs, "ALICE", &taken);
+    let _c = alice(one.addr, "HOME").await;
+    let mut s = TcpStream::connect(two.addr).await.unwrap();
+    negotiate_dialects_from(&mut s, &[0x0210], [3; 16]).await;
+    let l = login_with(&mut s, 1, 0, "alice", "password", LoginOptions::default()).await;
+    assert_eq!(l.status, STATUS_SUCCESS);
+    let r = request(&mut s, Command::TreeConnect, 3, l.session_id, 0, &tree_connect_body(r"\\QSTEST\HOME")).await;
+    assert_eq!(status(&r), STATUS_REQUEST_NOT_ACCEPTED);
+    // The first job's view, and QZLSENSS's end of its session.
+    let view = one.server.sessions();
+    assert_eq!(view.len(), 1);
+    assert_eq!(view[0].user, "ALICE");
+    assert_eq!(view[0].trees.iter().map(|t| t.share.as_str()).collect::<Vec<_>>(), ["HOME"]);
+    assert!(one.server.end_session(view[0].session_id));
+    assert!(one.server.sessions().is_empty());
+}
