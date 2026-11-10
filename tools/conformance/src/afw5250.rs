@@ -338,7 +338,9 @@ impl Suite {
         f.push(("ok", "OK"));
         let changed = post(port, "/5250/2/properties", "/5250/2/properties", &sid, &f)?;
         want(&changed, 303, &[], "TLS off in Properties")?;
-        let _ = afw(port, "GET", "/5250/session/2", Some(&sid), None)?;
+        // A session disconnected stays so until Connect: its last
+        // screen (the Main Menu) is not the new connection's.
+        let _ = afw(port, "GET", "/5250/session/2?connect", Some(&sid), None)?;
         screen_until(port, &sid, 2, 30, |t| t.contains("Sign On"))
             .map_err(|e| format!("the session after TLS off, same device: {e}"))?;
         let off = post(
@@ -395,7 +397,7 @@ impl Suite {
             .trim()
             .to_string();
         Ok(format!(
-            "{USER} signed on to Access for Web over 2003 (host {port}); session Step 154 saved, downloaded as .qsd and started: the ACCESSWEB job's TN5250E client drew {system}'s \"{shown}\" (screen.png, the WebSocket's first screen); {USER} signed on through the page's Paste, Field Exit and Enter and reached the Main Menu; Print Screen a PDF; Disconnect (QAD1006), Delete (XWA0011); the instance ended"
+            "{USER} signed on to Access for Web over 2003 (host {port}); session Step 154 saved, downloaded as .qsd and started: the ACCESSWEB job's TN5250E client drew {system}'s \"{shown}\" (screen.png, the WebSocket's first screen); {USER} signed on through the page's Paste, Field Exit and Enter and reached the Main Menu; Print Screen a PDF; Disconnect (QAD1006); a TLS session signed on automatically (a QAP ticket) to the Main Menu, then Connect on the same device without TLS drew Sign On; Delete (XWA0011); the instance ended"
         ))
     }
 }
