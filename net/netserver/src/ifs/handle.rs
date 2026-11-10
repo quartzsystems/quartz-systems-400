@@ -49,9 +49,20 @@ pub struct IfsHandle {
     pub(super) xlate: Option<Arc<Xlate>>,
 }
 
-/// Where the object is now: by file ID, else by the path opened.
+/// Where the object is now: the path opened while it still names the
+/// object (one `stat`), else found by file ID (a walk of its file
+/// system, only after a rename), else the path opened.
 pub(super) fn locate(c: &dyn IfsClient, id: Option<FileId>, path: &str) -> String {
-    id.and_then(|id| c.path_from_file_id(id).ok()).unwrap_or_else(|| path.to_owned())
+    let Some(id) = id else {
+        return path.to_owned();
+    };
+    let same = |st: &ifs::ops::Stat| {
+        st.ino == id.ino && st.dev == id.fs && (id.generation == 0 || st.ino_gen == id.generation)
+    };
+    if c.stat(path, false).is_ok_and(|st| same(&st)) {
+        return path.to_owned();
+    }
+    c.path_from_file_id(id).unwrap_or_else(|_| path.to_owned())
 }
 
 /// The last component of `path`, or empty for the share root.
