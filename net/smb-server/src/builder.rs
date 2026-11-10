@@ -395,6 +395,8 @@ pub struct SmbServerBuilder {
     comment: String,
     print_service: Option<crate::print::PrintServiceRef>,
     lease_observer: Option<crate::outside::ObserverRef>,
+    /// QS/400: admits tree connects.
+    admission: Option<crate::admission::AdmissionRef>,
     #[cfg(feature = "discovery")]
     discovery: Option<crate::discovery::Discovery>,
 }
@@ -430,6 +432,7 @@ impl SmbServerBuilder {
             comment: String::new(),
             print_service: None,
             lease_observer: None,
+            admission: None,
             #[cfg(feature = "discovery")]
             discovery: None,
         }
@@ -492,6 +495,14 @@ impl SmbServerBuilder {
     /// Without it the pipe does not exist.
     pub fn print_service(mut self, service: impl crate::print::PrintService) -> Self {
         self.print_service = Some(crate::print::PrintServiceRef(Arc::new(service)));
+        self
+    }
+
+    /// QS/400: asks `admission` before every tree connect (after the
+    /// share's own checks); a refusal is STATUS_REQUEST_NOT_ACCEPTED (see
+    /// `QS400-PATCHES.md`).
+    pub fn tree_admission(mut self, admission: impl crate::admission::TreeAdmission) -> Self {
+        self.admission = Some(crate::admission::AdmissionRef(Arc::new(admission)));
         self
     }
 
@@ -868,6 +879,7 @@ impl SmbServerBuilder {
             comment: self.comment,
             print_service: self.print_service,
             lease_observer: self.lease_observer,
+            admission: self.admission,
             #[cfg(feature = "discovery")]
             discovery,
         };

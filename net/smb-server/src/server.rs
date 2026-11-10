@@ -188,6 +188,17 @@ impl ShareBindings {
         })
     }
 
+    /// QS/400: the share type TREE_CONNECT answers: 1 disk, 2 pipe, 3 print.
+    pub(crate) fn share_type(&self) -> u8 {
+        if self.is_ipc {
+            2
+        } else if self.is_print {
+            3
+        } else {
+            1
+        }
+    }
+
     /// Synthetic IPC$ share, whose opens are named pipes.
     pub fn ipc() -> Arc<Self> {
         Self::new(
@@ -234,6 +245,8 @@ pub struct ServerConfig {
     pub(crate) print_service: Option<crate::print::PrintServiceRef>,
     /// QS/400: hears of every change to the leases on a file.
     pub(crate) lease_observer: Option<crate::outside::ObserverRef>,
+    /// QS/400: admits tree connects.
+    pub(crate) admission: Option<crate::admission::AdmissionRef>,
     /// The server is announced on the local network while it serves.
     #[cfg(feature = "discovery")]
     pub(crate) discovery: Option<crate::discovery::Settings>,
@@ -984,6 +997,68 @@ impl SmbServer {
         }
         close_opens(self.state.durable.take_for(None, None)).await;
         self.state.durable.closed().await;
+    }
+
+    /// QS/400: every session of the connections being served, with its
+    /// tree connects and how many files each has open.
+    pub async fn sessions(&self) -> Vec<crate::admission::SessionView> {
+        use crate::admission::{SessionView, TreeView};
+        let mut out = Vec::new();
+        for conn in self.state.active_connections.live().await {
+            let sessions: Vec<_> = conn
+                .sessions
+                .read()
+                .await
+                .iter()
+                .map(|(id, s)| (*id, Arc::clone(s)))
+                .collect();
+            for (session_id, sess_arc) in sessions {
+                let sess = sess_arc.read().await;
+                let user = match &sess.identity {
+                    crate::proto::auth::ntlm::Identity::User { user, .. } => user.clone(),
+                    crate::proto::auth::ntlm::Identity::Anonymous => String::new(),
+                };
+                let mut trees = Vec::new();
+                for tree_arc in sess.trees.read().await.values() {
+                    let tree = tree_arc.read().await;
+                    let pipes = tree
+                        .pipes
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .len();
+                    let opens = tree.opens.read().await.len() + pipes;
+                    trees.push(TreeView {
+                        tree_id: tree.id,
+                        share: tree.share.name.clone(),
+                        kind: tree.share.share_type(),
+                        opens: u32::try_from(opens).unwrap_or(u32::MAX),
+                    });
+                }
+                trees.sort_by_key(|t| t.tree_id);
+                out.push(SessionView {
+                    peer: conn.peer_addr,
+                    session_id,
+                    user,
+                    guest: sess.keyless,
+                    trees,
+                });
+            }
+        }
+        out.sort_by_key(|s| s.session_id);
+        out
+    }
+
+    /// QS/400: ends session `session_id` on whichever connection holds it:
+    /// its trees and opens close, durable ones included; the client's next
+    /// request on it gets STATUS_USER_SESSION_DELETED. False when no
+    /// connection has it.
+    pub async fn end_session(&self, session_id: u64) -> bool {
+        for conn in self.state.active_connections.live().await {
+            if conn.close_session(session_id, None).await {
+                return true;
+            }
+        }
+        false
     }
 
     #[cfg(any(test, fuzzing, feature = "fuzzing"))]

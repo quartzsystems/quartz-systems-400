@@ -112,6 +112,26 @@ pub async fn handle(
 
     let tc = TreeConnect::new(sess.alloc_tree_id(), share.clone(), granted);
     let tree_id = tc.id;
+    // QS/400: the application admits the tree (a share's maximum users).
+    if let Some(admission) = &server.config.admission {
+        let user = match &caller.identity {
+            crate::proto::auth::ntlm::Identity::User { user, .. } => user.as_str(),
+            crate::proto::auth::ntlm::Identity::Anonymous => "",
+        };
+        let req = crate::admission::TreeRequest {
+            peer: conn.peer_addr,
+            session_id: hdr.session_id,
+            user,
+            guest: sess.keyless,
+            share: &share.name,
+            kind: share.share_type(),
+            tree_id,
+        };
+        if !admission.0.admit(&req) {
+            warn!(share = %share.name, "TREE_CONNECT not admitted");
+            return HandlerResponse::err(ntstatus::STATUS_REQUEST_NOT_ACCEPTED);
+        }
+    }
     trees.insert(tree_id, Arc::new(tokio::sync::RwLock::new(tc)));
     drop(trees);
     drop(sess);

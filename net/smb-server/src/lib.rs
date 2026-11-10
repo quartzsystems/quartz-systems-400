@@ -453,6 +453,8 @@ mod tests {
 }
 pub mod print;
 mod utils;
+// QS/400: tree admission and the sessions' view.
+mod admission;
 mod verifier;
 mod wildcard;
 
@@ -479,6 +481,8 @@ pub use stream::{StreamInfo, StreamName};
 pub use verifier::{Logon, LogonVerifier};
 // QS/400: leases shared with other processes.
 pub use outside::{LeaseKey, LeaseObserver};
+// QS/400: tree admission and the sessions' view.
+pub use admission::{SessionView, TreeAdmission, TreeRequest, TreeView};
 
 pub mod wire {
     pub use crate::proto::header;

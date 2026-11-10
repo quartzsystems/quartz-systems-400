@@ -131,3 +131,52 @@ async fn serve_connection_serves_one_handed_over_socket() {
     drop(s);
     task.await.unwrap().unwrap();
 }
+
+/// QS/400: admits `data` once; records what it was asked.
+struct OnceOnly(std::sync::Arc<std::sync::Mutex<Vec<(String, String, u8)>>>);
+
+impl smb_server::TreeAdmission for OnceOnly {
+    fn admit(&self, req: &smb_server::TreeRequest<'_>) -> bool {
+        let mut seen = self.0.lock().unwrap();
+        let first = !seen.iter().any(|(_, s, _)| s == req.share);
+        seen.push((req.user.to_owned(), req.share.to_owned(), req.kind));
+        first
+    }
+}
+
+#[tokio::test]
+async fn tree_admission_and_the_sessions_view() {
+    use smb_server::ntstatus::STATUS_REQUEST_NOT_ACCEPTED;
+    let td = tempfile::tempdir().unwrap();
+    let seen: std::sync::Arc<std::sync::Mutex<Vec<(String, String, u8)>>> = std::sync::Arc::default();
+    let server = std::sync::Arc::new(
+        builder(&td, Access::ReadWrite)
+            .tree_admission(OnceOnly(seen.clone()))
+            .listen("127.0.0.1:0".parse().unwrap())
+            .build()
+            .unwrap(),
+    );
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr: SocketAddr = listener.local_addr().unwrap();
+    let srv = server.clone();
+    let task = tokio::spawn(async move {
+        let (stream, peer) = listener.accept().await.unwrap();
+        srv.serve_connection(stream, peer).await
+    });
+    let mut s = TcpStream::connect(addr).await.unwrap();
+    negotiate(&mut s).await;
+    let login = spnego_login(&mut s, 1, 0, "qsuser", "secret").await;
+    assert_eq!(tree(&mut s, 3, login.session_id).await, STATUS_SUCCESS);
+    assert_eq!(tree(&mut s, 4, login.session_id).await, STATUS_REQUEST_NOT_ACCEPTED);
+    assert_eq!(seen.lock().unwrap()[0], ("QSUSER".to_owned(), "data".to_owned(), 1));
+    let view = server.sessions().await;
+    assert_eq!(view.len(), 1);
+    assert_eq!(view[0].user, "QSUSER");
+    assert_eq!(view[0].trees.len(), 1);
+    assert_eq!(view[0].trees[0].share, "data");
+    assert!(server.end_session(login.session_id).await);
+    assert!(server.sessions().await.is_empty());
+    assert!(!server.end_session(login.session_id).await);
+    drop(s);
+    task.await.unwrap().unwrap();
+}
