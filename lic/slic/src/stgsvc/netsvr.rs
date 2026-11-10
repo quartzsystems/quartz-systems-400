@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! NetServer in the storage service (`docs/NETSERVER.md` sections 4 and
-//! the APIs): the configuration files `QAZLSCFG` and `QAZLSSHR` under
+//! The SMB file server's side of the storage service
+//! (`docs/NETSERVER.md` section 4 and the APIs): the configuration files `QAZLSCFG` and `QAZLSSHR` under
 //! `/QIBM/UserData/OS400/NetServer/` (made with the shipped `QIBM`
 //! share at first use, owned by `QSYS`, `*PUBLIC *EXCLUDE`), the `QZLS*`
 //! APIs over them (`netsvrcfg::api`), and the session table the
