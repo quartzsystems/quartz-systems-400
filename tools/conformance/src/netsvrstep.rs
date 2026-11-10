@@ -6,8 +6,9 @@
 //! 166 starts `*NETSVR` and finds `QZLSSERVER` (BCH) and `QZLSFILE` (PJ) in
 //! `WRKACTJOB`; 167 makes a user and a share (`QZLSADFS`) and runs every
 //! `smbtest` scenario against the guest's 445 through a port forward; 168
-//! copies 1 GiB in and out and reports MB/s; 169 the listener in `NETSTAT`,
-//! a maximum users through `QZLSCHFS`, and `ENDTCPSVR`, `QZLSSTRS`,
+//! copies 1 GiB in and out and reports MB/s; 169 the listener in `NETSTAT`
+//! and `QSYS2.NETSTAT_INFO`, a maximum users through `QZLSCHFS` seen in
+//! `QSYS2.SERVER_SHARE_INFO`, and `ENDTCPSVR`, `QZLSSTRS`,
 //! `QZLSENDS` and `STRTCPSVR`.
 //!
 //! `tools/smbtest` has its own lockfile outside the workspace, so the steps
@@ -39,7 +40,10 @@ fn job_line(s: &mut Session, name: &str) -> Result<String, String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
-        if let Some(l) = out.lines().find(|l| l.split_whitespace().next() == Some(name)) {
+        if let Some(l) = out
+            .lines()
+            .find(|l| l.split_whitespace().next() == Some(name))
+        {
             return Ok(l.trim().to_string());
         }
         if Instant::now() > end {
@@ -54,12 +58,14 @@ fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
-        if !out.lines().any(|l| l.split_whitespace().next() == Some(name)) {
+        if !out
+            .lines()
+            .any(|l| l.split_whitespace().next() == Some(name))
+        {
             return Ok(());
         }
         if Instant::now() > end {
-            return Err(format!("{name} still active:
-{out}"));
+            return Err(format!("{name} still active:\n{out}"));
         }
         std::thread::sleep(Duration::from_millis(500));
     }
@@ -69,8 +75,7 @@ fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
 fn expect(s: &mut Session, cmd: &str, want: &[&str]) -> Result<String, String> {
     let out = s.command(cmd, CMD)?;
     match want.iter().find(|w| !out.contains(**w)) {
-        Some(w) => Err(format!("{cmd}: no {w:?} in:
-{out}")),
+        Some(w) => Err(format!("{cmd}: no {w:?} in:\n{out}")),
         None => Ok(out),
     }
 }
@@ -96,14 +101,24 @@ fn smbtest_binary() -> Result<PathBuf, String> {
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let st = Command::new(cargo)
         .current_dir(&repo)
-        .args(["build", "--release", "--locked", "--manifest-path", "tools/smbtest/Cargo.toml"])
+        .args([
+            "build",
+            "--release",
+            "--locked",
+            "--manifest-path",
+            "tools/smbtest/Cargo.toml",
+        ])
         .env("CARGO_TARGET_DIR", &target)
         .status()
         .map_err(|e| format!("cargo build smbtest: {e}"))?;
     if !st.success() {
         return Err("cargo build smbtest failed".into());
     }
-    Ok(target.join("release").join(if cfg!(windows) { "smbtest.exe" } else { "smbtest" }))
+    Ok(target.join("release").join(if cfg!(windows) {
+        "smbtest.exe"
+    } else {
+        "smbtest"
+    }))
 }
 
 /// Runs `smbtest` against the forwarded port; its output when no scenario failed.
@@ -121,7 +136,11 @@ fn smbtest(port: u16, extra: &[&str]) -> Result<String, String> {
     if !out.status.success() || !fails.is_empty() {
         return Err(format!(
             "smbtest: {}\n{text}{}",
-            if fails.is_empty() { "exit status".into() } else { fails.join("; ") },
+            if fails.is_empty() {
+                "exit status".into()
+            } else {
+                fails.join("; ")
+            },
             String::from_utf8_lossy(&out.stderr)
         ));
     }
@@ -147,11 +166,9 @@ impl Suite {
             Ok(l) => l,
             Err(e) => {
                 let opr = s.command("DSPMSG MSGQ(QSYSOPR)", CMD).unwrap_or_default()
-                    + &s.command("WRKJOBQ JOBQ(QSYS/QPWFSERVER)", CMD).unwrap_or_default();
-                return Err(format!("{e}
-STRTCPSVR: {started}
-QSYSOPR:
-{opr}"));
+                    + &s.command("WRKJOBQ JOBQ(QSYS/QPWFSERVER)", CMD)
+                        .unwrap_or_default();
+                return Err(format!("{e}\nSTRTCPSVR: {started}\nQSYSOPR:\n{opr}"));
             }
         };
         let file = job_line(s, "QZLSFILE")?;
@@ -160,17 +177,25 @@ QSYSOPR:
                 return Err(format!("not type {kind}: {line}"));
             }
         }
-        Ok(format!("QZLSSERVER BCH and QZLSFILE PJ active: {server} | {file}"))
+        Ok(format!(
+            "QZLSSERVER BCH and QZLSFILE PJ active: {server} | {file}"
+        ))
     }
 
     /// Step 167: a user, a read/write share over its home directory, and
     /// every `smbtest` scenario against the guest.
     pub(crate) fn netsvr_files(&self, s: &mut Session) -> Result<String, String> {
-        s.command(&format!("crtusrprf USRPRF({USER}) PASSWORD('{PASSWORD}') HOMEDIR('/home/{USER}')"), CMD)?;
+        s.command(
+            &format!("crtusrprf USRPRF({USER}) PASSWORD('{PASSWORD}') HOMEDIR('/home/{USER}')"),
+            CMD,
+        )?;
         s.command(&format!("MKDIR DIR('/home/{USER}')"), CMD)?;
         s.command(&format!("MKDIR DIR('/home/{USER}/{SCRATCH}')"), CMD)?;
         s.command(&format!("CHGOWN OBJ('/home/{USER}') NEWOWN({USER})"), CMD)?;
-        s.command(&format!("CHGOWN OBJ('/home/{USER}/{SCRATCH}') NEWOWN({USER})"), CMD)?;
+        s.command(
+            &format!("CHGOWN OBJ('/home/{USER}/{SCRATCH}') NEWOWN({USER})"),
+            CMD,
+        )?;
         // QZLSADFS: share name CHAR(12), path, path length, path CCSID (0, the
         // job's), text CHAR(50), permissions (2 read/write), maximum users
         // (-1 none), error code (bytes provided 0: escape messages).
@@ -178,8 +203,11 @@ QSYSOPR:
         let port = forward_port(self, GUEST, 445)?;
         let out = smbtest(port, &["--copy-bytes", "16M"])?;
         let oks = out.lines().filter(|l| l.starts_with("ok ")).count();
-        let skips: Vec<&str> =
-            out.lines().filter_map(|l| l.strip_prefix("skip ")).map(|l| l.split(':').next().unwrap_or(l)).collect();
+        let skips: Vec<&str> = out
+            .lines()
+            .filter_map(|l| l.strip_prefix("skip "))
+            .map(|l| l.split(':').next().unwrap_or(l))
+            .collect();
         let dialects = ["2.0.2", "2.1", "3.0", "3.0.2", "3.1.1"]
             .iter()
             .filter(|d| out.contains(&format!("ok negotiate-{d}\n")))
@@ -205,7 +233,8 @@ QSYSOPR:
         let size = std::env::var("QS400_NETSVR_COPY").unwrap_or_else(|_| "1G".into());
         let out = smbtest(port, &["--only", "copy,cleanup", "--copy-bytes", &size])?;
         let rin = detail(&out, "copy", "in: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
-        let rout = detail(&out, "copy", "out: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
+        let rout =
+            detail(&out, "copy", "out: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
         Ok(format!("{size} in {rin}, out {rout}"))
     }
 }
@@ -217,11 +246,25 @@ impl Suite {
     /// commands and the APIs.
     pub(crate) fn netsvr_admin(&self, s: &mut Session) -> Result<String, String> {
         expect(s, "NETSTAT OPTION(*CNN)", &["445", "Listen"])?;
-        // NEEDS-CODY: QSYS2.NETSTAT_INFO and QSYS2.SERVER_SHARE_INFO answer
-        // SQL0443 in the guest, at STRSQL as at the console (the system's
-        // state is not read where those statements run), so the listener
-        // is NETSTAT's above and the share's maximum is the API's.
+        expect(
+            s,
+            "svc.sql SELECT * FROM QSYS2/NETSTAT_INFO WHERE LOCAL_PORT = 445;",
+            &["LISTEN", "row(s)"],
+        )?;
         s.command(&share_call("QZLSCHFS", 1), SLOW)?;
+        let shares = expect(
+            s,
+            &format!(
+                "svc.sql SELECT * FROM QSYS2/SERVER_SHARE_INFO WHERE SERVER_SHARE_NAME = '{SHARE}';"
+            ),
+            &[SHARE, "/home/NSUSER", "1 row(s)"],
+        )?;
+        if !shares
+            .lines()
+            .any(|l| l.contains(SHARE) && l.split_whitespace().any(|w| w == "1"))
+        {
+            return Err(format!("SERVER_SHARE_INFO: no maximum of 1 in:\n{shares}"));
+        }
         // One user may connect: a single sign-on and tree connect still
         // does (refusing the next is proven in memory, the netserver tests).
         let port = forward_port(self, GUEST, 445)?;
@@ -236,7 +279,7 @@ impl Suite {
         job_gone(s, "QZLSSERVER")?;
         s.command("STRTCPSVR SERVER(*NETSVR)", CMD)?;
         job_line(s, "QZLSSERVER")?;
-        Ok("445 listening in NETSTAT; maximum users 1 through QZLSCHFS; ENDTCPSVR, QZLSSTRS, QZLSENDS, STRTCPSVR".into())
+        Ok("445 listening in NETSTAT and NETSTAT_INFO; maximum users 1 through QZLSCHFS, in SERVER_SHARE_INFO; ENDTCPSVR, QZLSSTRS, QZLSENDS, STRTCPSVR".into())
     }
 }
 
@@ -246,7 +289,8 @@ mod tests {
 
     #[test]
     fn finds_detail_lines_of_one_scenario() {
-        let out = "ok a\n  in: 1 MB/s\nok copy\n  bytes: 9\n  in: 99.0 MB/s (1s)\nok cleanup\n  in: x\n";
+        let out =
+            "ok a\n  in: 1 MB/s\nok copy\n  bytes: 9\n  in: 99.0 MB/s (1s)\nok cleanup\n  in: x\n";
         assert_eq!(detail(out, "copy", "in: "), Some("99.0 MB/s (1s)"));
         assert_eq!(detail(out, "missing", "in: "), None);
     }

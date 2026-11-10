@@ -31,6 +31,8 @@ use rustix::event::{PollFd, PollFlags, Timespec, poll};
 use sql::embed::{Desc, Embedded, Op};
 use stg::Request;
 
+mod conssql;
+
 use super::fiber::{self, Fiber};
 use super::served::{self, Conn};
 use super::{cmn, ifsvol};
@@ -432,6 +434,13 @@ fn long(svc: &Svc, i: usize, req: &Request) -> bool {
         Request::RunCmd { name, .. } | Request::RunCmdCalling { name, .. } => {
             longcmd::NAMES.contains(&name.as_str())
         }
+        // STRSQL's statements and the console's take turns too, so the
+        // QSYS2 services can read the system (`sqlhost`).
+        Request::IsqlRun { check, .. } => !check,
+        Request::Exec { line } => svc.conns[i]
+            .ctx
+            .as_ref()
+            .is_some_and(|c| crate::svc::db::sqlcmd::completes(&c.svc, line).is_some()),
         _ => false,
     }
 }
@@ -500,6 +509,9 @@ fn start(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
     }
     if matches!(req, Request::RunCmd { .. } | Request::RunCmdCalling { .. }) {
         return start_cmd(svc, id, i, req);
+    }
+    if matches!(req, Request::IsqlRun { .. } | Request::Exec { .. }) {
+        return conssql::start(svc, id, i, req);
     }
     start_sql(svc, id, i, req)
 }

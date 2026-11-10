@@ -7,6 +7,7 @@
 //! rows, and each user's saved session, kept in the user space
 //! `QUSRSYS/QSQLSESS` as `user, length, text` records.
 
+use std::cell::{RefCell, RefMut};
 use std::collections::BTreeMap;
 
 use db::cmt::LckLvl;
@@ -14,6 +15,7 @@ use qsname::Name;
 use sql::ast::Naming;
 use sql::{Outcome, Prepared};
 use stg::proto::IsqlReply;
+use store::Store;
 use store::obj::library::Library;
 use store::obj::ops::{self, CreateParams};
 use store::obj::{ObjectId, types, usrspc};
@@ -65,34 +67,54 @@ pub fn start(system: &mut System, user: &str, naming: &str, commit: &str) -> Res
 
 /// `isql_run`: one statement, its rows cut at `max_rows`.
 pub fn run(system: &mut System, text: &str, naming: &str, check: bool, max_rows: u32) -> IsqlReply {
-    let naming = naming_of(naming);
-    let statement = match sql::prepare_dynamic(text, naming).map(|p| p.statement) {
-        Ok(s) => s,
-        Err(e) => {
-            let ca = sql::Sqlca::from_error(&e);
-            return IsqlReply {
-                sqlcode: ca.sqlcode,
-                sqlstate: ca.sqlstate,
-                msgid: e.msgid(),
-                text: ca.sqlerrmc,
-                ..IsqlReply::default()
-            };
-        }
+    let p = match prepare(text, naming) {
+        Ok(p) => p,
+        Err(r) => return *r,
     };
-    let name = sql::exec::statement_name(&statement).to_string();
     if check {
         return IsqlReply {
-            statement: name,
+            statement: sql::exec::statement_name(&p.statement).to_string(),
             ..IsqlReply::default()
         };
     }
     let (store, ctx) = match db(system) {
         Ok(x) => x,
-        Err(e) => return failed(&name, &e),
+        Err(e) => return failed(sql::exec::statement_name(&p.statement), &e),
     };
-    let target = target_of(&statement);
-    let p = Prepared { statement, naming };
-    let mut txn = match store.begin() {
+    let cell = RefCell::new(store);
+    let get = || RefMut::map(cell.borrow_mut(), |s| &mut **s);
+    run_on(&get, ctx, &p, max_rows)
+}
+
+/// A statement parsed for `isql_run`, or the reply its error makes.
+pub fn prepare(text: &str, naming: &str) -> Result<Prepared, Box<IsqlReply>> {
+    let naming = naming_of(naming);
+    match sql::prepare_dynamic(text, naming).map(|p| p.statement) {
+        Ok(statement) => Ok(Prepared { statement, naming }),
+        Err(e) => {
+            let ca = sql::Sqlca::from_error(&e);
+            Err(Box::new(IsqlReply {
+                sqlcode: ca.sqlcode,
+                sqlstate: ca.sqlstate,
+                msgid: e.msgid(),
+                text: ca.sqlerrmc,
+                ..IsqlReply::default()
+            }))
+        }
+    }
+}
+
+/// Run a prepared statement in a transaction over the store `get`
+/// borrows (the system's own or the lent one); its rows cut at `max_rows`.
+pub fn run_on<'a>(
+    get: &'a dyn Fn() -> RefMut<'a, Store>,
+    ctx: &mut sql::SqlContext,
+    p: &Prepared,
+    max_rows: u32,
+) -> IsqlReply {
+    let name = sql::exec::statement_name(&p.statement).to_string();
+    let target = target_of(&p.statement);
+    let mut txn = match Txn::lent(Box::new(get)) {
         Ok(t) => t,
         Err(e) => return failed(&name, &e.to_string()),
     };

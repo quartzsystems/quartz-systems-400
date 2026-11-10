@@ -5,11 +5,14 @@
 //! SQL on the console: a line mode standing in for STRSQL, and the
 //! statement-file runner.
 
+use std::cell::{RefCell, RefMut};
 use std::fmt::Write as _;
 
 use qsname::Name;
 use sql::ast::Naming;
-use sql::{CommitOpt, Outcome, Prepared, RunOpts, parse_all, runsqlstm};
+use sql::{CommitOpt, Outcome, Prepared, RunOpts, SqlContext, parse_all, runsqlstm};
+use store::Store;
+use store::txn::Txn;
 
 use super::{Mode, Params, db};
 use crate::ipl::system::System;
@@ -35,14 +38,26 @@ pub fn sql(system: &mut System, line: &str) -> String {
 /// Run every statement of `text`, each in its own transaction, and
 /// show rows, counts and the SQLCA of anything that is not plain success.
 pub fn run_text(system: &mut System, text: &str) -> String {
-    let naming = super::naming(system);
-    let statements = match parse_all(text, naming) {
-        Ok(s) => s,
-        Err(e) => return format!("{} {e}\n", e.msgid()),
-    };
     let (store, ctx) = match db(system) {
         Ok(x) => x,
         Err(e) => return format!("{e}\n"),
+    };
+    let cell = RefCell::new(store);
+    let get = || RefMut::map(cell.borrow_mut(), |s| &mut **s);
+    run_text_on(&get, ctx, text)
+}
+
+/// [`run_text`] over the store `get` borrows (the system's own, or the
+/// lent one for a statement taking turns).
+pub fn run_text_on<'a>(
+    get: &'a dyn Fn() -> RefMut<'a, Store>,
+    ctx: &mut SqlContext,
+    text: &str,
+) -> String {
+    let naming = ctx.naming;
+    let statements = match parse_all(text, naming) {
+        Ok(s) => s,
+        Err(e) => return format!("{} {e}\n", e.msgid()),
     };
     let mut out = String::new();
     for st in statements {
@@ -50,7 +65,7 @@ pub fn run_text(system: &mut System, text: &str) -> String {
             statement: st,
             naming,
         };
-        let mut txn = match store.begin() {
+        let mut txn = match Txn::lent(Box::new(get)) {
             Ok(t) => t,
             Err(e) => return format!("{e}\n"),
         };
@@ -78,6 +93,30 @@ pub fn run_text(system: &mut System, text: &str) -> String {
         }
     }
     out
+}
+
+/// The statements a console line completes, as [`super::intercept`] or
+/// [`sql`] would run them: `sql STATEMENT;`, or in SQL mode the buffer
+/// with a line ending in `;`. `None` for any other line.
+pub fn completes(state: &super::State, line: &str) -> Option<String> {
+    match &state.mode {
+        Mode::Normal => {
+            if line.split_whitespace().next()? != "sql" {
+                return None;
+            }
+            let text = line.trim_start().strip_prefix("sql")?.trim();
+            text.ends_with(';').then(|| text.to_string())
+        }
+        Mode::Sql { buffer } => {
+            let word = line.trim().to_ascii_lowercase();
+            if word == "quit" || word == "exit" {
+                return None;
+            }
+            let all = format!("{buffer}{line}\n");
+            all.trim_end().ends_with(';').then_some(all)
+        }
+        _ => None,
+    }
 }
 
 /// `opnqryf FILE(LIB/F) [QRYSLT('...') KEYFLD((F1) (F2 *DESCEND)) OPTION(*INP|*OUT|*UPD|*ALL)]`.

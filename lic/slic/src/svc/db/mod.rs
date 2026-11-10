@@ -14,7 +14,7 @@ pub mod files;
 pub(crate) mod journal;
 pub(crate) mod prtf;
 mod rla;
-mod sqlcmd;
+pub mod sqlcmd;
 mod trgout;
 
 use std::collections::BTreeMap;
@@ -139,7 +139,12 @@ pub fn msgf_target(table: &[MsgfOvr], file: &str) -> Option<(String, String)> {
 
 /// The prompt the mode wants.
 pub fn prompt(system: &System) -> &'static str {
-    match system.svc.mode {
+    prompt_of(&system.svc)
+}
+
+/// The prompt a job's console state wants.
+pub fn prompt_of(state: &State) -> &'static str {
+    match state.mode {
         Mode::Normal => super::PROMPT,
         Mode::Capture { .. } => "",
         Mode::Sql { .. } => "sql> ",
