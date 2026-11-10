@@ -7,6 +7,12 @@
 //! its spooler. Each CREATE opens a print job as the signed-on profile on
 //! the share's output queue; its WRITEs are the data; its CLOSE ends the
 //! spooled file.
+//!
+//! [`spoolss`]: the same printers through `\pipe\spoolss` (point and
+//! print). [`drivers`]: the read-only `print$` share's driver files.
+
+pub mod drivers;
+pub mod spoolss;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -56,6 +62,17 @@ pub trait PrintJob: Send {
     ///
     /// The spooler's.
     fn close(self: Box<Self>) -> Result<(), PrintError>;
+    /// Deletes the spooled file: nothing of it prints (a `spoolss`
+    /// document aborted, or left open when its pipe closed). By default
+    /// the job is dropped, and what that does is the spooler's.
+    ///
+    /// # Errors
+    ///
+    /// The spooler's.
+    fn abort(self: Box<Self>) -> Result<(), PrintError> {
+        drop(self);
+        Ok(())
+    }
 }
 
 /// The job's spooler. Blocking; keep each call short.

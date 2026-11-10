@@ -22,6 +22,8 @@ use tokio::sync::{Notify, oneshot};
 use tracing::info;
 
 use crate::ifs::{IfsShare, IfsWorker, MakeClient};
+use crate::print::drivers::{self, DRIVER_STORE, PRINT_DOLLAR};
+use crate::print::spoolss::{SpoolPrinter, Spoolss};
 use crate::print::{OutQueue, PrintShare, Printer};
 use crate::signon::{SignOn, Verifier};
 
@@ -60,6 +62,9 @@ pub struct PrintShareCfg {
     pub text: String,
     /// The output queue its files spool to.
     pub queue: OutQueue,
+    /// The printer driver clients are told to use (the share's printer
+    /// driver attribute).
+    pub driver: String,
 }
 
 /// What the job serves with, from the server attributes and shares.
@@ -91,6 +96,9 @@ pub struct NetServerConfig {
     pub file_shares: Vec<FileShare>,
     /// Print shares.
     pub print_shares: Vec<PrintShareCfg>,
+    /// The IFS directory the read-only `print$` share serves driver files
+    /// from, with print shares; not served when it is not a directory.
+    pub driver_store: Option<String>,
 }
 
 impl Default for NetServerConfig {
@@ -109,6 +117,7 @@ impl Default for NetServerConfig {
             guest: None,
             file_shares: Vec::new(),
             print_shares: Vec::new(),
+            driver_store: Some(DRIVER_STORE.into()),
         }
     }
 }
@@ -130,6 +139,50 @@ pub enum BuildError {
     /// The runtime or a thread could not be started.
     #[error(transparent)]
     Io(#[from] io::Error),
+}
+
+/// The driver store at `root` and the read-only share of it, or `None`
+/// when `root` is not a directory.
+fn driver_store(handle: &Handle, io: &Arc<IfsWorker>, root: &str) -> Result<Option<(String, IfsShare)>, BuildError> {
+    let is_dir = on_ifs(handle, io, root.to_owned(), (), |c, root, ()| {
+        Ok(c.stat(&root, true).is_ok_and(|st| st.mode & ::ifs::ops::flags::S_IFMT == ::ifs::ops::flags::S_IFDIR))
+    })?
+    .unwrap_or(false);
+    if !is_dir {
+        return Ok(None);
+    }
+    let (tx, rx) = mpsc::channel();
+    let (io2, path) = (io.clone(), root.to_owned());
+    handle.spawn(async move {
+        let _ = tx.send(IfsShare::new(io2, &path, true).await);
+    });
+    let share = rx
+        .recv()
+        .map_err(|_| io::Error::other("server thread gone"))?
+        .map_err(|error| BuildError::Share { name: PRINT_DOLLAR.into(), error })?;
+    Ok(Some((root.to_owned(), share)))
+}
+
+/// Runs `f` on the IFS thread from outside the runtime and waits for it;
+/// `None` when the IFS call failed.
+fn on_ifs<A, B, T>(
+    handle: &Handle,
+    io: &Arc<IfsWorker>,
+    a: A,
+    b: B,
+    f: impl FnOnce(&dyn ::ifs::client::IfsClient, A, B) -> ::ifs::Result<T> + Send + 'static,
+) -> Result<Option<T>, BuildError>
+where
+    A: Send + 'static,
+    B: Send + 'static,
+    T: Send + 'static,
+{
+    let (tx, rx) = mpsc::channel();
+    let io2 = io.clone();
+    handle.spawn(async move {
+        let _ = tx.send(io2.call(move |c| f(c, a, b)).await);
+    });
+    Ok(rx.recv().map_err(|_| io::Error::other("server thread gone"))?.ok())
 }
 
 /// One job's SMB server.
@@ -200,6 +253,33 @@ impl NetServer {
         for p in &cfg.print_shares {
             let backend = PrintShare::new(printer.clone(), p.queue.clone(), profile.clone());
             b = b.share(Share::new(p.name.clone(), backend).print().any_user(Access::ReadWrite).remark(p.text.clone()));
+        }
+        if !cfg.print_shares.is_empty() {
+            let store = match &cfg.driver_store {
+                Some(root) => driver_store(&handle, &io, root)?,
+                None => None,
+            };
+            let mut printers = Vec::new();
+            for p in &cfg.print_shares {
+                let driver_files = match &store {
+                    Some((root, _)) => on_ifs(&handle, &io, root.clone(), p.driver.clone(), |c, root, driver| {
+                        Ok(drivers::find(c, &root, &driver))
+                    })?
+                    .unwrap_or_default(),
+                    None => Vec::new(),
+                };
+                printers.push(SpoolPrinter {
+                    name: p.name.clone(),
+                    text: p.text.clone(),
+                    queue: p.queue.clone(),
+                    driver: p.driver.clone(),
+                    driver_files,
+                });
+            }
+            if let Some((_, backend)) = store {
+                b = b.share(Share::new(PRINT_DOLLAR, backend).any_user(Access::Read).named_streams(false).extended_attributes(false));
+            }
+            b = b.print_service(Spoolss::new(printer.clone(), printers));
         }
         let smb = Arc::new(b.build()?);
         Ok(Self {

@@ -6,7 +6,7 @@
 //! against `NetServer` jobs over one IFS in memory, through handed-over
 //! loopback sockets as `QZLSSERVER` hands them.
 
-#![allow(clippy::many_single_char_names)]
+#![allow(clippy::many_single_char_names, clippy::cast_possible_truncation)]
 
 mod smbc;
 
@@ -165,6 +165,7 @@ fn config() -> NetServerConfig {
             name: "PRT01".into(),
             text: "Printer".into(),
             queue: OutQueue { library: "QGPL".into(), name: "PRT01".into() },
+            driver: "Microsoft PCL6 Class Driver".into(),
         }],
         durable_timeout: Duration::from_millis(500),
         ..NetServerConfig::default()
@@ -423,4 +424,169 @@ async fn port_139_answers_the_session_request_then_serves() {
     assert_eq!(l.status, STATUS_SUCCESS);
     let t = request(&mut s, Command::TreeConnect, 3, l.session_id, 0, &tree_connect_body(r"\\QSTEST\PUB")).await;
     assert_eq!(status(&t), STATUS_SUCCESS);
+}
+
+/// NDR as a client marshals it, for the spoolss requests.
+#[derive(Default)]
+struct Stub(Vec<u8>, u32);
+
+impl Stub {
+    fn u32(&mut self, v: u32) -> &mut Self {
+        self.0.resize(self.0.len().next_multiple_of(4), 0);
+        self.0.extend_from_slice(&v.to_le_bytes());
+        self
+    }
+    fn ptr(&mut self, present: bool) -> &mut Self {
+        self.1 += 4;
+        self.u32(if present { 0x0002_0000 + self.1 } else { 0 })
+    }
+    fn string(&mut self, text: &str) -> &mut Self {
+        let units: Vec<u16> = text.encode_utf16().chain([0]).collect();
+        self.u32(units.len() as u32).u32(0).u32(units.len() as u32);
+        for u in units {
+            self.0.extend_from_slice(&u.to_le_bytes());
+        }
+        self
+    }
+    fn raw(&mut self, b: &[u8]) -> &mut Self {
+        self.0.resize(self.0.len().next_multiple_of(4), 0);
+        self.0.extend_from_slice(b);
+        self
+    }
+    fn bytes(&mut self, b: &[u8]) -> &mut Self {
+        self.u32(b.len() as u32);
+        self.0.extend_from_slice(b);
+        self
+    }
+    fn take(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self.0)
+    }
+}
+
+const SPOOLSS: [u8; 20] = [
+    0x78, 0x56, 0x34, 0x12, 0x34, 0x12, 0xcd, 0xab, 0xef, 0x00, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 1, 0, 0, 0,
+];
+
+fn dword(b: &[u8], at: usize) -> u32 {
+    u32::from_le_bytes(b[at..at + 4].try_into().unwrap())
+}
+
+/// The string an INFO buffer's offset at `at` (from `base`) points to.
+fn info_string(b: &[u8], base: usize, at: usize) -> String {
+    let from = base + dword(b, base + at) as usize;
+    let units: Vec<u16> = b[from..].as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).take_while(|&u| u != 0).collect();
+    String::from_utf16(&units).unwrap()
+}
+
+/// alice on spoolss, bound, with `PRT01` open.
+async fn spoolss_printer(addr: SocketAddr) -> (Client, smb_server::wire::messages::FileId, Vec<u8>) {
+    use smbc::rpc::*;
+    let mut c = ipc_client(addr, 0x0210, Some("alice")).await;
+    let pipe = c.open_pipe("spoolss").await.expect("spoolss").file_id;
+    assert_eq!(c.pipe_write(pipe, &bind_pdu(1, 4280, &[(0, SPOOLSS, NDR)])).await, STATUS_SUCCESS);
+    let (_, ack) = c.pipe_read(pipe, 4280).await;
+    assert_eq!(ack_results(&ack), [(0, 0)]);
+    let mut s = Stub::default();
+    s.ptr(true).string(r"\\QSTEST\PRT01").ptr(false).u32(0).ptr(false).u32(0x8).u32(1).u32(1).ptr(false);
+    let out = c.call(pipe, 2, 69, &s.take()).await.unwrap();
+    assert_eq!(dword(&out, 20), 0, "OpenPrinterEx");
+    (c, pipe, out[..20].to_vec())
+}
+
+/// The INFO buffer of a GetPrinter-style answer.
+fn info_buffer(out: &[u8]) -> Vec<u8> {
+    assert_ne!(dword(out, 0), 0);
+    let len = dword(out, 4) as usize;
+    out[8..8 + len].to_vec()
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn spoolss_prints_to_the_share_s_queue_as_create_does() {
+    let fs = Fs::new();
+    let j = job(&fs, "ALICE");
+    let (mut c, pipe, h) = spoolss_printer(j.addr).await;
+    // GetPrinter 2: the driver and the output queue as the port.
+    let mut s = Stub::default();
+    s.raw(&h).u32(2).ptr(true).bytes(&[0; 4096]).u32(4096);
+    let out = c.call(pipe, 3, 8, &s.take()).await.unwrap();
+    let info = info_buffer(&out);
+    assert_eq!(info_string(&info, 0, 8), "PRT01");
+    assert_eq!(info_string(&info, 0, 12), "QGPL/PRT01");
+    assert_eq!(info_string(&info, 0, 16), "Microsoft PCL6 Class Driver");
+    // StartDoc, WritePrinter, EndDoc.
+    let mut s = Stub::default();
+    s.raw(&h).u32(1).u32(1).ptr(true).ptr(true).ptr(false).ptr(false).string("Test Page");
+    let out = c.call(pipe, 4, 17, &s.take()).await.unwrap();
+    assert_eq!(dword(&out, 4), 0, "StartDocPrinter");
+    let mut s = Stub::default();
+    s.raw(&h).bytes(b"\x1bE test page\x0c").u32(13);
+    let out = c.call(pipe, 5, 19, &s.take()).await.unwrap();
+    assert_eq!((dword(&out, 0), dword(&out, 4)), (13, 0));
+    let mut s = Stub::default();
+    s.raw(&h);
+    assert_eq!(c.call(pipe, 6, 23, &s.take()).await.unwrap(), [0; 4]);
+    let printed = j.printed.lock().unwrap().clone();
+    assert_eq!(printed, [("ALICE".into(), "QGPL/PRT01".into(), "Test Page".into(), b"\x1bE test page\x0c".to_vec())]);
+}
+
+/// Writes `files` under the driver store as QSECOFR.
+fn driver_store(fs: &Fs, files: &[(&str, &[u8])]) {
+    use ifs::ops::OpenArgs;
+    use ifs::ops::flags::{O_CREAT, O_WRONLY};
+    let c = fs.client("QSECOFR");
+    for (path, data) in files {
+        let full = format!("{}/{path}", netserver::print::drivers::DRIVER_STORE);
+        let mut dir = String::new();
+        for part in full.split('/').filter(|p| !p.is_empty()).collect::<Vec<_>>().split_last().unwrap().1 {
+            dir = format!("{dir}/{part}");
+            let _ = c.mkdir(&dir, 0o755);
+        }
+        let fd = c.open(&full, OpenArgs::new(O_CREAT | O_WRONLY).mode(0o644)).unwrap();
+        c.write(fd, data).unwrap();
+        c.close(fd).unwrap();
+    }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn print_dollar_serves_the_driver_files_spoolss_names() {
+    let fs = Fs::new();
+    driver_store(
+        &fs,
+        &[
+            ("x64/3/Microsoft PCL6 Class Driver.qsdrv", b"driver=unidrv.dll\ndata=pcl6.gpd\nconfig=unidrvui.dll\nfile=stdnames.gpd\n"),
+            ("x64/3/unidrv.dll", b"MZ driver"),
+        ],
+    );
+    let j = job(&fs, "ALICE");
+    let (mut c, pipe, h) = spoolss_printer(j.addr).await;
+    let driver = |env: &str| {
+        let mut s = Stub::default();
+        s.raw(&h).ptr(true).string(env).u32(3).ptr(true).bytes(&[0; 4096]).u32(4096).u32(3).u32(0);
+        s.take()
+    };
+    let out = c.call(pipe, 3, 53, &driver("Windows x64")).await.unwrap();
+    let info = info_buffer(&out);
+    assert_eq!(info_string(&info, 0, 12), r"\\QSTEST\print$\x64\3\unidrv.dll");
+    assert_eq!(info_string(&info, 0, 28), r"\\QSTEST\print$\x64\3\stdnames.gpd");
+    // No x86 files: that environment has no driver.
+    let out = c.call(pipe, 4, 53, &driver("Windows NT x86")).await.unwrap();
+    assert_eq!(dword(&out, out.len() - 4), 1797, "ERROR_UNKNOWN_PRINTER_DRIVER");
+
+    // print$ is read-only.
+    let mut p = alice(j.addr, "print$").await;
+    let id = p.open(r"x64\3\unidrv.dll", FILE_GENERIC_READ, SHARE_ALL).await.unwrap();
+    assert_eq!(p.read(id, 0, 64).await.unwrap(), b"MZ driver");
+    p.close(id).await;
+    let made = p.create(Create { access: FILE_GENERIC_WRITE, disposition: FILE_CREATE, ..mk(r"x64\3\new.dll") }).await;
+    assert!(made.is_err());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn without_a_driver_store_there_is_no_print_dollar() {
+    let fs = Fs::new();
+    let j = job(&fs, "ALICE");
+    let mut s = smbc::durable::negotiated(j.addr, 0x0210, [0xA3; 16]).await;
+    let l = login_with(&mut s, 1, 0, "alice", "password", LoginOptions::default()).await;
+    let t = request(&mut s, Command::TreeConnect, 3, l.session_id, 0, &tree_connect_body(r"\\QSTEST\print$")).await;
+    assert_eq!(status(&t), STATUS_BAD_NETWORK_NAME);
 }
