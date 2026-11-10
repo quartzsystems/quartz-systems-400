@@ -5,10 +5,9 @@
 //! Clients, sessions and opens against the target.
 //!
 //! The client crate keeps one connection per server address in each
-//! [`Client`], so every independent connection is its own `Client`. They
-//! all send one `ClientGuid`, as Windows' redirector does for a machine.
+//! [`Client`], so every independent connection is its own `Client`.
 
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use smb::connection::EncryptionMode;
@@ -19,12 +18,6 @@ use smb::{
 use smb::connection::connection_info::ConnectionInfo;
 
 use crate::{Error, Target};
-
-/// This run's `ClientGuid`, one for every connection.
-fn client_guid() -> smb::Guid {
-    static GUID: OnceLock<smb::Guid> = OnceLock::new();
-    *GUID.get_or_init(smb::Guid::generate)
-}
 
 /// How long any one request may take.
 pub const TIMEOUT: Duration = Duration::from_secs(30);
@@ -71,12 +64,7 @@ impl Share {
         password: &str,
         share: &str,
     ) -> Result<Share, Error> {
-        let client = Client::new(ClientConfig {
-            dfs: false,
-            connection: config,
-            client_guid: client_guid(),
-            ..ClientConfig::default()
-        });
+        let client = Client::new(ClientConfig { dfs: false, connection: config, ..ClientConfig::default() });
         let unc = UncPath::new(&t.host)?.with_share(share)?;
         client.share_connect(&unc, user, password.to_string()).await?;
         Ok(Share { client, unc })
