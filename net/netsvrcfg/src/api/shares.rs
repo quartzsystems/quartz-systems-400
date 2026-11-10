@@ -118,8 +118,15 @@ fn autl(api: &str, h: &mut dyn Host, p: &Parms<'_>, i: usize) -> Result<Option<S
     Ok(Some(name))
 }
 
+/// 0 (the server's), or a single-byte CCSID: a converted file keeps its
+/// size and offsets only between single-byte CCSIDs, so multi-byte and
+/// mixed CCSIDs are refused (as is mixed data, text conversion `2`).
 fn text_ccsid_ok(c: i32) -> bool {
-    c == 0 || u16::try_from(c).is_ok_and(|c| ccsid::conv::supported().contains(&c))
+    use ccsid::conv::{Codec, Form};
+    c == 0
+        || u16::try_from(c).is_ok_and(|c| {
+            matches!(Codec::of(c), Ok(Some(Codec { form: Form::Sbcs { .. }, .. })))
+        })
 }
 
 /// The extension table: `count` entries of a length and 46 bytes.

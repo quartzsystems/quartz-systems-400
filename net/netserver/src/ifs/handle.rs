@@ -19,6 +19,7 @@ use ifs::ops::OpenArgs;
 use smb_server::{DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
 
 use super::lease::LeaseLink;
+use super::text::Xlate;
 use super::info::{attr_changes, file_info, nanos, smb_error, stat_path};
 use super::pattern::matches;
 use super::worker::IfsWorker;
@@ -44,6 +45,8 @@ pub struct IfsHandle {
     pub(super) leases: Option<Arc<LeaseLink>>,
     /// Leases this open reserved there.
     pub(super) reserved: Mutex<Vec<[u8; 32]>>,
+    /// Its data converted as text, by its share ([`super::text`]).
+    pub(super) xlate: Option<Arc<Xlate>>,
 }
 
 /// Where the object is now: by file ID, else by the path opened.
@@ -108,6 +111,10 @@ impl Handle for IfsHandle {
                 })
                 .await,
         )?;
+        let mut data = data;
+        if let Some(x) = &self.xlate {
+            x.to_client(&mut data);
+        }
         Ok(Bytes::from(data))
     }
 
@@ -115,10 +122,13 @@ impl Handle for IfsHandle {
         self.write_owned(offset, data.to_vec()).await
     }
 
-    async fn write_owned(&self, offset: u64, data: Vec<u8>) -> SmbResult<u32> {
+    async fn write_owned(&self, offset: u64, mut data: Vec<u8>) -> SmbResult<u32> {
         let Fd { fd, write } = self.fd().await?;
         if !write {
             return Err(SmbError::AccessDenied);
+        }
+        if let Some(x) = &self.xlate {
+            x.to_file(&mut data);
         }
         err(
             self.io

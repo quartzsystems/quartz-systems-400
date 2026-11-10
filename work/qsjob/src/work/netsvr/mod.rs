@@ -68,6 +68,9 @@ pub fn server_config(c: &Config) -> NetServerConfig {
                 read_only: f.permission == Permission::ReadOnly,
                 encrypt: s.encryption_required,
                 leases: a.oplocks(),
+                conversion: f.text_conversion.then(|| {
+                    netserver::ifs::TextConversion::new(f.text_ccsid, f.extensions.clone())
+                }),
             }),
             Kind::Print(p) => n.print_shares.push(PrintShareCfg {
                 name: s.name.clone(),

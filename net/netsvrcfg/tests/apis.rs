@@ -80,6 +80,14 @@ fn file_shares_are_added_changed_and_removed() {
         let e = api::call(&mut h, "QZLSADFS", &parms).expect_err("refused");
         assert_eq!((e.id, reason(&e, 22)), ("CPFB68A", r));
     }
+    // Text conversion keeps sizes only between single-byte CCSIDs: a
+    // multi-byte or binary text CCSID, and mixed data, are refused.
+    for (ccsid, flag) in [(1208, 0xF1), (65535, 0xF1), (930, 0xF1), (819, 0xF2)] {
+        let mut ch = adfs("DOCS", "/home/docs", 2, -1);
+        ch.extend([b4(ccsid), vec![flag]]);
+        let e = api::call(&mut h, "QZLSCHFS", &ch).expect_err("refused");
+        assert_eq!((e.id, reason(&e, 22)), ("CPFB68A", 10), "{ccsid} {flag:X}");
+    }
     let e = api::call(&mut h, "QZLSADFS", &adfs("A/B", "/a", 1, 1)).expect_err("bad name");
     assert_eq!(e.id, "CPFB68B");
 

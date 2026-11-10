@@ -27,6 +27,7 @@ pub mod info;
 pub mod lease;
 pub mod watch;
 pub mod pattern;
+pub mod text;
 pub mod worker;
 
 use std::sync::{Arc, Mutex};
@@ -36,7 +37,7 @@ use ifs::Errno;
 use ifs::client::IfsClient;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{
-    O_CREAT, O_EXCL, O_INHERITMODE, O_RDONLY, O_RDWR, O_SHARE_NONE, O_SHARE_RDONLY, O_SHARE_RDWR,
+    O_CCSID, O_CREAT, O_EXCL, O_INHERITMODE, O_RDONLY, O_RDWR, O_SHARE_NONE, O_SHARE_RDONLY, O_SHARE_RDWR,
     O_SHARE_WRONLY, O_TRUNC, O_WRONLY, S_IFDIR, S_IFMT,
 };
 use ifs::ops::{Attr, AttrId, OpenArgs, RenameMode};
@@ -50,6 +51,8 @@ use handle::Fd;
 use info::smb_error;
 pub use worker::{IfsWorker, MakeClient};
 pub use lease::{LeaseLink, Observer};
+pub use text::TextConversion;
+use text::Xlate;
 
 /// `FILE_SHARE_READ`.
 const SHARE_READ: u32 = 0x1;
@@ -63,6 +66,7 @@ pub struct IfsShare {
     read_only: bool,
     case_sensitive: bool,
     leases: Option<Arc<LeaseLink>>,
+    conversion: Option<Arc<TextConversion>>,
 }
 
 impl IfsShare {
@@ -86,13 +90,20 @@ impl IfsShare {
             })
             .await
             .map_err(smb_error)?;
-        Ok(Self { io, root, read_only, case_sensitive, leases: None })
+        Ok(Self { io, root, read_only, case_sensitive, leases: None, conversion: None })
     }
 
     /// Its leases go to the IFS's lease table through `link`.
     #[must_use]
     pub fn with_leases(mut self, link: Arc<LeaseLink>) -> Self {
         self.leases = Some(link);
+        self
+    }
+
+    /// Its text files are converted as `t` says ([`text`]).
+    #[must_use]
+    pub fn with_conversion(mut self, t: TextConversion) -> Self {
+        self.conversion = Some(Arc::new(t));
         self
     }
 
@@ -142,6 +153,7 @@ struct Opened {
     fd: Option<Fd>,
     action: OpenAction,
     id: Option<FileId>,
+    xlate: Option<Xlate>,
 }
 
 fn file_id(c: &dyn IfsClient, path: &str) -> Option<FileId> {
@@ -160,7 +172,21 @@ fn missing(c: &dyn IfsClient, path: &str) -> SmbError {
     }
 }
 
-fn open_sync(c: &dyn IfsClient, path: &str, opts: OpenOptions) -> SmbResult<Opened> {
+/// A file's CCSID.
+fn file_ccsid(c: &dyn IfsClient, path: &str) -> Option<u16> {
+    c.get_attrs(path, &[AttrId::Ccsid], true).ok()?.into_iter().find_map(|a| match a {
+        Attr::Ccsid(v) => Some(v),
+        _ => None,
+    })
+}
+
+/// The share's conversion of the file at `path`, when it converts.
+fn xlate_of(c: &dyn IfsClient, path: &str, t: Option<&TextConversion>) -> Option<Xlate> {
+    let t = t.filter(|t| t.applies(path.rsplit('/').next().unwrap_or("")))?;
+    Xlate::between(file_ccsid(c, path)?, t.ccsid)
+}
+
+fn open_sync(c: &dyn IfsClient, path: &str, opts: OpenOptions, conv: Option<&TextConversion>) -> SmbResult<Opened> {
     let existing = match c.stat(path, true) {
         Ok(st) => Some(st),
         Err(Errno::ENOENT) => None,
@@ -178,14 +204,20 @@ fn open_sync(c: &dyn IfsClient, path: &str, opts: OpenOptions) -> SmbResult<Open
         }
         if opts.directory {
             c.mkdir(path, 0o777).map_err(|e| if e == Errno::ENOENT { missing(c, path) } else { smb_error(e) })?;
-            return Ok(Opened { is_dir: true, fd: None, action: OpenAction::Created, id: file_id(c, path) });
+            return Ok(Opened { is_dir: true, fd: None, action: OpenAction::Created, id: file_id(c, path), xlate: None });
         }
         let oflag = access | share | O_CREAT | O_EXCL | O_INHERITMODE;
+        // A file made through a converting share is in the share's CCSID.
+        let args = match conv.filter(|t| t.applies(path.rsplit('/').next().unwrap_or(""))) {
+            Some(t) => OpenArgs::new(oflag | O_CCSID).mode(0o666).conv(u32::from(t.ccsid)),
+            None => OpenArgs::new(oflag).mode(0o666),
+        };
         let fd = c
-            .open(path, OpenArgs::new(oflag).mode(0o666))
+            .open(path, args)
             .map_err(|e| if e == Errno::ENOENT { missing(c, path) } else { smb_error(e) })?;
         let write = opts.write;
-        return Ok(Opened { is_dir: false, fd: Some(Fd { fd, write }), action: OpenAction::Created, id: file_id(c, path) });
+        let xlate = xlate_of(c, path, conv);
+        return Ok(Opened { is_dir: false, fd: Some(Fd { fd, write }), action: OpenAction::Created, id: file_id(c, path), xlate });
     };
     if opts.intent == OpenIntent::Create {
         return Err(SmbError::Exists);
@@ -195,7 +227,7 @@ fn open_sync(c: &dyn IfsClient, path: &str, opts: OpenOptions) -> SmbResult<Open
         if opts.non_directory {
             return Err(SmbError::IsDirectory);
         }
-        return Ok(Opened { is_dir, fd: None, action: OpenAction::Opened, id: file_id(c, path) });
+        return Ok(Opened { is_dir, fd: None, action: OpenAction::Opened, id: file_id(c, path), xlate: None });
     }
     if opts.directory {
         return Err(SmbError::NotADirectory);
@@ -205,11 +237,11 @@ fn open_sync(c: &dyn IfsClient, path: &str, opts: OpenOptions) -> SmbResult<Open
     // An open without data access (attributes, the server's own) takes its
     // descriptor when it first reads.
     if !opts.write && !truncate && opts.share_access.is_none() {
-        return Ok(Opened { is_dir, fd: None, action, id: file_id(c, path) });
+        return Ok(Opened { is_dir, fd: None, action, id: file_id(c, path), xlate: xlate_of(c, path, conv) });
     }
     let oflag = access | share | if truncate { O_TRUNC } else { 0 };
     let fd = c.open(path, OpenArgs::new(oflag)).map_err(smb_error)?;
-    Ok(Opened { is_dir, fd: Some(Fd { fd, write: opts.write }), action, id: file_id(c, path) })
+    Ok(Opened { is_dir, fd: Some(Fd { fd, write: opts.write }), action, id: file_id(c, path), xlate: xlate_of(c, path, conv) })
 }
 
 #[async_trait]
@@ -217,9 +249,10 @@ impl ShareBackend for IfsShare {
     async fn open(&self, path: &SmbPath, opts: OpenOptions) -> SmbResult<(Box<dyn Handle>, OpenAction)> {
         let full = self.ifs_path(path);
         let p = full.clone();
+        let conv = self.conversion.clone();
         let opened = self
             .io
-            .call(move |c| Ok(open_sync(c, &p, opts)))
+            .call(move |c| Ok(open_sync(c, &p, opts, conv.as_deref())))
             .await
             .map_err(smb_error)??;
         let handle = IfsHandle {
@@ -231,6 +264,7 @@ impl ShareBackend for IfsShare {
             root: self.root.clone(),
             leases: self.leases.clone(),
             reserved: Mutex::default(),
+            xlate: opened.xlate.map(Arc::new),
         };
         Ok((Box::new(handle), opened.action))
     }

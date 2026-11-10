@@ -643,9 +643,27 @@ the IFS authorities (section 6).
   (`Share::named_streams(false)`, `extended_attributes(false)`).
 - `/QSYS.LIB`: libraries are `X.LIB`, files `Y.FILE`, members `Z.MBR`
   directories and files as the IFS's `/QSYS.LIB` view shows them; a
-  member's data is what that view reads and writes (no per-share text
-  conversion in V1R2M0: the share's CCSID and text-conversion fields are
-  refused by `QZLSADFS`, section 10).
+  member's data is what that view reads and writes, converted as text
+  when the share says so (below).
+- Text conversion (`net/netserver/src/ifs/text.rs`): on a share with
+  text conversion enabled (`QZLSADFS`/`QZLSCHFS` parameter 8 `1`), a
+  file whose extension is in the share's list (without regard to case;
+  `*` is every file, including those without an extension) has its data
+  converted from the file's CCSID to the share's text CCSID on read and
+  back on write, as IBM's NetServer converts between the file's CCSID
+  and the share's. A text CCSID of 0 is the server's, 819 (the ASCII
+  equivalent of the system CCSID 37). Both CCSIDs are single-byte, so
+  each byte maps to one byte and sizes, offsets, end of file and
+  byte-range locks are the stored file's own: a client sees the same
+  size it reads. `QZLSADFS` and `QZLSCHFS` refuse a text CCSID that is
+  not single-byte (UTF-8, UTF-16, double-byte, mixed, 65535) and the
+  value `2` (mixed data allowed), `CPFB68A` reason 10, since a
+  conversion that changes lengths cannot keep offsets coherent. A file
+  in a multi-byte or mixed CCSID, in 65535 or already in the share's
+  CCSID is served as stored. A file created through such a share (with
+  a listed extension) is made in the share's CCSID, as IBM's are, so it
+  needs no conversion. Whether an open converts is decided when it
+  opens (by its name then and the file's CCSID then).
 
 ### Leases across jobs (built: `ifs/ifs/src/lease/`, `net/netserver/src/ifs/lease.rs`)
 
@@ -1025,7 +1043,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | `wkssvc` and other named pipes | not built | `STATUS_OBJECT_NAME_NOT_FOUND` on the pipe |
 | `srvsvc` over NDR64 | the library binds NDR 2.0 only (Windows binds NDR 2.0) | the NDR64 context is rejected in the bind ack |
 | The NetBIOS name service (UDP 137) and datagram service (138), browsing | not built | no answer on 137/138; clients connect by DNS name or address, or `*SMBSERVER` on 139 |
-| A share's text CCSID and text conversion | the backend serves data as the IFS stores it | `NEEDS-CODY`: `QZLSADFS`/`QZLSCHFS` store them (and `SERVER_SHARE_INFO` shows them), but files are served unconverted: they should be refused, or converted (NS-11's backend) |
+| Text conversion with mixed data (`2`), a share text CCSID that is not single-byte | a conversion that changes a file's length cannot keep sizes and offsets coherent (section 6, text conversion) | `QZLSADFS`/`QZLSCHFS` `CPFB68A` reason 10 |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
 | Leases broken, and change notify, for `/QSYS.LIB` member changes through the database | record I/O and SQL do not go through the IFS | a client caching a member's data sees the change when its lease next breaks or it opens the member again; a watch hears nothing |
@@ -1048,7 +1066,10 @@ anything only if IBM checks the length first), and IBM's checks of
   DOS attributes and file IDs, share modes and byte-range locks between
   two jobs, a read-only share and the IFS authority, sign-on refusals and
   one profile per job, a print share spooling as the profile,
-  `/QSYS.LIB` listings and member reads, a durable reconnect into the
+  `/QSYS.LIB` listings and member reads, text conversion (a CCSID 37
+  file and a source member read and written in the share's CCSID with
+  their sizes, an unlisted extension and an unconverting share served as
+  stored, a new file made in the share's CCSID), a durable reconnect into the
   same job and the job's release, port 139; leases across two jobs: a
   lease broken by the other job's open and write and by a plain IFS
   writer, each waiting for the write-back, no write caching while

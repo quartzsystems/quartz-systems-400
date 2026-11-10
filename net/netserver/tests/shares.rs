@@ -20,12 +20,13 @@ use ifs::auth::MemEnv;
 use ifs::backend::mem::MemBackend;
 use ifs::client::{IfsClient, LocalIfs};
 use ifs::ops::audit::MemAudit;
-use ifs::ops::flags::{O_CREAT, O_RDWR};
+use ifs::ops::flags::{O_CCSID, O_CREAT, O_RDWR};
 use ifs::ops::{Attr, Config as IfsConfig, Ctx, Ifs, OpenArgs, Owner};
 use ifs::vfs::qsys::{MemQsys, MemberData};
 use md4::{Digest, Md4};
 use netserver::print::{OutQueue, PrintError, PrintJob, Printer};
 use netserver::signon::{Refusal, SignOn, SignOnRequest, SignedOn};
+use netserver::ifs::TextConversion;
 use netserver::{FileShare, NetServer, NetServerConfig, PrintShareCfg, nbss};
 use sec::auth::bits::Auth;
 use sec::auth::principal::Principal;
@@ -164,9 +165,13 @@ impl PrintJob for SpoolJob {
 fn config() -> NetServerConfig {
     let mut ro = FileShare::new("PUBRO", "/pub");
     ro.read_only = true;
+    let mut cnv = FileShare::new("PUBCNV", "/pub");
+    cnv.conversion = Some(TextConversion::new(819, vec!["TXT".into()]));
+    let mut qcnv = FileShare::new("QSYSCNV", "/QSYS.LIB");
+    qcnv.conversion = Some(TextConversion::new(0, vec!["MBR".into()]));
     NetServerConfig {
         server_name: "QSTEST".into(),
-        file_shares: vec![FileShare::new("HOME", "/home/ALICE"), FileShare::new("PUB", "/pub"), ro, FileShare::new("QSYS", "/QSYS.LIB")],
+        file_shares: vec![FileShare::new("HOME", "/home/ALICE"), FileShare::new("PUB", "/pub"), ro, FileShare::new("QSYS", "/QSYS.LIB"), cnv, qcnv],
         print_shares: vec![PrintShareCfg {
             name: "PRT01".into(),
             text: "Printer".into(),
@@ -924,4 +929,78 @@ async fn a_share_s_maximum_users_hold_across_jobs_and_sessions_end() {
     assert_eq!(view[0].trees.iter().map(|t| t.share.as_str()).collect::<Vec<_>>(), ["HOME"]);
     assert!(one.server.end_session(view[0].session_id));
     assert!(one.server.sessions().is_empty());
+}
+
+/// A file in `ccsid` holding `data`, made by a plain IFS caller.
+fn tagged(fs: &Fs, path: &str, ccsid: u16, data: &[u8]) {
+    let me = fs.client("ALICE");
+    let fd = me.open(path, OpenArgs::new(O_CREAT | O_RDWR | O_CCSID).mode(0o666).conv(u32::from(ccsid))).unwrap();
+    me.pwrite(fd, data, 0).unwrap();
+    me.close(fd).unwrap();
+    me.release();
+}
+
+fn ccsid_of(fs: &Fs, path: &str) -> u16 {
+    let me = fs.client("ALICE");
+    let a = me.get_attrs(path, &[ifs::ops::AttrId::Ccsid], true).unwrap();
+    me.release();
+    a.into_iter().find_map(|a| if let Attr::Ccsid(c) = a { Some(c) } else { None }).unwrap()
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn text_files_convert_between_the_file_s_and_the_share_s_ccsid() {
+    let fs = Fs::new();
+    let ebcdic = ccsid::to_ebcdic("HELLO, WORLD").unwrap();
+    tagged(&fs, "/pub/e.txt", 37, &ebcdic);
+    tagged(&fs, "/pub/e.dat", 37, &ebcdic);
+    let j = job(&fs, "ALICE");
+    let mut c = alice(j.addr, "PUBCNV").await;
+    // A listed extension: read in the share's CCSID, same size and offsets.
+    let id = c.open("E.TXT", FILE_GENERIC_READ | FILE_GENERIC_WRITE, SHARE_ALL).await.unwrap();
+    assert_eq!(c.read(id, 0, 100).await.unwrap(), b"HELLO, WORLD");
+    assert_eq!(c.read(id, 7, 5).await.unwrap(), b"WORLD");
+    // Written in the share's CCSID, stored in the file's.
+    assert_eq!(c.write(id, 7, b"there").await.unwrap(), 5);
+    c.close(id).await;
+    let me = fs.client("ALICE");
+    let fd = me.open("/pub/e.txt", OpenArgs::new(O_RDWR)).unwrap();
+    assert_eq!(me.pread(fd, 100, 0).unwrap(), ccsid::to_ebcdic("HELLO, there").unwrap());
+    me.close(fd).unwrap();
+    assert_eq!(me.stat("/pub/e.txt", true).unwrap().size, 12);
+    // Another extension is served as stored.
+    let id = c.open("e.dat", FILE_GENERIC_READ, SHARE_ALL).await.unwrap();
+    assert_eq!(c.read(id, 0, 100).await.unwrap(), ebcdic);
+    c.close(id).await;
+    // A file made through the share is in the share's CCSID, unconverted.
+    let id = c.create(Create { disposition: FILE_CREATE, ..mk("new.txt") }).await.unwrap().file_id;
+    assert_eq!(c.write(id, 0, b"abc").await.unwrap(), 3);
+    c.close(id).await;
+    assert_eq!(ccsid_of(&fs, "/pub/new.txt"), 819);
+    let fd = me.open("/pub/new.txt", OpenArgs::new(O_RDWR)).unwrap();
+    assert_eq!(me.pread(fd, 10, 0).unwrap(), b"abc");
+    me.close(fd).unwrap();
+    // The same files through a share without conversion.
+    let mut p = alice(j.addr, "PUB").await;
+    let id = p.open("e.txt", FILE_GENERIC_READ, SHARE_ALL).await.unwrap();
+    assert_eq!(p.read(id, 0, 5).await.unwrap(), ccsid::to_ebcdic("HELLO").unwrap());
+    p.close(id).await;
+    me.release();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn members_convert_from_their_ccsid_to_the_server_s() {
+    let fs = Fs::new();
+    let j = job(&fs, "ALICE");
+    let path = "qgpl.lib\\qclsrc.file\\hello.mbr";
+    let mut c = alice(j.addr, "QSYSCNV").await;
+    let id = c.open(path, FILE_GENERIC_READ, SHARE_ALL).await.unwrap();
+    let text = c.read(id, 0, 4096).await.unwrap();
+    c.close(id).await;
+    assert!(text.windows(6).any(|w| w == b"ENDPGM"), "{text:?}");
+    let mut p = alice(j.addr, "QSYS").await;
+    let id = p.open(path, FILE_GENERIC_READ, SHARE_ALL).await.unwrap();
+    let raw = p.read(id, 0, 4096).await.unwrap();
+    p.close(id).await;
+    assert_eq!(raw.len(), text.len());
+    assert!(!raw.windows(6).any(|w| w == b"ENDPGM"));
 }
