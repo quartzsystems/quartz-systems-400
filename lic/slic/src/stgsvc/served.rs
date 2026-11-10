@@ -2622,6 +2622,21 @@ impl Service for Served<'_> {
         crate::cpp::lpapi::call(self.system, &api, &parms)
     }
 
+    fn netsvr_api(
+        &mut self,
+        api: String,
+        parms: Vec<Vec<u8>>,
+    ) -> Result<Vec<u8>, (String, Vec<u8>)> {
+        self.system.current_job = self.ctx.job.number;
+        let me = self.ctx.session.borrow().principal.clone();
+        super::netsvr::call(self.system, &me, 37, &api, &parms)
+    }
+
+    fn netsvr(&mut self, op: stg::netsvr::NsOp) -> stg::netsvr::NsReply {
+        let job = self.ctx.job.clone();
+        super::netsvr::request(self.system, &job, op)
+    }
+
     fn service_op(&mut self, op: String, args: Vec<String>) -> Result<Vec<String>, String> {
         self.system.current_job = self.ctx.job.number;
         super::svcop::run(self.system, &self.ctx.job, &op, &args)

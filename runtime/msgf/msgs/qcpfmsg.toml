@@ -2470,6 +2470,301 @@ text = "The file's CCSID was changed from &1 to &2."
 help = "The CCSID tag of the file was changed."
 vars = ["*CHAR 5", "*CHAR 5"]
 
+# NetServer (QZLSSERVER, QZLSFILE and the QZLS* APIs, docs/NETSERVER.md):
+# IBM's identifiers, severities and substitution layouts; our texts.
+
+[[msg]]
+id = "CPDB680"
+sev = 40
+text = "Not authorized to enable user &1 for NetServer."
+help = "Enabling a user for NetServer needs *OBJMGT and *USE authority to the user profile. Ask the security officer for the authority, or have someone with it enable the user."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPFB680"
+sev = 40
+text = "The NetServer job QZLSSERVER is not active."
+help = "NetServer works only while its QZLSSERVER job runs in subsystem QSERVER. Start QSERVER if it is not active, then start NetServer with STRTCPSVR SERVER(*NETSVR) or the QZLSSTRS API."
+
+[[msg]]
+id = "CPFB681"
+sev = 40
+text = "NetServer had an internal error and ended its sessions."
+help = "Something NetServer did not expect happened. The messages in QSYSOPR and the QZLSSERVER job log say what. End NetServer and start it again with reset; report the problem if it comes back."
+
+[[msg]]
+id = "CPFB682"
+sev = 40
+text = "API &1 failed with reason code &2."
+help = "Reason codes: 1 and 2, the caller's credentials could not be read; 3, the job could not switch profiles; 4, a lock NetServer needs is held; 5, an internal operation returned &3; 6, print share &4 was added or changed but could not be published (QS/400 has no directory to publish to), so it is not published; 7, both 5 and 6."
+vars = ["*CHAR 10", "*BIN 4", "*BIN 4", "*CHAR 12"]
+
+[[msg]]
+id = "CPFB683"
+sev = 40
+text = "API &1 could not convert parameter &5 from CCSID &3 to CCSID &2."
+help = "The text at offset &6 of parameter &5 has no form in the target CCSID, or the CCSID is not one QS/400 converts (return code &4). Give the value in a CCSID QS/400 supports."
+vars = ["*CHAR 10", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFB684"
+sev = 40
+text = "Not authorized to use API &1 (reason code &2)."
+help = "Reason codes: 1, the API needs *IOSYSCFG special authority; 2, it needs *IOSYSCFG and *SECADM; 3, the directory or output queue to share does not exist and the caller has no *IOSYSCFG; 4, the caller neither owns the directory or output queue nor has *IOSYSCFG."
+vars = ["*CHAR 10", "*BIN 4"]
+
+[[msg]]
+id = "CPFB685"
+sev = 40
+text = "API &1 could not start NetServer (reason code &2)."
+help = "Reason codes: 1, subsystem QSERVER is not active; 2, QZLSSERVER is active already; 3, NetBIOS could not be reset (return code &3); 4, an internal operation failed (return code &3); 5, the reset value &4 is not 0 or 1."
+vars = ["*CHAR 10", "*BIN 4", "*BIN 4", "*CHAR 1"]
+
+[[msg]]
+id = "CPFB686"
+sev = 40
+text = "API &1 could not change the NetServer attributes (reason code &2)."
+help = "Reason codes: 5, the code page has no CCSID; 6 and 7, WINS servers, scope and the WINS proxy are not supported (QS/400 has no WINS client, return code &3); 8, the browse interval is not 0 to 720000; 9, the oplock time-out is not 1 to 600 or -1; 10, the idle time-out is not above 0 or -1; 12, the WINS proxy is not 0 or 1; 13, QS/400 is not a logon server; 14, the authentication method is not 0, 1 or 2; 15, Kerberos is not configured (QS/400 has none); 16, message authentication is not 0, 1 or 2; 17, QS/400 sends no administrative alerts, so the minimum severity is -1; 18, LAN Manager authentication is never allowed."
+vars = ["*CHAR 10", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFB687"
+sev = 40
+text = "API &1: guest profile &3 is not found, or &2 authority to it is missing."
+help = "The guest profile must exist and the caller needs at least the named authority to it. Correct the name or get the authority, then call the API again."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPFB688"
+sev = 40
+text = "API &1 could not open the NetServer list (reason code &2)."
+help = "Reason codes: 1, format &3 is not one the API knows; 2, the list could not be built (the qualifier does not suit the format; the messages before this one say more); 3 to 6, the temporary space could not be made, used or removed."
+vars = ["*CHAR 10", "*BIN 4", "*CHAR 8"]
+
+[[msg]]
+id = "CPFB689"
+sev = 40
+text = "API &1 could not end NetServer (reason code &2)."
+help = "Reason code 1: the QZLSSERVER job could not be found. Try again; if it persists, end subsystem QSERVER."
+vars = ["*CHAR 10", "*BIN 4"]
+
+[[msg]]
+id = "CPFB68A"
+sev = 40
+text = "API &1 failed for share &2 (reason code &3)."
+help = "Reason codes: 1, a share of that name exists; 2, the share does not exist; 3, the permission is not 1 or 2; 4, the maximum users is not -1 or above 0; 5, the spooled file type is not 1 to 4; 7, the path does not begin with /; 8, the share is of the other kind (file or print); 9, its extension list is damaged; 10, the text conversion value or CCSID is not valid; 11, the publish value is not 0 or 1; 12, the change could not take effect at once."
+vars = ["*CHAR 10", "*CHAR 12", "*BIN 4"]
+
+[[msg]]
+id = "CPFB68B"
+sev = 40
+text = "API &1: value &3 of parameter &2 has a character that is not allowed."
+help = "Server and domain names take A-Z, 0-9, #, $, @ and blanks inside, with no leading blank. Share names take neither the characters Windows reserves nor a leading blank. Correct the value and call the API again."
+vars = ["*CHAR 10", "*BIN 4", "*CHAR 15"]
+
+[[msg]]
+id = "CPFB68C"
+sev = 40
+text = "API &1: guest profile &2 has special authority &3."
+help = "A guest profile may have no special authority, neither of its own nor through a group profile. Remove the authority or choose another profile."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPFB68D"
+sev = 40
+text = "API &1: length &3 of parameter &2 is not valid."
+help = "The length must be more than &4 and less than &5. Correct it and call the API again."
+vars = ["*CHAR 10", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFB68E"
+sev = 40
+text = "API &1 could not end the sessions of &2 (reason code &3)."
+help = "Reason codes: 1, the workstation has no session; 2, QZLSSERVER is not active, so there are no sessions; 3, QSERVER is not active; 4, a session identifier was given but the workstation is not *SESSID; 5, no session has identifier &4; 6, *EXPANDED was given without an expanded name."
+vars = ["*CHAR 10", "*CHAR 15", "*BIN 4", "*BIN 8"]
+
+[[msg]]
+id = "CPFB68F"
+sev = 40
+text = "API &1 could not list the NetServer information (reason code &3)."
+help = "Reason codes: 1, format &4 is not one the API knows; 2, the library of user space &2 is not found; 3, user space &2 is not found or not authorized; 4, the user space is locked; 5 and 6, the job or the time could not be read; 7, the qualifier does not suit the format; 8, data at offset &5 could not be converted; 9, *SESSID must be given for both the qualifier and the session user, and only with a session identifier; 10, format ZLSL0900 takes a blank qualifier; 11, *EXPANDED was given without an expanded name."
+vars = ["*CHAR 10", "*CHAR 20", "*BIN 4", "*CHAR 8", "*BIN 4"]
+
+[[msg]]
+id = "CPFB690"
+sev = 40
+text = "API &1 could not change the NetServer information (reason code &2)."
+help = "Reason code 1: format &3 is not ZLSS0100 or ZLSS0200."
+vars = ["*CHAR 10", "*BIN 4", "*CHAR 8"]
+
+[[msg]]
+id = "CPFB691"
+sev = 40
+text = "Interface &1 failed with reason code &3."
+help = "A network server answered request &2 badly (reason codes 1 to 5: an error, or a parameter, data, type or count that does not fit). Check that server &4 can be reached and that NetServer is active."
+vars = ["*CHAR 50", "*CHAR 10", "*BIN 4", "*CHAR 15"]
+
+[[msg]]
+id = "CPFB692"
+sev = 40
+text = "Interface &1 failed with reason code &2."
+help = "Reason codes: 1, no storage; 2, &6 could not be converted from CCSID &4 to CCSID &5 (return code &3); 3 and 6, the computer list was not valid; 4, no server was found for domain &7; 5, TCP/IP failed (return code &8); 7, the time could not be read."
+vars = ["*CHAR 50", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 30", "*CHAR 15", "*BIN 4"]
+
+[[msg]]
+id = "CPFB693"
+sev = 40
+text = "API &5 could not convert item &4 from CCSID &1 to CCSID &2."
+help = "Items: 1, a share name; 2, an extension file name; 99, another item. The return code was &3. Correct the value and call the API again."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPFB694"
+sev = 40
+text = "&1 users were not enabled for NetServer."
+help = "Some of the users named could not be enabled. The messages before this one say why for each; correct that and call QZLSCHSI with format ZLSS0200 again."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFB695"
+sev = 40
+text = "NetServer file &2 could not be converted (error number &1)."
+help = "A file system error stopped the conversion of the configuration file. Try again; report the problem if it persists."
+vars = ["*BIN 4", "*CHAR 100"]
+
+[[msg]]
+id = "CPIB680"
+sev = 0
+text = "NetServer &1 is started."
+help = "The QZLSSERVER job is ready for clients."
+vars = ["*CHAR 15"]
+
+[[msg]]
+id = "CPIB681"
+sev = 0
+text = "NetServer &1 has ended."
+help = "The QZLSSERVER job ended and clients can no longer connect."
+vars = ["*CHAR 15"]
+
+[[msg]]
+id = "CPIB682"
+sev = 0
+text = "User &1 is disabled for NetServer after too many failed sign-ons."
+help = "The user reached QMAXSIGN failed NetServer sign-ons, the last from workstation &4 at address &5. The profile itself stays enabled. Enable the user with QZLSCHSI format ZLSS0200 or Navigator; a password change enables it too."
+vars = ["*CHAR 10", "*CHAR 16", "*CHAR 16", "*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "CPIB683"
+sev = 40
+text = "NetServer could not start (reason code &1)."
+help = "Reason codes: 1 to 3, the job's credentials or profile switch failed; 4, a lock is held; 5, NetBIOS did not start (return code &2; 16 means another computer uses the server name); 6, an internal operation failed (return code &2); 7, the shares could not be offered; 8, QMAXSIGN could not be read; 9, the code page could not be read; 10, the system's address could not be found (return code &2); 11, TCP/IP is not started; 12, the CCSID set up is not an ASCII one; 13, address &4 is not valid."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 16", "*CHAR 128"]
+
+[[msg]]
+id = "CPIB684"
+sev = 40
+text = "NetServer did not end cleanly (reason code &1)."
+help = "Reason codes: 1, NetBIOS did not end (return code &2); 2, an internal operation failed (return code &2). Start NetServer with reset; if that fails, end and start subsystem QSERVER."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPIB685"
+sev = 40
+text = "A NetServer request failed: item &4 could not be converted from CCSID &1 to CCSID &2."
+help = "The return code was &3. Items: 1 to 5, the server name, domain, guest, scope or text; 6 and 7, a file name; 8 and 9, the name or path of share &6; 10 to 12, a directory or extension file; 13, a printer file; 14 to 18, a pending value; 19 and 20, an output queue or driver; 99, another item."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 12"]
+
+[[msg]]
+id = "CPIB686"
+sev = 40
+text = "The file extensions of share &1 could not be read."
+help = "The extension list is empty or damaged. Change the share with QZLSCHFS giving no extensions, then give them again if needed, and start NetServer."
+vars = ["*CHAR 12"]
+
+[[msg]]
+id = "CPIB687"
+sev = 0
+text = "NetServer started, but not everything works (reason code &1)."
+help = "Reason codes: 1, NetBIOS started with errors (return code &3); 2, a logon server or browser on &4 conflicts; 3 and 4, &4 announced itself for domain &5 too; 5, system &4 has the server or domain name."
+vars = ["*BIN 4", "*CHAR 40", "*BIN 4", "*CHAR 15", "*CHAR 20", "*CHAR 128"]
+
+[[msg]]
+id = "CPIB688"
+sev = 0
+text = "User &1 shared &4 as &3 from &5."
+help = "The share is temporary: it is not in the share list and goes when NetServer ends. Remove it with QZLSRMS if it should not be seen."
+vars = ["*CHAR 10", "*CHAR 15", "*CHAR 12", "*CHAR 255", "*CHAR 128"]
+
+[[msg]]
+id = "CPIB689"
+sev = 0
+text = "NetServer started, but the print shares were not published (reason code &1)."
+help = "Reason codes: 1, the server name could not be converted from CCSID &2 to CCSID &3 (return code &4); 2, an internal error. QS/400 publishes no print shares."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPIB68A"
+sev = 40
+text = "No user profile matches NetServer user &1."
+help = "The client signed on with a name no profile has, and there is no guest profile. A name longer than 10 characters is matched by its first 10."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB68B"
+sev = 40
+text = "The profile of NetServer user &1 is disabled."
+help = "A disabled profile cannot sign on. Enable it with CHGUSRPRF STATUS(*ENABLED) if it should."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB68C"
+sev = 40
+text = "The password of NetServer user &1 has expired."
+help = "Change the password (CHGPWD at a display, or CHGUSRPRF) and sign on again."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB68D"
+sev = 40
+text = "NetServer user &1 has no password NetServer can check."
+help = "NetServer checks a form of the password kept since the last password change at a QPWDLVL that keeps it. Change the password once and sign on again."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB68E"
+sev = 40
+text = "User &1 is disabled for NetServer."
+help = "Too many failed sign-ons disabled the user for NetServer. Enable it with QZLSCHSI format ZLSS0200 or Navigator, or change its password."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB68F"
+sev = 10
+text = "User &1 is enabled for NetServer again."
+help = "The user, disabled for NetServer, can sign on to it again."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB690"
+sev = 20
+text = "The password of NetServer user &1 expires in &2 days."
+help = "Change the password before it expires."
+vars = ["*CHAR 37", "*BIN 2"]
+
+[[msg]]
+id = "CPIB691"
+sev = 10
+text = "User &1 signed on to NetServer."
+help = "The user connected to NetServer and signed on."
+vars = ["*CHAR 37"]
+
+[[msg]]
+id = "CPIB692"
+sev = 40
+text = "NetServer user &1 sent Kerberos credentials (error &2)."
+help = "QS/400 has no Kerberos; NetServer signs on with NTLM only. Have the client use a user name and password."
+vars = ["*CHAR 37", "*BIN 4"]
+
 # The communications trace (STRCMNTRC, ENDCMNTRC, DLTCMNTRC, CHKCMNTRC,
 # PRTCMNTRC): IBM's identifiers, our texts.
 

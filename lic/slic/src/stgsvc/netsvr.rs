@@ -1,0 +1,421 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! NetServer in the storage service (`docs/NETSERVER.md` sections 4 and
+//! the APIs): the configuration files `QAZLSCFG` and `QAZLSSHR` under
+//! `/QIBM/UserData/OS400/NetServer/` (made with the shipped `QIBM`
+//! share at first use, owned by `QSYS`, `*PUBLIC *EXCLUDE`), the `QZLS*`
+//! APIs over them (`netsvrcfg::api`), and the session table the
+//! `QZLSSERVER` and `QZLSFILE` jobs report into.
+
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};
+
+use netsvrcfg::api::{self, ApiError, Caller, Enabled, GuestCheck, Host, ServerControl};
+use netsvrcfg::file::{self, CFG_PATH, SHR_PATH};
+use netsvrcfg::{Config, Counter, Qualified, Session, SessionTable};
+use sec::auth::principal::Principal;
+use sec::profile::SpecialAuth;
+use stg::netsvr::{NsConn, NsOp, NsReply, NsSession};
+use store::obj::types;
+
+use super::certs::{as_system, read_file, write_file};
+use super::devices::in_store;
+use crate::ipl::system::{System, now_unix};
+
+/// The session table; one per storage service, so per IPL.
+static TABLE: LazyLock<Mutex<SessionTable>> = LazyLock::new(|| Mutex::new(SessionTable::new()));
+
+/// Whether this IPL made the pending attributes current yet.
+static APPLIED: AtomicBool = AtomicBool::new(false);
+
+fn table() -> MutexGuard<'static, SessionTable> {
+    TABLE.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// The jobs that may change the session table.
+const SERVER_JOBS: &[&str] = &["QZLSSERVER", "QZLSFILE"];
+
+/// The configuration the files hold, and whether they must be written
+/// (one is missing, or this IPL makes the pending values current).
+fn merge(cfg: Option<Vec<u8>>, shr: Option<Vec<u8>>, name: &str, apply: bool) -> Result<(Config, bool), String> {
+    let mut save = cfg.is_none() || shr.is_none();
+    let shipped = Config::shipped(name);
+    let (a, s) = file::write(&shipped).map_err(|e| e.to_string())?;
+    let c = cfg.unwrap_or(a);
+    let s = shr.unwrap_or(s);
+    let mut config = file::read(&c, &s, name).map_err(|e| e.to_string())?;
+    if apply && config.attrs.apply_pending() {
+        save = true;
+    }
+    Ok((config, save))
+}
+
+/// Read the configuration, writing it first when missing; the first
+/// read of an IPL makes the pending attributes current.
+pub fn load(system: &mut System) -> Result<Config, String> {
+    let name = system.system_name();
+    let (cfg, shr) = as_system(system, |c| Ok::<_, String>((read_file(c, CFG_PATH)?, read_file(c, SHR_PATH)?)))?;
+    let apply = !APPLIED.load(Ordering::Acquire);
+    let (config, save_it) = merge(cfg, shr, &name, apply)?;
+    if save_it {
+        save(system, &config)?;
+    }
+    APPLIED.store(true, Ordering::Release);
+    Ok(config)
+}
+
+/// Write both files (each replaced whole).
+pub fn save(system: &mut System, c: &Config) -> Result<(), String> {
+    let (a, s) = file::write(c).map_err(|e| e.to_string())?;
+    as_system(system, |cl| {
+        write_file(cl, CFG_PATH, &a)?;
+        write_file(cl, SHR_PATH, &s)
+    })
+}
+
+/// The server control the service has: `QZLSSERVER` counts as active
+/// when the job table has it in `QSERVER`.
+struct Jobs {
+    active: bool,
+}
+
+impl Jobs {
+    fn of(system: &System) -> Self {
+        Self {
+            active: system
+                .jobs
+                .all()
+                .iter()
+                .any(|j| j.name == "QZLSSERVER" && j.subsystem == "QSERVER"),
+        }
+    }
+}
+
+impl ServerControl for Jobs {
+    fn active(&mut self) -> bool {
+        self.active
+    }
+
+    // BLOCKED(rel): the QZLSSERVER job (work/qsjob/src/work/netsvr/) starts, ends and ends sessions; until it lands these report that the required job has ended.
+    fn start(&mut self, _reset: bool) -> Result<(), ApiError> {
+        Err(ApiError::new(api::error::msg::JOB_ENDED))
+    }
+
+    fn end(&mut self) -> Result<(), ApiError> {
+        Err(ApiError::new(api::error::msg::JOB_ENDED))
+    }
+
+    fn end_session(&mut self, _job: &str, _id: u64) -> Result<(), ApiError> {
+        Err(ApiError::new(api::error::msg::JOB_ENDED))
+    }
+}
+
+/// The APIs' view of the system for one call.
+struct SvcHost<'a> {
+    system: &'a mut System,
+    me: Principal,
+    table: MutexGuard<'static, SessionTable>,
+    jobs: Jobs,
+    ccsid: u16,
+}
+
+impl SvcHost<'_> {
+    fn store<T>(&mut self, f: impl FnOnce(&mut store::txn::Txn<'_>, store::obj::ObjectId) -> Result<T, String>) -> Option<T> {
+        in_store(self.system, f).ok()
+    }
+}
+
+fn internal(e: &str) -> ApiError {
+    eprintln!("slic: netserver: {e}");
+    ApiError::new(api::error::msg::INTERNAL)
+}
+
+impl Host for SvcHost<'_> {
+    fn load(&mut self) -> Result<Config, ApiError> {
+        load(self.system).map_err(|e| internal(&e))
+    }
+
+    fn save(&mut self, c: &Config) -> Result<(), ApiError> {
+        save(self.system, c).map_err(|e| internal(&e))
+    }
+
+    fn caller(&mut self) -> Caller {
+        Caller {
+            user: self.me.user.clone(),
+            iosyscfg: self.me.has(SpecialAuth::IOSYSCFG),
+            secadm: self.me.has(SpecialAuth::SECADM),
+        }
+    }
+
+    fn path_owner(&mut self, path: &str) -> Option<String> {
+        as_system(self.system, |c| c.stat(path, true).ok().map(|s| s.owner))
+    }
+
+    fn outq_owner(&mut self, q: &Qualified) -> Option<String> {
+        let (lib, name) = (q.library.clone(), q.name.clone());
+        self.store(|txn, qsys| {
+            let ctx = store::obj::ops::NameContext::default();
+            let id = wm::obj::find(txn, qsys, &ctx, &lib, &name, types::OUTQ).map_err(|e| e.to_string())?;
+            let h = store::obj::ops::describe(txn, id).map_err(|e| e.to_string())?;
+            Ok(ccsid::decode_trimmed(&h.owner))
+        })
+    }
+
+    fn autl_exists(&mut self, name: &str) -> bool {
+        let name = name.to_string();
+        self.store(|txn, qsys| sec::auth::autl::find(txn, qsys, &name).map_err(|e| e.to_string()))
+            .is_some()
+    }
+
+    fn guest_check(&mut self, name: &str) -> GuestCheck {
+        let name = name.to_string();
+        self.store(|txn, qsys| {
+            let Ok((id, p)) = sec::profile::objects::read(txn, qsys, &name) else {
+                return Ok(GuestCheck::NotFound);
+            };
+            if !sec::guard::allowed(txn, qsys, "usrprf.use", id) {
+                return Ok(GuestCheck::NotFound);
+            }
+            let mut sp = p.spcaut;
+            for g in std::iter::once(&p.grpprf).chain(p.supgrpprf.iter()) {
+                if g != "*NONE"
+                    && let Ok((_, gp)) = sec::profile::objects::read(txn, qsys, g)
+                {
+                    sp = SpecialAuth(sp.0 | gp.spcaut.0);
+                }
+            }
+            Ok(match sp.names().first() {
+                Some(n) => GuestCheck::Special((*n).to_string()),
+                None => GuestCheck::Usable,
+            })
+        })
+        .unwrap_or(GuestCheck::NotFound)
+    }
+
+    // BLOCKED(rel): NS-2 adds sec's enable_netserver_user and the disabled state; the lead wires this call to it.
+    fn enable_user(&mut self, name: &str) -> Enabled {
+        Enabled::Failed(format!("{name}: the NetServer disabled state is not built yet"))
+    }
+
+    fn disabled_users(&mut self) -> Vec<String> {
+        Vec::new()
+    }
+
+    fn sessions(&mut self) -> &mut SessionTable {
+        &mut self.table
+    }
+
+    fn server(&mut self) -> &mut dyn ServerControl {
+        &mut self.jobs
+    }
+
+    fn now(&mut self) -> u64 {
+        now_unix()
+    }
+
+    fn stamp(&mut self, unix: u64) -> String {
+        let local = super::perfcol::local_now(self.system);
+        let off = i64::try_from(local).unwrap_or(0) - i64::try_from(now_unix()).unwrap_or(0);
+        api::host::stamp_utc(u64::try_from(i64::try_from(unix).unwrap_or(0) + off).unwrap_or(unix))
+    }
+
+    fn job_ccsid(&mut self) -> u16 {
+        self.ccsid
+    }
+}
+
+/// A `QZLS*` API for the caller `me`.
+pub fn call(system: &mut System, me: &Principal, ccsid: u16, name: &str, parms: &[Vec<u8>]) -> Result<Vec<u8>, (String, Vec<u8>)> {
+    let jobs = Jobs::of(system);
+    let mut h = SvcHost {
+        system,
+        me: me.clone(),
+        table: table(),
+        jobs,
+        ccsid,
+    };
+    api::call(&mut h, name, parms).map_err(|e| (e.id.to_string(), e.data))
+}
+
+fn to_wire(s: &Session) -> NsSession {
+    NsSession {
+        id: s.id,
+        workstation: s.workstation.clone(),
+        expanded: s.expanded.clone(),
+        user: s.user.clone(),
+        job: s.job.clone(),
+        guest: s.guest,
+        since: s.since,
+        last_active: s.last_active,
+        ending: s.ending,
+        connections: s
+            .connections
+            .iter()
+            .map(|c| NsConn {
+                id: c.id,
+                share: c.share.clone(),
+                kind: c.kind,
+                opens: c.opens,
+                since: c.since,
+            })
+            .collect(),
+    }
+}
+
+fn counter(n: u8) -> Option<Counter> {
+    Some(match n {
+        0 => Counter::Opens,
+        1 => Counter::PrintJobs,
+        2 => Counter::AutoDisconnects,
+        3 => Counter::DuplicateSessions,
+        4 => Counter::SessionErrors,
+        5 => Counter::PasswordViolations,
+        6 => Counter::UnknownUsers,
+        7 => Counter::BytesSent,
+        8 => Counter::BytesReceived,
+        9 => Counter::Response,
+        _ => return None,
+    })
+}
+
+/// A session table operation on `t` for job `job` (`number/user/name`,
+/// its name `name`) at `now`.
+fn table_op(t: &mut SessionTable, job: &str, name: &str, now: u64, op: NsOp) -> NsReply {
+    let err = |e: &dyn std::fmt::Display| NsReply::Error { text: e.to_string() };
+    let changes = !matches!(op, NsOp::List | NsOp::Ending { .. } | NsOp::Config);
+    if changes && !SERVER_JOBS.contains(&name) {
+        return NsReply::Error {
+            text: format!("job {job} is not a NetServer job"),
+        };
+    }
+    match op {
+        NsOp::Started => {
+            t.started(now);
+            NsReply::Done
+        }
+        NsOp::Register { session } => {
+            let s = Session {
+                id: 0,
+                workstation: session.workstation,
+                expanded: session.expanded,
+                user: session.user,
+                job: job.into(),
+                guest: session.guest,
+                since: now,
+                last_active: now,
+                connections: Vec::new(),
+                ending: false,
+            };
+            NsReply::Session { id: t.register(s) }
+        }
+        NsOp::Unregister { id, idle } => t.unregister(id, idle).map_or_else(|e| err(&e), |_| NsReply::Done),
+        NsOp::Connect { id, share, kind } => t
+            .connect(id, &share, kind, now)
+            .map_or_else(|e| err(&e), |c| NsReply::Conn { id: c }),
+        NsOp::Disconnect { id, conn } => t.disconnect(id, conn).map_or_else(|e| err(&e), |()| NsReply::Done),
+        NsOp::Opens { id, conn, opens } => t
+            .set_opens(id, conn, opens, now)
+            .map_or_else(|e| err(&e), |()| NsReply::Done),
+        NsOp::Touch { id } => t.touch(id, now).map_or_else(|e| err(&e), |()| NsReply::Done),
+        NsOp::Count { counter: c, n } => match counter(c) {
+            Some(k) => {
+                t.count(k, n);
+                NsReply::Done
+            }
+            None => err(&format!("counter {c} does not exist")),
+        },
+        NsOp::List => NsReply::Sessions {
+            list: t.sessions().map(to_wire).collect(),
+        },
+        NsOp::Ending { id } => NsReply::Flag { yes: t.is_ending(id) },
+        NsOp::JobEnded => {
+            t.job_ended(job);
+            NsReply::Done
+        }
+        NsOp::Config => NsReply::Error {
+            text: "the configuration is read by the service".into(),
+        },
+    }
+}
+
+/// The `netsvr` request from job `job`.
+pub fn request(system: &mut System, job: &wm::table::JobInfo, op: NsOp) -> NsReply {
+    let q = format!("{:06}/{}/{}", job.number, job.user, job.name);
+    if matches!(op, NsOp::Config) {
+        if !SERVER_JOBS.contains(&job.name.as_str()) {
+            return NsReply::Error {
+                text: format!("job {q} is not a NetServer job"),
+            };
+        }
+        return match load(system).and_then(|c| file::write(&c).map_err(|e| e.to_string())) {
+            Ok((cfg, shr)) => NsReply::Files { cfg, shr },
+            Err(e) => NsReply::Error { text: e },
+        };
+    }
+    table_op(&mut table(), &q, &job.name, now_unix(), op)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn missing_files_are_made_and_pending_applies_once() {
+        let (c, save) = merge(None, None, "QS400", true).expect("merges");
+        assert!(save);
+        assert!(c.share("QIBM").is_some());
+        let mut changed = c.clone();
+        changed.attrs.pending.text = "Files".into();
+        let (a, s) = file::write(&changed).expect("writes");
+        let (c, save) = merge(Some(a.clone()), Some(s.clone()), "QS400", false).expect("merges");
+        assert!(!save);
+        assert_eq!(c.attrs.current.text, "QS/400");
+        let (c, save) = merge(Some(a), Some(s), "QS400", true).expect("merges");
+        assert!(save);
+        assert_eq!(c.attrs.current.text, "Files");
+        assert!(merge(Some(b"junk".to_vec()), None, "QS400", true).is_err());
+    }
+
+    #[test]
+    fn only_netserver_jobs_change_the_table() {
+        let mut t = SessionTable::new();
+        let reg = || NsOp::Register {
+            session: NsSession {
+                workstation: "PC1".into(),
+                user: "BOB".into(),
+                ..NsSession::default()
+            },
+        };
+        assert!(matches!(table_op(&mut t, "000001/QPGMR/QPADEV0001", "QPADEV0001", 5, reg()), NsReply::Error { .. }));
+        let NsReply::Session { id } = table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 5, reg()) else {
+            panic!("registers")
+        };
+        let NsReply::Conn { id: c } = table_op(
+            &mut t,
+            "000002/QUSER/QZLSFILE",
+            "QZLSFILE",
+            6,
+            NsOp::Connect { id, share: "qibm".into(), kind: 0 },
+        ) else {
+            panic!("connects")
+        };
+        assert_eq!(
+            table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 7, NsOp::Opens { id, conn: c, opens: 1 }),
+            NsReply::Done
+        );
+        let NsReply::Sessions { list } = table_op(&mut t, "x", "QPADEV0001", 8, NsOp::List) else {
+            panic!("lists")
+        };
+        assert_eq!(list[0].job, "000002/QUSER/QZLSFILE");
+        assert_eq!(list[0].connections[0].share, "QIBM");
+        assert_eq!(table_op(&mut t, "x", "QPADEV0001", 8, NsOp::Ending { id }), NsReply::Flag { yes: false });
+        assert!(matches!(
+            table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 9, NsOp::Count { counter: 99, n: 1 }),
+            NsReply::Error { .. }
+        ));
+        assert_eq!(table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 9, NsOp::JobEnded), NsReply::Done);
+        assert_eq!(t.sessions().count(), 0);
+    }
+}

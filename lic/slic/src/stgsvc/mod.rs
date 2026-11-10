@@ -39,6 +39,7 @@ pub(crate) mod liclog;
 pub(crate) mod licpgm;
 pub(crate) mod media;
 pub(crate) mod msgs;
+pub(crate) mod netsvr;
 pub(crate) mod nslogon;
 mod pdm;
 pub(crate) mod perfcol;
