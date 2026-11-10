@@ -589,13 +589,9 @@ pub const PWD_MAGIC: &[u8; 8] = b"QS400PWD";
 #[must_use]
 pub fn password_blob(p: &crate::profile::UsrPrf) -> Vec<u8> {
     let mut b = PWD_MAGIC.to_vec();
-    for h in &p.hashes {
-        b.push(match h.form {
-            crate::profile::PwdForm::Short => 0,
-            crate::profile::PwdForm::Long => 1,
-            crate::profile::PwdForm::DesToken => 2,
-            crate::profile::PwdForm::ShaToken => 3,
-        });
+    // The NT hash stays in the service: it is sealed to this system.
+    for h in p.hashes.iter().filter(|h| h.form.in_history() || h.form.is_token()) {
+        b.push(h.form.code());
         b.extend_from_slice(&u16::try_from(h.phc.len()).unwrap_or(0).to_le_bytes());
         b.extend_from_slice(h.phc.as_bytes());
     }
@@ -614,16 +610,16 @@ fn blob_hashes(b: &[u8]) -> Result<Vec<crate::profile::PwdHash>> {
             .map(|l| usize::from(u16::from_le_bytes([l[0], l[1]])))
             .ok_or_else(bad)?;
         let phc = rest.get(at + 3..at + 3 + n).ok_or_else(bad)?;
-        out.push(crate::profile::PwdHash {
-            form: match form {
-                0 => crate::profile::PwdForm::Short,
-                2 => crate::profile::PwdForm::DesToken,
-                3 => crate::profile::PwdForm::ShaToken,
-                _ => crate::profile::PwdForm::Long,
-            },
-            phc: String::from_utf8_lossy(phc).into_owned(),
-        });
         at += 3 + n;
+        // Hashes and tokens only: an NT hash, or a form not known here,
+        // is dropped.
+        let form = crate::profile::PwdForm::from_code(form);
+        if form.in_history() || form.is_token() {
+            out.push(crate::profile::PwdHash {
+                form,
+                phc: String::from_utf8_lossy(phc).into_owned(),
+            });
+        }
     }
     Ok(out)
 }

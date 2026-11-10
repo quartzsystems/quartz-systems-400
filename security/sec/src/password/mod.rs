@@ -8,6 +8,7 @@
 //! form, SHA-1 of the long form) so a TN5250E client can sign on with a
 //! substitute; `docs/SECURITY.md` says what is stored.
 
+pub mod nthash;
 pub mod policy;
 pub mod rules;
 
@@ -48,7 +49,9 @@ pub fn short_ok(p: &str) -> bool {
 pub fn canonical(p: &str, form: PwdForm) -> String {
     match form {
         PwdForm::Short | PwdForm::DesToken => p.to_ascii_uppercase(),
-        PwdForm::Long | PwdForm::ShaToken => p.to_string(),
+        PwdForm::Long | PwdForm::ShaToken | PwdForm::NtHash | PwdForm::Unknown(_) => {
+            p.to_string()
+        }
     }
 }
 
@@ -218,6 +221,13 @@ fn hashes_only(p: &str, pwdlvl: u8) -> Vec<PwdHash> {
         }
         _ => vec![hash(p, PwdForm::Long, fresh_salt())],
     }
+}
+
+/// Give `prf` the new password `p`'s hashes at `pwdlvl`: [`hashes_for`]
+/// and the sealed NT hashes (`nthash`, with the installed sealer).
+pub fn set_hashes(prf: &mut UsrPrf, p: &str, pwdlvl: u8) {
+    prf.hashes = hashes_for(p, pwdlvl);
+    prf.hashes.extend(nthash::hashes(&prf.name, p, pwdlvl));
 }
 
 /// Whether `p` is the profile's current password at `pwdlvl`.

@@ -17,6 +17,7 @@ mod error;
 pub mod fcnusg;
 pub mod guard;
 pub mod level;
+pub mod netsvr;
 pub mod password;
 pub mod prfexit;
 pub mod profile;

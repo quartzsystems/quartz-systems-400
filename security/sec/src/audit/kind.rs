@@ -181,7 +181,7 @@ impl Kind {
     #[must_use]
     pub fn category(self) -> Option<&'static str> {
         Some(match self {
-            Self::Af | Self::Pw => "*AUTFAIL",
+            Self::Af | Self::Pw | Self::Vp => "*AUTFAIL",
             Self::Co => "*CREATE",
             Self::Do => "*DELETE",
             Self::Ad | Self::Cp | Self::Ds | Self::Sv | Self::Se | Self::Au => "*SECCFG",
@@ -193,7 +193,7 @@ impl Kind {
             Self::Sf => "*SPLFDTA",
             Self::St => "*SERVICE",
             Self::So | Self::Vo => "*SECVLDL",
-            Self::Va | Self::Vp | Self::Vu | Self::X2 => "*NETCMN",
+            Self::Va | Self::Vu | Self::X2 => "*NETCMN",
             Self::X0 => "*SECNAS",
             Self::Zc | Self::Zr => return None,
         })
@@ -214,7 +214,6 @@ impl Kind {
                 | Self::So
                 | Self::Va
                 | Self::Vo
-                | Self::Vp
                 | Self::Vu
                 | Self::X0
                 | Self::X1

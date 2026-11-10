@@ -10,8 +10,9 @@
 use crate::audit::kind::Kind;
 use crate::rec::{Layout, field};
 
-/// The version of these layouts (frozen at V1R1M0, `docs/SECURITY.md` §7).
-pub const FORMAT_VERSION: u16 = 1;
+/// The version of these layouts (frozen at V1R1M0, `docs/SECURITY.md` §7;
+/// version 2 adds `VP`).
+pub const FORMAT_VERSION: u16 = 2;
 
 /// `AF`: authority failure.
 pub static AF: Layout = Layout {
@@ -278,6 +279,20 @@ pub static PW: Layout = Layout {
     ],
 };
 
+/// `VP`: network password error (`NetServer`). Version 2.
+pub static VP: Layout = Layout {
+    name: "AuditVP",
+    size: Some(41),
+    fields: &[
+        field("VPTYPE", 0, 1),
+        field("VPNWSD", 1, 10),
+        field("VPSDAT", 11, 6),
+        field("VPSTIM", 17, 6),
+        field("VPCOMP", 23, 8),
+        field("VPPROF", 31, 10),
+    ],
+};
+
 /// `SE`: subsystem routing changed.
 pub static SE: Layout = Layout {
     name: "AuditSE",
@@ -388,6 +403,7 @@ pub fn of(kind: Kind) -> Option<&'static Layout> {
         Kind::Pg => &PG,
         Kind::Ps => &PS,
         Kind::Pw => &PW,
+        Kind::Vp => &VP,
         Kind::Se => &SE,
         Kind::Sf => &SF,
         Kind::St => &ST,
@@ -403,6 +419,6 @@ pub fn of(kind: Kind) -> Option<&'static Layout> {
 pub fn all() -> Vec<&'static Layout> {
     vec![
         &AF, &AD, &AU, &CA, &CO, &CP, &DO, &DS, &GR, &JD, &JS, &OM, &OW, &PA, &PG, &PS, &PW, &SE,
-        &SF, &ST, &SV, &ZC, &ZR,
+        &SF, &ST, &SV, &VP, &ZC, &ZR,
     ]
 }

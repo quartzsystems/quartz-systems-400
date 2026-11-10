@@ -25,6 +25,7 @@ or SMB3 on the wire, so that part of QS/400 is built from [MS-SMB2],
 |---|---|---|
 | `objects-primary.txt`, `objects-pub400.txt` | `DSPOBJD OBJ(QSYS/QZLS*) OBJTYPE(*ALL) OUTPUT(*OUTFILE)` | NetServer's programs, service programs and job descriptions. The primary has `QZLSSERVER *JOBD` and `QZLSTCP`; pub400 does not |
 | `messages.txt` | `MessageFile.getMessage` per ID | the IDs and severities of `QCPFMSG`'s NetServer messages: `CPIB680`-`CPIB692`, `CPFB680`-`CPFB695`, `CPDB680`. IBM's text is not kept; QS/400 writes its own |
+| `audit-vp.txt` | `QSYS2/SYSCOLUMNS` on the primary (`probes/NsAudit.java`) | the fields of `QASYVPJ5`, `QASYVPJE` and `QASYPWJ5`: the `VP` entry (`VPTYPE`, `VPNWSD`, `VPSDAT`, `VPSTIM`, `VPCOMP`, `VPPROF`) is what NetServer writes for a password not valid |
 | `server-share-info.txt` | `QSYS2.SYSCOLUMNS` | the 20 columns of `QSYS2.SERVER_SHARE_INFO` (no rows visible to the pub400 account) |
 | `../qsysinc/H/QZLS*.txt` | `QSYSINC/H` on pub400 | the headers of the 13 APIs and `QZLS` (common definitions), formats `ZLSL0100`-`ZLSL0900`, `ZLSS0100`, `ZLSS0200` |
 | `../net/primary/dspsbsd-qserver.txt`, `../net/pub400/prestart-jobs.txt` | Phase 10 captures | routing entry 800 (`QZLSSERVER`, compare value `QZLSSTART`), prestart entries `QZLSFILE` (`QZLSPJ`, 1/1/5, `MAXUSE` 200) and `QZLSFILET` |

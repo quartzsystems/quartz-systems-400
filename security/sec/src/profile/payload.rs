@@ -87,7 +87,11 @@ pub const LAYOUT: Layout = Layout {
 };
 
 const MAGIC: &[u8; 8] = b"QSSECUSR";
-const VERSION: u64 = 1;
+/// Version 2 (V1R2M0) adds the NT hash form; version 1 (V1R1M0) reads
+/// unchanged, with no NT hash.
+const VERSION: u64 = 2;
+/// The V1R1M0 payload.
+const VERSION_1: u64 = 1;
 
 /// Tail tags.
 mod tag {
@@ -122,6 +126,11 @@ pub enum PwdForm {
     /// The RFC 4777 SHA-1 token of the long form (hex), for levels 2
     /// and 3.
     ShaToken,
+    /// An NT hash for `NetServer`, sealed with the LIC stash key
+    /// (`password::nthash`). Version 2.
+    NtHash,
+    /// A form this release does not know: kept as read, never matched.
+    Unknown(u8),
 }
 
 impl PwdForm {
@@ -129,6 +138,51 @@ impl PwdForm {
     #[must_use]
     pub fn is_token(self) -> bool {
         matches!(self, Self::DesToken | Self::ShaToken)
+    }
+
+    /// Whether a previous password keeps it (`QPWDRQDDIF`): only the
+    /// one-way hashes. Tokens and NT hashes are password-equivalent.
+    #[must_use]
+    pub fn in_history(self) -> bool {
+        matches!(self, Self::Short | Self::Long)
+    }
+
+    /// The stored form byte.
+    #[must_use]
+    pub fn code(self) -> u8 {
+        match self {
+            Self::Short => 0,
+            Self::Long => 1,
+            Self::DesToken => 2,
+            Self::ShaToken => 3,
+            Self::NtHash => 4,
+            Self::Unknown(c) => c,
+        }
+    }
+
+    /// From the stored form byte.
+    #[must_use]
+    pub fn from_code(c: u8) -> Self {
+        match c {
+            0 => Self::Short,
+            1 => Self::Long,
+            2 => Self::DesToken,
+            3 => Self::ShaToken,
+            4 => Self::NtHash,
+            c => Self::Unknown(c),
+        }
+    }
+
+    /// Its bit in `PwdForms`; none for an unknown form.
+    fn bit(self) -> u64 {
+        match self {
+            Self::Short => 1,
+            Self::Long => 2,
+            Self::DesToken => 4,
+            Self::ShaToken => 8,
+            Self::NtHash => 16,
+            Self::Unknown(_) => 0,
+        }
     }
 }
 
@@ -143,12 +197,7 @@ pub struct PwdHash {
 
 impl PwdHash {
     fn encode(&self) -> Vec<u8> {
-        let mut b = vec![match self.form {
-            PwdForm::Short => 0,
-            PwdForm::Long => 1,
-            PwdForm::DesToken => 2,
-            PwdForm::ShaToken => 3,
-        }];
+        let mut b = vec![self.form.code()];
         b.extend_from_slice(self.phc.as_bytes());
         b
     }
@@ -158,12 +207,7 @@ impl PwdHash {
             .split_first()
             .ok_or_else(|| SecError::Corrupt("empty password item".into()))?;
         Ok(Self {
-            form: match f {
-                0 => PwdForm::Short,
-                2 => PwdForm::DesToken,
-                3 => PwdForm::ShaToken,
-                _ => PwdForm::Long,
-            },
+            form: PwdForm::from_code(f),
             phc: String::from_utf8_lossy(rest).into_owned(),
         })
     }
@@ -498,14 +542,7 @@ impl UsrPrf {
         r.set_uint("SpcAut", u64::from(self.spcaut.0));
         r.set_flag("PwdExp", self.pwdexp);
         r.set_flag("PwdNone", self.pwd_none);
-        let forms = self.hashes.iter().fold(0u64, |a, h| {
-            a | match h.form {
-                PwdForm::Short => 1,
-                PwdForm::Long => 2,
-                PwdForm::DesToken => 4,
-                PwdForm::ShaToken => 8,
-            }
-        });
+        let forms = self.hashes.iter().fold(0u64, |a, h| a | h.form.bit());
         r.set_uint("PwdForms", forms);
         r.set_uint(
             "LmtCpb",
@@ -611,7 +648,7 @@ impl UsrPrf {
     #[allow(clippy::too_many_lines)]
     pub fn decode(b: &[u8]) -> Result<Self> {
         let r = Rec::read(&LAYOUT, b)?;
-        if r.bytes("Magic") != MAGIC || r.uint("Version") != VERSION {
+        if r.bytes("Magic") != MAGIC || !matches!(r.uint("Version"), VERSION | VERSION_1) {
             return Err(SecError::Corrupt("not a user profile payload".into()));
         }
         let t = Tail::decode(r.tail())?;

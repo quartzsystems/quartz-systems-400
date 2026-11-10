@@ -991,6 +991,16 @@ fn user_info_and_groups() {
         vec![row(&["CODY", "*ENABLED", "*USER", "DEVS", "Cody"]), row(&["DEVS", "*ENABLED", "*USER", "*NONE", "Developers"])]
     );
     assert_eq!(db.rows("SELECT GROUP_MEMBER_INDICATOR FROM QSYS2.USER_INFO_BASIC WHERE AUTHORIZATION_NAME = 'DEVS'"), vec![row(&["YES"])]);
+    // Disabled for NetServer: the service's table, not the profile.
+    let users = sec::netsvr::users();
+    users.started(Some(1));
+    assert!(users.failed("CODY", Some(1), 1_767_225_600));
+    assert_eq!(
+        db.rows("SELECT AUTHORIZATION_NAME, STATUS, NETSERVER_DISABLED FROM QSYS2.USER_INFO ORDER BY 1"),
+        vec![row(&["CODY", "*ENABLED", "YES"]), row(&["DEVS", "*ENABLED", "NO"])]
+    );
+    assert!(sec::netsvr::enable_netserver_user("CODY"));
+    assert_eq!(db.rows("SELECT NETSERVER_DISABLED FROM QSYS2.USER_INFO_BASIC WHERE AUTHORIZATION_NAME = 'CODY'"), vec![row(&["NO"])]);
     assert_eq!(
         db.rows("SELECT * FROM QSYS2.GROUP_PROFILE_ENTRIES"),
         vec![row(&["DEVS", "CODY", "Cody"])]

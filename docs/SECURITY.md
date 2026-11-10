@@ -20,9 +20,23 @@ items (a one-byte tag, a two-byte length, the bytes; tag 0 ends it):
 | 3 | `HOMEDIR` |
 | 4 | a `SETJOBATR` value, once each |
 | 5 | a `USROPT` value, once each |
-| 6 | a password hash of the current password: a form byte (0 short, 1 long) and the PHC string |
-| 7 | a previous password's hash, the same way, newest first |
+| 6 | a password form of the current password: a form byte and its text (below) |
+| 7 | a previous password's hash, the same way (forms 0 and 1 only), newest first |
 | 8 | an `AUDLVL` value, once each |
+
+The form bytes of tags 6 and 7:
+
+| Form | Text | Since |
+|---|---|---|
+| 0 | Argon2id PHC string of the short form (`QPWDLVL` 0 and 1) | version 1 |
+| 1 | Argon2id PHC string of the long form (2 to 4) | version 1 |
+| 2 | the RFC 4777 DES token's password, hex (TN5250E and host server substitutes at 0 and 1) | version 1 |
+| 3 | the RFC 4777 SHA token's password, hex (2 to 4) | version 1 |
+| 4 | an NT hash for `NetServer`: the stash key's generation, `$`, then hex of the AES-256-GCM nonce, ciphertext and tag sealed with the LIC partition's stash key, the profile name the additional data (§2, "The NT hash") | version 2 |
+
+A form byte the release does not know is kept as read and matches
+nothing (version 1 readers took any byte above 3 as the long form;
+none was ever written). Previous passwords keep forms 0 and 1 only.
 
 Three of the profile object's tree root slots hold its indexes, B+trees
 keyed by object ID: slot 0 the objects it owns, slot 1 the objects it
@@ -36,13 +50,13 @@ and `DLTUSRPRF` never scan the system.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSSECUSR` |
-| 8 | 2 | Version | 1 |
+| 8 | 2 | Version | 2 (V1R2M0: form 4, the NT hash); 1 (V1R1M0) reads unchanged |
 | 10 | 1 | Status | 0 `*ENABLED`, 1 `*DISABLED` |
 | 11 | 1 | UsrCls | 0 `*USER`, 1 `*SYSOPR`, 2 `*PGMR`, 3 `*SECADM`, 4 `*SECOFR` |
 | 12 | 4 | SpcAut | bits: 0x01 `*ALLOBJ`, 0x02 `*SECADM`, 0x04 `*JOBCTL`, 0x08 `*SPLCTL`, 0x10 `*SAVSYS`, 0x20 `*SERVICE`, 0x40 `*AUDIT`, 0x80 `*IOSYSCFG` |
 | 16 | 1 | PwdExp | 1 `PWDEXP(*YES)` |
 | 17 | 1 | PwdNone | 1 `PASSWORD(*NONE)` |
-| 18 | 1 | PwdForms | bit 0 short form kept, bit 1 long form kept |
+| 18 | 1 | PwdForms | bit 0 short form kept, bit 1 long form kept, bit 2 DES token, bit 3 SHA token, bit 4 NT hash |
 | 19 | 1 | LmtCpb | 0 `*NO`, 1 `*PARTIAL`, 2 `*YES` |
 | 20 | 1 | DspSgnInf | 0 `*SYSVAL`, 1 `*NO`, 2 `*YES` |
 | 21 | 1 | LclPwdMgt | 1 `*YES` |
@@ -155,6 +169,28 @@ parameters: version 19, 19 MiB, two passes, one lane) of the password
 as the form canonicalizes it, with sixteen salt bytes of its own from
 `/dev/urandom`, stored as the PHC string. No IBM hash format is ever
 stored or produced; `QSYRUPWD` returns these strings.
+
+### The NT hash
+
+`NetServer` signs users on with `NTLMv2`, which needs the NT hash of the
+password (MD4 of its UTF-16LE form, `ntlm::nt_hash`). It is
+password-equivalent, so it is kept only sealed (form 4 above) and is
+opened only in the storage service, by the `NetServer` sign-on
+(`sec::netsvr`); it is never returned by `QSYRUPWD`, never taken from
+`QSYSUPWD` data (another system's seal would not open here anyway) and
+never kept for a previous password. `password::set_hashes` makes it
+wherever a password is set (`CRTUSRPRF`, `CHGUSRPRF PASSWORD`,
+`CHGPWD`, `QSYCHGPW`, the host servers' change, the installer's
+`QSECOFR`); `PASSWORD(*NONE)` drops it. At levels 0 and 1 the hashes
+of the password's upper and lower case forms are kept (a client may send
+either); at 2 to 4 the password as typed. A level change does not touch
+it; the next password change makes the hash for the new level
+(`docs/NETSERVER.md` section 5 has IBM's rules and the sources). The
+service installs the sealer over the LIC stash key at start
+(`password::nthash::install`); a password set with no sealer installed
+gets no NT hash. `RSTUSRPRF` restores it with the payload: on the
+system that saved it, it opens; on another it does not, and the user
+changes the password once.
 
 ### Rules
 
@@ -523,13 +559,15 @@ failure) is audited too. An event is written when:
 | `SF` | `*SPLFDTA` | a spooled file is read, held, released, changed or deleted |
 | `ST` | `*SERVICE` | DST or the service console is signed on to |
 | `SV` | `*SECCFG` | a system value changes |
+| `VP` | `*AUTFAIL` | a `NetServer` sign-on with a password not valid (`P`), and the user then disabled for `NetServer` (`D`) |
 | `ZC` | object auditing | an audited object is changed |
 | `ZR` | object auditing | an audited object is read |
 
 The restore family (`OR`, `RA`, `RO`, `RP`, `RU`, `RZ`) waits for save
-and restore (Phase 11); `SO`, `VA`, `VO`, `VP`, `VU`, `X0`, `X1` and
+and restore (Phase 11); `SO`, `VA`, `VO`, `VU`, `X0`, `X1` and
 `X2` belong to servers and networks QS/400 does not have yet. They are
-defined (`sec::audit::Kind`) and never written.
+defined (`sec::audit::Kind`) and never written. `VP` came with
+`NetServer` (layout version 2).
 
 Each entry's data is the type's fields below, fixed-width CP037 text,
 named as IBM's model files name them (`QASYxxJ5` without the journal
@@ -865,6 +903,21 @@ System value changed.
 | 11 | 250 | SVNVAL | new value |
 | 261 | 250 | SVOVAL | old value |
 
+### `AuditVP` (41 bytes)
+
+Network password error (`NetServer`). IBM's `QASYVPJ5` at V7R1M0
+(`tools/conformance/oracle/netserver/audit-vp.txt`); the long computer
+name later releases add after `VPPROF` is not written.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | VPTYPE | `P` a password not valid, `D` the user disabled for `NetServer` |
+| 1 | 10 | VPNWSD | `*NETSERVER` |
+| 11 | 6 | VPSDAT | date logged, `MMDDYY` (UTC) |
+| 17 | 6 | VPSTIM | time logged, `HHMMSS` (UTC; zoned in IBM's file) |
+| 23 | 8 | VPCOMP | computer name, blank (obsolete in IBM's file too) |
+| 31 | 10 | VPPROF | the user |
+
 ### `AuditZC` (91 bytes)
 
 Object changed.
@@ -1080,5 +1133,12 @@ ones turned on before the attention program.
 ## Frozen at V1R1M0
 
 Frozen: the `*USRPRF` payload (`profile/payload.rs`), the stored authority structures (private authorities in the object store, authority bits, authorization lists; `auth::FORMAT_VERSION`) and the `QAUDJRN` entry-specific layouts of section 7 (`audit::layout::FORMAT_VERSION`).
+
+Since V1R1M0: the `*USRPRF` payload is version 2 (form 4, the NT hash);
+version 1 payloads read unchanged and are written back as version 2,
+`tests/netsvr.rs` reading a payload V1R1M0 wrote
+(`tests/fixtures/usrprf-v1r1m0.bin`). The audit layouts are version 2
+(`AuditVP`; `VP` selected by `*AUTFAIL`); the entries of version 1 are
+unchanged.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

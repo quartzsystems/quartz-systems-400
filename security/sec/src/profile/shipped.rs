@@ -397,7 +397,7 @@ pub fn profile_of(s: &Shipped, qsecurity: u8, pwdlvl: u8, now: u64) -> UsrPrf {
     if s.name == "QSECOFR" {
         u.pwd_none = false;
         u.pwdexp = true;
-        u.hashes = password::hashes_for("QSECOFR", pwdlvl);
+        password::set_hashes(&mut u, "QSECOFR", pwdlvl);
         u.pwd_changed = now;
     }
     u

@@ -16,7 +16,6 @@ use crate::error::Result;
 
 /// `NOT NULL` columns QS/400 has no value for.
 pub const NO_VALUE: &[&str] = &[
-    "NETSERVER_DISABLED",
     "AUTHORITY_COLLECTION_ACTIVE",
     "AUTHORITY_COLLECTION_REPOSITORY_EXISTS",
 ];
@@ -73,6 +72,11 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         out.text("STATUS", if p.disabled { "*DISABLED" } else { "*ENABLED" });
         out.stamp("PASSWORD_CHANGE_DATE", p.pwd_changed);
         out.yes("NO_PASSWORD_INDICATOR", p.pwd_none);
+        // The storage service keeps it (`sec::netsvr`), as `NetServer` does.
+        out.yes(
+            "NETSERVER_DISABLED",
+            sec::netsvr::netserver_disabled(&p.name),
+        );
         let has = |f: profile::PwdForm| p.hash(f).is_some();
         out.yes("PASSWORD_LEVEL_0_1", has(profile::PwdForm::Short));
         // Levels 2 to 4 share the long form's hash here.

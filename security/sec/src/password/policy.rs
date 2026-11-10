@@ -7,7 +7,7 @@
 //! `QPWDVLDPGM`) and `CHGUSRPRF PASSWORD` by an administrator.
 
 use crate::password::rules::{Rules, history_len};
-use crate::password::{form_for, hashes_for, verify};
+use crate::password::{form_for, verify};
 use crate::profile::payload::{NOMAX, SYSVAL, UsrPrf};
 use crate::{Result, SecError};
 
@@ -180,11 +180,11 @@ pub fn set(
     if !p.pwd_none {
         let mut hist = std::mem::take(&mut p.hashes);
         hist.extend(std::mem::take(&mut p.history));
-        hist.retain(|h| !h.form.is_token());
+        hist.retain(|h| h.form.in_history());
         hist.truncate(64);
         p.history = hist;
     }
-    p.hashes = hashes_for(new, policy.pwdlvl);
+    super::set_hashes(p, new, policy.pwdlvl);
     p.pwd_none = false;
     if user {
         p.pwdexp = false;
@@ -198,6 +198,7 @@ pub fn set_none(p: &mut UsrPrf) {
     if !p.pwd_none {
         let mut hist = std::mem::take(&mut p.hashes);
         hist.extend(std::mem::take(&mut p.history));
+        hist.retain(|h| h.form.in_history());
         hist.truncate(64);
         p.history = hist;
     }
