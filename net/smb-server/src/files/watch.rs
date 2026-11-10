@@ -147,6 +147,40 @@ fn dir_key(components: &[String], case_sensitive: bool) -> String {
     }
 }
 
+/// QS/400: a backend's change below the watched directory, named by its
+/// path there (`sub\name`, every component valid), as (action, path,
+/// filter) for tree watches; `None` for a change to an entry of the
+/// directory itself. A path with an invalid component is heard by none.
+fn deep_change(change: &DirChange) -> Option<Vec<(u32, String, u32)>> {
+    if !change.name.contains('\\') {
+        return None;
+    }
+    let valid = |p: &str| p.split('\\').all(is_valid_component);
+    if !valid(&change.name) {
+        return Some(Vec::new());
+    }
+    let names = if change.is_directory {
+        FILE_NOTIFY_CHANGE_DIR_NAME
+    } else {
+        FILE_NOTIFY_CHANGE_FILE_NAME
+    };
+    let name = change.name.clone();
+    Some(match &change.kind {
+        DirChangeKind::Added => vec![(FILE_ACTION_ADDED, name, names)],
+        DirChangeKind::Removed => vec![(FILE_ACTION_REMOVED, name, names)],
+        DirChangeKind::Renamed { from } if valid(from) => vec![
+            (FILE_ACTION_RENAMED_OLD_NAME, from.clone(), names),
+            (FILE_ACTION_RENAMED_NEW_NAME, name, names),
+        ],
+        DirChangeKind::Renamed { .. } => vec![(FILE_ACTION_ADDED, name, names)],
+        DirChangeKind::Modified => vec![(FILE_ACTION_MODIFIED, name, CONTENT_CHANGED)],
+        DirChangeKind::AttributesChanged => {
+            vec![(FILE_ACTION_MODIFIED, name, FILE_NOTIFY_CHANGE_ATTRIBUTES)]
+        }
+        _ => Vec::new(),
+    })
+}
+
 /// One open's watch (MS-FSA ChangeNotifyEntry).
 pub(crate) struct Watch {
     /// CompletionFilter of the first request, invalid bits dropped.
@@ -1186,7 +1220,13 @@ impl WatchTable {
         // the server may be making them, with their paths.
         let mut unless_open: Vec<(usize, SmbPath)> = Vec::new();
         let mut lost = false;
+        // QS/400: changes below the directory, which only tree watches hear.
+        let mut deep: Vec<(u32, String, u32)> = Vec::new();
         for change in &changes {
+            if let Some(heard_deep) = deep_change(change) {
+                deep.extend(heard_deep);
+                continue;
+            }
             let valid = is_valid_component(&change.name);
             let filter = names(change.is_directory);
             // A rename to or from a name the server cannot use is the
@@ -1289,6 +1329,29 @@ impl WatchTable {
             !dropped[at - 1]
         });
         self.hear(host, &heard, lost);
+        self.hear_deep(host, &deep);
+    }
+
+    /// QS/400: pushes `deep`, (action, path below the directory, filter) of
+    /// changes the backend reported below `host`'s directory, into each of
+    /// its tree watches whose filter asks for them.
+    fn hear_deep(&self, host: &Arc<Host>, deep: &[(u32, String, u32)]) {
+        if deep.is_empty() {
+            return;
+        }
+        for watch in self.watches_of(host) {
+            if !watch.tree {
+                continue;
+            }
+            let batch: Batch = deep
+                .iter()
+                .filter(|(_, _, filter)| watch.filter & filter != 0)
+                .map(|(action, name, _)| (*action, name.encode_utf16().collect()))
+                .collect();
+            if !batch.is_empty() {
+                watch.push(&batch);
+            }
+        }
     }
 
     /// Pushes `heard`, (action, name, filter) of changes the backend

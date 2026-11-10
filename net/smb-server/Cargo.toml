@@ -72,6 +72,10 @@ name = "qs400_leases"
 path = "tests/qs400_leases.rs"
 
 [[test]]
+name = "qs400_notify"
+path = "tests/qs400_notify.rs"
+
+[[test]]
 name = "auth_commands"
 path = "tests/auth_commands.rs"
 
