@@ -12,6 +12,7 @@
 mod builtin;
 mod hostsvr;
 mod httpsvr;
+mod netsvr;
 mod small;
 mod starter;
 
@@ -21,6 +22,7 @@ pub use httpsvr::{
     ACCESSWEB, ACCESSWEB_PRODUCT, DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR,
     NAVIGATOR_PRODUCT,
 };
+pub use netsvr::NetSvr;
 pub use small::{Lpd, Ntp};
 pub use starter::Starter;
 
@@ -146,6 +148,13 @@ pub trait Env {
     fn product_installed(&mut self, product: &str) -> bool {
         let _ = product;
         true
+    }
+    /// `NetServer`: ask the storage service to start `QZLSSERVER` (`start`;
+    /// `autostart` for `STRTCP`'s) or to end it; refused where the job
+    /// cannot ask.
+    fn netsvr(&mut self, start: bool, autostart: bool) -> Result<(), Refusal> {
+        let _ = (start, autostart);
+        Err(Refusal::new(msg::NOT_AVAILABLE, "*NETSVR"))
     }
 }
 

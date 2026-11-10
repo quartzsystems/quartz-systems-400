@@ -158,6 +158,9 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     if program == crate::work::ddm::listener::SERVER_PROGRAM {
         crate::work::ddm::server::run(ctl, link, start);
     }
+    if program == crate::work::netsvr::FILE_PROGRAM {
+        crate::work::netsvr::file::run(ctl, link, start);
+    }
     if program == crate::console::clisrv::PROGRAM {
         crate::work::sqlsrvr::run(ctl, link, start);
     }

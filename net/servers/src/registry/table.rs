@@ -289,6 +289,21 @@ pub static SPECS: &[ServerSpec] = &[
         readiness: Readiness::Built,
     },
     ServerSpec {
+        special: "*NETSVR",
+        name: "NETSVR",
+        jobs: &[
+            job("QZLSSERVER", "QPGMR", "QSERVER", JobKind::Listener, "NETSVR"),
+            job("QZLSFILE", "QUSER", "QSERVER", JobKind::Prestart, ""),
+        ],
+        ports: &[tcp(445, false), tcp(139, false)],
+        attrs_cmd: None,
+        app_id: None,
+        exit_points: &[],
+        start_subsystem: false,
+        instances: &[],
+        readiness: Readiness::Built,
+    },
+    ServerSpec {
         special: "*QAP",
         name: "QAP",
         jobs: &[

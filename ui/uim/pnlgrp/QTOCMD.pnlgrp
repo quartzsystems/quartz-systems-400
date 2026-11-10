@@ -23,7 +23,7 @@ through the servers framework.
 :EPARML.
 :P.Also accepted&colon. *TELNET, *FTP, *SMTP, *LPD, *HTTP, *SNMP,
 *ROUTED, *BOOTP, *TFTP, *REXEC, *DHCP, *DNS, *POP, *NTP, *SSHD,
-*HOSTSVR, *QAP.
+*HOSTSVR, *QAP, *NETSVR.
 :EHELP.
 :HELP NAME='ENDTCPSVR/HTTPSVR'.HTTP server (HTTPSVR)
 :P.The HTTP server for this command.
@@ -83,7 +83,7 @@ start with IBM's names in their subsystems.
 :EPARML.
 :P.Also accepted&colon. *AUTOSTART, *TELNET, *FTP, *SMTP, *LPD, *HTTP,
 *SNMP, *ROUTED, *BOOTP, *TFTP, *REXEC, *DHCP, *DNS, *POP, *NTP, *SSHD,
-*HOSTSVR, *QAP.
+*HOSTSVR, *QAP, *NETSVR.
 :EHELP.
 :HELP NAME='STRTCPSVR/RESTART'.Restart server (RESTART)
 :P.The restart server for this command.

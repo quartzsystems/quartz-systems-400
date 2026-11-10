@@ -2634,7 +2634,9 @@ impl Service for Served<'_> {
 
     fn netsvr(&mut self, op: stg::netsvr::NsOp) -> stg::netsvr::NsReply {
         let job = self.ctx.job.clone();
-        super::netsvr::request(self.system, &job, op)
+        self.system.current_job = job.number;
+        let me = self.ctx.session.borrow().principal.clone();
+        super::netsvr::request(self.system, &job, &me, op)
     }
 
     fn service_op(&mut self, op: String, args: Vec<String>) -> Result<Vec<String>, String> {
@@ -2675,7 +2677,7 @@ impl Service for Served<'_> {
     }
 
     fn netsvr_enable_user(&mut self, user: String) -> Result<bool, String> {
-        super::nslogon::enable_user(&user)
+        super::nslogon::enable_user(self.system, &user)
     }
 
     fn netsvr_disabled_users(&mut self) -> Vec<(String, u64)> {

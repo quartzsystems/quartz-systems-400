@@ -31,6 +31,8 @@ pub mod route;
 pub mod server;
 pub mod signon;
 
+/// The library's tree admission and its sessions' view.
+pub use smb_server::{SessionView, TreeAdmission, TreeRequest, TreeView};
 pub use server::{BuildError, FileShare, NetServer, NetServerConfig, PrintShareCfg};
 
 /// The library's parsers, for `tools/fuzz`.

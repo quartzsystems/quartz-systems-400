@@ -38,6 +38,7 @@ pub fn framework() -> Framework {
     f.register(Box::new(
         servers::framework::Standard::of("*DDM").expect("in the registry"),
     ));
+    f.register(Box::new(servers::framework::NetSvr));
     f
 }
 
@@ -221,6 +222,23 @@ impl Env for JobEnv<'_> {
             .with(|l| l.licpgm_panel("INSTALLED".into(), Vec::new()))
             .unwrap_or_default();
         base_installed(&rows, product)
+    }
+
+    fn netsvr(&mut self, start: bool, autostart: bool) -> Result<(), servers::Refusal> {
+        let op = if start {
+            stg::netsvr::NsOp::Start {
+                reset: false,
+                autostart,
+            }
+        } else {
+            stg::netsvr::NsOp::End
+        };
+        match self.host.link.borrow_mut().with(|l| l.netsvr(op)) {
+            stg::netsvr::NsReply::Done => Ok(()),
+            stg::netsvr::NsReply::Refused { msgid, text } => Err(servers::Refusal::new(&msgid, text)),
+            stg::netsvr::NsReply::Error { text } => Err(servers::Refusal::new(servers::msg::NOT_STARTED, text)),
+            other => Err(servers::Refusal::new(servers::msg::NOT_STARTED, format!("{other:?}"))),
+        }
     }
 }
 

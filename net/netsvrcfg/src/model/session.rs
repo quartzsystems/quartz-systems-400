@@ -147,6 +147,9 @@ pub enum TableError {
     /// No connection has the identifier.
     #[error("connection {0} does not exist")]
     NoConnection(u32),
+    /// The share has its maximum users connected.
+    #[error("share {0} has its maximum users")]
+    MaxUsers(String),
 }
 
 impl SessionTable {
@@ -212,6 +215,36 @@ impl SessionTable {
         });
         s.last_active = now;
         Ok(c)
+    }
+
+    /// [`SessionTable::connect`] unless `share` already has `max` users
+    /// connected (`max` below 1: no maximum), counted across every job.
+    ///
+    /// # Errors
+    ///
+    /// No such session, or [`TableError::MaxUsers`].
+    pub fn connect_within(
+        &mut self,
+        id: u64,
+        share: &str,
+        kind: i32,
+        max: i32,
+        now: u64,
+    ) -> Result<u32, TableError> {
+        if let Ok(max) = usize::try_from(max)
+            && max > 0
+        {
+            let users = self
+                .sessions
+                .values()
+                .flat_map(|s| s.connections.iter())
+                .filter(|c| c.share.eq_ignore_ascii_case(share))
+                .count();
+            if users >= max {
+                return Err(TableError::MaxUsers(share.to_ascii_uppercase()));
+            }
+        }
+        self.connect(id, share, kind, now)
     }
 
     /// The tree connection `conn` ended.
@@ -413,5 +446,18 @@ mod tests {
         assert_eq!(t.job_ended("000123/QUSER/QZLSFILE"), 2);
         assert_eq!(t.sessions().count(), 0);
         assert_eq!(t.stats.session_errors, 2);
+    }
+
+    #[test]
+    fn maximum_users_count_across_jobs() {
+        let mut t = SessionTable::new();
+        let a = t.register(session("PC1", "BOB"));
+        let mut other = session("PC2", "ANN");
+        other.job = "000124/QUSER/QZLSFILE".into();
+        let b = t.register(other);
+        assert!(t.connect_within(a, "data", 0, 1, 5).is_ok());
+        assert_eq!(t.connect_within(b, "DATA", 0, 1, 5), Err(TableError::MaxUsers("DATA".into())));
+        assert!(t.connect_within(b, "DATA", 0, -1, 5).is_ok());
+        assert!(t.connect_within(b, "other", 0, 1, 5).is_ok());
     }
 }

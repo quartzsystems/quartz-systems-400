@@ -25,5 +25,5 @@ pub mod model;
 
 pub use model::attrs::{Attributes, Dialect, Settings};
 pub use model::config::Config;
-pub use model::session::{Connection, Counter, Session, SessionTable, Stats};
+pub use model::session::{Connection, Counter, Session, SessionTable, Stats, TableError};
 pub use model::share::{FileShare, Kind, Permission, PrintShare, Qualified, Share, SpoolType};

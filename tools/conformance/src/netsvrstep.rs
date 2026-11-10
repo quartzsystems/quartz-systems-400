@@ -2,18 +2,18 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! QEMU steps 166 to 168: `NetServer` (`docs/NETSERVER.md` section 11).
+//! QEMU steps 166 to 169: `NetServer` (`docs/NETSERVER.md` section 11).
 //! 166 starts `*NETSVR` and finds `QZLSSERVER` (BCH) and `QZLSFILE` (PJ) in
 //! `WRKACTJOB`; 167 makes a user and a share (`QZLSADFS`) and runs every
 //! `smbtest` scenario against the guest's 445 through a port forward; 168
-//! copies 1 GiB in and out and reports MB/s.
+//! copies 1 GiB in and out and reports MB/s; 169 the listener in `NETSTAT`
+//! and `QSYS2.NETSTAT_INFO`, the share in `QSYS2.SERVER_SHARE_INFO`, a
+//! maximum users through `QZLSCHFS`, and `ENDTCPSVR`, `QZLSSTRS`,
+//! `QZLSENDS` and `STRTCPSVR`.
 //!
 //! `tools/smbtest` has its own lockfile outside the workspace, so the steps
 //! run its binary: `QS400_SMBTEST` when set, else one built here with
 //! `cargo build --release --manifest-path tools/smbtest/Cargo.toml`.
-//!
-//! The steps are registered only with `QS400_NETSVR_STEPS=1` until the
-//! `NetServer` jobs exist ([`enabled`]).
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -32,11 +32,6 @@ const SHARE: &str = "SMBTEST";
 /// The scenarios' directory on the share.
 const SCRATCH: &str = "smbtest";
 
-/// Whether the `NetServer` steps are registered (`QS400_NETSVR_STEPS=1`).
-pub(crate) fn enabled() -> bool {
-    std::env::var("QS400_NETSVR_STEPS").is_ok_and(|v| v == "1")
-}
-
 /// The `WRKACTJOB` line of `name`, waiting up to 30 seconds for it.
 fn job_line(s: &mut Session, name: &str) -> Result<String, String> {
     let end = Instant::now() + Duration::from_secs(30);
@@ -50,6 +45,43 @@ fn job_line(s: &mut Session, name: &str) -> Result<String, String> {
         }
         std::thread::sleep(Duration::from_millis(500));
     }
+}
+
+/// Waits up to 30 seconds for `name` to leave `WRKACTJOB`.
+fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
+    let end = Instant::now() + Duration::from_secs(30);
+    loop {
+        let out = s.command("wrkactjob", CMD)?;
+        if !out.lines().any(|l| l.split_whitespace().next() == Some(name)) {
+            return Ok(());
+        }
+        if Instant::now() > end {
+            return Err(format!("{name} still active:
+{out}"));
+        }
+        std::thread::sleep(Duration::from_millis(500));
+    }
+}
+
+/// The output of `cmd`, which must hold every one of `want`.
+fn expect(s: &mut Session, cmd: &str, want: &[&str]) -> Result<String, String> {
+    let out = s.command(cmd, CMD)?;
+    match want.iter().find(|w| !out.contains(**w)) {
+        Some(w) => Err(format!("{cmd}: no {w:?} in:
+{out}")),
+        None => Ok(out),
+    }
+}
+
+/// `QZLSADFS` or `QZLSCHFS` of the step's share with `max` users.
+fn share_call(api: &str, max: i32) -> String {
+    let path = format!("/home/{USER}");
+    format!(
+        "CALL PGM(QSYS/{api}) PARM('{SHARE:<12}' '{path}' X'{:08X}' X'00000000' '{:<50}' X'00000002' X'{:08X}' X'00000000')",
+        path.len(),
+        "smbtest share",
+        max.cast_unsigned()
+    )
 }
 
 /// The `smbtest` binary: `QS400_SMBTEST`, or built into the target directory.
@@ -130,15 +162,7 @@ impl Suite {
         // QZLSADFS: share name CHAR(12), path, path length, path CCSID (0, the
         // job's), text CHAR(50), permissions (2 read/write), maximum users
         // (-1 none), error code (bytes provided 0: escape messages).
-        let path = format!("/home/{USER}");
-        s.command(
-            &format!(
-                "CALL PGM(QSYS/QZLSADFS) PARM('{SHARE:<12}' '{path}' X'{:08X}' X'00000000' '{:<50}' X'00000002' X'FFFFFFFF' X'00000000')",
-                path.len(),
-                "smbtest share"
-            ),
-            CMD,
-        )?;
+        s.command(&share_call("QZLSADFS", -1), CMD)?;
         let port = forward_port(self, GUEST, 445)?;
         let out = smbtest(port, &["--copy-bytes", "16M"])?;
         let oks = out.lines().filter(|l| l.starts_with("ok ")).count();
@@ -162,6 +186,40 @@ impl Suite {
         let rin = detail(&out, "copy", "in: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
         let rout = detail(&out, "copy", "out: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
         Ok(format!("1 GiB in {rin}, out {rout}"))
+    }
+}
+
+#[allow(clippy::unused_self)] // the steps share one signature
+impl Suite {
+    /// Step 169: the listener in the network status, the share in the SQL
+    /// view, a maximum users, and the server ended and started by the
+    /// commands and the APIs.
+    pub(crate) fn netsvr_admin(&self, s: &mut Session) -> Result<String, String> {
+        expect(s, "NETSTAT OPTION(*CNN)", &["445", "Listen"])?;
+        expect(
+            s,
+            "svc.sql SELECT LOCAL_PORT, TCP_STATE FROM QSYS2.NETSTAT_INFO WHERE LOCAL_PORT = 445;",
+            &["445", "LISTEN"],
+        )?;
+        let view = "svc.sql SELECT SERVER_SHARE_NAME, PATH_NAME, PERMISSIONS, MAXIMUM_CONNECTIONS FROM QSYS2.SERVER_SHARE_INFO WHERE SERVER_SHARE_NAME = 'SMBTEST';";
+        expect(s, view, &[SHARE, &format!("/home/{USER}"), "RW", "1 row(s)"])?;
+        s.command(&share_call("QZLSCHFS", 1), CMD)?;
+        expect(s, view, &[SHARE, " 1"])?;
+        // One user at a time on the share: smbtest's scenarios connect one
+        // after another.
+        let port = forward_port(self, GUEST, 445)?;
+        smbtest(port, &["--only", "file-round-trip,cleanup", "--no-bad-signon"])?;
+        s.command(&share_call("QZLSCHFS", -1), CMD)?;
+        s.command("ENDTCPSVR SERVER(*NETSVR)", CMD)?;
+        job_gone(s, "QZLSSERVER")?;
+        // QZLSSTRS: reset '0', error code (bytes provided 0).
+        s.command("CALL PGM(QSYS/QZLSSTRS) PARM('0' X'00000000')", CMD)?;
+        job_line(s, "QZLSSERVER")?;
+        s.command("CALL PGM(QSYS/QZLSENDS) PARM(X'00000000')", CMD)?;
+        job_gone(s, "QZLSSERVER")?;
+        s.command("STRTCPSVR SERVER(*NETSVR)", CMD)?;
+        job_line(s, "QZLSSERVER")?;
+        Ok("445 listening in NETSTAT and NETSTAT_INFO; SMBTEST in SERVER_SHARE_INFO; maximum users 1 through QZLSCHFS; ENDTCPSVR, QZLSSTRS, QZLSENDS, STRTCPSVR".into())
     }
 }
 

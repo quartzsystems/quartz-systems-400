@@ -105,7 +105,7 @@ fn disabled_message(system: &mut System, ctx: &JobCtx, user: &str, client: &str)
         msgf: ("QCPFMSG".into(), "QSYS".into()),
         severity: 0,
         data,
-        text: format!("User profile {name} is disabled for NetServer access from {client}."),
+        text: super::msgs::text(system, sec::netsvr::DISABLED_MSGID, &[&name, client]),
         job: (ctx.job.name.clone(), ctx.job.user.clone(), ctx.job.number),
         from_pgm: "QZLSFILE".into(),
         ..wm::obj::msgq::QMsg::default()
@@ -125,11 +125,9 @@ pub fn started(system: &System, ctx: &JobCtx) {
 
 /// `netsvr_enable_user` (`QZLSCHSI` reset of a disabled user):
 /// `*IOSYSCFG`. Whether the user was disabled.
-pub fn enable_user(user: &str) -> Result<bool, String> {
-    require(
-        sec::profile::SpecialAuth::IOSYSCFG,
-        "enable a user for NetServer",
-    )?;
+pub fn enable_user(system: &mut System, user: &str) -> Result<bool, String> {
+    let what = super::msgs::text(system, "TXT0E2C", &[]);
+    require(sec::profile::SpecialAuth::IOSYSCFG, &what)?;
     Ok(sec::netsvr::enable_netserver_user(user))
 }
 

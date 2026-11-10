@@ -105,6 +105,26 @@ pub enum NsOp {
     /// Both configuration files (`QAZLSCFG`, `QAZLSSHR`), created with
     /// the shipped share when missing.
     Config,
+    /// Start `QZLSSERVER` (`STRTCPSVR SERVER(*NETSVR)`, `STRTCP`'s
+    /// autostart), as `QZLSSTRS` does; `reset` applies the pending
+    /// attributes. An autostart start does nothing unless `*NETSVR`
+    /// autostarts.
+    Start { reset: bool, autostart: bool },
+    /// End `QZLSSERVER` and every `QZLSFILE`'s connections, as
+    /// `QZLSENDS` does.
+    End,
+    /// Whether `QZLSSERVER` is active and whether it was asked to end.
+    State,
+    /// The calling job's routes for reconnects: its relay identifier,
+    /// the `ClientGuid`s it serves or holds opens for, and the client
+    /// addresses of its durable opens. Empty lists withdraw it.
+    Route { relay: Vec<u8>, guids: Vec<Vec<u8>>, peers: Vec<String> },
+    /// The job a new connection goes to: the one that registered `guid`
+    /// (16 bytes, or empty), else `peer`; an empty relay for none.
+    Lookup { guid: Vec<u8>, peer: String },
+    /// [`NsOp::Connect`] within the share's maximum users, counted
+    /// across jobs: the connection's identifier, or `Refused`.
+    Admit { id: u64, share: String, kind: i32 },
 }
 
 wire_enum!(NsOp {
@@ -120,6 +140,12 @@ wire_enum!(NsOp {
     9 => Ending { id },
     10 => JobEnded,
     11 => Config,
+    12 => Start { reset, autostart },
+    13 => End,
+    14 => State,
+    15 => Route { relay, guids, peers },
+    16 => Lookup { guid, peer },
+    17 => Admit { id, share, kind },
 });
 
 /// The answer to an [`NsOp`].
@@ -140,6 +166,13 @@ pub enum NsReply {
     Files { cfg: Vec<u8>, shr: Vec<u8> },
     /// Refused or failed.
     Error { text: String },
+    /// Refused with a message: its identifier and first-level text.
+    Refused { msgid: String, text: String },
+    /// `QZLSSERVER`'s state.
+    State { active: bool, ending: bool },
+    /// The relay identifier of the job a connection goes to; empty for
+    /// a new prestart job.
+    Target { relay: Vec<u8> },
 }
 
 wire_enum!(NsReply {
@@ -150,6 +183,9 @@ wire_enum!(NsReply {
     4 => Flag { yes },
     5 => Files { cfg, shr },
     6 => Error { text },
+    7 => Refused { msgid, text },
+    8 => State { active, ending },
+    9 => Target { relay },
 });
 
 #[cfg(test)]

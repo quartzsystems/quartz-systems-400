@@ -1021,6 +1021,13 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
             "QSERVER",
             Sbsd {
                 text: "File server subsystem".into(),
+                // NetServer (the primary's DSPSBSD, pub400's entries):
+                // QZLSSERVER is submitted to QPWFSERVER with QZLSSTART.
+                rtges: vec![Rtge {
+                    pgm: q("QZLSSERVER", "QSYS"),
+                    ..rt(800, "QZLSSTART", q("QPWFSERVER", "QSYS"), 1)
+                }],
+                jobqes: vec![jq("QPWFSERVER", "QSYS", 10, 0)],
                 pjes: vec![
                     host_pje(
                         "QPWFSERVSO",
@@ -1034,6 +1041,15 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                         q("QPWFSERVER", "QSYS"),
                         0,
                     ),
+                    Pje {
+                        adljobs: 5,
+                        ..host_pje("QZLSFILE", q("QZLSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 200)
+                    },
+                    Pje {
+                        strjobs: false,
+                        adljobs: 0,
+                        ..host_pje("QZLSFILET", q("QZLSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 1)
+                    },
                 ],
                 ..Sbsd::default()
             },

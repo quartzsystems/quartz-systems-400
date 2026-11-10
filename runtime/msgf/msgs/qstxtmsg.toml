@@ -1653,3 +1653,31 @@ help = "Text of CHGTIMZON's refusal: what the user was not allowed to do (*ALLOB
 id = "TXT0E2B"
 text = "delete a time zone description"
 help = "Text of DLTTIMZON's refusal: what the user was not allowed to do (*ALLOBJ is needed)."
+
+[[msg]]
+id = "TXT0E2C"
+text = "enable a user for NetServer"
+help = "Text of the NetServer user enable's refusal (QZLSCHSI format ZLSS0200): what the user was not allowed to do (*IOSYSCFG is needed)."
+
+[[msg]]
+id = "TXT0E2D"
+text = "Job &1 is not a NetServer job."
+help = "Text of the storage service's answer when a job other than QZLSSERVER or QZLSFILE asks to change the NetServer session table or read its configuration."
+vars = ["*CHAR 28"]
+
+[[msg]]
+id = "TXT0E2E"
+text = "NetServer counter &1 does not exist."
+help = "Text of the storage service's answer when a NetServer job reports into a statistics counter the session table does not have."
+vars = ["*CHAR 3"]
+
+[[msg]]
+id = "TXT0E2F"
+text = "The NetServer configuration is read through its own request."
+help = "Text of the storage service's answer when the NetServer configuration request reaches the session table."
+
+[[msg]]
+id = "TXT0E30"
+text = "Share &1 has its maximum users connected."
+help = "Text of a NetServer tree connection refused because the share's maximum users (QZLSADFS, QZLSCHFS) are connected, counted across every QZLSFILE job; the client sees STATUS_REQUEST_NOT_ACCEPTED."
+vars = ["*CHAR 12"]

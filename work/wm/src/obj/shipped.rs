@@ -284,6 +284,7 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         ("QSYS", "QSPL", "Spooling job queue"),
         ("QSYS", "QSYSNOMAX", "System jobs, no limit"),
         ("QSYS", "QUSRNOMAX", "User jobs, no limit"),
+        ("QSYS", "QPWFSERVER", "File server job queue"),
     ] {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");

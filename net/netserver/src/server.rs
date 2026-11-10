@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::thread;
 use std::time::Duration;
 
-use smb_server::{Access, Share, SmbError, SmbServer};
+use smb_server::{Access, SessionView, Share, SmbError, SmbServer, TreeAdmission, TreeRequest};
 use tokio::runtime::{Builder, Handle};
 use tokio::sync::{Notify, oneshot};
 use tracing::info;
@@ -185,6 +185,15 @@ where
     Ok(rx.recv().map_err(|_| io::Error::other("server thread gone"))?.ok())
 }
 
+/// The library's admission over a shared one.
+struct Admit(Arc<dyn TreeAdmission>);
+
+impl TreeAdmission for Admit {
+    fn admit(&self, req: &TreeRequest<'_>) -> bool {
+        self.0.admit(req)
+    }
+}
+
 /// One job's SMB server.
 pub struct NetServer {
     smb: Arc<SmbServer>,
@@ -209,6 +218,22 @@ impl NetServer {
     /// A share root that is not a directory, a configuration the library
     /// refuses, or no runtime.
     pub fn build(cfg: &NetServerConfig, ifs: MakeClient, signon: Arc<dyn SignOn>, printer: &Arc<dyn Printer>) -> Result<Self, BuildError> {
+        Self::build_admitted(cfg, ifs, signon, printer, None)
+    }
+
+    /// [`NetServer::build`] with every tree connect admitted by
+    /// `admission` first (the job counts a share's users across jobs).
+    ///
+    /// # Errors
+    ///
+    /// As [`NetServer::build`].
+    pub fn build_admitted(
+        cfg: &NetServerConfig,
+        ifs: MakeClient,
+        signon: Arc<dyn SignOn>,
+        printer: &Arc<dyn Printer>,
+        admission: Option<Arc<dyn TreeAdmission>>,
+    ) -> Result<Self, BuildError> {
         let rt = Builder::new_current_thread().enable_all().build()?;
         let handle = rt.handle().clone();
         let (stop, stopped) = oneshot::channel::<()>();
@@ -233,6 +258,9 @@ impl NetServer {
             .durable_handle_timeout(cfg.durable_timeout)
             .logon_throttle(0, Duration::from_secs(1))
             .lease_observer(Observer(leases.clone()));
+        if let Some(a) = admission {
+            b = b.tree_admission(Admit(a));
+        }
         for s in &cfg.file_shares {
             let (tx, rx) = mpsc::channel();
             let (io2, path, ro) = (io.clone(), s.path.clone(), s.read_only);
@@ -388,6 +416,29 @@ impl NetServer {
             let _ = tx.send(smb.client_guids().await);
         });
         rx.recv().unwrap_or_default()
+    }
+
+    /// The sessions served now, with their trees and open counts.
+    #[must_use]
+    pub fn sessions(&self) -> Vec<SessionView> {
+        let smb = self.smb.clone();
+        let (tx, rx) = mpsc::channel();
+        self.handle.spawn(async move {
+            let _ = tx.send(smb.sessions().await);
+        });
+        rx.recv().unwrap_or_default()
+    }
+
+    /// Ends session `id` (`QZLSENSS`): its trees and opens close. False
+    /// when no connection holds it.
+    #[must_use]
+    pub fn end_session(&self, id: u64) -> bool {
+        let smb = self.smb.clone();
+        let (tx, rx) = mpsc::channel();
+        self.handle.spawn(async move {
+            let _ = tx.send(smb.end_session(id).await);
+        });
+        rx.recv().unwrap_or(false)
     }
 
     /// Durable opens waiting for their client to reconnect.

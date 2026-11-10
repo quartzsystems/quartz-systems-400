@@ -679,12 +679,10 @@ impl Suite {
             "157 Access for Web messages, jobs and commands",
             Self::access_web_work,
         )?);
-        // NetServer: registered with QS400_NETSVR_STEPS=1 until its jobs exist.
-        if crate::netsvrstep::enabled() {
-            reports.push(self.step(&mut s, "166 NetServer start", Self::netsvr_start)?);
-            reports.push(self.step(&mut s, "167 NetServer files", Self::netsvr_files)?);
-            reports.push(self.step(&mut s, "168 NetServer copy 1 GB", Self::netsvr_copy)?);
-        }
+        reports.push(self.step(&mut s, "166 NetServer start", Self::netsvr_start)?);
+        reports.push(self.step(&mut s, "167 NetServer files", Self::netsvr_files)?);
+        reports.push(self.step(&mut s, "168 NetServer copy 1 GB", Self::netsvr_copy)?);
+        reports.push(self.step(&mut s, "169 NetServer APIs and SQL", Self::netsvr_admin)?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
