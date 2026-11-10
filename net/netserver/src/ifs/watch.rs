@@ -65,6 +65,10 @@ impl Watches {
         let changes: Vec<DirChange> = events.into_iter().map(change).collect();
         let mut g = self.lock();
         let Some(feed) = g.feeds.get(&id) else {
+            // Kept only for a watch being taken now; a few at most.
+            if g.early.len() >= BATCHES {
+                g.early.clear();
+            }
             g.early.entry(id).or_default().extend(changes);
             return;
         };

@@ -179,3 +179,20 @@ fn a_lease_being_granted_survives_a_report_that_keeps_it() {
     l.report(A, 5, &[(K, super::state::KEEP)]);
     assert_eq!(l.on(F), [(A, K, RWH)]);
 }
+
+#[test]
+fn a_reset_owner_s_poll_answers_at_once_and_its_leases_go() {
+    let l = Leases::default();
+    l.grant(A, F, 5, K, RWH, Others::default());
+    let (_, d) = deferring(true, || l.orders(A, Duration::from_secs(30)));
+    let d = d.expect("deferred");
+    l.reset_owner(A);
+    assert!(l.ready(&d));
+    assert!(l.is_empty());
+    assert!(l.orders(A, Duration::from_secs(30)).unwrap().is_empty());
+    // Once: the next poll waits again.
+    assert_eq!(
+        deferring(true, || l.orders(A, Duration::from_secs(30))).0,
+        Err(Errno::EAGAIN)
+    );
+}

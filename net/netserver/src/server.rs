@@ -208,6 +208,8 @@ pub struct NetServer {
     leases: Arc<LeaseLink>,
     /// Ends the thread polling for lease break orders.
     stopping: Arc<AtomicBool>,
+    /// That thread, joined when the server ends.
+    poller: Mutex<Option<thread::JoinHandle<()>>>,
 }
 
 impl NetServer {
@@ -337,6 +339,7 @@ impl NetServer {
             driver: Some(driver),
             leases,
             stopping: Arc::default(),
+            poller: Mutex::default(),
         })
     }
 
@@ -353,7 +356,7 @@ impl NetServer {
     pub fn start_leases(&self, orders: MakeClient) -> io::Result<()> {
         let (smb, handle, link, stop) = (self.smb.clone(), self.handle.clone(), self.leases.clone(), self.stopping.clone());
         link.start();
-        thread::Builder::new().name("netserver-leases".into()).spawn(move || {
+        let poller = thread::Builder::new().name("netserver-leases".into()).spawn(move || {
             let client = orders();
             link.serve_orders(&*client, &stop, |tag, keep, link| {
                 let smb = smb.clone();
@@ -364,6 +367,7 @@ impl NetServer {
                 });
             });
         })?;
+        *self.poller.lock().unwrap_or_else(PoisonError::into_inner) = Some(poller);
         Ok(())
     }
 
@@ -524,6 +528,13 @@ impl NetServer {
 impl Drop for NetServer {
     fn drop(&mut self) {
         self.stopping.store(true, Ordering::SeqCst);
+        // The job's leases and watches in the IFS go with this server, and
+        // its poll returns, before a later server of the job polls: news
+        // for that one never reaches this one.
+        if let Some(poller) = self.poller.lock().unwrap_or_else(PoisonError::into_inner).take() {
+            self.leases.reset();
+            let _ = poller.join();
+        }
         if let Some(stop) = self.stop.take() {
             let _ = stop.send(());
         }

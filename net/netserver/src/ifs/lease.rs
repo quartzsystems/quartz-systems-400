@@ -203,6 +203,12 @@ impl LeaseLink {
         }
     }
 
+    /// The server ends: the job's leases and watches leave the IFS's table
+    /// and the poll waiting there returns.
+    pub fn reset(&self) {
+        let _ = self.io.call_blocking(|c| c.lease_reset());
+    }
+
     /// An order found no open of `tag` in the library: what the table
     /// still has from this job there goes.
     pub fn none_open(&self, tag: u64) {

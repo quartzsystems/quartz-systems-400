@@ -1031,3 +1031,44 @@ async fn a_detached_connection_holds_the_job_until_it_closes() {
     }
     assert!(released);
 }
+
+/// A server of the job `owner` with its leases and watches in the IFS.
+fn server_of(fs: &Arc<Fs>, owner: u64) -> NetServer {
+    let (f, g) = (fs.clone(), fs.clone());
+    let server = NetServer::build(
+        &config(),
+        Box::new(move || Box::new(f.client_as("ALICE", owner)) as Box<dyn IfsClient>),
+        Arc::new(Profiles),
+        &(Arc::new(Spool(Arc::default())) as Arc<dyn Printer>),
+    )
+    .unwrap();
+    server.start_leases(Box::new(move || Box::new(g.client_as("ALICE", owner)) as Box<dyn IfsClient>)).unwrap();
+    server
+}
+
+/// A job serves one client after another, each with a server of its own:
+/// the ended server's poll leaves first, so the next server's watch hears
+/// other jobs' changes (none goes to the ended one).
+#[tokio::test(flavor = "multi_thread")]
+async fn a_later_server_of_the_same_job_hears_other_jobs_changes() {
+    let fs = Fs::new();
+    let owner = fs.owner.fetch_add(1, Ordering::SeqCst);
+    let first = server_of(&fs, owner);
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    tokio::task::spawn_blocking(move || drop(first)).await.unwrap();
+    let second = Arc::new(server_of(&fs, owner));
+    let me = fs.client("ALICE");
+    me.mkdir("/pub/later", 0o777).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let accept = std::thread::spawn(move || l.accept().unwrap().0);
+    let c = tokio::spawn(alice(addr, "PUB"));
+    let s = tokio::task::spawn_blocking(move || accept.join().unwrap()).await.unwrap();
+    second.serve_detached(s).unwrap();
+    let mut c = c.await.unwrap();
+    let dir = c.open_dir("later").await;
+    let mid = arm(&mut c, dir, false).await;
+    me.mkdir("/pub/later/x", 0o777).unwrap();
+    assert_eq!(notified(&mut c, mid).await, [(ADDED, "x".to_owned())]);
+    me.release();
+}

@@ -506,4 +506,7 @@ impl IfsClient for RemoteIfs {
     fn watch_end(&self, id: u64) -> Result<()> {
         reply_as!(self.call(IfsOp::WatchEnd { id }), Unit)
     }
+    fn lease_reset(&self) -> Result<()> {
+        reply_as!(self.call(IfsOp::LeaseReset), Unit)
+    }
 }

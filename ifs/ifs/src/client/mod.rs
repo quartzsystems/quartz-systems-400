@@ -213,6 +213,9 @@ pub trait IfsClient {
     fn watch_add(&self, path: &str, tree: bool) -> Result<u64>;
     /// End the watch `id`.
     fn watch_end(&self, id: u64) -> Result<()>;
+    /// The caller's server of leases and watches ended: they go, and its
+    /// waiting poll answers at once.
+    fn lease_reset(&self) -> Result<()>;
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -494,6 +497,10 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
         self.ifs.watch_end(self.cx, id);
         Ok(())
     }
+    fn lease_reset(&self) -> Result<()> {
+        self.ifs.lease_reset(self.cx);
+        Ok(())
+    }
 }
 
 /// An [`IfsClient`] in the process: one caller over a shared [`Ifs`],
@@ -635,6 +642,7 @@ macro_rules! every_method {
         fn lease_orders(wait_ms: u32) -> Result<News>;
         fn watch_add(path: &str, tree: bool) -> Result<u64>;
         fn watch_end(id: u64) -> Result<()>;
+        fn lease_reset() -> Result<()>;
     } };
 }
 

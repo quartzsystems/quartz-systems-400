@@ -303,6 +303,7 @@ pub enum IfsOp {
     WatchEnd {
         id: u64,
     },
+    LeaseReset,
 }
 
 wire_enum!(IfsOp {
@@ -377,6 +378,7 @@ wire_enum!(IfsOp {
     68 => LeaseOrders { wait_ms },
     69 => WatchAdd { path, tree },
     70 => WatchEnd { id },
+    71 => LeaseReset,
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -661,6 +663,7 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
             r: c.watch_add(&path, tree),
         },
         IfsOp::WatchEnd { id } => R::Unit { r: c.watch_end(id) },
+        IfsOp::LeaseReset => R::Unit { r: c.lease_reset() },
     }
 }
 

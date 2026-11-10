@@ -99,6 +99,12 @@ impl<B: Backend> Ifs<B> {
         Ok(self.leases.watch_add(cx.owner, r.path(), tree))
     }
 
+    /// The caller's server of leases and watches ended: they go, and its
+    /// waiting poll answers at once ([`crate::lease::Leases::reset_owner`]).
+    pub fn lease_reset(&self, cx: &Ctx<'_>) {
+        self.leases.reset_owner(cx.owner);
+    }
+
     /// End the caller's watch `id`.
     pub fn watch_end(&self, cx: &Ctx<'_>, id: u64) {
         self.leases.watch_end(cx.owner, id);

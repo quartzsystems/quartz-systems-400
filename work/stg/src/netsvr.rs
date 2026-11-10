@@ -118,7 +118,11 @@ pub enum NsOp {
     /// The calling job's routes for reconnects: its relay identifier,
     /// the `ClientGuid`s it serves or holds opens for, and the client
     /// addresses of its durable opens. Empty lists withdraw it.
-    Route { relay: Vec<u8>, guids: Vec<Vec<u8>>, peers: Vec<String> },
+    Route {
+        relay: Vec<u8>,
+        guids: Vec<Vec<u8>>,
+        peers: Vec<String>,
+    },
     /// The job a new connection goes to: the one that registered `guid`
     /// (16 bytes, or empty), else `peer`; an empty relay for none.
     Lookup { guid: Vec<u8>, peer: String },

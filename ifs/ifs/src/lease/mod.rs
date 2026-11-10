@@ -72,6 +72,8 @@ struct Inner {
     tags: HashMap<(Owner, u64), ObjKey>,
     orders: HashMap<Owner, Vec<Order>>,
     watches: Watches,
+    /// Owners whose poll answers at once, empty: they reset.
+    woken: std::collections::HashSet<Owner>,
 }
 
 /// Every owner's leases on the file system's objects.
@@ -292,6 +294,9 @@ impl Leases {
     /// `EAGAIN` as above.
     pub fn orders(&self, owner: Owner, wait: Duration) -> Result<News> {
         let mut g = self.lock();
+        if g.woken.remove(&owner) {
+            return Ok(News::default());
+        }
         let news = News {
             breaks: g.orders.remove(&owner).unwrap_or_default(),
             changes: g.watches.take(owner),
@@ -364,6 +369,15 @@ impl Leases {
         self.changed.notify_all();
     }
 
+    /// `owner`'s server of leases and watches ended (the job goes on): they
+    /// and its orders go, and its poll waiting now answers at once, empty,
+    /// so no later server's news goes to the ended one.
+    pub fn reset_owner(&self, owner: Owner) {
+        self.release_owner(owner);
+        self.lock().woken.insert(owner);
+        self.changed.notify_all();
+    }
+
     /// `owner` ended: its leases and orders go, and what waited on them
     /// goes on.
     pub fn release_owner(&self, owner: Owner) {
@@ -375,6 +389,7 @@ impl Leases {
         g.tags.retain(|(o, _), _| *o != owner);
         g.orders.remove(&owner);
         g.watches.release_owner(owner);
+        g.woken.remove(&owner);
         self.watching
             .store(!g.watches.is_empty(), Ordering::Release);
         drop(g);
@@ -453,7 +468,9 @@ fn order(orders: &mut HashMap<Owner, Vec<Order>>, owner: Owner, tag: u64, keep: 
 fn ready(g: &Inner, d: &Deferral) -> bool {
     match *d {
         Deferral::Orders { owner, .. } => {
-            g.orders.get(&owner).is_some_and(|v| !v.is_empty()) || g.watches.has_news(owner)
+            g.orders.get(&owner).is_some_and(|v| !v.is_empty())
+                || g.watches.has_news(owner)
+                || g.woken.contains(&owner)
         }
         Deferral::Breaks {
             key,

@@ -385,9 +385,11 @@ fn refused(op: &IfsOp) -> Option<IfsReply> {
         IfsOp::LeaseGrant { .. } => Some(IfsReply::Mask {
             r: Err(Errno::EPERM),
         }),
-        IfsOp::LeaseReport { .. } | IfsOp::WatchEnd { .. } => Some(IfsReply::Unit {
-            r: Err(Errno::EPERM),
-        }),
+        IfsOp::LeaseReport { .. } | IfsOp::WatchEnd { .. } | IfsOp::LeaseReset => {
+            Some(IfsReply::Unit {
+                r: Err(Errno::EPERM),
+            })
+        }
         IfsOp::WatchAdd { .. } => Some(IfsReply::Handle {
             r: Err(Errno::EPERM),
         }),
