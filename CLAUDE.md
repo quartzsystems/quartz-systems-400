@@ -20,10 +20,11 @@ kernel is the only inherited component; every process above it is ours.
 | 9 | ILE RPG: front end, compiler, runtime (`qrpgrt`), the SQL precompiler, listings and debug views, the corpus against pub400, HLINV | `PHASE9.md`, `RPG.md` |
 | 10 | the IFS on xfs with `/QSYS.LIB`, TCP/IP and communications objects, sockets, TLS and certificates, telnet, FTP, SSH, NTP, LPD, DDM/DRDA, the host servers, network printers, QSH and PASE | `PHASE10.md` |
 | 11 | save and restore, tape and optical (virtual, physical code ready), image catalogs, licensed programs and `GO LICPGM`, PTFs and the update service, the problem log and service tools, install media and recovery, cleanup and backup | `PHASE11.md` |
-| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6 (7 to 9, `Manage`, `Develop`/`Jobs` and `Debug`, drafts in V1R1M0); the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
+| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6 (7 to 9, `Manage`, `Develop`/`Jobs` and `Debug`, drafts in V1R1M0; 10, `NetServer`, a draft for V1R2M0); the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
 | 12 | release engineering for V1R1M0: the carried gaps, the format freeze, Collection Services, help everywhere, the text audit and NLS, hardware qualification, the guest agent, RPG III, hardening, the Knowledge Center (complete) | `PHASE12.md` |
 | SQL | the SQL engine to the Db2 for i SQL dialect, 7.5 level: DDL, queries, SQL PL and triggers, types, dynamic and embedded SQL, `QSQCLI`, DRDA, the `QSYS2` services, the plan cache, `STRSQL` | `SQL.md` |
 | pre-release | V1R1M0 made releasable: QS00 product IDs, every accepted-and-ignored clause implemented or refused, hot spares and the DST options, storage thresholds, power and system values, time zones, CCSIDs, function usage, the `QIBM_QSY_*` exit points, CI and releases from a tag, Secure Boot signing, `NOTICES.txt`, the kernel source offer, reproducible media; QS/400 Access for Web (`net/accessweb`, QS00AFW) | `PHASE12.md` Release gate, `RELEASE_NOTES_V1R1M0.md`, `releasing.md`, `ACCESSWEB.md` |
+| V1R2M0 | NetServer: SMB 2.0.2 to 3.1.1 file and print serving over the IFS (the vendored `net/smb-server` with QS/400's patches, `net/netserver`, `net/netsvrcfg`, `security/ntlm`), `QZLSSERVER`/`QZLSFILE`, the `QZLS*` APIs, Navigator and QAP, system-wide leases and change notify, point and print; `tools/smbtest` | `NETSERVER.md`, `RELEASE_NOTES_V1R2M0.md` |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -163,6 +164,9 @@ tools/        host-side tools
   helpaudit/    help coverage of every panel, command, parameter and message; `gen` writes
                 the command help groups
   textaudit/    literals on display paths not in a message file or panel; baseline.txt
+  smbtest/      the NetServer test client over the `smb` client crate (other authors than the
+                server), outside the workspace with its own Cargo.lock; scenarios, loopback and
+                interop tests; `build deny` checks its graph with its own advisory ignores
   kcbuild/      the Knowledge Center (on the media) and the release notes' generated blocks
   pesign/       Authenticode signing of the UKIs with the Secure Boot db key, keygen, ESL and
                 OVMF variable stores; keys/ holds the development pair only
@@ -410,6 +414,9 @@ security/     users, authorities, auditing
                 dltusrprf, audit); required.toml, exempt.toml; tests/
   pwdsub/       RFC 4777 password substitutes (DES and SHA), shared by TN5250E and the
                 password store
+  ntlm/         MD4, MD5, HMAC-MD5, RC4, the NT hash and NTLMv2 verification (the storage
+                service signs NetServer users on with it; sec's password/nthash.rs seals the
+                hash, its netsvr/ the sign-on, QMAXSIGN and the users disabled for NetServer)
 command/      commands and CL
   cmd/          command definitions: src/token/ the tokenizer, src/def/ the model,
                 src/source/ the definition compiler (rules.toml), src/payload/ the *CMD
@@ -554,17 +561,33 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 list.rs LISTFMT layouts, src/net/ (tcp, mem) the connections, server.rs,
                 block.rs, src/client/ the FTP command's client, memhost.rs a Host in memory;
                 tests/ sessions in memory and the client against the server over loopback
+  smb-server/   rust-smb-server 0.10.0 (MIT), vendored and outside the workspace: the SMB2/3
+                protocol, signing, encryption, leases, durable handles, srvsvc and spoolss;
+                every QS/400 change is marked `QS/400:` and listed in QS400-PATCHES.md
+                (logon verifier, any-user grant, one connection, guest, share modes, locks,
+                minimum dialect, print shares, tree admission, leases and watches from outside)
+  netserver/    NetServer (docs/NETSERVER.md) around the library: src/ifs/ the share backend
+                over IfsClient (text.rs conversion, the lease and watch link), signon.rs the
+                SignOn trait and verifier, src/print/ print shares, spoolss over the Printer,
+                the print$ driver store, src/nbss/ port 139, route.rs the ClientGuid peek,
+                server.rs NetServer (build, serve_one, release); the jobs are
+                work/qsjob/src/work/netsvr/ (QZLSSERVER, QZLSFILE)
+  netsvrcfg/    NetServer's configuration: attributes current and pending, shares, the
+                QAZLSCFG/QAZLSSHR files (frozen at V1R2M0), the ZLSL/ZLSS and QS/400 QSL*
+                formats, the 13 QZLS* APIs over bytes, the session table, an API client for
+                Navigator and QAP; the service side is lic/slic/src/stgsvc/netsvr.rs and
+                nslogon.rs (sign-on), the APIs runtime/sysapi/src/netsvr.rs
 docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKUP.md,
               CERTS.md, CL.md, CMD.md, CMD_OPEN_QUESTIONS.md, CONSOLE.md,
               CPP_AUDIT.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md,
               DSPF.md, DST.md, FTP.md, HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md,
               HTTPADMIN_HANDOFF.md, IFS.md, ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md,
               LICPGM.md, MEDIA.md, MENUS.md, MSGF.md, NAVIGATOR.md,
-              NAVIGATOR_HANDOFF.md, NET_OPEN_QUESTIONS.md, PERF.md, PHASE0.md,
+              NAVIGATOR_HANDOFF.md, NETSERVER.md, NET_OPEN_QUESTIONS.md, PERF.md, PHASE0.md,
               PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
               PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md,
               PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QUALIFIED_HARDWARE.md,
-              RECOVERY.md, RELEASE_NOTES_V1R1M0.md, RPG.md, RPG3.md,
+              RECOVERY.md, RELEASE_NOTES_V1R1M0.md, RELEASE_NOTES_V1R2M0.md, RPG.md, RPG3.md,
               RPG_OPEN_QUESTIONS.md, SAVE_FORMAT.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, SERVERS.md, SERVICE.md, SQL.md, SSHD.md,
               STORAGE_SERVICE.md, STORE_FORMAT.md, SVC_OPEN_QUESTIONS.md, SYSAPI.md,
@@ -652,6 +675,10 @@ cargo run -p navigator --bin navigator-demo [PORT]   # Navigator over the fixtur
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
 cargo test -p sys-cpps --test smallsvr    # CHGNTPA, CHGLPDA, CHGSMTPA, SNDTCPSPLF, LPR against the oracle
 cargo test -p sshd                        # the SSH server end to end in memory
+cargo test -p netserver -p netsvrcfg -p ntlm   # NetServer: shares over a MemBackend IFS, two jobs, leases, print; config, APIs; NTLM
+(cd net/smb-server && cargo test)         # the vendored SMB library and its QS/400 patches (tests/qs400_*.rs); own target dir
+cargo test --manifest-path tools/smbtest/Cargo.toml   # the test client against the library on loopback; --test interop -- --ignored for smbclient/cifs
+cargo run -p conformance -- --only 166,167,168,169   # NetServer under QEMU: start, every smbtest scenario, the 1 GB copy, APIs and SQL
 cargo test -p licpgm -p lpstore -p lpbuild -p osobjects   # products, payloads, APIs, keys; the store; build lp
 cargo test -p uim --test licpgm_panels    # GO LICPGM panels; QS400_UPDATE_GOLDEN=1 rewrites tests/golden/licpgm/
 cargo test -p sshd --test openssh -- --ignored   # real ssh/sftp/scp against the daemon
@@ -736,6 +763,9 @@ otherwise logs go to `target/logs/`.
   program) and `tools/fuzz/src/cov.rs` (the fuzzer reading LLVM's coverage counters; host
   tool only). Tests that call generated code (`runtime/codegen/tests/`,
   `runtime/mi/tests/heap.rs`) use it too, each block with its `SAFETY` line.
+  The vendored `net/smb-server` keeps upstream's `unsafe`; built as QS/400
+  builds it (no `localfs`, no `discovery`) only `host_name` in its
+  `src/builder.rs` (`gethostname`) is compiled.
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in
