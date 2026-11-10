@@ -194,8 +194,11 @@ impl Object {
             for &x in &b[OBJ_HEAD..OBJ_HEAD + ext] {
                 n = (n << 8) | u64::from(x);
             }
-            let n = usize::try_from(n).map_err(|_| Error::Invalid("object too long".into()))?;
-            (ext, OBJ_HEAD + ext, OBJ_HEAD + ext + n)
+            let total = usize::try_from(n)
+                .ok()
+                .and_then(|n| (OBJ_HEAD + ext).checked_add(n))
+                .ok_or_else(|| Error::Invalid("object too long".into()))?;
+            (ext, OBJ_HEAD + ext, total)
         } else {
             let ll = usize::from(ll);
             if ll < OBJ_HEAD {
@@ -302,5 +305,13 @@ mod tests {
         let (d, _) = Object::decode(&b).unwrap();
         assert_eq!(d.bytes().len(), 40000);
         assert_eq!(d.encode(), b);
+    }
+
+    #[test]
+    fn extended_length_past_usize_is_refused() {
+        // An 8-byte extended length of all ones (the fuzzer's crash).
+        let mut b = vec![0x80, 0x0C, 0x24, 0x12];
+        b.extend_from_slice(&[0xFF; 8]);
+        assert!(matches!(Object::decode(&b), Err(Error::Invalid(_))));
     }
 }
