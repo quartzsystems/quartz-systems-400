@@ -368,9 +368,11 @@ fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
         Request::IfsReq { op } if park && super::ifs::may_park(op) => Some(req.clone()),
         _ => None,
     };
+    super::stall::begin(&req);
     let (reply, deferral) = super::ifs::parking(keep.is_some(), || {
         served::handle(&mut svc.system, &mut svc.conns, i, req)
     });
+    super::stall::end();
     if let (Some(d), Some(req)) = (deferral, keep) {
         let id = svc.conns[i].id;
         svc.busy.push(id);

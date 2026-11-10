@@ -40,11 +40,26 @@ impl ublk::Target for Target {
         self.0.read(block, buf).map_err(|_| ublk::target::EIO)
     }
     fn write(&self, block: u64, buf: &[u8]) -> Result<(), i32> {
-        self.0.write(block, buf).map_err(|_| ublk::target::EIO)
+        slow("write", || self.0.write(block, buf)).map_err(|_| ublk::target::EIO)
     }
     fn flush(&self) -> Result<(), i32> {
-        self.0.flush().map_err(|_| ublk::target::EIO)
+        slow("flush", || self.0.flush()).map_err(|_| ublk::target::EIO)
     }
+}
+
+/// Run a device transfer; one slower than a second is logged.
+fn slow<T>(what: &str, f: impl FnOnce() -> T) -> T {
+    let at = Instant::now();
+    let r = f();
+    let took = at.elapsed();
+    if took >= Duration::from_secs(1) {
+        eprintln!(
+            "qsstg: IFS device {what} took {} ms; {}",
+            took.as_millis(),
+            super::stall::memory()
+        );
+    }
+    r
 }
 
 /// The served device.

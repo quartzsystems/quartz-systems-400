@@ -77,6 +77,7 @@ mod served;
 mod seu;
 mod sqlhost;
 mod sqlsrv;
+mod stall;
 pub(crate) mod sysdata;
 mod sysdsp;
 mod system2;
@@ -347,6 +348,7 @@ fn prepare(system: &mut System) -> Option<served::JobCtx> {
 fn serve(mut system: System, slic: Chan, listener: UnixListener) -> ! {
     let ctx = prepare(&mut system);
     let mut svc = turns::Svc::new(system, vec![Conn::new(slic, ctx)], listener);
+    stall::watch();
     loop {
         let wait = turns::top_wait(&svc.system);
         svc = turns::round(svc, wait);
