@@ -18,10 +18,9 @@
 //! One `QZLSFILE` job serves one client (and its reconnects), so the
 //! library's share modes, locks and leases see that client's opens only;
 //! the IFS backend takes share modes and byte-range locks in the IFS too,
-//! so other jobs see them. Leases are not broken by other jobs' changes:
-//! a share where clients of several jobs change the same files should
-//! turn them off ([`server::FileShare::leases`]). `docs/NETSERVER.md` is
-//! the reference.
+//! so other jobs see them, and puts its leases in the IFS's lease table
+//! ([`ifs::lease`], [`NetServer::start_leases`]), so other jobs' changes
+//! break them. `docs/NETSERVER.md` is the reference.
 
 #![deny(missing_docs)]
 

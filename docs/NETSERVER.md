@@ -504,14 +504,12 @@ the IFS authorities (section 6).
   job's plain reads and writes are not refused. An exclusive lock through
   an open without write access is taken shared in the IFS.
 - Leases: on by default (`FileShare::leases`); they let a client cache
-  and are needed for durable handles. The library breaks them for opens
-  in the same job only: a change made by another job (another client, a
-  program, FTP) breaks no lease, and the caching client keeps stale data
-  until it next opens the file. Shares where several clients change the
-  same files should turn leases off (which also turns off durable
-  handles there). Oplocks are not offered (the library has none).
+  and are needed for durable handles. Oplocks are not offered (the
+  library has none). The library keeps each job's leases and breaks them
+  for opens in the same job; every other job's change reaches them
+  through the storage service ("Leases across jobs" below).
 - Change notify: the IFS has no change events, so clients hear only of
-  changes made through their own job's connections.
+  changes made through their own job's connections (section 10).
 - Security descriptors: queries answer the library's default (no owner or
   DACL from the IFS); setting one is refused (section 10). Authority is the
   IFS's: every call runs as the job's profile and the share's read-only
@@ -523,6 +521,70 @@ the IFS authorities (section 6).
   member's data is what that view reads and writes (no per-share text
   conversion in V1R2M0: the share's CCSID and text-conversion fields are
   refused by `QZLSADFS`, section 10).
+
+### Leases across jobs (built: `ifs/ifs/src/lease/`, `net/netserver/src/ifs/lease.rs`)
+
+Every IFS operation of every job runs in the storage service's one `Ifs`
+(`lic/slic/src/stgsvc/ifs.rs`), so the lease table is there, one per
+`Ifs` (`ifs::lease::Leases`), keyed by the object (file system and file
+number):
+
+1. Before the library grants a lease, the backend reserves it
+   (`Handle::lease_limit`, a library patch, `IfsClient::lease_grant`):
+   the service resolves the path as the job, checks it is still the file
+   the handle has (its file ID), and grants the best state other jobs
+   allow, recorded at once: write caching only when no other job has the
+   file open (an IFS descriptor) or holds a lease on it; read and handle
+   caching only when no other job caches writes or holds a byte-range
+   lock on it (MS-FSA 2.1.5.18 across jobs). The library grants no more.
+2. Every change the library makes to a file's leases (grant, break,
+   acknowledgment, timeout, close) reaches the job's observer (a library
+   patch, `LeaseObserver`), which reports the file's full set to the
+   table (`lease_report`) behind the job's other IFS calls on the IFS
+   thread, so a report never overtakes the I/O before it. A lease still
+   being granted is reported as `KEEP`.
+3. Before an operation changes a file, the service orders every other
+   job's conflicting lease broken (`Leases::gate`), as MS-FSA 2.1.4.12
+   breaks them for another open: an open (read or write) breaks write
+   caching; a truncating open, a write (`write`, `pwrite`), `ftruncate`
+   and a byte-range lock break everything; a rename of the file or over
+   it and `unlink` break handle caching; an open refused by a share mode
+   breaks handle caching and is tried again once the holder closed what
+   its client cached (`STATUS_SHARING_VIOLATION` only if it still
+   conflicts). Stat, read, attribute and authority changes break
+   nothing. A lease caching only reads drops at once; one caching more
+   waits for the holder's acknowledgment.
+4. An operation that MS-FSA has wait (an open breaking write caching, a
+   write breaking it, a rename or delete breaking handle caching) waits
+   until the holder reports the lower state, at most 35 seconds (the
+   library's acknowledgment timeout); then the break counts as done.
+   The service never waits in its serve loop: the operation gives up
+   with nothing changed and leaves a deferral (`ifs::lease::defer`), the
+   loop parks the request (its connection is not read, as for a
+   statement's turn) and runs it again once the deferral is ready or out
+   of time (`lic/slic/src/stgsvc/turns.rs`, `wake_parked`).
+   Operations made of others (`CPY`, `MOV`, removing a tree) and the
+   service's own calls (console lines, `SAV`/`RST`) send the breaks and
+   go on without waiting.
+5. Each `QZLSFILE` job polls for its break orders on a second link
+   (`NetServer::start_leases`, a thread of its own, `lease_orders`, a
+   request the service parks up to 30 seconds until an order comes) and
+   has the library break the file's leases to what the order lets it
+   keep (`SmbServer::break_leases`, a library patch). The client is
+   notified, writes back and acknowledges; the library's report then
+   completes the break and the waiting operation goes on. A lease held
+   only by a durable open waiting for its client is closed instead, as
+   MS-SMB2 3.3.4.7 says.
+6. The lease calls are refused (`EPERM`) to any job but `QZLSFILE`. A
+   job's leases and orders go when its connection to the service closes
+   (`Ifs::release_owner`), and whatever waited on them goes on.
+
+A job that waits for another job's break holds its own IFS calls (one IFS
+thread per job), so two jobs whose clients break each other's leases at
+the same moment resolve at the 35-second timeout. `/QSYS.LIB` members
+changed through the database (record I/O, SQL) and not the IFS break no
+lease; nor does a rename of a directory above a leased file (the
+handle finds its file by file ID).
 
 ### Backend
 
@@ -766,7 +828,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | Signing | HMAC-SHA256 (2.x), AES-128-CMAC (3.x; the 3.1.1 answer whatever the client lists; AES-GMAC not offered); required for every session when the signing attribute says so |
 | Encryption | 3.1.1: AES-128-CCM, AES-128-GCM, AES-256-CCM, AES-256-GCM; 3.0 and 3.0.2: AES-128-CCM; per share or for every session; clients that cannot encrypt are refused a tree on an encrypted share |
 | Credits, compounding, large MTU | yes; READ and WRITE up to the configured size (64 KiB to 8 MiB, 1 MiB by default) |
-| Leases | R, RH, RW, RWH on files (2.1+); no directory leases and no oplocks; broken only by opens in the same job (section 6) |
+| Leases | R, RH, RW, RWH on files (2.1+); no directory leases and no oplocks; broken by opens in the same job and by every other job's opens, writes, truncations, locks, renames and deletes (section 6, "Leases across jobs") |
 | Durable handles | v1 and v2 with a handle-caching lease; reconnects routed back to the job (section 3) |
 | Resilient and persistent handles, multichannel, RDMA, DFS, compression | refused (section 10) |
 | Change notify | yes, for changes through the job's own connections |
@@ -808,7 +870,8 @@ anything only if IBM checks the length first), and IBM's checks of
 | Per-share maximum users, CCSID and text conversion | not built in V1R2M0: one job per client cannot count other jobs' users, and the backend serves data as the IFS stores it | `QZLSADFS`/`QZLSCHFS` refuse a value other than the default |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
-| Leases broken by other jobs | the IFS has no change events and the lease table is per job | none; turn leases off on shares several clients change |
+| Change notify for other jobs' changes | the IFS has no change events; the lease orders' channel could carry them to a backend `DirWatch` (not built in V1R2M0) | clients hear of changes made through their own job's connections only, and see others' when they list the directory again |
+| Leases broken by `/QSYS.LIB` member changes through the database | record I/O and SQL do not go through the IFS | a client caching a member's data sees the change when its lease next breaks or it opens the member again |
 | WINS servers, scope, WINS proxy | no WINS client | `QZLSCHSI` `CPFB686` reason 6 or 7, return code 3440 |
 | Kerberos authentication method (`1`, `2`) | no Kerberos | `QZLSCHSI` `CPFB686` reason 15 |
 | Logon server role, domain logon | no domain logons | `QZLSCHSI` `CPFB686` reason 13 |
@@ -829,9 +892,19 @@ anything only if IBM checks the length first), and IBM's checks of
   two jobs, a read-only share and the IFS authority, sign-on refusals and
   one profile per job, a print share spooling as the profile,
   `/QSYS.LIB` listings and member reads, a durable reconnect into the
-  same job and the job's release, port 139.
+  same job and the job's release, port 139; leases across two jobs: a
+  lease broken by the other job's open and write and by a plain IFS
+  writer, each waiting for the write-back, no write caching while
+  another job has the file open, a durable handle taken back on a new
+  connection broken there by a plain write and reading it, an ended
+  job's leases leaving nothing waiting.
+- `cargo test -p ifs --test leases --lib`: the lease table (grants capped
+  by other owners, the break table, orders, reports, deferral, expiry,
+  an owner's end) and which operations break, defer and leave a lease.
+- `cargo test -p stg --test ifs_link`: the lease calls over the wire.
 - `cd net/smb-server; cargo test --test qs400_hooks --test
-  qs400_patches`: the library patches.
+  qs400_patches --test qs400_leases`: the library patches (the lease
+  observer, the backend's cap, breaks from outside).
 
 - `cargo test -p netserver`: codecs against [MS-SMB2] examples, crypto
   against the published vectors ([MS-SMB2] 3.1.4, RFC 4493, RFC 3610,
