@@ -1,0 +1,1 @@
+doc-valid-idents = ["NTLMv1", "NTLMv2", "NTOWFv1", "NTOWFv2", "LMv2", "NetServer", ".."]

@@ -1,0 +1,12 @@
+[package]
+name = "ntlm"
+description = "QS/400 NTLM: MD4, MD5, HMAC-MD5, RC4, the NT one-way functions, NTLMv2 verification, key exchange and the MIC"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

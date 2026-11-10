@@ -49,6 +49,7 @@ members = [
     # Security: profiles, passwords, authority, auditing.
     "security/sec",
     "security/pwdsub",
+    "security/ntlm",
     # Commands: definitions, the analyzer, the prompter, CL, the system command set.
     "command/cmd",
     "command/sys-cpps",
