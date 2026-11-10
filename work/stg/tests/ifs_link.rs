@@ -349,3 +349,32 @@ fn wrong_shaped_replies_are_unknown() {
     let c = RemoteIfs::new(Rc::new(RefCell::new(link)));
     assert_eq!(c.getcwd(), Err(Errno::EUNKNOWN));
 }
+
+#[test]
+fn leases_over_the_link() {
+    use ifs::ops::{Attr, AttrId};
+    let far = far();
+    home(&far, 0o777);
+    let a = connect(&far, "BOB", 1);
+    let b = connect(&far, "ANN", 2);
+    let fd = a
+        .open("/home/bob/l", OpenArgs::new(O_RDWR | O_CREAT).mode(0o666))
+        .unwrap();
+    a.chmod("/home/bob/l", 0o666).unwrap();
+    let id = match a.get_attrs("/home/bob/l", &[AttrId::FileId], true).unwrap()[..] {
+        [Attr::FileId(id)] => id,
+        ref other => panic!("{other:?}"),
+    };
+    let key = [3; 32];
+    assert_eq!(a.lease_grant("/home/bob/l", id, 9, key, 7).unwrap(), 7);
+    assert!(a.lease_orders(0).unwrap().is_empty());
+    // Without a deferral the service's far end breaks and goes on.
+    let w = b.open("/home/bob/l", OpenArgs::new(O_RDWR)).unwrap();
+    assert_eq!(b.pwrite(w, b"x", 0).unwrap(), 1);
+    assert_eq!(a.lease_orders(0).unwrap(), [(9, 0)]);
+    a.lease_report(9, &[(key, 3)]).unwrap();
+    assert_eq!(far.ifs.leases().on(ifs::lock::ObjKey { fs: id.fs, ino: id.ino }).len(), 1);
+    a.lease_report(9, &[]).unwrap();
+    assert!(far.ifs.leases().is_empty());
+    a.close(fd).unwrap();
+}

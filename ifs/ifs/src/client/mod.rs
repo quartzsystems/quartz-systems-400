@@ -20,6 +20,7 @@ use sec::auth::principal::Principal;
 use crate::auth::AuthEnv;
 use crate::backend::{Backend, Nanos};
 use crate::errno::Result;
+use crate::lease::{LeaseKey, Order};
 use crate::lock::range::{RangeKind, RangeLock};
 use crate::lock::{LockInfo, ObjKey, Owner};
 use crate::meta::reclaim::Report;
@@ -198,6 +199,14 @@ pub trait IfsClient {
     /// connection's and its console lines'. `*JOBCTL` or the job's own
     /// user is needed (`EPERM`).
     fn job_locks(&self, job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>>;
+    /// A `NetServer` job reserves the lease `key` (client GUID and lease
+    /// key) in state `want` on `path`, the file it knows as `id` and
+    /// calls `tag`: the state other jobs allow ([`crate::lease`]).
+    fn lease_grant(&self, path: &str, id: FileId, tag: u64, key: LeaseKey, want: u8) -> Result<u8>;
+    /// The leases the caller holds on the file it calls `tag`, and no others.
+    fn lease_report(&self, tag: u64, leases: &[(LeaseKey, u8)]) -> Result<()>;
+    /// The caller's break orders, waiting up to `wait_ms` for one.
+    fn lease_orders(&self, wait_ms: u32) -> Result<Vec<Order>>;
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -461,6 +470,17 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
         v.extend(self.ifs.owner_locks(crate::lock::Owner(h | 1 << 63)));
         Ok(v)
     }
+    fn lease_grant(&self, path: &str, id: FileId, tag: u64, key: LeaseKey, want: u8) -> Result<u8> {
+        self.ifs.lease_grant(self.cx, path, id, tag, key, want)
+    }
+    fn lease_report(&self, tag: u64, leases: &[(LeaseKey, u8)]) -> Result<()> {
+        self.ifs.lease_report(self.cx, tag, leases);
+        Ok(())
+    }
+    fn lease_orders(&self, wait_ms: u32) -> Result<Vec<Order>> {
+        let wait = std::time::Duration::from_millis(u64::from(wait_ms));
+        self.ifs.lease_orders(self.cx, wait)
+    }
 }
 
 /// An [`IfsClient`] in the process: one caller over a shared [`Ifs`],
@@ -496,6 +516,19 @@ impl<B: Backend> LocalIfs<B> {
         })
     }
 
+    /// Run `f` as [`Self::with`] does, waiting out other owners' lease
+    /// breaks it defers on and running it again ([`crate::lease::defer`]).
+    pub fn waiting<T>(&self, f: impl Fn(&dyn IfsClient) -> T) -> T {
+        let mut allow = true;
+        loop {
+            let (r, d) = crate::lease::defer::deferring(allow, || self.with(&f));
+            let Some(d) = d else {
+                return r;
+            };
+            allow = self.ifs.leases().wait(&d);
+        }
+    }
+
     /// End the caller's use: its descriptors, streams and locks go.
     pub fn release(&self) {
         self.ifs.release_owner(self.owner);
@@ -504,7 +537,8 @@ impl<B: Backend> LocalIfs<B> {
 
 macro_rules! forward {
     ($( fn $name:ident ( $($a:ident : $t:ty),* ) -> $r:ty; )*) => {
-        $( fn $name(&self, $($a: $t),*) -> $r { self.with(|d| d.$name($($a),*)) } )*
+        $( #[allow(clippy::clone_on_copy, clippy::redundant_clone)]
+        fn $name(&self, $($a: $t),*) -> $r { self.waiting(|d| d.$name($(<$t as Clone>::clone(&$a)),*)) } )*
     };
 }
 
@@ -583,6 +617,9 @@ macro_rules! every_method {
         fn object_locks(path: &str) -> Result<Vec<LockInfo>>;
         fn owner_locks() -> Result<Vec<(ObjKey, LockInfo)>>;
         fn job_locks(job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>>;
+        fn lease_grant(path: &str, id: FileId, tag: u64, key: LeaseKey, want: u8) -> Result<u8>;
+        fn lease_report(tag: u64, leases: &[(LeaseKey, u8)]) -> Result<()>;
+        fn lease_orders(wait_ms: u32) -> Result<Vec<Order>>;
     } };
 }
 

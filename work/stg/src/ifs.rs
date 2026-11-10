@@ -282,6 +282,20 @@ pub enum IfsOp {
         job: u32,
         user: String,
     },
+    LeaseGrant {
+        path: String,
+        id: FileId,
+        tag: u64,
+        key: [u8; 32],
+        want: u8,
+    },
+    LeaseReport {
+        tag: u64,
+        leases: Vec<([u8; 32], u8)>,
+    },
+    LeaseOrders {
+        wait_ms: u32,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -351,6 +365,9 @@ wire_enum!(IfsOp {
     63 => OwnerLocks,
     64 => Lchown { path, uid, gid },
     65 => JobLocks { job, user },
+    66 => LeaseGrant { path, id, tag, key, want },
+    67 => LeaseReport { tag, leases },
+    68 => LeaseOrders { wait_ms },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -379,6 +396,7 @@ pub enum IfsReply {
     Report { r: Result<Report> },
     Locks { r: Result<Vec<LockInfo>> },
     OwnerLocks { r: Result<Vec<(ObjKey, LockInfo)>> },
+    Orders { r: Result<Vec<(u64, u8)>> },
 }
 
 wire_enum!(IfsReply {
@@ -402,6 +420,7 @@ wire_enum!(IfsReply {
     17 => Report { r },
     18 => Locks { r },
     19 => OwnerLocks { r },
+    20 => Orders { r },
 });
 
 /// The answer `Err(EUNKNOWN)` for a reply of the wrong shape.
@@ -613,6 +632,21 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         IfsOp::OwnerLocks => R::OwnerLocks { r: c.owner_locks() },
         IfsOp::JobLocks { job, user } => R::OwnerLocks {
             r: c.job_locks(job, &user),
+        },
+        IfsOp::LeaseGrant {
+            path,
+            id,
+            tag,
+            key,
+            want,
+        } => R::Mask {
+            r: c.lease_grant(&path, id, tag, key, want).map(u32::from),
+        },
+        IfsOp::LeaseReport { tag, leases } => R::Unit {
+            r: c.lease_report(tag, &leases),
+        },
+        IfsOp::LeaseOrders { wait_ms } => R::Orders {
+            r: c.lease_orders(wait_ms),
         },
     }
 }

@@ -11,6 +11,7 @@
 use ifs::Result;
 use ifs::backend::Nanos;
 use ifs::client::{CHUNK, IfsClient, WalkEntry};
+use ifs::lease::{LeaseKey, Order};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::lock::{LockInfo, ObjKey};
 use ifs::meta::reclaim::Report;
@@ -467,5 +468,30 @@ impl IfsClient for RemoteIfs {
             }),
             OwnerLocks
         )
+    }
+    fn lease_grant(&self, path: &str, id: FileId, tag: u64, key: LeaseKey, want: u8) -> Result<u8> {
+        let r = reply_as!(
+            self.call(IfsOp::LeaseGrant {
+                path: path.into(),
+                id,
+                tag,
+                key,
+                want
+            }),
+            Mask
+        );
+        r.map(|s| u8::try_from(s).unwrap_or(0))
+    }
+    fn lease_report(&self, tag: u64, leases: &[(LeaseKey, u8)]) -> Result<()> {
+        reply_as!(
+            self.call(IfsOp::LeaseReport {
+                tag,
+                leases: leases.to_vec()
+            }),
+            Unit
+        )
+    }
+    fn lease_orders(&self, wait_ms: u32) -> Result<Vec<Order>> {
+        reply_as!(self.call(IfsOp::LeaseOrders { wait_ms }), Orders)
     }
 }

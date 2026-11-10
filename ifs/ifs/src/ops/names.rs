@@ -12,6 +12,7 @@ use super::{Ctx, Ifs, Rest};
 use crate::auth::need::Op;
 use crate::backend::{self, Backend, Kind};
 use crate::errno::{Errno, Result};
+use crate::lease::state::Trigger;
 use crate::meta::{self, Flags, Meta};
 use crate::resolve::{Node, Res, Sys};
 use crate::vfs::qsys::{self, QsysNode};
@@ -240,6 +241,7 @@ impl<B: Backend> Ifs<B> {
         {
             return Err(Errno::EBUSY);
         }
+        self.leases.gate(cx.owner, r.node.key(), Trigger::Handle)?;
         match (&dir.node, &r.node) {
             (Node::Back { rel: drel, .. }, Node::Back { rel, .. }) => {
                 self.b.unlink(rel)?;
@@ -397,6 +399,9 @@ impl<B: Backend> Ifs<B> {
         if moving_dir && ndir.comps.starts_with(&src.comps) {
             return Err(Errno::EINVAL);
         }
+        if !moving_dir {
+            self.leases.gate(cx.owner, src.node.key(), Trigger::Handle)?;
+        }
         let new_rel = backend::join(ndrel, &nname);
         let mut replace = false;
         match sys.child(&ndir, &nname) {
@@ -423,6 +428,7 @@ impl<B: Backend> Ifs<B> {
                     if sys.mounts.all().iter().any(|mt| mt.at == t.comps) {
                         return Err(Errno::EBUSY);
                     }
+                    self.leases.gate(cx.owner, t.node.key(), Trigger::Handle)?;
                     // The stored name may differ in case: remove it first.
                     let trel = t.node.rel().ok_or(Errno::ENOTSUP)?.to_string();
                     if trel == new_rel {

@@ -18,6 +18,7 @@ mod authcmd;
 mod copy;
 mod dir;
 mod io;
+mod lease;
 mod names;
 mod open;
 mod stat;
@@ -300,6 +301,7 @@ pub struct Ifs<B: Backend> {
     cfg: Config,
     st: Mutex<State<B::File>>,
     clock: Mutex<meta::change::Clock>,
+    leases: crate::lease::Leases,
 }
 
 /// The directories every system has, with their `*PUBLIC` data
@@ -346,6 +348,7 @@ impl<B: Backend> Ifs<B> {
                 },
             }),
             clock: Mutex::new(meta::change::Clock::default()),
+            leases: crate::lease::Leases::default(),
         }
     }
 
@@ -357,6 +360,11 @@ impl<B: Backend> Ifs<B> {
     /// The settings.
     pub fn config(&self) -> &Config {
         &self.cfg
+    }
+
+    /// The leases other owners' operations break ([`crate::lease`]).
+    pub fn leases(&self) -> &crate::lease::Leases {
+        &self.leases
     }
 
     pub(crate) fn lock(&self) -> MutexGuard<'_, State<B::File>> {
@@ -499,6 +507,7 @@ impl<B: Backend> Ifs<B> {
     /// End an owner: close its descriptors and directory streams
     /// (writing back members), drop its locks and its state.
     pub fn release_owner(&self, owner: Owner) {
+        self.leases.release_owner(owner);
         let mut st = self.lock();
         let Some(os) = st.rest.owners.remove(&owner) else {
             st.rest.locks.release_owner(owner);

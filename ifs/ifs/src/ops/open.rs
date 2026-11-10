@@ -13,6 +13,7 @@ use crate::auth::data::DataAuth;
 use crate::auth::need::Op;
 use crate::backend::{self, BFile, Backend, Kind};
 use crate::errno::{Errno, Result};
+use crate::lease::state::Trigger;
 use crate::lock::OpenRef;
 use crate::lock::range::{RangeKind, RangeLock};
 use crate::lock::share::{Access, Share};
@@ -336,6 +337,13 @@ impl<B: Backend> Ifs<B> {
                 return Err(Errno::EBUSY);
             }
         }
+        // Other owners' leases on it break before anything changes.
+        if created.is_none() && !r.node.is_dir() {
+            let trigger = Trigger::Open {
+                overwrite: truncate,
+            };
+            self.leases.gate(cx.owner, r.node.key(), trigger)?;
+        }
         // A file without a valid record gets one now, so that its
         // changes count (meta::change).
         if writes
@@ -367,7 +375,7 @@ impl<B: Backend> Ifs<B> {
         };
         let key = r.node.key();
         let id = rest.next_open;
-        rest.locks.open(
+        let shared = rest.locks.open(
             key,
             &path_s,
             OpenRef {
@@ -376,7 +384,15 @@ impl<B: Backend> Ifs<B> {
                 access,
                 share,
             },
-        )?;
+        );
+        if let Err(e) = shared {
+            // Handles another owner's client caches may be what refuses
+            // it: they break, and the open is tried again.
+            if e == Errno::EBUSY {
+                self.leases.gate(cx.owner, key, Trigger::Sharing)?;
+            }
+            return Err(e);
+        }
         let text_mode = a.oflag & f::O_TEXTDATA != 0;
         let kind = match self.open_kind(&r, created, writes, truncate, text_mode) {
             Ok(k) => k,
@@ -737,6 +753,9 @@ impl<B: Backend> Ifs<B> {
                     _ => {}
                 }
                 let blocking = matches!(cmd, f::F_SETLKW | f::F_SETLKW64);
+                if kind != RangeKind::Unlock {
+                    self.leases.gate(cx.owner, key, Trigger::Write)?;
+                }
                 rest.locks.set(key, &path, want, blocking)?;
                 Ok(None)
             }

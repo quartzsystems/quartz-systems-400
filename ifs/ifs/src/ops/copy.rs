@@ -33,6 +33,10 @@ const CHUNK: usize = 64 * 1024;
 impl<B: Backend> Ifs<B> {
     /// `CPY OBJ(from) TOOBJ(to)`.
     pub fn copy(&self, cx: &Ctx<'_>, from: &str, to: &str, o: CopyOpts) -> Result<()> {
+        crate::lease::defer::whole(|| self.copy_in(cx, from, to, o))
+    }
+
+    fn copy_in(&self, cx: &Ctx<'_>, from: &str, to: &str, o: CopyOpts) -> Result<()> {
         let (src, sm) = self.resolve_meta(cx, from, false)?;
         match src.node.ntype() {
             NodeType::Symlink => {
@@ -166,6 +170,10 @@ impl<B: Backend> Ifs<B> {
 
     /// Remove an object and, for a directory, everything in it.
     pub fn remove_tree(&self, cx: &Ctx<'_>, p: &str) -> Result<()> {
+        crate::lease::defer::whole(|| self.remove_tree_in(cx, p))
+    }
+
+    fn remove_tree_in(&self, cx: &Ctx<'_>, p: &str) -> Result<()> {
         let s = self.lstat(cx, p)?;
         if s.objtype == "*DIR" {
             for e in self.read_dir(cx, p)? {
@@ -180,6 +188,10 @@ impl<B: Backend> Ifs<B> {
     /// `MOV OBJ(from) TOOBJ(to)`: a rename in one file system, else a
     /// copy of the whole subtree and the removal of the source.
     pub fn mov(&self, cx: &Ctx<'_>, from: &str, to: &str, replace: bool) -> Result<()> {
+        crate::lease::defer::whole(|| self.mov_in(cx, from, to, replace))
+    }
+
+    fn mov_in(&self, cx: &Ctx<'_>, from: &str, to: &str, replace: bool) -> Result<()> {
         let mode = if replace {
             RenameMode::Unlink
         } else {
