@@ -44,31 +44,101 @@ built and proven.
 | Navigator | `net/navigator/src/routes/netsvr/` | File Shares, Print Shares, Sessions, Properties |
 | QAP | `work/qap-proto` | the NetServer operations in the next draft version |
 
-## 3. Jobs and the subsystem (design)
+## 3. Jobs and the subsystem (built: `work/qsjob/src/work/netsvr/`)
 
-As on the oracle (`dspsbsd-qserver.txt`, `prestart-jobs.txt`):
+As on the oracle (`dspsbsd-qserver.txt`, `prestart-jobs.txt`), `QSERVER`
+(`work/wm/src/obj/sbsd.rs`) has routing entry 800 (program
+`QSYS/QZLSSERVER`, compare value `QZLSSTART`, class `QSYS/QPWFSERVER`),
+the job queue entry `QSYS/QPWFSERVER` (the queue is shipped with the
+others) and the prestart entries:
 
-- `QZLSSERVER`: user `QPGMR`, subsystem `QSERVER`, job description
-  `QSYS/QZLSSERVER`, started by routing entry 800 (compare value
-  `QZLSSTART`, class `QPWFSERVER`). It listens on TCP 445, and on 139 and
-  UDP 137/138 when NetBIOS is allowed, then hands each accepted connection
-  through the descriptor relay (`net/sockets` `pass`, the way `QRWTLSTN`
-  hands DDM connections to `QRWTSRVR`) to a `QZLSFILE` prestart job.
-- `QZLSFILE`: prestart, user `QUSER`, job description `QSYS/QZLSPJ`,
-  `STRJOBS(*YES) INLJOBS(1) THRESHOLD(1) ADLJOBS(5) MAXJOBS(*NOMAX)
-  MAXUSE(200)`, class `QPWFSERVER`. One job serves one client connection;
-  after `SESSION_SETUP` it runs as the signed-on profile (the host
-  servers' swap), so every IFS call is checked and audited as that user.
-- `QZLSFILET`: the entry is shipped (`STRJOBS(*NO)`, `ADLJOBS(0)`,
-  `MAXUSE(1)`) as on V7R5M0; QS/400 does not use it.
-- `STRTCPSVR SERVER(*NETSVR)` and `QZLSSTRS` start `QZLSSERVER`;
-  `ENDTCPSVR SERVER(*NETSVR)` and `QZLSENDS` end it, and every `QZLSFILE`
-  closes its sessions cleanly (an SMB2 `LOGOFF`-free disconnect after
-  in-flight requests finish). The autostart attribute is the server
-  table's (`*NETSVR` row of `net/servers/src/registry/table.rs`).
-  `QZLSSTRS` with reset `*YES` applies pending attributes first.
-- `WRKACTJOB` shows them as IBM does: `QZLSSERVER` type `BCH`,
-  `QZLSFILE` type `PJ`.
+| Entry | Job description | `STRJOBS` | `INLJOBS` | `THRESHOLD` | `ADLJOBS` | `MAXJOBS` | `MAXUSE` | Class |
+|---|---|---|---|---|---|---|---|---|
+| `QZLSFILE` | `QSYS/QZLSPJ` | `*YES` | 1 | 1 | 5 | `*NOMAX` | 200 | `QSYS/QPWFSERVER` |
+| `QZLSFILET` | `QSYS/QZLSPJ` | `*NO` | 1 | 1 | 0 | `*NOMAX` | 1 | `QSYS/QPWFSERVER` |
+
+Both run as `QUSER`. `QZLSFILET` is shipped as on V7R5M0 and never given
+work. An existing V1R1M0 system keeps the `QSERVER` it has: shipped
+objects are made only when missing (`NEEDS-CODY`: whether V1R2M0's
+update should replace `QSERVER`).
+
+**Starting and ending.** `STRTCPSVR SERVER(*NETSVR)`, `QZLSSTRS` and
+`STRTCP`'s autostart (the `*NETSVR` row of the server table,
+`net/servers/src/registry/table.rs`, autostart off by default) all reach
+the storage service's server control (`lic/slic/src/stgsvc/netsvr.rs`):
+the command through `netsvr` `Start` (`servers::framework::NetSvr`), the
+API through `netsvr_api`. Both run `QZLSSTRS`'s checks (`*IOSYSCFG`, not
+active already; the autostart is the system's own and needs no
+authority, and does nothing unless `*NETSVR` autostarts), apply the
+pending attributes on a reset, and submit `QZLSSERVER` (job description
+`QSYS/QZLSSERVER`, user `QPGMR`, routing data `QZLSSTART`) to
+`QSYS/QPWFSERVER`; `QSERVER` routes it through entry 800 and the batch
+job calls the listener (`work/qsjob/src/work/batch.rs`), so `WRKACTJOB`
+shows `QZLSSERVER` `BCH` as `QPGMR` and the prestart jobs `QZLSFILE`
+`PJ` as `QUSER`. `QZLSSERVER` counts as active while it is in the job
+table in `QSERVER` or still on its job queue.
+
+`ENDTCPSVR SERVER(*NETSVR)` and `QZLSENDS` mark the server ending
+(`netsvr` `End`; `CPFB680` when it is not active). `QZLSSERVER` sees the
+mark within half a second (and `ENDJOB` or its subsystem ending), closes
+its ports, sends `CPIB681` and ends; each `QZLSFILE` sees it within a
+second and shuts its server down: every connection closes once the
+request it is answering is answered, with no `LOGOFF`. The mark stays
+until the next start, so no `QZLSFILE` misses it.
+
+**`QZLSSERVER`** (`server.rs`) reads the configuration (`netsvr`
+`Config`, decoded with `netsvrcfg::file::read`), listens on TCP 445, and
+on 139 when the allow NetBIOS attribute is on (there it answers the
+session request, `nbss::answer`, before routing; the calling name goes
+with the socket as the workstation name), calls `netsvr_started` (1501:
+every user enabled again, `QMAXSIGN` taken) and sends `CPIB680` with the
+server name to `QSYSOPR`. When it cannot listen on 445 it sends `CPIB683`
+reason 6 with the error number, when the configuration cannot be read
+`CPIB683` reason 7, and ends. UDP 137 and 138 are not served (section
+10). Each accepted connection goes through the descriptor relay
+(`net/sockets` `relay`), as `QRWTLSTN` hands DDM connections to
+`QRWTSRVR`: to the job the routing table names (below), otherwise to the
+`QZLSFILE` pool. `NETSTAT` and `QSYS2.NETSTAT_INFO` show 445 (and 139)
+listening.
+
+**`QZLSFILE`** (`file.rs`) takes a socket from its pool, builds a
+`NetServer` from the configuration of that moment (the current
+attributes and every share: a file share whose directory cannot be
+served is left out and logged; print shares with their driver), and
+serves the connection.
+
+- Sign-on (`signon.rs`) is `netsvr_signon` (1500) with the guest profile
+  from the configuration. The first profile signed on is swapped to (the
+  host servers' swap, so every IFS call is checked and audited as that
+  profile); a later one is only checked and the library's verifier
+  refuses it (`OtherProfile`), so the job never changes whom it runs as.
+  `CPIB691` goes to `QSYSOPR` at each sign-on when the log sign-on
+  attribute is on; a refusal sends the message `signon::Refusal::msgid()`
+  names (`CPIB68A` to `CPIB68E`; `CPIB682` the service sends itself) and
+  counts a password violation or an unknown user.
+- The SMB server calls sign-on, the spooler and the session table from
+  its own thread: they reach the service over a thread link of the job
+  (`hello_thread`, `svc.rs`), which shares the job's security session;
+  the IFS (`MakeClient`) runs over another, on the IFS thread.
+- Print shares (`printer.rs`) spool on the share's output queue as the
+  job's profile (`splf_open`, `splf_put`, `splf_close`). The device type
+  is the share's spooled file type (`*USERASCII`, `*SCS`, `*AFPDS`;
+  `*AUTO` is `*SCS` when the data starts with an SCS control, else
+  `*USERASCII`), the data as the client sent it; the spooled file is
+  named after the share's printer file (`QPRINT` without one) with the
+  document name as user data. An aborted `spoolss` document is deleted.
+  There is no host print transform here: the writer applies it when it
+  prints an `*SCS` file to an ASCII printer.
+- Once a second the job brings the service's session table (`report.rs`,
+  1511) to the server's own view (`NetServer::sessions`, a library
+  patch): sessions registered and unregistered, tree connections, open
+  files. A session `QZLSENSS` marked (`Ending`) is ended
+  (`NetServer::end_session`) and unregistered. Tree connects are admitted
+  through the table (section 4, the session table).
+- When `NetServer::idle_until_released` returns (no connection, no
+  durable open kept), the job withdraws its routes, unregisters what is
+  left, runs as `QUSER` again (`host_reset`) and goes back to the
+  prestart pool; after `MAXUSE` clients it ends.
 
 ### Reconnects and durable handles
 
@@ -77,32 +147,32 @@ A client whose connection drops keeps its durable opens (version 1 and
 library's default, 2 minutes, or what a version 2 request asks, up to 5
 minutes) and takes them back on a new connection. The opens live in the
 `QZLSFILE` job that served it, so the new connection must reach the same
-job:
+job. The routing table is the storage service's (`netsvr` `Route` and
+`Lookup`), so the jobs need no channel between them:
 
-1. The job registers with `QZLSSERVER` the ClientGuids it serves or holds
-   opens for (`NetServer::client_guids`) and the peer addresses of its
-   connections, and updates them as they change.
+1. Once a second each `QZLSFILE` registers its relay identifier with the
+   ClientGuids it serves or holds opens for (`NetServer::client_guids`)
+   and, while it keeps durable opens, the addresses of the clients it
+   served. A released job withdraws them; `JobEnded` drops them too.
 2. `QZLSSERVER`, after accepting (and on 139 after answering the session
-   request, `nbss::answer`), reads the ClientGuid of the first NEGOTIATE
-   without consuming it (`route::client_guid`: `MSG_PEEK`, at most 2
-   seconds and 64 KiB). An SMB2 NEGOTIATE offering 2.1 or later carries
-   one; an SMB1 multi-protocol NEGOTIATE or a 2.0.2-only one gives none,
-   and the peer address is used instead.
-3. A ClientGuid (else a peer address) a job has registered sends the
-   socket to that job, which serves it with `NetServer::serve_one` beside
-   any connection it already serves; anything else goes to a new
-   prestart job.
+   request), reads the ClientGuid of the first NEGOTIATE without
+   consuming it (`route::client_guid`: `MSG_PEEK`, at most 2 seconds and
+   64 KiB). An SMB2 NEGOTIATE offering 2.1 or later carries one; an SMB1
+   multi-protocol NEGOTIATE or a 2.0.2-only one gives none, and the peer
+   address is used instead.
+3. `Lookup` answers the job that registered the ClientGuid (else the
+   address); `QZLSSERVER` gives the socket to that job's own relay
+   identifier, where a thread of the job takes it and serves it with
+   `NetServer::serve_one` beside any connection it already serves.
+   Anything else goes to the `QZLSFILE` pool.
 4. The library's own reconnect then runs within that job: same user, same
    client, same share, the lease key and, for version 2, the CreateGuid.
-5. The job ends (back to the prestart pool) when
-   `NetServer::idle_until_released` returns: no connection served and no
-   durable open kept. It then withdraws its registration.
+5. The job ends its client (back to the prestart pool) when
+   `NetServer::idle_until_released` returns.
 
 One job serves one profile: a sign-on as another profile in a job that
 already has one is refused (`signon::Refusal::OtherProfile`, logged), so
-a routed connection never runs under another user's authority. The
-routing table and the job wiring are `QZLSSERVER`'s and `QZLSFILE`'s
-(`work/qsjob/src/work/netsvr/`).
+a routed connection never runs under another user's authority.
 
 ## 4. Configuration
 
@@ -270,7 +340,9 @@ files, start), and the `ZLSL0400` counters. The jobs report through the
 session's identifier; the service fills in the job), `Unregister`
 (normal or idle end), `Connect`, `Disconnect`, `Opens`, `Touch`,
 `Count` (a counter and an amount), `JobEnded` (the job's sessions go,
-counted as errors). Only jobs named `QZLSSERVER` or `QZLSFILE` may
+counted as errors, with its routes), `Admit` (a tree connection within
+the share's maximum users), `Route` and `Lookup` (reconnect routing,
+section 3); `Start`, `End` and `State` are the server control's. Only jobs named `QZLSSERVER` or `QZLSFILE` may
 change it; any job may `List` and ask `Ending` (whether `QZLSENSS`
 marked a session to end, which the serving job then ends and
 unregisters).
@@ -302,8 +374,15 @@ Attribute changes send only the APIs whose fields changed (`QZLSCHSN`
 for names, text and allow system name, `QZLSCHSG` for the guest,
 `ZLSS0100` for the rest of IBM's, `QSLS0100` for QS/400's), so a user
 with `*IOSYSCFG` but not `*SECADM` can change everything but the guest.
-Start, end and ending a session answer `CPFB680` until the
-`QZLSSERVER` job's server control lands (section "APIs").
+Start, end and ending a session reach the storage service's server
+control (section 3).
+A file share's maximum users is enforced here, across every `QZLSFILE`:
+each TREE_CONNECT is admitted by the job (a library patch,
+`smb_server::TreeAdmission`) through `Admit`, which refuses when the
+share already has that many tree connections in the table; the client
+gets `STATUS_REQUEST_NOT_ACCEPTED` and the job logs `TXT0E30`'s text. The
+connection is in the table the moment it is admitted, so two jobs never
+both take the last place.
 
 ## 5. Security
 
@@ -876,12 +955,12 @@ user and `0` for the guest, the encrypted-password flag always `1`,
 the workstation `*EXPANDED` (type 1) when its name passes 15
 characters (`NEEDS-CODY`: no live session was captured).
 
-The server control (`netsvrcfg::api::ServerControl`): `QZLSSERVER`
-counts as active when the job table has it in `QSERVER`. Start, end and
-ending a session belong to the `QZLSSERVER` job and answer `CPFB680`
-until it lands (`BLOCKED(rel)` in `lic/slic/src/stgsvc/netsvr.rs`). A
-reset applies the pending values only after the server control accepts
-the start.
+The server control (`netsvrcfg::api::ServerControl`, section 3):
+`QZLSSERVER` counts as active while the job table has it in `QSERVER`
+or it waits on its job queue. Start submits it; end marks the server
+ending (`CPFB680` when it is not active); ending a session marks the
+session, which its job ends within a second. A reset applies the
+pending values only after the server control accepts the start.
 
 `NEEDS-CODY` (change APIs are never called on the oracles): the exact
 `CPFB68D` bounds of `QZLSCHSI`
@@ -938,7 +1017,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | `wkssvc` and other named pipes | not built | `STATUS_OBJECT_NAME_NOT_FOUND` on the pipe |
 | `srvsvc` over NDR64 | the library binds NDR 2.0 only (Windows binds NDR 2.0) | the NDR64 context is rejected in the bind ack |
 | The NetBIOS name service (UDP 137) and datagram service (138), browsing | not built | no answer on 137/138; clients connect by DNS name or address, or `*SMBSERVER` on 139 |
-| Per-share maximum users, CCSID and text conversion | not built in V1R2M0: one job per client cannot count other jobs' users, and the backend serves data as the IFS stores it | `QZLSADFS`/`QZLSCHFS` refuse a value other than the default |
+| A share's text CCSID and text conversion | the backend serves data as the IFS stores it | `NEEDS-CODY`: `QZLSADFS`/`QZLSCHFS` store them (and `SERVER_SHARE_INFO` shows them), but files are served unconverted: they should be refused, or converted (NS-11's backend) |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
 | Leases broken, and change notify, for `/QSYS.LIB` member changes through the database | record I/O and SQL do not go through the IFS | a client caching a member's data sees the change when its lease next breaks or it opens the member again; a watch hears nothing |
@@ -1102,9 +1181,7 @@ cargo test --manifest-path tools/smbtest/Cargo.toml --test interop -- --ignored 
 
 (the kernel tests mount, so as root or with `sudo -n`).
 
-QEMU steps 166-168 (`tools/conformance/src/netsvrstep.rs`) are
-registered only with `QS400_NETSVR_STEPS=1` until `QZLSSERVER` and
-`QZLSFILE` exist: 166 `STRTCPSVR SERVER(*NETSVR)` and both jobs in
+QEMU steps 166-169 (`tools/conformance/src/netsvrstep.rs`): 166 `STRTCPSVR SERVER(*NETSVR)` and both jobs in
 `WRKACTJOB` (`BCH`, `PJ`); 167 a user `NSUSER`, a read/write share
 `SMBTEST` over `/home/NSUSER` added with `QZLSADFS` from the console,
 and every scenario through a forward to the guest's 445 (16 MiB copy);
