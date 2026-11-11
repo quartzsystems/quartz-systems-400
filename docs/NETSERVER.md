@@ -33,7 +33,7 @@ built and proven.
 | Piece | Where | Holds |
 |---|---|---|
 | SMB2/3 protocol | `net/smb-server` | rust-smb-server 0.10.0 (MIT, Palta.io), vendored with QS/400 patches (`net/smb-server/QS400-PATCHES.md`, each marked `QS/400:`): framing, every SMB2 command, negotiate contexts, signing, encryption, credits, compounding, sessions, trees, opens, leases, durable handles, change notify, NTLMv2 in SPNEGO, `srvsvc` and `spoolss` over named pipes. QS/400 does not write SMB codecs, NTLM or crypto |
-| NetServer glue | `net/netserver` | the IFS backend (`ifs/`), sign-on (`signon.rs`), print shares (`print.rs`), one job's server (`server.rs`), the NetBIOS session request on 139 (`nbss/`), reconnect routing (`route.rs`). **No job, store or service code**: the job implements `signon::SignOn`, `print::Printer` and hands an `ifs::client::IfsClient` maker |
+| NetServer glue | `net/netserver` | the IFS backend (`ifs/`), sign-on (`signon.rs`), print shares (`print.rs`), one job's server (`server.rs`), the NetBIOS session request on 139 (`nbss/`), the NetBIOS name service on UDP 137 (`nbns/`), reconnect routing (`route.rs`). **No job, store or service code**: the job implements `signon::SignOn`, `print::Printer` and hands an `ifs::client::IfsClient` maker |
 | Configuration | `net/netsvrcfg` | the server attributes (current and pending), file and print shares, validation, the `QAZLSCFG` and `QAZLSSHR` codecs, the `ZLSL*` and `ZLSS*` formats of the APIs, the reason codes |
 | Test client | `tools/smbtest` | an SMB2/3 client written separately from the server (it does not depend on `net/netserver`, so one codec bug cannot hide in both) and its scenarios |
 | Profiles | `security/sec` | the NT hash password form, the `QPWDLVL` rules for it, the NetServer-disabled state, the guest profile check |
@@ -94,8 +94,11 @@ with the socket as the workstation name), calls `netsvr_started` (1501:
 every user enabled again, `QMAXSIGN` taken) and sends `CPIB680` with the
 server name to `QSYSOPR`. When it cannot listen on 445 it sends `CPIB683`
 reason 6 with the error number, when the configuration cannot be read
-`CPIB683` reason 7, and ends. UDP 137 and 138 are not served (section
-10). Each accepted connection goes through the descriptor relay
+`CPIB683` reason 7, and ends. With NetBIOS allowed it also holds the
+server's NetBIOS names on UDP 137 on a thread of its own (`nbns::serve`
+over `nbns::Udp`, section 9; a bind failure is logged and 445 and 139
+are served without it) and releases them when it ends; UDP 138 is not
+served (section 10). Each accepted connection goes through the descriptor relay
 (`net/sockets` `relay`), as `QRWTLSTN` hands DDM connections to
 `QRWTSRVR`: to the job the routing table names (below), otherwise to the
 `QZLSFILE` pool. `NETSTAT` and `QSYS2.NETSTAT_INFO` show 445 (and 139)
@@ -221,7 +224,7 @@ defaults are the primary's (`zlsl/olst-ZLSL0201-ALL.txt`).
 | Code page | 0 (the job's) | `codePage` | the OEM code page of NetBIOS names; 0 or a code page with a CCSID QS/400 converts |
 | Idle time-out | 6000 seconds | `idleTimeOut` | -1 never; above 0 |
 | Oplock time-out | 30 seconds | `oplockTimeOut` | -1 turns leases and oplocks off; 1 to 600 |
-| Browse interval | 720000 ms | `browsingInterval` | 0 to 720000; for the NetBIOS announcements when NetBIOS is allowed |
+| Browse interval | 720000 ms | `browsingInterval` | 0 to 720000; kept, but no announcements are sent: they are the datagram service's (UDP 138), which is not built (section 10) |
 | WINS primary, secondary, scope, proxy | none | as named | refused when set (section 10) |
 | Allow system name | `0` | `systemNameAccess` | the server also answers to the system name |
 | Authentication method | `0` (passwords) | `authMethod` | `1`, `2` (Kerberos) refused |
@@ -231,7 +234,7 @@ defaults are the primary's (`zlsl/olst-ZLSL0201-ALL.txt`).
 | LAN Manager authentication | 0 | `LanmanAuth` | 1 refused |
 | Encrypted connections | 0 | `encryptedConnectionEnforcement` | 0 not required, 1 required for every connection |
 | Server authorization list | none | `serverAuthorizationList` | users need `*USE` to it to connect; must exist |
-| Allow NetBIOS | no | (QS/400 only) | 139, 137, 138 |
+| Allow NetBIOS | no | (QS/400 only) | the session service on TCP 139 and the name service on UDP 137 (138 is not built) |
 | SMB2 minimum dialect | 2.0.2 | (QS/400 only) | 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1 |
 | Log sign-on messages | no | (QS/400 only) | `CPIB691` to `QSYSOPR` |
 
@@ -599,9 +602,41 @@ the IFS authorities (section 6).
   case-insensitive with case preserved on `/` and `/QSYS.LIB`,
   case-sensitive under `/QOpenSys`; a share reports the case sensitivity
   of its root's file system. The library rejects `..`, empty components,
-  `<>:"|?*` and control characters before the backend sees a name. No 8.3
-  short names: listings carry an empty ShortName (clients use the long
-  name).
+  `<>:"|?*` and control characters before the backend sees a name.
+- 8.3 short names (`net/netserver/src/ifs/short.rs`, the library's
+  `short_name`): the IFS stores none, so each is made when asked, from the
+  directory's entries and their file numbers (`d_fileno`). A name needs one
+  unless it is a valid 8.3 name ([MS-FSCC] 2.1.5.2.1: a base of 1 to 8 and
+  an extension of 0 to 3 ASCII letters, digits or `$%'-_@~`!(){}^#&`); in a
+  case-sensitive file system (`/QOpenSys`, a `CASE(*MIXED)` UDFS) a valid
+  8.3 name with lower-case letters needs one too, since its upper-case form
+  may be another file's (on `/` and `/QSYS.LIB` `readme.txt` has none, under
+  `/QOpenSys` it has one). The form is Windows' hash form `XXHHHH~1.EXT`:
+  the first two characters of the base and the first three of the last
+  extension, upper case, spaces and dots dropped, characters a short name
+  cannot hold as `_` (leading dots are skipped: `.htaccess` is
+  `HTHHHH~1`); `HHHH` is four hex digits. Windows takes the hex digits from
+  a checksum of the long name and stores the name; with nothing to store
+  they come from the file number (its top 16 bits after a multiplication by
+  the 64-bit golden ratio), so a name is the same in every listing, query
+  and job and survives a rename but for its two letters and extension.
+  Uniqueness in the directory: entries are settled in order of file number
+  (then name), each taking its hash value or the next free one (after 65 536
+  values, `~2` to `~9`), never another's short name nor any entry's 8.3 long
+  name. Windows' sequential form (`LONGNA~1`) is not used: its number
+  depends on what the directory held when the file was made, which needs
+  storage. A short name can change only when a file with a smaller file
+  number and the same two characters and extension appears and its value
+  lands on it, or a file is made whose long name is that short name.
+  Listings carry the short name in FileBothDirectoryInformation and
+  FileIdBothDirectoryInformation, FileAlternateNameInformation answers it
+  (an 8.3 name and the share root have none: `STATUS_OBJECT_NAME_NOT_FOUND`),
+  a search pattern matches the long name or the short name (as [MS-FSA]
+  2.1.5.6.3), and a path component that names nothing but could be a short
+  name (a valid 8.3 name with `~`) is looked up as one in its directory, for
+  CREATE, delete and rename alike; creating a file under another's short name
+  is a collision. A file renamed to its own short name takes it as its long
+  name. Short names cannot be set (section 10).
 - File IDs: the IFS file ID (file number and generation, `Qp0lGetAttr`'s
   `*FILEID`), the same in listings, `FileInternalInformation` and the
   library's tables; an open finds its object by it after a rename
@@ -1011,6 +1046,8 @@ anything only if IBM checks the length first), and IBM's checks of
 | Credits, compounding, large MTU | yes; READ and WRITE up to the configured size (64 KiB to 8 MiB, 1 MiB by default) |
 | Leases | R, RH, RW, RWH on files (2.1+); no directory leases and no oplocks; broken by opens in the same job and by every other job's opens, writes, truncations, locks, renames and deletes (section 6, "Leases across jobs") |
 | Durable handles | v1 and v2 with a handle-caching lease; reconnects routed back to the job (section 3) |
+| 8.3 short names | made from file numbers (section 6): listings (FileBoth and FileIdBothDirectoryInformation), FileAlternateNameInformation, search patterns and opens by short name (a library patch); not settable |
+| NetBIOS name service | UDP 137 when NetBIOS is allowed, as a B node (RFC 1001 15, RFC 1002 4.2 and 5.1.1; `net/netserver/src/nbns/`): the server name `<00>` and `<20>` (unique) and the workgroup `<00>` (group, when the domain is set and not the server name) claimed with three broadcast registration requests 250 ms apart and an overwrite demand, TTL 302 400 s (`DEFAULT_TTL`); positive answers to name queries for them (unicast and broadcast, to the sender), a negative answer (`NAM_ERR`) to a unicast query for another name, none to a broadcast one; node status for `*` or a held name (the held names, active, statistics zero); another node's registration of a held unique name refused (`ACT_ERR`); a name another node objects to or demands is dropped; a refresh request broadcast at half the TTL (a B node has no name server; this re-asserts the names); release requests when `QZLSSERVER` ends. No WINS (point-to-point) registration, no scope |
 | Resilient and persistent handles, multichannel, RDMA, DFS, compression | refused (section 10) |
 | Change notify | yes, for every change in the directory (and below it with `SMB2_WATCH_TREE`) through any job or the service (section 6, "Change notify across jobs") |
 | Server-side copy | COPYCHUNK and COPYCHUNK_WRITE, done by reads and writes in the job; no block cloning |
@@ -1044,10 +1081,11 @@ anything only if IBM checks the length first), and IBM's checks of
 | Compression, RDMA | the library has none | not offered in NEGOTIATE |
 | Oplocks, directory leases | the library has none | an oplock request gets no oplock |
 | Extended attributes | off on every share | no `FILE_SUPPORTS_EXTENDED_ATTRIBUTES`; `ExtA` contexts `STATUS_EAS_NOT_SUPPORTED` |
-| Reparse points, object IDs, 8.3 short names, snapshots | the IFS has none | `STATUS_NOT_SUPPORTED`; no short names in listings; no previous versions |
+| Reparse points, object IDs, snapshots | the IFS has none | `STATUS_NOT_SUPPORTED`; no previous versions |
+| Setting a short name (FileShortNameInformation) | short names are made from file numbers, not stored (section 6) | `STATUS_NOT_SUPPORTED` |
 | `wkssvc` and other named pipes | not built | `STATUS_OBJECT_NAME_NOT_FOUND` on the pipe |
 | `srvsvc` over NDR64 | the library binds NDR 2.0 only (Windows binds NDR 2.0) | the NDR64 context is rejected in the bind ack |
-| The NetBIOS name service (UDP 137) and datagram service (138), browsing | not built | no answer on 137/138; clients connect by DNS name or address, or `*SMBSERVER` on 139 |
+| The NetBIOS datagram service (UDP 138): browsing, host announcements, master browser elections | file serving does not use it; network browsing is the only user | nothing on 138; the server is not in Network Neighborhood lists, and clients name it (by NetBIOS name through UDP 137, by DNS name or address) |
 | Text conversion with mixed data (`2`), a share text CCSID that is not single-byte | a conversion that changes a file's length cannot keep sizes and offsets coherent (section 6, text conversion) | `QZLSADFS`/`QZLSCHFS` `CPFB68A` reason 10 |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
@@ -1082,7 +1120,29 @@ anything only if IBM checks the length first), and IBM's checks of
   connection broken there by a plain write and reading it, an ended
   job's leases leaving nothing waiting; change notify of a plain IFS
   caller's, another job's and the job's own creates (the last heard
-  once), and a tree watch hearing a change below its directory.
+  once), and a tree watch hearing a change below its directory; 8.3
+  short names (both listing classes agree, the alternate name, an 8.3
+  name with none, opens by short name in any case and through a short
+  directory name, a pattern matching a short name, a create under
+  another's short name refused, the same names from a second job, the
+  hex digits kept across a rename, and the case rule of `/` against
+  `/QOpenSys`).
+- `cargo test -p netserver --test nbns`: the name service over loopback
+  UDP (a stand-in broadcast address): the claims, a name query, a node
+  status, a defended registration and the releases at the end; `cargo
+  test -p netserver --lib nbns`: the packets against RFC 1001 14.1's
+  `FRED` example and RFC 1002 4.2.2's layout, malformed packets, and
+  the state machine (retries and the overwrite demand, answers while
+  registering and held, defence, objections, conflict demands, its own
+  broadcasts, refresh, release). No QEMU step: the harness forwards TCP
+  only and no step turns NetBIOS on (it needs the attribute changed and
+  the server restarted); the loopback test runs the same loop over a
+  real socket.
+- `cd net/smb-server; cargo test --test qs400_short_names --lib
+  short_name`: the short-name patch over a connection (both listing
+  classes, the alternate name and its overflow, an open by short name)
+  and the generator (valid 8.3 names, the case rule, the form,
+  uniqueness among 2000 colliding names whatever their order).
 - `cargo test -p ifs --test watches`: which operations a watch hears and
   as what, a tree watch and the watcher's own changes below, a watched
   directory moved and removed, the queue's overflow, the poll's wait,
@@ -1140,7 +1200,8 @@ anything only if IBM checks the length first), and IBM's checks of
   files; no store, no `print$`. `cargo test -p netserver --lib`: the
   driver manifests.
 - Fuzz targets: the SMB2 header and commands, NTLMSSP, SPNEGO, the
-  NetBIOS session service and name service, DCE/RPC, the spoolss request
+  NetBIOS session service (`nbss`) and name service (`nbns`: the packet
+  parser and a name service holding its names), DCE/RPC, the spoolss request
   decoder (`smb_server::fuzzing::spoolss_request`).
 - `NEEDS-CODY`: Windows 11, macOS and a Linux kernel client map a share,
   open and save with Notepad, Word and Excel, print to a print share; a
