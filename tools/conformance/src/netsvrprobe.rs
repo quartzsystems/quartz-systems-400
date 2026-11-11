@@ -219,12 +219,15 @@ fn setup(s: &mut Session) -> Result<(), String> {
         )?;
     }
     // The driver store: a manifest for the share's driver and its files.
-    // The configuration directory is made owner-only; users (and QUSER,
-    // which builds the job's server) need to search it to reach print$.
-    quiet(
-        s,
-        "CHGAUT OBJ('/QIBM/UserData/OS400/NetServer') USER(*PUBLIC) DTAAUT(*X) OBJAUT(*NONE)",
-    )?;
+    // The service makes the configuration directory and the `OS400`
+    // directory above it owner-only; users (and QUSER, which builds the
+    // job's server) need to search both to reach print$.
+    for d in ["/QIBM/UserData/OS400", "/QIBM/UserData/OS400/NetServer"] {
+        quiet(
+            s,
+            &format!("CHGAUT OBJ('{d}') USER(*PUBLIC) DTAAUT(*X) OBJAUT(*NONE)"),
+        )?;
+    }
     let mut dir = String::new();
     for part in format!("{STORE}/x64/3")
         .split('/')

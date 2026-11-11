@@ -988,12 +988,13 @@ shares. IBM i has no such directory (the primary's
 `/QIBM/UserData/OS400/NetServer` holds only `QAZLSCFG` and `QAZLSSHR`,
 `tools/conformance/oracle/netserver/README.md`), so the path is QS/400's
 choice, beside IBM's files. The service makes
-`/QIBM/UserData/OS400/NetServer` owner-only when it first writes the
-configuration, and the job looks for the store as `QUSER` when it builds
-its server, so the administrator also gives `*PUBLIC` `*X` to that
-directory (`CHGAUT OBJ('/QIBM/UserData/OS400/NetServer') USER(*PUBLIC)
-DTAAUT(*X)`, as QEMU step 170 does); without it there is no `print$`
-(found by `smbprobe`, 2026-11-10). Its layout is Windows': `x64`, `W32X86` and
+`/QIBM/UserData/OS400` and `/QIBM/UserData/OS400/NetServer` owner-only
+when it first writes the configuration (`stgsvc/certs.rs` `make_dirs`),
+and the job looks for the store as `QUSER` when it builds its server, so
+the administrator also gives `*PUBLIC` `*X` to both (`CHGAUT
+OBJ('/QIBM/UserData/OS400/NetServer') USER(*PUBLIC) DTAAUT(*X)`, as QEMU
+step 170 does); without it there is no `print$` (found by `smbprobe`,
+2026-11-10). Its layout is Windows': `x64`, `W32X86` and
 `ARM64`, each with `3` and `4` for the driver version. For a driver
 named `NAME`, the administrator copies the driver's files into, say,
 `x64/3` and writes `x64/3/NAME.qsdrv` beside them, lines of
