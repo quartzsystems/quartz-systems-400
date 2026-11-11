@@ -1181,7 +1181,12 @@ anything only if IBM checks the length first), and IBM's checks of
   connection broken there by a plain write and reading it, an ended
   job's leases leaving nothing waiting; change notify of a plain IFS
   caller's, another job's and the job's own creates (the last heard
-  once), and a tree watch hearing a change below its directory; 8.3
+  once), and a tree watch hearing a change below its directory; over a
+  `/QSYS.LIB` that is a store in memory with the database's watcher
+  (`tests/shares/members.rs`): a client's lease on a source member
+  broken by `srcput` (no IFS call) and the client reading the new
+  records, no write caching while a database job has the member open
+  for update, a watch on the file hearing `ADDPFM` and `RMVM`; 8.3
   short names (both listing classes agree, the alternate name, an 8.3
   name with none, opens by short name in any case and through a short
   directory name, a pattern matching a short name, a create under
@@ -1302,7 +1307,7 @@ cannot share a lockfile with `tools/build`'s `ed25519-dalek` 3.0.0.
 cargo test  --manifest-path tools/smbtest/Cargo.toml        # unit tests and tests/loopback.rs
 cargo clippy --manifest-path tools/smbtest/Cargo.toml --all-targets
 cargo run   --manifest-path tools/smbtest/Cargo.toml -- HOST PORT USER PASSWORD SHARE SCRATCH \
-    [--only A,B] [--copy-bytes N[K|M|G]] [--large-bytes N] [--print-share NAME] [--no-bad-signon] [--list]
+    [--only A,B] [--copy-bytes N[K|M|G]] [--large-bytes N] [--print-share NAME] [--no-bad-signon] [--watch DIR] [--list]
 cargo run   --manifest-path tools/smbtest/Cargo.toml -- probe HOST PORT   # NEGOTIATE only, no sign-on
 ```
 
@@ -1323,6 +1328,7 @@ any scenario failed. Every writing scenario works under a run directory
 | `file-round-trip`, `dir-list`, `rename`, `delete` | text and every byte value through a new open; a listing of mixed-case names and a directory; rename on an open handle (old name `STATUS_OBJECT_NAME_NOT_FOUND`); delete on close |
 | `change-notify` | a watch from one connection sees `Added` for a file another connection creates |
 | `change-notify-two-machines` | the same, the writer another machine (another ClientGuid: on QS/400 another `QZLSFILE` job, so the change reaches the watch through the IFS) |
+| `watch-dir` (only with `--watch DIR`, and alone) | a watch on `DIR` (relative to the share) until one entry is added and then removed by anyone (QEMU 167: members added and removed from the console) |
 | `large-io` | several requests at the negotiated maximum read and write sizes, checked |
 | `copy` | `--copy-bytes` (64 MiB by default) written and read with 8 requests of up to 1 MiB in flight; `in:` and `out:` in MB/s (10^6 bytes) |
 
@@ -1374,7 +1380,12 @@ cargo test --manifest-path tools/smbtest/Cargo.toml --test interop -- --ignored 
 QEMU steps 166-169 (`tools/conformance/src/netsvrstep.rs`): 166 `STRTCPSVR SERVER(*NETSVR)` and both jobs in
 `WRKACTJOB` (`BCH`, `PJ`); 167 a user `NSUSER`, a read/write share
 `SMBTEST` over `/home/NSUSER` added with `QZLSADFS` from the console,
-and every scenario through a forward to the guest's 445 (16 MiB copy);
+and every scenario through a forward to the guest's 445 (16 MiB copy),
+then a library `NSWATCH` with a source file `QCLSRC` shared as `NSWATCH`
+and `smbtest --only watch-dir --watch QCLSRC.FILE` watching the file's
+directory while the console adds and removes members (`ADDPFM`, `RMVM`
+every two seconds until the client has heard one come and go: database
+changes reaching change notify);
 168 `QSGROWIFS SIZE(1536)` (the guest's IFS volume starts at 1 GiB and
 grows a step at a time as it fills: without room first a 1 GiB write meets
 `STATUS_DISK_FULL`), then `--only copy,cleanup --copy-bytes 1G`
