@@ -987,7 +987,13 @@ serves the IFS directory `/QIBM/UserData/OS400/NetServer/print$`
 shares. IBM i has no such directory (the primary's
 `/QIBM/UserData/OS400/NetServer` holds only `QAZLSCFG` and `QAZLSSHR`,
 `tools/conformance/oracle/netserver/README.md`), so the path is QS/400's
-choice, beside IBM's files. Its layout is Windows': `x64`, `W32X86` and
+choice, beside IBM's files. The service makes
+`/QIBM/UserData/OS400/NetServer` owner-only when it first writes the
+configuration, and the job looks for the store as `QUSER` when it builds
+its server, so the administrator also gives `*PUBLIC` `*X` to that
+directory (`CHGAUT OBJ('/QIBM/UserData/OS400/NetServer') USER(*PUBLIC)
+DTAAUT(*X)`, as QEMU step 170 does); without it there is no `print$`
+(found by `smbprobe`, 2026-11-10). Its layout is Windows': `x64`, `W32X86` and
 `ARM64`, each with `3` and `4` for the driver version. For a driver
 named `NAME`, the administrator copies the driver's files into, say,
 `x64/3` and writes `x64/3/NAME.qsdrv` beside them, lines of
@@ -1446,7 +1452,7 @@ durable V2) unless they say otherwise.
 | Scenario | What it proves |
 |---|---|
 | `share-enum` | `\pipe\srvsvc` bound as Windows binds (NDR 2.0, NDR64 and the feature negotiation together; NDR 2.0 accepted), `NetrShareEnum` level 1: the file share `STYPE_DISKTREE`, the print share `STYPE_PRINTQ` |
-| `lock-conflict` | an exclusive lock from one job: another job's lock `STATUS_LOCK_NOT_GRANTED`, its read in the range `STATUS_FILE_LOCK_CONFLICT`, outside it served; after the unlock the other job takes the range and the first is refused |
+| `lock-conflict` | an exclusive lock from one job: another job's lock `STATUS_LOCK_NOT_GRANTED` and its read served (IFS locks are advisory across jobs, section 6; Windows would refuse it with `STATUS_FILE_LOCK_CONFLICT`); another open in the locking job reads `STATUS_FILE_LOCK_CONFLICT`; after the unlock the other job takes the range and the first is refused |
 | `lease-break` | an RWH lease on machine A; B's open breaks it to RH and waits while A writes back and acknowledges; B reads A's write-back; a new lease from A while B has the file open gets no write caching; B's write breaks read caching; A reads B's write |
 | `lease-break-ifs` | an RWH lease broken by a writer outside SMB: the probe prints `ready lease-break-ifs PATH` and waits; the harness writes `--ifs-text` into the file from the console (`svc.ifs put`, through the IFS); the breaks are acknowledged and the file reads as written |
 | `durable-reconnect` | a durable V2 handle with an RWH lease and a byte-range lock; the connection is reset; a new connection from the same ClientGuid signs on with the old SessionId as PreviousSessionId and takes the handle back by its CreateGuid (only the job that served it holds it, so routing reached the same job); it reads the file, its lock still refuses another job, and it unlocks the range |
