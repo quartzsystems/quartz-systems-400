@@ -232,3 +232,115 @@ fn the_http_server_installs_its_library() {
     let report = licpgm::directory::check::chkprdopt(&mut p, &objs, &pid, None, None).unwrap();
     assert!(report.clean(), "{report:?}");
 }
+
+/// QSERVER as V1R1M0 had it, with an entry of the customer's, and no
+/// `QSYS/QZLSSERVER`; a spooled file on `QGPL/QPRINT`.
+fn as_v1r1m0(t: &mut store::Txn<'_>, qsys: ObjectId) -> wm::obj::sbsd::Pje {
+    use wm::obj::sbsd::{Pje, Sbsd};
+    let id = |t: &mut store::Txn<'_>, lib: &str, n: &str, ty: u16| {
+        let l = if lib == "QSYS" {
+            qsys
+        } else {
+            ops::find_library(t, qsys, Name::parse(lib).unwrap())
+                .unwrap()
+                .id
+        };
+        ops::list(t, l, Some(ty))
+            .unwrap()
+            .into_iter()
+            .find(|(k, _)| k.name.to_string() == n)
+            .unwrap()
+            .1
+    };
+    let q = id(t, "QSYS", "QSERVER", types::SBSD);
+    let mut s = Sbsd::decode(&wm::obj::read(t, q).unwrap()).unwrap();
+    s.rtges.clear();
+    s.jobqes.clear();
+    s.pjes.retain(|p| p.pgm.0.starts_with("QPWFSERV"));
+    let mine = Pje {
+        pgm: ("MYSRV".into(), "MYLIB".into()),
+        job: "MYSRV".into(),
+        ..s.pjes[0].clone()
+    };
+    s.pjes.push(mine.clone());
+    wm::obj::write(t, q, &s.encode()).unwrap();
+    let jd = id(t, "QSYS", "QZLSSERVER", types::JOBD);
+    ops::delete(t, store::obj::JobHandle(0), jd).unwrap();
+    let o = id(t, "QGPL", "QPRINT", types::OUTQ);
+    let mut outq = wm::obj::outq::OutQ::decode(&wm::obj::read(t, o).unwrap()).unwrap();
+    outq.files.push(7);
+    wm::obj::write(t, o, &outq.encode()).unwrap();
+    mine
+}
+
+#[test]
+fn a_slip_install_keeps_qserver_and_adds_netserver() {
+    use wm::obj::sbsd::Sbsd;
+    let key = SigningKey::from_bytes(&[42; 32]);
+    let built = lpbuild::build(&manifest("QS00SS1"), &key, NOW).unwrap();
+    let (mut store, qsys) = system_on(Arc::new(MemBlockDev::with_seed(65536, 9)));
+    let req = Request {
+        stream: built.stream.clone(),
+        product: "QS00SS1",
+        options: Vec::new(),
+        key: Some(key.verifying_key().to_bytes()),
+        system: SystemInfo::current("QS40001", "P05"),
+        accepted_by: "QSECOFR",
+        now: NOW,
+    };
+    osload::install(&mut store, qsys, &req).unwrap();
+    let mut t = store.begin().unwrap();
+    let mine = as_v1r1m0(&mut t, qsys);
+    let kept = wm::obj::upgrade::keep(&mut t, qsys).unwrap();
+    t.commit().unwrap();
+    osload::install(&mut store, qsys, &req).unwrap();
+    let stamp = wm::obj::Stamp {
+        owner: "QSYS".into(),
+        system: "QS400".into(),
+        now: NOW,
+    };
+    let mut t = store.begin().unwrap();
+    // The restore alone puts the load's copies over the system's.
+    {
+        let q = ops::list(&mut t, qsys, Some(types::SBSD))
+            .unwrap()
+            .into_iter()
+            .find(|(k, _)| k.name.to_string() == "QSERVER")
+            .unwrap()
+            .1;
+        let s = Sbsd::decode(&wm::obj::read(&mut t, q).unwrap()).unwrap();
+        assert!(!s.pjes.contains(&mine));
+    }
+    let lines = wm::obj::upgrade::put_back(&mut t, qsys, &kept, &stamp).unwrap();
+    assert!(
+        lines
+            .iter()
+            .any(|l| l.contains("QSERVER: NetServer: added routing entry 800")),
+        "{lines:?}"
+    );
+    let find = |t: &mut store::Txn<'_>, l: ObjectId, n: &str, ty: u16| {
+        ops::list(t, l, Some(ty))
+            .unwrap()
+            .into_iter()
+            .find(|(k, _)| k.name.to_string() == n)
+            .map(|(_, id)| id)
+    };
+    let q = find(&mut t, qsys, "QSERVER", types::SBSD).unwrap();
+    let s = Sbsd::decode(&wm::obj::read(&mut t, q).unwrap()).unwrap();
+    assert!(s.pjes.contains(&mine), "the customer's entry is kept");
+    assert!(
+        s.rtges
+            .iter()
+            .any(|r| r.seq == 800 && r.pgm.0 == "QZLSSERVER")
+    );
+    assert!(s.pjes.iter().any(|p| p.pgm.0 == "QZLSFILE"));
+    assert!(s.jobqes.iter().any(|e| e.jobq.0 == "QPWFSERVER"));
+    assert!(find(&mut t, qsys, "QZLSSERVER", types::JOBD).is_some());
+    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap())
+        .unwrap()
+        .id;
+    let o = find(&mut t, qgpl, "QPRINT", types::OUTQ).unwrap();
+    let outq = wm::obj::outq::OutQ::decode(&wm::obj::read(&mut t, o).unwrap()).unwrap();
+    assert_eq!(outq.files, vec![7], "the queue's spooled files are kept");
+    t.commit().unwrap();
+}

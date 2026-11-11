@@ -63,7 +63,9 @@ pub struct Report {
 /// and menus, the Collection Services model files, the registration
 /// facility, the commands and `QSTRUP`.
 /// Objects that exist are left alone (a changed command definition is
-/// replaced, as at every IPL).
+/// replaced, as at every IPL), but for the shipped message descriptions
+/// and subsystem entries an older release's objects lack, which are
+/// added (`wm::obj::upgrade`).
 pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Result<Report, Error> {
     let mut r = Report::default();
     let mctx = msgf::store::Ctx {
@@ -76,6 +78,10 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
         msgf::store::install_builtin(txn, &mctx, qsys),
     )?
     .len();
+    r.made += piece(
+        "message descriptions",
+        msgf::store::add_missing_descriptions(txn, qsys),
+    )?;
     r.made += piece(
         "work management objects",
         wm::obj::shipped::install(txn, qsys, stamp),

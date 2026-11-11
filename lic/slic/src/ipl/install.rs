@@ -910,8 +910,20 @@ impl Env<'_> {
         };
         let s = self.system.storage.as_mut().expect("opened above");
         let qsys = s.qsys.expect("made above");
+        // The system's work management objects, kept across the restore.
+        let kept = if fresh {
+            None
+        } else {
+            Some(sec::guard::as_system(|| kept_objects(&mut s.store, qsys))?)
+        };
         let mut r = sec::guard::as_system(|| osload::install(&mut s.store, qsys, &req))
             .map_err(fail("Installing the operating system"))?;
+        if let Some(kept) = &kept {
+            let lines = sec::guard::as_system(|| put_back(&mut s.store, qsys, kept, now))?;
+            for l in lines {
+                self.system.out.serial(&format!("slic: install: {l}\n"));
+            }
+        }
         self.system.emit(&src::INSTALL_OS_LOAD);
         report(stage::CODE, self);
         report(stage::LANGUAGE, self);
@@ -1031,6 +1043,38 @@ fn licpgms_wanted(system: &System, options: &OsOptions, found: &instdev::Found) 
         }
         _ => Vec::new(),
     }
+}
+
+/// Before the operating system's load goes over an installed system:
+/// its shipped work management objects (`wm::obj::upgrade`).
+fn kept_objects(
+    store: &mut store::Store,
+    qsys: store::obj::ObjectId,
+) -> Result<wm::obj::upgrade::Kept, String> {
+    let mut t = store.begin().map_err(|e| e.to_string())?;
+    let k = wm::obj::upgrade::keep(&mut t, qsys).map_err(|e| e.to_string());
+    t.abort();
+    k
+}
+
+/// After the load's restore: the kept objects back, the release's
+/// subsystem entries added. A line for each object changed.
+fn put_back(
+    store: &mut store::Store,
+    qsys: store::obj::ObjectId,
+    kept: &wm::obj::upgrade::Kept,
+    now: u64,
+) -> Result<Vec<String>, String> {
+    let stamp = wm::obj::Stamp {
+        owner: "QSYS".into(),
+        system: "QS400".into(),
+        now,
+    };
+    let mut t = store.begin().map_err(|e| e.to_string())?;
+    let lines =
+        wm::obj::upgrade::put_back(&mut t, qsys, kept, &stamp).map_err(|e| e.to_string())?;
+    t.commit().map_err(|e| e.to_string())?;
+    Ok(lines)
 }
 
 /// A partition's node name on `disk`.

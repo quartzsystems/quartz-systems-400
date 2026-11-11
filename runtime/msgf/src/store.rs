@@ -172,6 +172,28 @@ pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<V
     Ok(made)
 }
 
+/// The shipped descriptions an existing system message file lacks,
+/// added (a system whose files an older release made, its code since
+/// replaced by a PTF). Descriptions the file has are left as they are.
+/// Returns how many were added.
+pub fn add_missing_descriptions(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize> {
+    let mut n = 0;
+    let lib = Library::load(txn, qsys)?;
+    for f in builtin() {
+        let name = Name::parse(&f.name)?;
+        let Some(id) = lib.lookup(txn, types::MSGF, name)? else {
+            continue;
+        };
+        let mut have = load(txn, id)?;
+        let added = have.merge(&f, false);
+        if added > 0 {
+            write_payload(txn, id, &have)?;
+            n += added;
+        }
+    }
+    Ok(n)
+}
+
 /// Install a product library's message files (`QHTTPSVR/QZHBMSG`), and
 /// the library, when absent; returns the objects created.
 pub fn install_product_files(

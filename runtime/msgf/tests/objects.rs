@@ -11,8 +11,8 @@ use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
 use msgf::store::{
-    Ctx, addmsgd, chgmsgd, crtmsgf, dspmsgd, install_builtin, install_product_files, load, mrgmsgf,
-    rmvmsgd, rtvmsg,
+    Ctx, add_missing_descriptions, addmsgd, chgmsgd, crtmsgf, dspmsgd, install_builtin,
+    install_product_files, load, mrgmsgf, rmvmsgd, rtvmsg,
 };
 use msgf::{MsgDesc, VarType};
 use qsname::{LibSpec, Name};
@@ -81,6 +81,38 @@ fn desc(id: &str, text: &str) -> MsgDesc {
         valid_replies: Vec::new(),
         dump: Vec::new(),
     }
+}
+
+#[test]
+fn an_older_files_missing_descriptions_are_added() {
+    let (mut store, qsys, _) = open_new();
+    let mut t = store.begin().unwrap();
+    install_builtin(&mut t, &ctx(), qsys).unwrap();
+    assert_eq!(add_missing_descriptions(&mut t, qsys).unwrap(), 0);
+    let names = NameContext {
+        curlib: None,
+        libl: vec![qsys],
+    };
+    let f = ops::resolve(
+        &mut t,
+        qsys,
+        &names,
+        LibSpec::Name(Name::parse("QSYS").unwrap()),
+        Name::parse("QCPFMSG").unwrap(),
+        types::MSGF,
+    )
+    .unwrap()
+    .id;
+    // As a V1R1M0 file: no CPIB68D; one description the customer changed.
+    rmvmsgd(&mut t, f, "CPIB68D").unwrap();
+    let mut d = load(&mut t, f).unwrap().find("CPF9801").unwrap().clone();
+    d.text = "changed here".into();
+    chgmsgd(&mut t, f, d).unwrap();
+    assert_eq!(add_missing_descriptions(&mut t, qsys).unwrap(), 1);
+    let back = load(&mut t, f).unwrap();
+    assert!(back.find("CPIB68D").is_some());
+    assert_eq!(back.find("CPF9801").unwrap().text, "changed here");
+    t.commit().unwrap();
 }
 
 #[test]

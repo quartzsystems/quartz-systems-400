@@ -243,6 +243,69 @@ fn printer_files() -> Vec<(&'static str, Prtf)> {
     ]
 }
 
+/// `(library, name, text)` of the job queues.
+fn job_queues() -> [(&'static str, &'static str, &'static str); 10] {
+    [
+        ("QGPL", "QBATCH", "Batch job queue"),
+        ("QGPL", "QBASE", "Base subsystem job queue"),
+        ("QGPL", "QINTER", "Interactive job queue"),
+        ("QGPL", "QPGMR", "Programmer job queue"),
+        ("QGPL", "QS36EVOKE", "System/36 evoke job queue"),
+        ("QSYS", "QCTL", "Controlling subsystem job queue"),
+        ("QSYS", "QSPL", "Spooling job queue"),
+        ("QSYS", "QSYSNOMAX", "System jobs, no limit"),
+        ("QSYS", "QUSRNOMAX", "User jobs, no limit"),
+        ("QSYS", "QPWFSERVER", "File server job queue"),
+    ]
+}
+
+/// `(library, name, text)` of the output queues.
+fn output_queues() -> [(&'static str, &'static str, &'static str); 6] {
+    [
+        ("QGPL", "QPRINT", "Default printer output queue"),
+        ("QGPL", "QPRINTS", "Special forms output queue"),
+        ("QGPL", "QPRINT2", "Second printer output queue"),
+        ("QUSRSYS", "QEZJOBLOG", "Job logs"),
+        ("QUSRSYS", "QEZDEBUG", "Service dumps and debug output"),
+        ("QUSRSYS", "QSCAPTURE", "Capture printer output queue"),
+    ]
+}
+
+/// Every object [`install`] makes but the reply list (a `*USRSPC`,
+/// [`super::rpyl`]): `(library, name, type)`.
+#[must_use]
+pub fn objects() -> Vec<(&'static str, &'static str, u16)> {
+    let mut v = Vec::new();
+    v.extend(jobds().into_iter().map(|(l, n, _)| (l, n, types::JOBD)));
+    v.extend(classes().into_iter().map(|(l, n, _)| (l, n, types::CLS)));
+    v.extend(
+        job_queues()
+            .into_iter()
+            .map(|(l, n, _)| (l, n, types::JOBQ)),
+    );
+    v.extend(
+        output_queues()
+            .into_iter()
+            .map(|(l, n, _)| (l, n, types::OUTQ)),
+    );
+    v.extend(
+        printer_files()
+            .into_iter()
+            .map(|(n, _)| ("QSYS", n, types::FILE)),
+    );
+    v.push(("QSYS", super::devd::CONSOLE, types::DEVD));
+    v.push(("QSYS", super::devd::CAPTURE, types::DEVD));
+    let (slib, sname) = super::jobscd::SCHEDULE;
+    v.push((slib, sname, types::JOBSCD));
+    v.extend(
+        super::sbsd::shipped()
+            .into_iter()
+            .map(|(n, _)| ("QSYS", n, types::SBSD)),
+    );
+    v.extend(queues().into_iter().map(|(l, n, _)| (l, n, types::MSGQ)));
+    v
+}
+
 /// Whether `lib` holds `name` of a type.
 fn exists(txn: &mut Txn<'_>, lib: ObjectId, name: Name, type_code: u16) -> Result<bool> {
     Ok(Library::load(txn, lib)?
@@ -253,7 +316,9 @@ fn exists(txn: &mut Txn<'_>, lib: ObjectId, name: Name, type_code: u16) -> Resul
 /// Create the shipped objects that do not exist; how many were made.
 #[allow(clippy::too_many_lines)]
 pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize> {
-    let mut made = 0;
+    // A release's entries for a subsystem the system already has, before
+    // the objects that mark them are made.
+    let mut made = super::upgrade::add_missing(txn, qsys)?.len();
     for (lib, name, d) in jobds() {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");
@@ -274,18 +339,7 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         super::rpyl::save(txn, qsys, &super::rpyl::RpyList::shipped(), stamp)?;
         made += 1;
     }
-    for (lib, name, text) in [
-        ("QGPL", "QBATCH", "Batch job queue"),
-        ("QGPL", "QBASE", "Base subsystem job queue"),
-        ("QGPL", "QINTER", "Interactive job queue"),
-        ("QGPL", "QPGMR", "Programmer job queue"),
-        ("QGPL", "QS36EVOKE", "System/36 evoke job queue"),
-        ("QSYS", "QCTL", "Controlling subsystem job queue"),
-        ("QSYS", "QSPL", "Spooling job queue"),
-        ("QSYS", "QSYSNOMAX", "System jobs, no limit"),
-        ("QSYS", "QUSRNOMAX", "User jobs, no limit"),
-        ("QSYS", "QPWFSERVER", "File server job queue"),
-    ] {
+    for (lib, name, text) in job_queues() {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");
         if !exists(txn, l, n, types::JOBQ)? {
@@ -294,14 +348,7 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
             made += 1;
         }
     }
-    for (lib, name, text) in [
-        ("QGPL", "QPRINT", "Default printer output queue"),
-        ("QGPL", "QPRINTS", "Special forms output queue"),
-        ("QGPL", "QPRINT2", "Second printer output queue"),
-        ("QUSRSYS", "QEZJOBLOG", "Job logs"),
-        ("QUSRSYS", "QEZDEBUG", "Service dumps and debug output"),
-        ("QUSRSYS", "QSCAPTURE", "Capture printer output queue"),
-    ] {
+    for (lib, name, text) in output_queues() {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");
         if !exists(txn, l, n, types::OUTQ)? {
