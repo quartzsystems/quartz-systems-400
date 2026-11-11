@@ -226,5 +226,26 @@ fn a_slip_install_keeps_the_systems_objects_and_adds_netserver() {
             .is_empty()
     );
     t2.commit().unwrap();
+
+    // V1R1M0's QSERVER as shipped: the load's copy is the result, and the
+    // additions are still told.
+    let (mut store3, qsys3) = open_new();
+    let mut t3 = store3.begin().unwrap();
+    shipped::install(&mut t3, qsys3, &stamp()).unwrap();
+    as_v1r1m0(&mut t3, qsys3);
+    let mut s = qserver(&mut t3, qsys3);
+    s.pjes.retain(|p| p.pgm.0 != "MYSRV");
+    set_qserver(&mut t3, qsys3, &s);
+    let kept = upgrade::keep(&mut t3, qsys3).unwrap();
+    restore_load(&mut t3, qsys3);
+    let lines = upgrade::put_back(&mut t3, qsys3, &kept, &stamp()).unwrap();
+    assert!(
+        lines
+            .iter()
+            .any(|l| l.contains("QSERVER: NetServer: added")),
+        "{lines:?}"
+    );
+    assert_eq!(qserver(&mut t3, qsys3), shipped_qserver());
+    t3.commit().unwrap();
     t.commit().unwrap();
 }

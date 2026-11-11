@@ -231,7 +231,8 @@ pub fn keep(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Kept> {
 
 /// After the restore: each kept object's payload back where the load's
 /// differs, with the additions the system never had merged into its
-/// subsystems. A line for each object put back.
+/// subsystems. A line for each object put back and each subsystem given
+/// entries.
 pub fn put_back(
     txn: &mut Txn<'_>,
     qsys: ObjectId,
@@ -258,10 +259,18 @@ pub fn put_back(
                 note = Some(notes.join("; "));
             }
         }
-        if read(txn, id)? != want {
+        let changed = read(txn, id)? != want;
+        if changed {
             write(txn, id, &want)?;
-            let tname = types::type_by_code(*ty).map_or("*UNKNOWN", |t| t.name);
-            lines.push(note.unwrap_or_else(|| format!("{lib}/{name} {tname}: the system's kept")));
+        }
+        // The additions are told even when the result is the load's copy.
+        match note {
+            Some(n) => lines.push(n),
+            None if changed => {
+                let tname = types::type_by_code(*ty).map_or("*UNKNOWN", |t| t.name);
+                lines.push(format!("{lib}/{name} {tname}: the system's kept"));
+            }
+            None => {}
         }
     }
     if let Some(list) = &kept.rpyl
