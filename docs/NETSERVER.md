@@ -1518,7 +1518,7 @@ in memory.
 
 ## Acceptance
 
-Status at the end of the handoff (2026-11-10). "Built" means built and
+Status at the end of the handoff (2026-11-11). "Built" means built and
 proven by the tests named; `NEEDS-CODY` items need a real client or an
 oracle change the rules forbid.
 
@@ -1543,6 +1543,15 @@ oracle change the rules forbid.
 | Print shares, spoolss point and print, `print$` | `cargo test -p netserver --test shares`; library `qs400_spoolss` | built; Windows 11 `NEEDS-CODY` |
 | Navigator NetServer pages, QAP v10 NetServer service | `cargo test -p navigator --test netsvr`, `-p qapd --test netserver`, `-p qap-proto --test version10` | built |
 | Fuzz targets: NetBIOS session service, the library's parsers, spoolss | `tools/fuzz` targets `nbss`, `smb`; `smb_server::fuzzing::spoolss_request` | built |
+| 8.3 short names | `cargo test -p netserver --test shares short_names`; library `--test qs400_short_names` | built |
+| NetBIOS name service (UDP 137) | `cargo test -p netserver --test nbns`, `--lib nbns`; fuzz target `nbns` | built (loopback; no QEMU step) |
+| Leases and change notify for `/QSYS.LIB` members changed through the database and the object commands; no write caching while a member is open for update | `cargo test -p ifs --test qsys_changes`, `-p qsyslib --test notice`, `-p netserver --test shares members`; QEMU 167 (member watch) | built |
+| Leases across jobs and a writer outside SMB, byte-range locks across jobs (advisory), durable reconnect into the same job, against the running system | QEMU 170 (`smbprobe`) | built |
+| Print share CREATE/WRITE and spoolss point and print into the profile's `QPRTJOB`; `print$` | QEMU 170 (`WRKSPLF SELECT(user)`, `DSPSPLF`) | built; Windows 11 `NEEDS-CODY` |
+| Share enumeration over NDR 2.0, guest logon, maximum users, per-share encryption, minimum dialect | QEMU 170 | built |
+| NetServer directories `*PUBLIC *RX`, configuration files `*EXCLUDE`, owner-only systems corrected | QEMU 170 (`DSPAUT`) | built |
+| Upgrade from V1R1M0: `QSERVER` entries added once, the customer's kept, work management objects kept across the slip install | `cargo test -p wm --test upgrade`, `-p instmedia --test install` | built |
+| V1R1M0 to V1R2M0 slip install with NetServer working on the upgraded system | install step 10 (`INSTALL.md` §4; needs a development build of tag `v1.1.0` as `QS400_OLD_ISO`) | built |
 | Windows 11, macOS, Linux kernel clients; Office documents; `QMAXSIGN` disabling from a real client | section 11 | `NEEDS-CODY` |
 | Samba `smbclient` and kernel CIFS interop | `cargo test --manifest-path tools/smbtest/Cargo.toml --test interop -- --ignored` | written; `NEEDS-CODY` (packages) |
 

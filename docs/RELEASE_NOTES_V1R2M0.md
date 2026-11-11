@@ -79,7 +79,8 @@ with IBM i NetServer:
   NetBIOS names on UDP 137.
 - File shares over the IFS (`/QSYS.LIB` too), with text conversion by
   CCSID for the extensions a share lists and a maximum number of users.
-  Print shares spool to an output queue as the user, as `*USERASCII` or
+  Print shares spool to an output queue as the user (a spooled file of
+  the signed-on profile's `QPRTJOB`, as IBM's are), as `*USERASCII` or
   through the host print transform; Windows point and print through the
   print spooler RPC and a read-only `print$` driver share.
 - Administration as on IBM i: `STRTCPSVR` and `ENDTCPSVR SERVER(*NETSVR)`,

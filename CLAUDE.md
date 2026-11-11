@@ -167,6 +167,10 @@ tools/        host-side tools
   smbtest/      the NetServer test client over the `smb` client crate (other authors than the
                 server), outside the workspace with its own Cargo.lock; scenarios, loopback and
                 interop tests; `build deny` checks its graph with its own advisory ignores
+  smbprobe/     a second NetServer client from the server library's own test helpers, for what
+                smbtest's crate cannot ask: leases, locks, durable reconnect, print shares,
+                spoolss, share enumeration; QEMU step 170 runs it (it shares authors with the
+                library, so smbtest stays the independent client)
   kcbuild/      the Knowledge Center (on the media) and the release notes' generated blocks
   pesign/       Authenticode signing of the UKIs with the Secure Boot db key, keygen, ESL and
                 OVMF variable stores; keys/ holds the development pair only
@@ -678,7 +682,9 @@ cargo test -p sshd                        # the SSH server end to end in memory
 cargo test -p netserver -p netsvrcfg -p ntlm   # NetServer: shares over a MemBackend IFS, two jobs, leases, print; config, APIs; NTLM
 (cd net/smb-server && cargo test)         # the vendored SMB library and its QS/400 patches (tests/qs400_*.rs); own target dir
 cargo test --manifest-path tools/smbtest/Cargo.toml   # the test client against the library on loopback; --test interop -- --ignored for smbclient/cifs
-cargo run -p conformance -- --only 166,167,168,169   # NetServer under QEMU: start, every smbtest scenario, the 1 GB copy, APIs and SQL
+cargo run -p conformance -- --only 166,167,168,169,170   # NetServer under QEMU: start, every smbtest scenario, the 1 GB copy, APIs and SQL, smbprobe (leases, locks, print)
+cargo run -p conformance -- --only 51,53,172   # telnet sign-on and recovery, named display sessions (DEVNAME, QMAXSGNACN vary-off, VRYCFG)
+QS400_RELEASE=V1R2M0 QS400_OLD_ISO=<V1R1M0 dev ISO> cargo run -p conformance -- --media iso --install --only 10   # the slip install from V1R1M0 (docs/INSTALL.md §4 builds the old media)
 cargo test -p licpgm -p lpstore -p lpbuild -p osobjects   # products, payloads, APIs, keys; the store; build lp
 cargo test -p uim --test licpgm_panels    # GO LICPGM panels; QS400_UPDATE_GOLDEN=1 rewrites tests/golden/licpgm/
 cargo test -p sshd --test openssh -- --ignored   # real ssh/sftp/scp against the daemon
@@ -739,6 +745,14 @@ install step stays up this long; 400 by default, 0 for none).
 `QS400_JOBS=N` caps the kernel build's `make -j` (default: every core). `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
 `/mnt/c`; drvfs is far too slow for a kernel build). `-v` streams tool output;
 otherwise logs go to `target/logs/`.
+
+Two checkouts (worktrees) must not share a `QS400_TARGET_DIR` or a
+`CARGO_TARGET_DIR` as they are: cargo names a workspace crate by its path
+from the workspace root and judges freshness by file times, so a build
+links the other checkout's artifacts without a word (the userland's cargo
+target is inside `QS400_TARGET_DIR`). Give each checkout its own, or, when
+disk is short, build one at a time and touch the checkout's tracked files
+first (`git ls-files -z | xargs -0 touch -c`).
 
 ## Conventions
 
