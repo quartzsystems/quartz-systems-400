@@ -511,13 +511,15 @@ pub fn on_queue(system: &mut System, q: &str) -> Result<(String, OutQ, Vec<SplfA
 
 /// The profile a `NetServer` document belongs to: the one the
 /// `QZLSFILE` job `job` (name, user) signed on and runs as, `current`;
-/// never a name the client gave. `CPF3309`-style refusals otherwise.
+/// never a name the client gave. `CPF3309` and the job's name or user
+/// otherwise.
 pub fn netsvr_owner(job: (&str, &str), current: &str) -> Result<String, String> {
     if job.0 != "QZLSFILE" {
-        return Err(format!("CPF3309 job {} is not a NetServer job", job.0));
+        // A message ID only: the job's printer never shows it.
+        return Err(format!("CPF3309 {}", job.0));
     }
     if current.is_empty() || current.eq_ignore_ascii_case(job.1) {
-        return Err("CPF3309 no profile is signed on in this NetServer job".into());
+        return Err(format!("CPF3309 {}", job.1));
     }
     Ok(current.to_ascii_uppercase())
 }
