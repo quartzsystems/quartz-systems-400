@@ -112,11 +112,16 @@ fn share_call(api: &str, max: i32) -> String {
 /// `QZLSADFS` or `QZLSCHFS` of the read/write share `share` over `path`.
 fn share_api(api: &str, share: &str, path: &str, max: i32) -> String {
     format!(
-        "CALL PGM(QSYS/{api}) PARM('{share:<12}' '{path}' X'{:08X}' X'00000000' '{:<50}' X'00000002' X'{:08X}' X'00000000')",
-        path.len(),
+        "CALL PGM(QSYS/{api}) PARM('{share:<12}' '{path}' {} X'00000000' '{:<50}' X'00000002' {} X'00000000')",
+        bin4(u32::try_from(path.len()).unwrap_or(0)),
         "smbtest share",
-        max.cast_unsigned()
+        bin4(max.cast_unsigned())
     )
+}
+
+/// A 4-byte binary parameter as a hexadecimal literal.
+pub(crate) fn bin4(n: u32) -> String {
+    format!("X'{n:08X}'")
 }
 
 /// The library 167's member watch uses, and its share.

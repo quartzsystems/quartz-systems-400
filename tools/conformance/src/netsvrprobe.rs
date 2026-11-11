@@ -23,7 +23,7 @@ use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use crate::netsvrstep::{
-    PASSWORD, SCRATCH, SHARE, SLOW, USER, job_gone, job_line, no_client_job, share_setup,
+    PASSWORD, SCRATCH, SHARE, SLOW, USER, bin4, job_gone, job_line, no_client_job, share_setup,
 };
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
@@ -166,13 +166,14 @@ fn chars(text: &str, n: usize) -> String {
 /// `extra` optional parameters.
 fn file_share(name: &str, max: i32, extra: &str) -> String {
     let path = format!("/home/{USER}");
-    format!(
-        "CALL PGM(QSYS/QZLSADFS) PARM({} '{path}' X'{:08X}' X'00000000' {} X'00000002' X'{:08X}' X'00000000'{extra})",
+    let parms = format!(
+        "{} '{path}' {} X'00000000' {} X'00000002' {} X'00000000'",
         chars(name, 12),
-        path.len(),
+        bin4(u32::try_from(path.len()).unwrap_or(0)),
         chars("smbprobe share", 50),
-        max.cast_unsigned()
-    )
+        bin4(max.cast_unsigned())
+    );
+    format!("CALL PGM(QSYS/QZLSADFS) PARM({parms}{extra})")
 }
 
 /// The shares, users, queue, guest and driver store the scenarios need;

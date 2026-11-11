@@ -2495,7 +2495,7 @@ help = "Something NetServer did not expect happened. The messages in QSYSOPR and
 [[msg]]
 id = "CPFB682"
 sev = 40
-text = "API &1 failed with reason code &2."
+text = "NetServer API &1 ended in error, reason code &2."
 help = "Reason codes: 1 and 2, the caller's credentials could not be read; 3, the job could not switch profiles; 4, a lock NetServer needs is held; 5, an internal operation returned &3; 6, print share &4 was added or changed but could not be published (QS/400 has no directory to publish to), so it is not published; 7, both 5 and 6."
 vars = ["*CHAR 10", "*BIN 4", "*BIN 4", "*CHAR 12"]
 
