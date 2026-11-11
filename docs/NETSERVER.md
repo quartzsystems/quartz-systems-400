@@ -97,7 +97,12 @@ reason 6 with the error number, when the configuration cannot be read
 server's NetBIOS names on UDP 137 on a thread of its own (`nbns::serve`
 over `nbns::Udp`, section 9; a bind failure is logged and 445 and 139
 are served without it) and releases them when it ends; UDP 138 is not
-served (section 10). Each accepted connection goes through the descriptor relay
+served (section 10). Each TCP port has a thread blocked in `accept`, so a
+connection is taken the moment it arrives (the loop polled every 50 ms
+before, up to 50 ms on every new connection); at the end the job sets
+its stop flag and wakes each thread with a connection of its own to
+`127.0.0.1`, as the TCP servers' listeners do (`net/servers/src/listen.rs`).
+Each accepted connection goes through the descriptor relay
 (`net/sockets` `relay`), as `QRWTLSTN` hands DDM connections to
 `QRWTSRVR`: to the job the routing table names (below), otherwise to the
 `QZLSFILE` pool. `NETSTAT` and `QSYS2.NETSTAT_INFO` show 445 (and 139)
@@ -1338,7 +1343,8 @@ What smb 0.12.1 cannot express, printed as `skip`: byte-range locks
 (`print-write`: the crate panics opening one). `share-enum` is also a
 `skip` against a server that, like the vendored library, accepts only NDR
 2.0 for `srvsvc`: the crate binds with NDR64 only (Windows, macOS and Samba
-clients offer NDR 2.0). These are covered by `tests/interop.rs`.
+clients offer NDR 2.0). These are covered by `tests/interop.rs` and,
+against the running system, by `tools/smbprobe` (below, QEMU step 170).
 
 Facts the client found:
 
@@ -1408,6 +1414,66 @@ one per machine, so `QZLSSERVER` routes them into one `QZLSFILE` job;
 (`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`
 into `$QS400_TARGET_DIR/smbtest`).
 
+### The second client (`tools/smbprobe`)
+
+`smbprobe` covers what `smbtest`'s crate cannot express, against the
+running system. It is **not independent of the server**: it is built on
+the vendored library's own test helpers (`net/netserver/tests/smbc/`,
+included by path, and `src/crypto.rs`, copied from the library's
+`tests/common/crypto.rs`), so a misreading of [MS-SMB2] shared by the
+library and its tests can hide in both. `smbtest` stays the independent
+client; `smbprobe` proves that what the in-memory tests show also holds
+across real `QZLSFILE` jobs, the storage service and the spooler. It is a
+workspace member (the library's dependencies are already in the
+workspace's lockfile), so `cargo run -p build -- deny` covers it with the
+workspace.
+
+```
+cargo run -p smbprobe -- HOST PORT USER PASSWORD SHARE SCRATCH [--only A,B] [--user2 NAME] \
+    [--print-share NAME] [--max-share NAME] [--enc-share NAME] [--guest-user NAME] \
+    [--min-dialect 3.0] [--driver-file PATH=TEXT] [--ifs-text TEXT] [--list]
+```
+
+`PASSWORD` `-` reads `SMBPROBE_PASSWORD`; `--user2`'s password is
+`SMBPROBE_PASSWORD2`. Output as `smbtest`'s (`ok NAME` and detail lines,
+`fail NAME: why`, `skip NAME: why` when an option it needs is missing);
+exit status 1 when any failed. Each connection sends a ClientGuid of its
+own unless the scenario says otherwise, so each is another machine and,
+on QS/400, another `QZLSFILE` job. Files go under `SCRATCH\probe-PID-MILLIS`,
+which `cleanup` removes. Scenarios negotiate 3.0.2 (lease V2 contexts,
+durable V2) unless they say otherwise.
+
+| Scenario | What it proves |
+|---|---|
+| `share-enum` | `\pipe\srvsvc` bound as Windows binds (NDR 2.0, NDR64 and the feature negotiation together; NDR 2.0 accepted), `NetrShareEnum` level 1: the file share `STYPE_DISKTREE`, the print share `STYPE_PRINTQ` |
+| `lock-conflict` | an exclusive lock from one job: another job's lock `STATUS_LOCK_NOT_GRANTED`, its read in the range `STATUS_FILE_LOCK_CONFLICT`, outside it served; after the unlock the other job takes the range and the first is refused |
+| `lease-break` | an RWH lease on machine A; B's open breaks it to RH and waits while A writes back and acknowledges; B reads A's write-back; a new lease from A while B has the file open gets no write caching; B's write breaks read caching; A reads B's write |
+| `lease-break-ifs` | an RWH lease broken by a writer outside SMB: the probe prints `ready lease-break-ifs PATH` and waits; the harness writes `--ifs-text` into the file from the console (`svc.ifs put`, through the IFS); the breaks are acknowledged and the file reads as written |
+| `durable-reconnect` | a durable V2 handle with an RWH lease and a byte-range lock; the connection is reset; a new connection from the same ClientGuid signs on with the old SessionId as PreviousSessionId and takes the handle back by its CreateGuid (only the job that served it holds it, so routing reached the same job); it reads the file, its lock still refuses another job, and it unlocks the range |
+| `print-write` | `TREE_CONNECT` answers share type print; CREATE, two WRITEs and CLOSE spool a document (reads refused); the harness finds it |
+| `spoolss` | `\pipe\spoolss` (winspool over NDR 2.0): `RpcOpenPrinterEx` of `\\HOST\SHARE`, `RpcGetPrinter` 2 (name, port `LIB/OUTQ`, driver), `RpcGetPrinterDriver2` 3 for `Windows x64` (the driver and its file in `print$`), `RpcStartDocPrinter`, `RpcWritePrinter`, `RpcEndDocPrinter`, `RpcClosePrinter`; the harness finds the document |
+| `print-dollar` | `print$` lists the driver store, the file `--driver-file` names reads as stored, a new file is refused |
+| `guest-logon` | an unknown user name with the guest profile set: `SMB2_SESSION_FLAG_IS_GUEST`, `IPC$` connects |
+| `max-users` | a share with a maximum of one user: the second profile from another machine `STATUS_REQUEST_NOT_ACCEPTED`, admitted once the first has gone |
+| `encrypt-share` | a share that requires encryption: unencrypted tree connects at 2.1 and 3.0.2 `STATUS_ACCESS_DENIED`; a sealed 3.1.1 session connects and a file round trips |
+| `min-dialect` | (with `--min-dialect`) a NEGOTIATE offering only lower dialects `STATUS_NOT_SUPPORTED`; with the minimum added it is chosen and a sign-on works |
+| `cleanup` | the run directory removed |
+
+QEMU step 170 (`tools/conformance/src/netsvrprobe.rs`, after 169; `--only
+166,170` runs it, as it makes what it needs): a second user `NSUSER2`, a
+guest profile `NSGUEST` (`QZLSCHSG`), an output queue `QGPL/NSPRTQ` and the
+print share `NSPRT` on it (`QZLSADPS`, `*USERASCII`, driver `QSProbe`), the
+file shares `SMBMAX` (maximum one user) and `SMBENC` (encryption required)
+with `QZLSADFS`, and a driver store (`x64/3/QSProbe.qsdrv` and its files,
+`svc.ifs`); then `ENDTCPSVR` and `QZLSSTRS` with reset `1`, every scenario
+through the port forward, the console's write when the probe waits for it,
+and on the system's side `WRKSPLF SELECT(NSUSER)`: both documents on
+`NSPRTQ`, owned by `NSUSER`, their bytes found with `DSPSPLF VIEW(*HEX)`.
+Then the minimum dialect 3.0 (`QZLSCHSI` `QSLS0100`), the guest removed, a
+restart, `min-dialect`, and 2.0.2 put back with another restart. The
+probe binary is `QS400_SMBPROBE`, or built with `cargo build --release
+--locked -p smbprobe`.
+
 ## Upgrading from V1R1M0
 
 What NetServer needs that a V1R1M0 system lacks, and how it gets it
@@ -1420,6 +1486,7 @@ What NetServer needs that a V1R1M0 system lacks, and how it gets it
 | `QCPFMSG`'s `CPIB6xx` descriptions | the load's `QCPFMSG` | added to the system's `QCPFMSG` at the next IPL (`msgf::store::add_missing_descriptions`) |
 | the `*NETSVR` row of the server table | code | code |
 | `QAZLSCFG`, `QAZLSSHR`, the `QIBM` share | written at NetServer's first use | the same |
+| `/QIBM/UserData/OS400` and its `NetServer` directory `*PUBLIC *RX` (owner-only where the service made them before) | corrected at the first read of the configuration after an IPL (section 7) | the same |
 | each user's NT hash | the next password change (`CPIB68D` until then, section 5) | the same |
 
 The entries are added only to a system that never had them: the job
