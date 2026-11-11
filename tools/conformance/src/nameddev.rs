@@ -8,7 +8,8 @@
 //! Under `QMAXSGNACN(1)`, `QMAXSIGN` wrong passwords at it vary the
 //! device off: `WRKCFGSTS` says so, `QSYSOPR` has `CPF1397`, the
 //! profile stays enabled, and a session naming the device is closed.
-//! `VRYCFG STATUS(*ON)` brings it back.
+//! `VRYCFG STATUS(*ON)` brings it back. `VRYCFG STATUS(*OFF)` leaves its
+//! `ONLINE` attribute as it was.
 
 use std::time::{Duration, Instant};
 
@@ -153,5 +154,26 @@ fn varied_off(s: &mut Session, port: u16, ctx: &mut Context) -> Result<(), Strin
         named(port).map_err(|e| format!("a session naming {DEVICE} after VRYCFG *ON: {e}"))?;
     d.disconnect();
     drop(d);
+    status(s, "VARIED ON")?;
+    // Varying it off by command leaves how it comes up at IPL alone.
+    s.command(
+        &format!("VRYCFG CFGOBJ({DEVICE}) CFGTYPE(*DEV) STATUS(*OFF)"),
+        CMD,
+    )?;
+    status(s, "VARIED OFF")?;
+    let devd = s.command(&format!("DSPDEVD DEVD({DEVICE})"), CMD)?;
+    if !devd
+        .lines()
+        .any(|l| l.contains("Online at IPL") && l.contains("*YES"))
+    {
+        return Err(format!(
+            "VRYCFG *OFF changed ONLINE of {DEVICE}:
+{devd}"
+        ));
+    }
+    s.command(
+        &format!("VRYCFG CFGOBJ({DEVICE}) CFGTYPE(*DEV) STATUS(*ON)"),
+        CMD,
+    )?;
     status(s, "VARIED ON")
 }
