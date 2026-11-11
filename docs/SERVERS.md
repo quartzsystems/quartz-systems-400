@@ -120,7 +120,12 @@ from its parent, `ENDJOB` or its subsystem ending (it polls
 retries for ten seconds while an ended server still holds the port;
 `serve(listener, tls, service)` accepts until `Running::stop`, does the
 TLS handshake for a secure port, and calls `Service::serve` on a thread
-per connection.
+per connection. Accept blocks, so a connection is taken the moment it
+arrives (a polled accept cost every new connection up to 50 ms); `stop`
+wakes the loop with a connection of its own. The web products answer
+each request with a `Server-Timing: app;dur=` header, the milliseconds
+the page took in the job, which a browser's network panel shows beside
+the request's total time.
 
 ## `*TELNET`
 
