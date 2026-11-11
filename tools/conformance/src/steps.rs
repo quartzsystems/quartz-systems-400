@@ -683,6 +683,11 @@ impl Suite {
         reports.push(self.step(&mut s, "167 NetServer files", Self::netsvr_files)?);
         reports.push(self.step(&mut s, "168 NetServer copy 1 GB", Self::netsvr_copy)?);
         reports.push(self.step(&mut s, "169 NetServer APIs and SQL", Self::netsvr_admin)?);
+        reports.push(self.step(
+            &mut s,
+            "170 NetServer leases, locks and print",
+            Self::netsvr_probe,
+        )?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);

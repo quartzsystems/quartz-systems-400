@@ -26,19 +26,19 @@ use crate::steps::{CMD, Suite};
 use crate::tcp::{GUEST, forward_port};
 
 /// The user the steps make.
-const USER: &str = "NSUSER";
+pub(crate) const USER: &str = "NSUSER";
 /// Its password.
-const PASSWORD: &str = "NetSrv26x";
+pub(crate) const PASSWORD: &str = "NetSrv26x";
 /// The share the steps add, over the user's home directory.
-const SHARE: &str = "SMBTEST";
+pub(crate) const SHARE: &str = "SMBTEST";
 /// How long a configuration change may take: the service writes the
 /// configuration files, which waits for the IFS to flush after step 168.
-const SLOW: Duration = Duration::from_secs(90);
+pub(crate) const SLOW: Duration = Duration::from_secs(90);
 /// The scenarios' directory on the share.
-const SCRATCH: &str = "smbtest";
+pub(crate) const SCRATCH: &str = "smbtest";
 
 /// The `WRKACTJOB` line of `name`, waiting up to 30 seconds for it.
-fn job_line(s: &mut Session, name: &str) -> Result<String, String> {
+pub(crate) fn job_line(s: &mut Session, name: &str) -> Result<String, String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
@@ -56,7 +56,7 @@ fn job_line(s: &mut Session, name: &str) -> Result<String, String> {
 }
 
 /// Waits up to 30 seconds for `name` to leave `WRKACTJOB`.
-fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
+pub(crate) fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
@@ -75,7 +75,7 @@ fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
 
 /// Waits up to two minutes for every `QZLSFILE` job to be back in its
 /// pool (`PSRW`): no client is served.
-fn no_client_job(s: &mut Session) -> Result<(), String> {
+pub(crate) fn no_client_job(s: &mut Session) -> Result<(), String> {
     let end = Instant::now() + Duration::from_secs(120);
     loop {
         let out = s.command("wrkactjob", CMD)?;
@@ -96,7 +96,7 @@ fn no_client_job(s: &mut Session) -> Result<(), String> {
 }
 
 /// The output of `cmd`, which must hold every one of `want`.
-fn expect(s: &mut Session, cmd: &str, want: &[&str]) -> Result<String, String> {
+pub(crate) fn expect(s: &mut Session, cmd: &str, want: &[&str]) -> Result<String, String> {
     let out = s.command(cmd, CMD)?;
     match want.iter().find(|w| !out.contains(**w)) {
         Some(w) => Err(format!("{cmd}: no {w:?} in:\n{out}")),
@@ -242,7 +242,7 @@ pub(crate) fn smbtest_as(
 /// The user, its home and scratch directories and the read/write share
 /// over them; what exists already is left as it is, so 168 also runs
 /// without 167.
-fn share_setup(s: &mut Session) -> Result<(), String> {
+pub(crate) fn share_setup(s: &mut Session) -> Result<(), String> {
     s.command(
         &format!("crtusrprf USRPRF({USER}) PASSWORD('{PASSWORD}') HOMEDIR('/home/{USER}')"),
         CMD,
