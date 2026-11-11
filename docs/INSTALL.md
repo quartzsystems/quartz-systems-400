@@ -398,7 +398,7 @@ cp "$(cat $QS400_TARGET_DIR/images/iso.path)" ~/QS400-V1R1M0-dev.iso
 cd - && git worktree remove ../v110
 QS400_RELEASE=V1R2M0 cargo run -p build -- all
 QS400_RELEASE=V1R2M0 cargo run -p build -- iso
-QS400_OLD_ISO=~/QS400-V1R1M0-dev.iso cargo run -p build -- test --media iso --install --only 10
+QS400_RELEASE=V1R2M0 QS400_OLD_ISO=~/QS400-V1R1M0-dev.iso cargo run -p conformance -- --media iso --install --only 10
 ```
 
 ## 5. QEMU
