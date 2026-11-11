@@ -483,3 +483,43 @@ pub fn capacity() -> Option<(u64, u64)> {
     let free = s.bfree.saturating_mul(s.block_size);
     Some((size, size.saturating_sub(free)))
 }
+
+#[cfg(test)]
+mod tests {
+    use ifs::lease::state::{H, R, RWH, Trigger, W};
+    use ifs::lease::{Leases, Others};
+    use ifs::lock::ObjKey;
+
+    use super::{Owner, db_deferring, parking};
+
+    const KEY: ObjKey = ObjKey { fs: 5, ino: 9 };
+
+    /// Job 1's client caches writes to the object.
+    fn leased() -> Leases {
+        let l = Leases::default();
+        assert_eq!(
+            l.grant(Owner(1), KEY, 5, [1; 32], RWH, Others::default()),
+            RWH
+        );
+        l
+    }
+
+    #[test]
+    fn a_database_open_defers_only_when_its_request_may_park() {
+        let l = leased();
+        let open = || l.gate(Owner(2), KEY, Trigger::Open { overwrite: false });
+        // A job's own open request: the deferral is the request's.
+        let (r, d) = parking(true, || db_deferring(open));
+        assert_eq!(r, Err(ifs::Errno::EAGAIN));
+        assert!(d.is_some_and(|d| !l.ready(&d)));
+        l.report(Owner(1), 5, &[([1; 32], R | H)]);
+        assert!(d.is_some_and(|d| l.ready(&d)));
+        // Anything else (a statement, a command): breaks sent, no wait.
+        let l = leased();
+        let (r, d) = parking(false, || {
+            db_deferring(|| l.gate(Owner(2), KEY, Trigger::Open { overwrite: false }))
+        });
+        assert_eq!((r, d), (Ok(()), None));
+        assert_eq!(l.on(KEY)[0].2 & W, W, "still breaking, not waited for");
+    }
+}
