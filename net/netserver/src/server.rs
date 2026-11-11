@@ -16,7 +16,9 @@ use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::thread;
 use std::time::Duration;
 
-use smb_server::{Access, SessionView, Share, SmbError, SmbServer, TreeAdmission, TreeRequest};
+use smb_server::{
+    Access, SessionView, Share, SmbError, SmbServer, SmbServerBuilder, TreeAdmission, TreeRequest,
+};
 use tokio::runtime::{Builder, Handle};
 use tokio::sync::{Notify, oneshot};
 use tracing::info;
@@ -266,6 +268,64 @@ fn file_backend(
         })
 }
 
+/// The print shares on `b`: each queue's share, and when there are any,
+/// the spooler pipe and the `print$` driver store.
+fn with_printing(
+    mut b: SmbServerBuilder,
+    cfg: &NetServerConfig,
+    handle: &Handle,
+    io: &Arc<IfsWorker>,
+    printer: &Arc<dyn Printer>,
+    profile: &Arc<Mutex<Option<String>>>,
+) -> Result<SmbServerBuilder, BuildError> {
+    for p in &cfg.print_shares {
+        let backend = PrintShare::new(printer.clone(), p.queue.clone(), profile.clone());
+        b = b.share(
+            Share::new(p.name.clone(), backend)
+                .print()
+                .any_user(Access::ReadWrite)
+                .remark(p.text.clone()),
+        );
+    }
+    if !cfg.print_shares.is_empty() {
+        let store = match &cfg.driver_store {
+            Some(root) => driver_store(handle, io, root)?,
+            None => None,
+        };
+        let mut printers = Vec::new();
+        for p in &cfg.print_shares {
+            let driver_files = match &store {
+                Some((root, _)) => on_ifs(
+                    handle,
+                    io,
+                    root.clone(),
+                    p.driver.clone(),
+                    |c, root, driver| Ok(drivers::find(c, &root, &driver)),
+                )?
+                .unwrap_or_default(),
+                None => Vec::new(),
+            };
+            printers.push(SpoolPrinter {
+                name: p.name.clone(),
+                text: p.text.clone(),
+                queue: p.queue.clone(),
+                driver: p.driver.clone(),
+                driver_files,
+            });
+        }
+        if let Some((_, backend)) = store {
+            b = b.share(
+                Share::new(PRINT_DOLLAR, backend)
+                    .any_user(Access::Read)
+                    .named_streams(false)
+                    .extended_attributes(false),
+            );
+        }
+        b = b.print_service(Spoolss::new(printer.clone(), printers));
+    }
+    Ok(b)
+}
+
 impl NetServer {
     /// Builds the server: the IFS thread over `ifs`, the shares, sign-on
     /// through `signon` (the library's own logon throttle is off: the
@@ -344,51 +404,7 @@ impl NetServer {
             }
             b = b.share(share);
         }
-        for p in &cfg.print_shares {
-            let backend = PrintShare::new(printer.clone(), p.queue.clone(), profile.clone());
-            b = b.share(
-                Share::new(p.name.clone(), backend)
-                    .print()
-                    .any_user(Access::ReadWrite)
-                    .remark(p.text.clone()),
-            );
-        }
-        if !cfg.print_shares.is_empty() {
-            let store = match &cfg.driver_store {
-                Some(root) => driver_store(&handle, &io, root)?,
-                None => None,
-            };
-            let mut printers = Vec::new();
-            for p in &cfg.print_shares {
-                let driver_files = match &store {
-                    Some((root, _)) => on_ifs(
-                        &handle,
-                        &io,
-                        root.clone(),
-                        p.driver.clone(),
-                        |c, root, driver| Ok(drivers::find(c, &root, &driver)),
-                    )?
-                    .unwrap_or_default(),
-                    None => Vec::new(),
-                };
-                printers.push(SpoolPrinter {
-                    name: p.name.clone(),
-                    text: p.text.clone(),
-                    queue: p.queue.clone(),
-                    driver: p.driver.clone(),
-                    driver_files,
-                });
-            }
-            if let Some((_, backend)) = store {
-                b = b.share(
-                    Share::new(PRINT_DOLLAR, backend)
-                        .any_user(Access::Read)
-                        .named_streams(false)
-                        .extended_attributes(false),
-                );
-            }
-            b = b.print_service(Spoolss::new(printer.clone(), printers));
-        }
+        let b = with_printing(b, cfg, &handle, &io, printer, &profile)?;
         let smb = Arc::new(b.build()?);
         Ok(Self {
             smb,

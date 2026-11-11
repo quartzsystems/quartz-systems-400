@@ -206,6 +206,59 @@ fn xlate_of(c: &dyn IfsClient, path: &str, t: Option<&TextConversion>) -> Option
     Xlate::between(file_ccsid(c, path)?, t.ccsid)
 }
 
+/// Make the file or directory `path` does not name yet.
+fn create_sync(
+    c: &dyn IfsClient,
+    path: &str,
+    opts: &OpenOptions,
+    conv: Option<&TextConversion>,
+    oflag: u32,
+) -> SmbResult<Opened> {
+    if matches!(opts.intent, OpenIntent::Open | OpenIntent::Truncate) {
+        return Err(missing(c, path));
+    }
+    if opts.directory {
+        c.mkdir(path, 0o777).map_err(|e| {
+            if e == Errno::ENOENT {
+                missing(c, path)
+            } else {
+                smb_error(e)
+            }
+        })?;
+        return Ok(Opened {
+            is_dir: true,
+            fd: None,
+            action: OpenAction::Created,
+            id: file_id(c, path),
+            xlate: None,
+        });
+    }
+    let oflag = oflag | O_CREAT | O_EXCL | O_INHERITMODE;
+    // A file made through a converting share is in the share's CCSID.
+    let args = match conv.filter(|t| t.applies(path.rsplit('/').next().unwrap_or(""))) {
+        Some(t) => OpenArgs::new(oflag | O_CCSID)
+            .mode(0o666)
+            .conv(u32::from(t.ccsid)),
+        None => OpenArgs::new(oflag).mode(0o666),
+    };
+    let fd = c.open(path, args).map_err(|e| {
+        if e == Errno::ENOENT {
+            missing(c, path)
+        } else {
+            smb_error(e)
+        }
+    })?;
+    let write = opts.write;
+    let xlate = xlate_of(c, path, conv);
+    Ok(Opened {
+        is_dir: false,
+        fd: Some(Fd { fd, write }),
+        action: OpenAction::Created,
+        id: file_id(c, path),
+        xlate,
+    })
+}
+
 fn open_sync(
     c: &dyn IfsClient,
     path: &str,
@@ -224,49 +277,7 @@ fn open_sync(
     };
     let share = share_flag(opts.share_access);
     let Some(st) = existing else {
-        if matches!(opts.intent, OpenIntent::Open | OpenIntent::Truncate) {
-            return Err(missing(c, path));
-        }
-        if opts.directory {
-            c.mkdir(path, 0o777).map_err(|e| {
-                if e == Errno::ENOENT {
-                    missing(c, path)
-                } else {
-                    smb_error(e)
-                }
-            })?;
-            return Ok(Opened {
-                is_dir: true,
-                fd: None,
-                action: OpenAction::Created,
-                id: file_id(c, path),
-                xlate: None,
-            });
-        }
-        let oflag = access | share | O_CREAT | O_EXCL | O_INHERITMODE;
-        // A file made through a converting share is in the share's CCSID.
-        let args = match conv.filter(|t| t.applies(path.rsplit('/').next().unwrap_or(""))) {
-            Some(t) => OpenArgs::new(oflag | O_CCSID)
-                .mode(0o666)
-                .conv(u32::from(t.ccsid)),
-            None => OpenArgs::new(oflag).mode(0o666),
-        };
-        let fd = c.open(path, args).map_err(|e| {
-            if e == Errno::ENOENT {
-                missing(c, path)
-            } else {
-                smb_error(e)
-            }
-        })?;
-        let write = opts.write;
-        let xlate = xlate_of(c, path, conv);
-        return Ok(Opened {
-            is_dir: false,
-            fd: Some(Fd { fd, write }),
-            action: OpenAction::Created,
-            id: file_id(c, path),
-            xlate,
-        });
+        return create_sync(c, path, &opts, conv, access | share);
     };
     if opts.intent == OpenIntent::Create {
         return Err(SmbError::Exists);
