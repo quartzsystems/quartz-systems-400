@@ -97,7 +97,7 @@ impl Job {
         attrs.devtype = devtype(self.kind, first).into();
         let id = self
             .svc
-            .call(move |l| l.borrow_mut().with(|c| c.splf_open(attrs)))
+            .call(move |l| l.borrow_mut().with(|c| c.netsvr_splf_open(attrs)))
             .ok_or(PrintError::Other(String::new()))?
             .map_err(|e| {
                 if e.starts_with("CPF3303") || e.contains("not found") {
@@ -173,9 +173,11 @@ impl PrintJob for Job {
 }
 
 impl Printer for JobPrinter {
+    // The file is the signed-on profile's `QPRTJOB`'s: the service takes
+    // the job's own profile (`netsvr_splf_open`), not this name.
     fn open(
         &self,
-        user: &str,
+        _user: &str,
         queue: &OutQueue,
         document: &str,
     ) -> Result<Box<dyn PrintJob>, PrintError> {
@@ -209,7 +211,6 @@ impl Printer for JobPrinter {
             prtf: share.prtf.clone(),
             ..SplfAttrs::default()
         };
-        let _ = user;
         Ok(Box::new(Job {
             svc: self.svc.clone(),
             attrs,

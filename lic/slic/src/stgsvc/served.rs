@@ -2686,6 +2686,22 @@ impl Service for Served<'_> {
         super::nslogon::disabled_users()
     }
 
+    fn netsvr_splf_open(&mut self, attrs: wm::obj::splf::SplfAttrs) -> Result<u32, String> {
+        let current = self.ctx.session.borrow().principal.user.clone();
+        let user = super::spool::netsvr_owner((&self.ctx.job.name, &self.ctx.job.user), &current)?;
+        let files = self.system.spool.files.values().map(|e| &e.attrs);
+        let number = match wm::obj::splf::prtjob(files, &user) {
+            Some(n) => n,
+            None => super::jobs::next(self.system)?,
+        };
+        self.own_libl();
+        let r = super::spool::create(self.system, super::spool::in_prtjob(attrs, &user, number));
+        ile::set_libl(None);
+        let id = r?;
+        self.ctx.splfs.push(id);
+        Ok(id)
+    }
+
     fn ddmf_put(
         &mut self,
         lib: String,

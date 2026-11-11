@@ -8,9 +8,10 @@
 //! one user and one that requires encryption (`QZLSADFS`), a second user,
 //! a guest profile (`QZLSCHSG`) and a driver store, restarts the server
 //! with the pending attributes, and runs every scenario; it writes the
-//! leased file from the console when the probe waits for it, and finds
-//! both printed documents on the output queue with the bytes the probe
-//! sent. Then it sets the minimum dialect to 3.0
+//! leased file from the console when the probe waits for it, finds both
+//! printed documents in the user's `QPRTJOB` on the output queue with the
+//! bytes the probe sent, and checks the configuration directories are
+//! `*PUBLIC *RX` and its files `*PUBLIC *EXCLUDE`. Then it sets the minimum dialect to 3.0
 //! (`QZLSCHSI` `QSLS0100`), runs `min-dialect`, and puts it and the guest
 //! back.
 
@@ -219,15 +220,6 @@ fn setup(s: &mut Session) -> Result<(), String> {
         )?;
     }
     // The driver store: a manifest for the share's driver and its files.
-    // The service makes the configuration directory and the `OS400`
-    // directory above it owner-only; users (and QUSER, which builds the
-    // job's server) need to search both to reach print$.
-    for d in ["/QIBM/UserData/OS400", "/QIBM/UserData/OS400/NetServer"] {
-        quiet(
-            s,
-            &format!("CHGAUT OBJ('{d}') USER(*PUBLIC) DTAAUT(*X) OBJAUT(*NONE)"),
-        )?;
-    }
     let mut dir = String::new();
     for part in format!("{STORE}/x64/3")
         .split('/')
@@ -313,20 +305,19 @@ fn hex_bytes(out: &str) -> Vec<u8> {
     b
 }
 
-/// The spooled files `QZLSFILE` jobs made: the documents `print-write`
-/// and `spoolss` sent are on the print share's queue with their bytes.
-/// The files carry the job's user (`QUSER`): QS/400's spooled files have
-/// no owner apart from their job (`docs/NETSERVER.md` section 7).
+/// The user's spooled files: the documents `print-write` and `spoolss`
+/// sent are files of `NSUSER`'s `QPRTJOB` (the profile that signed on,
+/// not the `QZLSFILE` job's `QUSER`), on the print share's queue, with
+/// their bytes.
 fn printed(s: &mut Session, docs: &[String]) -> Result<String, String> {
     // The service's own words: the command's `WRKSPLF` has no `VIEW`.
-    let rows = s.command("svc.wrksplf SELECT(*ALL) VIEW(3)", CMD)?;
-    let queue = s.command(&format!("wrkoutq QGPL/{OUTQ}"), CMD)?;
+    let rows = s.command(&format!("svc.wrksplf SELECT({USER}) VIEW(3)"), CMD)?;
+    let listed = s.command(&format!("svc.wrksplf SELECT({USER})"), CMD)?;
     let mut found = vec![false; docs.len()];
-    let mut users = Vec::new();
     let files: Vec<Vec<&str>> = rows
         .lines()
         .map(|l| l.split_whitespace().collect::<Vec<_>>())
-        .filter(|w| w.len() >= 5 && w[2] == "QZLSFILE" && w[1].bytes().all(|c| c.is_ascii_digit()))
+        .filter(|w| w.len() >= 5 && w[1].bytes().all(|c| c.is_ascii_digit()))
         .collect();
     for w in &files {
         let (file, nbr, job, user, number) = (w[0], w[1], w[2], w[3], w[4]);
@@ -337,31 +328,67 @@ fn printed(s: &mut Session, docs: &[String]) -> Result<String, String> {
         let data = hex_bytes(&shown);
         for (i, d) in docs.iter().enumerate() {
             if data.windows(d.len()).any(|x| x == d.as_bytes()) {
+                if job != "QPRTJOB" || user != USER {
+                    return Err(format!(
+                        "{d:?} is in job {number}/{user}/{job}:
+{rows}"
+                    ));
+                }
                 found[i] = true;
-                users.push(user.to_owned());
             }
         }
     }
     if let Some(i) = found.iter().position(|f| !f) {
         return Err(format!(
-            "no QZLSFILE spooled file holds {:?}:
+            "no spooled file of {USER} holds {:?}:
 {rows}
-{queue}",
+{listed}",
             docs[i]
         ));
     }
-    let on_queue = queue.lines().filter(|l| l.contains("QPRINT")).count();
+    let on_queue = listed.lines().filter(|l| l.contains(OUTQ)).count();
     if on_queue < docs.len() {
         return Err(format!(
-            "{on_queue} files on {OUTQ}:
-{queue}"
+            "{on_queue} of {USER}'s files on {OUTQ}:
+{listed}"
         ));
     }
-    users.dedup();
     Ok(format!(
-        "{on_queue} spooled files on {OUTQ}, both documents' bytes found (job user {})",
-        users.join(", ")
+        "both documents in {USER}'s QPRTJOB on {OUTQ} with their bytes"
     ))
+}
+
+/// The configuration's directories are `*PUBLIC *RX`, its files
+/// `*PUBLIC *EXCLUDE`.
+fn dir_authority(s: &mut Session) -> Result<(), String> {
+    let public = |out: &str| {
+        out.lines()
+            .find(|l| l.contains("*PUBLIC"))
+            .map(str::to_owned)
+            .unwrap_or_default()
+    };
+    for d in [
+        "/QIBM/UserData/OS400",
+        "/QIBM/UserData/OS400/NetServer",
+        STORE,
+    ] {
+        let out = s.command(&format!("DSPAUT OBJ('{d}')"), CMD)?;
+        if !public(&out).contains("*RX") {
+            return Err(format!(
+                "DSPAUT {d}: *PUBLIC not *RX:
+{out}"
+            ));
+        }
+    }
+    let f = "/QIBM/UserData/OS400/NetServer/QAZLSCFG";
+    let out = s.command(&format!("DSPAUT OBJ('{f}')"), CMD)?;
+    if !public(&out).contains("*EXCLUDE") {
+        return Err(format!(
+            "DSPAUT {f}: *PUBLIC not *EXCLUDE:
+{out}"
+        ));
+    }
+    Ok(())
 }
 
 #[allow(clippy::unused_self)] // the steps share one signature
@@ -414,6 +441,7 @@ impl Suite {
             return Err(format!("no document data in:\n{out}"));
         }
         let spool = printed(s, &docs)?;
+        dir_authority(s)?;
 
         // The minimum dialect, then everything put back.
         min_dialect(s, "3.0")?;

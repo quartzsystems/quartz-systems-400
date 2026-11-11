@@ -127,10 +127,13 @@ serves the connection.
   its own thread: they reach the service over a thread link of the job
   (`hello_thread`, `svc.rs`), which shares the job's security session;
   the IFS (`MakeClient`) runs over another, on the IFS thread.
-- Print shares (`printer.rs`) spool on the share's output queue with the
-  job's profile's authority (`splf_open`, `splf_put`, `splf_close`); the
-  spooled file is the `QZLSFILE` job's, user `QUSER` (section 11, step
-  170). The device type
+- Print shares (`printer.rs`) spool on the share's output queue as the
+  signed-on profile (a guest's too): each document is a spooled file of
+  the profile's `QPRTJOB` (`nnnnnn/USER/QPRTJOB`, as IBM i files a
+  swapped server job's output and as `SNDNETSPLF` does), opened with
+  `netsvr_splf_open` (1504; the service takes the job's current profile,
+  never a name from the client, and only for a `QZLSFILE` job running as
+  one), then `splf_put` and `splf_close`. The device type
   is the share's spooled file type (`*USERASCII`, `*SCS`, `*AFPDS`;
   `*AUTO` is `*SCS` when the data starts with an SCS control, else
   `*USERASCII`), the data as the client sent it; the spooled file is
@@ -405,7 +408,7 @@ both take the last place.
 
 Built: `security/sec` (`password::nthash`, `netsvr`), the storage
 service's `lic/slic/src/stgsvc/nslogon.rs` and the job's requests
-`netsvr_*` (`work/stg`, 1500-1503). Where IBM's documentation disagreed
+`netsvr_*` (`work/stg`, 1500-1504). Where IBM's documentation disagreed
 with the first design it is followed, and each change is marked
 **Changed**.
 
@@ -435,6 +438,7 @@ job of that name may ask; any other gets `NoSuchUser`):
 1501 => fn netsvr_started / NetsvrStarted () -> ();
 1502 => fn netsvr_enable_user / NetsvrEnableUser (user: String) -> Result<bool, String>;
 1503 => fn netsvr_disabled_users / NetsvrDisabledUsers () -> Vec<(String, u64)>;
+1504 => fn netsvr_splf_open / NetsvrSplfOpen (attrs: SplfAttrs) -> Result<u32, String>;
 ```
 
 `Logon` carries the user and domain as the client sent them, the
@@ -989,14 +993,14 @@ serves the IFS directory `/QIBM/UserData/OS400/NetServer/print$`
 shares. IBM i has no such directory (the primary's
 `/QIBM/UserData/OS400/NetServer` holds only `QAZLSCFG` and `QAZLSSHR`,
 `tools/conformance/oracle/netserver/README.md`), so the path is QS/400's
-choice, beside IBM's files. The service makes
-`/QIBM/UserData/OS400` and `/QIBM/UserData/OS400/NetServer` owner-only
-when it first writes the configuration (`stgsvc/certs.rs` `make_dirs`),
-and the job looks for the store as `QUSER` when it builds its server, so
-the administrator also gives `*PUBLIC` `*X` to both (`CHGAUT
-OBJ('/QIBM/UserData/OS400/NetServer') USER(*PUBLIC) DTAAUT(*X)`, as QEMU
-step 170 does); without it there is no `print$` (found by `smbprobe`,
-2026-11-10). Its layout is Windows': `x64`, `W32X86` and
+choice, beside IBM's files. `/QIBM/UserData/OS400`,
+`/QIBM/UserData/OS400/NetServer` and `print$` are `*PUBLIC *RX`, as IBM's
+directories are, while `QAZLSCFG` and `QAZLSSHR` stay `*PUBLIC
+*EXCLUDE`: the service makes the directories so and, at the first read
+of the configuration after an IPL, corrects a system that made them
+owner-only before (`lic/slic/src/stgsvc/netsvr.rs` `open_dirs`; the job
+looks for the store as `QUSER` when it builds its server, so an
+owner-only directory left no `print$`, as `smbprobe` found). Its layout is Windows': `x64`, `W32X86` and
 `ARM64`, each with `3` and `4` for the driver version. For a driver
 named `NAME`, the administrator copies the driver's files into, say,
 `x64/3` and writes `x64/3/NAME.qsdrv` beside them, lines of
@@ -1476,13 +1480,10 @@ file shares `SMBMAX` (maximum one user) and `SMBENC` (encryption required)
 with `QZLSADFS`, and a driver store (`x64/3/QSProbe.qsdrv` and its files,
 `svc.ifs`); then `ENDTCPSVR` and `QZLSSTRS` with reset `1`, every scenario
 through the port forward, the console's write when the probe waits for it,
-and on the system's side both documents on `NSPRTQ` (`WRKOUTQ`), in
-`QZLSFILE` jobs, their bytes found with `DSPSPLF VIEW(*HEX)`. They carry
-the job's user, `QUSER`: a QS/400 spooled file has no owner apart from
-its job, so `WRKSPLF SELECT(NSUSER)` does not list them, where IBM i
-lists a swapped job's spooled files under the profile that made them
-(`NEEDS-CODY`: confirm on the primary; a spooled file owner would change
-the frozen `*SPLF` attribute layout).
+and on the system's side `WRKSPLF SELECT(NSUSER)`: both documents in
+`NSUSER`'s `QPRTJOB` on `NSPRTQ`, their bytes found with `DSPSPLF
+VIEW(*HEX)`; `DSPAUT`: the configuration directories and `print$`
+`*PUBLIC *RX`, `QAZLSCFG` `*PUBLIC *EXCLUDE`.
 Then the minimum dialect 3.0 (`QZLSCHSI` `QSLS0100`), the guest removed, a
 restart, `min-dialect`, and 2.0.2 put back with another restart. The
 probe binary is `QS400_SMBPROBE`, or built with `cargo build --release

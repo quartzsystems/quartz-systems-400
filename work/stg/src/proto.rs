@@ -1025,6 +1025,11 @@ ipc::rpc! {
     1502 => fn netsvr_enable_user / NetsvrEnableUser (user: String) -> Result<bool, String>;
     /// The users disabled for `NetServer`, by name, with when.
     1503 => fn netsvr_disabled_users / NetsvrDisabledUsers () -> Vec<(String, u64)>;
+    /// Open a spooled file for a `NetServer` print document: a file of
+    /// the signed-on profile's `QPRTJOB` (the job's current profile, a
+    /// guest's too; never one the client names), on `attrs.outq`. Only a
+    /// `QZLSFILE` job running as a profile asks.
+    1504 => fn netsvr_splf_open / NetsvrSplfOpen (attrs: SplfAttrs) -> Result<u32, String>;
     // --- NetServer (1510-1519; crate::netsvr, stgsvc/netsvr.rs)
     /// A `QZLS*` API over its parameters' bytes (`netsvrcfg::api`): the
     /// answer's bytes, or the message ID and its data for the error

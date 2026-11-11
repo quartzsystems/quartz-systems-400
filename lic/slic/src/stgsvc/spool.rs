@@ -509,9 +509,57 @@ pub fn on_queue(system: &mut System, q: &str) -> Result<(String, OutQ, Vec<SplfA
     Ok((real, oq, files))
 }
 
+/// The profile a `NetServer` document belongs to: the one the
+/// `QZLSFILE` job `job` (name, user) signed on and runs as, `current`;
+/// never a name the client gave. `CPF3309`-style refusals otherwise.
+pub fn netsvr_owner(job: (&str, &str), current: &str) -> Result<String, String> {
+    if job.0 != "QZLSFILE" {
+        return Err(format!("CPF3309 job {} is not a NetServer job", job.0));
+    }
+    if current.is_empty() || current.eq_ignore_ascii_case(job.1) {
+        return Err("CPF3309 no profile is signed on in this NetServer job".into());
+    }
+    Ok(current.to_ascii_uppercase())
+}
+
+/// `attrs` as a spooled file of `user`'s `QPRTJOB` number `number`.
+pub fn in_prtjob(attrs: SplfAttrs, user: &str, number: u32) -> SplfAttrs {
+    SplfAttrs {
+        job: (splf::PRTJOB.into(), user.to_ascii_uppercase(), number),
+        ..attrs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_netserver_document_is_the_signed_on_profile_s() {
+        assert_eq!(
+            netsvr_owner(("QZLSFILE", "QUSER"), "nsuser").as_deref(),
+            Ok("NSUSER")
+        );
+        // Not signed on (still QUSER), or not a NetServer job.
+        assert!(netsvr_owner(("QZLSFILE", "QUSER"), "QUSER").is_err());
+        assert!(netsvr_owner(("QZLSFILE", "QUSER"), "").is_err());
+        assert!(netsvr_owner(("QZDASOINIT", "QUSER"), "NSUSER").is_err());
+        let a = in_prtjob(
+            SplfAttrs {
+                name: "QPRINT".into(),
+                job: ("QZLSFILE".into(), "QUSER".into(), 7),
+                ..SplfAttrs::default()
+            },
+            "nsuser",
+            42,
+        );
+        assert_eq!(a.job, ("QPRTJOB".into(), "NSUSER".into(), 42));
+        assert_eq!(a.name, "QPRINT");
+        // The user's QPRTJOB is reused while it has room.
+        let files = [a];
+        assert_eq!(splf::prtjob(files.iter(), "NSUSER"), Some(42));
+        assert_eq!(splf::prtjob(files.iter(), "OTHER"), None);
+    }
 
     #[test]
     fn only_scs_the_old_encoder_wrote_is_converted() {

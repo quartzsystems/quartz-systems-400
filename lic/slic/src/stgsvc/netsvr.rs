@@ -5,7 +5,8 @@
 //! The SMB file server's side of the storage service
 //! (`docs/NETSERVER.md` section 4 and the APIs): the configuration files `QAZLSCFG` and `QAZLSSHR` under
 //! `/QIBM/UserData/OS400/NetServer/` (made with the shipped `QIBM`
-//! share at first use, owned by `QSYS`, `*PUBLIC *EXCLUDE`), the `QZLS*`
+//! share at first use, owned by `QSYS`, the files `*PUBLIC *EXCLUDE` in
+//! directories everyone may search and read), the `QZLS*`
 //! APIs over them (`netsvrcfg::api`), and the session table the
 //! `QZLSSERVER` and `QZLSFILE` jobs report into.
 
@@ -14,6 +15,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};
 
+use ifs::Errno;
+use ifs::client::IfsClient;
 use netsvrcfg::api::{self, ApiError, Caller, Enabled, GuestCheck, Host, ServerControl};
 use netsvrcfg::file::{self, CFG_PATH, SHR_PATH};
 use netsvrcfg::{Config, Counter, Qualified, Session, SessionTable};
@@ -59,14 +62,49 @@ fn merge(
     Ok((config, save))
 }
 
+/// The directories above and beside the files: `*PUBLIC *RX`, as IBM's
+/// are, so users (and `QUSER`, building a `QZLSFILE` job's server) reach
+/// the driver store `print$`. The last, the store, only when it exists.
+const OPEN_DIRS: [&str; 3] = [
+    "/QIBM/UserData/OS400",
+    "/QIBM/UserData/OS400/NetServer",
+    "/QIBM/UserData/OS400/NetServer/print$",
+];
+
+/// Make the [`OPEN_DIRS`] (but the store) and give each `*PUBLIC *RX`; a
+/// system that made them owner-only before V1R2M0 is corrected.
+fn open_dirs(c: &dyn IfsClient) -> Result<(), String> {
+    for (i, d) in OPEN_DIRS.iter().enumerate() {
+        let mode = match c.stat(d, true) {
+            Ok(st) => st.mode & 0o7777,
+            Err(Errno::ENOENT) if i + 1 < OPEN_DIRS.len() => {
+                c.mkdir(d, 0o755)
+                    .map_err(|e| format!("{d}: {}", e.text()))?;
+                continue;
+            }
+            Err(Errno::ENOENT) => continue,
+            Err(e) => return Err(format!("{d}: {}", e.text())),
+        };
+        if mode & 0o055 != 0o055 {
+            c.chmod(d, mode | 0o055)
+                .map_err(|e| format!("{d}: {}", e.text()))?;
+        }
+    }
+    Ok(())
+}
+
 /// Read the configuration, writing it first when missing; the first
-/// read of an IPL makes the pending attributes current.
+/// read of an IPL makes the pending attributes current and opens the
+/// directories ([`open_dirs`]).
 pub fn load(system: &mut System) -> Result<Config, String> {
     let name = system.system_name();
+    let apply = !APPLIED.load(Ordering::Acquire);
     let (cfg, shr) = as_system(system, |c| {
+        if apply {
+            open_dirs(c)?;
+        }
         Ok::<_, String>((read_file(c, CFG_PATH)?, read_file(c, SHR_PATH)?))
     })?;
-    let apply = !APPLIED.load(Ordering::Acquire);
     let (config, save_it) = merge(cfg, shr, &name, apply)?;
     if save_it {
         save(system, &config)?;
@@ -79,6 +117,7 @@ pub fn load(system: &mut System) -> Result<Config, String> {
 pub fn save(system: &mut System, c: &Config) -> Result<(), String> {
     let (a, s) = file::write(c).map_err(|e| e.to_string())?;
     as_system(system, |cl| {
+        open_dirs(cl)?;
         write_file(cl, CFG_PATH, &a)?;
         write_file(cl, SHR_PATH, &s)
     })
