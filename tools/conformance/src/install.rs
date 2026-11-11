@@ -674,6 +674,16 @@ impl Suite {
             }
             let mut detail = upgraded_checks(&mut s, &old, &new, &spooled)?;
             if release_at_least(&new, (1, 2, 0)) {
+                // The install added NetServer's entries to the system's QSERVER.
+                let added = s
+                    .log
+                    .lines()
+                    .find(|l| l.contains("QSYS/QSERVER: NetServer: added"))
+                    .and_then(|l| l.split("slic: install: ").nth(1))
+                    .map(|l| l.trim().to_string())
+                    .ok_or("the install added no QSERVER entries")?;
+                detail.push_str("; ");
+                detail.push_str(&added);
                 detail.push_str("; ");
                 detail.push_str(&self.netserver_after_upgrade(&mut s, &old)?);
             }
