@@ -41,8 +41,11 @@ impl NbName {
     }
 
     /// The encoded form: length 32, the half-ASCII bytes, scope labels, 0.
+    /// The wildcard `*` (node status, RFC 1002 4.2.17) is padded with
+    /// zero bytes, every other name with spaces.
     pub fn encode(&self) -> Vec<u8> {
-        let mut raw = [b' '; 16];
+        let pad = if self.name == "*" { 0 } else { b' ' };
+        let mut raw = [pad; 16];
         for (d, s) in raw.iter_mut().zip(self.name.bytes().take(15)) {
             *d = s;
         }
@@ -91,9 +94,12 @@ impl NbName {
             labels.push(String::from_utf8_lossy(l).into_owned());
             pos += n;
         }
-        let name = String::from_utf8_lossy(&raw[..15])
+        let mut name = String::from_utf8_lossy(&raw[..15])
             .trim_end_matches(' ')
             .to_string();
+        if name.starts_with('*') {
+            name = name.trim_end_matches(char::from(0)).to_string();
+        }
         Ok((
             Self {
                 name,

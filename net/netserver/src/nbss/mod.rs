@@ -6,8 +6,8 @@
 //! answers the session request with [`answer`] before it hands the socket
 //! over; after it the stream is framed as on 445 (a type byte of 0 and a
 //! 24-bit length), and the library skips the keepalives clients send.
-//! The name service on UDP 137 and the datagram service on 138 are not
-//! built (`docs/NETSERVER.md` section 10).
+//! The name service on UDP 137 is [`crate::nbns`]; the datagram service
+//! on 138 is not built (`docs/NETSERVER.md` section 10).
 
 pub mod name;
 

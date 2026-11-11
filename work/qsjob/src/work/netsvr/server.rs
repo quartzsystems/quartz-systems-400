@@ -5,7 +5,8 @@
 //! `QZLSSERVER`, NetServer's listener: a batch job of `QSERVER` that the
 //! storage service submits with routing data `QZLSSTART` (`QZLSSTRS`,
 //! `STRTCPSVR SERVER(*NETSVR)`). It listens on 445, and on 139 when
-//! NetBIOS is allowed (answering the session request there first), and
+//! NetBIOS is allowed (answering the session request there first, and
+//! holding the server's NetBIOS names on UDP 137, `nbns`), and
 //! gives each connection to a `QZLSFILE` prestart job through the
 //! descriptor relay: the job that registered the connection's
 //! `ClientGuid` (or, without one, its address) when there is one, so a
@@ -18,7 +19,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use netserver::{nbss, route};
+use netserver::{nbns, nbss, route};
 use sockets::relay;
 use stg::netsvr::{NsOp, NsReply};
 use stg::{Client, Shared};
@@ -139,6 +140,17 @@ pub fn run(c: &mut Console, link: &Shared, number: u32, name: &str) -> u16 {
     } else {
         None
     };
+    let names = if cfg.attrs.current.allow_netbios {
+        match nbns::Udp::bind(nbns::udp::PORT) {
+            Ok(u) => Some(u),
+            Err(e) => {
+                eprintln!("qsjob: {SERVER_PROGRAM}: UDP port 137: {e}");
+                None
+            }
+        }
+    } else {
+        None
+    };
     let me = relay_id(number, name);
     let stop = Arc::new(AtomicBool::new(false));
     let mut threads = Vec::new();
@@ -152,6 +164,13 @@ pub fn run(c: &mut Console, link: &Shared, number: u32, name: &str) -> u16 {
                 Ok(link) => accept(&l, me, nb.as_deref(), &stop, &link),
                 Err(e) => eprintln!("qsjob: {SERVER_PROGRAM}: a thread's link: {e}"),
             }
+        }));
+    }
+    if let Some(mut udp) = names {
+        let stop = stop.clone();
+        let nb = nbns::NameConfig::new(&server, &cfg.attrs.current.domain);
+        threads.push(std::thread::spawn(move || {
+            nbns::serve(&mut udp, &mut nbns::NameService::new(&nb), &stop);
         }));
     }
     link.borrow_mut().with(Client::netsvr_started);

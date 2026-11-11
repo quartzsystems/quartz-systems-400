@@ -272,6 +272,27 @@ fn nbss(data: &[u8]) {
     let _ = netserver::route::guid_in(data);
 }
 
+fn nbns(data: &[u8]) {
+    use netserver::nbns::{NameConfig, NameService, Packet};
+    use std::net::{Ipv4Addr, SocketAddrV4};
+    use std::time::{Duration, Instant};
+    if let Ok(p) = Packet::parse(data) {
+        let _ = Packet::parse(&p.encode());
+    }
+    // A service holding its names hears the packet.
+    let me = Ipv4Addr::new(10, 0, 2, 15);
+    let mut svc = NameService::new(&NameConfig::new("QSTEST", "WORKGROUP"));
+    let now = Instant::now();
+    let _ = svc.start(now, me);
+    for k in 1..=3 {
+        let _ = svc.tick(now + Duration::from_secs(k), me);
+    }
+    let peer = SocketAddrV4::new(Ipv4Addr::new(10, 0, 2, 2), 137);
+    for o in svc.handle(peer, data, me) {
+        let _ = o.packet.encode();
+    }
+}
+
 fn smb(data: &[u8]) {
     use netserver::fuzzing as f;
     f::frame(data);
@@ -478,6 +499,14 @@ pub const TARGETS: &[Target] = &[
         seeds: &[b"\x81\x00\x00\x44\x20CACACACACACACACACACACACACACACAAA\x00\x20EEEFEFEFEFEFEFEFEFEFEFEFEFEFEFAA\x00", b"\x85\x00\x00\x00"],
         dict: &[b"\x81", b"\x85", b"\x20", b"\xfeSMB", b"\x24\x00"],
         max_len: 4096,
+    },
+    Target {
+        name: "nbns",
+        what: "NetBIOS name service packets and the B-node name service's answers",
+        run: nbns,
+        seeds: &[b"\x12\x34\x29\x10\x00\x01\x00\x00\x00\x00\x00\x01\x20FBFDFEEFFDFECACACACACACACACACAAA\x00\x00\x20\x00\x01\xc0\x0c\x00\x20\x00\x01\x00\x04\x93\xe0\x00\x06\x00\x00\x0a\x00\x02\x0f", b"\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x20CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\x00\x00\x21\x00\x01"],
+        dict: &[b"\xc0\x0c", b"\x00\x20\x00\x01", b"\x00\x21\x00\x01", b"\x29\x10", b"\x20FBFDFEEFFDFE"],
+        max_len: 1500,
     },
     Target {
         name: "smb",
