@@ -9,8 +9,8 @@
 //! a guest profile (`QZLSCHSG`) and a driver store, restarts the server
 //! with the pending attributes, and runs every scenario; it writes the
 //! leased file from the console when the probe waits for it, and finds
-//! both printed documents on the output queue, owned by the user, with
-//! the bytes the probe sent. Then it sets the minimum dialect to 3.0
+//! both printed documents on the output queue with the bytes the probe
+//! sent. Then it sets the minimum dialect to 3.0
 //! (`QZLSCHSI` `QSLS0100`), runs `min-dialect`, and puts it and the guest
 //! back.
 
@@ -313,42 +313,54 @@ fn hex_bytes(out: &str) -> Vec<u8> {
     b
 }
 
-/// Every spooled file of the user on the print share's queue: the
-/// documents `print-write` and `spoolss` sent are there with their bytes.
+/// The spooled files `QZLSFILE` jobs made: the documents `print-write`
+/// and `spoolss` sent are on the print share's queue with their bytes.
+/// The files carry the job's user (`QUSER`): QS/400's spooled files have
+/// no owner apart from their job (`docs/NETSERVER.md` section 7).
 fn printed(s: &mut Session, docs: &[String]) -> Result<String, String> {
-    let rows = s.command(&format!("wrksplf SELECT({USER}) VIEW(3)"), CMD)?;
-    let queues = s.command(&format!("wrksplf SELECT({USER})"), CMD)?;
+    // The service's own words: the command's `WRKSPLF` has no `VIEW`.
+    let rows = s.command("svc.wrksplf SELECT(*ALL) VIEW(3)", CMD)?;
+    let queue = s.command(&format!("wrkoutq QGPL/{OUTQ}"), CMD)?;
     let mut found = vec![false; docs.len()];
+    let mut users = Vec::new();
     let files: Vec<Vec<&str>> = rows
         .lines()
         .map(|l| l.split_whitespace().collect::<Vec<_>>())
-        .filter(|w| w.len() >= 5 && w[1].bytes().all(|c| c.is_ascii_digit()))
+        .filter(|w| w.len() >= 5 && w[2] == "QZLSFILE" && w[1].bytes().all(|c| c.is_ascii_digit()))
         .collect();
     for w in &files {
         let (file, nbr, job, user, number) = (w[0], w[1], w[2], w[3], w[4]);
         let shown = s.command(
-            &format!("dspsplf {file} JOB({number}/{user}/{job}) SPLNBR({nbr}) VIEW(*HEX)"),
+            &format!("svc.dspsplf {file} JOB({number}/{user}/{job}) SPLNBR({nbr}) VIEW(*HEX)"),
             CMD,
         )?;
         let data = hex_bytes(&shown);
         for (i, d) in docs.iter().enumerate() {
             if data.windows(d.len()).any(|x| x == d.as_bytes()) {
                 found[i] = true;
+                users.push(user.to_owned());
             }
         }
     }
     if let Some(i) = found.iter().position(|f| !f) {
         return Err(format!(
-            "no spooled file of {USER} holds {:?}:\n{rows}\n{queues}",
+            "no QZLSFILE spooled file holds {:?}:
+{rows}
+{queue}",
             docs[i]
         ));
     }
-    let on_queue = queues.lines().filter(|l| l.contains(OUTQ)).count();
+    let on_queue = queue.lines().filter(|l| l.contains("QPRINT")).count();
     if on_queue < docs.len() {
-        return Err(format!("{on_queue} of {USER}'s files on {OUTQ}:\n{queues}"));
+        return Err(format!(
+            "{on_queue} files on {OUTQ}:
+{queue}"
+        ));
     }
+    users.dedup();
     Ok(format!(
-        "{on_queue} of {USER}'s spooled files on {OUTQ}, both documents' bytes found"
+        "{on_queue} spooled files on {OUTQ}, both documents' bytes found (job user {})",
+        users.join(", ")
     ))
 }
 

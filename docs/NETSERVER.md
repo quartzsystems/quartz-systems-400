@@ -127,8 +127,10 @@ serves the connection.
   its own thread: they reach the service over a thread link of the job
   (`hello_thread`, `svc.rs`), which shares the job's security session;
   the IFS (`MakeClient`) runs over another, on the IFS thread.
-- Print shares (`printer.rs`) spool on the share's output queue as the
-  job's profile (`splf_open`, `splf_put`, `splf_close`). The device type
+- Print shares (`printer.rs`) spool on the share's output queue with the
+  job's profile's authority (`splf_open`, `splf_put`, `splf_close`); the
+  spooled file is the `QZLSFILE` job's, user `QUSER` (section 11, step
+  170). The device type
   is the share's spooled file type (`*USERASCII`, `*SCS`, `*AFPDS`;
   `*AUTO` is `*SCS` when the data starts with an SCS control, else
   `*USERASCII`), the data as the client sent it; the spooled file is
@@ -1474,8 +1476,13 @@ file shares `SMBMAX` (maximum one user) and `SMBENC` (encryption required)
 with `QZLSADFS`, and a driver store (`x64/3/QSProbe.qsdrv` and its files,
 `svc.ifs`); then `ENDTCPSVR` and `QZLSSTRS` with reset `1`, every scenario
 through the port forward, the console's write when the probe waits for it,
-and on the system's side `WRKSPLF SELECT(NSUSER)`: both documents on
-`NSPRTQ`, owned by `NSUSER`, their bytes found with `DSPSPLF VIEW(*HEX)`.
+and on the system's side both documents on `NSPRTQ` (`WRKOUTQ`), in
+`QZLSFILE` jobs, their bytes found with `DSPSPLF VIEW(*HEX)`. They carry
+the job's user, `QUSER`: a QS/400 spooled file has no owner apart from
+its job, so `WRKSPLF SELECT(NSUSER)` does not list them, where IBM i
+lists a swapped job's spooled files under the profile that made them
+(`NEEDS-CODY`: confirm on the primary; a spooled file owner would change
+the frozen `*SPLF` attribute layout).
 Then the minimum dialect 3.0 (`QZLSCHSI` `QSLS0100`), the guest removed, a
 restart, `min-dialect`, and 2.0.2 put back with another restart. The
 probe binary is `QS400_SMBPROBE`, or built with `cargo build --release
