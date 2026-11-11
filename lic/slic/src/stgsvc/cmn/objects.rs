@@ -323,7 +323,12 @@ pub(super) fn vary_plain_dev(system: &mut System, n: &str, on: bool) -> Result<(
         })?;
         let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
         let mut d = Devd::decode(&b).map_err(|e| e.to_string())?;
-        d.online = on;
+        // A display's status says whether it is varied on; its `ONLINE`
+        // (how it comes up at IPL) is the description's own. Other
+        // devices show their vary state through `online`.
+        if !d.is_display() {
+            d.online = on;
+        }
         d.status = if on {
             wm::obj::devd::DevStatus::VariedOn
         } else {

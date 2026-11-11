@@ -29,11 +29,19 @@ marker inventory and the SQL refusals) stay in the V1R1M0 notes until
   over from V1R1M0 has none, and NetServer refuses it (`CPIB68D`) until the
   next `CHGPWD` or `CHGUSRPRF PASSWORD()`. The same holds after a
   `QPWDLVL` change (`NETSERVER.md` §5).
-- Shipped objects are made only when missing, so a V1R1M0 system keeps
-  its `QSERVER` subsystem description: add NetServer's routing entry 800
-  (`ADDRTGE`), the `QPWFSERVER` job queue entry (`ADDJOBQE`) and the
-  `QZLSFILE` and `QZLSFILET` prestart job entries (`ADDPJE`) as
-  `NETSERVER.md` §3 lists them.
+- The upgrade adds NetServer's `QSERVER` entries for you: routing entry
+  800, the `QSYS/QPWFSERVER` job queue entry, and the `QZLSFILE` and
+  `QZLSFILET` prestart job entries. They go next to the system's own
+  entries, once; an entry whose sequence number is taken is left out and
+  named in the install log. A system that gets the code by PTF gets them
+  at its next IPL, with the shipped message descriptions its message
+  files lack.
+- A slip install now keeps the system's work management objects as they
+  are: subsystem entries, the messages on `QSYSOPR`, the jobs on job
+  queues, what output queues hold, the job schedule and the reply list.
+  Before, the operating system's load replaced them (`INSTALL.md` §4).
+- Install step 10 proves the upgrade from V1R1M0 media under QEMU,
+  NetServer included.
 
 ## What is new in V1R2M0
 
@@ -98,6 +106,8 @@ with IBM i NetServer:
   OFF, `QSYSOPR` gets `CPF1397`, `VRYCFG STATUS(*ON)` or an IPL (for
   `ONLINE(*YES)`) brings it back, and a device left in that state by an
   earlier release works again once this release is installed.
+- `VRYCFG STATUS(*OFF)` of a display changed its `ONLINE` attribute, so
+  it stayed off after the next IPL whatever its description said.
 - The web products' listeners took up to 50 ms to accept each new
   connection; every response now carries a `Server-Timing` header
   (`SERVERS.md`).
