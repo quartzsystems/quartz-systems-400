@@ -59,7 +59,16 @@ with IBM i NetServer:
   reconnect returns to the job that holds its files.
 - Leases and change notifications are system-wide: a change from any job,
   FTP, QSH or a program breaks the leases other clients hold and reaches
-  their change notifications.
+  their change notifications. That includes `/QSYS.LIB` members, files
+  and libraries changed through the database and the object commands
+  (record I/O, SQL, `CLRPFM`, SEU, `ADDPFM`, `RMVM`, `RNMM`, `DLTF`,
+  `CLRLIB`); a job's open for update waits for clients to give back
+  cached writes.
+- Files get Windows-style 8.3 short names (`XXHHHH~1.EXT`, made from the
+  file's number, so they stay the same): in listings, in alternate-name
+  queries, and to open files by.
+- With "allow NetBIOS" on, the server registers and answers for its
+  NetBIOS names on UDP 137.
 - File shares over the IFS (`/QSYS.LIB` too), with text conversion by
   CCSID for the extensions a share lists and a maximum number of users.
   Print shares spool to an output queue as the user, as `*USERASCII` or
@@ -120,11 +129,11 @@ Each has its own handoff document for a later release.
 
 ## Known limits
 
-NetServer's are in `NETSERVER.md` §10. The main ones: the NetBIOS name
-service (UDP 137/138) and browsing are not built (clients connect by name
-or address); `/QSYS.LIB` members changed through record I/O or SQL break
-no lease and reach no change notification; the install ISO's boot image
-has about 1 MB of room left after NetServer joined `qsjob`.
+NetServer's are in `NETSERVER.md` §10. The main ones: the NetBIOS
+datagram service (UDP 138) and browsing are not built (clients connect by
+name or address); renaming a file or library above a leased member breaks
+no lease; the install ISO's boot image has about 1 MB of room left after
+NetServer joined `qsjob`.
 
 ## Before shipping (Cody)
 
