@@ -321,22 +321,85 @@ replacement with RSTLICPGM's semantics:
   in user libraries touched;
 - the restored objects carry the new build's signatures, checked
   against the system key as they come in;
+- the shipped work management objects are the system's own and keep
+  what the system put in them (`wm::obj::upgrade`): before the restore
+  slic reads every one the system has (subsystem, job and printer
+  descriptions, classes, job and output queues, message queues, the job
+  schedule, the reply list), and after it writes the system's copy back
+  where the load's differs. Without this the load's copy replaced them:
+  a customer's subsystem entries, the messages on `QSYSOPR`, the jobs on
+  a job queue and the spooled file list of an output queue were lost.
+  An object the system lacks comes from the load as shipped;
+- a release that adds entries to a shipped subsystem lists them in
+  `wm::obj::upgrade::ADDITIONS` with a marker object shipped with them
+  (V1R2M0: `QSERVER`'s routing entry 800, the `QSYS/QPWFSERVER` job
+  queue entry and the `QZLSFILE` and `QZLSFILET` prestart entries,
+  marked by the job description `QSYS/QZLSSERVER`). A system without
+  the marker gets them added to its own description, beside its own
+  entries; a sequence number in use or a missing pool leaves the entry
+  out with a line in the install log. The marker comes in with the
+  load, so this happens once: an entry the customer removes later stays
+  removed;
 - after an upgrade, every `*PGM`, `*SRVPGM` and `*MODULE` outside QSYS,
   QSYS2, QTEMP, QSPL and QHLPSYS is translated again from its IR
   (`ile::store::retranslate`), so the new release's code generator
   makes every native copy; a slip install translates only code an older
   code generator made.
 
+A system that gets new code by PTF rather than by install media is
+brought up to the same point at its next IPL, where the storage service
+makes the shipped objects that are missing (`osobjects::create`): the
+additions whose marker is missing are added to the subsystem the system
+has first (`wm::obj::upgrade::add_missing`), and every shipped message
+description the system's message files lack is added to them
+(`msgf::store::add_missing_descriptions`); descriptions the files have,
+a customer's changes among them, stay as they are. The other things
+NetServer brought need nothing: the job descriptions `QZLSPJ` and
+`QZLSSERVER` and the `QPWFSERVER` job queue are made as missing objects,
+the `*NETSVR` row of the server table is code, and the configuration
+files and the `QIBM` share are written at NetServer's first use.
+
 The current release is V1R1M0. A build claims another release with
 `QS400_RELEASE=VxRyMz` at build time (`lic/release/build.rs`); the
-harness's step 10 installs a `QS400_RELEASE=V1R0M0` build's ISO
-(`QS400_OLD_ISO`; built from `becee24b`, the last tree with object header
-and save stream version 1) on a blank disk, makes user data (a data area,
-a journaled SQL table with rows, spooled files, a `SAVLIB` holding an SQL
-table in a save file), upgrades it with the suite's V1R1M0 media, checks
-every piece, uses the V1R0M0 table from SQL (`SELECT`, `INSERT`, `CREATE
-INDEX`, `CREATE VIEW`; it has no `*SQLINF`), restores the V1R0M0 save
-with `RSTLIB` and reads its table, and has the V1R0M0 media refused.
+harness's step 10 installs an older release's ISO (`QS400_OLD_ISO`)
+on a blank disk, makes user data (a data area, a journaled SQL table
+with rows, spooled files, a `SAVLIB` holding an SQL table in a save
+file, the audit journal with `QAUDLVL(*DFTSET)` and a profile made under
+it), upgrades it with the suite's media, checks every piece, uses the
+older table from SQL (`SELECT`, `INSERT`, `CREATE INDEX`, `CREATE VIEW`),
+restores the older save with `RSTLIB` and reads its table, and has the
+older media refused. The releases come from the systems themselves
+(`svc.asp`, slic's `upgrade to` line), so the one step serves:
+
+| Old media (`QS400_OLD_ISO`) | Suite's media | What more |
+|---|---|---|
+| V1R0M0: a `QS400_RELEASE=V1R0M0` build of `becee24b`, the last tree with object header and save stream version 1 | the V1R1M0 tree | the V1R0M0 table has no `*SQLINF` |
+| V1R1M0: a development build of tag `v1.1.0` | the current tree built with `QS400_RELEASE=V1R2M0` | NetServer on the upgraded system (below) |
+
+From V1R2M0 on, the step also proves NetServer on the upgraded system:
+the V1R1M0 profile (payload version 1) signs on at the console's 5250
+display; `DSPAUDJRNE ENTTYP(CP)` shows the V1R1M0 entry of its creation;
+the guest's address is configured, a share added over its home
+directory and `STRTCPSVR SERVER(*NETSVR)` starts `QZLSSERVER` (`BCH`)
+and `QZLSFILE` (`PJ`) through the `QSERVER` entries the upgrade added;
+`smbtest` as that profile is refused (no NT hash) and `QSYSOPR` has
+`CPIB68D`; after `CHGUSRPRF PASSWORD()` it signs on; a wrong password
+writes a `VP` entry; a file goes in and out through the share.
+
+The old media must be a development build (the service console,
+`qs400.svc=1`): the published release ISO has none, and the harness
+drives the older system through it. To make the V1R1M0 one, in WSL
+(see `CLAUDE.md`, Commands):
+
+```
+git worktree add --detach ../v110 v1.1.0
+cd ../v110 && cargo run -p build -- all && cargo run -p build -- iso
+cp "$(cat $QS400_TARGET_DIR/images/iso.path)" ~/QS400-V1R1M0-dev.iso
+cd - && git worktree remove ../v110
+QS400_RELEASE=V1R2M0 cargo run -p build -- all
+QS400_RELEASE=V1R2M0 cargo run -p build -- iso
+QS400_OLD_ISO=~/QS400-V1R1M0-dev.iso cargo run -p build -- test --media iso --install --only 10
+```
 
 ## 5. QEMU
 
@@ -350,7 +413,7 @@ matrix:
 | 3 interactive install | every panel of §2 over serial, `Specify Install Options` included |
 | 8 response file mirrored | a FAT32 copy of the media with `QS400/INSTALL.RSP`: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 | 9 SAVSYS and recovery | `CRTDEVTAP`, `CRTIMGCLG`, `ADDIMGCLGE`, `LODIMGCLG`, then `SAVSYS DEV(TAPVRT01)`, `CHKTAP` (a system save), `SAVLIB LIB(*NONSYS)` and `SAV` after it; the volume copied onto a disk (`svc.vrtout`), the system disk wiped, option 4: LIC and operating system from the tape, RSTUSRPRF, RSTCFG, RSTAUT, then the storage service's RSTLIB, RST and RSTAUT; the profile, the library and the IFS file made before the save are back |
-| 10 slip install V1R1M0 | option 1 with V1R1M0 media over V1R0M0 (header and stream version 1), the upgrade's panels, user data kept, the store at V1R1M0; the V1R0M0 SQL table selected, inserted into, indexed and viewed; the V1R0M0 `SAVLIB` restored with its SQL table; then V1R0M0 media refused |
+| 10 slip install | option 1 with the suite's media over an older release's system (`QS400_OLD_ISO`, §4: V1R0M0 under V1R1M0, V1R1M0 under V1R2M0), the upgrade's panels, user data kept, the store at the new release; the older SQL table selected, inserted into, indexed and viewed; the older `SAVLIB` restored with its SQL table; from V1R2M0 the older profile at 5250 and through NetServer, the older audit entries, a `VP` entry, `STRTCPSVR *NETSVR` and a file round trip; then the older media refused |
 | 11 power pull mid-install | killed during the LIC install; the reinstall reaches sign-on, `chkstg` clean |
 | 12 four-unit mirror | step 1's disk with three blank disks: added to ASP 1 in DST, `svc.obj fill` puts data on every unit, Start mirrored protection pairs 1 with 4 and 2 with 3 (the data of 3 and 4 moved first), the copies at the re-IPL, the data intact; disk 4 pulled: A6001255, its unit Missing, the IPL completes |
 | 13 device parity RAID 5 | the same four units, RAID 5 started over all of them in DST and synchronized at the IPL; disk 4 pulled: A6001257, `DPY/Failed`, every page read and written through parity; disk 4 back: rebuilt at the IPL, `DPY/Active`, data intact, `chkstg` clean |

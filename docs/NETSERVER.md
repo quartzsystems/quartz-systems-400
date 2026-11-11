@@ -58,9 +58,8 @@ others) and the prestart entries:
 | `QZLSFILET` | `QSYS/QZLSPJ` | `*NO` | 1 | 1 | 0 | `*NOMAX` | 1 | `QSYS/QPWFSERVER` |
 
 Both run as `QUSER`. `QZLSFILET` is shipped as on V7R5M0 and never given
-work. An existing V1R1M0 system keeps the `QSERVER` it has: shipped
-objects are made only when missing (`NEEDS-CODY`: whether V1R2M0's
-update should replace `QSERVER`).
+work. A V1R1M0 system keeps the `QSERVER` it has, its own entries
+included, and gets these entries added once ("Upgrading from V1R1M0").
 
 **Starting and ending.** `STRTCPSVR SERVER(*NETSVR)`, `QZLSSTRS` and
 `STRTCP`'s autostart (the `*NETSVR` row of the server table,
@@ -1408,6 +1407,32 @@ one per machine, so `QZLSSERVER` routes them into one `QZLSFILE` job;
 `change-notify-two-machines` adds a second ClientGuid (another job). They run the `smbtest` binary from `QS400_SMBTEST`, or build it
 (`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`
 into `$QS400_TARGET_DIR/smbtest`).
+
+## Upgrading from V1R1M0
+
+What NetServer needs that a V1R1M0 system lacks, and how it gets it
+(`INSTALL.md` §4):
+
+| Piece | Slip install (option 1 with V1R2M0 media) | New code by PTF |
+|---|---|---|
+| `QSERVER`'s routing entry 800, job queue entry `QSYS/QPWFSERVER`, prestart entries `QZLSFILE` and `QZLSFILET` | added to the system's own `QSERVER` after the restore (`wm::obj::upgrade::put_back`), its other entries kept | added at the next IPL (`wm::obj::upgrade::add_missing`) |
+| job descriptions `QSYS/QZLSPJ`, `QSYS/QZLSSERVER`; job queue `QSYS/QPWFSERVER` | restored from the load | made at the next IPL as missing objects |
+| `QCPFMSG`'s `CPIB6xx` descriptions | the load's `QCPFMSG` | added to the system's `QCPFMSG` at the next IPL (`msgf::store::add_missing_descriptions`) |
+| the `*NETSVR` row of the server table | code | code |
+| `QAZLSCFG`, `QAZLSSHR`, the `QIBM` share | written at NetServer's first use | the same |
+| each user's NT hash | the next password change (`CPIB68D` until then, section 5) | the same |
+
+The entries are added only to a system that never had them: the job
+description `QSYS/QZLSSERVER`, shipped with them, marks one that did.
+An entry whose sequence number the system uses for another, or whose
+pool the subsystem lacks, is left out with a line in the install log
+(`slic: install: QSYS/QSERVER: NetServer: ...`); add it by hand then.
+Install step 10 proves the upgrade under QEMU (`INSTALL.md` §5):
+a V1R1M0 profile signs on at 5250, is refused by NetServer until
+`CHGUSRPRF PASSWORD()`, a wrong password writes `VP`, `STRTCPSVR
+SERVER(*NETSVR)` starts the jobs and a file goes through the share;
+`cargo test -p wm --test upgrade` and `-p instmedia --test install`
+in memory.
 
 ## Acceptance
 
