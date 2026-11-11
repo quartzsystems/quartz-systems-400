@@ -157,7 +157,8 @@ fn info_buffer(out: &[u8], what: &str) -> Result<Vec<u8>, String> {
         .ok_or_else(|| format!("{what}: a short answer"))
 }
 
-/// One call on the spoolss pipe; the stub, or why not.
+/// One call on the spoolss pipe; the stub, or why not. A request goes in
+/// one fragment, so it stays under the 4280 bytes the bind negotiated.
 async fn call(
     c: &mut Client,
     pipe: FileId,
@@ -180,7 +181,7 @@ async fn describe(
     lines: &mut Vec<String>,
 ) -> Result<(), String> {
     let mut s = Stub::default();
-    s.raw(h).u32(2).ptr(true).bytes(&[0; 8192]).u32(8192);
+    s.raw(h).u32(2).ptr(true).bytes(&[0; 4096]).u32(4096);
     let info = info_buffer(
         &call(c, pipe, 3, GET_PRINTER, &s.take()).await?,
         "RpcGetPrinter",
@@ -201,8 +202,8 @@ async fn describe(
         .string("Windows x64")
         .u32(3)
         .ptr(true)
-        .bytes(&[0; 8192])
-        .u32(8192)
+        .bytes(&[0; 4096])
+        .u32(4096)
         .u32(3)
         .u32(0);
     let out = call(c, pipe, 4, GET_PRINTER_DRIVER2, &s.take()).await?;

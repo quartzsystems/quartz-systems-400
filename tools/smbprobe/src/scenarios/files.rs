@@ -59,8 +59,9 @@ pub async fn share_enum(t: Arc<Target>) -> Done {
 }
 
 /// An exclusive lock taken by one machine's job holds against another's:
-/// a lock is not granted, a read in the range conflicts, and once
-/// unlocked the other takes it.
+/// its lock is not granted (its read is served: IFS locks are advisory
+/// across jobs), the locking job's other open cannot read the range, and
+/// once unlocked the other job takes it.
 pub async fn lock_conflict(t: Arc<Target>) -> Done {
     let mut a = conn::client(&t, SMB302).await?;
     conn::new_file(&t, &mut a, "lock.txt", b"0123456789abcdef").await?;
@@ -86,10 +87,22 @@ pub async fn lock_conflict(t: Arc<Target>) -> Done {
         b.lock(idb, &[(4, 4, flags)]).await,
         STATUS_LOCK_NOT_GRANTED,
     )?;
-    let read = b.read(idb, 0, 4).await;
+    // IFS locks are advisory across jobs (`docs/NETSERVER.md` section 6):
+    // the other job's read is served; a second open in the locking job
+    // meets the library's own lock.
+    let across = b.read(idb, 0, 4).await;
+    if across.as_deref() != Ok(b"0123".as_slice()) {
+        return Err(format!("the other job's read of 0-4: {across:?}"));
+    }
+    let ida2 = a
+        .open(&path, RW, SHARE_ALL)
+        .await
+        .map_err(|e| format!("second open in the job: {}", status(e)))?;
+    let within = a.read(ida2, 0, 4).await;
+    a.close(ida2).await;
     expect(
-        "second job's read of 0-4",
-        read.err().unwrap_or(STATUS_SUCCESS),
+        "the same job's other open reading 0-4",
+        within.err().unwrap_or(STATUS_SUCCESS),
         STATUS_FILE_LOCK_CONFLICT,
     )?;
     let outside = b
@@ -117,7 +130,8 @@ pub async fn lock_conflict(t: Arc<Target>) -> Done {
     b.close(idb).await;
     a.close(ida).await;
     Ok(vec![
-        "not granted: STATUS_LOCK_NOT_GRANTED; read in range: STATUS_FILE_LOCK_CONFLICT".into(),
+        "the other job: lock STATUS_LOCK_NOT_GRANTED, read served (advisory)".into(),
+        "the same job's other open: read STATUS_FILE_LOCK_CONFLICT".into(),
         "unlocked: taken by the other job".into(),
     ])
 }
