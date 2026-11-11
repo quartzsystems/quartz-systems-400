@@ -183,14 +183,16 @@ pub fn run(c: &mut Console, link: &Shared, number: u32, name: &str) -> u16 {
                 Err(e) => eprintln!("qsjob: {SERVER_PROGRAM}: a thread's link: {e}"),
             }
         });
-        threads.push((port, thread));
+        threads.push((Some(port), thread));
     }
     if let Some(mut udp) = names {
         let stop = stop.clone();
         let nb = nbns::NameConfig::new(&server, &cfg.attrs.current.domain);
-        threads.push(std::thread::spawn(move || {
+        // It looks at `stop` between datagrams by itself.
+        let thread = std::thread::spawn(move || {
             nbns::serve(&mut udp, &mut nbns::NameService::new(&nb), &stop);
-        }));
+        });
+        threads.push((None, thread));
     }
     link.borrow_mut().with(Client::netsvr_started);
     sysopr(link, "CPIB680", &[&server]);
@@ -209,7 +211,7 @@ pub fn run(c: &mut Console, link: &Shared, number: u32, name: &str) -> u16 {
         // Each loop blocks in accept: a connection of our own wakes it.
         // Not woken, the thread ends at its next connection; the job
         // ending closes the listener.
-        if t.is_finished() || wake(port) {
+        if t.is_finished() || port.is_none_or(wake) {
             let _ = t.join();
         }
     }
