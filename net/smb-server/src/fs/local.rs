@@ -1187,6 +1187,7 @@ pub(super) fn file_info_from_metadata(
         unix_mode: unix_mode(md),
         ea_size: 0,
         file_attributes: host_attributes(md),
+        short_name: None, // QS/400
     }
 }
 

@@ -182,7 +182,8 @@ async fn query_file(open: &Open, share: &ShareBindings, class: u8, cap: usize) -
         ic::FILE_ALL_INFORMATION => (104, Overflow::Truncate, FILE_READ_ATTRIBUTES),
         ic::FILE_NETWORK_OPEN_INFORMATION => (56, Overflow::Never, FILE_READ_ATTRIBUTES),
         ic::FILE_STREAM_INFORMATION => (24, Overflow::WholeEntries, 0),
-        ic::FILE_ALTERNATE_NAME_INFORMATION => (8, Overflow::Never, 0),
+        // QS/400: the name is cut to fit.
+        ic::FILE_ALTERNATE_NAME_INFORMATION => (8, Overflow::Truncate, 0),
         // MS-FSA 2.1.5.12.19: not available to remote clients.
         ic::FILE_NAME_INFORMATION => return Err(ntstatus::STATUS_NOT_SUPPORTED),
         c if is_file_class(c) => return Err(ntstatus::STATUS_NOT_SUPPORTED),
@@ -232,8 +233,16 @@ async fn query_file(open: &Open, share: &ShareBindings, class: u8, cap: usize) -
         ic::FILE_MODE_INFORMATION => ic::encode_file_mode_information(0),
         ic::FILE_ALIGNMENT_INFORMATION => ic::encode_file_alignment_information(),
         ic::FILE_NETWORK_OPEN_INFORMATION => ic::encode_file_network_open_information(&info),
-        // MS-FSA 2.1.5.12.4. Files here have no 8.3 short name.
-        ic::FILE_ALTERNATE_NAME_INFORMATION => return Err(ntstatus::STATUS_OBJECT_NAME_NOT_FOUND),
+        // MS-FSA 2.1.5.12.4. QS/400: the backend's short name, if any.
+        ic::FILE_ALTERNATE_NAME_INFORMATION => {
+            let short = handle.short_name().await.map_err(|e| e.to_nt_status())?;
+            let short = short.ok_or(ntstatus::STATUS_OBJECT_NAME_NOT_FOUND)?;
+            let name = crate::utils::utf16le(&short);
+            let mut buf = Vec::with_capacity(4 + name.len());
+            buf.extend_from_slice(&(name.len() as u32).to_le_bytes());
+            buf.extend_from_slice(&name);
+            buf
+        }
         _ => unreachable!("class checked above"),
     };
     Ok((buf, overflow))

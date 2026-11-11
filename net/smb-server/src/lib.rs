@@ -430,6 +430,8 @@ mod path;
 mod proto;
 mod rpc;
 mod server;
+// QS/400: 8.3 short names.
+pub mod short_name;
 mod stream;
 #[cfg(test)]
 mod tests {

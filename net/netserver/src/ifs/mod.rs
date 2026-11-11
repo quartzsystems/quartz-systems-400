@@ -15,6 +15,8 @@
 //!   refuses them; attribute-only opens take no descriptor.
 //! - DOS attributes: read-only, hidden, system and archive are the IFS's
 //!   `*READONLY`, `*HIDDEN`, `*SYSTEM` and `*PCARCHIVE`.
+//! - Short names: made from file numbers ([`short`]); a path may name a
+//!   file by its short name.
 //! - File IDs: the IFS file ID (number and generation); a handle finds its
 //!   object by it after a rename.
 //! - Leases: the job's are in the IFS's lease table ([`lease`]), so an
@@ -26,6 +28,7 @@ mod handle;
 pub mod info;
 pub mod lease;
 pub mod pattern;
+mod short;
 pub mod text;
 pub mod watch;
 pub mod worker;
@@ -325,14 +328,19 @@ impl ShareBackend for IfsShare {
         path: &SmbPath,
         opts: OpenOptions,
     ) -> SmbResult<(Box<dyn Handle>, OpenAction)> {
-        let full = self.ifs_path(path);
-        let p = full.clone();
+        let p = self.ifs_path(path);
         let conv = self.conversion.clone();
-        let opened = self
+        let root = self.root.clone();
+        let (full, opened) = self
             .io
-            .call(move |c| Ok(open_sync(c, &p, opts, conv.as_deref())))
+            .call(move |c| {
+                let p = short::long_path(c, &root, &p);
+                let opened = open_sync(c, &p, opts, conv.as_deref());
+                Ok((p, opened))
+            })
             .await
-            .map_err(smb_error)??;
+            .map_err(smb_error)?;
+        let opened = opened?;
         let handle = IfsHandle {
             io: self.io.clone(),
             path: Mutex::new(full),
@@ -349,8 +357,10 @@ impl ShareBackend for IfsShare {
 
     async fn unlink(&self, path: &SmbPath) -> SmbResult<()> {
         let p = self.ifs_path(path);
+        let root = self.root.clone();
         self.io
             .call(move |c| {
+                let p = short::long_path(c, &root, &p);
                 let st = c.stat(&p, false)?;
                 if st.mode & S_IFMT == S_IFDIR {
                     c.rmdir(&p)
@@ -364,8 +374,15 @@ impl ShareBackend for IfsShare {
 
     async fn rename(&self, from: &SmbPath, to: &SmbPath, replace_if_exists: bool) -> SmbResult<()> {
         let (f, t) = (self.ifs_path(from), self.ifs_path(to));
+        let root = self.root.clone();
         self.io
             .call(move |c| {
+                let f = short::long_path(c, &root, &f);
+                // A file renamed to its own short name takes it as its name.
+                let t = match short::long_path(c, &root, &t) {
+                    l if l == f => t,
+                    l => l,
+                };
                 let src = c.stat(&f, false)?;
                 let mode = match c.stat(&t, false) {
                     // The same object under another spelling.

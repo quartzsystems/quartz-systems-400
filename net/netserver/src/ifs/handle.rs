@@ -21,6 +21,7 @@ use smb_server::{DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbE
 use super::info::{attr_changes, file_info, nanos, smb_error, stat_path};
 use super::lease::LeaseLink;
 use super::pattern::matches;
+use super::short;
 use super::text::Xlate;
 use super::worker::IfsWorker;
 
@@ -243,12 +244,14 @@ impl Handle for IfsHandle {
             .io
             .call(move |c| {
                 let p = locate(c, id, &path);
+                let (ents, cs) = short::entries(c, &p)?;
+                let shorts = short::of(&ents, cs);
                 let mut out = Vec::new();
-                for e in c.read_dir(&p)? {
-                    if e.name == "." || e.name == ".." {
-                        continue;
-                    }
-                    if pattern.as_deref().is_some_and(|pat| !matches(pat, &e.name)) {
+                for (e, short) in ents.into_iter().zip(shorts) {
+                    // A pattern matches the name or the short name.
+                    if pattern.as_deref().is_some_and(|pat| {
+                        !matches(pat, &e.name) && !short.as_deref().is_some_and(|s| matches(pat, s))
+                    }) {
                         continue;
                     }
                     let full = if p.ends_with('/') {
@@ -258,13 +261,21 @@ impl Handle for IfsHandle {
                     };
                     // An entry gone or unreadable since the listing is left out.
                     if let Ok((st, attrs)) = stat_path(c, &full) {
-                        out.push(DirEntry {
-                            info: file_info(&e.name, &st, &attrs),
-                        });
+                        let mut info = file_info(&e.name, &st, &attrs);
+                        info.short_name = short;
+                        out.push(DirEntry { info });
                     }
                 }
                 Ok(out)
             })
+            .await)
+    }
+
+    async fn short_name(&self) -> SmbResult<Option<String>> {
+        let (id, path, root) = (self.id, self.path(), self.root.clone());
+        err(self
+            .io
+            .call(move |c| Ok(short::of_path(c, &locate(c, id, &path), &root)))
             .await)
     }
 

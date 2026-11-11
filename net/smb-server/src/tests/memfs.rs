@@ -744,6 +744,7 @@ impl Handle for MemHandle {
             unix_mode: Some(if self.is_dir { DIR_MODE } else { FILE_MODE }),
             ea_size: g.ea_size(&key),
             file_attributes: g.attributes.get(&key).copied().unwrap_or(0),
+            short_name: None, // QS/400
         })
     }
 
@@ -819,6 +820,7 @@ impl Handle for MemHandle {
                         unix_mode: Some(FILE_MODE),
                         ea_size: g.ea_size(k),
                         file_attributes: 0,
+                        short_name: None, // QS/400
                     },
                 });
             }
@@ -843,6 +845,7 @@ impl Handle for MemHandle {
                         unix_mode: Some(DIR_MODE),
                         ea_size: g.ea_size(k),
                         file_attributes: 0,
+                        short_name: None, // QS/400
                     },
                 });
             }

@@ -68,8 +68,8 @@ fn principal(user: &str) -> Principal {
     p
 }
 
-/// One IFS in memory: `/home/ALICE` owned by `ALICE`, `/pub` for
-/// everyone, `/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR`.
+/// One IFS in memory: `/home/ALICE` owned by `ALICE`, `/pub` and
+/// `/QOpenSys/pub` for everyone, `/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR`.
 struct Fs {
     ifs: Arc<Ifs<MemBackend>>,
     env: Arc<MemEnv>,
@@ -115,6 +115,8 @@ impl Fs {
         ifs.chgown(&cx, "/home/ALICE", "ALICE", true).unwrap();
         ifs.mkdir(&cx, "/pub", 0o777).unwrap();
         ifs.chmod(&cx, "/pub", 0o777).unwrap();
+        ifs.mkdir(&cx, "/QOpenSys/pub", 0o777).unwrap();
+        ifs.chmod(&cx, "/QOpenSys/pub", 0o777).unwrap();
         ifs.release_owner(Owner(u64::MAX));
         Arc::new(Self {
             ifs: Arc::new(ifs),
@@ -210,6 +212,7 @@ fn config() -> NetServerConfig {
         file_shares: vec![
             FileShare::new("HOME", "/home/ALICE"),
             FileShare::new("PUB", "/pub"),
+            FileShare::new("QOSPUB", "/QOpenSys/pub"),
             ro,
             FileShare::new("QSYS", "/QSYS.LIB"),
             cnv,
@@ -1548,4 +1551,227 @@ async fn a_later_server_of_the_same_job_hears_other_jobs_changes() {
     me.mkdir("/pub/later/x", 0o777).unwrap();
     assert_eq!(notified(&mut c, mid).await, [(ADDED, "x".to_owned())]);
     me.release();
+}
+
+const FILE_BOTH_DIRECTORY_INFORMATION: u8 = 0x03;
+
+/// (name, short name) of each entry of a `FileBothDirectoryInformation`
+/// (`id` false) or `FileIdBothDirectoryInformation` listing.
+fn short_entries(mut buf: &[u8], id: bool) -> Vec<(String, String)> {
+    let name_at = if id { 104 } else { 94 };
+    let text = |b: &[u8]| {
+        let u: Vec<u16> = b
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
+            .collect();
+        String::from_utf16(&u).unwrap()
+    };
+    let mut out = Vec::new();
+    while buf.len() >= name_at {
+        let next = dword(buf, 0) as usize;
+        let len = dword(buf, 60) as usize;
+        let short = usize::from(buf[68]);
+        out.push((
+            text(&buf[name_at..name_at + len]),
+            text(&buf[70..70 + short]),
+        ));
+        if next == 0 {
+            break;
+        }
+        buf = &buf[next..];
+    }
+    out
+}
+
+/// The short names a listing of `dir` gives, by name, in either class
+/// (which agree).
+async fn listed_short(c: &mut Client, dir: &str, pattern: &str) -> Vec<(String, String)> {
+    let d = c.open_dir(dir).await;
+    let mut both = Vec::new();
+    for (class, id) in [
+        (FILE_BOTH_DIRECTORY_INFORMATION, false),
+        (FILE_ID_BOTH_DIRECTORY_INFORMATION, true),
+    ] {
+        let (st, buf) = c.query_directory(d, class, 0x01, pattern, 65536).await;
+        assert_eq!(st, STATUS_SUCCESS);
+        let mut v: Vec<_> = short_entries(&buf, id)
+            .into_iter()
+            .filter(|(n, _)| n != "." && n != "..")
+            .collect();
+        v.sort();
+        both.push(v);
+    }
+    c.close(d).await;
+    assert_eq!(both[0], both[1]);
+    both.remove(0)
+}
+
+/// `FileAlternateNameInformation` of `name`, or the status.
+async fn alternate(c: &mut Client, name: &str) -> Result<String, u32> {
+    let id = c.open(name, FILE_GENERIC_READ, SHARE_ALL).await?;
+    let r = c.query_file_info(id, FILE_ALTERNATE_NAME_INFORMATION).await;
+    c.close(id).await;
+    let b = r?;
+    let n = dword(&b, 0) as usize;
+    let u: Vec<u16> = b[4..4 + n]
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| u16::from_le_bytes(*c))
+        .collect();
+    Ok(String::from_utf16(&u).unwrap())
+}
+
+async fn put(c: &mut Client, name: &str, data: &[u8]) {
+    let id = c
+        .create(Create {
+            disposition: FILE_CREATE,
+            ..mk(name)
+        })
+        .await
+        .unwrap()
+        .file_id;
+    c.write(id, 0, data).await.unwrap();
+    c.close(id).await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn short_names_are_listed_queried_and_opened() {
+    let fs = Fs::new();
+    let j = job(&fs, "ALICE");
+    let mut c = alice(j.addr, "HOME").await;
+    put(&mut c, "Quarterly Report.docx", b"report").await;
+    put(&mut c, "Quarterly Results.docx", b"results").await;
+    put(&mut c, "readme.txt", b"plain").await;
+    let d = c
+        .create(Create {
+            access: FILE_GENERIC_READ,
+            options: FILE_DIRECTORY_FILE,
+            disposition: FILE_CREATE,
+            ..mk("Long Directory Name")
+        })
+        .await
+        .unwrap()
+        .file_id;
+    c.close(d).await;
+    put(&mut c, "Long Directory Name\\inner file.text", b"inner").await;
+
+    let listed = listed_short(&mut c, "", "*").await;
+    let short = |n: &str| listed.iter().find(|e| e.0 == n).unwrap().1.clone();
+    let (rep, res, dir) = (
+        short("Quarterly Report.docx"),
+        short("Quarterly Results.docx"),
+        short("Long Directory Name"),
+    );
+    // Windows' hash form; an 8.3 name keeps none; no two alike.
+    for (s, start, end) in [
+        (&rep, "QU", "~1.DOC"),
+        (&res, "QU", "~1.DOC"),
+        (&dir, "LO", "~1"),
+    ] {
+        assert!(s.len() == start.len() + 4 + end.len(), "{s}");
+        assert!(s.starts_with(start) && s.ends_with(end), "{s}");
+    }
+    assert_ne!(rep, res);
+    assert_eq!(short("readme.txt"), "");
+
+    // The alternate name is the listed one; an 8.3 name has none.
+    assert_eq!(
+        alternate(&mut c, "Quarterly Report.docx").await,
+        Ok(rep.clone())
+    );
+    assert_eq!(
+        alternate(&mut c, "readme.txt").await,
+        Err(STATUS_OBJECT_NAME_NOT_FOUND)
+    );
+
+    // Opened by its short name, in any case, and through a short directory.
+    let id = c
+        .open(&rep.to_lowercase(), FILE_GENERIC_READ, SHARE_ALL)
+        .await
+        .unwrap();
+    assert_eq!(c.read(id, 0, 6).await.unwrap(), b"report");
+    c.close(id).await;
+    let inner = listed_short(&mut c, "Long Directory Name", "*").await;
+    let inner_short = inner[0].1.clone();
+    assert!(inner_short.starts_with("IN") && inner_short.ends_with("~1.TEX"));
+    let id = c
+        .open(
+            &format!("{dir}\\{inner_short}"),
+            FILE_GENERIC_READ,
+            SHARE_ALL,
+        )
+        .await
+        .unwrap();
+    assert_eq!(c.read(id, 0, 5).await.unwrap(), b"inner");
+    c.close(id).await;
+    // A search pattern matches short names too.
+    assert_eq!(
+        listed_short(&mut c, "", &res).await,
+        [("Quarterly Results.docx".to_owned(), res.clone())]
+    );
+    // Making a file under another's short name is a collision.
+    assert_eq!(
+        c.create(Create {
+            disposition: FILE_CREATE,
+            ..mk(&rep)
+        })
+        .await
+        .err(),
+        Some(STATUS_OBJECT_NAME_COLLISION)
+    );
+
+    // Another job, another connection: the same short names.
+    let j2 = job(&fs, "ALICE");
+    let mut c2 = alice(j2.addr, "HOME").await;
+    assert_eq!(listed_short(&mut c2, "", "*").await, listed);
+    // Renamed, a file keeps its hex digits.
+    let id = c
+        .open(
+            "Quarterly Report.docx",
+            DELETE | FILE_GENERIC_READ,
+            SHARE_ALL,
+        )
+        .await
+        .unwrap();
+    let mut rename = vec![0u8; 20];
+    let target = smbc::utf16le("Annual Report.docx");
+    rename[16..20].copy_from_slice(&u32::try_from(target.len()).unwrap().to_le_bytes());
+    rename.extend_from_slice(&target);
+    assert_eq!(
+        c.set_info(id, FILE_RENAME_INFORMATION, rename).await,
+        STATUS_SUCCESS
+    );
+    c.close(id).await;
+    let after = alternate(&mut c2, "Annual Report.docx").await.unwrap();
+    assert_eq!(&after[..2], "AN");
+    assert_eq!(after[2..], rep[2..]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn short_names_follow_the_case_rule_of_the_file_system() {
+    let fs = Fs::new();
+    let j = job(&fs, "ALICE");
+    // `/`: names compare without case, so readme.txt is an 8.3 name.
+    let mut root = alice(j.addr, "PUB").await;
+    put(&mut root, "readme.txt", b"a").await;
+    assert_eq!(
+        listed_short(&mut root, "", "*").await,
+        [("readme.txt".to_owned(), String::new())]
+    );
+    // `/QOpenSys`: README.TXT may be another file, so readme.txt has one.
+    let mut qos = alice(j.addr, "QOSPUB").await;
+    put(&mut qos, "readme.txt", b"lower").await;
+    put(&mut qos, "README.TXT", b"upper").await;
+    let listed = listed_short(&mut qos, "", "*").await;
+    assert_eq!(listed[0], ("README.TXT".to_owned(), String::new()));
+    assert_eq!(listed[1].0, "readme.txt");
+    let s = listed[1].1.clone();
+    assert!(s.starts_with("RE") && s.ends_with("~1.TXT"), "{s}");
+    assert_eq!(alternate(&mut qos, "readme.txt").await, Ok(s.clone()));
+    let id = qos.open(&s, FILE_GENERIC_READ, SHARE_ALL).await.unwrap();
+    assert_eq!(qos.read(id, 0, 5).await.unwrap(), b"lower");
+    qos.close(id).await;
 }

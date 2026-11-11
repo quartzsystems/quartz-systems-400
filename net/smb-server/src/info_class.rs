@@ -383,10 +383,8 @@ pub fn encode_dir_entry(class: u8, entry: &DirEntry, ea_size: u32) -> Vec<u8> {
             let mut out = Vec::new();
             write_dir_entry_prefix(&mut out, info, name_u16.len());
             out.extend_from_slice(&ea_size.to_le_bytes());
-            out.push(0); // ShortNameLength
-            out.push(0); // Reserved1
-            // ShortName: 24 bytes (12 UTF-16 chars).
-            out.extend_from_slice(&[0u8; 24]);
+            // QS/400: the backend's short name.
+            write_short_name(&mut out, info);
             out.extend_from_slice(&name_u16);
             out
         }
@@ -394,9 +392,8 @@ pub fn encode_dir_entry(class: u8, entry: &DirEntry, ea_size: u32) -> Vec<u8> {
             let mut out = Vec::new();
             write_dir_entry_prefix(&mut out, info, name_u16.len());
             out.extend_from_slice(&ea_size.to_le_bytes());
-            out.push(0); // ShortNameLength
-            out.push(0); // Reserved1
-            out.extend_from_slice(&[0u8; 24]); // ShortName
+            // QS/400: the backend's short name.
+            write_short_name(&mut out, info);
             out.extend_from_slice(&0u16.to_le_bytes()); // Reserved2
             out.extend_from_slice(&info.file_index.to_le_bytes()); // FileId
             out.extend_from_slice(&name_u16);
@@ -454,6 +451,17 @@ pub fn encode_finder_dir_entry(entry: &DirEntry, finder: &FinderData) -> Vec<u8>
     out
 }
 
+/// QS/400: ShortNameLength, Reserved1 and the 24 bytes of ShortName (12
+/// UTF-16 characters, zero-padded) from [`FileInfo::short_name`].
+fn write_short_name(out: &mut Vec<u8>, info: &FileInfo) {
+    let mut short = info.short_name.as_deref().map(utf16le).unwrap_or_default();
+    short.truncate(24);
+    out.push(short.len() as u8); // ShortNameLength
+    out.push(0); // Reserved1
+    out.extend_from_slice(&short);
+    out.extend_from_slice(&[0u8; 24][short.len()..]);
+}
+
 fn write_dir_entry_prefix(out: &mut Vec<u8>, info: &FileInfo, name_len: usize) {
     out.extend_from_slice(&0u32.to_le_bytes()); // NextEntryOffset (patched later)
     out.extend_from_slice(&(info.file_index as u32).to_le_bytes()); // FileIndex
@@ -506,6 +514,7 @@ mod tests {
             unix_mode: None,
             ea_size: 0,
             file_attributes: 0,
+            short_name: None, // QS/400
         }
     }
 

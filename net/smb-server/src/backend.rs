@@ -145,6 +145,12 @@ pub struct FileInfo {
     /// are ignored: `read_only` and `is_directory` give READONLY and
     /// DIRECTORY. `0` for a backend that stores none of them.
     pub file_attributes: u32,
+    /// QS/400: the file's 8.3 short name ([MS-FSCC] 2.1.5.2.1), which
+    /// FileBothDirectoryInformation and FileIdBothDirectoryInformation
+    /// listings carry; `None` for a file without one. Only listings read
+    /// it; FileAlternateNameInformation asks [`Handle::short_name`].
+    /// [`crate::short_name`] makes them for a backend that stores none.
+    pub short_name: Option<String>,
 }
 
 // File attributes (MS-FSCC 2.6).
@@ -187,6 +193,7 @@ impl FileInfo {
             unix_mode: None,
             ea_size: 0,
             file_attributes: 0,
+            short_name: None,
         }
     }
 
@@ -657,6 +664,14 @@ pub trait Handle: Send + Sync {
     /// watch. The default returns `Ok(None)`: the server then reports only
     /// the changes made through it.
     ///
+    /// QS/400: the 8.3 short name of the file or directory this handle is
+    /// open on, answered by FileAlternateNameInformation; `None` (the
+    /// default, and always for the share root) fails that query with
+    /// STATUS_OBJECT_NAME_NOT_FOUND, as for a file without one.
+    async fn short_name(&self) -> SmbResult<Option<String>> {
+        Ok(None)
+    }
+
     /// QS/400: a backend that also sees changes below the directory may
     /// report them by their path there (`sub\name`); only the directory's
     /// tree watches hear those, and the server does not match them with
