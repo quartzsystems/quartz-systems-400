@@ -104,7 +104,12 @@ fn serve_with<C: Read + Write>(
         }
         let keep = req.keep_alive() && n < MAX_REQUESTS;
         let head_only = req.method == "HEAD";
+        let began = std::time::Instant::now();
         let (mut resp, more) = respond(req);
+        // How long the page took here, for the browser's network panel.
+        let ms = began.elapsed().as_secs_f64() * 1000.0;
+        resp.headers
+            .push(("Server-Timing".into(), format!("app;dur={ms:.1}")));
         if let response::Body::Upgrade(_) = resp.body {
             let response::Body::Upgrade(run) =
                 std::mem::replace(&mut resp.body, Body::Bytes(Vec::new()))

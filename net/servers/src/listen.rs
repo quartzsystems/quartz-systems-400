@@ -8,7 +8,7 @@
 //! connection running the server's [`Service`].
 
 use std::io::{self, Read, Write};
-use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, TcpListener, TcpStream};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
@@ -19,8 +19,10 @@ use tls::stream::TlsStream;
 
 /// How long a TLS handshake may take.
 const HANDSHAKE: Duration = Duration::from_secs(10);
-/// How often the accept loop looks at its stop flag.
-const POLL: Duration = Duration::from_millis(50);
+/// How long the accept loop waits after an accept that failed.
+const RETRY: Duration = Duration::from_millis(50);
+/// How long `stop` waits for its wake-up connection.
+const WAKE: Duration = Duration::from_secs(2);
 
 /// One accepted connection, plain or TLS.
 pub enum Conn {
@@ -129,7 +131,19 @@ impl Running {
     fn halt(&mut self) {
         self.stop.store(true, Ordering::Relaxed);
         if let Some(t) = self.thread.take() {
-            let _ = t.join();
+            // The loop blocks in accept: a connection of our own wakes it.
+            let mut to = self.addr;
+            if to.ip().is_unspecified() {
+                to.set_ip(match to {
+                    SocketAddr::V4(_) => Ipv4Addr::LOCALHOST.into(),
+                    SocketAddr::V6(_) => Ipv6Addr::LOCALHOST.into(),
+                });
+            }
+            if TcpStream::connect_timeout(&to, WAKE).is_ok() {
+                let _ = t.join();
+            }
+            // Not woken (the port is filtered from itself): the thread
+            // ends at the next connection, which it drops.
         }
     }
 }
@@ -146,7 +160,8 @@ pub fn serve(
     tls: Option<Arc<ServerConfig>>,
     service: Arc<dyn Service>,
 ) -> io::Result<Running> {
-    listener.set_nonblocking(true)?;
+    // Blocking: a connection is taken the moment it arrives.
+    listener.set_nonblocking(false)?;
     let addr = listener.local_addr()?;
     let stop = Arc::new(AtomicBool::new(false));
     let flag = Arc::clone(&stop);
@@ -154,6 +169,10 @@ pub fn serve(
         while !flag.load(Ordering::Relaxed) {
             match listener.accept() {
                 Ok((s, peer)) => {
+                    if flag.load(Ordering::Relaxed) {
+                        // Stopped: this is the wake-up, or a client too late.
+                        break;
+                    }
                     let tls = tls.clone();
                     let service = Arc::clone(&service);
                     std::thread::spawn(move || {
@@ -162,10 +181,10 @@ pub fn serve(
                         }
                     });
                 }
-                Err(e) if e.kind() == io::ErrorKind::WouldBlock => std::thread::sleep(POLL),
+                Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
                 Err(e) => {
                     tracing::warn!("accept on {addr}: {e}");
-                    std::thread::sleep(POLL);
+                    std::thread::sleep(RETRY);
                 }
             }
         }
