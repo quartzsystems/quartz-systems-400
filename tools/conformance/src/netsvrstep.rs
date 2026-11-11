@@ -205,12 +205,22 @@ fn smbtest_binary() -> Result<PathBuf, String> {
 
 /// Runs `smbtest` against the forwarded port; its output when no scenario failed.
 fn smbtest(port: u16, extra: &[&str]) -> Result<String, String> {
+    smbtest_as(port, USER, PASSWORD, extra)
+}
+
+/// [`smbtest`] as `user` with `password`, on the share [`share_for`] adds.
+pub(crate) fn smbtest_as(
+    port: u16,
+    user: &str,
+    password: &str,
+    extra: &[&str],
+) -> Result<String, String> {
     let bin = smbtest_binary()?;
     let port = port.to_string();
     let out = Command::new(&bin)
-        .args(["127.0.0.1", &port, USER, "-", SHARE, SCRATCH])
+        .args(["127.0.0.1", &port, user, "-", SHARE, SCRATCH])
         .args(extra)
-        .env("SMBTEST_PASSWORD", PASSWORD)
+        .env("SMBTEST_PASSWORD", password)
         .output()
         .map_err(|e| format!("{}: {e}", bin.display()))?;
     let text = String::from_utf8_lossy(&out.stdout).into_owned();
@@ -237,17 +247,26 @@ fn share_setup(s: &mut Session) -> Result<(), String> {
         &format!("crtusrprf USRPRF({USER}) PASSWORD('{PASSWORD}') HOMEDIR('/home/{USER}')"),
         CMD,
     )?;
-    s.command(&format!("MKDIR DIR('/home/{USER}')"), CMD)?;
-    s.command(&format!("MKDIR DIR('/home/{USER}/{SCRATCH}')"), CMD)?;
-    s.command(&format!("CHGOWN OBJ('/home/{USER}') NEWOWN({USER})"), CMD)?;
+    share_for(s, USER)
+}
+
+/// `user`'s home and scratch directories and the read/write share over
+/// them; the profile exists.
+pub(crate) fn share_for(s: &mut Session, user: &str) -> Result<(), String> {
+    s.command(&format!("MKDIR DIR('/home/{user}')"), CMD)?;
+    s.command(&format!("MKDIR DIR('/home/{user}/{SCRATCH}')"), CMD)?;
+    s.command(&format!("CHGOWN OBJ('/home/{user}') NEWOWN({user})"), CMD)?;
     s.command(
-        &format!("CHGOWN OBJ('/home/{USER}/{SCRATCH}') NEWOWN({USER})"),
+        &format!("CHGOWN OBJ('/home/{user}/{SCRATCH}') NEWOWN({user})"),
         CMD,
     )?;
     // QZLSADFS: share name CHAR(12), path, path length, path CCSID (0, the
     // job's), text CHAR(50), permissions (2 read/write), maximum users
     // (-1 none), error code (bytes provided 0: escape messages).
-    s.command(&share_call("QZLSADFS", -1), CMD)?;
+    s.command(
+        &share_api("QZLSADFS", SHARE, &format!("/home/{user}"), -1),
+        CMD,
+    )?;
     Ok(())
 }
 

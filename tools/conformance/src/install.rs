@@ -9,7 +9,7 @@
 //! |---|---|
 //! | 8 | a response file on a FAT32 copy of the media: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 //! | 9 | `SAVSYS` to a virtual tape, the system disk wiped, the recovery from the tape: LIC, operating system, profiles, configuration |
-//! | 10 | V1R0M0 media (`QS400_OLD_ISO`) installed, user data made (a journaled SQL table, spooled files, a SAVLIB with an SQL table in a save file), upgraded with option 1 to the suite's V1R1M0 media: the data kept, the release recorded, the V1R0M0 table (no `*SQLINF`) selected, inserted into, indexed and viewed by SQL, RSTLIB of the V1R0M0 save, the downgrade refused |
+//! | 10 | an older release's media (`QS400_OLD_ISO`: V1R0M0 under V1R1M0, V1R1M0 under V1R2M0) installed, user data made (a journaled SQL table, spooled files, a SAVLIB with an SQL table in a save file, the audit journal and a profile), upgraded with option 1 to the suite's media: the data kept (the spooled files on their queue too), the release recorded, the older table selected, inserted into, indexed and viewed by SQL, RSTLIB of the older save; from V1R2M0, the older profile at 5250 and through `NetServer` (refused until its password changes), a `VP` entry, `STRTCPSVR *NETSVR` and a file round trip; the downgrade refused |
 //! | 11 | a power pull in the middle of a LIC install, then a clean reinstall |
 //! | 14 | option 1, Restore Licensed Internal Code, over step 1's disk with user data: the data kept, the new slot booted |
 //! | 15 | a network boot (PXE over QEMU's TFTP): the response file beside the boot file, the payload from the CD; `QSTRUP` starts the `*IP4DHCP` interface and it gets a lease, again after an IPL from the disk alone |
@@ -105,6 +105,213 @@ pub(crate) fn signatures_clean(s: &mut Session) -> Result<String, String> {
             .unwrap_or_default();
         Ok(format!("CHKOBJITG not run: {}", first.trim()))
     }
+}
+
+/// The profile the older release makes, its password there and after
+/// the upgrade's change (upper case: one case at every `QPWDLVL`).
+const OLD_USER: &str = "NSOLD";
+const OLD_PW: &str = "OLDPW26X";
+const NEW_PW: &str = "NEWPW26X";
+
+/// `VxRyMz` after `created by` in `svc.asp`.
+fn store_release(asp: &str) -> Option<String> {
+    let at = asp.find("created by ")? + "created by ".len();
+    let r: String = asp[at..]
+        .chars()
+        .take_while(char::is_ascii_alphanumeric)
+        .collect();
+    vrm(&r).map(|_| r)
+}
+
+/// `VxRyMz` as numbers.
+fn vrm(r: &str) -> Option<(u8, u8, u8)> {
+    let rest = r.strip_prefix('V')?;
+    let (v, rest) = rest.split_once('R')?;
+    let (rr, m) = rest.split_once('M')?;
+    Some((v.parse().ok()?, rr.parse().ok()?, m.parse().ok()?))
+}
+
+/// Whether release `r` is `at` or later.
+fn release_at_least(r: &str, at: (u8, u8, u8)) -> bool {
+    vrm(r).is_some_and(|x| x >= at)
+}
+
+/// On the older release: a library with a data area, a journaled table
+/// with rows, spooled files, a save file holding a `SAVLIB`, the audit
+/// journal on and a profile made under it. The ready spooled files.
+fn old_user_data(s: &mut Session, old: &str) -> Result<Vec<String>, String> {
+    let saved = format!("crtlib LIB(SLIPSAV) TEXT('saved by {old}')");
+    let oldsave =
+        format!("crtdtaara DTAARA(SLIPSAV/OLDSAVE) TYPE(*CHAR) LEN(20) VALUE('from {old}')");
+    let user = format!(
+        "crtusrprf USRPRF({OLD_USER}) PASSWORD({OLD_PW}) PWDEXP(*NO) HOMEDIR('/home/{OLD_USER}')"
+    );
+    for (line, want) in [
+        ("crtlib LIB(SLIPUSR) TEXT('user data')", ""),
+        (
+            "crtdtaara DTAARA(SLIPUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')",
+            "",
+        ),
+        (
+            "runsql SQL('CREATE TABLE SLIPUSR.ORDERS (ID INTEGER, ITEM CHAR(10))') COMMIT(*NONE)",
+            "",
+        ),
+        ("crtjrnrcv SLIPUSR/RCV0001", "created"),
+        ("crtjrn SLIPUSR/JRN JRNRCV(SLIPUSR/RCV0001)", "created"),
+        (
+            "strjrnpf SLIPUSR/ORDERS JRN(SLIPUSR/JRN) IMAGES(*BOTH)",
+            "started",
+        ),
+        (
+            "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(1, ''bolts'')') COMMIT(*NONE)",
+            "",
+        ),
+        (
+            "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(2, ''nuts'')') COMMIT(*NONE)",
+            "",
+        ),
+        ("DSPLIBL OUTPUT(*PRINT)", ""),
+        (&saved, ""),
+        (&oldsave, ""),
+        (
+            "runsql SQL('CREATE TABLE SLIPSAV.PARTS (ID INTEGER, NAME CHAR(10))') COMMIT(*NONE)",
+            "",
+        ),
+        (
+            "runsql SQL('INSERT INTO SLIPSAV.PARTS VALUES(7, ''gears'')') COMMIT(*NONE)",
+            "",
+        ),
+        ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
+        (
+            "savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
+            "CPC3722",
+        ),
+        ("dltlib LIB(SLIPSAV)", ""),
+        // The audit journal, and a profile whose creation it records.
+        ("crtjrnrcv QSYS/AUDRCV0 THRESHOLD(64) AUT(*EXCLUDE)", ""),
+        (
+            "crtjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV0) MNGRCV(*USER) AUT(*EXCLUDE)",
+            "",
+        ),
+        ("chgsecaud QAUDCTL(*AUDLVL) QAUDLVL(*DFTSET)", ""),
+        (&user, ""),
+        ("dspaudjrne ENTTYP(CP)", OLD_USER),
+    ] {
+        let out = s.command(line, CMD)?;
+        if out.contains("CPF") || !out.contains(want) {
+            return Err(format!("{line}:\n{out}"));
+        }
+    }
+    // The ready spooled files, by name, to find again after the upgrade.
+    let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+    let names: Vec<String> = files
+        .lines()
+        .filter(|l| l.contains("RDY"))
+        .filter_map(|l| l.split_whitespace().next().map(str::to_string))
+        .collect();
+    if names.is_empty() {
+        return Err(format!("no spooled file before the upgrade:\n{files}"));
+    }
+    Ok(names)
+}
+
+/// After the upgrade from `old` to `new`: the products, the user data,
+/// the older SQL table used by SQL, the older save restored.
+fn upgraded_checks(
+    s: &mut Session,
+    old: &str,
+    new: &str,
+    spooled: &[String],
+) -> Result<String, String> {
+    let checks: [(&str, &[&str]); 18] = [
+        // The products installed, by Quartz's IDs and IBM's.
+        ("dspsfwrsc", &["QS00999", "QS00SS1", "QS00WDS", new]),
+        ("chkprdopt PRDID(5770SS1)", &["QS00SS1"]),
+        ("chkprdopt PRDID(QS00WDS) OPTION(31)", &["QS00WDS"]),
+        ("dspptf LICPGM(5770SS1)", &["QS00SS1"]),
+        ("svc.dtaara get SLIPUSR/KEEPME", &["kept value"]),
+        ("dsppfm FILE(SLIPUSR/ORDERS)", &["bolts", "nuts"]),
+        ("dspjrn JRN(SLIPUSR/JRN)", &["PT", "ORDERS"]),
+        (
+            "svc.sql SELECT TABLE_NAME FROM QSYS2/SYSTABLES WHERE TABLE_SCHEMA = 'SLIPUSR' AND TABLE_TYPE = 'T';",
+            &["ORDERS", "1 row(s)"],
+        ),
+        (
+            "svc.sql SELECT ITEM FROM SLIPUSR/ORDERS WHERE ID = 2;",
+            &["nuts", "1 row(s)"],
+        ),
+        (
+            "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(3, ''washers'')') COMMIT(*NONE)",
+            &[],
+        ),
+        (
+            "runsql SQL('CREATE INDEX SLIPUSR.ORDERSIX ON SLIPUSR.ORDERS (ITEM)') COMMIT(*NONE)",
+            &[],
+        ),
+        (
+            "runsql SQL('CREATE VIEW SLIPUSR.ORDERSV AS SELECT ID, ITEM FROM SLIPUSR.ORDERS WHERE ID > 1') COMMIT(*NONE)",
+            &[],
+        ),
+        (
+            "svc.sql SELECT COUNT(*) FROM SLIPUSR/ORDERS;",
+            &["3", "1 row(s)"],
+        ),
+        (
+            "svc.sql SELECT ITEM FROM SLIPUSR/ORDERSV ORDER BY ITEM;",
+            &["nuts", "washers", "2 row(s)"],
+        ),
+        (
+            "svc.sql SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2/SYSTABLES WHERE TABLE_SCHEMA = 'SLIPUSR' AND TABLE_NAME LIKE 'ORDERS%' ORDER BY TABLE_NAME;",
+            &["ORDERSV", "2 row(s)"],
+        ),
+        (
+            "svc.sql SELECT INDEX_NAME, TABLE_NAME FROM QSYS2/SYSINDEXES WHERE INDEX_SCHEMA = 'SLIPUSR';",
+            &["ORDERSIX", "ORDERS", "1 row(s)"],
+        ),
+        (
+            "rstlib SAVLIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
+            &["CPC3703", "SLIPSAV"],
+        ),
+        (
+            "svc.sql SELECT ID, NAME FROM SLIPSAV/PARTS;",
+            &["gears", "1 row(s)"],
+        ),
+    ];
+    for (line, wants) in checks {
+        let out = s.command(line, CMD)?;
+        let ibm_id = ["5770999", "5770SS1", "5770WDS"]
+            .iter()
+            .any(|i| out.contains(i));
+        if out.contains("CPF") || out.contains("SQLSTATE") || ibm_id {
+            return Err(format!("{line}: failed after the upgrade:\n{out}"));
+        }
+        if let Some(w) = wants.iter().find(|w| !out.contains(**w)) {
+            return Err(format!("{line}: no {w} after the upgrade:\n{out}"));
+        }
+    }
+    let v = s.command(
+        "svc.sql SELECT ITEM FROM SLIPUSR/ORDERSV WHERE ITEM = 'bolts';",
+        CMD,
+    )?;
+    if !v.contains("0 row(s)") {
+        return Err(format!(
+            "the view over the {old} table does not select:\n{v}"
+        ));
+    }
+    let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+    if let Some(f) = spooled.iter().find(|f| !files.contains(f.as_str())) {
+        return Err(format!("spooled file {f} lost in the upgrade:\n{files}"));
+    }
+    let v = s.command("svc.dtaara get SLIPSAV/OLDSAVE", CMD)?;
+    if !v.contains(&format!("from {old}")) {
+        return Err(format!("RSTLIB of the {old} save lost the data:\n{v}"));
+    }
+    Ok(format!(
+        "{old} installed, upgraded to {new}; its products shown as QS00999, QS00SS1 and \
+         QS00WDS and found by 5770SS1; the data area, the journaled table and its entries, \
+         the spooled files kept; the {old} SQL table selected, inserted into, indexed and \
+         viewed; RSTLIB of a {old} SAVLIB with its SQL table"
+    ))
 }
 
 impl Suite {
@@ -379,7 +586,7 @@ impl Suite {
 
     #[allow(clippy::too_many_lines)] // one QEMU scenario, three boots
     fn slip_install(&self, installed: &PathBuf) -> Result<StepReport, HarnessError> {
-        let name = "10 slip install V1R1M0";
+        let name = "10 slip install";
         let start = Instant::now();
         if self.skipped(name) {
             return Ok(StepReport {
@@ -388,11 +595,12 @@ impl Suite {
                 detail: "skipped".into(),
             });
         }
-        // The suite's media is the current release (V1R1M0); the system
-        // upgraded is installed from V1R0M0 media, a build made with
-        // `QS400_RELEASE=V1R0M0` (`QS400_OLD_ISO`).
+        // The system upgraded is installed from an older release's media
+        // (`QS400_OLD_ISO`: V1R0M0 under the suite's V1R1M0, V1R1M0 under
+        // a build claiming V1R2M0 with `QS400_RELEASE`); the suite's media
+        // upgrades it.
         let Some(older) = std::env::var_os("QS400_OLD_ISO").map(PathBuf::from) else {
-            println!("  SKIP {name:<24}  QS400_OLD_ISO names no V1R0M0 media");
+            println!("  SKIP {name:<24}  QS400_OLD_ISO names no older release's media");
             return Ok(StepReport {
                 name,
                 elapsed: Duration::ZERO,
@@ -414,15 +622,12 @@ impl Suite {
             return report(
                 name,
                 start,
-                Err((format!("V1R0M0 install: {e}"), s.log.clone())),
+                Err((format!("older release's install: {e}"), s.log.clone())),
             );
         }
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(30));
         drop(s);
-        // User data on the V1R0M0 system: a library with a data area, a
-        // journaled table with rows, spooled files, and a save file
-        // holding a SAVLIB made by V1R0M0.
         let disk = Launch {
             image: Some(system.clone()),
             cdrom: None,
@@ -431,77 +636,17 @@ impl Suite {
             ..self.launch.clone()
         };
         let mut s = Session::spawn(&disk)?;
-        let r = (|| -> Result<Vec<String>, String> {
+        let r = (|| -> Result<(String, Vec<String>), String> {
             s.expect(SRC_IPL_COMPLETE, self.boot_timeout * 2)?;
             s.expect(crate::PROMPT, CMD)?;
             let asp = s.command("svc.asp", CMD)?;
-            if !asp.contains("V1R0M0") {
-                return Err(format!("QS400_OLD_ISO is not V1R0M0 media:\n{asp}"));
-            }
-            for (line, want) in [
-                ("crtlib LIB(SLIPUSR) TEXT('user data')", ""),
-                (
-                    "crtdtaara DTAARA(SLIPUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')",
-                    "",
-                ),
-                (
-                    "runsql SQL('CREATE TABLE SLIPUSR.ORDERS (ID INTEGER, ITEM CHAR(10))') COMMIT(*NONE)",
-                    "",
-                ),
-                ("crtjrnrcv SLIPUSR/RCV0001", "created"),
-                ("crtjrn SLIPUSR/JRN JRNRCV(SLIPUSR/RCV0001)", "created"),
-                (
-                    "strjrnpf SLIPUSR/ORDERS JRN(SLIPUSR/JRN) IMAGES(*BOTH)",
-                    "started",
-                ),
-                (
-                    "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(1, ''bolts'')') COMMIT(*NONE)",
-                    "",
-                ),
-                (
-                    "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(2, ''nuts'')') COMMIT(*NONE)",
-                    "",
-                ),
-                ("DSPLIBL OUTPUT(*PRINT)", ""),
-                ("crtlib LIB(SLIPSAV) TEXT('saved by V1R0M0')", ""),
-                (
-                    "crtdtaara DTAARA(SLIPSAV/OLDSAVE) TYPE(*CHAR) LEN(20) VALUE('from V1R0M0')",
-                    "",
-                ),
-                (
-                    "runsql SQL('CREATE TABLE SLIPSAV.PARTS (ID INTEGER, NAME CHAR(10))') COMMIT(*NONE)",
-                    "",
-                ),
-                (
-                    "runsql SQL('INSERT INTO SLIPSAV.PARTS VALUES(7, ''gears'')') COMMIT(*NONE)",
-                    "",
-                ),
-                ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
-                (
-                    "savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
-                    "CPC3722",
-                ),
-                ("dltlib LIB(SLIPSAV)", ""),
-            ] {
-                let out = s.command(line, CMD)?;
-                if out.contains("CPF") || !out.contains(want) {
-                    return Err(format!("{line}:\n{out}"));
-                }
-            }
-            // The ready spooled files, by name, to find again after the upgrade.
-            let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
-            let names: Vec<String> = files
-                .lines()
-                .filter(|l| l.contains("RDY"))
-                .filter_map(|l| l.split_whitespace().next().map(str::to_string))
-                .collect();
-            if names.is_empty() {
-                return Err(format!("no spooled file before the upgrade:\n{files}"));
-            }
-            Ok(names)
+            let old =
+                store_release(&asp).ok_or_else(|| format!("svc.asp names no release:\n{asp}"))?;
+            let spooled = old_user_data(&mut s, &old)?;
+            Ok((old, spooled))
         })();
-        let spooled = match r {
-            Ok(n) => n,
+        let (old, spooled) = match r {
+            Ok(v) => v,
             Err(e) => return report(name, start, Err((e, s.log.clone()))),
         };
         s.command("pwrdwn", CMD).ok();
@@ -515,71 +660,22 @@ impl Suite {
         };
         let mut s = Session::spawn(&upgrade)?;
         let r = (|| -> Result<String, String> {
-            self.restore_lic(&mut s, "upgrade to V1R1M0 over V1R0M0")?;
-            let tr = self.os_over(&mut s, "Upgrade from V1R0M0 to V1R1M0")?;
+            self.restore_lic(&mut s, &format!(" over {old}"))?;
+            // `slic: install: upgrade to VxRyMz over ...`
+            let new = s
+                .log
+                .rfind("slic: install: upgrade to ")
+                .and_then(|i| s.log[i..].split_whitespace().nth(4).map(str::to_string))
+                .ok_or_else(|| format!("the media is no upgrade over {old}"))?;
+            let tr = self.os_over(&mut s, &format!("Upgrade from {old} to {new}"))?;
             let asp = s.command("svc.asp", CMD)?;
-            if !asp.contains("V1R1M0") {
-                return Err(format!("the store does not record V1R1M0:\n{asp}"));
+            if store_release(&asp).as_deref() != Some(new.as_str()) {
+                return Err(format!("the store does not record {new}:\n{asp}"));
             }
-            // The V1R0M0 table has no *SQLINF (header version 1): SQL
-            // still sees a table, reads it, adds to it and builds on it.
-            let checks: [(&str, &[&str]); 18] = [
-                // The products V1R0M0 installed, by Quartz's IDs and IBM's.
-                ("dspsfwrsc", &["QS00999", "QS00SS1", "QS00WDS", "V1R1M0"]),
-                ("chkprdopt PRDID(5770SS1)", &["QS00SS1"]),
-                ("chkprdopt PRDID(QS00WDS) OPTION(31)", &["QS00WDS"]),
-                ("dspptf LICPGM(5770SS1)", &["QS00SS1"]),
-                ("svc.dtaara get SLIPUSR/KEEPME", &["kept value"]),
-                ("dsppfm FILE(SLIPUSR/ORDERS)", &["bolts", "nuts"]),
-                ("dspjrn JRN(SLIPUSR/JRN)", &["PT", "ORDERS"]),
-                (
-                    "svc.sql SELECT TABLE_NAME FROM QSYS2/SYSTABLES WHERE TABLE_SCHEMA = 'SLIPUSR' AND TABLE_TYPE = 'T';",
-                    &["ORDERS", "1 row(s)"],
-                ),
-                ("svc.sql SELECT ITEM FROM SLIPUSR/ORDERS WHERE ID = 2;", &["nuts", "1 row(s)"]),
-                ("runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(3, ''washers'')') COMMIT(*NONE)", &[]),
-                ("runsql SQL('CREATE INDEX SLIPUSR.ORDERSIX ON SLIPUSR.ORDERS (ITEM)') COMMIT(*NONE)", &[]),
-                (
-                    "runsql SQL('CREATE VIEW SLIPUSR.ORDERSV AS SELECT ID, ITEM FROM SLIPUSR.ORDERS WHERE ID > 1') COMMIT(*NONE)",
-                    &[],
-                ),
-                ("svc.sql SELECT COUNT(*) FROM SLIPUSR/ORDERS;", &["3", "1 row(s)"]),
-                ("svc.sql SELECT ITEM FROM SLIPUSR/ORDERSV ORDER BY ITEM;", &["nuts", "washers", "2 row(s)"]),
-                (
-                    "svc.sql SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2/SYSTABLES WHERE TABLE_SCHEMA = 'SLIPUSR' AND TABLE_NAME LIKE 'ORDERS%' ORDER BY TABLE_NAME;",
-                    &["ORDERSV", "2 row(s)"],
-                ),
-                (
-                    "svc.sql SELECT INDEX_NAME, TABLE_NAME FROM QSYS2/SYSINDEXES WHERE INDEX_SCHEMA = 'SLIPUSR';",
-                    &["ORDERSIX", "ORDERS", "1 row(s)"],
-                ),
-                (
-                    "rstlib SAVLIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
-                    &["CPC3703", "SLIPSAV"],
-                ),
-                ("svc.sql SELECT ID, NAME FROM SLIPSAV/PARTS;", &["gears", "1 row(s)"]),
-            ];
-            for (line, wants) in checks {
-                let out = s.command(line, CMD)?;
-                let ibm_id = ["5770999", "5770SS1", "5770WDS"].iter().any(|i| out.contains(i));
-                if out.contains("CPF") || out.contains("SQLSTATE") || ibm_id {
-                    return Err(format!("{line}: failed after the upgrade:\n{out}"));
-                }
-                if let Some(w) = wants.iter().find(|w| !out.contains(**w)) {
-                    return Err(format!("{line}: no {w} after the upgrade:\n{out}"));
-                }
-            }
-            let v = s.command("svc.sql SELECT ITEM FROM SLIPUSR/ORDERSV WHERE ITEM = 'bolts';", CMD)?;
-            if !v.contains("0 row(s)") {
-                return Err(format!("the view over the V1R0M0 table does not select:\n{v}"));
-            }
-            let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
-            if let Some(f) = spooled.iter().find(|f| !files.contains(f.as_str())) {
-                return Err(format!("spooled file {f} lost in the upgrade:\n{files}"));
-            }
-            let v = s.command("svc.dtaara get SLIPSAV/OLDSAVE", CMD)?;
-            if !v.contains("from V1R0M0") {
-                return Err(format!("RSTLIB of the V1R0M0 save lost the data:\n{v}"));
+            let mut detail = upgraded_checks(&mut s, &old, &new, &spooled)?;
+            if release_at_least(&new, (1, 2, 0)) {
+                detail.push_str("; ");
+                detail.push_str(&self.netserver_after_upgrade(&mut s, &old)?);
             }
             let sig = signatures_clean(&mut s)?;
             let last = tr
@@ -590,12 +686,7 @@ impl Suite {
                 .unwrap_or_default()
                 .trim()
                 .to_string();
-            Ok(format!(
-                "V1R0M0 installed, upgraded to V1R1M0; its products shown as QS00999, QS00SS1 \
-                 and QS00WDS and found by 5770SS1; the data area, the journaled table and \
-                 its entries, the spooled files kept; the V1R0M0 SQL table selected, inserted \
-                 into, indexed and viewed; RSTLIB of a V1R0M0 SAVLIB with its SQL table; {last}; {sig}"
-            ))
+            Ok(format!("{detail}; {last}; {sig}"))
         })()
         .map_err(|e| (e, s.log.clone()));
         s.command("pwrdwn", CMD).ok();
@@ -605,7 +696,7 @@ impl Suite {
             Ok(d) => d,
             Err(e) => return report(name, start, Err(e)),
         };
-        // The V1R0M0 media over it now: refused.
+        // The older media over it now: refused.
         let back = Launch {
             cdrom: Some(older),
             ..upgrade
@@ -624,11 +715,84 @@ impl Suite {
             s.send("1")?;
             s.expect("SRC A6004080", CMD)?;
             s.expect("cannot be installed over release", CMD)?;
-            Ok(format!("{detail}; V1R0M0 over it refused"))
+            Ok(format!("{detail}; {old} over it refused"))
         })()
         .map_err(|e| (e, s.log.clone()));
         s.kill();
         report(name, start, r)
+    }
+
+    /// After an upgrade to a release with `NetServer`: the older
+    /// release's profile signs on at the console's 5250 display and is
+    /// refused by `NetServer` (`CPIB68D`) until its password is changed;
+    /// a wrong password writes a `VP` entry; `STRTCPSVR` starts the
+    /// server jobs and a file goes in and out through the share.
+    fn netserver_after_upgrade(&self, s: &mut Session, old: &str) -> Result<String, String> {
+        use crate::netsvrstep::{share_for, smbtest_as};
+        // The profile from the older release signs on at 5250.
+        let screen = crate::phase5::console_sign_on_as(s, OLD_USER, OLD_PW, OLD_PW)?;
+        if !screen.contains("Main Menu") && !screen.contains("Command Entry") {
+            return Err(format!("{OLD_USER} did not sign on:\n{screen}"));
+        }
+        crate::phase6::entry(s, "signoff")?;
+        crate::phase5::screen_wait(s, "Sign On")?;
+        // The older release's audit entries display.
+        let cp = s.command("dspaudjrne ENTTYP(CP)", CMD)?;
+        if !cp.contains(OLD_USER) {
+            return Err(format!(
+                "dspaudjrne CP: no {OLD_USER} entry from {old}:\n{cp}"
+            ));
+        }
+        crate::tcp::guest_address(s)?;
+        share_for(s, OLD_USER)?;
+        let started = self.netsvr_start(s)?;
+        let port = crate::tcp::forward_port(self, crate::tcp::GUEST, 445)?;
+        let good = ["--only", "signon-good", "--no-bad-signon"];
+        // No NT hash in an older release's profile: refused, CPIB68D.
+        match smbtest_as(port, OLD_USER, OLD_PW, &good) {
+            Ok(out) => return Err(format!("{OLD_USER} signed on with no NT hash:\n{out}")),
+            Err(e) if e.contains("fail signon-good") => {}
+            Err(e) => return Err(e),
+        }
+        let opr = s.command("DSPMSG MSGQ(QSYSOPR)", CMD)?;
+        if !opr.contains("CPIB68D") && !opr.contains("has no password NetServer can check") {
+            return Err(format!("QSYSOPR has no CPIB68D:\n{opr}"));
+        }
+        let chg = s.command(
+            &format!("CHGUSRPRF USRPRF({OLD_USER}) PASSWORD({NEW_PW})"),
+            CMD,
+        )?;
+        if chg.contains("CPF") {
+            return Err(format!("CHGUSRPRF:\n{chg}"));
+        }
+        smbtest_as(port, OLD_USER, NEW_PW, &good)?;
+        // A wrong password: refused, and a VP entry under *AUTFAIL.
+        let wrong = smbtest_as(port, OLD_USER, NEW_PW, &["--only", "signon-wrong-password"])?;
+        if !wrong.contains("ok signon-wrong-password") {
+            return Err(format!("signon-wrong-password did not run:\n{wrong}"));
+        }
+        let vp = s.command("dspaudjrne ENTTYP(VP)", CMD)?;
+        if !vp.contains("VP") || vp.contains("CPF") {
+            return Err(format!("dspaudjrne VP: no entry:\n{vp}"));
+        }
+        let files = smbtest_as(
+            port,
+            OLD_USER,
+            NEW_PW,
+            &[
+                "--only",
+                "signon-good,scratch-dir,file-round-trip,cleanup",
+                "--no-bad-signon",
+            ],
+        )?;
+        if !files.contains("ok file-round-trip") {
+            return Err(format!("file-round-trip did not run:\n{files}"));
+        }
+        Ok(format!(
+            "{OLD_USER} from {old} signed on at 5250, refused by NetServer (CPIB68D) until \
+             CHGUSRPRF PASSWORD(), then signed on; a wrong password a VP entry; {old}'s CP \
+             entries displayed; {started}; a file round trip through the share"
+        ))
     }
 
     /// Option 1 from the media's IPL menu: no load source choice, no
