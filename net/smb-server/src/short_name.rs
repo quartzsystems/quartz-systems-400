@@ -31,7 +31,7 @@ fn legal_char(c: char) -> bool {
 
 /// Whether `name` is a valid 8.3 name ([MS-FSCC] 2.1.5.2.1): a base of one
 /// to eight characters and an optional extension of one to three, both of
-/// ASCII letters, digits and `$%'-_@~`!(){}^#&`. Case is not considered.
+/// ASCII letters, digits and `` $%'-_@~`!(){}^#& ``. Case is not considered.
 pub fn is_8dot3(name: &str) -> bool {
     let (base, ext) = match name.split_once('.') {
         Some((b, e)) => (b, Some(e)),

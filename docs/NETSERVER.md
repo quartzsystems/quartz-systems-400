@@ -607,7 +607,7 @@ the IFS authorities (section 6).
   `short_name`): the IFS stores none, so each is made when asked, from the
   directory's entries and their file numbers (`d_fileno`). A name needs one
   unless it is a valid 8.3 name ([MS-FSCC] 2.1.5.2.1: a base of 1 to 8 and
-  an extension of 0 to 3 ASCII letters, digits or `$%'-_@~`!(){}^#&`); in a
+  an extension of 0 to 3 ASCII letters, digits or `` $%'-_@~`!(){}^#& ``); in a
   case-sensitive file system (`/QOpenSys`, a `CASE(*MIXED)` UDFS) a valid
   8.3 name with lower-case letters needs one too, since its upper-case form
   may be another file's (on `/` and `/QSYS.LIB` `readme.txt` has none, under
