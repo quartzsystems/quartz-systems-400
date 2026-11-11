@@ -196,12 +196,13 @@ fn old_user_data(s: &mut Session, old: &str) -> Result<Vec<String>, String> {
         ("chgsecaud QAUDCTL(*AUDLVL) QAUDLVL(*DFTSET)", ""),
         (&user, ""),
         ("dspaudjrne ENTTYP(CP)", OLD_USER),
-        // A virtual display left varied off: the upgrade's IPL varies it on.
+        // A virtual display, ONLINE(*YES): varied on after the upgrade's IPL.
+        // (Not VRYCFG *OFF: QS/400's VRYCFG clears ONLINE, so the IPL leaves
+        // such a device off.)
         (
             "crtdevdsp DEVD(SLIPVRT01) DEVCLS(*VRT) TYPE(3179) MODEL(2) ONLINE(*YES)",
             "",
         ),
-        ("VRYCFG CFGOBJ(SLIPVRT01) CFGTYPE(*DEV) STATUS(*OFF)", ""),
         ("WRKCFGSTS CFGTYPE(*DEV)", "SLIPVRT01"),
     ] {
         let out = s.command(line, CMD)?;
@@ -319,15 +320,15 @@ fn upgraded_checks(
         .any(|l| l.starts_with("SLIPVRT01") && l.contains("VARIED ON"))
     {
         return Err(format!(
-            "SLIPVRT01, varied off on {old}, is not varied on:\n{devs}"
+            "SLIPVRT01, ONLINE(*YES) on {old}, is not varied on:\n{devs}"
         ));
     }
     Ok(format!(
         "{old} installed, upgraded to {new}; its products shown as QS00999, QS00SS1 and \
          QS00WDS and found by 5770SS1; the data area, the journaled table and its entries, \
          the spooled files kept; the {old} SQL table selected, inserted into, indexed and \
-         viewed; RSTLIB of a {old} SAVLIB with its SQL table; a virtual display varied \
-         off on {old} varied on by the upgrade's IPL"
+         viewed; RSTLIB of a {old} SAVLIB with its SQL table; a virtual display \
+         described on {old} varied on by the upgrade's IPL"
     ))
 }
 
