@@ -186,9 +186,11 @@ pub fn allocate(
                     }
                     // A display whose connection dropped waits for its
                     // client: reconnecting under its name signs on again
-                    // and takes the kept jobs back.
+                    // and takes the kept jobs back. The status says
+                    // whether it is varied on; `online` is only how it
+                    // comes up at IPL.
                     let free = matches!(d.status, DevStatus::VariedOn | DevStatus::RecoveryPending);
-                    if !d.online || !free {
+                    if !free {
                         return Err(code::BUSY.into());
                     }
                     d.status = DevStatus::SignonDisplay;
@@ -227,7 +229,6 @@ pub fn allocate(
             }
             existing += 1;
             if free.is_none()
-                && d.online
                 && d.status == DevStatus::VariedOn
                 && d.devtype == devtype
                 && d.model == model
@@ -265,11 +266,12 @@ pub fn allocate(
     r
 }
 
-/// At IPL, every online device on the virtual controller is free again:
-/// no session and no kept job outlives an IPL. That is the displays
-/// `QAUTOVRT` named, the ones a client named (`DEVNAME`) and printer
-/// sessions' devices; otherwise a device in use at power-down refuses
-/// its own name for good.
+/// At IPL, every device on the virtual controller that was in use is
+/// free again: no session and no kept job outlives an IPL. That is the
+/// displays `QAUTOVRT` named, the ones a client named (`DEVNAME`) and
+/// printer sessions' devices; otherwise a device in use at power-down
+/// refuses its own name for good. A display varied off (by `VRYCFG` or
+/// by `QMAXSGNACN`) whose description says `ONLINE(*YES)` is varied on.
 pub fn after_ipl(system: &mut System) {
     let r = in_store(system, |txn, qsys| {
         let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
@@ -286,7 +288,8 @@ pub fn after_ipl(system: &mut System) {
                 d.status,
                 DevStatus::SignonDisplay | DevStatus::Active | DevStatus::RecoveryPending
             );
-            if d.devcls == "*VRT" && d.online && in_use {
+            let back_on = d.online && d.is_display() && d.status == DevStatus::VariedOff;
+            if d.devcls == "*VRT" && (in_use || back_on) {
                 d.status = DevStatus::VariedOn;
                 wm::obj::write(txn, id, &d.encode()).map_err(|e| e.to_string())?;
                 freed += 1;
@@ -307,6 +310,12 @@ pub fn set_status(system: &mut System, device: &str, status: u8) -> Result<(), S
     in_store(system, |txn, qsys| {
         let (id, mut d) = find_devd(txn, qsys, &name)
             .ok_or_else(|| format!("CPF2702 device {name} not found"))?;
+        // A session that ends frees its display, but one varied off
+        // under it (`QMAXSGNACN`) stays off until it is varied on. The
+        // console is never varied off.
+        if status == 1 && d.status == DevStatus::VariedOff && name != super::sbs::CONSOLE_DEVICE {
+            return Ok(());
+        }
         d.status = match status {
             1 => DevStatus::VariedOn,
             2 => DevStatus::SignonDisplay,

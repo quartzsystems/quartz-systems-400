@@ -53,6 +53,7 @@ mod load;
 mod lpstep;
 pub mod media;
 mod medlib;
+mod nameddev;
 mod navstep;
 mod netauto;
 mod netinst;

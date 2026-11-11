@@ -699,6 +699,7 @@ impl Suite {
             "97 telnet automatic sign-on",
             Self::telnet_auto_signon,
         )?);
+        reports.push(self.step(&mut s, "172 named display sessions", Self::named_displays)?);
         reports.push(self.step(&mut s, "98 SMTP relay credentials", Self::smtp_relay_auth)?);
         reports.push(self.step(&mut s, "100 DDM", Self::ddm)?);
         reports.push(self.step(&mut s, "101 WSCST", Self::wscst)?);

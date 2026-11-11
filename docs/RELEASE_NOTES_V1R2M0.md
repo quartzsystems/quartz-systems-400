@@ -83,6 +83,15 @@ with IBM i NetServer:
   `STRSQL` and the service console; only embedded SQL reached them.
 - The IFS volume's flushes no longer hold up its reads and writes: a slow
   flush on the host stalled every job's IFS requests behind it (`IFS.md`).
+- A display varied off by `QMAXSGNACN` (too many sign-on attempts that
+  were not valid) still showed VARIED ON, while every session that named
+  it (`DEVNAME`) was closed, even after an IPL. The device now shows VARIED
+  OFF, `QSYSOPR` gets `CPF1397`, `VRYCFG STATUS(*ON)` or an IPL (for
+  `ONLINE(*YES)`) brings it back, and a device left in that state by an
+  earlier release works again once this release is installed.
+- The web products' listeners took up to 50 ms to accept each new
+  connection; every response now carries a `Server-Timing` header
+  (`SERVERS.md`).
 
 ## Deliberately not in V1R2M0
 

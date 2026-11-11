@@ -631,7 +631,7 @@ fn sign_on_as(
     let r = r.unwrap_or_else(|| Err(fail("The sign-on could not be checked.".into())));
     match &r {
         Ok(s) => user_queue(system, &s.user),
-        Err(e) if e.vary_off => vary_off(system, device),
+        Err(e) if e.vary_off => vary_off(system, device, user),
         Err(_) => {}
     }
     r
@@ -675,9 +675,11 @@ fn user_queue(system: &mut System, user: &str) {
     });
 }
 
-/// `QMAXSGNACN` 1 or 3: the display is varied off.
-fn vary_off(system: &mut System, device: &str) {
-    let _ = sec::guard::as_system(|| {
+/// `QMAXSGNACN` 1 or 3: the display is varied off, which its status
+/// says (`WRKCFGSTS`) and `QSYSOPR` is told (`CPF1397`). `ONLINE`, how
+/// it comes up at IPL, stays as its description has it.
+fn vary_off(system: &mut System, device: &str, user: &str) {
+    let done = sec::guard::as_system(|| {
         let s = system.storage.as_mut()?;
         let qsys = s.qsys?;
         let mut txn = s.store.begin().ok()?;
@@ -691,10 +693,35 @@ fn vary_off(system: &mut System, device: &str) {
         )
         .ok()?;
         let mut d = wm::obj::devd::Devd::decode(&wm::obj::read(&mut txn, id).ok()?).ok()?;
-        d.online = false;
+        d.status = wm::obj::devd::DevStatus::VariedOff;
         wm::obj::write(&mut txn, id, &d.encode()).ok()?;
         txn.commit().ok()
     });
+    if done.is_none() {
+        return;
+    }
+    let (device, user) = (
+        device.trim().to_ascii_uppercase(),
+        user.trim().to_ascii_uppercase(),
+    );
+    let pad = |s: &str| {
+        let mut b: Vec<u8> = ccsid::to_ebcdic(s).unwrap_or_default();
+        b.resize(10, 0x40);
+        b
+    };
+    let mut data = pad("*N");
+    data.extend(pad(&device));
+    data.extend(pad(&user));
+    let m = wm::obj::msgq::QMsg {
+        msgid: "CPF1397".into(),
+        msgf: ("QCPFMSG".into(), "QSYS".into()),
+        severity: 40,
+        data,
+        text: super::msgs::text(system, "CPF1397", &["*N", &device, &user]),
+        job: ("QSYSARB".into(), "QSYS".into(), 0),
+        ..wm::obj::msgq::QMsg::default()
+    };
+    let _ = super::msgs::send(system, "QSYS", "QSYSOPR", m);
 }
 
 /// `CHGPWD` for the job's own user; `validated` says the job already

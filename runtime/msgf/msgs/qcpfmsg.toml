@@ -6672,6 +6672,13 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF1397"
+sev = 40
+text = "Work station &2 was varied off: too many sign-on attempts for user &3 were not valid."
+help = "QMAXSIGN sign-on attempts in a row failed at the work station, and QMAXSGNACN says to vary the device off (1 or 3). Sessions that name the device are refused until it is varied on: VRYCFG CFGOBJ(&2) CFGTYPE(*DEV) STATUS(*ON). An IPL varies it on again when its description says ONLINE(*YES). &1 is the subsystem, *N when it is not known."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
 id = "CPF1628"
 sev = 40
 text = "Job schedule entry &1 not found."
