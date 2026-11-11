@@ -393,10 +393,12 @@ drives the older system through it. To make the V1R1M0 one, in WSL
 
 ```
 git clone -q . ~/v110 && git -C ~/v110 checkout -q v1.1.0
-(cd ~/v110 && CARGO_TARGET_DIR=~/v110/target cargo run -p build -- all &&   CARGO_TARGET_DIR=~/v110/target cargo run -p build -- iso)
+# Each tree's files touched before its build: cargo then rebuilds every
+# workspace crate from that tree, not from the other's artifacts.
+(cd ~/v110 && git ls-files -z | xargs -0 touch -c &&   cargo run -p build -- all && cargo run -p build -- iso)
 cp "$(cat $QS400_TARGET_DIR/images/iso.path)" ~/QS400-V1R1M0-dev.iso
 rm -rf ~/v110
-git ls-files -z | xargs -0 touch   # a shared QS400_TARGET_DIR: newer than v1.1.0's artifacts
+git ls-files -z | xargs -0 touch -c
 QS400_RELEASE=V1R2M0 cargo run -p build -- all
 QS400_RELEASE=V1R2M0 cargo run -p build -- iso
 QS400_RELEASE=V1R2M0 QS400_OLD_ISO=~/QS400-V1R1M0-dev.iso cargo run -p conformance -- --media iso --install --only 10
