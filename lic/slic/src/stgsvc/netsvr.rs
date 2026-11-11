@@ -306,9 +306,11 @@ impl Host for SvcHost<'_> {
                     sp = SpecialAuth(sp.0 | gp.spcaut.0);
                 }
             }
-            Ok(match sp.names().first() {
-                Some(n) => GuestCheck::Special((*n).to_string()),
-                None => GuestCheck::Usable,
+            // `names` answers `*NONE` for no special authority.
+            Ok(if sp.0 == 0 {
+                GuestCheck::Usable
+            } else {
+                GuestCheck::Special(sp.names()[0].to_string())
             })
         })
         .unwrap_or(GuestCheck::NotFound)
