@@ -1,0 +1,30 @@
+[package]
+name = "smbprobe"
+description = "A second SMB test client for QS/400 NetServer, on the server library's own test helpers: leases, locks, durable reconnects, print shares, spoolss, share enumeration, guest, share limits and encryption"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "smbprobe"
+path = "src/main.rs"
+
+[dependencies]
+# The vendored server library: its wire types build the requests.
+smb-server = { path = "../../net/smb-server", version = "=0.10.0", default-features = false }
+tokio = { version = "=1.53.3", features = ["rt", "rt-multi-thread", "net", "io-util", "sync", "time", "macros"] }
+# NTLMv2, SMB 2.x signing and SMB 3.x keys and ciphers (the helpers').
+hmac = "=0.12.1"
+md4 = "=0.10.2"
+md-5 = "=0.10.6"
+rc4 = "=0.2.0"
+sha2 = "=0.10.9"
+socket2 = "=0.6.5"
+aes = "=0.8.4"
+aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes"] }
+ccm = { version = "=0.5.0", default-features = false }
+cmac = "=0.7.2"
+
+[lints]
+workspace = true

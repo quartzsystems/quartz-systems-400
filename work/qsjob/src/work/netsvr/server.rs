@@ -32,6 +32,10 @@ use crate::console::Console;
 const PEEK: Duration = Duration::from_secs(2);
 /// How long the NetBIOS session request is waited for on 139.
 const SESSION_REQUEST: Duration = Duration::from_secs(10);
+/// How long the accept loop waits after an accept that failed.
+const RETRY: Duration = Duration::from_millis(50);
+/// How long [`wake`] waits for its connection.
+const WAKE: Duration = Duration::from_secs(2);
 /// `CPIB683` reason 6: an internal operation failed (the return code
 /// is the error number).
 const CANNOT_LISTEN: &str = "6";
@@ -61,7 +65,8 @@ fn route_to(link: &Shared, s: &TcpStream) -> sockets::JobId {
 }
 
 /// Accept on `l` until `stop`; `netbios` names the server a session
-/// request on 139 must call.
+/// request on 139 must call. The accept blocks, so a connection is taken
+/// the moment it arrives; [`wake`] ends it once `stop` is set.
 fn accept(
     l: &TcpListener,
     me: sockets::JobId,
@@ -69,16 +74,21 @@ fn accept(
     stop: &AtomicBool,
     link: &Shared,
 ) {
-    let _ = l.set_nonblocking(true);
+    let _ = l.set_nonblocking(false);
     while !stop.load(Ordering::Acquire) {
         let mut s = match l.accept() {
             Ok((s, _)) => s,
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                std::thread::sleep(Duration::from_millis(50));
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(e) => {
+                eprintln!("qsjob: {SERVER_PROGRAM}: accept: {e}");
+                std::thread::sleep(RETRY);
                 continue;
             }
-            Err(_) => continue,
         };
+        if stop.load(Ordering::Acquire) {
+            // The wake-up, or a client too late.
+            break;
+        }
         let _ = s.set_nonblocking(false);
         let _ = s.set_nodelay(true);
         let mut note = Vec::new();
@@ -100,6 +110,13 @@ fn accept(
             eprintln!("qsjob: {SERVER_PROGRAM}: handing a connection to {FILE_PROGRAM}: {e:?}");
         }
     }
+}
+
+/// Wakes the accept loop blocked on `port` with a connection of its own
+/// (after `stop` is set); whether it connected.
+fn wake(port: u16) -> bool {
+    let to = std::net::SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port));
+    TcpStream::connect_timeout(&to, WAKE).is_ok()
 }
 
 fn bind(port: u16) -> Result<TcpListener, std::io::Error> {
@@ -155,16 +172,18 @@ pub fn run(c: &mut Console, link: &Shared, number: u32, name: &str) -> u16 {
     let stop = Arc::new(AtomicBool::new(false));
     let mut threads = Vec::new();
     for (l, nb) in std::iter::once((main, None)).chain(netbios.map(|l| (l, Some(server.clone())))) {
+        let port = l.local_addr().map_or(0, |a| a.port());
         let stop = stop.clone();
         let pid = std::process::id();
-        threads.push(std::thread::spawn(move || {
+        let thread = std::thread::spawn(move || {
             // The relay and the routing table are asked from this
             // thread's own link.
             match super::svc::thread_link(number, pid) {
                 Ok(link) => accept(&l, me, nb.as_deref(), &stop, &link),
                 Err(e) => eprintln!("qsjob: {SERVER_PROGRAM}: a thread's link: {e}"),
             }
-        }));
+        });
+        threads.push((port, thread));
     }
     if let Some(mut udp) = names {
         let stop = stop.clone();
@@ -186,8 +205,13 @@ pub fn run(c: &mut Console, link: &Shared, number: u32, name: &str) -> u16 {
         }
     }
     stop.store(true, Ordering::Release);
-    for t in threads {
-        let _ = t.join();
+    for (port, t) in threads {
+        // Each loop blocks in accept: a connection of our own wakes it.
+        // Not woken, the thread ends at its next connection; the job
+        // ending closes the listener.
+        if t.is_finished() || wake(port) {
+            let _ = t.join();
+        }
     }
     sysopr(link, "CPIB681", &[&server]);
     link.borrow_mut().with(|l| l.netsvr(NsOp::JobEnded));

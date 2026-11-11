@@ -3848,6 +3848,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "smbprobe"
+version = "0.1.0"
+dependencies = [
+ "aes 0.8.4",
+ "aes-gcm",
+ "ccm",
+ "cmac",
+ "hmac 0.12.1",
+ "md-5",
+ "md4",
+ "rc4",
+ "sha2 0.10.9",
+ "smb-server",
+ "socket2",
+ "tokio",
+]
+
+[[package]]
 name = "socket2"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

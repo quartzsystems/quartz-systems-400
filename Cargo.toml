@@ -153,6 +153,7 @@ members = [
     "tools/pesign",
     "tools/helpaudit",
     "tools/textaudit",
+    "tools/smbprobe",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",
