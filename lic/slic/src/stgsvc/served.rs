@@ -1727,7 +1727,9 @@ impl Service for Served<'_> {
     }
 
     fn open(&mut self, spec: OpenSpec) -> Result<(u32, IoFileInfo), IoFail> {
-        self.lent(|c| c.io.open(&spec))
+        // An open for change waits (parked) for SMB clients caching
+        // writes to the member to give them back (`docs/NETSERVER.md` 6).
+        super::ifs::db_deferring(|| self.lent(|c| c.io.open(&spec)))
     }
 
     fn io(&mut self, handle: u32, req: OwnedRequest) -> IoResult {

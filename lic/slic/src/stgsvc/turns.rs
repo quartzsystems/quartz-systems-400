@@ -355,8 +355,9 @@ fn end_doomed(svc: &mut Svc) {
     }
 }
 
-/// Answer one request in the ordinary way: an IFS operation that has to
-/// wait for another job's lease break is parked instead.
+/// Answer one request in the ordinary way: an IFS operation, or a
+/// database open for change, that has to wait for another job's lease
+/// break is parked instead.
 fn answer(svc: &mut Svc, i: usize, req: Request) {
     answer_as(svc, i, req, true);
 }
@@ -366,6 +367,7 @@ fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
     let close = matches!(req, Request::Close {});
     let keep = match &req {
         Request::IfsReq { op } if park && super::ifs::may_park(op) => Some(req.clone()),
+        Request::Open { .. } if park && super::ifs::leased() => Some(req.clone()),
         _ => None,
     };
     super::stall::begin(&req);

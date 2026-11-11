@@ -5,7 +5,9 @@
 //! QEMU steps 166 to 169: `NetServer` (`docs/NETSERVER.md` section 11).
 //! 166 starts `*NETSVR` and finds `QZLSSERVER` (BCH) and `QZLSFILE` (PJ) in
 //! `WRKACTJOB`; 167 makes a user and a share (`QZLSADFS`) and runs every
-//! `smbtest` scenario against the guest's 445 through a port forward; 168
+//! `smbtest` scenario against the guest's 445 through a port forward, then
+//! watches a source file's directory while the console adds and removes
+//! members (change notify of database changes); 168
 //! copies 1 GiB in and out and reports MB/s; 169 the listener in `NETSTAT`
 //! and `QSYS2.NETSTAT_INFO`, a maximum users through `QZLSCHFS` seen in
 //! `QSYS2.SERVER_SHARE_INFO`, and `ENDTCPSVR`, `QZLSSTRS`,
@@ -104,13 +106,71 @@ fn expect(s: &mut Session, cmd: &str, want: &[&str]) -> Result<String, String> {
 
 /// `QZLSADFS` or `QZLSCHFS` of the step's share with `max` users.
 fn share_call(api: &str, max: i32) -> String {
-    let path = format!("/home/{USER}");
+    share_api(api, SHARE, &format!("/home/{USER}"), max)
+}
+
+/// `QZLSADFS` or `QZLSCHFS` of the read/write share `share` over `path`.
+fn share_api(api: &str, share: &str, path: &str, max: i32) -> String {
     format!(
-        "CALL PGM(QSYS/{api}) PARM('{SHARE:<12}' '{path}' X'{:08X}' X'00000000' '{:<50}' X'00000002' X'{:08X}' X'00000000')",
+        "CALL PGM(QSYS/{api}) PARM('{share:<12}' '{path}' X'{:08X}' X'00000000' '{:<50}' X'00000002' X'{:08X}' X'00000000')",
         path.len(),
         "smbtest share",
         max.cast_unsigned()
     )
+}
+
+/// The library 167's member watch uses, and its share.
+const WATCH_LIB: &str = "NSWATCH";
+
+/// 167's last part: a client watches a source file's directory through a
+/// share over its library while the console adds and removes members
+/// (`ADDPFM`, `RMVM`: database changes, no IFS call); the watch hears
+/// them (`docs/NETSERVER.md` section 6). The members' lines it heard.
+fn member_watch(s: &mut Session, port: u16) -> Result<String, String> {
+    s.command(&format!("CRTLIB LIB({WATCH_LIB})"), CMD)?;
+    s.command(&format!("CRTSRCPF FILE({WATCH_LIB}/QCLSRC)"), CMD)?;
+    let lib = format!("/QSYS.LIB/{WATCH_LIB}.LIB");
+    s.command(&share_api("QZLSADFS", WATCH_LIB, &lib, -1), CMD)?;
+    let bin = smbtest_binary()?;
+    let mut child = Command::new(&bin)
+        .args(["127.0.0.1", &port.to_string(), USER, "-", WATCH_LIB, ""])
+        .args(["--only", "watch-dir", "--watch", "QCLSRC.FILE"])
+        .env("SMBTEST_PASSWORD", PASSWORD)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("{}: {e}", bin.display()))?;
+    // The watch is posted once the client has connected: add and remove a
+    // member every two seconds until it has heard one come and go.
+    let end = Instant::now() + Duration::from_secs(110);
+    let mut n = 0;
+    while child.try_wait().map_err(|e| e.to_string())?.is_none() {
+        if Instant::now() > end {
+            let _ = child.kill();
+            break;
+        }
+        std::thread::sleep(Duration::from_secs(2));
+        let m = format!("W{n}");
+        n += 1;
+        s.command(&format!("ADDPFM FILE({WATCH_LIB}/QCLSRC) MBR({m})"), CMD)?;
+        s.command(&format!("RMVM FILE({WATCH_LIB}/QCLSRC) MBR({m})"), CMD)?;
+    }
+    let out = child.wait_with_output().map_err(|e| e.to_string())?;
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    if !text.lines().any(|l| l == "ok watch-dir") {
+        return Err(format!(
+            "member watch: {text}{}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
+    }
+    let heard: Vec<&str> = text
+        .lines()
+        .skip_while(|l| *l != "ok watch-dir")
+        .skip(1)
+        .take_while(|l| l.starts_with("  "))
+        .map(str::trim)
+        .collect();
+    Ok(heard.join(", "))
 }
 
 /// The `smbtest` binary: `QS400_SMBTEST`, or built into the target directory.
@@ -249,8 +309,9 @@ impl Suite {
             .iter()
             .filter(|d| out.contains(&format!("ok negotiate-{d}\n")))
             .count();
+        let heard = member_watch(s, port)?;
         Ok(format!(
-            "{oks} scenarios ok ({dialects} dialects; cipher on 3.1.1 {}), skipped: {}",
+            "{oks} scenarios ok ({dialects} dialects; cipher on 3.1.1 {}), skipped: {}; members added and removed by the console heard: {heard}",
             detail(&out, "encrypt-3.1.1", "cipher: ").unwrap_or("?"),
             skips.join(", ")
         ))

@@ -196,3 +196,46 @@ async fn notify_between(t: &Target, sc: &Scratch, name: &str, writer: Share) -> 
     watcher.close().await?;
     Ok(lines)
 }
+
+/// Watches the directory `dir` (relative to the share) until one entry
+/// is added and then removed by anyone (`--watch`; QEMU step 170 adds and
+/// removes a member from the console while a source file is watched).
+pub async fn watch_dir(t: &Target, dir: &str) -> Lines {
+    let s = Share::connect(t, base_config(t)).await?;
+    let access = smb::FileAccessMask::new().with_generic_read(true);
+    let smb::Resource::Directory(d) = s
+        .open(dir, &smb::FileCreateArgs::make_open_existing(access))
+        .await?
+    else {
+        return Err(Error::Check(format!("{dir} is not a directory")));
+    };
+    let filter = NotifyFilter::new().with_file_name(true).with_dir_name(true);
+    let end = std::time::Instant::now() + Duration::from_secs(90);
+    let mut lines = Vec::new();
+    let mut added: Vec<String> = Vec::new();
+    loop {
+        let left = end.saturating_duration_since(std::time::Instant::now());
+        if left.is_zero() {
+            return Err(Error::Check(format!(
+                "nothing added and removed in {dir}: {lines:?}"
+            )));
+        }
+        let seen = match d.watch_timeout(filter, false, left).await {
+            Ok(v) => v,
+            Err(smb::Error::OperationTimeout(..)) => continue,
+            Err(e) => return Err(e.into()),
+        };
+        for n in seen {
+            lines.push(format!("{:?} {}", n.action, n.file_name));
+            match n.action {
+                NotifyAction::Added => added.push(n.file_name.to_string()),
+                NotifyAction::Removed if added.contains(&n.file_name.to_string()) => {
+                    d.close().await?;
+                    s.close().await?;
+                    return Ok(lines);
+                }
+                _ => {}
+            }
+        }
+    }
+}

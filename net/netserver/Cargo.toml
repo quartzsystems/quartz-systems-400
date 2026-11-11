@@ -30,6 +30,12 @@ md-5 = "=0.10.6"
 rc4 = "=0.2.0"
 sha2 = "=0.10.9"
 socket2 = "=0.6.5"
+# Members changed through the database (tests/shares/members.rs).
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+qsyslib = { path = "../../ifs/qsyslib", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
 tokio = { version = "=1.53.3", features = ["rt", "rt-multi-thread", "net", "io-util", "sync", "time", "macros"] }
 
 [lints]

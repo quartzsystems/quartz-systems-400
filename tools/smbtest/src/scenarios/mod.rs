@@ -123,6 +123,19 @@ pub async fn run_all(t: &Target) -> Report {
     )
     .await;
 
+    if let Some(dir) = &t.watch {
+        run(
+            &mut r,
+            t,
+            "watch-dir",
+            SHORT,
+            Box::pin(files::watch_dir(t, dir)),
+        )
+        .await;
+        // Alone: its share need not take a scratch directory.
+        return r;
+    }
+
     // Everything below writes under one run directory in the scratch directory.
     let scratch = Scratch::new(t);
     let made = if t.wants("scratch-dir") {

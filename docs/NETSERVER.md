@@ -764,10 +764,63 @@ number):
 
 A job that waits for another job's break holds its own IFS calls (one IFS
 thread per job), so two jobs whose clients break each other's leases at
-the same moment resolve at the 35-second timeout. `/QSYS.LIB` members
-changed through the database (record I/O, SQL) and not the IFS break no
-lease; nor does a rename of a directory above a leased file (the
-handle finds its file by file ID).
+the same moment resolve at the 35-second timeout. A rename of a
+directory above a leased file breaks no lease (the handle finds its file
+by file ID).
+
+### Members changed through the database (built: `storage/store/src/obj/watch.rs`, `ifs/ifs/src/lease/qsys.rs`, `ifs/qsyslib/src/notice.rs`)
+
+Most changes to a `/QSYS.LIB` member make no IFS call: record I/O from
+RPG and CL, SQL, `CPYF`, `CLRPFM`, `RGZPFM`, `INZPFM`, SEU and `srcput`,
+journal apply and remove, rollback, `ADDPFM`, `RMVM`, `RNMM`, `DLTF`, and
+the object commands on files and libraries (`CRTPF`, `RNMOBJ`, `MOVOBJ`,
+`CLRLIB`, `DLTLIB`). They all run in the storage service, so they reach
+the same lease table and watches through the store:
+
+- The store has a watcher (`store::obj::watch::Watcher`, installed on
+  ASP 1 when the IFS starts, `qsyslib::Notice`). The database tells it a
+  member is being opened for change (`db::odp::Odp::open`, every
+  physical member a logical file's open can change), its records are
+  about to change (each `Member` write, update, delete, clear: every
+  path above goes through them) and a member was added, is being
+  removed or was renamed (`db::file`); the store itself tells it a file
+  or library was created, is being deleted, renamed or moved. With no
+  lease held and no directory watched the cost is one check
+  (`Leases::idle`), and nothing is looked up.
+- The watcher names the object's node (library, file, member) and uses
+  the IFS's own identity for it: the key a lease on
+  `/QSYS.LIB/L.LIB/F.FILE/M.MBR` is held under is the file number the IFS
+  gives the node (`ifs::resolve::qsys_key`, from the path), so a
+  rebuilt member (`RGZPFM` makes a new `*MBR` object) keeps it.
+- What each does is the IFS operation with the same effect
+  (`ifs::lease::qsys`): an open for change breaks write caching, and
+  waits for the holder's acknowledgment as an IFS open does; a record
+  change breaks every lease, as a write, and never waits; `RMVM`, `DLTF`
+  (each member) and `RNMM` break handle caching, as unlink and rename do.
+  The owner is the changing job's connection, so its own leases are
+  left (as in the IFS); a change with no job (a command run by the
+  service, `ADDPFM`, `RNMM`) is owner 0.
+- An open data path opened for change waits only at its open: a job's
+  open (`Open` request, record I/O from RPG and CL programs) that has
+  to wait for an acknowledgment is parked by the service as an IFS
+  request is (`super::ifs::db_deferring`, `turns.rs`) and opens once the
+  holder gave back what it cached or 35 seconds passed. Its records then
+  break what is left (read and handle caching) without waiting, record
+  by record, so a client that is granted read caching between two
+  records loses it at the next one. Opens that are not a job's own
+  request (SQL statements, which take turns in the service; commands
+  such as `CPYF`, `CLRPFM`, `RGZPFM`; the service console) send the
+  breaks and go on without waiting, as the IFS's composite operations
+  do: a client that still holds unwritten data may write it back over
+  their change.
+- While a job other than the lease holder's has the member open for
+  change through the database (it holds the member `*SHRUPD`, `*EXCLRD`
+  or `*EXCL`, which every open for output, update or delete takes), no
+  lease with write caching is granted on it (`QsysView::member_busy`),
+  as the table refuses one while another job has the file open.
+- Changes the IFS makes to the store itself (a client writing a member
+  through `/QSYS.LIB`, `mkdir` of a library) are left out: the IFS
+  operation has broken and noted them (`qsyslib::notice::in_view`).
 
 ### Change notify across jobs (built: `ifs/ifs/src/lease/notify.rs`, `net/netserver/src/ifs/watch.rs`)
 
@@ -798,8 +851,17 @@ job; past either, the changes are dropped and the next answer is
 `STATUS_NOTIFY_ENUM_DIR`, and the client lists the directory again. A
 watch ends with the library's last watch of the directory
 (`IfsClient::watch_end`), and every watch of a job goes when its
-connection to the service closes. `/QSYS.LIB` members changed through
-the database are not heard (no IFS call).
+connection to the service closes.
+
+`/QSYS.LIB` changed through the database is heard the same way ("Members
+changed through the database" above): a member added (`ADDPFM`) is
+`Added`, removed (`RMVM`) `Removed`, renamed (`RNMM`) `Renamed`, its
+records changed `Modified` in its file's directory; a file created,
+deleted, renamed or moved, and a library, likewise in its library's
+directory and `/QSYS.LIB`, and a watch of a deleted file's directory
+ends. Records written one after another queue one `Modified` until the
+watcher polls (a `Modified` the same as the last one queued is not
+queued again, from any operation).
 
 ### Backend
 
@@ -1089,7 +1151,6 @@ anything only if IBM checks the length first), and IBM's checks of
 | Text conversion with mixed data (`2`), a share text CCSID that is not single-byte | a conversion that changes a file's length cannot keep sizes and offsets coherent (section 6, text conversion) | `QZLSADFS`/`QZLSCHFS` `CPFB68A` reason 10 |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
-| Leases broken, and change notify, for `/QSYS.LIB` member changes through the database | record I/O and SQL do not go through the IFS | a client caching a member's data sees the change when its lease next breaks or it opens the member again; a watch hears nothing |
 | WINS servers, scope, WINS proxy | no WINS client | `QZLSCHSI` `CPFB686` reason 6 or 7, return code 3440 |
 | Kerberos authentication method (`1`, `2`) | no Kerberos | `QZLSCHSI` `CPFB686` reason 15 |
 | Logon server role, domain logon | no domain logons | `QZLSCHSI` `CPFB686` reason 13 |
@@ -1150,6 +1211,20 @@ anything only if IBM checks the length first), and IBM's checks of
 - `cargo test -p ifs --test leases --lib`: the lease table (grants capped
   by other owners, the break table, orders, reports, deferral, expiry,
   an owner's end) and which operations break, defer and leave a lease.
+- `cargo test -p ifs --test qsys_changes`: a member's lease key is the
+  file number the IFS gives it; an open for change outside the IFS
+  defers until write caching is given back, a record change breaks the
+  rest without waiting; a thousand record changes are one `Modified`.
+- `cargo test -p qsyslib --test notice`: members changed through the
+  database over a store in memory with the watcher installed: a lease on
+  a member broken by an open data path's open (deferred until
+  acknowledged) and its writes, by `srcput`, `CLRPFM`, `RMVM` and SQL
+  `UPDATE`; no write caching while another job has the member open for
+  update (and again once it closed); a client's own write through
+  `/QSYS.LIB` keeping its lease (the IFS's store calls not told twice);
+  a watch on a source file hearing `ADDPFM`, the records written, `RNMM`
+  and `RMVM`, a watch on the library hearing `CRTPF` and `DLTF`, and the
+  deleted file's watch ending.
 - `cargo test -p stg --test ifs_link`: the lease calls over the wire.
 - `cd net/smb-server; cargo test --test qs400_hooks --test
   qs400_patches --test qs400_leases --test qs400_notify`: the library

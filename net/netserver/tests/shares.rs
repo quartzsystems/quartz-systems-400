@@ -8,6 +8,8 @@
 
 #![allow(clippy::many_single_char_names, clippy::cast_possible_truncation)]
 
+#[path = "shares/members.rs"]
+mod members;
 mod smbc;
 
 use std::net::{SocketAddr, TcpListener};
@@ -79,6 +81,11 @@ struct Fs {
 
 impl Fs {
     fn new() -> Arc<Self> {
+        Self::over(Box::new(Self::mem_qsys()))
+    }
+
+    /// The `/QSYS.LIB` in memory.
+    fn mem_qsys() -> MemQsys {
         let q = MemQsys::new(Auth::USE);
         q.add_lib("QGPL");
         q.add_obj("QGPL", "QCLSRC", "*FILE", "PF-SRC", "QSYS");
@@ -94,13 +101,18 @@ impl Fs {
                 ccsid: 37,
             },
         );
+        q
+    }
+
+    /// One IFS with `q` as its `/QSYS.LIB`.
+    fn over(q: Box<dyn ifs::vfs::qsys::QsysView>) -> Arc<Self> {
         let env = MemEnv::default()
             .user("QSYS", 0)
             .user("QSECOFR", 1)
             .user("QDFTOWN", 3)
             .user("ALICE", 110)
             .user("BOB", 120);
-        let ifs = Ifs::new(MemBackend::new(), Box::new(q), IfsConfig::default());
+        let ifs = Ifs::new(MemBackend::new(), q, IfsConfig::default());
         ifs.ensure_layout(&env).unwrap();
         let audit = MemAudit::default();
         let sec = principal("QSECOFR");

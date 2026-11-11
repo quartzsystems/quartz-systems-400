@@ -6,6 +6,8 @@
 //! key is the one the IFS gives it, and each change breaks and is heard
 //! as the IFS operation with the same effect.
 
+#![allow(clippy::many_single_char_names)]
+
 mod common;
 
 use std::time::Duration;

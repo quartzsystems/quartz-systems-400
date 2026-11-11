@@ -33,11 +33,14 @@ pub struct Target {
     /// Leave out the sign-ons that fail (a wrong password counts towards
     /// `QMAXSIGN`).
     pub no_bad_signon: bool,
+    /// A directory (relative to the share) for `watch-dir` to watch; that
+    /// scenario runs only with it.
+    pub watch: Option<String>,
 }
 
 /// The usage line.
 pub const USAGE: &str = "smbtest HOST PORT USER PASSWORD SHARE SCRATCH \
-[--only A,B] [--copy-bytes N] [--large-bytes N] [--print-share NAME] [--no-bad-signon] [--list]\n\
+[--only A,B] [--copy-bytes N] [--large-bytes N] [--print-share NAME] [--no-bad-signon] [--watch DIR] [--list]\n\
 PASSWORD `-` reads SMBTEST_PASSWORD from the environment.";
 
 impl Target {
@@ -62,6 +65,7 @@ impl Target {
             large_bytes: 8 << 20,
             only: Vec::new(),
             no_bad_signon: false,
+            watch: None,
         }
     }
 
@@ -85,6 +89,7 @@ impl Target {
                 "--large-bytes" => opts.large_bytes = bytes(&value("--large-bytes")?)?,
                 "--print-share" => opts.print_share = Some(value("--print-share")?),
                 "--no-bad-signon" => opts.no_bad_signon = true,
+                "--watch" => opts.watch = Some(value("--watch")?),
                 s if s.starts_with("--") => {
                     return Err(Error::Usage(format!("unknown option {s}")));
                 }
@@ -108,6 +113,7 @@ impl Target {
             only: opts.only,
             print_share: opts.print_share,
             no_bad_signon: opts.no_bad_signon,
+            watch: opts.watch,
             copy_bytes: opts.copy_bytes,
             large_bytes: opts.large_bytes,
             ..base

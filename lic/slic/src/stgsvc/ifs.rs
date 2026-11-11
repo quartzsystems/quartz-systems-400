@@ -136,10 +136,16 @@ pub fn start(system: &mut System) -> String {
         eprintln!("qsstg: {e}");
     }
     let _ = IFS.set(r);
-    if get().is_some() {
+    if let Some(ifs) = get() {
         keep_registry(system);
         keep_notices(system);
         keep_downloads(system);
+        // Members, files and libraries changed through the database break
+        // leases and are heard by watches (`qsyslib::notice`).
+        if let Some(s) = system.storage.as_mut() {
+            let notice = qsyslib::Notice::new(ifs.leases_shared());
+            s.store.set_watcher(Some(std::sync::Arc::new(notice)));
+        }
     }
     line
 }
@@ -370,6 +376,23 @@ pub fn parking<T>(allow: bool, f: impl FnOnce() -> T) -> (T, Option<Deferral>) {
 #[must_use]
 pub fn may_park(op: &IfsOp) -> bool {
     matches!(op, IfsOp::LeaseOrders { .. }) || get().is_some_and(|i| !i.leases().is_empty())
+}
+
+/// Whether some job holds a lease: a database open for change may then
+/// have to wait for it (`db::odp`, `qsyslib::notice`).
+#[must_use]
+pub fn leased() -> bool {
+    get().is_some_and(|i| !i.leases().is_empty())
+}
+
+/// Run `f`, a job's database open, letting it defer for a lease break
+/// as [`serve`] lets an IFS operation: the deferral is the request's
+/// (`super::turns` parks it; its reply is not sent).
+pub fn db_deferring<T>(f: impl FnOnce() -> T) -> T {
+    let allow = PARKING.with(Cell::get);
+    let (r, d) = ifs::lease::defer::deferring(allow, f);
+    DEFERRED.with(|c| c.set(d));
+    r
 }
 
 /// The leases: what the loop checks parked requests against.
