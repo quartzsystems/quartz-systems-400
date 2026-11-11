@@ -22,6 +22,7 @@ pub mod sysval;
 pub mod types;
 pub mod usridx;
 pub mod usrspc;
+pub mod watch;
 
 pub use dir::DirKey;
 pub use header::{Authority, ObjectHeader, SaveInfo, Signature};

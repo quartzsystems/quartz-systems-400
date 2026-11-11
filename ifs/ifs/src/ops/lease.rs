@@ -15,6 +15,8 @@ use crate::backend::Backend;
 use crate::errno::{Errno, Result};
 use crate::lease::{LeaseKey, News, Others};
 use crate::lock::Held;
+use crate::resolve::Node;
+use crate::vfs::qsys::QsysNode;
 
 impl<B: Backend> Ifs<B> {
     /// Reserve the lease `key` in state `want` on the file at `path`,
@@ -51,6 +53,10 @@ impl<B: Backend> Ifs<B> {
         }
         let obj = r.node.key();
         let mut others = Others::default();
+        // A member open for change by a database job counts as open.
+        if let Node::Qsys(QsysNode::Mbr(l, f, m), _) = &r.node {
+            others.open = sys.qsys.member_busy(l, f, m);
+        }
         for l in rest.locks.list(obj) {
             if l.owner == cx.owner {
                 continue;

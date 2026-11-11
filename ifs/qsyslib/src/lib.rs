@@ -17,10 +17,12 @@
 pub mod access;
 pub mod audit;
 pub mod env;
+pub mod notice;
 pub mod savf;
 pub mod view;
 
 pub use access::{MemAccess, StoreAccess};
 pub use audit::JournalAudit;
 pub use env::StoreEnv;
+pub use notice::Notice;
 pub use view::StoreQsys;

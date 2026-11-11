@@ -22,7 +22,7 @@ use qsname::{MemberSpec, Name};
 use store::obj::header::{self, ObjectHeader, text_of};
 use store::obj::ops::{self, CreateParams};
 use store::obj::space::Space;
-use store::obj::{JobHandle, ObjectId, types};
+use store::obj::{JobHandle, ObjectId, types, watch};
 use store::txn::Txn;
 
 use crate::error::{DbError, Result};
@@ -576,6 +576,7 @@ pub fn add_member(
         ..Default::default()
     };
     crate::journal::member_entry(txn, &desc, name, "MA", ctx)?;
+    watch::changed(txn, JobHandle(0), object, watch::Change::Added)?;
     Ok(object)
 }
 
@@ -809,6 +810,9 @@ pub fn remove_member(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, name: Na
         ..Default::default()
     };
     crate::journal::member_entry(txn, &desc, name, "MD", ctx)?;
+    if desc.attr.kind != FileKind::Logical {
+        watch::changed(txn, job, entry.object, watch::Change::Removing)?;
+    }
     desc.members.remove(at);
     member::destroy(txn, job, entry.object)?;
     write_members(txn, &mut desc)
@@ -840,11 +844,16 @@ pub fn rename_member(
             member: from.to_string(),
         })?;
     entry.name = to;
-    let (page, mut h) = ops::read_header(txn, entry.object)?;
+    let object = entry.object;
+    let (page, mut h) = ops::read_header(txn, object)?;
     h.name = to;
     h.changed = now;
     ops::write_header(txn, page, &h)?;
-    write_members(txn, &mut desc)
+    write_members(txn, &mut desc)?;
+    if desc.attr.kind != FileKind::Logical {
+        watch::changed(txn, JobHandle(0), object, watch::Change::Renamed { from })?;
+    }
+    Ok(())
 }
 
 /// `DLTF`: the members, then the file. A physical file with dependent

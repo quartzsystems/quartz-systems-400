@@ -17,6 +17,7 @@ use crate::obj::header::{self, ATTR_OFF, ObjectHeader, text};
 use crate::obj::library::{LibAttr, LibType, Library};
 use crate::obj::lock::{JobHandle, LockState};
 use crate::obj::types::{self, type_by_code};
+use crate::obj::watch::{self, Change};
 use crate::page::pager::{PageNo, Pager};
 use crate::page::{Page, PageType};
 use crate::txn::Txn;
@@ -307,6 +308,7 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
     dir::objdir_insert(txn, id, page)?;
     lib.add(txn, params.type_code, params.name, id)?;
     guard::created(txn, &h)?;
+    told(txn, JobHandle(0), id, Change::Added)?;
     Ok(id)
 }
 
@@ -381,6 +383,12 @@ pub fn delete(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<()> {
             library: lib_name,
         });
     }
+    if let Err(e) = told(txn, job, id, Change::Removing) {
+        txn.store()
+            .locks_mut()
+            .unlock(job, id, LockState::Exclusive);
+        return Err(e);
+    }
     let result = delete_locked(txn, id, page, &h);
     txn.store().locks_mut().release_object(id);
     result
@@ -443,9 +451,20 @@ pub fn rename(txn: &mut Txn<'_>, id: ObjectId, new_name: Name, now: u64) -> Resu
     }
     lib.remove(txn, id.type_code, h.name)?;
     lib.add(txn, id.type_code, new_name, id)?;
+    let from = h.name;
     h.name = new_name;
     h.changed = now;
-    write_header(txn, page, &h)
+    write_header(txn, page, &h)?;
+    told(txn, JobHandle(0), id, Change::Renamed { from })
+}
+
+/// Tell the watcher of a change to a library or file
+/// ([`crate::obj::watch`]); members are the database's to tell.
+fn told(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId, what: Change) -> Result<()> {
+    if id.type_code != types::LIB && id.type_code != types::FILE {
+        return Ok(());
+    }
+    watch::changed(txn, job, id, what)
 }
 
 /// Move to another library.
@@ -472,9 +491,11 @@ pub fn move_to(txn: &mut Txn<'_>, id: ObjectId, to: ObjectId, now: u64) -> Resul
     let mut from = Library::load(txn, h.library)?;
     from.remove(txn, id.type_code, h.name)?;
     dest.add(txn, id.type_code, h.name, id)?;
+    let from = h.library;
     h.library = to;
     h.changed = now;
-    write_header(txn, page, &h)
+    write_header(txn, page, &h)?;
+    told(txn, JobHandle(0), id, Change::Moved { from })
 }
 
 /// Change the text description.

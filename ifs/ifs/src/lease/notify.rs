@@ -77,6 +77,10 @@ impl Watch {
         if self.ended || self.lost {
             return;
         }
+        // Records written one by one say `Modified` once until polled.
+        if e.kind == ChangeKind::Modified && self.queue.back() == Some(&e) {
+            return;
+        }
         if self.queue.len() >= QUEUE {
             self.queue.clear();
             self.lost = true;

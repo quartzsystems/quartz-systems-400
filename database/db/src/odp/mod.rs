@@ -241,6 +241,30 @@ pub fn allocate(
         })
 }
 
+/// A member is about to be opened for change: the store's watcher hears
+/// it for each physical member the open can change, before anything is
+/// taken, and may have the open wait (`StoreError::Deferred`) for SMB
+/// clients to give back what they cache (`docs/NETSERVER.md` section 6).
+fn told_opening(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    desc: &file::FileDesc,
+    entry: &file::MemberEntry,
+) -> Result<()> {
+    if !store::obj::watch::active(txn) {
+        return Ok(());
+    }
+    let members = if desc.attr.kind == FileKind::Logical {
+        crate::member::Core::load(txn, entry.object)?.base_members(txn)?
+    } else {
+        vec![entry.object]
+    };
+    for m in members {
+        store::obj::watch::changed(txn, job, m, store::obj::watch::Change::Opening)?;
+    }
+    Ok(())
+}
+
 /// Release an allocation taken with [`allocate`].
 pub fn deallocate(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId, state: LockState) {
     txn.store().locks_mut().unlock(job, id, state);
@@ -291,6 +315,7 @@ impl Odp {
                 member: opts.member.to_string(),
             })?;
         let file_lock = if opts.usage.changes() {
+            told_opening(txn, opts.job, &desc, &entry)?;
             LockState::SharedUpdate
         } else {
             LockState::SharedRead

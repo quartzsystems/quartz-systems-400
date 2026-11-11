@@ -303,7 +303,7 @@ pub struct Ifs<B: Backend> {
     cfg: Config,
     st: Mutex<State<B::File>>,
     clock: Mutex<meta::change::Clock>,
-    leases: crate::lease::Leases,
+    leases: std::sync::Arc<crate::lease::Leases>,
 }
 
 /// The directories every system has, with their `*PUBLIC` data
@@ -350,7 +350,7 @@ impl<B: Backend> Ifs<B> {
                 },
             }),
             clock: Mutex::new(meta::change::Clock::default()),
-            leases: crate::lease::Leases::default(),
+            leases: std::sync::Arc::default(),
         }
     }
 
@@ -367,6 +367,13 @@ impl<B: Backend> Ifs<B> {
     /// The leases other owners' operations break ([`crate::lease`]).
     pub fn leases(&self) -> &crate::lease::Leases {
         &self.leases
+    }
+
+    /// The same leases, shared: for the database's changes to members
+    /// (`crate::lease::qsys`), which reach them outside any IFS call.
+    #[must_use]
+    pub fn leases_shared(&self) -> std::sync::Arc<crate::lease::Leases> {
+        std::sync::Arc::clone(&self.leases)
     }
 
     pub(crate) fn lock(&self) -> MutexGuard<'_, State<B::File>> {

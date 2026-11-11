@@ -216,6 +216,12 @@ pub trait QsysView: Send + Sync {
     fn delete(&self, _node: &QsysNode, _who: &Principal) -> Result<()> {
         Err(Errno::ENOTSUP)
     }
+    /// Whether a job other than the caller's has the member open for
+    /// change through the database (it holds the member `*SHRUPD` or
+    /// stronger): no SMB lease may cache writes to it.
+    fn member_busy(&self, _lib: &str, _file: &str, _mbr: &str) -> bool {
+        false
+    }
 }
 
 /// The line end of a CCSID: EBCDIC `0x25`, else `0x0A`.

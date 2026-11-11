@@ -104,6 +104,11 @@ pub enum StoreError {
         objects: usize,
     },
 
+    /// The operation has to wait for others to give back what they
+    /// cache ([`crate::obj::watch`]); nothing was changed.
+    #[error("the operation waits for cached copies to be given back")]
+    Deferred,
+
     /// The store is quiesced for reclaim storage: no transaction starts
     /// until it is released.
     #[error("the store is quiesced for reclaim storage")]

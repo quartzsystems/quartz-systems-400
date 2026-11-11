@@ -24,7 +24,7 @@ use store::btree::{self, BTree};
 use store::obj::header::TREE_ROOT_SLOTS;
 use store::obj::ops::{self, CreateParams};
 use store::obj::space::Space;
-use store::obj::{JobHandle, ObjectId, types};
+use store::obj::{JobHandle, ObjectId, types, watch};
 use store::txn::Txn;
 
 use crate::error::{DbError, Result};
@@ -736,6 +736,7 @@ impl Member {
     pub fn write_new(&mut self, txn: &mut Txn<'_>, record: &[u8], null_map: &[u8]) -> Result<u64> {
         self.physical_only()?;
         self.check(record, null_map)?;
+        self.told_data(txn)?;
         let (rrn, reused) = self.next_rrn(txn)?;
         self.link(txn, rrn, record, null_map)?;
         let slot_len = u64::from(self.core.attr.slot_len);
@@ -775,6 +776,7 @@ impl Member {
         if rrn == 0 {
             return Err(DbError::RecordNotFound { rrn });
         }
+        self.told_data(txn)?;
         let slot_len = self.core.attr.slot_len;
         if rrn <= self.core.attr.slots {
             match self.core.read_slot(txn, rrn)? {
@@ -836,6 +838,7 @@ impl Member {
         self.physical_only()?;
         self.check(record, null_map)?;
         let old = self.active(txn, rrn)?;
+        self.told_data(txn)?;
         self.unlink(txn, rrn, &old.record, &old.null_map)?;
         self.link(txn, rrn, record, null_map)?;
         let (space, _) = Space::load(txn, self.core.id)?;
@@ -857,6 +860,7 @@ impl Member {
     pub fn delete(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
         self.physical_only()?;
         let old = self.active(txn, rrn)?;
+        self.told_data(txn)?;
         self.unlink(txn, rrn, &old.record, &old.null_map)?;
         let (space, _) = Space::load(txn, self.core.id)?;
         space.write(
@@ -874,6 +878,13 @@ impl Member {
         self.core.save(txn)?;
         let kind = if self.jrn.rollback { "DR" } else { "DL" };
         crate::journal::record(txn, self, kind, rrn, &old.record, &old.null_map)
+    }
+
+    /// Its records are about to change: the store's watcher hears it
+    /// (`store::obj::watch`; SMB leases and change notify).
+    fn told_data(&self, txn: &mut Txn<'_>) -> Result<()> {
+        watch::changed(txn, self.jrn.job, self.core.id, watch::Change::Data)?;
+        Ok(())
     }
 
     fn active(&self, txn: &mut Txn<'_>, rrn: u64) -> Result<Slot> {
@@ -898,6 +909,7 @@ impl Member {
 
     fn clear_with(&mut self, txn: &mut Txn<'_>, lobs: bool) -> Result<()> {
         self.physical_only()?;
+        self.told_data(txn)?;
         self.refresh_dependents(txn)?;
         Space::truncate(txn, self.core.id, 0)?;
         let slots: &[usize] = if lobs {

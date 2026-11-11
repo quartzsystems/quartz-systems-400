@@ -3014,6 +3014,7 @@ dependencies = [
  "ifs",
  "qsname",
  "sec",
+ "sql",
  "store",
  "tracing",
 ]

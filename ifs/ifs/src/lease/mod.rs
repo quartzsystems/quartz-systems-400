@@ -18,6 +18,7 @@
 
 pub mod defer;
 pub mod notify;
+pub mod qsys;
 pub mod state;
 
 #[cfg(test)]
@@ -120,6 +121,13 @@ impl Leases {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.lock().files.is_empty()
+    }
+
+    /// Whether no lease is held and no directory watched: changes need
+    /// not be told ([`qsys`]).
+    #[must_use]
+    pub fn idle(&self) -> bool {
+        !self.watching() && self.is_empty()
     }
 
     /// `owner` is about to do `trigger` on `key`: order every other

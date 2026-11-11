@@ -17,7 +17,9 @@ use sec::auth::bits::Auth;
 use sec::auth::principal::Principal;
 use sec::auth::search;
 use store::obj::header::{ObjectHeader, text_of};
-use store::obj::{CreateParams, ObjectId, ops, type_by_code, type_by_name, types, usrspc};
+use store::obj::{
+    CreateParams, LockState, ObjectId, ops, type_by_code, type_by_name, types, usrspc,
+};
 use store::txn::Txn;
 
 use crate::access::{StoreAccess, db_errno, store_errno};
@@ -40,7 +42,7 @@ impl<S: StoreAccess> StoreQsys<S> {
     }
 
     fn run<T>(&self, mut f: impl FnMut(&mut Txn<'_>, ObjectId) -> Result<T>) -> Result<T> {
-        self.access.with_main(&mut f)
+        crate::notice::in_view(|| self.access.with_main(&mut f))
     }
 }
 
@@ -400,5 +402,23 @@ impl<S: StoreAccess + Send + Sync> QsysView for StoreQsys<S> {
                 db::file::remove_member(txn, job, id, name(m)?).map_err(|e| db_errno(&e))
             }
         })
+    }
+
+    fn member_busy(&self, lib: &str, file: &str, mbr: &str) -> bool {
+        let me = self.access.job();
+        self.run(|txn, qsys| {
+            let id = object(txn, qsys, lib, file, "*FILE")?;
+            let desc = db::file::describe(txn, id).map_err(|e| db_errno(&e))?;
+            let entry = desc
+                .member(MemberSpec::Name(name(mbr)?))
+                .ok_or(Errno::ENOENT)?;
+            Ok(txn
+                .store()
+                .locks()
+                .holders(entry.object)
+                .iter()
+                .any(|h| h.job != me && h.state >= LockState::SharedUpdate))
+        })
+        .unwrap_or(false)
     }
 }

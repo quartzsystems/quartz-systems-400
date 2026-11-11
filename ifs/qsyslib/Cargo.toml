@@ -17,6 +17,7 @@ tracing.workspace = true
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
 
 [lints]
 workspace = true

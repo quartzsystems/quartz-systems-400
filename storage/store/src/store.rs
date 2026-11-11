@@ -99,6 +99,7 @@ pub struct Store {
     stats: StoreStats,
     locks: LockTable,
     guard: Option<Arc<dyn Guard>>,
+    watcher: Option<Arc<dyn crate::obj::watch::Watcher>>,
     /// Header pages found in the object directory with this root.
     headers: (Option<PageNo>, HashMap<ObjectId, PageNo>),
     /// The open group commit, if any (`begin_group`).
@@ -393,6 +394,7 @@ impl Store {
             stats: StoreStats::default(),
             locks: LockTable::default(),
             guard: None,
+            watcher: None,
             headers: (None, HashMap::new()),
             group: None,
             ifs_limits: (
@@ -832,6 +834,18 @@ impl Store {
     #[must_use]
     pub fn guard(&self) -> Option<Arc<dyn Guard>> {
         self.guard.clone()
+    }
+
+    /// Install the watcher told of library, file and member changes
+    /// ([`crate::obj::watch`]).
+    pub fn set_watcher(&mut self, watcher: Option<Arc<dyn crate::obj::watch::Watcher>>) {
+        self.watcher = watcher;
+    }
+
+    /// The watcher, if one is installed.
+    #[must_use]
+    pub fn watcher(&self) -> Option<Arc<dyn crate::obj::watch::Watcher>> {
+        self.watcher.clone()
     }
 
     /// The object lock table, to take and release locks.

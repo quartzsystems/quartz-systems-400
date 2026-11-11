@@ -135,6 +135,26 @@ fn hash_ino(s: &str) -> u64 {
     h | 1 << 63
 }
 
+/// The file number of a `/QSYS.LIB` node: from its path, so the same in
+/// every process and for whatever reaches it (the IFS, the database's
+/// changes to members, `lease::qsys`).
+fn qsys_ino(n: &QsysNode) -> u64 {
+    if *n == QsysNode::Root {
+        1
+    } else {
+        hash_ino(&qsys::path_of(n))
+    }
+}
+
+/// The lock and lease key of a `/QSYS.LIB` node, as [`Node::key`] gives it.
+#[must_use]
+pub fn qsys_key(n: &QsysNode) -> ObjKey {
+    ObjKey {
+        fs: ids::QSYS,
+        ino: qsys_ino(n),
+    }
+}
+
 impl Node {
     /// The type.
     #[must_use]
@@ -200,13 +220,7 @@ impl Node {
             Self::DevDir { .. } | Self::OptRoot | Self::Unsup { .. } => 1,
             Self::AspDir { asp } => hash_ino(asp),
             Self::Dev { dev, .. } => dev.ino(),
-            Self::Qsys(n, _) => {
-                if *n == QsysNode::Root {
-                    1
-                } else {
-                    hash_ino(&qsys::path_of(n))
-                }
-            }
+            Self::Qsys(n, _) => qsys_ino(n),
             Self::Opt { vol, path, .. } => hash_ino(&format!("{vol}/{}", path.join("/"))),
         }
     }
