@@ -66,6 +66,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "session")]
     fn every_printable_character_of_the_ccsids_has_a_glyph() {
         use ccsid::conv::Codec;
         for id in [37u16, 273, 285, 297, 500, 1140] {

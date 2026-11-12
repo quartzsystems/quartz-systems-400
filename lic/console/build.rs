@@ -2,21 +2,31 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Compiles `font/qs400-9x16.txt` into a glyph table. Each row of nine
-//! pixels becomes a `u16` with the leftmost pixel in bit 8.
+//! Compiles the font source, the one `.txt` file of `font/`, into a
+//! glyph table. Each row of nine pixels becomes a `u16` with the
+//! leftmost pixel in bit 8.
 
 use std::env;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
-const SOURCE: &str = "font/qs400-9x16.txt";
+/// The directory the font source is the one `.txt` file of.
+const SOURCE: &str = "font";
 const WIDTH: usize = 9;
 const HEIGHT: usize = 16;
 
 fn main() {
     println!("cargo:rerun-if-changed={SOURCE}");
-    let text = fs::read_to_string(SOURCE).unwrap_or_else(|e| panic!("{SOURCE}: {e}"));
+    let mut sources: Vec<_> = fs::read_dir(SOURCE)
+        .unwrap_or_else(|e| panic!("{SOURCE}: {e}"))
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "txt"))
+        .collect();
+    assert_eq!(sources.len(), 1, "{SOURCE} holds one font source");
+    let source = sources.remove(0);
+    let text = fs::read_to_string(&source).unwrap_or_else(|e| panic!("{}: {e}", source.display()));
     let glyphs = parse(&text);
 
     let mut out = String::new();

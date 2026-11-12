@@ -180,7 +180,7 @@ fn shift_left(s: &mut Screen, f: &Field, pos: usize) {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "session"))]
 mod tests {
     use super::*;
     use crate::screens::sign_on;

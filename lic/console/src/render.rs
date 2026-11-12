@@ -7,6 +7,7 @@
 
 use std::io;
 
+use crate::display::Display;
 use crate::fb::Framebuffer;
 use crate::scale::{Canvas, Cells, Scale};
 
@@ -89,5 +90,19 @@ impl Renderer {
             }
             _ => false,
         }
+    }
+}
+
+impl Display for Renderer {
+    fn draw(&mut self, cells: &dyn Cells) -> io::Result<()> {
+        Renderer::draw(self, cells)
+    }
+
+    fn describe(&self) -> String {
+        Renderer::describe(self)
+    }
+
+    fn check_mode(&mut self) -> bool {
+        Renderer::check_mode(self)
     }
 }

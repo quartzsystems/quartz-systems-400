@@ -1,6 +1,6 @@
 [package]
 name = "console"
-description = "QS/400 local console: 5250-style framebuffer renderer, font, screens"
+description = "A local console: 5250-style 24x80 screen on the framebuffer and on a serial terminal, font, keyboard"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,9 +9,18 @@ build = "build.rs"
 
 [dependencies]
 thiserror.workspace = true
-release = { path = "../../lic/release", version = "0.1.0" }
-tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
-ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0", optional = true }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0", optional = true }
+
+[features]
+default = ["session"]
+# The console as the terminal of a 5250 session, and the sign-on display
+# shown before one. A caller with screens of its own only does without.
+session = ["dep:tn5250", "dep:ccsid"]
+
+[[test]]
+name = "golden"
+required-features = ["session"]
 
 [target.'cfg(target_os = "linux")'.dependencies]
 rustix = { version = "1.1.5", features = ["fs"] }

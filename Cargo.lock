@@ -728,7 +728,6 @@ name = "console"
 version = "0.1.0"
 dependencies = [
  "ccsid",
- "release",
  "rustix",
  "thiserror 2.0.21",
  "tn5250",

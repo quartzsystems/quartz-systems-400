@@ -22,8 +22,15 @@ use crate::src;
 /// codes emitted so far. Keyboard input comes back as `Event::Console`.
 pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
     let mode = console_mode(system);
-    let (con, status) =
-        console::Console::open_scaled(mode == ConsoleMode::Local, system.boot.console_scale);
+    let identity = console::Identity {
+        banner: release::banner(),
+        ready_code: src::IPL_COMPLETE.code.to_string(),
+    };
+    let (con, status) = console::Console::open_scaled(
+        identity,
+        mode == ConsoleMode::Local,
+        system.boot.console_scale,
+    );
     system.out.serial(&format!(
         "slic: display: {} ({})\n",
         con.describe(),

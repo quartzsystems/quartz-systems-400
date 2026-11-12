@@ -4,11 +4,13 @@
 
 //! The console service: owns the screen and the keyboard state, redraws
 //! on every command, answers `Dump`, and reports Enter and function
-//! keys on screens whose meaning belongs to slic. Runs on its own
-//! thread.
+//! keys on screens whose meaning belongs to its caller. Runs on its own
+//! thread. What names the product on its screens is the caller's
+//! ([`Identity`]).
 
 use std::sync::mpsc::{Receiver, Sender};
 
+use crate::display::Display;
 use crate::editor::{self, Outcome};
 use crate::fb::{FbError, Framebuffer};
 use crate::keyboard::KeyEvent;
@@ -21,10 +23,18 @@ use crate::screens;
 /// Input-inhibited indicator, bottom left.
 pub const INHIBITED: &str = "X II";
 
-/// The code after which the sign-on display may show.
-pub const IPL_COMPLETE: &str = "C6001090";
+/// Who the console speaks for.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Identity {
+    /// The top line of the SRC display: the product, its release and
+    /// its build, as the caller words them.
+    pub banner: String,
+    /// The reference code after which a sign-on display may show; until
+    /// it is shown the SRC display stays up. Empty: at once.
+    pub ready_code: String,
+}
 
-/// What slic asks of the console.
+/// What the caller asks of the console.
 #[derive(Debug)]
 pub enum Command {
     /// Show the SRC display with this code current.
@@ -39,6 +49,7 @@ pub enum Command {
     /// Show a screen built elsewhere; Enter reports every field.
     ShowScreen(Screen),
     /// Show the sign-on display.
+    #[cfg(feature = "session")]
     ShowSignOn {
         /// System name.
         system: String,
@@ -58,24 +69,28 @@ pub enum Command {
     },
     /// A key from a keyboard reader.
     Key(KeyEvent),
-    /// A key from the service console (`key`, `type`), already a 5250 key.
+    /// A key from elsewhere (a service console's `key` and `type`, a
+    /// serial terminal), already a 5250 key.
     Virtual(Key),
     /// Reply with the 24 lines of the grid.
     Dump(Sender<String>),
     /// A TN5250E session to the system's telnet server is up: the
     /// console becomes its terminal; the operator's records go out
     /// on the sender.
+    #[cfg(feature = "session")]
     Attach(Sender<Vec<u8>>),
     /// A record from the session.
+    #[cfg(feature = "session")]
     Record(Vec<u8>),
     /// Reply with the display's mode and scale, asking the framebuffer
     /// for its mode again first.
     Describe(Sender<String>),
     /// The session ended: the console's own screens again.
+    #[cfg(feature = "session")]
     Detach,
 }
 
-/// What the console reports back to slic.
+/// What the console reports back to its caller.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Input {
     /// Enter on an application screen, with every input field in order.
@@ -85,6 +100,7 @@ pub enum Input {
     Function(u8, Vec<String>),
     /// Enter on the sign-on display: user, password, program, menu,
     /// current library.
+    #[cfg(feature = "session")]
     SignOn(Vec<String>),
 }
 
@@ -92,14 +108,19 @@ pub enum Input {
 enum Kind {
     Src,
     App,
+    #[cfg(feature = "session")]
     SignOn,
     /// A 5250 terminal of the system's own telnet server.
+    #[cfg(feature = "session")]
     Terminal,
 }
 
 /// The console state.
 pub struct Console {
+    identity: Identity,
     renderer: Option<Renderer>,
+    /// Displays besides the framebuffer: a serial terminal.
+    displays: Vec<Box<dyn Display>>,
     screen: Screen,
     kind: Kind,
     recent: Vec<(String, String)>,
@@ -108,30 +129,38 @@ pub struct Console {
     locked: bool,
     out: Option<Sender<Input>>,
     /// The terminal, while attached to a session.
+    #[cfg(feature = "session")]
     term: Option<crate::terminal::ConsoleTerminal>,
     /// Where the terminal's records go.
+    #[cfg(feature = "session")]
     link: Option<Sender<Vec<u8>>>,
-    /// `C6001090` was shown: sign-on may show from now on.
+    /// The ready code was shown: sign-on may show from now on.
+    #[cfg(feature = "session")]
     complete: bool,
     /// A sign-on asked for before that, shown when it comes.
+    #[cfg(feature = "session")]
     pending: Option<Command>,
 }
 
 impl Console {
     /// Open the framebuffer. Without one the console still keeps a screen,
     /// so `Dump` works over serial.
-    pub fn open() -> (Self, Result<(), FbError>) {
-        Self::open_with(true)
+    pub fn open(identity: Identity) -> (Self, Result<(), FbError>) {
+        Self::open_with(identity, true)
     }
 
     /// Open with or without the display: the serial console mode keeps
     /// the screen in memory only and never touches the framebuffer.
-    pub fn open_with(display: bool) -> (Self, Result<(), FbError>) {
-        Self::open_scaled(display, Scale::Auto)
+    pub fn open_with(identity: Identity, display: bool) -> (Self, Result<(), FbError>) {
+        Self::open_scaled(identity, display, Scale::Auto)
     }
 
     /// Open with the scale chosen on the command line.
-    pub fn open_scaled(display: bool, scale: Scale) -> (Self, Result<(), FbError>) {
+    pub fn open_scaled(
+        identity: Identity,
+        display: bool,
+        scale: Scale,
+    ) -> (Self, Result<(), FbError>) {
         let opened = if display {
             Framebuffer::open()
                 .and_then(|fb| Renderer::new(fb, ROWS, COLS, scale).map_err(FbError::from))
@@ -143,26 +172,40 @@ impl Console {
             Err(FbError::NotWanted) => (None, Ok(())),
             Err(e) => (None, Err(e)),
         };
-        (
-            Self {
-                renderer,
-                screen: Screen::new(),
-                kind: Kind::Src,
-                recent: Vec::new(),
-                system: String::new(),
-                mods: Modifiers::default(),
-                locked: false,
-                out: None,
-                term: None,
-                link: None,
-                complete: false,
-                pending: None,
-            },
-            status,
-        )
+        (Self::with(identity, renderer), status)
+    }
+
+    fn with(identity: Identity, renderer: Option<Renderer>) -> Self {
+        Self {
+            identity,
+            renderer,
+            displays: Vec::new(),
+            screen: Screen::new(),
+            kind: Kind::Src,
+            recent: Vec::new(),
+            system: String::new(),
+            mods: Modifiers::default(),
+            locked: false,
+            out: None,
+            #[cfg(feature = "session")]
+            term: None,
+            #[cfg(feature = "session")]
+            link: None,
+            #[cfg(feature = "session")]
+            complete: false,
+            #[cfg(feature = "session")]
+            pending: None,
+        }
+    }
+
+    /// Show the screens on another display too (a serial terminal), from
+    /// the next redraw on. Its keys come in as [`Command::Virtual`].
+    pub fn add_display(&mut self, display: Box<dyn Display>) {
+        self.displays.push(display);
     }
 
     /// Whether the console is a session's terminal.
+    #[cfg(feature = "session")]
     pub fn attached(&self) -> bool {
         self.kind == Kind::Terminal
     }
@@ -188,24 +231,38 @@ impl Console {
         }
     }
 
+    fn src_screen(&self, code: &str, text: &str) -> Screen {
+        screens::src_screen(
+            &self.identity.banner,
+            &self.system,
+            code,
+            text,
+            &self.recent,
+        )
+    }
+
     /// Apply one command and redraw.
     pub fn handle(&mut self, cmd: Command) {
         match cmd {
             Command::ShowSrc { system, code, text } => {
                 self.system = system;
                 self.recent.push((code.clone(), text.clone()));
-                self.screen = screens::src_screen(&self.system, &code, &text, &self.recent);
+                self.screen = self.src_screen(&code, &text);
                 self.kind = Kind::Src;
                 self.locked = false;
-                if code == IPL_COMPLETE {
+                #[cfg(feature = "session")]
+                if code == self.identity.ready_code {
                     self.complete = true;
                     if let Some(sign_on) = self.pending.take() {
                         return self.handle(sign_on);
                     }
                 }
             }
-            // Until the IPL completes the SRC display stays up.
-            cmd @ Command::ShowSignOn { .. } if !self.complete => {
+            // Until the system is ready the SRC display stays up.
+            #[cfg(feature = "session")]
+            cmd @ Command::ShowSignOn { .. }
+                if !self.complete && !self.identity.ready_code.is_empty() =>
+            {
                 self.pending = Some(cmd);
                 return;
             }
@@ -219,6 +276,7 @@ impl Console {
                     editor::home(&mut self.screen);
                 }
             }
+            #[cfg(feature = "session")]
             Command::ShowSignOn {
                 system,
                 subsystem,
@@ -231,6 +289,7 @@ impl Console {
                 self.locked = false;
                 editor::home(&mut self.screen);
             }
+            #[cfg(feature = "session")]
             Command::Message { .. } if self.pending.is_some() => return,
             Command::Message { text, error } => {
                 screens::set_message(&mut self.screen, &text, error);
@@ -249,6 +308,7 @@ impl Console {
                 let _ = reply.send(self.dump());
                 return;
             }
+            #[cfg(feature = "session")]
             Command::Attach(link) => {
                 self.term = Some(crate::terminal::ConsoleTerminal::new());
                 self.link = Some(link);
@@ -256,6 +316,7 @@ impl Console {
                 self.locked = false;
                 self.screen = Screen::new();
             }
+            #[cfg(feature = "session")]
             Command::Record(bytes) => {
                 let (Some(t), Ok(rec)) =
                     (self.term.as_mut(), tn5250::record::Record::decode(&bytes))
@@ -273,6 +334,7 @@ impl Console {
                 let _ = reply.send(self.describe());
                 return;
             }
+            #[cfg(feature = "session")]
             Command::Detach => self.detach(),
         }
         self.redraw();
@@ -280,17 +342,19 @@ impl Console {
 
     /// The grid as text: the terminal's while attached.
     fn dump(&self) -> String {
-        match &self.term {
-            Some(t) if self.kind == Kind::Terminal => {
-                let mut s = t.text_rows().join("\n");
-                s.push('\n');
-                s
-            }
-            _ => self.screen.dump(),
+        #[cfg(feature = "session")]
+        if let Some(t) = &self.term
+            && self.kind == Kind::Terminal
+        {
+            let mut s = t.text_rows().join("\n");
+            s.push('\n');
+            return s;
         }
+        self.screen.dump()
     }
 
     /// The session ended: the last SRC display again.
+    #[cfg(feature = "session")]
     fn detach(&mut self) {
         // The mode may have changed while the session drew.
         if let Some(r) = self.renderer.as_mut() {
@@ -301,7 +365,7 @@ impl Console {
         if self.kind == Kind::Terminal {
             self.kind = Kind::Src;
             self.screen = match self.recent.last() {
-                Some((code, text)) => screens::src_screen(&self.system, code, text, &self.recent),
+                Some((code, text)) => self.src_screen(code, text),
                 None => Screen::new(),
             };
         }
@@ -330,6 +394,7 @@ impl Console {
 
     /// Apply a 5250 key. Returns whether the screen changed.
     fn apply(&mut self, key: Key) -> bool {
+        #[cfg(feature = "session")]
         if self.kind == Kind::Terminal {
             let Some(t) = self.term.as_mut() else {
                 return false;
@@ -369,8 +434,8 @@ impl Console {
         }
     }
 
-    /// Enter: an application screen's fields go to slic; sign-on locks
-    /// the keyboard; a screen without fields ignores Enter.
+    /// Enter: an application screen's fields go to the caller; sign-on
+    /// locks the keyboard; a screen without fields ignores Enter.
     fn enter(&mut self) -> bool {
         match self.kind {
             Kind::App => {
@@ -385,9 +450,10 @@ impl Console {
                 }
                 false
             }
+            #[cfg(feature = "session")]
             Kind::SignOn => {
-                // slic signs on and shows the job's first screen, or this
-                // one again with the reason.
+                // The caller signs on and shows the job's first screen,
+                // or this one again with the reason.
                 let fields = self
                     .screen
                     .fields
@@ -398,10 +464,13 @@ impl Console {
                 self.lock("");
                 true
             }
-            Kind::Src | Kind::Terminal => false,
+            Kind::Src => false,
+            #[cfg(feature = "session")]
+            Kind::Terminal => false,
         }
     }
 
+    #[cfg(feature = "session")]
     fn lock(&mut self, message: &str) {
         self.locked = true;
         screens::set_message(&mut self.screen, message, true);
@@ -424,6 +493,9 @@ impl Console {
         if let Some(r) = self.renderer.as_mut() {
             let _ = r.draw(&self.screen);
         }
+        for d in &mut self.displays {
+            let _ = d.draw(&self.screen);
+        }
     }
 }
 
@@ -431,21 +503,18 @@ impl Console {
 mod tests {
     use super::*;
 
+    /// QS/400's, as slic passes it.
+    #[cfg(feature = "session")]
+    const IPL_COMPLETE: &str = "C6001090";
+
     fn console() -> Console {
-        Console {
-            renderer: None,
-            screen: Screen::new(),
-            kind: Kind::Src,
-            recent: Vec::new(),
-            system: String::new(),
-            mods: Modifiers::default(),
-            locked: false,
-            out: None,
-            term: None,
-            link: None,
-            complete: false,
-            pending: None,
-        }
+        Console::with(
+            Identity {
+                banner: "QS/400 V1R1M0 build test".into(),
+                ready_code: "C6001090".into(),
+            },
+            None,
+        )
     }
 
     fn press(c: &mut Console, code: u16) {
@@ -459,6 +528,7 @@ mod tests {
         }));
     }
 
+    #[cfg(feature = "session")]
     fn sign_on() -> Command {
         Command::ShowSignOn {
             system: "QS400".into(),
@@ -468,6 +538,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "session")]
     fn src(c: &mut Console, code: &str) {
         c.handle(Command::ShowSrc {
             system: "QS400".into(),
@@ -476,11 +547,13 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "session")]
     fn complete(c: &mut Console) {
         src(c, IPL_COMPLETE);
     }
 
     #[test]
+    #[cfg(feature = "session")]
     fn sign_on_waits_for_the_ipl_to_complete() {
         let mut c = console();
         src(&mut c, "C6001010");
@@ -504,6 +577,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "session")]
     fn sign_on_enter_sends_the_fields_and_locks() {
         let (tx, rx) = std::sync::mpsc::channel();
         let mut c = console();
@@ -570,5 +644,48 @@ mod tests {
         c.handle(Command::ShowScreen(Screen::new()));
         c.handle(Command::Virtual(Key::Enter));
         assert!(rx.try_recv().is_err());
+    }
+
+    /// A writer the test keeps a hold of.
+    #[derive(Clone, Default)]
+    struct Shared(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+
+    impl std::io::Write for Shared {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn the_banner_is_the_callers_and_a_serial_display_shows_the_same_screen() {
+        let serial = Shared::default();
+        let mut c = Console::with(
+            Identity {
+                banner: "QSDEMO V0R3M0 build 1".into(),
+                ready_code: String::new(),
+            },
+            None,
+        );
+        c.add_display(Box::new(crate::ansi::AnsiDisplay::new(serial.clone())));
+        c.handle(Command::ShowSrc {
+            system: "DEMO1".into(),
+            code: "C1001010".into(),
+            text: "starting".into(),
+        });
+        let dump = c.screen().dump();
+        assert!(dump.starts_with("QSDEMO V0R3M0 build 1"));
+        assert!(!dump.contains("QS/400"));
+        let sent = String::from_utf8_lossy(&serial.0.lock().unwrap()).into_owned();
+        assert!(sent.contains("QSDEMO V0R3M0 build 1"), "{sent:?}");
+        assert!(sent.contains("starting"));
+        // A key from the serial terminal is a virtual key.
+        let (tx, rx) = std::sync::mpsc::channel();
+        c.out = Some(tx);
+        c.handle(Command::Virtual(Key::Function(3)));
+        assert_eq!(rx.try_recv(), Ok(Input::Function(3, Vec::new())));
     }
 }

@@ -125,7 +125,8 @@ impl Mode {
     }
 }
 
-/// How the scale is chosen: `qs400.console.scale=auto|N`.
+/// How the scale is chosen: `auto` or `N` on the kernel command line,
+/// under a key of the caller's.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Scale {
     /// The largest integer scale that fits.
@@ -145,13 +146,14 @@ impl Scale {
         }
     }
 
-    /// `qs400.console.scale=` from a kernel command line.
+    /// The value of `key=` on a kernel command line (the caller's key,
+    /// `product.console.scale`), the last one given.
     #[must_use]
-    pub fn from_cmdline(cmdline: &str) -> Self {
+    pub fn from_cmdline(cmdline: &str, key: &str) -> Self {
         cmdline
             .split_whitespace()
             .rev()
-            .find_map(|w| w.strip_prefix("qs400.console.scale="))
+            .find_map(|w| w.strip_prefix(key)?.strip_prefix('='))
             .map_or(Self::Auto, Self::parse)
     }
 }
@@ -503,8 +505,13 @@ mod tests {
         assert_eq!(Scale::parse("auto"), Scale::Auto);
         assert_eq!(Scale::parse("0"), Scale::Auto);
         let line = "console=ttyS0 qs400.console.scale=2 quiet";
-        assert_eq!(Scale::from_cmdline(line), Scale::Fixed(2));
-        assert_eq!(Scale::from_cmdline("quiet"), Scale::Auto);
+        let key = "qs400.console.scale";
+        assert_eq!(Scale::from_cmdline(line, key), Scale::Fixed(2));
+        assert_eq!(Scale::from_cmdline("quiet", key), Scale::Auto);
+        assert_eq!(
+            Scale::from_cmdline(line, "other.console.scale"),
+            Scale::Auto
+        );
     }
 
     #[test]

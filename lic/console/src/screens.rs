@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The Phase 1 screens. Positions are 1-based row and column. Every
-//! string here is Quartz's own.
+//! The console's own screens. Positions are 1-based row and column.
+//! Every string here is Quartz's own, and none names a product: the
+//! SRC display's top line is the caller's.
 
 use crate::screen::{Attr, Screen};
 
@@ -18,11 +19,18 @@ pub const SIGN_ON_VALUE_COL: usize = 70;
 /// Row of the message line.
 pub const MESSAGE_ROW: usize = 23;
 
-/// The SRC display shown during IPL: the current code double width, the
-/// last eight codes below it.
-pub fn src_screen(system: &str, current: &str, text: &str, recent: &[(String, String)]) -> Screen {
+/// The SRC display shown during IPL: the caller's banner (its product,
+/// release and build), the current code double width, the last eight
+/// codes below it.
+pub fn src_screen(
+    banner: &str,
+    system: &str,
+    current: &str,
+    text: &str,
+    recent: &[(String, String)],
+) -> Screen {
     let mut s = Screen::new();
-    s.put(1, 1, &release::banner(), Attr::WHITE);
+    s.put(1, 1, banner, Attr::WHITE);
     s.put(1, 70, system, Attr::GREEN);
     s.put(3, 1, "System reference code", Attr::GREEN);
     s.put_double(5, 24, current, Attr::WHITE);
@@ -38,6 +46,7 @@ pub fn src_screen(system: &str, current: &str, text: &str, recent: &[(String, St
 
 /// The sign-on display. Geometry follows the classic layout; the words are
 /// Quartz's.
+#[cfg(feature = "session")]
 pub fn sign_on(system: &str, subsystem: &str, display: &str, long_password: bool) -> Screen {
     let mut s = Screen::new();
     s.put(1, 36, "Sign On", Attr::WHITE);
@@ -103,6 +112,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(feature = "session")]
     fn sign_on_layout_matches_the_specification() {
         let s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         let d = s.dump();
@@ -131,6 +141,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "session")]
     fn long_password_moves_the_rows_below_down_two() {
         let s = sign_on("QS400", "QINTER", "QSCONSOLE", true);
         let d = s.dump();
@@ -148,8 +159,19 @@ mod tests {
         let recent: Vec<(String, String)> = (0..10)
             .map(|i| (format!("C100{i:04}"), format!("step {i}")))
             .collect();
-        let s = src_screen("QS400", "C6001090", "IPL complete", &recent);
+        let s = src_screen(
+            "QSDEMO V0R3M0 build 7",
+            "QS400",
+            "C6001090",
+            "IPL complete",
+            &recent,
+        );
         let d = s.dump();
+        assert!(
+            d.starts_with("QSDEMO V0R3M0 build 7 "),
+            "the caller's banner"
+        );
+        assert_eq!(&d.lines().next().unwrap()[69..74], "QS400");
         assert!(d.contains("C1000002  step 2"));
         assert!(!d.contains("C1000001  step 1"));
         assert_eq!(s.cell(4, 23).ch, 'C');
