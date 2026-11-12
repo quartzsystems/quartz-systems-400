@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Captures the build ID (`git describe --always --dirty`) into the
+//! Captures (through `vrm::build`) the build ID (`git describe --always --dirty`) into the
 //! `QS400_BUILD_ID` environment variable for `env!`. An explicit
 //! `QS400_BUILD_ID` in the environment wins, so a release build can pin it.
 //! Without git the ID is `unknown`.
@@ -11,75 +11,12 @@
 //! for the upgrade path (docs/INSTALL.md); absent, the release follows
 //! `VERSION` at the repository root (`1.1.0` is V1R1M0, docs/releasing.md).
 
-use std::env;
 use std::path::Path;
-use std::process::Command;
 
 fn main() {
-    println!("cargo:rerun-if-env-changed=QS400_BUILD_ID");
     let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(Path::parent)
-        .map(Path::to_path_buf);
-    if let Some(repo) = &repo {
-        println!(
-            "cargo:rerun-if-changed={}",
-            repo.join(".git/HEAD").display()
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            repo.join(".git/index").display()
-        );
-    }
-    let id = env::var("QS400_BUILD_ID")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .or_else(|| git_describe(repo.as_deref()))
-        .unwrap_or_else(|| "unknown".to_string());
-    println!("cargo:rustc-env=QS400_BUILD_ID={id}");
-    println!("cargo:rerun-if-env-changed=QS400_RELEASE");
-    let rel = env::var("QS400_RELEASE").unwrap_or_default();
-    let (v, r, m) = match parse_release(rel.trim()) {
-        Some(vrm) => vrm,
-        None => version_file(repo.as_deref()),
-    };
-    println!("cargo:rustc-env=QS400_RELEASE_V={v}");
-    println!("cargo:rustc-env=QS400_RELEASE_R={r}");
-    println!("cargo:rustc-env=QS400_RELEASE_M={m}");
-}
-
-/// `VERSION` (`MAJOR.MINOR.PATCH`) as the release's three numbers.
-fn version_file(repo: Option<&Path>) -> (u8, u8, u8) {
-    let path = repo.expect("the repository root").join("VERSION");
-    println!("cargo:rerun-if-changed={}", path.display());
-    let text = std::fs::read_to_string(&path).expect("VERSION at the repository root");
-    let mut parts = text.trim().split('.').map(str::parse::<u8>);
-    match (parts.next(), parts.next(), parts.next(), parts.next()) {
-        (Some(Ok(v)), Some(Ok(r)), Some(Ok(m)), None) => (v, r, m),
-        _ => panic!("VERSION is not MAJOR.MINOR.PATCH: {}", text.trim()),
-    }
-}
-
-/// `VxRyMz` as three numbers; `None` for anything else.
-fn parse_release(s: &str) -> Option<(u8, u8, u8)> {
-    let rest = s.strip_prefix('V')?;
-    let (v, rest) = rest.split_once('R')?;
-    let (r, m) = rest.split_once('M')?;
-    Some((v.parse().ok()?, r.parse().ok()?, m.parse().ok()?))
-}
-
-fn git_describe(repo: Option<&Path>) -> Option<String> {
-    let mut cmd = Command::new("git");
-    if let Some(r) = repo {
-        cmd.arg("-C").arg(r);
-    }
-    let out = cmd
-        .args(["describe", "--always", "--dirty", "--abbrev=7"])
-        .output()
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    (!s.is_empty()).then_some(s)
+        .expect("the repository root");
+    vrm::build::capture(repo, "QS400_");
 }

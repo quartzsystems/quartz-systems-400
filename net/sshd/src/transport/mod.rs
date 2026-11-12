@@ -18,7 +18,7 @@ use packet::DirKeys;
 /// This server's identification string, without CR LF.
 #[must_use]
 pub fn server_ident() -> String {
-    format!("SSH-2.0-QS400_{}", release::RELEASE.full())
+    format!("SSH-2.0-QS400_{}", release::full())
 }
 
 /// Read the peer's identification line (RFC 4253 4.2), skipping any

@@ -1,0 +1,13 @@
+[package]
+name = "vrm"
+description = "VxRyMz release identity for any product: the Release type, the VERSION file, the build ID a build script captures"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[lints]
+workspace = true

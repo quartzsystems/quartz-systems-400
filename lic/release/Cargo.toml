@@ -9,6 +9,10 @@ build = "build.rs"
 
 [dependencies]
 thiserror.workspace = true
+vrm = { path = "../vrm", version = "0.1.0" }
+
+[build-dependencies]
+vrm = { path = "../vrm", version = "0.1.0" }
 
 [lints]
 workspace = true

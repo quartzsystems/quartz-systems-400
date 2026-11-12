@@ -120,7 +120,7 @@ impl Server {
         for n in &config.notes {
             tracing::info!(path = config_path, "{n}");
         }
-        let comment = format!("QSYS@{}", release::RELEASE.full());
+        let comment = format!("QSYS@{}", release::full());
         let keys = HostKeys::load_or_generate(&*ifs, &config.host_key_paths(), &comment)?;
         if keys.0.is_empty() {
             return Err(StartError::NoHostKey);

@@ -12,7 +12,7 @@ use thiserror::Error;
 /// A version, release and modification level.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Release {
-    /// Version: a new generation of the OS.
+    /// Version: a new generation of the product.
     pub v: u8,
     /// Release: adds function; may change on-disk formats.
     pub r: u8,
@@ -27,15 +27,15 @@ pub struct ParseReleaseError(pub String);
 
 impl Release {
     /// Same V and R: the on-disk formats are compatible. M never changes
-    /// them. On R0 formats may still move without an R bump; `store`
+    /// them. On R0 formats may still move without an R bump; a store
     /// records the creating release and refuses a different V/R.
     pub fn is_compatible_store(self, other: Release) -> bool {
         self.v == other.v && self.r == other.r
     }
 
-    /// `V1R0M0 build a1b2c3d`.
-    pub fn full(self) -> String {
-        format!("{self} build {}", crate::build_id())
+    /// `V1R0M0 build a1b2c3d`, with the build ID given.
+    pub fn full(self, build_id: &str) -> String {
+        format!("{self} build {build_id}")
     }
 }
 

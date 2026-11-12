@@ -15,35 +15,18 @@
 
 mod ptf;
 pub mod upgrade;
-mod version;
 
 pub use ptf::{Cumulative, Ptf};
 pub use upgrade::{InstallKind, UpgradeError, check_upgrade, previous, store_may_open};
-pub use version::Release;
+pub use vrm::Release;
 
 /// The current development stream. A test build may claim another
 /// with `QS400_RELEASE` at build time (the upgrade path's test).
-pub const RELEASE: Release = Release {
-    v: num(env!("QS400_RELEASE_V")),
-    r: num(env!("QS400_RELEASE_R")),
-    m: num(env!("QS400_RELEASE_M")),
-};
+pub const RELEASE: Release = vrm::release_from_env!("QS400_");
 
 /// Every release Quartz has defined, ascending: what `*PRV` and the
 /// upgrade rule look in.
 pub const KNOWN: &[Release] = &[Release { v: 1, r: 0, m: 0 }, Release { v: 1, r: 1, m: 0 }];
-
-/// A decimal number of at most three digits, at compile time.
-const fn num(s: &str) -> u8 {
-    let b = s.as_bytes();
-    let mut i = 0;
-    let mut n: u8 = 0;
-    while i < b.len() {
-        n = n * 10 + (b[i] - b'0');
-        i += 1;
-    }
-    n
-}
 
 /// The operating system's product identifier (`DSPSFWRSC`, `DSPPTF`,
 /// `QSZRTVPR`). IBM's `5770SS1` is accepted for it on input
@@ -127,7 +110,7 @@ pub fn build_id() -> &'static str {
 
 /// `V1R1M0 build a1b2c3d`.
 pub fn full() -> String {
-    RELEASE.full()
+    RELEASE.full(build_id())
 }
 
 /// `QS/400 V1R1M0 build a1b2c3d`, the line slic prints at IPL.
