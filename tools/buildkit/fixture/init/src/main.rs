@@ -3,8 +3,18 @@
 // root directory of this project.
 
 //! QSDEMO's PID 1: mount `/proc`, `/sys` and `/dev`, say who we are on
-//! the console, count the boot in the A/B record, power off. The kernel
-//! has the console open as our standard output.
+//! the console, count the boot in the A/B record, then use what an
+//! appliance takes from QS/400 beside the pipeline: a panel of the
+//! screen kit on the framebuffer and the serial terminal ([`panel`]), a
+//! mirrored set served through ublk with an xfs on it ([`raid`]), a
+//! route under its own protocol number ([`net`]). Each prints
+//! `QSDEMO <what>: ...` when it held and `QSDEMO <what> FAILED: ...`
+//! when it did not, and the system powers off. The kernel has the
+//! console open as our standard output.
+
+mod net;
+mod panel;
+mod raid;
 
 use std::ffi::CStr;
 use std::fs::OpenOptions;
@@ -59,12 +69,31 @@ fn count_boot() -> Result<(Slot, u64, u32), String> {
     Ok((slot, sequence, boots))
 }
 
+/// Print what a proof found.
+fn report(what: &str, found: Result<Vec<String>, String>) {
+    match found {
+        Ok(lines) => {
+            for l in lines {
+                println!("QSDEMO {what}: {l}");
+            }
+        }
+        Err(e) => println!("QSDEMO {what} FAILED: {e}"),
+    }
+    let _ = std::io::stdout().flush();
+}
+
 fn main() {
+    // The set's server is this program again.
+    let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("serve") {
+        raid::serve(&args[2..]);
+    }
     for (fs, at) in [("proc", "/proc"), ("sysfs", "/sys"), ("devtmpfs", "/dev")] {
         let _ = std::fs::create_dir_all(at);
         let _ = mount(fs, at, fs, MountFlags::empty(), None::<&CStr>);
     }
-    println!("QSDEMO {RELEASE} {}", env!("QSDEMO_BUILD_ID"));
+    let banner = format!("QSDEMO {RELEASE} {}", env!("QSDEMO_BUILD_ID"));
+    println!("{banner}");
     let magic = String::from_utf8_lossy(&RECORD.magic);
     match count_boot() {
         Ok((slot, sequence, boots)) => {
@@ -72,6 +101,9 @@ fn main() {
         }
         Err(e) => println!("QSDEMO record {magic} failed: {e}"),
     }
+    report("panel", panel::prove(&banner).map(|l| vec![l]));
+    report("set", raid::prove());
+    report("route", net::prove().map(|l| vec![l]));
     let _ = std::io::stdout().flush();
     rustix::fs::sync();
     let _ = reboot(RebootCommand::PowerOff);

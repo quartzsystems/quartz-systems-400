@@ -24,6 +24,7 @@ licpart.workspace = true
 ipc.workspace = true
 console.workspace = true
 svctools.workspace = true
+svcusers.workspace = true
 
 [build-dependencies]
 vrm.workspace = true

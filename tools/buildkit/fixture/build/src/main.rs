@@ -46,7 +46,13 @@ fn qsdemo() -> Result<Product> {
         release: RELEASE.to_string(),
         build_id: env!("QSDEMO_BUILD_ID").to_string(),
         fragments: &["qsdemo.config"],
-        required_y: &["VIRTIO_BLK", "XFS_FS", "SERIAL_8250_CONSOLE"],
+        required_y: &[
+            "VIRTIO_BLK",
+            "XFS_FS",
+            "SERIAL_8250_CONSOLE",
+            "BLK_DEV_UBLK",
+            "DRM_SIMPLEDRM",
+        ],
         required_n: &[],
         cmdline: "console=ttyS0,115200 panic=-1",
         packages: &[Package {

@@ -14,6 +14,16 @@
 //! in: the ESP's volume label and id, and the A/B record its PID 1
 //! wrote (`abrec` under its own magic and partition type).
 //!
+//! The fixture's PID 1 also uses what an appliance takes beside the
+//! pipeline (handoff 14), and the step asserts each on its console: a
+//! panel of the screen kit under QSDEMO's identity on the framebuffer
+//! and, in ANSI sequences, on the serial console; a mirrored set of two
+//! image files made by `protect`, served through `ublk` with an xfs of
+//! `xfsfmt` on it, a member removed, the server killed and the device
+//! recovered, the member replaced and rebuilt; a route added through
+//! `netlink` under QSDEMO's own protocol number. And its PID 1 is built
+//! without the crates those must not bring.
+//!
 //! Only committed work is seen: a git dependency is HEAD, not the
 //! working tree.
 
@@ -52,6 +62,47 @@ const RECORD: Spec = Spec {
 /// (`fixture/build/src/main.rs`).
 const ESP_LABEL: &[u8; 11] = b"QSDEMO ESP ";
 const ESP_VOLUME_ID: u32 = 0x5153_444D;
+/// The panel's title (`fixture/init/src/panel.rs`).
+const PANEL_TITLE: &str = "QSDEMO Service Tools";
+/// What each of the fixture's proofs says when it held, in order.
+const PROOFS: &[(&str, &[&str])] = &[
+    (
+        "panel",
+        &[
+            "on the framebuffer",
+            "on the serial terminal",
+            "ended it with Storage",
+        ],
+    ),
+    (
+        "set",
+        &[
+            "mirrored set of 2 image files",
+            "xfs made, mounted and written",
+        ],
+    ),
+    (
+        "set",
+        &["member 1 removed", "read back from the member left"],
+    ),
+    (
+        "set",
+        &[
+            "server killed and restarted",
+            "recovered under the mounted xfs",
+        ],
+    ),
+    (
+        "set",
+        &["member 1 replaced and rebuilt", "the members are identical"],
+    ),
+    ("route", &["added with routing protocol 83"]),
+];
+/// Crates of this repository the fixture's PID 1 must not be built
+/// with: the neutral crates it takes bring none of them.
+const NOT_IN_INIT: &[&str] = &[
+    "release", "licpart", "store", "svctools", "tn5250", "ccsid", "slic",
+];
 
 /// Copy the tree `from` to `to`.
 fn copy_tree(from: &Path, to: &Path) -> Result<()> {
@@ -138,7 +189,9 @@ fn boot(disk: &Path) -> Result<Vec<String>> {
         .is_ok();
     let mut cmd = Command::new("qemu-system-x86_64");
     cmd.args(["-machine", "q35", "-m", "512", "-nodefaults", "-no-reboot"])
-        .args(["-display", "none", "-serial", "stdio"])
+        // A display adapter with nothing to show it: the firmware's
+        // framebuffer is what the fixture's panel is drawn on.
+        .args(["-vga", "std", "-display", "none", "-serial", "stdio"])
         .args(["-accel", if kvm { "kvm" } else { "tcg" }])
         .arg("-drive")
         .arg(format!(
@@ -254,6 +307,107 @@ fn check_record(disk: &mut fs::File) -> Result<()> {
     Ok(())
 }
 
+/// A console line without its ANSI control sequences.
+fn plain(line: &str) -> String {
+    let mut out = String::new();
+    let mut chars = line.chars();
+    while let Some(c) = chars.next() {
+        if c != '\x1b' {
+            out.push(c);
+            continue;
+        }
+        // CSI: parameters, then a final byte.
+        if chars.next() == Some('[') {
+            for c in chars.by_ref() {
+                if ('\x40'..='\x7e').contains(&c) {
+                    break;
+                }
+            }
+        }
+    }
+    out
+}
+
+/// The fixture's proofs, each on its console: none failed, every one
+/// said what it holds, and the panel itself went over the serial line.
+fn check_proofs(lines: &[String]) -> Result<()> {
+    let console = || lines.join("\n");
+    let text: Vec<String> = lines.iter().map(|l| plain(l)).collect();
+    if let Some(failed) = text.iter().find(|l| l.contains(" FAILED: ")) {
+        bail!("{}\nthe fixture's console:\n{}", failed.trim(), console());
+    }
+    for (what, says) in PROOFS {
+        let prefix = format!("QSDEMO {what}: ");
+        ensure!(
+            text.iter().any(|l| l
+                .trim()
+                .strip_prefix(&prefix)
+                .is_some_and(|rest| says.iter().all(|s| rest.contains(s)))),
+            "no `{prefix}` line with {says:?} on the fixture's console:\n{}",
+            console()
+        );
+    }
+    // The panel as the serial terminal got it: drawn with cursor
+    // addressing, under the fixture's system name.
+    ensure!(
+        lines.iter().any(|l| l.contains("\x1b[2J")),
+        "the serial console was never cleared for a panel"
+    );
+    for want in [PANEL_TITLE, "System:  QSDEMO1", "Selection"] {
+        ensure!(
+            text.iter()
+                .any(|l| l.contains(want) && !l.contains("QSDEMO panel: ")),
+            "`{want}` was not drawn on the serial console:\n{}",
+            console()
+        );
+    }
+    ensure!(
+        !text.iter().any(|l| l.contains("QS/400")),
+        "the fixture's console names QS/400:\n{}",
+        console()
+    );
+    Ok(())
+}
+
+/// The fixture's PID 1 is built without the operating system: `cargo
+/// tree` of it names none of the crates the neutral ones must not bring.
+fn check_init_graph(ctx: &Ctx, dir: &Path, target: &Path) -> Result<()> {
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let tree = Cmd::new(cargo, "fixture-tree")
+        .cwd(dir)
+        .args([
+            "tree",
+            "-p",
+            "qsdemo-init",
+            "--locked",
+            "-e",
+            "normal,build",
+        ])
+        .args(["--target", "x86_64-unknown-linux-musl"])
+        .args(["--prefix", "none", "--format", "{p}"])
+        .env("CARGO_TARGET_DIR", target)
+        .capture()?;
+    let names: Vec<&str> = tree
+        .lines()
+        .filter_map(|l| l.split_whitespace().next())
+        .collect();
+    ensure!(names.len() > 10, "cargo tree printed {} lines", names.len());
+    for must in ["console", "scrkit", "protect", "ublk", "netlink"] {
+        ensure!(
+            names.contains(&must),
+            "the fixture's PID 1 does not use {must}"
+        );
+    }
+    for not in NOT_IN_INIT {
+        ensure!(
+            !names.contains(not),
+            "the fixture's PID 1 is built with {not}"
+        );
+    }
+    let _ = ctx;
+    Ok(())
+}
+
 /// `build fixture`. Returns one line for the report.
 pub fn fixture(ctx: &Ctx) -> Result<String> {
     let dir = ctx.paths.target.join("fixture");
@@ -280,6 +434,7 @@ pub fn fixture(ctx: &Ctx) -> Result<String> {
         build.env("QSDEMO_JOBS", jobs);
     }
     build.run(ctx)?;
+    check_init_graph(ctx, &dir, &target)?;
 
     let pointer = target.join("images").join("disk.path");
     let disk = PathBuf::from(fs::read_to_string(&pointer)?.trim());
@@ -304,10 +459,13 @@ pub fn fixture(ctx: &Ctx) -> Result<String> {
         );
     }
     check_record(&mut open()?)?;
+    check_proofs(&lines)?;
     fs::remove_file(&booted)?;
     let line = format!(
         "qsdemo built from git dependencies at {} and booted: `{want}`, powered off; \
-         its ESP is `{}` and its A/B record `{}`",
+         its ESP is `{}` and its A/B record `{}`; its panel on the framebuffer and on \
+         serial, its mirrored set through ublk (a member removed, the server restarted, \
+         the member rebuilt) and its route held",
         &rev[..rev.len().min(9)],
         String::from_utf8_lossy(ESP_LABEL).trim_end(),
         String::from_utf8_lossy(&RECORD.magic)

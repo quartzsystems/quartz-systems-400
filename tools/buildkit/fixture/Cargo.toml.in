@@ -23,8 +23,15 @@ xfsfmt = { git = "@REPO@", rev = "@REV@" }
 abrec = { git = "@REPO@", rev = "@REV@" }
 licpart = { git = "@REPO@", rev = "@REV@" }
 ipc = { git = "@REPO@", rev = "@REV@" }
-console = { git = "@REPO@", rev = "@REV@" }
+# Without its default features: the screens and the two displays only,
+# not the 5250 session and what it brings.
+console = { git = "@REPO@", rev = "@REV@", default-features = false }
 svctools = { git = "@REPO@", rev = "@REV@" }
+scrkit = { git = "@REPO@", rev = "@REV@" }
+svcusers = { git = "@REPO@", rev = "@REV@" }
+protect = { git = "@REPO@", rev = "@REV@" }
+ublk = { git = "@REPO@", rev = "@REV@" }
+netlink = { git = "@REPO@", rev = "@REV@" }
 
 # What the pipeline's userland check asks of the image's binaries:
 # static (the musl target) and stripped.
