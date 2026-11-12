@@ -17,6 +17,14 @@ use netlink::{Family, nft};
 use super::{KAddr, KRoute, LinkInfo, NetError, NetOps, NetResult};
 use crate::model::Proto;
 
+/// The routing protocol number of the routes QS/400 configures
+/// (`ADDTCPRTE`, a lease's router), which tells them from kernel and
+/// boot routes. Unassigned in iproute2.
+pub const RTPROT_QS400: u8 = 81;
+
+/// QS/400's nftables table: the port restrictions (`ADDTCPPORT`).
+pub const NFT_TABLE: &str = "qs400";
+
 /// The kernel.
 #[derive(Debug, Default)]
 pub struct Kernel {
@@ -48,7 +56,7 @@ impl LeaseSink {
 
     fn route(l: &dhcp::Lease, index: u32) -> Option<netlink::route::Route> {
         let gw = l.router?;
-        let mut x = netlink::route::Route::new(Family::V4, None, 0);
+        let mut x = netlink::route::Route::new(Family::V4, None, 0, RTPROT_QS400);
         x.gateway = Some(IpAddr::V4(gw));
         x.oif = Some(index);
         x.metric = Some(DHCP_METRIC);
@@ -134,7 +142,7 @@ fn route_of(r: &KRoute) -> netlink::route::Route {
         (None, Some(g)) => Family::of(g),
         (None, None) => Family::V4,
     };
-    let mut x = netlink::route::Route::new(family, r.dst, r.prefix);
+    let mut x = netlink::route::Route::new(family, r.dst, r.prefix, RTPROT_QS400);
     x.gateway = r.gateway;
     x.oif = r.link;
     x.mtu = r.mtu;
@@ -223,7 +231,7 @@ impl NetOps for Kernel {
                 mtu: r.mtu,
                 tos: r.tos,
                 metric: r.metric,
-                ours: r.protocol == netlink::route::consts::RTPROT_QS400,
+                ours: r.protocol == RTPROT_QS400,
             })
             .collect())
     }
@@ -245,7 +253,7 @@ impl NetOps for Kernel {
     }
 
     fn set_port_rules(&mut self, rules: &[(Proto, u16, u16)]) -> NetResult<()> {
-        let mut n = nft::Nft::open().map_err(err)?;
+        let mut n = nft::Nft::open(NFT_TABLE).map_err(err)?;
         n.remove_all().map_err(err)?;
         for (p, first, last) in rules {
             let l4 = match p {

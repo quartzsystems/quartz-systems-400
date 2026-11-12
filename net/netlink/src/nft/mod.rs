@@ -3,20 +3,20 @@
 // root directory of this project.
 
 //! nftables over `NETLINK_NETFILTER`: the backstop for TCP/IP port
-//! restrictions (`ADDTCPPORT`).
+//! restrictions.
 //!
-//! QS/400 owns one `inet` table, [`TABLE`], with one base chain,
-//! [`CHAIN`], on the input hook at filter priority, policy accept. Each
-//! restriction is one rule:
+//! The caller owns one `inet` table, whose name it passes in, with one
+//! base chain, [`CHAIN`], on the input hook at filter priority, policy
+//! accept. Each restriction is one rule:
 //!
 //! ```text
 //! meta l4proto tcp th dport 8000-8100 socket mark & 0xffff0000 != 0x51530000 counter drop
 //! ```
 //!
-//! The sockets API sets [`SOCKET_MARK`] (`SO_MARK`) on every socket a
-//! QS/400 job binds after it passes the restriction check, so packets
-//! for those sockets pass; anything else listening on the port (a socket
-//! not made through the API) never sees them. See docs/TCPIP.md.
+//! The caller sets [`SOCKET_MARK`] (`SO_MARK`) on every socket it lets
+//! bind after its own restriction check, so packets for those sockets
+//! pass; anything else listening on the port never sees them. See
+//! docs/TCPIP.md.
 
 pub mod consts;
 mod expr;
@@ -31,11 +31,9 @@ use crate::codec::{
 };
 use crate::{Bus, Error, Result, Socket};
 
-/// The QS/400 table.
-pub const TABLE: &str = "qs400";
-/// Its input chain.
+/// The table's input chain.
 pub const CHAIN: &str = "input";
-/// The mark the sockets API sets on sockets bound through it. The low
+/// The mark of the sockets a restriction lets through. The low
 /// 16 bits are free for other uses.
 pub const SOCKET_MARK: u32 = 0x5153_0000;
 /// The bits of a socket mark that [`SOCKET_MARK`] occupies.
@@ -88,13 +86,13 @@ impl PortRule {
         Ok(Self { proto, first, last })
     }
 
-    /// The comment stored with the rule, which identifies it.
-    pub fn tag(&self) -> String {
-        format!("qs400 {} {}-{}", self.proto.word(), self.first, self.last)
+    /// The comment stored with the rule in `table`, which identifies it.
+    pub fn tag(&self, table: &str) -> String {
+        format!("{table} {} {}-{}", self.proto.word(), self.first, self.last)
     }
 }
 
-/// A rule in the QS/400 chain.
+/// A rule in the chain.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuleInfo {
     /// Kernel handle.
@@ -115,23 +113,23 @@ fn msg(kind: u16, flags: u16) -> Builder {
 }
 
 /// Create the table if missing.
-pub fn new_table() -> Builder {
+pub fn new_table(table: &str) -> Builder {
     let mut b = msg(NFT_MSG_NEWTABLE, NLM_F_CREATE | NLM_F_ACK);
-    b.str(NFTA_TABLE_NAME, TABLE).be32(NFTA_TABLE_FLAGS, 0);
+    b.str(NFTA_TABLE_NAME, table).be32(NFTA_TABLE_FLAGS, 0);
     b
 }
 
 /// Delete the table and everything in it.
-pub fn del_table() -> Builder {
+pub fn del_table(table: &str) -> Builder {
     let mut b = msg(NFT_MSG_DELTABLE, NLM_F_ACK);
-    b.str(NFTA_TABLE_NAME, TABLE);
+    b.str(NFTA_TABLE_NAME, table);
     b
 }
 
 /// Create the input chain if missing.
-pub fn new_chain() -> Builder {
+pub fn new_chain(table: &str) -> Builder {
     let mut b = msg(NFT_MSG_NEWCHAIN, NLM_F_CREATE | NLM_F_ACK);
-    b.str(NFTA_CHAIN_TABLE, TABLE).str(NFTA_CHAIN_NAME, CHAIN);
+    b.str(NFTA_CHAIN_TABLE, table).str(NFTA_CHAIN_NAME, CHAIN);
     b.nest(NFTA_CHAIN_HOOK, |b| {
         b.be32(NFTA_HOOK_HOOKNUM, NF_INET_LOCAL_IN)
             .be32(NFTA_HOOK_PRIORITY, 0);
@@ -142,27 +140,27 @@ pub fn new_chain() -> Builder {
 }
 
 /// Append a port restriction rule.
-pub fn new_rule(rule: &PortRule) -> Builder {
+pub fn new_rule(table: &str, rule: &PortRule) -> Builder {
     let mut b = msg(NFT_MSG_NEWRULE, NLM_F_CREATE | NLM_F_APPEND | NLM_F_ACK);
-    b.str(NFTA_RULE_TABLE, TABLE).str(NFTA_RULE_CHAIN, CHAIN);
+    b.str(NFTA_RULE_TABLE, table).str(NFTA_RULE_CHAIN, CHAIN);
     b.nest(NFTA_RULE_EXPRESSIONS, |b| port_drop_exprs(b, rule));
-    b.attr(NFTA_RULE_USERDATA, &comment_udata(&rule.tag()));
+    b.attr(NFTA_RULE_USERDATA, &comment_udata(&rule.tag(table)));
     b
 }
 
 /// Delete a rule by handle.
-pub fn del_rule(handle: u64) -> Builder {
+pub fn del_rule(table: &str, handle: u64) -> Builder {
     let mut b = msg(NFT_MSG_DELRULE, NLM_F_ACK);
-    b.str(NFTA_RULE_TABLE, TABLE)
+    b.str(NFTA_RULE_TABLE, table)
         .str(NFTA_RULE_CHAIN, CHAIN)
         .be64(NFTA_RULE_HANDLE, handle);
     b
 }
 
-/// Dump the rules of the QS/400 table.
-pub fn list_rules() -> Builder {
+/// Dump the rules of the table.
+pub fn list_rules(table: &str) -> Builder {
     let mut b = msg(NFT_MSG_GETRULE, NLM_F_DUMP);
-    b.str(NFTA_RULE_TABLE, TABLE);
+    b.str(NFTA_RULE_TABLE, table);
     b
 }
 
@@ -219,17 +217,24 @@ pub fn batch(cmds: &[Builder], seq: u32) -> (Vec<u8>, Vec<u32>) {
     (out, seqs)
 }
 
-/// An nftables client for the QS/400 table.
+/// An nftables client for one table.
 pub struct Nft {
     sock: Socket,
+    table: String,
 }
 
 impl Nft {
-    /// Open a request socket.
-    pub fn open() -> Result<Self> {
+    /// Open a request socket for the caller's table.
+    pub fn open(table: &str) -> Result<Self> {
         Ok(Self {
             sock: Socket::open(Bus::Netfilter)?,
+            table: table.to_string(),
         })
+    }
+
+    /// The table's name.
+    pub fn table(&self) -> &str {
+        &self.table
     }
 
     /// Run commands as one transaction; all apply or none.
@@ -263,12 +268,12 @@ impl Nft {
 
     /// Create the table and chain if missing.
     pub fn ensure(&mut self) -> Result<()> {
-        self.transact(&[new_table(), new_chain()])
+        self.transact(&[new_table(&self.table), new_chain(&self.table)])
     }
 
     /// Delete the table, every rule with it. Missing is not an error.
     pub fn remove_all(&mut self) -> Result<()> {
-        match self.transact(&[del_table()]) {
+        match self.transact(&[del_table(&self.table)]) {
             Err(e) if e.is_not_found() => Ok(()),
             r => r,
         }
@@ -276,7 +281,8 @@ impl Nft {
 
     /// The rules in the chain. Empty when the table does not exist.
     pub fn rules(&mut self) -> Result<Vec<RuleInfo>> {
-        match self.sock.dump(&list_rules(), |m| Ok(parse_rule(m.payload))) {
+        let list = list_rules(&self.table);
+        match self.sock.dump(&list, |m| Ok(parse_rule(m.payload))) {
             Err(e) if e.is_not_found() => Ok(Vec::new()),
             r => r,
         }
@@ -284,8 +290,12 @@ impl Nft {
 
     /// Add a restriction (creating the table if needed); returns its handle.
     pub fn add_port_drop(&mut self, rule: &PortRule) -> Result<u64> {
-        self.transact(&[new_table(), new_chain(), new_rule(rule)])?;
-        let tag = rule.tag();
+        self.transact(&[
+            new_table(&self.table),
+            new_chain(&self.table),
+            new_rule(&self.table, rule),
+        ])?;
+        let tag = rule.tag(&self.table);
         self.rules()?
             .into_iter()
             .rev()
@@ -296,12 +306,12 @@ impl Nft {
 
     /// Remove every rule for a restriction. Returns how many went.
     pub fn remove_port_drop(&mut self, rule: &PortRule) -> Result<usize> {
-        let tag = rule.tag();
+        let tag = rule.tag(&self.table);
         let dels: Vec<Builder> = self
             .rules()?
             .into_iter()
             .filter(|r| r.comment.as_deref() == Some(tag.as_str()))
-            .map(|r| del_rule(r.handle))
+            .map(|r| del_rule(&self.table, r.handle))
             .collect();
         if !dels.is_empty() {
             self.transact(&dels)?;
@@ -311,7 +321,7 @@ impl Nft {
 
     /// Delete one rule by handle.
     pub fn delete_rule(&mut self, handle: u64) -> Result<()> {
-        self.transact(&[del_rule(handle)])
+        self.transact(&[del_rule(&self.table, handle)])
     }
 }
 
@@ -320,10 +330,13 @@ mod tests {
     use super::*;
     use crate::codec::{NLMSG_HDRLEN, ne_u16};
 
+    /// QS/400's table, as its captures have it.
+    const TABLE: &str = "qs400";
+
     #[test]
     fn rule_carries_the_expressions_in_order() {
         let r = PortRule::new(L4::Tcp, 8000, 8100).unwrap();
-        let m = new_rule(&r).finish(9);
+        let m = new_rule(TABLE, &r).finish(9);
         assert_eq!(
             ne_u16(&m, 4),
             Some((NFNL_SUBSYS_NFTABLES << 8) | NFT_MSG_NEWRULE)
@@ -359,7 +372,7 @@ mod tests {
         );
 
         // One port compares instead of a range.
-        let one = new_rule(&PortRule::new(L4::Udp, 53, 53).unwrap()).finish(1);
+        let one = new_rule(TABLE, &PortRule::new(L4::Udp, 53, 53).unwrap()).finish(1);
         let a = Attrs::new(&one[NLMSG_HDRLEN + 4..]);
         let names: Vec<String> = a
             .get(NFTA_RULE_EXPRESSIONS)
@@ -372,7 +385,7 @@ mod tests {
 
     #[test]
     fn batch_wraps_commands_with_consecutive_numbers() {
-        let (bytes, seqs) = batch(&[new_table(), new_chain()], 40);
+        let (bytes, seqs) = batch(&[new_table(TABLE), new_chain(TABLE)], 40);
         assert_eq!(seqs, [41, 42]);
         let ms: Vec<_> = messages(&bytes).map(Result::unwrap).collect();
         assert_eq!(ms.len(), 4);

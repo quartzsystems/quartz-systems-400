@@ -117,9 +117,6 @@ pub const RTPROT_KERNEL: u8 = 2;
 pub const RTPROT_BOOT: u8 = 3;
 pub const RTPROT_STATIC: u8 = 4;
 pub const RTPROT_RA: u8 = 9;
-/// Routes QS/400 configures (`ADDTCPRTE`) carry this protocol so they
-/// can be told from kernel and boot routes. Unassigned in iproute2.
-pub const RTPROT_QS400: u8 = 81;
 
 pub const RTN_UNICAST: u8 = 1;
 pub const RTN_LOCAL: u8 = 2;

@@ -43,9 +43,11 @@ pub struct Route {
 }
 
 impl Route {
-    /// A unicast route to `dst/dst_len` in the main table, installed by
-    /// QS/400 ([`RTPROT_QS400`]).
-    pub fn new(family: Family, dst: Option<IpAddr>, dst_len: u8) -> Self {
+    /// A unicast route to `dst/dst_len` in the main table. `protocol`
+    /// is the caller's own `RTPROT_*` number (one iproute2 leaves
+    /// unassigned), so its routes can be told from the kernel's and
+    /// anyone else's.
+    pub fn new(family: Family, dst: Option<IpAddr>, dst_len: u8, protocol: u8) -> Self {
         Self {
             family,
             dst,
@@ -57,7 +59,7 @@ impl Route {
             table: RT_TABLE_MAIN,
             mtu: None,
             tos: 0,
-            protocol: RTPROT_QS400,
+            protocol,
             scope: RT_SCOPE_UNIVERSE,
             kind: RTN_UNICAST,
         }

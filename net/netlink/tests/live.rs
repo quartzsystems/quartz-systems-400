@@ -19,6 +19,9 @@ use netlink::route::consts::{IFA_F_NODAD, IFA_F_PERMANENT};
 use netlink::route::{Address, BondMode, BondSpec, LinkEvents, Route, Rtnl};
 use netlink::{Family, procnet};
 
+/// QS/400's routing protocol number, as the captures have it.
+const RTPROT_QS400: u8 = 81;
+
 fn in_netns() -> bool {
     let on = std::env::var("QS400_NETNS").is_ok_and(|v| v == "1");
     if !on {
@@ -113,7 +116,12 @@ fn links_bonds_vlans_addresses_routes() {
     assert_ne!(got6.flags & IFA_F_PERMANENT, 0);
     assert_ne!(got6.flags & IFA_F_NODAD, 0);
 
-    let mut rt4 = Route::new(Family::V4, Some("198.51.100.0".parse().unwrap()), 24);
+    let mut rt4 = Route::new(
+        Family::V4,
+        Some("198.51.100.0".parse().unwrap()),
+        24,
+        RTPROT_QS400,
+    );
     rt4.gateway = Some("192.0.2.1".parse().unwrap());
     rt4.metric = Some(50);
     rt4.mtu = Some(1300);
@@ -121,11 +129,16 @@ fn links_bonds_vlans_addresses_routes() {
     // A table other than main; IPv6 has one table on the QS/400 kernel.
     rt4.table = 1000;
     r.add_route(&rt4).unwrap();
-    let mut rt6 = Route::new(Family::V6, Some("2001:db8:1::".parse().unwrap()), 48);
+    let mut rt6 = Route::new(
+        Family::V6,
+        Some("2001:db8:1::".parse().unwrap()),
+        48,
+        RTPROT_QS400,
+    );
     rt6.gateway = Some("2001:db8::1".parse().unwrap());
     rt6.oif = Some(vlan.index);
     r.add_route(&rt6).unwrap();
-    let mut def = Route::new(Family::V4, None, 0);
+    let mut def = Route::new(Family::V4, None, 0, RTPROT_QS400);
     def.gateway = Some("192.0.2.1".parse().unwrap());
     r.add_route(&def).unwrap();
 
@@ -136,7 +149,7 @@ fn links_bonds_vlans_addresses_routes() {
     assert_eq!(g4.mtu, Some(1300));
     assert_eq!(g4.tos, 0x10);
     assert_eq!(g4.oif, Some(vlan.index));
-    assert_eq!(g4.protocol, netlink::route::consts::RTPROT_QS400);
+    assert_eq!(g4.protocol, RTPROT_QS400);
     assert_eq!(g4.table, 1000);
     let g6 = routes.iter().find(|x| x.dst == rt6.dst).unwrap();
     assert_eq!(g6.table, netlink::route::consts::RT_TABLE_MAIN);
@@ -274,7 +287,7 @@ fn nft_backstop_drops_unmarked_sockets() {
     let port = listener.local_addr().unwrap().port();
     assert!(connects(port));
 
-    let mut nft = Nft::open().unwrap();
+    let mut nft = Nft::open("qs400").unwrap();
     nft.remove_all().unwrap();
     assert!(nft.rules().unwrap().is_empty());
     let rule = PortRule::new(L4::Tcp, port, port.saturating_add(10)).unwrap();
@@ -289,7 +302,10 @@ fn nft_backstop_drops_unmarked_sockets() {
     assert!(handle > 0);
     let rules = nft.rules().unwrap();
     assert_eq!(rules.len(), 1);
-    assert_eq!(rules[0].comment.as_deref(), Some(rule.tag().as_str()));
+    assert_eq!(
+        rules[0].comment.as_deref(),
+        Some(rule.tag("qs400").as_str())
+    );
 
     assert!(
         !connects(port),

@@ -359,7 +359,12 @@ fn dhcp_address(system: &mut System, index: i32, name: &str) {
     if let Some(gw) = lease.router
         && let Ok(mut r) = netlink::route::Rtnl::open()
     {
-        let mut rt = netlink::route::Route::new(netlink::Family::V4, None, 0);
+        let mut rt = netlink::route::Route::new(
+            netlink::Family::V4,
+            None,
+            0,
+            tcpcfg::net::kernel::RTPROT_QS400,
+        );
         rt.gateway = Some(std::net::IpAddr::V4(gw));
         rt.oif = u32::try_from(index).ok();
         if let Err(e) = r.add_route(&rt) {

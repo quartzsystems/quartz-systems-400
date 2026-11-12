@@ -20,6 +20,9 @@ use netlink::nft::{self, L4, Nft, PortRule};
 use netlink::route::{self, Address, BondMode, BondSpec, Route, Rtnl};
 use netlink::{Bus, Family, Socket};
 
+/// QS/400's routing protocol number, as the captures have it.
+const RTPROT_QS400: u8 = 81;
+
 /// Every datagram of the reply to `req`, as hex lines.
 fn raw(bus: Bus, req: &Builder) -> String {
     let mut s = Socket::open(bus).unwrap();
@@ -72,7 +75,12 @@ fn capture_fixtures() {
     let mut a6 = Address::new(vlan.index, "2001:db8::10".parse().unwrap(), 64);
     a6.flags = route::consts::IFA_F_NODAD;
     r.add_address(&a6).unwrap();
-    let mut rt = Route::new(Family::V4, Some("198.51.100.0".parse().unwrap()), 24);
+    let mut rt = Route::new(
+        Family::V4,
+        Some("198.51.100.0".parse().unwrap()),
+        24,
+        RTPROT_QS400,
+    );
     rt.gateway = Some("192.0.2.1".parse().unwrap());
     rt.metric = Some(50);
     rt.mtu = Some(1300);
@@ -130,11 +138,14 @@ fn capture_fixtures() {
         ),
     );
 
-    let mut n = Nft::open().unwrap();
+    let mut n = Nft::open("qs400").unwrap();
     n.remove_all().unwrap();
     // Kernels without NFT_SOCKET (WSL) cannot hold the rule.
     match n.add_port_drop(&PortRule::new(L4::Tcp, 8470, 8476).unwrap()) {
-        Ok(_) => save("nft_rules.hex", raw(Bus::Netfilter, &nft::list_rules())),
+        Ok(_) => save(
+            "nft_rules.hex",
+            raw(Bus::Netfilter, &nft::list_rules("qs400")),
+        ),
         Err(e) if e.is_not_found() => eprintln!("nft: no socket expression, rules not captured"),
         Err(e) => panic!("nft: {e}"),
     }

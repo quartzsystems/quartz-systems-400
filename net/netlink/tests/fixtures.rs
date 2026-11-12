@@ -134,7 +134,7 @@ fn parses_routes() {
     assert_eq!(r.metric, Some(50));
     assert_eq!(r.mtu, Some(1300));
     assert_eq!(r.table, consts::RT_TABLE_MAIN);
-    assert_eq!(r.protocol, consts::RTPROT_QS400);
+    assert_eq!(r.protocol, 81, "QS/400's protocol number");
     // The kernel's connected route for the VLAN subnet.
     assert!(
         routes

@@ -12,8 +12,12 @@
 //! - [`route`]: `NETLINK_ROUTE` links, bonds, VLANs, addresses, routes,
 //!   neighbors and link events.
 //! - [`diag`]: `NETLINK_SOCK_DIAG` TCP and UDP sockets, `SOCK_DESTROY`.
-//! - [`nft`]: the `qs400` nftables table that backs port restrictions.
+//! - [`nft`]: the caller's nftables table that backs port restrictions.
 //! - [`sysctl`]: `/proc/sys/net` and the `CHGTCPA` mappings.
+//!
+//! What names an owner in the kernel comes from the caller: the routing
+//! protocol number of its routes ([`route::Route::new`]) and the name
+//! of its nftables table ([`nft::Nft::open`]).
 //! - [`procnet`]: `/proc/net/{tcp,udp}{,6}` and socket inode owners.
 
 #![forbid(unsafe_code)]
