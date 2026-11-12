@@ -4,7 +4,8 @@
 
 //! One ublk device: added and started through `/dev/ublk-control`, its
 //! one queue served on a thread of its own, resized, stopped and
-//! deleted.
+//! deleted; or left to the kernel when its server ends, and taken over
+//! by the next one.
 
 use std::fs::{File, OpenOptions};
 use std::os::fd::OwnedFd;
@@ -16,14 +17,15 @@ use std::time::{Duration, Instant};
 
 use tracing::{info, warn};
 
-use crate::Error;
 use crate::abi::{
-    self, ATTR_FUA, ATTR_VOLATILE_CACHE, CMD_ADD_DEV, CMD_DEL_DEV, CMD_SET_PARAMS, CMD_START_DEV,
-    CMD_STOP_DEV, CMD_UPDATE_SIZE, DevInfo, F_CMD_IOCTL_ENCODE, F_UPDATE_SIZE,
+    self, ATTR_FUA, ATTR_VOLATILE_CACHE, CMD_ADD_DEV, CMD_DEL_DEV, CMD_END_USER_RECOVERY,
+    CMD_SET_PARAMS, CMD_START_DEV, CMD_START_USER_RECOVERY, CMD_STOP_DEV, CMD_UPDATE_SIZE, DevInfo,
+    F_CMD_IOCTL_ENCODE, F_UPDATE_SIZE, F_USER_RECOVERY, F_USER_RECOVERY_REISSUE,
     IO_COMMIT_AND_FETCH_REQ, IO_FETCH_REQ, IoDesc,
 };
 use crate::sys::{Descs, Ring};
 use crate::target::{BLOCK, Served, Target, start};
+use crate::{Error, Options};
 
 /// Tags of the queue.
 pub const DEPTH: u16 = 32;
@@ -31,6 +33,8 @@ pub const DEPTH: u16 = 32;
 pub const MAX_IO: u32 = 512 << 10;
 /// `-ENODEV`: the kernel ended a fetch (`UBLK_IO_RES_ABORT`).
 const ABORT: i32 = -19;
+/// `EBUSY`: the old server's hold on the device is not gone yet.
+const EBUSY: i32 = 16;
 
 /// A running device.
 pub struct Device {
@@ -44,8 +48,9 @@ fn fail(what: &str, e: impl std::fmt::Display) -> Error {
     Error::Kernel(format!("{what}: {e}"))
 }
 
-/// One control command: submitted, waited for, its result.
-fn control(
+/// One control command: submitted, waited for, the kernel's answer
+/// (a negative `errno` when it refused).
+fn control_raw(
     ring: &mut Ring,
     ctrl: &File,
     op: u32,
@@ -61,31 +66,55 @@ fn control(
     let c = ring
         .pop()
         .ok_or_else(|| Error::Kernel(format!("{what}: no completion")))?;
-    let (_, res) = abi::cqe(&c);
+    Ok(abi::cqe(&c).1)
+}
+
+/// One control command: submitted, waited for, its result.
+fn control(
+    ring: &mut Ring,
+    ctrl: &File,
+    op: u32,
+    cmd: &[u8; abi::CTRL_CMD_LEN],
+    what: &str,
+) -> Result<i32, Error> {
+    let res = control_raw(ring, ctrl, op, cmd, what)?;
     if res < 0 {
         return Err(Error::Kernel(format!("{what}: errno {}", -res)));
     }
     Ok(res)
 }
 
+fn open_control() -> Result<File, Error> {
+    OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("/dev/ublk-control")
+        .map_err(|e| fail("/dev/ublk-control", e))
+}
+
 impl Device {
     /// Add a device over `target`, serve its queue, start it. The kernel
-    /// then shows `/dev/ublkbN`.
+    /// then shows `/dev/ublkbN`. The device goes when its server does.
     pub fn start(target: Arc<dyn Target>) -> Result<Self, Error> {
-        let ctrl = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open("/dev/ublk-control")
-            .map_err(|e| fail("/dev/ublk-control", e))?;
+        Self::start_with(target, Options::default())
+    }
+
+    /// [`start`](Self::start), the device added as `options` say.
+    pub fn start_with(target: Arc<dyn Target>, options: Options) -> Result<Self, Error> {
+        let ctrl = open_control()?;
         let mut ring = Ring::new(4).map_err(|e| fail("control ring", e))?;
         let pid = rustix::process::getpid().as_raw_nonzero().get();
+        let mut flags = F_CMD_IOCTL_ENCODE | F_UPDATE_SIZE;
+        if options.recovery {
+            flags |= F_USER_RECOVERY | F_USER_RECOVERY_REISSUE;
+        }
         let mut info = DevInfo {
             queues: 1,
             depth: DEPTH,
             max_io: MAX_IO,
             dev_id: u32::MAX,
             pid,
-            flags: F_CMD_IOCTL_ENCODE | F_UPDATE_SIZE,
+            flags,
         }
         .encode();
         let cmd = abi::ctrl_cmd(u32::MAX, info.as_mut_ptr() as u64, abi::DEV_INFO_LEN16, 0);
@@ -105,6 +134,39 @@ impl Device {
         Ok(dev)
     }
 
+    /// Take over device `id`, which a server that ended left behind
+    /// (it was added with [`Options::recovery`]): serve its queue over
+    /// `target`, the same device as before, and let its requests go on.
+    /// Waits for the kernel to see the old server gone.
+    pub fn recover(id: u32, target: Arc<dyn Target>) -> Result<Self, Error> {
+        let ctrl = open_control()?;
+        let mut ring = Ring::new(4).map_err(|e| fail("control ring", e))?;
+        let pid = rustix::process::getpid().as_raw_nonzero().get();
+        let cmd = abi::ctrl_cmd(id, 0, 0, 0);
+        let deadline = Instant::now() + Duration::from_secs(30);
+        loop {
+            let what = "start recovery";
+            match control_raw(&mut ring, &ctrl, CMD_START_USER_RECOVERY, &cmd, what)? {
+                r if r >= 0 => break,
+                r if r == -EBUSY && Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(50));
+                }
+                r => return Err(Error::Kernel(format!("{what}: errno {}", -r))),
+            }
+        }
+        let mut dev = Self {
+            id,
+            ctrl,
+            ring: Mutex::new(ring),
+            queue: None,
+        };
+        dev.serve(target)?;
+        let cmd = abi::ctrl_cmd(id, 0, 0, u64::try_from(pid).unwrap_or(1));
+        dev.control(CMD_END_USER_RECOVERY, &cmd, "end recovery")?;
+        info!("ublk: device {id} recovered");
+        Ok(dev)
+    }
+
     fn bring_up(&mut self, target: Arc<dyn Target>, pid: i32) -> Result<(), Error> {
         let params = abi::params_basic(
             ATTR_VOLATILE_CACHE | ATTR_FUA,
@@ -113,6 +175,15 @@ impl Device {
         );
         let cmd = abi::ctrl_cmd(self.id, params.as_ptr() as u64, abi::PARAMS_BASIC_LEN16, 0);
         self.control(CMD_SET_PARAMS, &cmd, "set parameters")?;
+        self.serve(target)?;
+        let cmd = abi::ctrl_cmd(self.id, 0, 0, u64::try_from(pid).unwrap_or(1));
+        self.control(CMD_START_DEV, &cmd, "start device")?;
+        Ok(())
+    }
+
+    /// Open the device's queue and fetch every tag on a thread of its
+    /// own.
+    fn serve(&mut self, target: Arc<dyn Target>) -> Result<(), Error> {
         let cdev = open_char(self.id)?;
         let (tx, rx) = mpsc::channel();
         let handle = std::thread::Builder::new()
@@ -125,8 +196,6 @@ impl Device {
             Ok(Err(e)) => return Err(e),
             Err(_) => return Err(Error::Kernel("queue thread did not start".into())),
         }
-        let cmd = abi::ctrl_cmd(self.id, 0, 0, u64::try_from(pid).unwrap_or(1));
-        self.control(CMD_START_DEV, &cmd, "start device")?;
         Ok(())
     }
 

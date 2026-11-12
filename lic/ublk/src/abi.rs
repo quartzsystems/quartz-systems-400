@@ -46,6 +46,17 @@ pub const IO_FETCH_REQ: u32 = ioc(RW, 0x20, IO);
 /// `UBLK_U_IO_COMMIT_AND_FETCH_REQ`.
 pub const IO_COMMIT_AND_FETCH_REQ: u32 = ioc(RW, 0x21, IO);
 
+/// `UBLK_U_CMD_START_USER_RECOVERY`.
+pub const CMD_START_USER_RECOVERY: u32 = ioc(RW, 0x10, CTRL);
+/// `UBLK_U_CMD_END_USER_RECOVERY`.
+pub const CMD_END_USER_RECOVERY: u32 = ioc(RW, 0x11, CTRL);
+
+/// `UBLK_F_USER_RECOVERY`: the device stays, quiesced, when its server
+/// ends.
+pub const F_USER_RECOVERY: u64 = 1 << 3;
+/// `UBLK_F_USER_RECOVERY_REISSUE`: requests the old server had are
+/// issued again to the new one.
+pub const F_USER_RECOVERY_REISSUE: u64 = 1 << 4;
 /// `UBLK_F_CMD_IOCTL_ENCODE`.
 pub const F_CMD_IOCTL_ENCODE: u64 = 1 << 6;
 /// `UBLK_F_UPDATE_SIZE`.

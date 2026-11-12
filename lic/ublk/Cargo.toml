@@ -1,6 +1,6 @@
 [package]
 name = "ublk"
-description = "QS/400 ublk server: a block device the kernel reads and writes through a process, over io_uring"
+description = "A ublk server: a block device the kernel reads and writes through a process, over io_uring"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

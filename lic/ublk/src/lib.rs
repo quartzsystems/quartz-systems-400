@@ -3,9 +3,13 @@
 // root directory of this project.
 
 //! A ublk server: a block device the kernel reads and writes through
-//! this process. The storage service serves the IFS volume with it
-//! (`docs/IFS.md` "The block device"). Only Linux has the driver; other
-//! hosts build the [`Target`] side and a [`Device`] that cannot start.
+//! this process, over whatever [`Target`] the caller gives it; any
+//! `blockdev::BlockDev` is one through [`BlockTarget`]. A device added
+//! with [`Options::recovery`] outlives its server: the kernel holds its
+//! requests until a new process takes it over ([`Device::recover`]),
+//! so a file system mounted on it stays mounted. Only Linux has the
+//! driver; other hosts build the [`Target`] side and a [`Device`] that
+//! cannot start.
 
 pub mod abi;
 pub mod target;
@@ -17,7 +21,18 @@ mod sys;
 
 #[cfg(target_os = "linux")]
 pub use device::{DEPTH, Device, MAX_IO};
-pub use target::{BLOCK, Target};
+pub use target::{BLOCK, BlockTarget, Target};
+
+/// How a device is added.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Options {
+    /// Keep the device when its server ends without stopping it. The
+    /// kernel holds the requests that come meanwhile, and issues again
+    /// the ones the old server had taken and not answered, once a new
+    /// process has taken the device over with `Device::recover`. The
+    /// target must take a write twice, as a block device does.
+    pub recovery: bool,
+}
 
 /// Why the device could not be served.
 #[derive(Debug, thiserror::Error)]
@@ -46,6 +61,25 @@ impl Device {
     /// Always [`Error::Unsupported`].
     pub fn start(_target: std::sync::Arc<dyn Target>) -> Result<Self, Error> {
         Err(Error::Unsupported)
+    }
+
+    /// Always [`Error::Unsupported`].
+    pub fn start_with(
+        _target: std::sync::Arc<dyn Target>,
+        _options: Options,
+    ) -> Result<Self, Error> {
+        Err(Error::Unsupported)
+    }
+
+    /// Always [`Error::Unsupported`].
+    pub fn recover(_id: u32, _target: std::sync::Arc<dyn Target>) -> Result<Self, Error> {
+        Err(Error::Unsupported)
+    }
+
+    /// The device number.
+    #[must_use]
+    pub fn id(&self) -> u32 {
+        0
     }
 
     /// The block device.

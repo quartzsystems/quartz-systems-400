@@ -31,6 +31,25 @@ pub trait Target: Send + Sync {
     fn flush(&self) -> Result<(), i32>;
 }
 
+/// Any block device as the device behind the server. Its errors reach
+/// the kernel as `EIO`.
+pub struct BlockTarget<D>(pub D);
+
+impl<D: blockdev::BlockDev> Target for BlockTarget<D> {
+    fn blocks(&self) -> u64 {
+        self.0.blocks()
+    }
+    fn read(&self, block: u64, buf: &mut [u8]) -> Result<(), i32> {
+        self.0.read(block, buf).map_err(|_| EIO)
+    }
+    fn write(&self, block: u64, buf: &[u8]) -> Result<(), i32> {
+        self.0.write(block, buf).map_err(|_| EIO)
+    }
+    fn flush(&self) -> Result<(), i32> {
+        self.0.flush().map_err(|_| EIO)
+    }
+}
+
 /// Serve one request with `buf` as its data (the tag's buffer): the
 /// bytes moved, or a negative `errno`.
 pub fn serve(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> i32 {
@@ -94,6 +113,33 @@ mod tests {
     use std::sync::Mutex;
 
     use super::*;
+
+    #[test]
+    fn any_block_device_is_a_target() {
+        let dev = BlockTarget(blockdev::MemBlockDev::new(8));
+        assert_eq!(dev.blocks(), 8);
+        let mut buf = vec![0x5Au8; 2 * BLOCK];
+        let write = IoDesc {
+            op: OP_WRITE,
+            flags: 0,
+            sectors: 16,
+            start: 8,
+        };
+        assert_eq!(serve(&dev, &write, &mut buf), 8192);
+        let mut back = vec![0u8; 2 * BLOCK];
+        let read = IoDesc {
+            op: OP_READ,
+            ..write
+        };
+        assert_eq!(serve(&dev, &read, &mut back), 8192);
+        assert_eq!(back, buf);
+        // A device that fails answers EIO.
+        dev.0.fail_reads(true);
+        assert_eq!(serve(&dev, &read, &mut back), -EIO);
+        // Past the end.
+        let past = IoDesc { start: 64, ..read };
+        assert_eq!(serve(&dev, &past, &mut back), -EINVAL);
+    }
 
     /// A device in memory that counts its flushes.
     struct Mem {
