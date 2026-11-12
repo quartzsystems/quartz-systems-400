@@ -54,6 +54,11 @@ fn sgr(a: Attr) -> String {
     s
 }
 
+/// Unchanged cells between two changed ones that are sent again rather
+/// than jumped over: moving the cursor costs as many bytes, and a
+/// label's words stay together on the line.
+const BRIDGE: usize = 7;
+
 /// What a cell shows: nothing for a nondisplay cell or the second half
 /// of a double-width character.
 fn glyph(c: Cell) -> char {
@@ -113,12 +118,31 @@ impl<W: Write + Send> AnsiDisplay<W> {
         let mut now = Vec::with_capacity(rows * cols);
         let mut pen: Option<Attr> = None;
         for r in 0..rows {
+            let row: Vec<Cell> = (0..cols).map(|c| cells.cell(r, c)).collect();
+            let mut send: Vec<bool> = (0..cols)
+                .map(|c| {
+                    let before = self.shown.as_ref().map_or(blank, |s| s[r * cols + c]);
+                    look(row[c]) != look(before)
+                })
+                .collect();
+            // Short runs of unchanged cells between changed ones go too.
+            let mut last: Option<usize> = None;
+            for c in 0..cols {
+                if !send[c] {
+                    continue;
+                }
+                if let Some(l) = last
+                    && c - l - 1 <= BRIDGE
+                {
+                    send[l + 1..c].fill(true);
+                }
+                last = Some(c);
+            }
+            now.extend_from_slice(&row);
             let mut at: Option<usize> = None;
             for c in 0..cols {
-                let cell = cells.cell(r, c);
-                now.push(cell);
-                let before = self.shown.as_ref().map_or(blank, |s| s[r * cols + c]);
-                if look(cell) == look(before) {
+                let cell = row[c];
+                if !send[c] {
                     continue;
                 }
                 if at != Some(c) {
@@ -375,6 +399,20 @@ mod tests {
         assert!(!out.contains("pw"));
         // Double width: each character and a space.
         assert!(out.contains("C 6 "));
+        // The words of a label go out as one run, blanks and all; what
+        // is far along the row is reached by moving the cursor.
+        let mut d = AnsiDisplay::new(Vec::new());
+        let mut s = Screen::new();
+        s.put(2, 62, "System:  QSDEMO1", Attr::GREEN);
+        s.put(4, 2, "left", Attr::GREEN);
+        s.put(4, 40, "right", Attr::GREEN);
+        d.draw(&s).unwrap();
+        let out = text(d.get_mut());
+        assert!(
+            out.contains("\x1b[2;62H\x1b[0;32mSystem:  QSDEMO1"),
+            "{out:?}"
+        );
+        assert!(out.contains("\x1b[4;2Hleft\x1b[4;40Hright"), "{out:?}");
     }
 
     fn keys(d: &mut KeyDecoder, bytes: &[u8]) -> Vec<Key> {
