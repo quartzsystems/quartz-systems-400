@@ -12,18 +12,28 @@ use crate::ctx::Ctx;
 use crate::host::cmd::{Cmd, which};
 use crate::userland::RUST_TARGET;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Status {
+/// How a check came out.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Status {
+    /// Present.
     Ok,
+    /// Absent, and the pipeline goes on without it.
     Warn,
+    /// Absent.
     Missing,
 }
 
-struct Row {
-    name: &'static str,
-    required: bool,
-    status: Status,
-    detail: String,
+/// One line of the table.
+#[derive(Debug, Clone)]
+pub struct Row {
+    /// What was looked for.
+    pub name: String,
+    /// Whether the pipeline needs it.
+    pub required: bool,
+    /// How the check came out.
+    pub status: Status,
+    /// The version found, or what to do.
+    pub detail: String,
 }
 
 fn tool(name: &'static str, required: bool, version_args: &[&str]) -> Row {
@@ -36,14 +46,14 @@ fn tool(name: &'static str, required: bool, version_args: &[&str]) -> Row {
                 .and_then(|s| s.lines().next().map(str::to_string))
                 .unwrap_or_else(|| path.display().to_string());
             Row {
-                name,
+                name: name.into(),
                 required,
                 status: Status::Ok,
                 detail,
             }
         }
         None => Row {
-            name,
+            name: name.into(),
             required,
             status: Status::Missing,
             detail: "not on PATH".into(),
@@ -54,13 +64,13 @@ fn tool(name: &'static str, required: bool, version_args: &[&str]) -> Row {
 fn file(name: &'static str, required: bool, candidates: &[&str], hint: &str) -> Row {
     match candidates.iter().find(|p| Path::new(p).exists()) {
         Some(p) => Row {
-            name,
+            name: name.into(),
             required,
             status: Status::Ok,
             detail: (*p).to_string(),
         },
         None => Row {
-            name,
+            name: name.into(),
             required,
             status: if required {
                 Status::Missing
@@ -68,24 +78,6 @@ fn file(name: &'static str, required: bool, candidates: &[&str], hint: &str) -> 
                 Status::Warn
             },
             detail: hint.to_string(),
-        },
-    }
-}
-
-fn firmware() -> Row {
-    let name = "OVMF (QS400_OVMF_CODE)";
-    match conformance::firmware::locate() {
-        Ok(p) => Row {
-            name,
-            required: true,
-            status: Status::Ok,
-            detail: p.display().to_string(),
-        },
-        Err(e) => Row {
-            name,
-            required: true,
-            status: Status::Missing,
-            detail: e.to_string(),
         },
     }
 }
@@ -128,15 +120,14 @@ pub fn doctor(ctx: &Ctx) -> Result<()> {
         tool("gpg", false, &["--version"]),
         tool("cargo-deny", true, &["--version"]),
         tool("qemu-system-x86_64", true, &["--version"]),
-        firmware(),
-        kvm(),
-        target_dir(ctx),
     ];
+    rows.extend((ctx.product.doctor)(ctx));
+    rows.extend([kvm(), target_dir(ctx)]);
     if !cfg!(target_os = "linux") {
         rows.insert(
             0,
             Row {
-                name: "host os",
+                name: "host os".into(),
                 required: true,
                 status: Status::Missing,
                 detail: "the pipeline runs on Linux only; use WSL".into(),
@@ -175,14 +166,14 @@ fn rust_target() -> Row {
         .unwrap_or_default();
     if installed.lines().any(|l| l == RUST_TARGET) {
         Row {
-            name: "musl target",
+            name: "musl target".into(),
             required: true,
             status: Status::Ok,
             detail: RUST_TARGET.into(),
         }
     } else {
         Row {
-            name: "musl target",
+            name: "musl target".into(),
             required: true,
             status: Status::Missing,
             detail: format!("rustup target add {RUST_TARGET}"),
@@ -194,7 +185,7 @@ fn kvm() -> Row {
     let name = "/dev/kvm";
     if !Path::new(name).exists() {
         return Row {
-            name,
+            name: name.into(),
             required: false,
             status: Status::Warn,
             detail: "absent; QEMU will use TCG".into(),
@@ -206,13 +197,13 @@ fn kvm() -> Row {
         .open(name)
     {
         Ok(_) => Row {
-            name,
+            name: name.into(),
             required: false,
             status: Status::Ok,
             detail: "usable".into(),
         },
         Err(e) => Row {
-            name,
+            name: name.into(),
             required: false,
             status: Status::Warn,
             detail: format!("{e}; add yourself to the kvm group, else TCG"),
@@ -224,14 +215,17 @@ fn target_dir(ctx: &Ctx) -> Row {
     let t = ctx.paths.target.display().to_string();
     if t.starts_with("/mnt/") {
         Row {
-            name: "target dir",
+            name: "target dir".into(),
             required: false,
             status: Status::Warn,
-            detail: format!("{t} is on drvfs; set QS400_TARGET_DIR to an ext4 path"),
+            detail: format!(
+                "{t} is on drvfs; set {} to an ext4 path",
+                ctx.product.env_name("TARGET_DIR")
+            ),
         }
     } else {
         Row {
-            name: "target dir",
+            name: "target dir".into(),
             required: false,
             status: Status::Ok,
             detail: t,

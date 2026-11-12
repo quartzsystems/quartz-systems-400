@@ -14,10 +14,10 @@ use anyhow::{Context, Result, ensure};
 use diskimg::{Guids, Plan, fat};
 use tracing::info;
 
-use crate::ctx::Ctx;
-use crate::host::hash::{sha256_file, short};
-use crate::host::paths;
-use crate::kernel::UkiKind;
+use buildkit::Ctx;
+use buildkit::UkiKind;
+use buildkit::host::hash::{sha256_file, short};
+use buildkit::host::paths;
 
 /// Slot A: the removable-media default boot path.
 const SLOT_A: &str = "BOOTX64.EFI";

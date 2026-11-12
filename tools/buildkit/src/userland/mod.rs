@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Build `slic`, `qsjob` and `instload` (the media UKI's loader) for the
-//! musl target and prove each is static and stripped.
+//! Build the product's userland packages for the musl target and prove
+//! each binary is static and stripped.
 
 pub mod elf;
 
@@ -23,30 +23,26 @@ pub const RUST_TARGET: &str = "x86_64-unknown-linux-musl";
 /// ELF `e_machine` for `x86_64`.
 const ELF_MACHINE: u16 = 62;
 
-/// `build userland`: the binaries, `slic` first.
+/// `build userland`: the binaries, in the product's order.
 pub fn userland(ctx: &Ctx) -> Result<Vec<PathBuf>> {
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    info!("userland: cargo build --release -p slic -p qsjob -p instload --target {RUST_TARGET}");
-    Cmd::new(cargo, "userland")
-        .cwd(&ctx.paths.repo)
-        .args([
-            "build",
-            "--release",
-            "--locked",
-            "-p",
-            "slic",
-            "-p",
-            "qsjob",
-            "-p",
-            "instload",
-            "--target",
-            RUST_TARGET,
-        ])
+    let names: Vec<&str> = ctx.product.packages.iter().map(|p| p.name).collect();
+    info!(
+        "userland: cargo build --release -p {} --target {RUST_TARGET}",
+        names.join(" -p ")
+    );
+    let mut cmd = Cmd::new(cargo, "userland");
+    cmd.cwd(&ctx.paths.repo)
+        .args(["build", "--release", "--locked"]);
+    for name in &names {
+        cmd.args(["-p", name]);
+    }
+    cmd.args(["--target", RUST_TARGET])
         .arg("--target-dir")
         .arg(&ctx.paths.target)
         .run(ctx)?;
 
-    let bins = vec![ctx.paths.slic(), ctx.paths.qsjob(), ctx.paths.instload()];
+    let bins: Vec<PathBuf> = names.iter().map(|n| ctx.paths.bin(n)).collect();
     for bin in &bins {
         check(bin)?;
     }

@@ -9,10 +9,9 @@
 //! the kernel. `deny.toml`'s `[licenses] allow` is the authority: a
 //! crate that needs anything else fails the build.
 //!
-//! The generated file is kept in the tree
-//! (`lic/osobjects/shipped/NOTICES.txt`): the storage service writes it
-//! to `/QQS/ProdData/Notices/` and the media carries it at its root.
-//! `build notices` rewrites it; `build release` fails when it is stale.
+//! The generated file is kept in the tree, where the product says
+//! (`Product::notices`), with the product's own opening lines. `build
+//! notices` rewrites it; with `--check` it fails when the file is stale.
 
 pub mod spdx;
 
@@ -26,9 +25,6 @@ use tracing::info;
 
 use crate::ctx::Ctx;
 use crate::host::cmd::Cmd;
-
-/// Where the generated file lives in the tree.
-pub const TREE_FILE: &str = "lic/osobjects/shipped/NOTICES.txt";
 
 /// The license texts, by SPDX identifier.
 const TEXTS: &[(&str, &str)] = &[
@@ -80,7 +76,7 @@ pub struct Crate {
     pub version: String,
     /// The license expression as the crate states it.
     pub expr: String,
-    /// The licenses QS/400 takes it under.
+    /// The licenses the product takes it under.
     pub chosen: Vec<String>,
     /// Its license and notice files: name and normalised text.
     pub files: Vec<(String, String)>,
@@ -234,27 +230,10 @@ fn rule(out: &mut String, title: &str) {
     let _ = writeln!(out, "\n{}\n{title}\n{}\n", "=".repeat(72), "=".repeat(72));
 }
 
-/// The text of `NOTICES.txt` for `crates`, the kernel `kernel_version`.
-pub fn render(crates: &[Crate], kernel_version: &str) -> Result<String> {
-    let mut o = String::new();
-    let _ = writeln!(o, "QS/400 {} third-party notices", release::RELEASE);
-    let _ = write!(
-        o,
-        "\nQS/400 is licensed under the MIT license (the LICENSE file of its source).\n\
-         It contains the work of others, listed here with their licenses:\n\n\
-         1. The Linux kernel {kernel_version}, under GPL-2.0 with the Linux syscall note.\n\
-         \x20  The kernel's source offer is QS400/SRC/ on the install media and\n\
-         \x20  SOURCE-OFFER.txt beside each release. No firmware is built into the\n\
-         \x20  kernel (CONFIG_EXTRA_FIRMWARE is empty) and the media carry none.\n\
-         2. musl libc, under MIT: Copyright (c) 2005-2020 Rich Felker, et al.\n\
-         \x20  musl's COPYRIGHT file names its authors and the few files it holds\n\
-         \x20  under other permissive terms.\n\
-         3. The Rust standard library (core, alloc, std and their dependencies),\n\
-         \x20  under MIT OR Apache-2.0, taken under MIT; LLVM's libunwind and\n\
-         \x20  compiler-rt builtins, under Apache-2.0 WITH LLVM-exception.\n\
-         4. The {} Rust crates below, each under the license named.\n",
-        crates.len()
-    );
+/// The text of the notices file: `intro` (the product's opening lines,
+/// which name the kernel and the toolchain parts), then `crates`.
+pub fn render(crates: &[Crate], intro: &str) -> Result<String> {
+    let mut o = String::from(intro);
     rule(
         &mut o,
         "Crates: name, version, license as stated, license taken",
@@ -289,7 +268,7 @@ pub fn render(crates: &[Crate], kernel_version: &str) -> Result<String> {
         let _ = writeln!(o, "---- {id} ----\n");
         for part in id.split(" WITH ") {
             let t = text(part).with_context(|| {
-                format!("no text for license {part} under tools/build/licenses/")
+                format!("no text for license {part} under tools/buildkit/licenses/")
             })?;
             o.push_str(&normalise(t));
             o.push('\n');
@@ -331,20 +310,27 @@ pub fn render(crates: &[Crate], kernel_version: &str) -> Result<String> {
 
 /// The file as the tree's lock file and registry sources make it now,
 /// and the crates in it.
-pub fn generate(repo: &Path) -> Result<(String, Vec<Crate>)> {
+pub fn generate(ctx: &Ctx) -> Result<(String, Vec<Crate>)> {
+    let notices = ctx
+        .product
+        .notices
+        .context("the product has no notices file")?;
+    let repo = &ctx.paths.repo;
     let version = fs::read_to_string(repo.join("kernel/VERSION")).context("kernel/VERSION")?;
     let crates = crates(repo)?;
-    Ok((render(&crates, version.trim())?, crates))
+    let intro = (notices.intro)(&ctx.product.release, version.trim(), crates.len());
+    Ok((render(&crates, &intro)?, crates))
 }
 
 /// `build notices`: rewrite the tree's file; with `check`, fail when it
 /// differs instead.
 pub fn notices(ctx: &Ctx, check: bool) -> Result<PathBuf> {
-    let (text, crates) = generate(&ctx.paths.repo)?;
+    let (text, crates) = generate(ctx)?;
     for (license, n) in summary(&crates) {
         info!("notices: {n:>4} crates under {license}");
     }
-    let path = ctx.paths.repo.join(TREE_FILE);
+    let file = ctx.product.notices.map_or("", |n| n.file);
+    let path = ctx.paths.repo.join(file);
     let old = fs::read_to_string(&path)
         .unwrap_or_default()
         .replace("\r\n", "\n");
@@ -352,7 +338,7 @@ pub fn notices(ctx: &Ctx, check: bool) -> Result<PathBuf> {
         info!("notices: {} is current", path.display());
     } else {
         if check {
-            bail!("{TREE_FILE} is stale: run `cargo run -p build -- notices` and commit it");
+            bail!("{file} is stale: run `cargo run -p build -- notices` and commit it");
         }
         fs::write(&path, &text).with_context(|| path.display().to_string())?;
         info!("notices: {} written ({} bytes)", path.display(), text.len());

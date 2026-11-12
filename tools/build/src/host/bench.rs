@@ -12,8 +12,8 @@ use std::env;
 use anyhow::Result;
 use tracing::info;
 
-use crate::ctx::Ctx;
-use crate::host::cmd::Cmd;
+use buildkit::Ctx;
+use buildkit::host::cmd::Cmd;
 
 /// The benchmark tests: (test, what it measures).
 const BENCHES: &[(&str, &str)] = &[("sql_bench", "SQL"), ("db_bench", "record-level access")];

@@ -20,9 +20,10 @@ use anyhow::{Context, Result, bail};
 use ed25519_dalek::Signer;
 use tracing::{info, warn};
 
-use crate::ctx::Ctx;
-use crate::host::paths;
-use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
+use buildkit::Ctx;
+use buildkit::UkiKind;
+use buildkit::host::paths;
+use buildkit::kernel::SOURCE_DATE_EPOCH;
 
 /// `build kc`: the Knowledge Center into `images/kc` (the ISO takes it).
 pub fn kc(ctx: &Ctx) -> Result<PathBuf> {
@@ -83,7 +84,7 @@ pub fn ptf_baseline(ctx: &Ctx) -> Result<String> {
         ),
         ptfs: Vec::new(),
     }];
-    let key = crate::image::manifest::signing_key(ctx)?;
+    let key = buildkit::image::manifest::signing_key(ctx)?;
     ptf_update::publish::publish(
         &dir,
         &ptf_update::publish::Publication {
@@ -147,7 +148,7 @@ fn media_root(ctx: &Ctx, key: &pesign::DbKey) -> Result<String> {
     let mut files = vec![
         (
             "NOTICES.txt".to_string(),
-            lf(&ctx.paths.repo.join(crate::notices::TREE_FILE))?,
+            lf(&ctx.paths.repo.join(crate::product::NOTICES_FILE))?,
         ),
         (
             NOTES.to_string(),
@@ -183,7 +184,7 @@ pub fn release(ctx: &Ctx) -> Result<PathBuf> {
     let vrm = release::RELEASE.to_string();
     info!("release: {}", release::full());
     // Stale notices or release notes stop the release before it builds.
-    crate::notices::notices(ctx, true)?;
+    buildkit::notices::notices(ctx, true)?;
     let problems = kcbuild::notes::problems(&ctx.paths.repo, kcbuild::notes::legacy_from_env())?;
     if !problems.is_empty() {
         bail!(
@@ -191,18 +192,18 @@ pub fn release(ctx: &Ctx) -> Result<PathBuf> {
             problems.join("\n  ")
         );
     }
-    crate::kernel::fetch::fetch(ctx)?;
-    crate::kernel::kernel(ctx)?;
-    crate::userland::userland(ctx)?;
-    crate::image::initramfs::initramfs(ctx)?;
-    crate::kernel::uki(ctx, true)?;
+    buildkit::kernel::fetch::fetch(ctx)?;
+    buildkit::kernel::kernel(ctx)?;
+    buildkit::userland::userland(ctx)?;
+    buildkit::image::initramfs::initramfs(ctx)?;
+    buildkit::kernel::uki(ctx, false)?;
     let key = sign_ukis(ctx)?;
     crate::image::disk::disk(ctx, None)?;
     kc(ctx)?;
     let baseline = ptf_baseline(ctx)?;
     let offer = media_root(ctx, &key)?;
     let iso = crate::image::media::iso(ctx)?;
-    let manifest = crate::image::manifest::manifest(ctx)?;
+    let manifest = buildkit::image::manifest::manifest(ctx)?;
 
     let out = ctx.paths.target.join("release").join(&vrm);
     if out.exists() {
@@ -218,7 +219,7 @@ pub fn release(ctx: &Ctx) -> Result<PathBuf> {
     }
     fs::write(out.join("SOURCE-OFFER.txt"), offer)?;
     fs::copy(
-        ctx.paths.repo.join(crate::notices::TREE_FILE),
+        ctx.paths.repo.join(crate::product::NOTICES_FILE),
         out.join("NOTICES.txt"),
     )?;
     fs::copy(&manifest, out.join("MANIFEST.json"))?;
@@ -249,11 +250,11 @@ pub fn release(ctx: &Ctx) -> Result<PathBuf> {
     files.sort();
     let mut sums = String::new();
     for f in &files {
-        let sum = crate::host::hash::sha256_file(&out.join(f))?;
+        let sum = buildkit::host::hash::sha256_file(&out.join(f))?;
         let _ = writeln!(sums, "{sum}  {f}");
     }
     fs::write(out.join("SHA256SUMS"), &sums)?;
-    let key = crate::image::manifest::signing_key(ctx)?;
+    let key = buildkit::image::manifest::signing_key(ctx)?;
     let sig = key.sign(sums.as_bytes());
     fs::write(
         out.join("SHA256SUMS.sig"),

@@ -344,6 +344,7 @@ name = "build"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "buildkit",
  "clap",
  "conformance",
  "diskimg",
@@ -370,6 +371,23 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "buildkit"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ed25519-dalek",
+ "getrandom 0.4.3",
+ "hex",
+ "reqwest",
+ "rustls-graviola",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "toml",
+ "tracing",
 ]
 
 [[package]]

@@ -2,13 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Image artifacts: cpio, initramfs, FAT volumes, disk image, ISO, manifest.
+//! QS/400's image steps: the disk image, the installation media, product
+//! loads, PTFs, the release and the kernel source offer.
 
-pub mod cpio;
 pub mod disk;
-pub mod initramfs;
 pub mod lp;
-pub mod manifest;
 pub mod media;
 pub mod ptf;
 pub mod release;

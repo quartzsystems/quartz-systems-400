@@ -11,8 +11,8 @@
 //! dependencies nobody activates (for example `rustls-webpki`'s `ring`);
 //! those are never downloaded or built.
 //!
-//! Two graphs are checked: the workspace, and `tools/smbtest`, which sits
-//! outside it with its own lockfile (see its `Cargo.toml`).
+//! The workspace is checked, and each graph the product lists that
+//! sits outside it with its own lockfile.
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -23,27 +23,10 @@ use tracing::info;
 
 use crate::ctx::Ctx;
 use crate::host::cmd::{Cmd, on_path};
+use crate::product::Standalone;
 use crate::userland::RUST_TARGET;
 
 const C_BUILDERS: &[&str] = &["cc", "cmake", "bindgen", "pkg-config", "vcpkg"];
-
-/// A crate outside the workspace with its own lockfile, checked the same
-/// way under `deny.toml` plus advisories ignored for its graph only.
-struct Standalone {
-    manifest: &'static str,
-    /// `(advisory, reason)` ignored in this graph alone.
-    ignore: &'static [(&'static str, &'static str)],
-}
-
-const STANDALONE: &[Standalone] = &[Standalone {
-    manifest: "tools/smbtest/Cargo.toml",
-    // `rsa` comes only through the `smb` client's sspi/picky, which pin a
-    // release candidate; the host test client signs on with NTLM only.
-    ignore: &[(
-        "RUSTSEC-2023-0071",
-        "rsa only via sspi/picky in the host test client tools/smbtest (NTLM, no RSA use)",
-    )],
-}];
 
 /// `build deny`.
 pub fn deny(ctx: &Ctx) -> Result<()> {
@@ -52,7 +35,7 @@ pub fn deny(ctx: &Ctx) -> Result<()> {
         bail!("cargo-deny not installed: cargo install cargo-deny --locked");
     }
     check_graph(ctx, &cargo, None)?;
-    for s in STANDALONE {
+    for s in ctx.product.deny {
         check_graph(ctx, &cargo, Some(s))?;
     }
     Ok(())

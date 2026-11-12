@@ -99,7 +99,7 @@ pub fn fetch(ctx: &Ctx) -> Result<Source> {
     }
     if !tarball.is_file() {
         let url = format!("{BASE_URL}/{tarball_name}");
-        let got = download(&url, &tarball)?;
+        let got = download(ctx, &url, &tarball)?;
         ensure!(
             got == expected,
             "sha256 mismatch for {tarball_name}\n  expected {expected}\n  got      {got}"
@@ -108,7 +108,7 @@ pub fn fetch(ctx: &Ctx) -> Result<Source> {
     }
 
     let dir = src.join(format!("linux-{}", pin.version));
-    let marker = dir.join(".qs400-extracted");
+    let marker = dir.join(format!(".{}-extracted", ctx.product.id));
     if !marker.is_file() {
         if dir.exists() {
             fs::remove_dir_all(&dir)?;
@@ -137,7 +137,7 @@ pub fn fetch(ctx: &Ctx) -> Result<Source> {
 fn record_pin(ctx: &Ctx, tarball_name: &str) -> Result<String> {
     let sums = ctx.paths.src().join(SUMS_FILE);
     info!("kernel/SHA256 missing; fetching {SUMS_FILE} to record the pin");
-    download(&format!("{BASE_URL}/{SUMS_FILE}"), &sums)?;
+    download(ctx, &format!("{BASE_URL}/{SUMS_FILE}"), &sums)?;
     gpg_check(&sums)?;
     let text = fs::read_to_string(&sums)?;
     let line = text
@@ -185,11 +185,11 @@ fn gpg_check(sums: &Path) -> Result<()> {
 }
 
 /// A blocking HTTPS client over rustls with the pure-Rust graviola provider.
-fn client() -> Result<reqwest::blocking::Client> {
+fn client(ctx: &Ctx) -> Result<reqwest::blocking::Client> {
     // Installing twice is harmless; the second call just reports it.
     let _ = rustls_graviola::default_provider().install_default();
     reqwest::blocking::Client::builder()
-        .user_agent("qs400-build")
+        .user_agent(format!("{}-build", ctx.product.id))
         .connect_timeout(Duration::from_secs(30))
         .timeout(None)
         .build()
@@ -197,9 +197,9 @@ fn client() -> Result<reqwest::blocking::Client> {
 }
 
 /// Download `url` to `dest` atomically, returning the hex sha256.
-fn download(url: &str, dest: &Path) -> Result<String> {
+fn download(ctx: &Ctx, url: &str, dest: &Path) -> Result<String> {
     info!("downloading {url}");
-    let mut resp = client()?
+    let mut resp = client(ctx)?
         .get(url)
         .send()
         .with_context(|| format!("GET {url}"))?

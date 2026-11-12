@@ -14,23 +14,19 @@ pub use build::{SOURCE_DATE_EPOCH, config_path, kernel, uki};
 pub const KERNEL_ARCH: &str = "x86_64";
 /// Base defconfig inside the kernel tree.
 pub const DEFCONFIG: &str = "arch/x86/configs/x86_64_defconfig";
-/// Our fragment in `kernel/config/`.
-pub const FRAGMENT: &str = "qs400.config";
 /// Make target that produces the EFI-bootable image.
 pub const MAKE_TARGET: &str = "bzImage";
 /// Where the image lands inside the build directory.
 pub const KERNEL_IMAGE: &str = "arch/x86/boot/bzImage";
-/// Baked kernel command line, before the slot and service-console flags.
-pub const CMDLINE: &str = "console=ttyS0,115200 console=tty0 panic=-1 quiet";
 
-/// Which UKI is being built. Slots A and B differ only in `qs400.slot=`;
-/// the media UKI boots from the ISO as an attended IPL type D, so the
-/// "IPL or Install the System" menu is shown.
+/// Which UKI is being built. A product builds the kinds it lists and
+/// gives each its command line; the two slots usually differ only in
+/// the word that names the slot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum UkiKind {
     /// `EFI/BOOT/BOOTX64.EFI` on the disk.
     SlotA,
-    /// `EFI/QS400/B.EFI` on the disk.
+    /// `EFI/<VENDOR>/B.EFI` on the disk.
     SlotB,
     /// `EFI/BOOT/BOOTX64.EFI` on the ISO's boot image.
     Media,
@@ -65,19 +61,5 @@ impl UkiKind {
             UkiKind::SlotB => "uki-b",
             UkiKind::Media => "uki-d",
         }
-    }
-
-    /// The full command line. `svc` enables the serial service console
-    /// (dev builds); release builds leave it out.
-    pub fn cmdline(self, svc: bool) -> String {
-        let mut s = match self {
-            UkiKind::SlotA => format!("{CMDLINE} qs400.slot=A"),
-            UkiKind::SlotB => format!("{CMDLINE} qs400.slot=B"),
-            UkiKind::Media => format!("{CMDLINE} qs400.ipl=D qs400.media=iso qs400.mode=manual"),
-        };
-        if svc {
-            s.push_str(" qs400.svc=1");
-        }
-        s
     }
 }

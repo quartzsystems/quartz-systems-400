@@ -17,10 +17,8 @@ use crate::ctx::Ctx;
 use crate::host::cmd::{Cmd, on_path};
 use crate::host::hash::{sha256_bytes, sha256_file};
 use crate::host::paths;
-use crate::kernel::{self, CMDLINE, UkiKind, fetch};
+use crate::kernel::{self, fetch};
 use crate::userland::RUST_TARGET;
-
-const KEY_ENV: &str = "QS400_SIGNING_KEY";
 
 #[derive(Serialize)]
 struct Manifest {
@@ -33,7 +31,7 @@ struct Manifest {
 #[derive(Serialize)]
 struct Inputs {
     release: String,
-    build_id: &'static str,
+    build_id: String,
     target: &'static str,
     kernel_version: String,
     kernel_sha256: String,
@@ -83,7 +81,7 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
         });
         Ok(())
     };
-    for kind in UkiKind::ALL {
+    for &kind in ctx.product.kinds {
         if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer(kind)) {
             add(kind.manifest_kind(), &p)?;
         }
@@ -96,8 +94,9 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
     }
     add("initramfs", &ctx.paths.initramfs())?;
     add("initramfs-media", &ctx.paths.initramfs_media())?;
-    add("slic", &ctx.paths.slic())?;
-    add("qsjob", &ctx.paths.qsjob())?;
+    for p in ctx.product.packages.iter().filter(|p| p.manifest) {
+        add(p.name, &ctx.paths.bin(p.name))?;
+    }
     let config = kernel::config_path(ctx);
     add("kernel-config", &config)?;
     ensure!(
@@ -107,10 +106,10 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
 
     let manifest = Manifest {
         schema: 2,
-        product: "QS/400",
+        product: ctx.product.name,
         inputs: Inputs {
-            release: release::RELEASE.to_string(),
-            build_id: release::build_id(),
+            release: ctx.product.release.clone(),
+            build_id: ctx.product.build_id.clone(),
             target: RUST_TARGET,
             kernel_version: pin.version,
             kernel_sha256: pin.sha256.unwrap_or_else(|| "unpinned".into()),
@@ -119,14 +118,14 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
             } else {
                 "absent".into()
             },
-            cmdline_base: CMDLINE,
+            cmdline_base: ctx.product.cmdline,
             source_date_epoch: kernel::SOURCE_DATE_EPOCH.parse()?,
             rustc: tool_version("rustc", &["-vV"]),
             clang: tool_version("clang", &["--version"]),
             toolchain_sha256: toolchain_sha256(&ctx.paths.repo),
             cargo_lock_sha256: sha256_file(&ctx.paths.repo.join("Cargo.lock"))?,
-            secure_boot_db_sha256: pesign::DbKey::from_env()
-                .map_or_else(|_| "unavailable".into(), |k| sha256_bytes(&k.cert)),
+            secure_boot_db_sha256: (ctx.product.secure_boot_db)()
+                .map_or_else(|| "unavailable".into(), |cert| sha256_bytes(&cert)),
             git_rev: git_rev(&ctx.paths.repo),
         },
         artifacts,
@@ -165,10 +164,11 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
     Ok(manifest_path)
 }
 
-/// Load the signing key from `QS400_SIGNING_KEY`, else a dev key under
+/// Load the signing key from `<PREFIX>SIGNING_KEY`, else a dev key under
 /// `target/keys/`, generating it when absent.
-pub(crate) fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
-    let (path, from_env) = match env::var_os(KEY_ENV) {
+pub fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
+    let key_env = ctx.product.env_name("SIGNING_KEY");
+    let (path, from_env) = match env::var_os(&key_env) {
         Some(p) => (PathBuf::from(p), true),
         None => (ctx.paths.keys().join("dev.ed25519"), false),
     };
@@ -181,14 +181,14 @@ pub(crate) fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
             .context("signing key must be 32 bytes")?;
         if !from_env {
             warn!(
-                "signing with the DEV key {} (set {KEY_ENV} for a real key)",
+                "signing with the DEV key {} (set {key_env} for a real key)",
                 path.display()
             );
         }
         return Ok(SigningKey::from_bytes(&seed));
     }
     if from_env {
-        bail!("{KEY_ENV}={} does not exist", path.display());
+        bail!("{key_env}={} does not exist", path.display());
     }
     let mut seed = [0u8; 32];
     getrandom::fill(&mut seed).context("getrandom")?;
@@ -221,7 +221,7 @@ fn write_private(path: &Path, contents: &str) -> Result<()> {
 }
 
 /// First line of a tool's version output, or `unavailable`.
-pub(crate) fn tool_version(tool: &str, args: &[&str]) -> String {
+pub fn tool_version(tool: &str, args: &[&str]) -> String {
     if !on_path(tool) {
         return "unavailable".into();
     }

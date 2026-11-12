@@ -18,10 +18,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::{Context, Result, bail};
 use tracing::{info, warn};
 
-use crate::ctx::Ctx;
-use crate::host::hash::sha256_bytes;
-use crate::host::paths;
-use crate::kernel::UkiKind;
+use buildkit::Ctx;
+use buildkit::UkiKind;
+use buildkit::host::hash::sha256_bytes;
+use buildkit::host::paths;
 
 /// The manifest's `lic` value that takes this build's UKIs.
 pub const FROM_BUILD: &str = "*BUILD";
@@ -106,7 +106,7 @@ pub fn ptf(ctx: &Ctx, manifest: &Path) -> Result<PathBuf> {
     if lic.is_some() && m.kind != "delayed" {
         warn!("ptf: a LIC PTF takes effect at the next IPL whatever its kind says");
     }
-    let key = crate::image::manifest::signing_key(ctx)?;
+    let key = buildkit::image::manifest::signing_key(ctx)?;
     let built = ptfbuild::build(&ptfbuild::Input {
         manifest: &m,
         cover: cover.clone(),
@@ -142,7 +142,7 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
         .filter(|p| p.extension().is_some_and(|x| x == "savf"))
         .collect();
     files.sort();
-    let key = crate::image::manifest::signing_key(ctx)?;
+    let key = buildkit::image::manifest::signing_key(ctx)?;
     let trusted = [key.verifying_key().to_bytes()];
     let mut streams = Vec::new();
     let mut ids = Vec::new();

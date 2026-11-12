@@ -11,8 +11,8 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use tracing::info;
 
-use crate::ctx::Ctx;
-use crate::host::paths;
+use buildkit::Ctx;
+use buildkit::host::paths;
 
 /// Run the soak for `secs` seconds.
 pub fn soak(ctx: &Ctx, secs: u64) -> Result<()> {

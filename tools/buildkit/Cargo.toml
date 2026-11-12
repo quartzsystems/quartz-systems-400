@@ -1,0 +1,23 @@
+[package]
+name = "buildkit"
+description = "The build pipeline as a library: pinned kernel, static userland, initramfs, UKIs, disk and ISO images, signed manifest, for the product a caller describes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["blocking", "rustls-no-provider"] }
+rustls-graviola = "0.4.0"
+ed25519-dalek = "3.0.0"
+getrandom = "0.4.3"
+
+[lints]
+workspace = true

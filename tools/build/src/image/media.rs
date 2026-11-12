@@ -23,10 +23,10 @@ use optical::IsoBuilder;
 use optical::manifest::{self, Manifest, ManifestFile};
 use tracing::info;
 
-use crate::ctx::Ctx;
-use crate::host::hash::{sha256_bytes, sha256_file, short, write_sum};
-use crate::host::paths;
-use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
+use buildkit::host::hash::{sha256_bytes, sha256_file, short, write_sum};
+use buildkit::host::paths;
+use buildkit::kernel::SOURCE_DATE_EPOCH;
+use buildkit::{Ctx, UkiKind};
 use diskimg::fat;
 
 /// The media UKI's path inside the boot image and in the ISO tree.
@@ -247,8 +247,8 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
 
     // The media UKI's loader takes both from the media.
-    let slic = fs::read(ctx.paths.slic()).context("no slic; run `userland` first")?;
-    let qsjob = fs::read(ctx.paths.qsjob()).context("no qsjob; run `userland` first")?;
+    let slic = fs::read(ctx.paths.bin("slic")).context("no slic; run `userland` first")?;
+    let qsjob = fs::read(ctx.paths.bin("qsjob")).context("no qsjob; run `userland` first")?;
 
     let efi = boot_image(ctx, &uki_bytes)?;
 
@@ -285,7 +285,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         }
         None => None,
     };
-    let key = crate::image::manifest::signing_key(ctx)?;
+    let key = buildkit::image::manifest::signing_key(ctx)?;
     let volume_id = format!("QS400_{release}");
     let b = compose(Parts {
         volume_id: &volume_id,

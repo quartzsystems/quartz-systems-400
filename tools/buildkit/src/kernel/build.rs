@@ -3,9 +3,8 @@
 // root directory of this project.
 
 //! Configure and compile the kernel. The UKI step is the same build with
-//! the initramfs embedded, once per UKI kind: slot A, slot B (they differ
-//! only in `qs400.slot=`) and the installation media (its initramfs
-//! holds the loader only, so it fits the ISO's boot image).
+//! the initramfs embedded, once per UKI kind the product lists: slot A,
+//! slot B and the installation media.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -17,19 +16,18 @@ use crate::ctx::Ctx;
 use crate::host::cmd::Cmd;
 use crate::host::hash::{sha256_file, short};
 use crate::host::paths;
-use crate::kernel::{
-    CMDLINE, DEFCONFIG, FRAGMENT, KERNEL_ARCH, KERNEL_IMAGE, MAKE_TARGET, UkiKind, config, fetch,
-};
+use crate::kernel::{DEFCONFIG, KERNEL_ARCH, KERNEL_IMAGE, MAKE_TARGET, config, fetch};
 
 /// 2026-01-01T00:00:00Z. Fixed for reproducible builds.
 pub const SOURCE_DATE_EPOCH: &str = "1767225600";
+/// The same instant as the kernel prints it.
 pub const BUILD_TIMESTAMP: &str = "Thu Jan  1 00:00:00 UTC 2026";
 
 /// `build kernel`: configure, verify, build without an initramfs.
 pub fn kernel(ctx: &Ctx) -> Result<()> {
     let src = fetch::fetch(ctx)?;
     let cfg = configure(ctx, &src.dir, &[])?;
-    config::verify(&cfg, CMDLINE, None)?;
+    config::verify(ctx, &cfg, ctx.product.cmdline, None)?;
     let image = build(ctx, &src.dir)?;
     let size = fs::metadata(&image)?.len();
     info!("kernel: {} ({size} bytes)", image.display());
@@ -37,10 +35,10 @@ pub fn kernel(ctx: &Ctx) -> Result<()> {
 }
 
 /// `build uki`: same build with the cpio embedded, once per kind. With
-/// `release` the service console flag is left off the command line.
-pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
+/// `dev` the product's development words are on the command line.
+pub fn uki(ctx: &Ctx, dev: bool) -> Result<Vec<PathBuf>> {
     let src = fetch::fetch(ctx)?;
-    for kind in UkiKind::ALL {
+    for &kind in ctx.product.kinds {
         let cpio = ctx.paths.initramfs_of(kind);
         ensure!(
             cpio.is_file(),
@@ -53,8 +51,8 @@ pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
     fs::create_dir_all(ctx.paths.kernel_build())?;
 
     let mut outs = Vec::new();
-    for kind in UkiKind::ALL {
-        let line = kind.cmdline(!release);
+    for &kind in ctx.product.kinds {
+        let line = (ctx.product.uki_cmdline)(&ctx.product, kind, dev);
         let cpio = ctx.paths.initramfs_of(kind);
         let frag = ctx.paths.kernel_build().join("uki.config");
         fs::write(
@@ -70,13 +68,14 @@ pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
         )?;
 
         let cfg = configure(ctx, &src.dir, &[frag])?;
-        config::verify(&cfg, &line, Some(&cpio))?;
+        config::verify(ctx, &cfg, &line, Some(&cpio))?;
         let image = build(ctx, &src.dir)?;
 
         let hash = sha256_file(&image)?;
         let out = out_dir.join(format!(
-            "qs400-{}-{}-{}.efi",
-            release::RELEASE,
+            "{}-{}-{}-{}.efi",
+            ctx.product.id,
+            ctx.product.release,
             kind.tag(),
             short(&hash)
         ));
@@ -109,6 +108,11 @@ fn configure(ctx: &Ctx, src: &Path, extra: &[PathBuf]) -> Result<PathBuf> {
     let out = build_dir(ctx);
     fs::create_dir_all(&out)?;
 
+    // The baseline first, so the product's fragments have the last word.
+    let base = ctx.paths.kernel_build().join("base.config");
+    fs::create_dir_all(ctx.paths.kernel_build())?;
+    fs::write(&base, config::baseline_fragment())?;
+
     let mut merge = Cmd::new("sh", "kernel-merge");
     merge
         .cwd(src)
@@ -116,8 +120,11 @@ fn configure(ctx: &Ctx, src: &Path, extra: &[PathBuf]) -> Result<PathBuf> {
         .args(["-m", "-Q", "-O"])
         .arg(&out)
         .arg(src.join(DEFCONFIG))
-        .arg(ctx.paths.fragments().join(FRAGMENT))
-        .args(extra);
+        .arg(&base);
+    for f in ctx.product.fragments {
+        merge.arg(ctx.paths.fragments().join(f));
+    }
+    merge.args(extra);
     info!("kernel: merging config fragments");
     merge.run(ctx)?;
 
@@ -149,8 +156,8 @@ fn make(ctx: &Ctx, src: &Path, out: &Path, target: &str) -> Cmd {
         .arg("LLVM=1")
         .arg(format!("ARCH={KERNEL_ARCH}"))
         .arg(format!("-j{}", ctx.jobs))
-        .arg("KBUILD_BUILD_USER=qs400")
-        .arg("KBUILD_BUILD_HOST=qs400")
+        .arg(format!("KBUILD_BUILD_USER={}", ctx.product.id))
+        .arg(format!("KBUILD_BUILD_HOST={}", ctx.product.id))
         .arg("KBUILD_BUILD_VERSION=1")
         .arg(format!("KBUILD_BUILD_TIMESTAMP={BUILD_TIMESTAMP}"))
         .arg(target)

@@ -13,13 +13,13 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use tracing::info;
 
-use crate::ctx::Ctx;
-use crate::host::hash::sha256_bytes;
-use crate::kernel::SOURCE_DATE_EPOCH;
+use buildkit::Ctx;
+use buildkit::host::hash::sha256_bytes;
+use buildkit::kernel::SOURCE_DATE_EPOCH;
 
 /// `build lp`.
 pub fn lp(ctx: &Ctx) -> Result<Vec<PathBuf>> {
-    let key = crate::image::manifest::signing_key(ctx)?;
+    let key = buildkit::image::manifest::signing_key(ctx)?;
     let now: u64 = SOURCE_DATE_EPOCH.parse()?;
     let src = ctx.paths.repo.join("licpgm/products");
     let mut manifests: Vec<PathBuf> = fs::read_dir(&src)

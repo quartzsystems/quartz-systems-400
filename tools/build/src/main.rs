@@ -4,22 +4,19 @@
 
 //! QS/400 build orchestrator: `cargo run -p build -- <command>`.
 //!
-//! Modules by concern: `host` (running tools, paths, doctor, deny, test),
-//! `kernel` (fetch, config, build), `userland` (slic), `image`
-//! (cpio, initramfs, disk, manifest). QS/400 is `x86_64` only.
+//! The pipeline is `buildkit`'s (docs/BUILDKIT.md), which `product`
+//! describes QS/400 to. What is QS/400's own stays here: `image` (the
+//! disk and media steps, product loads, PTFs, the release, the kernel
+//! source offer) and `host` (the QEMU suites, soak, bench, fuzz).
 
-mod ctx;
 mod host;
 mod image;
-mod kernel;
-mod notices;
-mod userland;
+mod product;
 
 use anyhow::Result;
+use buildkit::{Ctx, kernel, notices, userland};
 use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
-
-use crate::ctx::Ctx;
 
 #[derive(Parser)]
 #[command(name = "build", about = "QS/400 build orchestrator", version)]
@@ -155,7 +152,7 @@ fn main() -> Result<()> {
         .init();
 
     let cli = Cli::parse();
-    let ctx = Ctx::new(cli.verbose)?;
+    let ctx = Ctx::new(product::qs400()?, cli.verbose)?;
     if !cfg!(target_os = "linux")
         && !matches!(
             cli.command,
@@ -180,10 +177,10 @@ fn main() -> Result<()> {
             userland::userland(&ctx)?;
         }
         Command::Initramfs => {
-            image::initramfs::initramfs(&ctx)?;
+            buildkit::image::initramfs::initramfs(&ctx)?;
         }
         Command::Uki { release } => {
-            kernel::uki(&ctx, release)?;
+            kernel::uki(&ctx, !release)?;
         }
         Command::Disk { size } => {
             image::disk::disk(&ctx, size)?;
@@ -192,7 +189,7 @@ fn main() -> Result<()> {
             image::media::iso(&ctx)?;
         }
         Command::Manifest => {
-            image::manifest::manifest(&ctx)?;
+            buildkit::image::manifest::manifest(&ctx)?;
         }
         Command::Lp => {
             image::lp::lp(&ctx)?;
@@ -203,7 +200,7 @@ fn main() -> Result<()> {
         Command::PtfCatalog { dir, hiper } => {
             image::ptf::catalog(&ctx, &dir, &hiper)?;
         }
-        Command::All { release } => all(&ctx, release)?,
+        Command::All { release } => buildkit::all(&ctx, !release)?,
         Command::Test {
             media,
             install,
@@ -212,8 +209,8 @@ fn main() -> Result<()> {
         } => host::testrun::test(&ctx, media, install, bench, pulls)?,
         Command::Soak { secs } => host::soak::soak(&ctx, secs)?,
         Command::Bench { rows } => host::bench::bench(&ctx, rows)?,
-        Command::Doctor => host::doctor::doctor(&ctx)?,
-        Command::Deny => host::deny::deny(&ctx)?,
+        Command::Doctor => buildkit::host::doctor::doctor(&ctx)?,
+        Command::Deny => buildkit::host::deny::deny(&ctx)?,
         Command::Notices { check } => {
             notices::notices(&ctx, check)?;
         }
@@ -227,19 +224,5 @@ fn main() -> Result<()> {
             image::release::release(&ctx)?;
         }
     }
-    Ok(())
-}
-
-/// The full pipeline in order.
-fn all(ctx: &Ctx, release: bool) -> Result<()> {
-    tracing::info!("building {}", ::release::full());
-    kernel::fetch::fetch(ctx)?;
-    kernel::kernel(ctx)?;
-    userland::userland(ctx)?;
-    image::initramfs::initramfs(ctx)?;
-    kernel::uki(ctx, release)?;
-    image::disk::disk(ctx, None)?;
-    image::media::iso(ctx)?;
-    image::manifest::manifest(ctx)?;
     Ok(())
 }

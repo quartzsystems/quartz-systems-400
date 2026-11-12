@@ -11,25 +11,23 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 
 use crate::kernel::UkiKind;
+use crate::product::Product;
 use crate::userland::RUST_TARGET;
 
 /// Repository root and the target directory.
 pub struct Paths {
-    /// Repository root (two levels above `tools/build`).
+    /// Repository root, as the product gives it.
     pub repo: PathBuf,
-    /// Output root. `QS400_TARGET_DIR`, else `CARGO_TARGET_DIR`, else `<repo>/target`.
+    /// Output root. `<PREFIX>TARGET_DIR`, else `CARGO_TARGET_DIR`, else `<repo>/target`.
     pub target: PathBuf,
 }
 
 impl Paths {
-    /// Resolve from the compile-time crate location and the environment.
-    pub fn discover() -> Result<Self> {
-        let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .and_then(Path::parent)
-            .context("build crate is not under tools/")?
-            .to_path_buf();
-        let target = env::var_os("QS400_TARGET_DIR")
+    /// From the product's repository root and the environment.
+    pub fn of(product: &Product) -> Result<Self> {
+        let repo = product.repo.clone();
+        let target = product
+            .env("TARGET_DIR")
             .or_else(|| env::var_os("CARGO_TARGET_DIR"))
             .map_or_else(|| repo.join("target"), PathBuf::from);
         let target = if target.is_absolute() {
@@ -75,30 +73,17 @@ impl Paths {
         self.target.join("keys")
     }
 
-    /// The built `slic` binary.
-    pub fn slic(&self) -> PathBuf {
-        self.target.join(RUST_TARGET).join("release").join("slic")
+    /// The built binary of userland package `name`.
+    pub fn bin(&self, name: &str) -> PathBuf {
+        self.target.join(RUST_TARGET).join("release").join(name)
     }
 
-    /// The built `qsjob` binary.
-    pub fn qsjob(&self) -> PathBuf {
-        self.target.join(RUST_TARGET).join("release").join("qsjob")
-    }
-
-    /// The built `instload` binary, the media UKI's `/init`.
-    pub fn instload(&self) -> PathBuf {
-        self.target
-            .join(RUST_TARGET)
-            .join("release")
-            .join("instload")
-    }
-
-    /// The initramfs cpio.
+    /// The initramfs cpio of the slot UKIs.
     pub fn initramfs(&self) -> PathBuf {
         self.images().join("initramfs.cpio")
     }
 
-    /// The media UKI's initramfs cpio: the loader and the trusted keys.
+    /// The media UKI's initramfs cpio.
     pub fn initramfs_media(&self) -> PathBuf {
         self.images().join("initramfs-media.cpio")
     }

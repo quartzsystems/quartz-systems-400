@@ -12,8 +12,8 @@ use std::env;
 use anyhow::Result;
 use tracing::info;
 
-use crate::ctx::Ctx;
-use crate::host::cmd::Cmd;
+use buildkit::Ctx;
+use buildkit::host::cmd::Cmd;
 
 /// The flags that give every edge an 8-bit counter.
 const SANCOV: &str = "-C passes=sancov-module -C llvm-args=-sanitizer-coverage-level=3 \

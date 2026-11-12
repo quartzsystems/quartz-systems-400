@@ -13,8 +13,11 @@ use std::fs;
 
 use anyhow::{Context, Result};
 
-use crate::ctx::Ctx;
-use crate::kernel::{self, CMDLINE, DEFCONFIG, FRAGMENT, KERNEL_ARCH, MAKE_TARGET, UkiKind, fetch};
+use buildkit::Ctx;
+use buildkit::UkiKind;
+use buildkit::kernel::{self, DEFCONFIG, KERNEL_ARCH, MAKE_TARGET, fetch};
+
+use crate::product::{CMDLINE, FRAGMENT};
 
 /// Files by their path on the media.
 pub type Files = Vec<(String, Vec<u8>)>;
@@ -39,7 +42,7 @@ fn facts(ctx: &Ctx) -> Result<Facts> {
         url: fetch::tarball_url(&pin.version),
         version: pin.version,
         sha256,
-        clang: crate::image::manifest::tool_version("clang", &["--version"]),
+        clang: buildkit::image::manifest::tool_version("clang", &["--version"]),
     })
 }
 
@@ -79,7 +82,7 @@ fn offer(f: &Facts) -> String {
 }
 
 /// `BUILDING-THE-KERNEL.md`.
-fn building(f: &Facts) -> String {
+fn building(ctx: &Ctx, f: &Facts) -> String {
     let mut s = String::new();
     let _ = write!(
         s,
@@ -122,7 +125,8 @@ fn building(f: &Facts) -> String {
         stamp = kernel::build::BUILD_TIMESTAMP,
     );
     for kind in UkiKind::ALL {
-        let _ = writeln!(s, "- {kind:?}: `{}`", kind.cmdline(false));
+        let line = (ctx.product.uki_cmdline)(&ctx.product, kind, false);
+        let _ = writeln!(s, "- {kind:?}: `{line}`");
     }
     let _ = write!(
         s,
@@ -155,7 +159,7 @@ pub fn files(ctx: &Ctx) -> Result<(Files, String)> {
     let resolved = resolved.into_bytes();
     let fragment = fs::read(ctx.paths.fragments().join(FRAGMENT))?;
     let text = |id: &str| {
-        crate::notices::text(id)
+        buildkit::notices::text(id)
             .map(|t| t.as_bytes().to_vec())
             .unwrap_or_default()
     };
@@ -166,7 +170,7 @@ pub fn files(ctx: &Ctx) -> Result<(Files, String)> {
         ),
         (
             format!("{DIR}/BUILDING-THE-KERNEL.md"),
-            building(&f).into_bytes(),
+            building(ctx, &f).into_bytes(),
         ),
         (
             format!("{DIR}/PATCHES.txt"),

@@ -7,8 +7,8 @@
 use anyhow::{Context, Result};
 use tracing::{error, info};
 
-use crate::ctx::Ctx;
-use crate::host::paths;
+use buildkit::Ctx;
+use buildkit::host::paths;
 
 /// No new text on display paths (`tools/textaudit`): a string literal
 /// a panel or report would show, not in the baseline, fails the run.
