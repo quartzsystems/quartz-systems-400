@@ -10,6 +10,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use diskimg::fat;
 use diskimg::layout::{LayoutGuids, PartDesc};
 
 use crate::ctx::Ctx;
@@ -100,6 +101,11 @@ pub struct Product {
     pub disk_parts: fn() -> Vec<PartDesc>,
     /// The disk's GUIDs: fixed, so the image is the same every build.
     pub disk_guids: fn() -> LayoutGuids,
+    /// The volume label of the ESP and of the media's boot image: at
+    /// most eleven characters of a FAT short name (`diskimg::fat::label`).
+    pub esp_label: &'static str,
+    /// Their volume id, fixed for the same reason as the GUIDs.
+    pub esp_volume_id: u32,
     /// What goes on the installation media around the media UKI `uki`,
     /// for a product that has media.
     pub media: Option<MediaFn>,
@@ -131,6 +137,15 @@ impl Product {
     #[must_use]
     pub fn key(&self, name: &str) -> String {
         format!("{}{name}", self.key_prefix)
+    }
+
+    /// `spec` as the product's volume: its label and volume id.
+    pub fn fat_spec(&self, spec: fat::Spec) -> Result<fat::Spec> {
+        Ok(fat::Spec {
+            label: fat::label(self.esp_label)?,
+            volume_id: self.esp_volume_id,
+            ..spec
+        })
     }
 
     /// `<release> build <build id>`.

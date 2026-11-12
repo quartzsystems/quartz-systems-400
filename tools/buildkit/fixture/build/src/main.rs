@@ -62,6 +62,8 @@ fn qsdemo() -> Result<Product> {
         disk_bytes: 1024 * MIB,
         disk_parts,
         disk_guids: || LayoutGuids::fixed(*b"QSDM", 3),
+        esp_label: "QSDEMO ESP",
+        esp_volume_id: 0x5153_444D,
         media: None,
         doctor: |_| Vec::new(),
         deny: &[],

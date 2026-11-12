@@ -21,6 +21,7 @@ use crate::ctx::Ctx;
 use crate::host::hash::{sha256_bytes, sha256_file, short, write_sum};
 use crate::host::paths;
 use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
+use crate::product::Product;
 
 /// The media UKI's path inside the boot image and in the ISO tree.
 pub const BOOT_FILE: &str = "EFI/BOOT/BOOTX64.EFI";
@@ -54,9 +55,10 @@ pub struct Media {
     pub uki_copies: Vec<String>,
 }
 
-/// The El Torito boot image: the media UKI and `files` beside it.
-pub fn boot_image(uki: &[u8], files: &[(String, Vec<u8>)]) -> Result<Vec<u8>> {
-    let spec = fat::media_esp(uki.len() as u64);
+/// The El Torito boot image, a volume of the product's name: the media
+/// UKI and `files` beside it.
+pub fn boot_image(product: &Product, uki: &[u8], files: &[(String, Vec<u8>)]) -> Result<Vec<u8>> {
+    let spec = product.fat_spec(fat::media_esp(uki.len() as u64))?;
     // El Torito names the boot image's size in 512-byte sectors, 16 bits:
     // a larger image boots only on firmware that ignores the field.
     ensure!(
@@ -138,7 +140,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let uki_bytes = fs::read(&uki)?;
     let hash = sha256_file(&uki)?;
     let m = media(ctx, &uki_bytes)?;
-    let efi = boot_image(&uki_bytes, &m.boot_files)?;
+    let efi = boot_image(&ctx.product, &uki_bytes, &m.boot_files)?;
     let epoch: u64 = SOURCE_DATE_EPOCH.parse()?;
     let copies: Vec<&str> = m.uki_copies.iter().map(String::as_str).collect();
     let image = compose(&m.volume_id, epoch, efi, uki_bytes.clone(), m.tree)?.build()?;

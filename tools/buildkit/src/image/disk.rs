@@ -38,7 +38,7 @@ pub fn esp(ctx: &Ctx, bytes: u64) -> Result<Vec<u8>> {
     let b_bytes = fs::read(&uki_b)?;
     let slot_b = slot_b(&ctx.product);
     let esp = fat::build(
-        &fat::esp_spec(bytes),
+        &ctx.product.fat_spec(fat::esp_spec(bytes))?,
         &[(SLOT_A, &a_bytes), (slot_b.as_str(), &b_bytes)],
     )?;
     let listing = fat::list(&esp)?;

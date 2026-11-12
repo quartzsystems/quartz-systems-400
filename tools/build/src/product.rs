@@ -68,6 +68,10 @@ pub fn qs400() -> Result<Product> {
         // is made in ASP 1 at the first IPL.
         disk_parts: diskimg::Plan::parts,
         disk_guids: || diskimg::Guids::FIXED.layout(),
+        // What every QS/400 FAT volume has been called: `diskimg::fat`'s
+        // defaults, which the installer in `slic` writes too.
+        esp_label: "QS400 ESP",
+        esp_volume_id: diskimg::fat::VOLUME_ID,
         media: Some(crate::image::media::media),
         doctor,
         deny: &[Standalone {
@@ -351,3 +355,18 @@ pub const REQUIRED_N: &[&str] = &[
     // Install media: plain ISO 9660 only.
     "ZISOFS",
 ];
+
+#[cfg(test)]
+mod tests {
+    use diskimg::fat;
+
+    #[test]
+    fn the_fat_volumes_keep_their_name() {
+        let p = super::qs400().unwrap();
+        for spec in [fat::DISK_ESP, fat::MEDIA_ESP] {
+            let ours = p.fat_spec(spec).unwrap();
+            assert_eq!((ours.label, ours.volume_id), (spec.label, spec.volume_id));
+            assert_eq!(&ours.label, b"QS400 ESP  ");
+        }
+    }
+}

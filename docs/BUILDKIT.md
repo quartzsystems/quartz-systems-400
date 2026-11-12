@@ -39,6 +39,7 @@ fields:
 | `uki_cmdline` | one UKI's command line; `dev` adds the development words | `qs400.slot=A`, ..., `qs400.svc=1` |
 | `initramfs` | the entries of one UKI kind's initramfs, from the built binaries (`image::initramfs::binary`) | slic, qsjob and the trusted keys; the loader alone for the media |
 | `disk_bytes`, `disk_parts`, `disk_guids` | the disk image: its default size, its partitions in order (`diskimg::layout::PartDesc`), fixed GUIDs | 4 GiB; `diskimg::Plan::parts` (ESP, LIC, ASP 1); `Guids::FIXED` |
+| `esp_label`, `esp_volume_id` | the FAT volume label (eleven characters at most) and volume id of the ESP and of the media's boot image | `QS400 ESP`, `0x51533430` (`diskimg::fat`'s defaults) |
 | `media` | what goes on the installation media around the media UKI (`image::iso::Media`), for a product that has media | the manifest, product loads, slot UKIs, slic and qsjob, the Knowledge Center, the PTF baseline |
 | `doctor` | rows `doctor` adds to its own | the OVMF firmware |
 | `deny` | graphs `deny` checks besides the workspace, each with its own advisory ignores | `tools/smbtest` |
@@ -169,6 +170,8 @@ fn qsdemo() -> Result<Product> {
         disk_bytes: 1024 * MIB,
         disk_parts,   // ESP, an A/B record partition, one xfs data partition
         disk_guids: || LayoutGuids::fixed(*b"QSDM", 3),
+        esp_label: "QSDEMO ESP",
+        esp_volume_id: 0x5153_444D,
         media: None,
         doctor: |_| Vec::new(),
         deny: &[],
@@ -236,9 +239,11 @@ Notes on the edges:
   manifest's Secure Boot field comes through `Product::secure_boot_db`.
 - The hybrid image's second partition has `optical`'s Quartz media type
   for every product.
-- `diskimg::fat` labels every FAT volume `QS400 ESP` with volume id
-  `QS40`, the fixture's too. `BLOCKED(buildkit)`: a label per product
-  changes `Spec`, which `slic`'s installer shares.
+- A FAT volume's label and volume id are part of `diskimg::fat::Spec`.
+  The specs `diskimg` hands out (`DISK_ESP`, `MEDIA_ESP`, `esp_spec`,
+  `media_esp`, `fat32_for`) carry QS/400's, `QS400 ESP` and `QS40`,
+  which is what `slic`'s installer writes; the pipeline puts the
+  product's over them (`Product::fat_spec`).
 - The fetch step keeps QS/400's kernel line: a `6.18.y` pin from
   kernel.org's `v6.x` directory.
 
@@ -251,7 +256,7 @@ should know of each:
 |---|---|
 | `buildkit` | product-neutral (a test fails on a product's name in its code) |
 | `vrm` | product-neutral: `Release`, `build::capture`, `release_from_env!` |
-| `diskimg` | the general layout is neutral; `Plan`, its GUIDs and partition names are QS/400's; the FAT label is QS/400's (above) |
+| `diskimg` | the general layout is neutral; `Plan`, its GUIDs and partition names are QS/400's; `fat::Spec`'s default label and volume id are QS/400's, set your own (the pipeline does) |
 | `blockdev` | neutral |
 | `xfsfmt` | neutral; the default label is `QS400-IFS`, set `Options::label` (the layout writer does) |
 | `ipc` | neutral: the wire codec, frames, `rpc!`, Unix socket channels |

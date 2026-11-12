@@ -3,8 +3,9 @@
 // root directory of this project.
 
 //! FAT volume images built in memory with `fatfs`, used for the disk ESP
-//! and the ISO's El Torito boot image. Deterministic: fixed volume id and
-//! label, 1980 timestamps (no `chrono`), files in the order given.
+//! and the ISO's El Torito boot image. Deterministic: the volume id and
+//! label the caller's [`Spec`] gives, 1980 timestamps (no `chrono`), files
+//! in the order given.
 
 use std::io::{Cursor, Read as _, Write};
 
@@ -12,14 +13,41 @@ use fatfs::{Dir, FatType, FileSystem, FormatVolumeOptions, FsOptions, ReadWriteS
 
 use crate::Error;
 
-/// Volume label shared by every QS/400 FAT image.
+/// Volume label of every QS/400 FAT image, and the default of the
+/// specs here.
 pub const LABEL: [u8; 11] = *b"QS400 ESP  ";
-/// Volume id shared by every QS/400 FAT image.
+/// Volume id of every QS/400 FAT image, and the default of the specs
+/// here.
 pub const VOLUME_ID: u32 = 0x5153_3430;
 
-/// Geometry of a volume.
+/// Characters a FAT short name, and so a label, cannot hold.
+const NOT_IN_A_LABEL: &[u8] = b"\"*+,./:;<=>?[\\]|";
+
+/// `text` as a volume label: at most eleven of the characters a FAT
+/// short name takes (no lower case), padded with spaces.
+pub fn label(text: &str) -> Result<[u8; 11], Error> {
+    let ok = |b: u8| {
+        b == b' '
+            || (b.is_ascii_graphic() && !b.is_ascii_lowercase() && !NOT_IN_A_LABEL.contains(&b))
+    };
+    if text.is_empty() || text.len() > 11 || !text.bytes().all(ok) {
+        return Err(Error::Fat {
+            what: "label",
+            detail: format!("`{text}` is not a FAT volume label"),
+        });
+    }
+    let mut out = [b' '; 11];
+    out[..text.len()].copy_from_slice(text.as_bytes());
+    Ok(out)
+}
+
+/// A volume: its geometry and what it calls itself.
 #[derive(Clone, Copy, Debug)]
 pub struct Spec {
+    /// Volume label, eleven bytes padded with spaces ([`label`]).
+    pub label: [u8; 11],
+    /// Volume id (the serial number).
+    pub volume_id: u32,
     /// Volume size.
     pub bytes: u64,
     /// FAT type the geometry must produce. `fatfs` picks the type from the
@@ -31,13 +59,16 @@ pub struct Spec {
 
 /// The disk ESP: 256 MiB FAT32 at 2 KiB clusters (131072 clusters).
 pub const DISK_ESP: Spec = Spec {
+    label: LABEL,
+    volume_id: VOLUME_ID,
     bytes: crate::plan::ESP_BYTES,
     fat: FatType::Fat32,
     bytes_per_cluster: 2048,
 };
 
 /// An ESP of `bytes`: [`DISK_ESP`]'s geometry from 256 MiB, FAT16 at
-/// 4 KiB clusters below.
+/// 4 KiB clusters below. The label and volume id are the defaults; a
+/// product sets its own over them.
 #[must_use]
 pub fn esp_spec(bytes: u64) -> Spec {
     if bytes >= DISK_ESP.bytes {
@@ -51,6 +82,8 @@ pub fn esp_spec(bytes: u64) -> Spec {
 /// room for the media UKI. El Torito's sector count is sixteen bits of
 /// 512-byte sectors, 32 MiB at most, and FAT32 cannot be made that small.
 pub const MEDIA_ESP: Spec = Spec {
+    label: LABEL,
+    volume_id: VOLUME_ID,
     bytes: 31 * 1024 * 1024,
     fat: FatType::Fat16,
     bytes_per_cluster: 4096,
@@ -95,8 +128,8 @@ pub fn build(spec: &Spec, files: &[(&str, &[u8])]) -> Result<Vec<u8>, Error> {
         FormatVolumeOptions::new()
             .fat_type(spec.fat)
             .bytes_per_cluster(spec.bytes_per_cluster)
-            .volume_id(VOLUME_ID)
-            .volume_label(LABEL),
+            .volume_id(spec.volume_id)
+            .volume_label(spec.label),
     )
     .map_err(fat_err("format"))?;
     let fs = FileSystem::new(&mut cur, FsOptions::new()).map_err(fat_err("mount"))?;
@@ -132,8 +165,7 @@ pub fn fat32_for(payload: u64) -> Spec {
     let need = (payload + payload / 4 + 64 * MIB).div_ceil(MIB) * MIB;
     Spec {
         bytes: need.max(256 * MIB),
-        fat: FatType::Fat32,
-        bytes_per_cluster: 2048,
+        ..DISK_ESP
     }
 }
 
@@ -256,6 +288,63 @@ mod tests {
             build(&MEDIA_ESP, &[]).unwrap(),
             build(&MEDIA_ESP, &[]).unwrap()
         );
+    }
+
+    /// Where a volume's boot sector says its id and label.
+    fn named(img: &[u8], fat: FatType) -> (u32, &[u8]) {
+        let at = if fat == FatType::Fat32 { 67 } else { 39 };
+        let id = u32::from_le_bytes(img[at..at + 4].try_into().unwrap());
+        (id, &img[at + 4..at + 15])
+    }
+
+    #[test]
+    fn the_defaults_are_what_every_volume_had() {
+        for spec in [
+            DISK_ESP,
+            MEDIA_ESP,
+            esp_spec(64 << 20),
+            esp_spec(512 << 20),
+            media_esp(1),
+            media_esp(40 << 20),
+            fat32_for(1),
+        ] {
+            assert_eq!((spec.label, spec.volume_id), (LABEL, VOLUME_ID));
+        }
+        assert_eq!(label("QS400 ESP").unwrap(), LABEL);
+        assert_eq!(VOLUME_ID.to_be_bytes(), *b"QS40");
+        let img = build(&MEDIA_ESP, &[]).unwrap();
+        assert_eq!(
+            named(&img, FatType::Fat16),
+            (VOLUME_ID, &b"QS400 ESP  "[..])
+        );
+        let img = build(&DISK_ESP, &[]).unwrap();
+        assert_eq!(
+            named(&img, FatType::Fat32),
+            (VOLUME_ID, &b"QS400 ESP  "[..])
+        );
+    }
+
+    #[test]
+    fn a_product_names_its_own_volume() {
+        let spec = Spec {
+            label: label("QSDEMO ESP").unwrap(),
+            volume_id: 0x5153_444D,
+            ..MEDIA_ESP
+        };
+        let img = build(&spec, &[("EFI/BOOT/BOOTX64.EFI", b"uki")]).unwrap();
+        assert_eq!(
+            named(&img, FatType::Fat16),
+            (0x5153_444D, &b"QSDEMO ESP "[..])
+        );
+        assert_eq!(read_file(&img, "EFI/BOOT/BOOTX64.EFI").unwrap(), b"uki");
+        // Nothing else of the volume depends on the name: the id and the
+        // label in the boot sector, the label once more in the root.
+        let ours = build(&MEDIA_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"uki")]).unwrap();
+        let differ = img.iter().zip(&ours).filter(|(a, b)| a != b).count();
+        assert!((1..=4 + 11 + 11).contains(&differ), "{differ} bytes differ");
+        for bad in ["", "TWELVE CHARS", "lower", "A/B", "CAF\u{c9}"] {
+            assert!(label(bad).is_err(), "{bad}");
+        }
     }
 
     #[test]
