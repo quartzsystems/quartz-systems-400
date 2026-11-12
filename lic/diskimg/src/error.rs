@@ -17,6 +17,9 @@ pub enum Error {
         /// Size needed.
         min: u64,
     },
+    /// The description of the partitions cannot be laid out.
+    #[error("layout: {0}")]
+    Layout(String),
     /// An I/O error on the target.
     #[error("{what}: {source}")]
     Io {

@@ -5,8 +5,8 @@
 //! QS/400 build orchestrator: `cargo run -p build -- <command>`.
 //!
 //! The pipeline is `buildkit`'s (docs/BUILDKIT.md), which `product`
-//! describes QS/400 to. What is QS/400's own stays here: `image` (the
-//! disk and media steps, product loads, PTFs, the release, the kernel
+//! describes QS/400 to. What is QS/400's own stays here: `image` (what
+//! goes on the media, product loads, PTFs, the release, the kernel
 //! source offer) and `host` (the QEMU suites, soak, bench, fuzz).
 
 mod host;
@@ -183,10 +183,10 @@ fn main() -> Result<()> {
             kernel::uki(&ctx, !release)?;
         }
         Command::Disk { size } => {
-            image::disk::disk(&ctx, size)?;
+            buildkit::image::disk::disk(&ctx, size)?;
         }
         Command::Iso => {
-            image::media::iso(&ctx)?;
+            buildkit::image::iso::iso(&ctx)?;
         }
         Command::Manifest => {
             buildkit::image::manifest::manifest(&ctx)?;

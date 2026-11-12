@@ -2,8 +2,10 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Image artifacts: cpio, initramfs, manifest.
+//! Image artifacts: cpio, initramfs, disk image, ISO, manifest.
 
 pub mod cpio;
+pub mod disk;
 pub mod initramfs;
+pub mod iso;
 pub mod manifest;

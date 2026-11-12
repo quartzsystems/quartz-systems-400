@@ -4,21 +4,13 @@
 
 //! Writing the partition table and the ESP onto a disk or image.
 
-use std::collections::BTreeMap;
 use std::fmt::Debug;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{Read, Seek, Write};
 
 use gpt::disk::LogicalBlockSize;
-use gpt::mbr::ProtectiveMBR;
-use gpt::partition::Partition;
-use gpt::partition_types::{EFI, OperatingSystem, Type};
 
-use crate::plan::{ASP1_NAME, ASP1_TYPE_GUID, ESP_NAME, LIC_NAME, LIC_TYPE_GUID};
+use crate::layout::write_layout;
 use crate::{Error, Guids, Plan};
-
-/// Bytes zeroed at the head of the LIC and ASP1 partitions so nothing
-/// from an earlier life of the disk is mistaken for a QS/400 record.
-pub const WIPE_BYTES: u64 = 1024 * 1024;
 
 /// Write the protective MBR, the GPT, the ESP volume `esp`, and zero
 /// the heads of the LIC and ASP1 partitions. `dev` must already be
@@ -31,6 +23,8 @@ where
 }
 
 /// [`write_image`] reporting `(bytes written, bytes in all)` as it goes.
+/// The writer is the general one ([`crate::layout::write_layout`]) over
+/// the plan's description.
 pub fn write_image_with<D>(
     dev: &mut D,
     plan: &Plan,
@@ -41,78 +35,7 @@ pub fn write_image_with<D>(
 where
     D: Read + Write + Seek + Debug,
 {
-    assert_eq!(
-        esp.len() as u64,
-        plan.esp.bytes(),
-        "ESP volume matches its partition"
-    );
-    let mbr =
-        ProtectiveMBR::with_lb_size(u32::try_from(plan.total_sectors - 1).unwrap_or(u32::MAX));
-    mbr.overwrite_lba0(&mut *dev).map_err(|e| Error::Gpt {
-        what: "protective MBR",
-        detail: e.to_string(),
-    })?;
-
-    let mut gdisk = gpt::GptConfig::new()
-        .writable(true)
-        .logical_block_size(LogicalBlockSize::Lb512)
-        .create_from_device(&mut *dev, Some(guids.disk))
-        .map_err(|e| Error::Gpt {
-            what: "header",
-            detail: e.to_string(),
-        })?;
-    let mut parts = BTreeMap::new();
-    let part = |type_guid, guid, p: crate::Part, name: &str| Partition {
-        part_type_guid: type_guid,
-        part_guid: guid,
-        first_lba: p.first_lba,
-        last_lba: p.last_lba,
-        flags: 0,
-        name: name.to_string(),
-    };
-    let quartz = |guid| Type {
-        guid,
-        os: OperatingSystem::None,
-    };
-    parts.insert(1, part(EFI, guids.esp, plan.esp, ESP_NAME));
-    parts.insert(
-        2,
-        part(quartz(LIC_TYPE_GUID), guids.lic, plan.lic, LIC_NAME),
-    );
-    parts.insert(
-        3,
-        part(quartz(ASP1_TYPE_GUID), guids.asp1, plan.asp1, ASP1_NAME),
-    );
-    gdisk.update_partitions(parts).map_err(|e| Error::Gpt {
-        what: "partitions",
-        detail: e.to_string(),
-    })?;
-    gdisk.write().map_err(|e| Error::Gpt {
-        what: "write",
-        detail: e.to_string(),
-    })?;
-
-    dev.seek(SeekFrom::Start(plan.esp.offset()))
-        .map_err(Error::io("seek to ESP"))?;
-    let total = esp.len() as u64 + 2 * WIPE_BYTES;
-    let mut written = 0u64;
-    progress(0, total);
-    for chunk in esp.chunks(4 * 1024 * 1024) {
-        dev.write_all(chunk).map_err(Error::io("write ESP"))?;
-        written += chunk.len() as u64;
-        progress(written, total);
-    }
-    let zeros = vec![0u8; usize::try_from(WIPE_BYTES).expect("1 MiB")];
-    for p in [plan.lic, plan.asp1] {
-        dev.seek(SeekFrom::Start(p.offset()))
-            .map_err(Error::io("seek to partition"))?;
-        dev.write_all(&zeros)
-            .map_err(Error::io("wipe partition head"))?;
-        written += WIPE_BYTES;
-        progress(written, total);
-    }
-    dev.flush().map_err(Error::io("flush"))?;
-    Ok(())
+    write_layout(dev, &plan.layout(), &guids.layout(), &[(1, esp)], progress)
 }
 
 /// Read back the partition table of a device written by `write_image`:
@@ -138,9 +61,18 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+    use std::io::SeekFrom;
+
+    use gpt::mbr::ProtectiveMBR;
+    use gpt::partition::Partition;
+    use gpt::partition_types::{EFI, OperatingSystem, Type};
+
     use super::*;
     use crate::fat;
+    use crate::layout::WIPE_BYTES;
     use crate::plan::SECTOR;
+    use crate::plan::{ASP1_NAME, ASP1_TYPE_GUID, ESP_NAME, LIC_NAME, LIC_TYPE_GUID};
     use xfsfmt::SparseDev;
 
     #[test]
@@ -181,5 +113,114 @@ mod tests {
                 .iter()
                 .all(|&b| b == 0)
         );
+    }
+
+    /// The writer as it was before the general one, kept to prove the
+    /// general one writes the same disk.
+    fn legacy_write<D>(
+        dev: &mut D,
+        plan: &Plan,
+        guids: &Guids,
+        esp: &[u8],
+        progress: &mut dyn FnMut(u64, u64),
+    ) -> Result<(), Error>
+    where
+        D: Read + Write + Seek + Debug,
+    {
+        assert_eq!(
+            esp.len() as u64,
+            plan.esp.bytes(),
+            "ESP volume matches its partition"
+        );
+        let mbr =
+            ProtectiveMBR::with_lb_size(u32::try_from(plan.total_sectors - 1).unwrap_or(u32::MAX));
+        mbr.overwrite_lba0(&mut *dev).map_err(|e| Error::Gpt {
+            what: "protective MBR",
+            detail: e.to_string(),
+        })?;
+
+        let mut gdisk = gpt::GptConfig::new()
+            .writable(true)
+            .logical_block_size(LogicalBlockSize::Lb512)
+            .create_from_device(&mut *dev, Some(guids.disk))
+            .map_err(|e| Error::Gpt {
+                what: "header",
+                detail: e.to_string(),
+            })?;
+        let mut parts = BTreeMap::new();
+        let part = |type_guid, guid, p: crate::Part, name: &str| Partition {
+            part_type_guid: type_guid,
+            part_guid: guid,
+            first_lba: p.first_lba,
+            last_lba: p.last_lba,
+            flags: 0,
+            name: name.to_string(),
+        };
+        let quartz = |guid| Type {
+            guid,
+            os: OperatingSystem::None,
+        };
+        parts.insert(1, part(EFI, guids.esp, plan.esp, ESP_NAME));
+        parts.insert(
+            2,
+            part(quartz(LIC_TYPE_GUID), guids.lic, plan.lic, LIC_NAME),
+        );
+        parts.insert(
+            3,
+            part(quartz(ASP1_TYPE_GUID), guids.asp1, plan.asp1, ASP1_NAME),
+        );
+        gdisk.update_partitions(parts).map_err(|e| Error::Gpt {
+            what: "partitions",
+            detail: e.to_string(),
+        })?;
+        gdisk.write().map_err(|e| Error::Gpt {
+            what: "write",
+            detail: e.to_string(),
+        })?;
+
+        dev.seek(SeekFrom::Start(plan.esp.offset()))
+            .map_err(Error::io("seek to ESP"))?;
+        let total = esp.len() as u64 + 2 * WIPE_BYTES;
+        let mut written = 0u64;
+        progress(0, total);
+        for chunk in esp.chunks(4 * 1024 * 1024) {
+            dev.write_all(chunk).map_err(Error::io("write ESP"))?;
+            written += chunk.len() as u64;
+            progress(written, total);
+        }
+        let zeros = vec![0u8; usize::try_from(WIPE_BYTES).expect("1 MiB")];
+        for p in [plan.lic, plan.asp1] {
+            dev.seek(SeekFrom::Start(p.offset()))
+                .map_err(Error::io("seek to partition"))?;
+            dev.write_all(&zeros)
+                .map_err(Error::io("wipe partition head"))?;
+            written += WIPE_BYTES;
+            progress(written, total);
+        }
+        dev.flush().map_err(Error::io("flush"))?;
+        Ok(())
+    }
+
+    #[test]
+    fn the_general_writer_writes_the_same_disk() {
+        for bytes in [
+            crate::MIN_DISK_BYTES,
+            crate::MIN_DISK_BYTES + 77 * 4096 + 512,
+        ] {
+            let plan = Plan::for_bytes(bytes).unwrap();
+            let esp = fat::build(&fat::DISK_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"uki")]).unwrap();
+            let guids = Guids::from_random([[3; 16], [5; 16], [7; 16], [9; 16]]);
+            let (mut old, mut new) = (SparseDev::new(bytes), SparseDev::new(bytes));
+            // Something from an earlier life of the disk, in both.
+            for dev in [&mut old, &mut new] {
+                dev.seek(SeekFrom::Start(plan.lic.offset())).unwrap();
+                dev.write_all(&[0xa5; 4096]).unwrap();
+            }
+            let (mut was, mut is) = (Vec::new(), Vec::new());
+            legacy_write(&mut old, &plan, &guids, &esp, &mut |d, t| was.push((d, t))).unwrap();
+            write_image_with(&mut new, &plan, &guids, &esp, &mut |d, t| is.push((d, t))).unwrap();
+            assert!(new.pages().eq(old.pages()), "{bytes}");
+            assert_eq!(was, is);
+        }
     }
 }

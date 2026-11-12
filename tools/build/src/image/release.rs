@@ -198,11 +198,11 @@ pub fn release(ctx: &Ctx) -> Result<PathBuf> {
     buildkit::image::initramfs::initramfs(ctx)?;
     buildkit::kernel::uki(ctx, false)?;
     let key = sign_ukis(ctx)?;
-    crate::image::disk::disk(ctx, None)?;
+    buildkit::image::disk::disk(ctx, None)?;
     kc(ctx)?;
     let baseline = ptf_baseline(ctx)?;
     let offer = media_root(ctx, &key)?;
-    let iso = crate::image::media::iso(ctx)?;
+    let iso = buildkit::image::iso::iso(ctx)?;
     let manifest = buildkit::image::manifest::manifest(ctx)?;
 
     let out = ctx.paths.target.join("release").join(&vrm);

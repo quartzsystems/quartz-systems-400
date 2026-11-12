@@ -378,9 +378,11 @@ name = "buildkit"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "diskimg",
  "ed25519-dalek",
  "getrandom 0.4.3",
  "hex",
+ "optical",
  "reqwest",
  "rustls-graviola",
  "serde",

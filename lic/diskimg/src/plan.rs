@@ -10,6 +10,7 @@
 use uuid::{Uuid, uuid};
 
 use crate::Error;
+use crate::layout::{Content, ESP_TYPE_GUID, Layout, LayoutGuids, PartDesc, Placed, Size};
 
 /// Logical sector size the layout is expressed in.
 pub const SECTOR: u64 = 512;
@@ -85,33 +86,58 @@ pub struct Plan {
 }
 
 impl Plan {
+    /// The layout as a description: the ESP, the LIC partition and ASP1
+    /// taking the rest (`crate::layout`).
+    #[must_use]
+    pub fn parts() -> Vec<PartDesc> {
+        vec![
+            PartDesc {
+                name: ESP_NAME.into(),
+                type_guid: ESP_TYPE_GUID,
+                size: Size::Fixed(ESP_BYTES),
+                content: Content::Image,
+            },
+            PartDesc {
+                name: LIC_NAME.into(),
+                type_guid: LIC_TYPE_GUID,
+                size: Size::Fixed(LIC_BYTES),
+                content: Content::Wiped,
+            },
+            PartDesc {
+                name: ASP1_NAME.into(),
+                type_guid: ASP1_TYPE_GUID,
+                size: Size::Rest {
+                    min: MIN_ASP1_BYTES,
+                },
+                content: Content::Wiped,
+            },
+        ]
+    }
+
     /// Lay out a disk of `bytes`. ASP1 starts and ends on 4 KiB boundaries.
     pub fn for_bytes(bytes: u64) -> Result<Self, Error> {
-        if bytes < MIN_DISK_BYTES {
-            return Err(Error::TooSmall {
-                bytes,
-                min: MIN_DISK_BYTES,
-            });
-        }
-        let total_sectors = bytes / SECTOR;
-        let esp = Part {
-            first_lba: ESP_FIRST_LBA,
-            last_lba: ESP_FIRST_LBA + ESP_BYTES / SECTOR - 1,
-        };
-        let lic = Part {
-            first_lba: esp.last_lba + 1,
-            last_lba: esp.last_lba + LIC_BYTES / SECTOR,
-        };
-        let asp_end = (total_sectors - TAIL_SECTORS) / 8 * 8;
+        let layout = Layout::for_bytes(&Self::parts(), bytes)?;
         Ok(Self {
-            total_sectors,
-            esp,
-            lic,
-            asp1: Part {
-                first_lba: lic.last_lba + 1,
-                last_lba: asp_end - 1,
-            },
+            total_sectors: layout.total_sectors,
+            esp: layout.parts[0].part,
+            lic: layout.parts[1].part,
+            asp1: layout.parts[2].part,
         })
+    }
+
+    /// This plan as a general layout.
+    #[must_use]
+    pub fn layout(&self) -> Layout {
+        let parts = Self::parts()
+            .into_iter()
+            .zip([self.esp, self.lic, self.asp1])
+            .zip(1..)
+            .map(|((desc, part), index)| Placed { index, desc, part })
+            .collect();
+        Layout {
+            total_sectors: self.total_sectors,
+            parts,
+        }
     }
 
     /// The default 4 GiB image.
@@ -142,6 +168,15 @@ impl Guids {
         lic: uuid!("51533430-0000-4000-8000-000000000003"),
         asp1: uuid!("51533430-0000-4000-8000-000000000004"),
     };
+
+    /// These GUIDs for [`Plan::layout`].
+    #[must_use]
+    pub fn layout(&self) -> LayoutGuids {
+        LayoutGuids {
+            disk: self.disk,
+            parts: vec![self.esp, self.lic, self.asp1],
+        }
+    }
 
     /// GUIDs from caller-supplied random bytes, for an installed disk.
     #[must_use]
@@ -176,8 +211,12 @@ mod tests {
         assert!(p.asp1.bytes() > 3 * GIB);
         assert!(matches!(
             Plan::for_bytes(MIN_DISK_BYTES - 1),
-            Err(Error::TooSmall { .. })
+            Err(Error::TooSmall {
+                min: MIN_DISK_BYTES,
+                ..
+            })
         ));
+        assert_eq!(crate::layout::min_bytes(&Plan::parts()), MIN_DISK_BYTES);
         let small = Plan::for_bytes(MIN_DISK_BYTES).unwrap();
         assert!(small.asp1.bytes() >= MIN_ASP1_BYTES - 4096);
         assert_ne!(Guids::from_random([[1; 16]; 4]).disk, Guids::FIXED.disk);

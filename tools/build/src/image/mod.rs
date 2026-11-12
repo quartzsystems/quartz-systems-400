@@ -2,10 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! QS/400's image steps: the disk image, the installation media, product
+//! QS/400's image steps: what goes on the installation media, product
 //! loads, PTFs, the release and the kernel source offer.
 
-pub mod disk;
 pub mod lp;
 pub mod media;
 pub mod ptf;

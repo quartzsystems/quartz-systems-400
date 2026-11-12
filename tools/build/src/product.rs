@@ -63,8 +63,12 @@ pub fn qs400() -> Result<Product> {
         kinds: &UkiKind::ALL,
         uki_cmdline,
         initramfs,
-        disk: crate::image::disk::disk,
-        iso: Some(crate::image::media::iso),
+        disk_bytes: diskimg::DEFAULT_DISK_BYTES,
+        // The ESP, the LIC partition and ASP 1 (`diskimg::Plan`); the IFS
+        // is made in ASP 1 at the first IPL.
+        disk_parts: diskimg::Plan::parts,
+        disk_guids: || diskimg::Guids::FIXED.layout(),
+        media: Some(crate::image::media::media),
         doctor,
         deny: &[Standalone {
             manifest: "tools/smbtest/Cargo.toml",

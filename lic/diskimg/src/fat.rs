@@ -36,6 +36,17 @@ pub const DISK_ESP: Spec = Spec {
     bytes_per_cluster: 2048,
 };
 
+/// An ESP of `bytes`: [`DISK_ESP`]'s geometry from 256 MiB, FAT16 at
+/// 4 KiB clusters below.
+#[must_use]
+pub fn esp_spec(bytes: u64) -> Spec {
+    if bytes >= DISK_ESP.bytes {
+        Spec { bytes, ..DISK_ESP }
+    } else {
+        Spec { bytes, ..MEDIA_ESP }
+    }
+}
+
 /// The ISO boot image: 31 MiB FAT16 at 4 KiB clusters (7936 clusters),
 /// room for the media UKI. El Torito's sector count is sixteen bits of
 /// 512-byte sectors, 32 MiB at most, and FAT32 cannot be made that small.

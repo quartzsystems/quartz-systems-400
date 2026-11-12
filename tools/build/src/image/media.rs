@@ -2,37 +2,29 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `build iso`: UEFI-bootable installation media. The El Torito boot
-//! image holds the media UKI; the same UKI is also a plain file at
-//! `EFI/BOOT/BOOTX64.EFI` and `QS400/LIC/qs400.efi`, so a copy of the
-//! tree onto a FAT stick boots too. The media UKI's initramfs holds
-//! only the loader, to fit the boot image whatever the system grows to;
-//! `slic` and the job program are `QS400/LIC/SLIC` and `QS400/LIC/QSJOB`,
-//! in the signed manifest. The image is a hybrid: its GPT
-//! makes the boot image an EFI System partition when the ISO is
-//! written raw to a disk (docs/MEDIA.md, "Hybrid install image").
-//! The product loads `build lp` makes go under `QS400/LP/`, a response
-//! file named by `QS400_INSTALL_RSP` goes to `QS400/INSTALL.RSP`, and
-//! the manifest is signed with the build key (docs/INSTALL.md).
+//! What QS/400 puts on its installation media (`build iso`; the image
+//! itself is `buildkit::image::iso`'s). The media UKI is also at
+//! `QS400/LIC/qs400.efi`. Its initramfs holds only the loader, to fit
+//! the boot image whatever the system grows to; `slic` and the job
+//! program are `QS400/LIC/SLIC` and `QS400/LIC/QSJOB`, in the signed
+//! manifest. The product loads `build lp` makes go under `QS400/LP/`, a
+//! response file named by `QS400_INSTALL_RSP` goes to
+//! `QS400/INSTALL.RSP`, and the manifest is signed with the build key
+//! (docs/INSTALL.md).
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, ensure};
-use optical::IsoBuilder;
+use anyhow::{Context, Result};
+use buildkit::host::hash::sha256_bytes;
+use buildkit::host::paths;
+use buildkit::image::iso::{Item, Media};
+use buildkit::{Ctx, UkiKind};
 use optical::manifest::{self, Manifest, ManifestFile};
 use tracing::info;
 
-use buildkit::host::hash::{sha256_bytes, sha256_file, short, write_sum};
-use buildkit::host::paths;
-use buildkit::kernel::SOURCE_DATE_EPOCH;
-use buildkit::{Ctx, UkiKind};
-use diskimg::fat;
-
-/// The media UKI's path inside the boot image and in the ISO tree.
+/// The media UKI's path in the ISO tree.
 pub const BOOT_FILE: &str = manifest::BOOT_UKI;
-/// The El Torito boot image.
-pub const BOOT_IMAGE: &str = "EFI.IMG";
 /// The media UKI under the LIC directory.
 pub const LIC_FILE: &str = "QS400/LIC/qs400.efi";
 /// Slot A's UKI, which the installer copies onto the disk.
@@ -54,12 +46,8 @@ pub struct Parts<'a> {
     pub volume_id: &'a str,
     /// Release, `V1R0M0`.
     pub release: &'a str,
-    /// Unix time of every timestamp.
-    pub epoch: u64,
-    /// The FAT boot image holding [`BOOT_FILE`].
-    pub efi: Vec<u8>,
     /// The media UKI.
-    pub uki: Vec<u8>,
+    pub uki: &'a [u8],
     /// Slot A's UKI.
     pub slot_a: Vec<u8>,
     /// Slot B's UKI.
@@ -81,16 +69,15 @@ pub struct Parts<'a> {
     pub extra: Vec<(String, Vec<u8>)>,
 }
 
-/// The image's tree and options.
-pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
-    let mut b = IsoBuilder::new(p.volume_id, p.epoch);
+/// The media's tree, in the order it is written.
+pub fn tree(p: Parts<'_>) -> Vec<Item> {
     // The marker the media locator looks for, with the payload.
     let mut files: Vec<ManifestFile> = [
-        (SLOT_A_FILE, &p.slot_a),
-        (SLOT_B_FILE, &p.slot_b),
-        (BOOT_FILE, &p.uki),
-        (SLIC_FILE, &p.slic),
-        (JOB_FILE, &p.qsjob),
+        (SLOT_A_FILE, p.slot_a.as_slice()),
+        (SLOT_B_FILE, p.slot_b.as_slice()),
+        (BOOT_FILE, p.uki),
+        (SLIC_FILE, p.slic.as_slice()),
+        (JOB_FILE, p.qsjob.as_slice()),
     ]
     .map(|(path, data)| ManifestFile {
         path: path.to_string(),
@@ -115,28 +102,24 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     if let Some(k) = &p.key {
         instmedia::sign::sign(&mut m, k);
     }
-    b.add_file(manifest::PATH, m.to_text().into_bytes())?;
+    let mut t = vec![Item::File(manifest::PATH.into(), m.to_text().into_bytes())];
     for (id, data) in p.lp {
-        b.add_file(&instmedia::Payload::Product(id).path(), data)?;
+        t.push(Item::File(instmedia::Payload::Product(id).path(), data));
     }
     if let Some(r) = p.rsp {
-        b.add_file(manifest::RESPONSE, r.into_bytes())?;
+        t.push(Item::File(manifest::RESPONSE.into(), r.into_bytes()));
     }
-    b.add_file(BOOT_IMAGE, p.efi)?;
-    b.add_file(BOOT_FILE, p.uki)?;
-    b.add_link(LIC_FILE, BOOT_FILE)?;
-    b.add_file(SLOT_A_FILE, p.slot_a)?;
-    b.add_file(SLOT_B_FILE, p.slot_b)?;
-    b.add_file(SLIC_FILE, p.slic)?;
-    b.add_file(JOB_FILE, p.qsjob)?;
-    b.add_file(README_FILE, p.readme.into_bytes())?;
+    t.push(Item::Boot);
+    t.push(Item::Link(LIC_FILE.into(), BOOT_FILE.into()));
+    t.push(Item::File(SLOT_A_FILE.into(), p.slot_a));
+    t.push(Item::File(SLOT_B_FILE.into(), p.slot_b));
+    t.push(Item::File(SLIC_FILE.into(), p.slic));
+    t.push(Item::File(JOB_FILE.into(), p.qsjob));
+    t.push(Item::File(README_FILE.into(), p.readme.into_bytes()));
     for (path, data) in p.extra {
-        b.add_file(&path, data)?;
+        t.push(Item::File(path, data));
     }
-    b.boot_image(BOOT_IMAGE)?;
-    // Protective MBR and GPT: a raw copy onto a disk boots under UEFI.
-    b.hybrid(true);
-    Ok(b)
+    t
 }
 
 /// Where the Knowledge Center (`build kc`) and the PTF baseline (`build
@@ -191,23 +174,10 @@ fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
     Ok(out)
 }
 
-/// The El Torito boot image: the media UKI, and a release's db key
-/// beside it where the firmware's enrol-from-file finds it (`build
-/// release` puts the key in `images/media-root`).
-fn boot_image(ctx: &Ctx, uki_bytes: &[u8]) -> Result<Vec<u8>> {
-    let spec = fat::media_esp(uki_bytes.len() as u64);
-    // El Torito names the boot image's size in 512-byte sectors, 16 bits:
-    // a larger image boots only on firmware that ignores the field.
-    ensure!(
-        spec.bytes <= 65_535 * 512,
-        "the media UKI ({} bytes) needs a {} MiB boot image; El Torito holds at most 32 MiB",
-        uki_bytes.len(),
-        spec.bytes / (1024 * 1024)
-    );
-    info!(
-        "iso: building {} MiB FAT16 boot image",
-        spec.bytes / (1024 * 1024)
-    );
+/// A release's db key, which goes in the boot image where the
+/// firmware's enrol-from-file finds it (`build release` puts the key in
+/// `images/media-root`).
+fn boot_keys(ctx: &Ctx) -> Vec<(String, Vec<u8>)> {
     let keys_dir = ctx
         .paths
         .images()
@@ -219,46 +189,23 @@ fn boot_image(ctx: &Ctx, uki_bytes: &[u8]) -> Result<Vec<u8>> {
             keys.push((format!("EFI/keys/{k}"), b));
         }
     }
-    let mut fat_files: Vec<(&str, &[u8])> = vec![(BOOT_FILE, uki_bytes)];
-    fat_files.extend(keys.iter().map(|(p, b)| (p.as_str(), b.as_slice())));
-    let efi = fat::build(&spec, &fat_files)?;
-    let listing = fat::list(&efi)?;
-    let mut want = vec!["EFI/".to_string(), "EFI/BOOT/".into(), BOOT_FILE.into()];
-    if !keys.is_empty() {
-        want.push("EFI/keys/".into());
-        want.extend(keys.iter().map(|(p, _)| p.clone()));
-    }
-    want.sort();
-    ensure!(
-        listing == want,
-        "boot image contents unexpected: {listing:?}"
-    );
-    Ok(efi)
+    keys
 }
 
-/// Build the ISO from the media UKI.
-pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
-    let uki = paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::Media))
-        .context("no media UKI; run `uki` first")?;
-    let uki_bytes = fs::read(&uki)?;
-    let hash = sha256_file(&uki)?;
+/// The media around the media UKI `uki`.
+pub fn media(ctx: &Ctx, uki: &[u8]) -> Result<Media> {
     // The installer copies the slot UKIs onto the disk's ESP.
     let slot_a = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotA))?)?;
     let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
-
     // The media UKI's loader takes both from the media.
     let slic = fs::read(ctx.paths.bin("slic")).context("no slic; run `userland` first")?;
     let qsjob = fs::read(ctx.paths.bin("qsjob")).context("no qsjob; run `userland` first")?;
-
-    let efi = boot_image(ctx, &uki_bytes)?;
 
     let release = release::RELEASE.to_string();
     let readme = format!(
         "QS/400 {}\nUEFI installation media. Boots the system from this volume\n(IPL type D). Write to a USB stick with dd; see docs/PHASE1.md.\n",
         release::full()
     );
-    let epoch: u64 = SOURCE_DATE_EPOCH.parse()?;
-    let uki_check = uki_bytes.clone();
     // The product loads, built now so they carry this build's release.
     let lp_dir = ctx.paths.images().join("lp");
     crate::image::lp::lp(ctx)?;
@@ -287,12 +234,10 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     };
     let key = buildkit::image::manifest::signing_key(ctx)?;
     let volume_id = format!("QS400_{release}");
-    let b = compose(Parts {
+    let tree = tree(Parts {
         volume_id: &volume_id,
         release: &release,
-        epoch,
-        efi,
-        uki: uki_bytes,
+        uki,
         slot_a,
         slot_b,
         slic,
@@ -302,101 +247,27 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         rsp,
         key: Some(key),
         extra: extra_files(ctx)?,
-    })?;
-    let image = b.build()?;
-    let checked = validate(&image, &uki_check)?;
-    info!("iso: {checked}");
-
-    let out = ctx
-        .paths
-        .images()
-        .join(format!("QS400-{release}-{}.iso", short(&hash)));
-    fs::write(&out, &image).with_context(|| format!("cannot write {}", out.display()))?;
-    paths::write_pointer(&ctx.paths.iso_pointer(), &out)?;
-    let sum = sha256_bytes(&image);
-    let sum_file = write_sum(&out, &sum)?;
-    info!(
-        "iso: {} ({} bytes, sha256 {sum}, {})",
-        out.display(),
-        image.len(),
-        sum_file.display()
-    );
-    Ok(out)
-}
-
-/// Read the image back with our own readers and check that it boots
-/// all three ways: the El Torito entry is EFI and points at the boot
-/// image, the boot image holds the UKI, the tree holds the same bytes,
-/// partition 1 is exactly the boot image, and the MBR and both GPTs
-/// check out. Returns one line for the log.
-pub fn validate(image: &[u8], uki: &[u8]) -> Result<String> {
-    use optical::iso::{boot::PLATFORM_EFI, hybrid};
-    let img = optical::IsoImage::open(image).context("ISO does not read back")?;
-    let entry = img.info().boot.context("no El Torito boot entry")?;
-    ensure!(
-        entry.platform == PLATFORM_EFI && entry.bootable && entry.media == 0,
-        "El Torito entry is not a bootable EFI no-emulation entry: {entry:?}"
-    );
-    let efi = img.lookup(BOOT_IMAGE)?;
-    ensure!(
-        efi.extents.len() == 1 && efi.extents[0].0 == entry.lba,
-        "El Torito entry does not point at {BOOT_IMAGE}"
-    );
-    let efi_bytes = img.read_file(&efi)?;
-    let inner = fat::read_file(&efi_bytes, BOOT_FILE)
-        .with_context(|| format!("{BOOT_IMAGE} has no {BOOT_FILE}"))?;
-    ensure!(
-        inner == uki,
-        "{BOOT_IMAGE}'s {BOOT_FILE} is not the media UKI"
-    );
-    for path in [BOOT_FILE, LIC_FILE] {
-        let loose = img.read_file(&img.lookup(path)?)?;
-        ensure!(
-            loose == inner,
-            "{path} in the ISO tree differs from the boot image's"
-        );
-    }
-    let gpt = hybrid::verify(&image).context("partition table")?;
-    let p1 = gpt
-        .partitions
-        .iter()
-        .find(|p| p.index == 1)
-        .context("no partition 1")?;
-    let first = u64::from(entry.lba) * 4;
-    let last = first + efi.size.div_ceil(512) - 1;
-    ensure!(
-        p1.type_guid == hybrid::EFI_SYSTEM && p1.first_lba == first && p1.last_lba == last,
-        "partition 1 is LBAs {}..={}, the boot image {first}..={last}",
-        p1.first_lba,
-        p1.last_lba
-    );
-    let p2 = gpt
-        .partitions
-        .iter()
-        .find(|p| p.index == 2)
-        .context("no partition 2")?;
-    ensure!(
-        p2.type_guid == hybrid::QUARTZ_MEDIA && p2.first_lba == 64 && p2.last_lba + 1 == first,
-        "partition 2 does not cover the ISO 9660 payload"
-    );
-    Ok(format!(
-        "El Torito EFI at sector {}, ESP LBAs {first}..={last}, payload LBAs 64..={}, GPT and backup valid",
-        entry.lba, p2.last_lba
-    ))
+    });
+    Ok(Media {
+        volume_id,
+        tree,
+        boot_files: boot_keys(ctx),
+        uki_copies: vec![LIC_FILE.into()],
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use buildkit::image::iso::{BOOT_IMAGE, compose, validate};
+    use diskimg::fat;
     use optical::IsoImage;
 
-    fn parts() -> Parts<'static> {
-        Parts {
+    fn build() -> Vec<u8> {
+        let tree = tree(Parts {
             volume_id: "QS400_V1R0M0",
             release: "V1R0M0",
-            epoch: 1_767_225_600,
-            efi: fat::build(&fat::MEDIA_ESP, &[(BOOT_FILE, b"uki")]).unwrap(),
-            uki: b"uki".to_vec(),
+            uki: b"uki",
             slot_a: b"slot a".to_vec(),
             slot_b: b"slot b".to_vec(),
             slic: b"slic".to_vec(),
@@ -406,18 +277,23 @@ mod tests {
             rsp: Some("language = 2924\n".into()),
             key: Some(ed25519_dalek::SigningKey::from_bytes(&[5; 32])),
             extra: vec![("QS400/KC/index.html".into(), b"<html>".to_vec())],
-        }
+        });
+        let efi = fat::build(&fat::MEDIA_ESP, &[(BOOT_FILE, b"uki")]).unwrap();
+        compose("QS400_V1R0M0", 1_767_225_600, efi, b"uki".to_vec(), tree)
+            .unwrap()
+            .build()
+            .unwrap()
     }
 
     #[test]
     fn the_tree_carries_the_loose_efi_files() {
-        let iso = compose(parts()).unwrap().build().unwrap();
-        validate(&iso, b"uki").unwrap();
-        assert!(validate(&iso, b"other").is_err());
+        let iso = build();
+        validate(&iso, b"uki", &[LIC_FILE]).unwrap();
+        assert!(validate(&iso, b"other", &[LIC_FILE]).is_err());
         let mut bad = iso.clone();
         bad[1024 + 40] ^= 1;
-        assert!(validate(&bad, b"uki").is_err());
-        assert_eq!(compose(parts()).unwrap().build().unwrap(), iso);
+        assert!(validate(&bad, b"uki", &[LIC_FILE]).is_err());
+        assert_eq!(build(), iso);
         let img = IsoImage::open(iso.as_slice()).unwrap();
         assert!(img.info().joliet && img.info().rock_ridge);
         for (path, want) in [

@@ -10,10 +10,12 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use diskimg::layout::{LayoutGuids, PartDesc};
 
 use crate::ctx::Ctx;
 use crate::host::doctor::Row;
 use crate::image::cpio::Entry;
+use crate::image::iso::Media;
 use crate::kernel::UkiKind;
 
 /// One userland package: a binary built for the image target.
@@ -44,6 +46,9 @@ pub struct Notices {
     /// the kernel's version and the number of crates.
     pub intro: fn(release: &str, kernel_version: &str, crates: usize) -> String,
 }
+
+/// What goes on the installation media around the media UKI `uki`.
+pub type MediaFn = fn(ctx: &Ctx, uki: &[u8]) -> Result<Media>;
 
 /// What is being built.
 pub struct Product {
@@ -88,10 +93,16 @@ pub struct Product {
     /// The initramfs of one UKI kind, in name order, from the built
     /// binaries ([`Paths::bin`](crate::host::paths::Paths::bin)).
     pub initramfs: fn(ctx: &Ctx, kind: UkiKind) -> Result<Vec<Entry>>,
-    /// The disk image step.
-    pub disk: fn(ctx: &Ctx, bytes: Option<u64>) -> Result<PathBuf>,
-    /// The installation media step, for a product that has media.
-    pub iso: Option<fn(ctx: &Ctx) -> Result<PathBuf>>,
+    /// The disk image's size when none is asked for.
+    pub disk_bytes: u64,
+    /// The disk's partitions in order; one is the ESP (an EFI System
+    /// partition with `Content::Image`), which gets both slots' UKIs.
+    pub disk_parts: fn() -> Vec<PartDesc>,
+    /// The disk's GUIDs: fixed, so the image is the same every build.
+    pub disk_guids: fn() -> LayoutGuids,
+    /// What goes on the installation media around the media UKI `uki`,
+    /// for a product that has media.
+    pub media: Option<MediaFn>,
     /// Rows `doctor` adds to its own.
     pub doctor: fn(ctx: &Ctx) -> Vec<Row>,
     /// Graphs `deny` checks besides the workspace.
