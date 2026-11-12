@@ -111,7 +111,7 @@ fn configure(ctx: &Ctx, src: &Path, extra: &[PathBuf]) -> Result<PathBuf> {
     // The baseline first, so the product's fragments have the last word.
     let base = ctx.paths.kernel_build().join("base.config");
     fs::create_dir_all(ctx.paths.kernel_build())?;
-    fs::write(&base, config::baseline_fragment())?;
+    fs::write(&base, config::baseline_fragment(ctx.product.cmdline))?;
 
     let mut merge = Cmd::new("sh", "kernel-merge");
     merge

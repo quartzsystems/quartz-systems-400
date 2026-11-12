@@ -36,9 +36,11 @@ pub const BASELINE_Y: &[&str] = &[
 pub const BASELINE_N: &[&str] = &["MODULES", "MODULE_SIG", "DEBUG_INFO"];
 
 /// The baseline as a configuration fragment, merged before the
-/// product's own.
-pub fn baseline_fragment() -> String {
+/// product's own: the symbols, and `cmdline` as the baked command line
+/// (each UKI's build replaces it with its own).
+pub fn baseline_fragment(cmdline: &str) -> String {
     let mut s = String::from("# Generated: the pipeline's baseline.\n");
+    let _ = writeln!(s, "CONFIG_CMDLINE=\"{cmdline}\"");
     for y in BASELINE_Y {
         let _ = writeln!(s, "CONFIG_{y}=y");
     }

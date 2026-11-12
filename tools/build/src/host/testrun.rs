@@ -128,7 +128,20 @@ pub fn test(
                     r.detail
                 );
             }
-            info!("test: PASS, {} steps", reports.len());
+            let mut steps = reports.len();
+            // The disk suite ends with the fixture: another product
+            // built through buildkit and booted.
+            if matches!(media, conformance::Media::Disk) && !install {
+                let started = std::time::Instant::now();
+                let detail = crate::host::fixture::fixture(ctx)?;
+                info!(
+                    "test: PASS {:<24} {:6.1}s  {detail}",
+                    "buildkit fixture",
+                    started.elapsed().as_secs_f64()
+                );
+                steps += 1;
+            }
+            info!("test: PASS, {steps} steps");
             Ok(())
         }
         Err(e) => {

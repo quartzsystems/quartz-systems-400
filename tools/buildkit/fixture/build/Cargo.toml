@@ -1,0 +1,29 @@
+[package]
+name = "qsdemo-build"
+description = "QSDEMO's build orchestrator: a clap enum over buildkit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+build = "build.rs"
+
+[dependencies]
+buildkit.workspace = true
+vrm.workspace = true
+diskimg.workspace = true
+anyhow = "1.0.102"
+clap = { version = "4.6.1", features = ["derive"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+uuid = "1.23.3"
+
+# Not used by the fixture: here so that the crates an appliance takes
+# from QS/400 are proven to build as git dependencies.
+blockdev.workspace = true
+xfsfmt.workspace = true
+licpart.workspace = true
+ipc.workspace = true
+console.workspace = true
+svctools.workspace = true
+
+[build-dependencies]
+vrm.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "qsdemo-init"
+description = "QSDEMO's PID 1: prints its release and powers off"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+build = "build.rs"
+
+[dependencies]
+vrm.workspace = true
+rustix = { version = "1.1.6", features = ["fs", "mount", "system"] }
+
+[build-dependencies]
+vrm.workspace = true

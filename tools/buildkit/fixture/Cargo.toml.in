@@ -1,0 +1,35 @@
+# The fixture consumer of buildkit (docs/BUILDKIT.md): a product of its
+# own, `qsdemo`, in a workspace of its own. `build fixture` copies this
+# tree to a clean directory and writes Cargo.toml from this file, with
+# @REPO@ the QS/400 repository's file:// URL and @REV@ its HEAD, so the
+# crates are taken as git dependencies, as another repository takes them.
+
+[workspace]
+resolver = "3"
+members = ["build", "init"]
+
+[workspace.package]
+version = "0.3.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+buildkit = { git = "@REPO@", rev = "@REV@" }
+vrm = { git = "@REPO@", rev = "@REV@" }
+diskimg = { git = "@REPO@", rev = "@REV@" }
+blockdev = { git = "@REPO@", rev = "@REV@" }
+xfsfmt = { git = "@REPO@", rev = "@REV@" }
+licpart = { git = "@REPO@", rev = "@REV@" }
+ipc = { git = "@REPO@", rev = "@REV@" }
+console = { git = "@REPO@", rev = "@REV@" }
+svctools = { git = "@REPO@", rev = "@REV@" }
+
+# What the pipeline's userland check asks of the image's binaries:
+# static (the musl target) and stripped.
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+debug = false

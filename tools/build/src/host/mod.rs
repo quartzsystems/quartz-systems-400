@@ -3,9 +3,10 @@
 // root directory of this project.
 
 //! QS/400's host steps: the QEMU suites, the soak, the benchmarks, the
-//! fuzzer.
+//! fuzzer, and the fixture that proves `buildkit` from outside.
 
 pub mod bench;
+pub mod fixture;
 pub mod fuzz;
 pub mod soak;
 pub mod testrun;

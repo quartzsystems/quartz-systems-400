@@ -111,6 +111,10 @@ enum Command {
         #[arg(long)]
         rows: Option<u64>,
     },
+    /// Build the fixture product `qsdemo` (`tools/buildkit/fixture`) from a
+    /// clean directory, taking this repository's crates as git
+    /// dependencies at HEAD, and boot it under QEMU (docs/BUILDKIT.md).
+    Fixture,
     /// Check host prerequisites.
     Doctor,
     /// Run cargo-deny plus the C-linkage lockfile check.
@@ -209,6 +213,9 @@ fn main() -> Result<()> {
         } => host::testrun::test(&ctx, media, install, bench, pulls)?,
         Command::Soak { secs } => host::soak::soak(&ctx, secs)?,
         Command::Bench { rows } => host::bench::bench(&ctx, rows)?,
+        Command::Fixture => {
+            host::fixture::fixture(&ctx)?;
+        }
         Command::Doctor => buildkit::host::doctor::doctor(&ctx)?,
         Command::Deny => buildkit::host::deny::deny(&ctx)?,
         Command::Notices { check } => {
