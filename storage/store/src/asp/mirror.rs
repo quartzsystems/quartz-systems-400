@@ -15,117 +15,51 @@ use crate::asp::layout::RESERVED_HEAD;
 use crate::asp::superblock::{NO_PARTNER, UnitEntry, serial_bytes};
 use crate::asp::unit::{UnitHeader, UnitState};
 use crate::asp::{Asp, MIN_UNIT_SPARE, UnitInfo, wipe_unit, write_unit_header};
-use crate::bytes::{get_u64, put_u64};
 use crate::{Refusal, Result, StoreError};
 
-/// Pages per resume chunk: 1 MiB.
-pub const RESUME_CHUNK: u64 = 256;
-/// Chunks copied between journal saves.
-const SAVE_EVERY: u64 = 16;
+pub use protect::mirror::{RESUME_CHUNK, ResumeProgress};
 
-const MAGIC: &[u8; 8] = b"QS400RSM";
+/// Magic of a resume journal.
+pub const RESUME_MAGIC: &[u8; 8] = b"QS400RSM";
 
-/// Which chunks of a span have been copied onto a resuming half.
+/// Which chunks of a span have been copied onto a resuming half: the
+/// `protect` crate's map under the store's magic.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ResumeState {
-    /// The ASP.
-    pub asp_uuid: [u8; 16],
-    /// The half being resumed.
-    pub unit_uuid: [u8; 16],
-    /// Pages per chunk.
-    pub chunk_pages: u64,
-    /// Chunks in the span.
-    pub chunks: u64,
-    /// Bit `i` set: chunk `i` is copied and durable.
-    pub done: Vec<u8>,
-    /// An operator's resume, which runs with the system up; otherwise
-    /// the synchronization start mirrored protection leaves to the IPL.
-    pub background: bool,
+pub struct ResumeState(protect::mirror::ResumeState);
+
+impl std::ops::Deref for ResumeState {
+    type Target = protect::mirror::ResumeState;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for ResumeState {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl ResumeState {
     /// Nothing copied yet.
     #[must_use]
     pub fn new(asp_uuid: [u8; 16], unit_uuid: [u8; 16], span_pages: u64) -> Self {
-        let chunks = span_pages.div_ceil(RESUME_CHUNK);
-        Self {
-            asp_uuid,
-            unit_uuid,
-            chunk_pages: RESUME_CHUNK,
-            chunks,
-            done: vec![0; usize::try_from(chunks.div_ceil(8)).expect("fits")],
-            background: false,
-        }
-    }
-
-    /// Whether chunk `i` is copied.
-    #[must_use]
-    pub fn is_done(&self, i: u64) -> bool {
-        self.done[usize::try_from(i / 8).expect("fits")] >> (i % 8) & 1 == 1
-    }
-
-    fn set_done(&mut self, i: u64) {
-        self.done[usize::try_from(i / 8).expect("fits")] |= 1 << (i % 8);
-    }
-
-    /// Chunks copied.
-    #[must_use]
-    pub fn chunks_done(&self) -> u64 {
-        (0..self.chunks).filter(|&i| self.is_done(i)).count() as u64
-    }
-
-    /// Whether every chunk is copied.
-    #[must_use]
-    pub fn complete(&self) -> bool {
-        self.chunks_done() == self.chunks
-    }
-
-    /// Percent complete, 0 to 100.
-    #[must_use]
-    pub fn percent(&self) -> u8 {
-        if self.chunks == 0 {
-            return 100;
-        }
-        u8::try_from(self.chunks_done() * 100 / self.chunks).unwrap_or(100)
+        Self(protect::mirror::ResumeState::new(
+            asp_uuid, unit_uuid, span_pages,
+        ))
     }
 
     /// Bytes for a journal: magic, UUIDs, sizes, bitmap, then one byte,
     /// 1 for a background resume (absent in older journals: 0).
     #[must_use]
     pub fn encode(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(56 + self.done.len());
-        out.extend_from_slice(MAGIC);
-        out.extend_from_slice(&self.asp_uuid);
-        out.extend_from_slice(&self.unit_uuid);
-        let mut nums = [0u8; 16];
-        put_u64(&mut nums, 0, self.chunk_pages);
-        put_u64(&mut nums, 8, self.chunks);
-        out.extend_from_slice(&nums);
-        out.extend_from_slice(&self.done);
-        out.push(u8::from(self.background));
-        out
+        self.0.encode(RESUME_MAGIC)
     }
 
     /// From journal bytes.
     #[must_use]
     pub fn decode(bytes: &[u8]) -> Option<Self> {
-        if bytes.len() < 56 || &bytes[..8] != MAGIC {
-            return None;
-        }
-        let chunk_pages = get_u64(bytes, 40);
-        let chunks = get_u64(bytes, 48);
-        let need = usize::try_from(chunks.div_ceil(8)).ok()?;
-        if chunk_pages != RESUME_CHUNK || bytes.len() < 56 + need {
-            return None;
-        }
-        Some(Self {
-            asp_uuid: bytes[8..24].try_into().ok()?,
-            unit_uuid: bytes[24..40].try_into().ok()?,
-            chunk_pages,
-            chunks,
-            done: bytes[56..56 + need].to_vec(),
-            background: bytes.get(56 + need) == Some(&1),
-        })
+        protect::mirror::ResumeState::decode(RESUME_MAGIC, bytes).map(Self)
     }
 }
 
@@ -158,21 +92,6 @@ impl ResumeJournal for MemJournal {
         self.saved = None;
         Ok(())
     }
-}
-
-/// How far a resume has come, for displays.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ResumeProgress {
-    /// The half being resumed.
-    pub unit: u16,
-    /// Chunks copied.
-    pub chunks_done: u64,
-    /// Chunks in all.
-    pub chunks: u64,
-    /// Percent complete.
-    pub percent: u8,
-    /// The half is active again.
-    pub complete: bool,
 }
 
 /// A resume in progress.
@@ -417,60 +336,26 @@ impl Asp {
                 unit: resume.unit,
                 what: "the active half is gone".into(),
             })?;
-        let mut copied = 0;
-        for chunk in 0..resume.state.chunks {
-            if copied >= budget {
-                break;
-            }
-            if resume.state.is_done(chunk) {
-                continue;
-            }
-            let first = chunk * RESUME_CHUNK;
-            let count = RESUME_CHUNK.min(span.pages - first);
-            let pno = span.start + first;
-            let buf = self.io.read_run_on(source, pno, count)?.ok_or_else(|| {
-                StoreError::UnitMissing {
-                    unit: source,
-                    what: "the active half is not attached".into(),
-                }
-            })?;
-            // Runs of allocated, non-reserved pages, written whole.
-            let mut run_start: Option<u64> = None;
-            for i in 0..=count {
-                let lba = first + i;
-                let wanted = i < count
-                    && lba >= RESERVED_HEAD
-                    && lba < span.pages - 1
-                    && !self.alloc.is_free(span.start + lba);
-                match (run_start, wanted) {
-                    (None, true) => run_start = Some(i),
-                    (Some(s), false) => {
-                        let bytes = &buf[usize::try_from(s).expect("fits") * crate::page::PAGE_SIZE
-                            ..usize::try_from(i).expect("fits") * crate::page::PAGE_SIZE];
-                        self.io.write_unit_bytes(resume.unit, first + s, bytes)?;
-                        run_start = None;
-                    }
-                    _ => {}
-                }
-            }
-            resume.state.set_done(chunk);
-            resume.since_save += 1;
-            copied += 1;
-            if resume.since_save >= SAVE_EVERY {
-                self.io.flush_unit(resume.unit)?;
-                journal.save(&resume.state)?;
-                resume.since_save = 0;
-            }
-        }
-        if resume.state.complete() {
-            self.io.flush_unit(resume.unit)?;
+        let mut io = Copy {
+            io: &mut self.io,
+            alloc: &self.alloc,
+            journal: &mut *journal,
+            source,
+            target: resume.unit,
+            start: span.start,
+            pages: span.pages,
+        };
+        let complete = protect::mirror::copy_step(
+            &mut io,
+            &mut resume.state,
+            &mut resume.since_save,
+            span.pages,
+            budget,
+        )?;
+        if complete {
             self.set_state(resume.unit, UnitState::Active);
             journal.clear()?;
             info!("asp {}: unit {} resumed", self.sb.asp_number, resume.unit);
-        } else if resume.since_save > 0 {
-            self.io.flush_unit(resume.unit)?;
-            journal.save(&resume.state)?;
-            resume.since_save = 0;
         }
         Ok(resume.progress())
     }
@@ -612,6 +497,48 @@ impl Asp {
         self.io.set_layout(layout.clone());
         self.alloc.set_layout(layout);
         Ok(dev)
+    }
+}
+
+/// One step of a resume: the active half read, the resuming half
+/// written, every allocated page of the span and none of the reserved.
+struct Copy<'a> {
+    io: &'a mut crate::asp::io::AspIo,
+    alloc: &'a crate::alloc::Allocator,
+    journal: &'a mut dyn ResumeJournal,
+    source: u16,
+    target: u16,
+    /// The span's first logical page and its size.
+    start: u64,
+    pages: u64,
+}
+
+impl protect::mirror::ResumeIo for Copy<'_> {
+    type Error = StoreError;
+
+    fn read(&mut self, lba: u64, count: u64) -> Result<blockdev::AlignedBuf> {
+        self.io
+            .read_run_on(self.source, self.start + lba, count)?
+            .ok_or_else(|| StoreError::UnitMissing {
+                unit: self.source,
+                what: "the active half is not attached".into(),
+            })
+    }
+
+    fn wanted(&mut self, lba: u64) -> bool {
+        lba >= RESERVED_HEAD && lba < self.pages - 1 && !self.alloc.is_free(self.start + lba)
+    }
+
+    fn write(&mut self, lba: u64, bytes: &[u8]) -> Result<()> {
+        self.io.write_unit_bytes(self.target, lba, bytes)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        self.io.flush_unit(self.target)
+    }
+
+    fn save(&mut self, state: &protect::mirror::ResumeState) -> Result<()> {
+        self.journal.save(&ResumeState(state.clone()))
     }
 }
 

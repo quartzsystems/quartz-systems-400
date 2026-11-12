@@ -14,11 +14,11 @@ use std::io;
 use blockdev::{BlockDev, BlockError};
 use tracing::{info, warn};
 
-use crate::asp::layout::RESERVED_HEAD;
-use crate::asp::parity::geometry::{Geometry, PPL_ENTRIES, PageRole};
-use crate::asp::parity::gf;
-use crate::asp::parity::ppl::{self, Entry, Ident};
-use crate::page::{PAGE_SIZE, trailer};
+use crate::PAGE_SIZE;
+use crate::parity::Format;
+use crate::parity::geometry::{Geometry, PPL_ENTRIES, PageRole};
+use crate::parity::gf;
+use crate::parity::ppl::{self, Entry, Ident};
 
 /// Writes held before an epoch runs on its own.
 const PENDING_MAX: usize = 4096;
@@ -79,6 +79,7 @@ pub enum Fault {
 
 /// A set at run time.
 pub struct Engine {
+    fmt: Format,
     asp_uuid: [u8; 16],
     /// Set number.
     pub set: u8,
@@ -96,8 +97,8 @@ pub struct Engine {
     events: Vec<EngineEvent>,
     /// The test hook, if armed.
     pub fault: Option<Fault>,
-    /// Per member, the runs `(lba, len)` of IFS volume pages: raw,
-    /// with no trailer to check.
+    /// Per member, the runs `(lba, len)` of raw pages: the caller's
+    /// damage check ([`Format::suspicious`]) does not apply to them.
     raw: Vec<Vec<(u64, u64)>>,
 }
 
@@ -115,11 +116,6 @@ fn missing(lba: u64) -> BlockError {
         lba,
         source: io::Error::new(io::ErrorKind::NotFound, "the unit is missing"),
     }
-}
-
-/// Whether a page is not zero and fails its trailer checksum.
-fn suspicious(page: &[u8]) -> bool {
-    page.iter().any(|&b| b != 0) && trailer::stored_crc(page) != trailer::checksum(page)
 }
 
 /// A stripe's pages as the units hold them; `None` where not known.
@@ -155,6 +151,7 @@ impl Engine {
     /// A set over its members. Nothing is read until [`recover`](Self::recover).
     #[must_use]
     pub fn new(
+        fmt: Format,
         asp_uuid: [u8; 16],
         set: u8,
         geo: Geometry,
@@ -163,6 +160,7 @@ impl Engine {
     ) -> Self {
         let n = members.len();
         Self {
+            fmt,
             asp_uuid,
             set,
             geo,
@@ -179,14 +177,14 @@ impl Engine {
         }
     }
 
-    /// Set a member's IFS runs, ascending.
+    /// Set a member's raw runs, ascending.
     pub fn set_raw(&mut self, member: usize, runs: Vec<(u64, u64)>) {
         if let Some(r) = self.raw.get_mut(member) {
             *r = runs;
         }
     }
 
-    /// Whether a member's page is an IFS volume page.
+    /// Whether a member's page is in a raw run.
     fn is_raw(&self, member: usize, lba: u64) -> bool {
         let runs = &self.raw[member];
         let i = runs.partition_point(|&(s, _)| s <= lba);
@@ -198,6 +196,20 @@ impl Engine {
         std::mem::take(&mut self.events)
     }
 
+    /// Take one member's device away (it was pulled, or is to be), the
+    /// held writes made first. The member is failed, which the others
+    /// record; an error when the set cannot lose one more.
+    pub fn remove_member(&mut self, member: usize) -> Res<Option<Box<dyn BlockDev>>> {
+        self.flush()?;
+        if self.members[member].health != Health::Failed {
+            if !self.can_lose() {
+                return Err(err("the set cannot lose another member"));
+            }
+            self.fail(member, "removed");
+        }
+        Ok(self.members[member].dev.take())
+    }
+
     /// Take the devices back, the held writes made first.
     pub fn take_devices(&mut self) -> Res<Vec<Option<Box<dyn BlockDev>>>> {
         self.flush()?;
@@ -206,6 +218,8 @@ impl Engine {
 
     fn ident(&self, member: usize) -> Ident {
         Ident {
+            magic: self.fmt.ppl_magic,
+            state_magic: self.fmt.state_magic,
             asp_uuid: self.asp_uuid,
             set: self.set,
             level: self.geo.level,
@@ -370,12 +384,15 @@ impl Engine {
         if self.in_step(member, stripe) {
             match self.read_dev(member, lba) {
                 Ok(page) => {
-                    if !self.protected(stripe) || self.is_raw(member, lba) || !suspicious(&page) {
+                    if !self.protected(stripe)
+                        || self.is_raw(member, lba)
+                        || !(self.fmt.suspicious)(&page)
+                    {
                         return Ok(page);
                     }
                     // A bad page on a good unit: try the stripe.
                     match self.reconstruct(member, stripe) {
-                        Ok(fixed) if !suspicious(&fixed) => {
+                        Ok(fixed) if !(self.fmt.suspicious)(&fixed) => {
                             if self.dev(member).write(lba, &fixed).is_ok() {
                                 self.dirty = true;
                                 warn!(
@@ -734,6 +751,13 @@ impl Engine {
         self.flush_members(&self.all_members())
     }
 
+    /// Record on the members that answer which members are failed
+    /// now, as a failure while running does: for a caller that found a
+    /// member missing at open and whose own record may be behind.
+    pub fn record_failed(&mut self) {
+        self.write_state();
+    }
+
     /// The members the newest state page says failed. Read at open,
     /// before [`recover`](Self::recover).
     pub fn recorded_failures(&mut self) -> u32 {
@@ -803,7 +827,7 @@ impl Engine {
     /// Where blocks `from..` start: the first row and the first parity page.
     fn bases(&self, from: u64) -> (u64, u64) {
         (
-            RESERVED_HEAD + from * self.geo.w() as u64,
+            self.geo.head + from * self.geo.w() as u64,
             self.geo.parity_lba(from * self.geo.n as u64, false),
         )
     }

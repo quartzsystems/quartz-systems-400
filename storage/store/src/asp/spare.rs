@@ -171,14 +171,13 @@ impl Asp {
     /// Take the smallest attached spare of at least `need` pages out of
     /// the list. The caller puts it in a unit's place and checkpoints.
     pub(crate) fn take_spare(&mut self, need: u64) -> Option<([u8; 16], Box<dyn BlockDev>)> {
-        let at = self
-            .spares
-            .iter()
-            .enumerate()
-            .filter_map(|(i, s)| s.dev.as_ref().map(|d| (i, d.blocks())))
-            .filter(|&(_, pages)| pages >= need)
-            .min_by_key(|&(_, pages)| pages)
-            .map(|(i, _)| i)?;
+        let at = protect::spare::smallest_fit(
+            self.spares
+                .iter()
+                .enumerate()
+                .filter_map(|(i, s)| s.dev.as_ref().map(|d| (i, d.blocks()))),
+            need,
+        )?;
         let spare = self.spares.remove(at);
         self.sb.spares.retain(|u| *u != spare.uuid);
         spare.dev.map(|d| (spare.uuid, d))

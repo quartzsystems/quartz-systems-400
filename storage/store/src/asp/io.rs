@@ -5,7 +5,9 @@
 //! Page I/O over the units of an ASP, addressed by logical page number.
 //! A span backed by a mirrored pair is written to both halves and read
 //! from one; a page that fails verification on one half is read from
-//! the other and rewritten.
+//! the other and rewritten. The transfers over the halves of a span are
+//! `protect::mirror`'s; which units make a span, and what a page's
+//! verification is, are the store's.
 //!
 //! The units sit behind a lock shared with [`SharedIo`], the handle the
 //! IFS volume's server uses from its own thread. Transfers hold the lock
@@ -13,10 +15,11 @@
 //! state takes it for writing, never while a transfer of the same thread
 //! holds it.
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
 use std::sync::{Arc, Mutex, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use blockdev::BlockDev;
+use protect::mirror::{BlockBuf, CheckedError, Half, Halves, MirrorError};
 use tracing::warn;
 
 use crate::asp::layout::Layout;
@@ -83,7 +86,16 @@ pub struct SharedIo {
 }
 
 /// Halves to take out of service once the read lock is let go.
-type Fails = Vec<(u16, u16, String)>;
+type Fails = protect::mirror::Fails;
+
+impl BlockBuf for Page {
+    fn bytes_mut(&mut self) -> &mut [u8] {
+        Page::bytes_mut(self)
+    }
+    fn bytes(&self) -> &[u8] {
+        Page::bytes(self)
+    }
+}
 
 impl Shared {
     fn read(&self) -> RwLockReadGuard<'_, Core> {
@@ -176,26 +188,16 @@ impl Core {
         self.units[usize::from(unit)].state
     }
 
-    /// Members of a span that may serve reads, the preferred one first.
-    fn readers(&self, span: u16, turn: &AtomicU64) -> Vec<u16> {
-        let mut r: Vec<u16> = self
-            .layout
-            .span(span)
-            .members()
-            .filter(|&u| self.state(u).readable() && self.dev(u).is_some())
-            .collect();
-        if r.len() > 1 && turn.fetch_add(1, Ordering::Relaxed).is_multiple_of(2) {
-            r.rotate_left(1);
-        }
-        r
-    }
-
-    /// Members of a span that must be written.
-    fn writers(&self, span: u16) -> Vec<u16> {
+    /// The members of a span, lent to a transfer.
+    fn halves(&self, span: u16) -> Vec<Half<'_>> {
         self.layout
             .span(span)
             .members()
-            .filter(|&u| self.state(u).writable() && self.dev(u).is_some())
+            .map(|u| Half {
+                unit: u,
+                state: self.state(u),
+                dev: self.dev(u),
+            })
             .collect()
     }
 
@@ -207,27 +209,20 @@ impl Core {
         }
     }
 
-    /// Whether a span has a writable half besides `unit`.
-    fn others(&self, span: u16, unit: u16) -> bool {
-        self.layout
-            .span(span)
-            .members()
-            .any(|u| u != unit && self.state(u).writable() && self.dev(u).is_some())
+    fn mirror_err(&self, span: u16, e: MirrorError) -> StoreError {
+        match e {
+            MirrorError::Block(e) => e.into(),
+            MirrorError::NoHalf => self.missing(span),
+        }
     }
 
-    /// Record a failing half to take out of service; whether the span
-    /// can go on without it (no other half failed in this call).
-    fn fail(&self, span: u16, unit: u16, what: String, fails: &mut Fails) -> bool {
-        let others = self.layout.span(span).members().any(|u| {
-            u != unit
-                && self.state(u).writable()
-                && self.dev(u).is_some()
-                && !fails.iter().any(|f| f.1 == u)
-        });
-        if others {
-            fails.push((span, unit, what));
+    /// Whether a span has a writable half besides `unit`.
+    fn others(&self, span: u16, unit: u16) -> bool {
+        Halves {
+            set: span,
+            halves: &self.halves(span),
         }
-        others
+        .others(unit)
     }
 
     fn read_run(
@@ -238,70 +233,31 @@ impl Core {
         fails: &mut Fails,
     ) -> Result<blockdev::AlignedBuf> {
         let (span, lba) = self.locate(pno)?;
-        let mut first_err = None;
-        for unit in self.readers(span, turn) {
-            let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
-            match self
-                .dev(unit)
-                .expect("reader is attached")
-                .read(lba, &mut buf)
-            {
-                Ok(()) => return Ok(buf),
-                Err(e) => {
-                    let what = format!("read {count} pages at {pno}: {e}");
-                    if !self.fail(span, unit, what, fails) {
-                        return Err(e.into());
-                    }
-                    first_err.get_or_insert(e);
-                }
-            }
+        Halves {
+            set: span,
+            halves: &self.halves(span),
         }
-        Err(first_err.map_or_else(|| self.missing(span), StoreError::from))
+        .read_run(lba, count, pno, turn, fails)
+        .map_err(|e| self.mirror_err(span, e))
     }
 
     fn write_bytes(&self, pno: PageNo, bytes: &[u8], fails: &mut Fails) -> Result<()> {
         let (span, lba) = self.locate(pno)?;
-        let writers = self.writers(span);
-        if writers.is_empty() {
-            return Err(self.missing(span));
+        Halves {
+            set: span,
+            halves: &self.halves(span),
         }
-        let mut failed = Vec::new();
-        for &unit in &writers {
-            if let Err(e) = self
-                .dev(unit)
-                .expect("writer is attached")
-                .write(lba, bytes)
-            {
-                failed.push((unit, e));
-            }
-        }
-        if failed.len() == writers.len() {
-            return Err(failed.remove(0).1.into());
-        }
-        for (unit, e) in failed {
-            self.fail(span, unit, format!("write page {pno}: {e}"), fails);
-        }
-        Ok(())
+        .write(lba, bytes, pno, fails)
+        .map_err(|e| self.mirror_err(span, e))
     }
 
     fn flush_span(&self, span: u16, fails: &mut Fails) -> Result<()> {
-        let writers = self.writers(span);
-        if writers.is_empty() {
-            return Err(self.missing(span));
+        Halves {
+            set: span,
+            halves: &self.halves(span),
         }
-        let mut failed = Vec::new();
-        for &unit in &writers {
-            if let Err(e) = self.dev(unit).expect("writer is attached").flush() {
-                failed.push((unit, e));
-            }
-        }
-        if failed.len() == writers.len() {
-            return Err(failed.remove(0).1.into());
-        }
-        for (unit, e) in failed {
-            self.fail(span, unit, format!("flush: {e}"), fails);
-        }
-        Ok(())
+        .flush(fails)
+        .map_err(|e| self.mirror_err(span, e))
     }
 }
 
@@ -469,65 +425,25 @@ impl AspIo {
 
     fn read_page_in(c: &Core, shared: &Shared, pno: PageNo, fails: &mut Fails) -> Result<Page> {
         let (span, lba) = c.locate(pno)?;
-        let readers = c.readers(span, &shared.turn);
-        let mut first_err = None;
-        for (i, &unit) in readers.iter().enumerate() {
-            let mut page = Page::zeroed();
-            let read = c
-                .dev(unit)
-                .expect("reader is attached")
-                .read(lba, page.bytes_mut());
-            match read
-                .map_err(StoreError::from)
-                .and_then(|()| page.verify(pno).map(|_| ()))
-            {
-                Ok(()) => {
-                    if i > 0 {
-                        Self::heal(c, shared, span, readers[0], lba, pno, &page, fails);
-                    }
-                    return Ok(page);
-                }
-                Err(StoreError::Block(e)) => {
-                    let what = format!("read page {pno}: {e}");
-                    if !c.fail(span, unit, what, fails) {
-                        return Err(StoreError::Block(e));
-                    }
-                    first_err.get_or_insert(StoreError::Block(e));
-                }
-                Err(e) => {
-                    first_err.get_or_insert(e);
-                }
-            }
+        let mut page = Page::zeroed();
+        let read = Halves {
+            set: span,
+            halves: &c.halves(span),
         }
-        Err(first_err.unwrap_or_else(|| c.missing(span)))
-    }
-
-    /// Rewrite a page on the half that could not serve it.
-    #[allow(clippy::too_many_arguments)]
-    fn heal(
-        c: &Core,
-        shared: &Shared,
-        span: u16,
-        unit: u16,
-        lba: u64,
-        pno: PageNo,
-        page: &Page,
-        fails: &mut Fails,
-    ) {
-        if !c.state(unit).writable() || fails.iter().any(|f| f.1 == unit) {
-            return;
-        }
-        let Some(dev) = c.dev(unit) else {
-            return;
-        };
-        match dev.write(lba, page.bytes()) {
-            Ok(()) => {
-                warn!("asp: page {pno} rewritten on unit {unit} from its mirror");
-                shared.push_event(IoEvent::Healed { page: pno, unit });
+        .read_checked(lba, &mut page, pno, &shared.turn, fails, |p: &Page| {
+            p.verify(pno).map(|_| ())
+        });
+        match read {
+            Ok(healed) => {
+                if let Some(unit) = healed {
+                    warn!("asp: page {pno} rewritten on unit {unit} from its mirror");
+                    shared.push_event(IoEvent::Healed { page: pno, unit });
+                }
+                Ok(page)
             }
-            Err(e) => {
-                c.fail(span, unit, format!("rewrite page {pno}: {e}"), fails);
-            }
+            Err(CheckedError::Block(e)) => Err(StoreError::Block(e)),
+            Err(CheckedError::Check(e)) => Err(e),
+            Err(CheckedError::NoHalf) => Err(c.missing(span)),
         }
     }
 
@@ -620,9 +536,11 @@ impl AspIo {
     pub fn discard(&mut self, start: PageNo, len: u64) -> Result<()> {
         let c = self.shared.read();
         let (span, lba) = c.locate(start)?;
-        for unit in c.writers(span) {
-            c.dev(unit).expect("writer is attached").discard(lba, len)?;
+        Halves {
+            set: span,
+            halves: &c.halves(span),
         }
+        .discard(lba, len)?;
         Ok(())
     }
 }

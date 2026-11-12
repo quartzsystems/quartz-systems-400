@@ -3,10 +3,11 @@
 // root directory of this project.
 
 //! Where a set's rows, parity pages and partial-parity slots are on each
-//! member, and which pages make a stripe. See `docs/STORE_FORMAT.md` §11.
+//! member, and which pages make a stripe. A member's first `head` pages
+//! and its last page are the caller's (its labels); the set uses what is
+//! between. See `docs/STORE_FORMAT.md` §11.
 
-use crate::asp::layout::RESERVED_HEAD;
-use crate::asp::parity::table::Level;
+use crate::parity::Level;
 
 /// Entries in one partial-parity slot.
 pub const PPL_ENTRIES: usize = 126;
@@ -22,16 +23,24 @@ pub struct Geometry {
     pub n: usize,
     /// Blocks: each member has `w` rows and `k` parity pages per block.
     pub blocks: u64,
+    /// Pages at the head of each member the set leaves alone.
+    pub head: u64,
 }
 
 impl Geometry {
-    /// For `n` members whose smallest span has `span_pages` pages. `None`
-    /// when the members are too small to hold a block.
+    /// For `n` members whose smallest span has `span_pages` pages, the
+    /// first `head` of them the caller's. `None` when the members are
+    /// too small to hold a block.
     #[must_use]
-    pub fn new(level: Level, n: usize, span_pages: u64) -> Option<Self> {
-        let room = span_pages.checked_sub(1 + RESERVED_HEAD + 2 * SLOT_PAGES + 1)?;
+    pub fn new(level: Level, n: usize, span_pages: u64, head: u64) -> Option<Self> {
+        let room = span_pages.checked_sub(1 + head + 2 * SLOT_PAGES + 1)?;
         let blocks = room / n as u64;
-        (blocks > 0 && n >= level.min_units()).then_some(Self { level, n, blocks })
+        (blocks > 0 && n >= level.min_units()).then_some(Self {
+            level,
+            n,
+            blocks,
+            head,
+        })
     }
 
     /// Parity pages per stripe.
@@ -49,13 +58,13 @@ impl Geometry {
     /// One past the last row.
     #[must_use]
     pub fn rows_end(&self) -> u64 {
-        RESERVED_HEAD + self.blocks * self.w() as u64
+        self.head + self.blocks * self.w() as u64
     }
 
     /// First page of the partial-parity slots.
     #[must_use]
     pub fn ppl_start(&self) -> u64 {
-        RESERVED_HEAD + self.blocks * self.n as u64
+        self.head + self.blocks * self.n as u64
     }
 
     /// First page of slot 0 or 1.
@@ -79,7 +88,7 @@ impl Geometry {
     /// Whether a member page is a row.
     #[must_use]
     pub fn is_row(&self, lba: u64) -> bool {
-        (RESERVED_HEAD..self.rows_end()).contains(&lba)
+        (self.head..self.rows_end()).contains(&lba)
     }
 
     /// Stripes in the set.
@@ -125,7 +134,7 @@ impl Geometry {
     pub fn row_of(&self, stripe: u64, member: usize) -> u64 {
         let j = usize::try_from(stripe % self.n as u64).expect("small");
         let i = (0..j).filter(|&x| !self.holds_parity(member, x)).count();
-        RESERVED_HEAD + self.block_of(stripe) * self.w() as u64 + i as u64
+        self.head + self.block_of(stripe) * self.w() as u64 + i as u64
     }
 
     /// The stripe a row of `member` belongs to.
@@ -134,7 +143,7 @@ impl Geometry {
         if !self.is_row(lba) {
             return None;
         }
-        let rel = lba - RESERVED_HEAD;
+        let rel = lba - self.head;
         let w = self.w() as u64;
         let block = rel / w;
         let i = usize::try_from(rel % w).expect("small");
@@ -190,8 +199,11 @@ mod tests {
     use super::*;
     use std::collections::HashSet;
 
+    /// The head the object store keeps: a header and two superblocks.
+    const HEAD: u64 = 3;
+
     fn check(level: Level, n: usize) {
-        let g = Geometry::new(level, n, 1001 + 2 * SLOT_PAGES).unwrap();
+        let g = Geometry::new(level, n, 1001 + 2 * SLOT_PAGES, HEAD).unwrap();
         let mut seen = HashSet::new();
         for s in 0..g.stripes() {
             let (p, q) = g.parity_members(s);
@@ -220,10 +232,7 @@ mod tests {
             }
         }
         // Every row of every member is in exactly one stripe.
-        assert_eq!(
-            seen.len() as u64,
-            g.n as u64 * (g.rows_end() - RESERVED_HEAD)
-        );
+        assert_eq!(seen.len() as u64, g.n as u64 * (g.rows_end() - HEAD));
         assert!(g.end() < 1001 + 2 * SLOT_PAGES);
     }
 
@@ -239,11 +248,15 @@ mod tests {
 
     #[test]
     fn too_small_or_too_few() {
-        assert!(Geometry::new(Level::Raid5, 3, 100).is_none());
-        assert!(Geometry::new(Level::Raid6, 3, 10_000).is_none());
-        let g = Geometry::new(Level::Raid5, 4, 5 + 2 * SLOT_PAGES + 400).unwrap();
+        assert!(Geometry::new(Level::Raid5, 3, 100, HEAD).is_none());
+        assert!(Geometry::new(Level::Raid6, 3, 10_000, HEAD).is_none());
+        let g = Geometry::new(Level::Raid5, 4, 5 + 2 * SLOT_PAGES + 400, HEAD).unwrap();
         assert_eq!(g.blocks, 100);
         assert_eq!(g.rows_end(), 3 + 300);
         assert_eq!(g.ppl_start(), 403);
+        // No head: the rows start at the member's first page.
+        let g = Geometry::new(Level::Raid5, 4, 2 + 2 * SLOT_PAGES + 400, 0).unwrap();
+        assert_eq!((g.blocks, g.rows_end(), g.ppl_start()), (100, 300, 400));
+        assert_eq!(g.stripe_of(1, 0), Some(0));
     }
 }

@@ -13,9 +13,10 @@ use tracing::info;
 
 use crate::asp::Asp;
 use crate::asp::io::IoEvent;
+use crate::asp::layout::RESERVED_HEAD;
 use crate::asp::parity::{
-    Engine, EngineEvent, Fault, Geometry, Health, Level, Member, MemberState, ParityTag, SetHandle,
-    WorkKind, geometry_of, table::MAX_MEMBERS, unit_of,
+    Engine, EngineEvent, FORMAT, Fault, Geometry, Health, Level, Member, MemberState, ParityTag,
+    SetHandle, WorkKind, geometry_of, table::MAX_MEMBERS, unit_of,
 };
 use crate::asp::superblock::serial_bytes;
 use crate::asp::unit::{UnitHeader, UnitState};
@@ -209,7 +210,7 @@ impl Asp {
             .map(|&u| self.sb.units[usize::from(u)].usable_pages)
             .min()
             .unwrap_or(0);
-        let geo = Geometry::new(level, units.len(), smallest).ok_or_else(|| {
+        let geo = Geometry::new(level, units.len(), smallest, RESERVED_HEAD).ok_or_else(|| {
             StoreError::UnitTooSmall {
                 pages: smallest,
                 need: 1 + 3 + 2 * crate::asp::parity::geometry::SLOT_PAGES + units.len() as u64,
@@ -255,7 +256,7 @@ impl Asp {
             self.alloc
                 .hold(span, geo.rows_end(), pages - 1 - geo.rows_end());
         }
-        let engine = Engine::new(self.sb.asp_uuid, set, geo, members, Some(0));
+        let engine = Engine::new(FORMAT, self.sb.asp_uuid, set, geo, members, Some(0));
         let handle = SetHandle {
             set,
             engine: Arc::new(Mutex::new(engine)),

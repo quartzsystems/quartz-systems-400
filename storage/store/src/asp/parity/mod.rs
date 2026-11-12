@@ -6,97 +6,29 @@
 //! units, kept by the store as IBM i's RAID controllers keep them. Each
 //! member stays its own span; the I/O layer sees a [`ParityDev`] in
 //! place of the member's device, and every page passes through the
-//! set's [`Engine`]. See `docs/STORE_FORMAT.md` §11.
+//! set's [`Engine`]. The engine, its layout and its partial-parity log
+//! are the `protect` crate's; what is the store's is here: the
+//! constants its sets carry on disk ([`FORMAT`]), the table in the
+//! superblock, and the sets' place among the units of an ASP. See
+//! `docs/STORE_FORMAT.md` §11.
 
-pub mod engine;
-pub mod geometry;
-pub mod gf;
+mod format;
 pub mod ops;
-pub mod ppl;
 pub mod table;
 
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
-
-use blockdev::{BLOCK_SIZE, BlockDev, check_range};
+use std::sync::{Arc, Mutex};
 
 use crate::alloc::Allocator;
 use crate::asp::UnitEvent;
 use crate::asp::io::UnitDev;
-use crate::asp::layout::Layout;
+use crate::asp::layout::{Layout, RESERVED_HEAD};
 use crate::asp::superblock::Superblock;
-use crate::page::PAGE_SIZE;
 use crate::{Result, StoreError};
-pub use engine::{Engine, EngineEvent, Fault, Health, Member};
-pub use geometry::Geometry;
+pub use format::{FORMAT, PPL_MAGIC, STATE_MAGIC};
+pub use protect::parity::{Engine, EngineEvent, Fault, Format, Health, Member};
+pub use protect::parity::{Geometry, ParityDev, SetHandle};
+pub use protect::parity::{engine, geometry, gf, ppl};
 pub use table::{Level, MemberState, ParityTable, ParityTag, ParityWork, WorkKind};
-
-/// A member's device as the I/O layer sees it.
-pub struct ParityDev {
-    engine: Arc<Mutex<Engine>>,
-    member: usize,
-    blocks: u64,
-}
-
-fn lock(e: &Mutex<Engine>) -> MutexGuard<'_, Engine> {
-    e.lock().unwrap_or_else(PoisonError::into_inner)
-}
-
-impl BlockDev for ParityDev {
-    fn block_size(&self) -> u32 {
-        BLOCK_SIZE
-    }
-
-    fn blocks(&self) -> u64 {
-        self.blocks
-    }
-
-    fn read(&self, lba: u64, buf: &mut [u8]) -> blockdev::Result<()> {
-        let count = check_range(self.blocks, lba, buf.len())?;
-        let mut e = lock(&self.engine);
-        for (i, chunk) in (0..count).zip(buf.chunks_mut(PAGE_SIZE)) {
-            chunk.copy_from_slice(&e.read_page(self.member, lba + i)?);
-        }
-        Ok(())
-    }
-
-    fn write(&self, lba: u64, buf: &[u8]) -> blockdev::Result<()> {
-        let count = check_range(self.blocks, lba, buf.len())?;
-        let mut e = lock(&self.engine);
-        for (i, chunk) in (0..count).zip(buf.chunks(PAGE_SIZE)) {
-            e.write_page(self.member, lba + i, chunk)?;
-        }
-        Ok(())
-    }
-
-    fn flush(&self) -> blockdev::Result<()> {
-        lock(&self.engine).flush()
-    }
-}
-
-/// One set at run time.
-pub struct SetHandle {
-    /// Set number.
-    pub set: u8,
-    /// The engine its members' devices share.
-    pub engine: Arc<Mutex<Engine>>,
-}
-
-impl SetHandle {
-    /// The engine, locked.
-    pub fn lock(&self) -> MutexGuard<'_, Engine> {
-        lock(&self.engine)
-    }
-
-    /// A member's device for the I/O layer.
-    #[must_use]
-    pub fn device(&self, member: usize, blocks: u64) -> Box<dyn BlockDev> {
-        Box::new(ParityDev {
-            engine: Arc::clone(&self.engine),
-            member,
-            blocks,
-        })
-    }
-}
 
 /// The sets of an ASP.
 #[derive(Default)]
@@ -201,7 +133,7 @@ pub(crate) fn geometry_of(sb: &Superblock, set: u8) -> Result<Geometry> {
             .ok_or_else(|| bad(format!("parity set {set}: a member is not in the table")))?;
         smallest = smallest.min(sb.units[usize::from(unit)].usable_pages);
     }
-    Geometry::new(level, members.len(), smallest)
+    Geometry::new(level, members.len(), smallest, RESERVED_HEAD)
         .ok_or_else(|| bad(format!("parity set {set}: members too small or too few")))
 }
 
@@ -260,7 +192,7 @@ pub(crate) fn attach(
                 pages: sb.units[usize::from(unit)].pages,
             });
         }
-        let mut engine = Engine::new(sb.asp_uuid, set, geo, members, sync);
+        let mut engine = Engine::new(FORMAT, sb.asp_uuid, set, geo, members, sync);
         // A member that failed after the last checkpoint is recorded on
         // the others: it is stale even though the table says active.
         let failed = engine.recorded_failures();

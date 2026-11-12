@@ -1,0 +1,16 @@
+[package]
+name = "protect"
+description = "Disk protection over block devices: mirrored sets, parity sets with partial parity, resynchronization, hot spares"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+thiserror.workspace = true
+crc.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

@@ -2767,6 +2767,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "protect"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "crc",
+ "thiserror 2.0.21",
+ "tracing",
+]
+
+[[package]]
 name = "ptf"
 version = "0.1.0"
 dependencies = [
@@ -4076,6 +4086,7 @@ dependencies = [
  "blockdev",
  "ccsid",
  "crc",
+ "protect",
  "qsname",
  "release",
  "thiserror 2.0.21",

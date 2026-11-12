@@ -30,6 +30,7 @@ members = [
     "lic/instload",
     # Object store and the names and code pages it holds.
     "storage/store",
+    "storage/protect",
     "storage/qsname",
     "storage/ccsid",
     # Database: DDS, decimal, files, journals, SQL.

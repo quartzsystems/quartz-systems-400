@@ -6,6 +6,10 @@
 
 # --- On disk: the object store and the LIC partition ---
 
+# The parity layout and its partial-parity log, the level's and the unit
+# state's bytes are protect's (storage/protect), re-locked without a bump
+# when they moved there: storage/store/tests/sets_bytes.rs holds the
+# digests of the units as the code before wrote them.
 [[format]]
 name = "store"
 frozen_at = "V1R1M0"
@@ -22,9 +26,12 @@ files = [
     "storage/store/src/asp/unit.rs",
     "storage/store/src/asp/layout.rs",
     "storage/store/src/asp/ifs/map.rs",
-    "storage/store/src/asp/parity/ppl.rs",
-    "storage/store/src/asp/parity/geometry.rs",
+    "storage/store/src/asp/parity/format.rs",
     "storage/store/src/asp/parity/table.rs",
+    "storage/protect/src/parity/ppl.rs",
+    "storage/protect/src/parity/geometry.rs",
+    "storage/protect/src/parity/level.rs",
+    "storage/protect/src/state.rs",
     "storage/store/src/wal/mod.rs",
     "storage/store/src/wal/record.rs",
     "storage/store/src/btree/node.rs",

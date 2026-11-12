@@ -8,16 +8,14 @@
 
 use crc::{CRC_32_ISCSI, Crc, Table};
 
-use crate::asp::parity::geometry::PPL_ENTRIES;
-use crate::asp::parity::table::Level;
+use crate::PAGE_SIZE;
 use crate::bytes::{get_u32, get_u64, put_u32, put_u64};
-use crate::page::PAGE_SIZE;
+use crate::parity::Level;
+use crate::parity::geometry::PPL_ENTRIES;
 use crate::spec::{Layout, field};
 
 const CRC32C: Crc<u32, Table<16>> = Crc::<u32, Table<16>>::new(&CRC_32_ISCSI);
 
-/// Magic at offset 0.
-pub const MAGIC: &[u8; 8] = b"QS400PPL";
 /// Header bytes; entries follow.
 pub const HEADER_LEN: usize = 64;
 /// Bytes per entry.
@@ -67,7 +65,11 @@ pub static ENTRY_LAYOUT: Layout = Layout {
 /// ignored.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ident {
-    /// The ASP.
+    /// Magic of a slot header, the caller's.
+    pub magic: [u8; 8],
+    /// Magic of the state page, the caller's.
+    pub state_magic: [u8; 8],
+    /// The pool the set belongs to.
     pub asp_uuid: [u8; 16],
     /// Set number.
     pub set: u8,
@@ -108,7 +110,7 @@ pub fn encode(id: &Ident, seq: u64, entries: &[Entry]) -> Vec<u8> {
         "slot holds {PPL_ENTRIES} entries"
     );
     let mut out = vec![0u8; pages_for(entries.len()) * PAGE_SIZE];
-    out[..8].copy_from_slice(MAGIC);
+    out[..8].copy_from_slice(&id.magic);
     put_u64(&mut out, OFF_SEQ, seq);
     out[OFF_ASP..OFF_ASP + 16].copy_from_slice(&id.asp_uuid);
     out[OFF_SET] = id.set;
@@ -140,7 +142,7 @@ pub fn encode(id: &Ident, seq: u64, entries: &[Entry]) -> Vec<u8> {
 /// one of its slots.
 #[must_use]
 pub fn header(id: &Ident, page: &[u8]) -> Option<(u64, usize)> {
-    if &page[..8] != MAGIC
+    if page[..8] != id.magic
         || page[OFF_ASP..OFF_ASP + 16] != id.asp_uuid
         || page[OFF_SET] != id.set
         || page[OFF_LEVEL] != id.level.as_u8()
@@ -186,8 +188,6 @@ pub fn decode(id: &Ident, bytes: &[u8]) -> Option<(u64, Vec<Entry>)> {
     Some((seq, entries))
 }
 
-/// Magic of the state page.
-pub const STATE_MAGIC: &[u8; 8] = b"QS400PST";
 const OFF_FAILED: usize = 36;
 
 /// The spec layout of the state page.
@@ -214,7 +214,7 @@ pub static STATE_LAYOUT: Layout = Layout {
 #[must_use]
 pub fn encode_state(id: &Ident, seq: u64, failed: u32) -> Vec<u8> {
     let mut out = vec![0u8; PAGE_SIZE];
-    out[..8].copy_from_slice(STATE_MAGIC);
+    out[..8].copy_from_slice(&id.state_magic);
     put_u64(&mut out, OFF_SEQ, seq);
     out[OFF_ASP..OFF_ASP + 16].copy_from_slice(&id.asp_uuid);
     out[OFF_SET] = id.set;
@@ -230,7 +230,7 @@ pub fn encode_state(id: &Ident, seq: u64, failed: u32) -> Vec<u8> {
 /// Decode a state page: its sequence and failed members.
 #[must_use]
 pub fn decode_state(id: &Ident, page: &[u8]) -> Option<(u64, u32)> {
-    if &page[..8] != STATE_MAGIC
+    if page[..8] != id.state_magic
         || page[OFF_ASP..OFF_ASP + 16] != id.asp_uuid
         || page[OFF_SET] != id.set
         || page[OFF_LEVEL] != id.level.as_u8()
@@ -251,6 +251,8 @@ mod tests {
 
     fn id() -> Ident {
         Ident {
+            magic: *b"TESTSPPL",
+            state_magic: *b"TESTSPST",
             asp_uuid: [9; 16],
             set: 2,
             level: Level::Raid6,
@@ -281,6 +283,11 @@ mod tests {
         assert_eq!(decode(&id(), &bytes), Some((9, entries)));
         let other = Ident { member: 1, ..id() };
         assert!(decode(&other, &bytes).is_none());
+        let theirs = Ident {
+            magic: *b"OTHERPPL",
+            ..id()
+        };
+        assert!(decode(&theirs, &bytes).is_none(), "another caller's slot");
         bytes[3 * PAGE_SIZE + 7] ^= 1;
         assert!(decode(&id(), &bytes).is_none());
     }
