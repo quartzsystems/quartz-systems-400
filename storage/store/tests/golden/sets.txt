@@ -1,0 +1,54 @@
+release V1R1M0
+[mirror, half resumed]
+unit 0: 1024 pages, 221 written, crc64 1082085d758b3969, crc32c 10a06ed1
+unit 1: 1024 pages, 216 written, crc64 86b88cf8d1689ca5, crc32c 7f18847a
+resume map: 515334303052534da5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a502020202020202020202020202020202000100000000000004000000000000000300
+[mirror, one half suspended]
+unit 0: 1024 pages, 307 written, crc64 289e1aa29dc77f3a, crc32c 5af45baa
+unit 1: 1024 pages, 261 written, crc64 61b2d9019a2c864c, crc32c 719fb2bb
+[mirror, half replaced, a hot spare]
+unit 0: 1024 pages, 329 written, crc64 1a81f8ea1a7676cc, crc32c 5d7fdde4
+unit 1: 1100 pages, 327 written, crc64 1d47608d9fb480a7, crc32c 89bdf4aa
+spare: 1024 pages, 2 written, crc64 67f05b0d352d9484, crc32c 85a1ff41
+[RAID 5, synchronizing]
+unit 0: 1200 pages, 52 written, crc64 db0d4a3ff13fc247, crc32c 3a234a0a
+unit 1: 1200 pages, 62 written, crc64 766fba6665b0b0e1, crc32c 0007dcc6
+unit 2: 1200 pages, 74 written, crc64 458f09ab62e55ab0, crc32c 2927b467
+[RAID 5, active]
+unit 0: 1200 pages, 92 written, crc64 6342a862f061b70d, crc32c e52382c9
+unit 1: 1200 pages, 106 written, crc64 694ad2f10bc6e8c2, crc32c 79ee2b26
+unit 2: 1200 pages, 101 written, crc64 11eb6d8c0484bcac, crc32c 3c9606c9
+[RAID 5, exposed]
+unit 0: 1200 pages, 113 written, crc64 b3bca38a2c3de599, crc32c c9f3a9fc
+unit 2: 1200 pages, 123 written, crc64 42fa41c6fd873709, crc32c 2f3eb81d
+[RAID 5, rebuilding]
+unit 0: 1200 pages, 113 written, crc64 7552712d01614d90, crc32c 28c417c7
+unit 1: 1200 pages, 124 written, crc64 83408b7c9302c485, crc32c 70e1bbc8
+unit 2: 1200 pages, 123 written, crc64 17f286b0ea8ea3c6, crc32c 925b626e
+[RAID 5, rebuilt]
+unit 0: 1200 pages, 117 written, crc64 47d7418ce3b471e4, crc32c f90c1b4e
+unit 1: 1200 pages, 133 written, crc64 7ff62c4bcec135dd, crc32c e1b51d54
+unit 2: 1200 pages, 135 written, crc64 feeab0347ce8064f, crc32c adddcb74
+[RAID 6, synchronizing]
+unit 0: 1200 pages, 52 written, crc64 7ddf834c04e46a63, crc32c 916fe677
+unit 1: 1200 pages, 69 written, crc64 b8ad3d28c0501012, crc32c e4f71649
+unit 2: 1200 pages, 67 written, crc64 2ca2712064cd4c74, crc32c 2d8416e6
+unit 3: 1200 pages, 72 written, crc64 3a8f52877ff300bb, crc32c ac5536b6
+[RAID 6, active]
+unit 0: 1200 pages, 112 written, crc64 add29a055a00e164, crc32c c8973e52
+unit 1: 1200 pages, 117 written, crc64 53fa1120e3d528b3, crc32c b813a543
+unit 2: 1200 pages, 119 written, crc64 3e90502a662fd29f, crc32c 0494abd7
+unit 3: 1200 pages, 120 written, crc64 8a6e94f25dc6114c, crc32c ff415e6e
+[RAID 6, exposed]
+unit 1: 1200 pages, 147 written, crc64 4d24ad8f5ad9e14d, crc32c 1c99044c
+unit 2: 1200 pages, 135 written, crc64 6ed48b4c11839fb3, crc32c 7900d344
+[RAID 6, rebuilding]
+unit 0: 1200 pages, 130 written, crc64 faa9999febf2f292, crc32c c98b532a
+unit 1: 1200 pages, 147 written, crc64 87b895c3f6e7946b, crc32c e863c42a
+unit 2: 1200 pages, 135 written, crc64 a2b36ab264053ffb, crc32c 51a0c1de
+unit 3: 1200 pages, 121 written, crc64 ea9c98eeca42b287, crc32c f979b276
+[RAID 6, rebuilt]
+unit 0: 1200 pages, 147 written, crc64 c426df50dbf02a6a, crc32c 9852d209
+unit 1: 1200 pages, 147 written, crc64 5026f65db217ea00, crc32c e2d02f70
+unit 2: 1200 pages, 149 written, crc64 5fa3c04570b7a4c9, crc32c 6bb2e0ae
+unit 3: 1200 pages, 144 written, crc64 115d604e20e0eff3, crc32c ef180441
