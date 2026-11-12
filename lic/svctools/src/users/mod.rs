@@ -2,151 +2,46 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Service tools user IDs: names, privileges, Argon2 password hashes,
-//! expired and disabled states, kept as one TLV in the LIC record. These
-//! are not the operating system's user profiles, as on IBM i; they
-//! exist before the object store does.
+//! Service tools user IDs as QS/400 has them: the users it ships, and
+//! the one TLV of the LIC record that keeps them. The IDs themselves
+//! (names, privileges, Argon2 password hashes, expired and disabled
+//! states, the count that disables one) are `svcusers`, which knows
+//! neither. These are not the operating system's user profiles, as on
+//! IBM i; they exist before the object store does.
 
-pub mod privilege;
-
-use argon2::Argon2;
-use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use licpart::Record;
 
-pub use privilege::Privilege;
+pub use svcusers::privilege;
+pub use svcusers::{
+    MAX_FAILURES, NAME_LEN, PASSWORD_LEN, Privilege, ServiceUser, SignOnError, UserDb,
+    hash_password, normalize_name, verify_password,
+};
 
 /// The TLV tag in the LIC record.
 pub const TAG_USERS: u16 = 0x0102;
-/// Wrong passwords before an ID is disabled.
-pub const MAX_FAILURES: u8 = 3;
-/// Longest user name.
-pub const NAME_LEN: usize = 10;
-/// Longest password.
-pub const PASSWORD_LEN: usize = 128;
 
-/// One user.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ServiceUser {
-    /// Upper-case name, at most ten characters.
-    pub name: String,
-    /// What the user may do.
-    pub privileges: Privilege,
-    /// Argon2 hash in PHC string form.
-    pub hash: String,
-    /// The password must be changed at the next sign-on.
-    pub expired: bool,
-    /// Too many wrong passwords, or disabled by an administrator.
-    pub disabled: bool,
-    /// Wrong passwords since the last good sign-on.
-    pub failures: u8,
-    /// Unix seconds the password was last set.
-    pub changed: u64,
-    /// Description.
-    pub text: String,
-}
-
-/// Why a sign-on or a password change was refused.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-pub enum SignOnError {
-    /// No such user, or the password does not match. Both read the same.
-    #[error("service tools user ID or password is not correct")]
-    NotCorrect,
-    /// The user ID is disabled.
-    #[error("service tools user ID is disabled")]
-    Disabled,
-    /// The password has expired and must be changed.
-    #[error("password has expired; it must be changed")]
-    Expired,
-    /// The new password breaks a rule.
-    #[error("new password is not valid: {0}")]
-    BadPassword(String),
-    /// The user exists already.
-    #[error("service tools user ID already exists")]
-    Exists,
-    /// The last user with the user ID privilege cannot lose it.
-    #[error("the last user ID that can manage user IDs cannot be removed")]
-    LastAdministrator,
-}
-
-impl SignOnError {
-    /// A number for the variant, for a message between processes.
-    #[must_use]
-    pub fn code(&self) -> u8 {
-        match self {
-            Self::NotCorrect => 0,
-            Self::Disabled => 1,
-            Self::Expired => 2,
-            Self::BadPassword(_) => 3,
-            Self::Exists => 4,
-            Self::LastAdministrator => 5,
-        }
-    }
-
-    /// The variant for a code and the reason of a bad password.
-    #[must_use]
-    pub fn from_code(code: u8, why: String) -> Self {
-        match code {
-            1 => Self::Disabled,
-            2 => Self::Expired,
-            3 => Self::BadPassword(why),
-            4 => Self::Exists,
-            5 => Self::LastAdministrator,
-            _ => Self::NotCorrect,
-        }
-    }
-}
-
-/// Every user.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct UserDb {
-    users: Vec<ServiceUser>,
-}
-
-/// Hash a password with a fresh salt.
-#[must_use]
-pub fn hash_password(password: &str, salt: [u8; 16]) -> String {
-    let salt = SaltString::encode_b64(&salt).expect("16 bytes fit");
-    Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
-        .expect("hashing cannot fail with valid parameters")
-        .to_string()
-}
-
-/// Whether a password matches a hash.
-#[must_use]
-pub fn verify_password(hash: &str, password: &str) -> bool {
-    PasswordHash::new(hash).is_ok_and(|h| {
-        Argon2::default()
-            .verify_password(password.as_bytes(), &h)
-            .is_ok()
-    })
-}
-
-fn valid_password(p: &str) -> Result<(), SignOnError> {
-    if p.is_empty() {
-        return Err(SignOnError::BadPassword("empty".into()));
-    }
-    if p.len() > PASSWORD_LEN {
-        return Err(SignOnError::BadPassword(
-            "longer than 128 characters".into(),
-        ));
-    }
-    if p.chars().any(char::is_control) {
-        return Err(SignOnError::BadPassword("control characters".into()));
-    }
-    Ok(())
-}
-
-/// A name as stored: upper case, trimmed.
-#[must_use]
-pub fn normalize_name(name: &str) -> String {
-    name.trim().to_ascii_uppercase()
-}
-
-impl UserDb {
+/// What QS/400 adds to the user IDs: its shipped users and their place
+/// in the LIC record.
+pub trait LicUsers: Sized {
     /// The shipped users: `QSECOFR` with an expired default password,
     /// `QSRV`, `11111111` and `22222222`, each with its privilege set.
-    pub fn defaults(now: u64, salt: &mut dyn FnMut() -> [u8; 16]) -> Self {
+    fn defaults(now: u64, salt: &mut dyn FnMut() -> [u8; 16]) -> Self;
+
+    /// `CHGDSTPWD PASSWORD(*DEFAULT)`: `QSECOFR` back to its shipped
+    /// password, expired and enabled; made again with every privilege
+    /// if it was deleted.
+    fn reset_secofr(&mut self, now: u64, salt: [u8; 16]);
+
+    /// The users recorded in a LIC record, if any.
+    #[must_use]
+    fn load(record: &Record) -> Option<Self>;
+
+    /// Record the users in a LIC record.
+    fn store(&self, record: &mut Record) -> Result<(), licpart::LicError>;
+}
+
+impl LicUsers for UserDb {
+    fn defaults(now: u64, salt: &mut dyn FnMut() -> [u8; 16]) -> Self {
         let mut db = Self::default();
         let shipped: [(&str, Privilege, bool, &str); 4] = [
             ("QSECOFR", Privilege::ALL, true, "Security officer"),
@@ -175,7 +70,7 @@ impl UserDb {
             ),
         ];
         for (name, privileges, expired, text) in shipped {
-            db.users.push(ServiceUser {
+            db.push(ServiceUser {
                 name: name.to_string(),
                 privileges,
                 hash: hash_password(name, salt()),
@@ -189,165 +84,10 @@ impl UserDb {
         db
     }
 
-    /// The same users with no password hashes: what a display needs,
-    /// for a process that has no business holding the hashes.
-    #[must_use]
-    pub fn without_hashes(&self) -> Self {
-        let mut users = self.users.clone();
-        for u in &mut users {
-            u.hash.clear();
-        }
-        Self { users }
-    }
-
-    /// The users, in creation order.
-    #[must_use]
-    pub fn list(&self) -> &[ServiceUser] {
-        &self.users
-    }
-
-    /// One user.
-    #[must_use]
-    pub fn get(&self, name: &str) -> Option<&ServiceUser> {
-        let name = normalize_name(name);
-        self.users.iter().find(|u| u.name == name)
-    }
-
-    fn get_mut(&mut self, name: &str) -> Option<&mut ServiceUser> {
-        let name = normalize_name(name);
-        self.users.iter_mut().find(|u| u.name == name)
-    }
-
-    /// Check a name and password. A wrong password counts toward the
-    /// disable limit; a good one resets the count. An expired password
-    /// signs on only far enough to be changed.
-    pub fn sign_on(&mut self, name: &str, password: &str) -> Result<&ServiceUser, SignOnError> {
-        let Some(u) = self.get_mut(name) else {
-            return Err(SignOnError::NotCorrect);
-        };
-        if u.disabled {
-            return Err(SignOnError::Disabled);
-        }
-        if !verify_password(&u.hash, password) {
-            u.failures += 1;
-            if u.failures >= MAX_FAILURES {
-                u.disabled = true;
-                return Err(SignOnError::Disabled);
-            }
-            return Err(SignOnError::NotCorrect);
-        }
-        u.failures = 0;
-        if u.expired {
-            return Err(SignOnError::Expired);
-        }
-        Ok(u)
-    }
-
-    /// Change a password, checking the old one.
-    pub fn change_password(
-        &mut self,
-        name: &str,
-        old: &str,
-        new: &str,
-        now: u64,
-        salt: [u8; 16],
-    ) -> Result<(), SignOnError> {
-        valid_password(new)?;
-        let Some(u) = self.get_mut(name) else {
-            return Err(SignOnError::NotCorrect);
-        };
-        if u.disabled {
-            return Err(SignOnError::Disabled);
-        }
-        if !verify_password(&u.hash, old) {
-            return Err(SignOnError::NotCorrect);
-        }
-        if old == new {
-            return Err(SignOnError::BadPassword("same as the old password".into()));
-        }
-        u.hash = hash_password(new, salt);
-        u.expired = false;
-        u.failures = 0;
-        u.changed = now;
-        Ok(())
-    }
-
-    /// Create a user with an expired password.
-    pub fn create(
-        &mut self,
-        name: &str,
-        password: &str,
-        privileges: Privilege,
-        text: &str,
-        now: u64,
-        salt: [u8; 16],
-    ) -> Result<(), SignOnError> {
-        let name = normalize_name(name);
-        if name.is_empty()
-            || name.len() > NAME_LEN
-            || !name.bytes().all(|b| b.is_ascii_alphanumeric())
-        {
-            return Err(SignOnError::BadPassword(
-                "user ID must be 1 to 10 letters or digits".into(),
-            ));
-        }
-        valid_password(password)?;
-        if self.get(&name).is_some() {
-            return Err(SignOnError::Exists);
-        }
-        self.users.push(ServiceUser {
-            name,
-            privileges,
-            hash: hash_password(password, salt),
-            expired: true,
-            disabled: false,
-            failures: 0,
-            changed: now,
-            text: text.trim().to_string(),
-        });
-        Ok(())
-    }
-
-    /// Delete a user. The last one who can manage user IDs stays.
-    pub fn delete(&mut self, name: &str) -> Result<(), SignOnError> {
-        let name = normalize_name(name);
-        let Some(i) = self.users.iter().position(|u| u.name == name) else {
-            return Err(SignOnError::NotCorrect);
-        };
-        if self.users[i].privileges.has(Privilege::USER_IDS) && self.administrators() == 1 {
-            return Err(SignOnError::LastAdministrator);
-        }
-        self.users.remove(i);
-        Ok(())
-    }
-
-    /// Set a new, expired password and enable the user.
-    pub fn reset_password(
-        &mut self,
-        name: &str,
-        password: &str,
-        now: u64,
-        salt: [u8; 16],
-    ) -> Result<(), SignOnError> {
-        valid_password(password)?;
-        let Some(u) = self.get_mut(name) else {
-            return Err(SignOnError::NotCorrect);
-        };
-        u.hash = hash_password(password, salt);
-        u.expired = true;
-        u.disabled = false;
-        u.failures = 0;
-        u.changed = now;
-        Ok(())
-    }
-
-    /// `CHGDSTPWD PASSWORD(*DEFAULT)`: `QSECOFR` back to its shipped
-    /// password, expired and enabled; made again with every privilege
-    /// if it was deleted.
-    pub fn reset_secofr(&mut self, now: u64, salt: [u8; 16]) {
+    fn reset_secofr(&mut self, now: u64, salt: [u8; 16]) {
         const SECOFR: &str = "QSECOFR";
         if self.get(SECOFR).is_none() {
-            self.users.insert(
+            self.insert(
                 0,
                 ServiceUser {
                     name: SECOFR.into(),
@@ -369,130 +109,12 @@ impl UserDb {
         u.changed = now;
     }
 
-    /// Enable or disable a user.
-    pub fn set_enabled(&mut self, name: &str, enabled: bool) -> Result<(), SignOnError> {
-        let Some(u) = self.get_mut(name) else {
-            return Err(SignOnError::NotCorrect);
-        };
-        u.disabled = !enabled;
-        if enabled {
-            u.failures = 0;
-        }
-        Ok(())
-    }
-
-    /// Change a user's privileges.
-    pub fn set_privileges(&mut self, name: &str, privileges: Privilege) -> Result<(), SignOnError> {
-        let was_admin = self
-            .get(name)
-            .is_some_and(|u| u.privileges.has(Privilege::USER_IDS));
-        if was_admin && !privileges.has(Privilege::USER_IDS) && self.administrators() == 1 {
-            return Err(SignOnError::LastAdministrator);
-        }
-        let Some(u) = self.get_mut(name) else {
-            return Err(SignOnError::NotCorrect);
-        };
-        u.privileges = privileges;
-        Ok(())
-    }
-
-    fn administrators(&self) -> usize {
-        self.users
-            .iter()
-            .filter(|u| u.privileges.has(Privilege::USER_IDS))
-            .count()
-    }
-
-    /// The TLV bytes.
-    #[must_use]
-    pub fn encode(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        out.extend_from_slice(
-            &u16::try_from(self.users.len())
-                .unwrap_or(u16::MAX)
-                .to_le_bytes(),
-        );
-        for u in &self.users {
-            put_str(&mut out, &u.name);
-            out.extend_from_slice(&u.privileges.0.to_le_bytes());
-            out.push(u8::from(u.expired) | (u8::from(u.disabled) << 1));
-            out.push(u.failures);
-            out.extend_from_slice(&u.changed.to_le_bytes());
-            put_str(&mut out, &u.hash);
-            put_str(&mut out, &u.text);
-        }
-        out
-    }
-
-    /// From TLV bytes.
-    #[must_use]
-    pub fn decode(bytes: &[u8]) -> Option<Self> {
-        let mut r = Reader { buf: bytes, at: 0 };
-        let count = r.u16()?;
-        let mut users = Vec::with_capacity(usize::from(count));
-        for _ in 0..count {
-            let name = r.str()?;
-            let privileges = Privilege(r.u64()?);
-            let flags = r.u8()?;
-            let failures = r.u8()?;
-            let changed = r.u64()?;
-            let hash = r.str()?;
-            let text = r.str()?;
-            users.push(ServiceUser {
-                name,
-                privileges,
-                hash,
-                expired: flags & 1 != 0,
-                disabled: flags & 2 != 0,
-                failures,
-                changed,
-                text,
-            });
-        }
-        Some(Self { users })
-    }
-
-    /// The users recorded in a LIC record, if any.
-    #[must_use]
-    pub fn load(record: &Record) -> Option<Self> {
+    fn load(record: &Record) -> Option<Self> {
         record.tlv(TAG_USERS).and_then(Self::decode)
     }
 
-    /// Record the users in a LIC record.
-    pub fn store(&self, record: &mut Record) -> Result<(), licpart::LicError> {
+    fn store(&self, record: &mut Record) -> Result<(), licpart::LicError> {
         record.set_tlv(TAG_USERS, self.encode())
-    }
-}
-
-fn put_str(out: &mut Vec<u8>, s: &str) {
-    let bytes = s.as_bytes();
-    out.extend_from_slice(&u16::try_from(bytes.len()).unwrap_or(u16::MAX).to_le_bytes());
-    out.extend_from_slice(&bytes[..bytes.len().min(usize::from(u16::MAX))]);
-}
-
-struct Reader<'a> {
-    buf: &'a [u8],
-    at: usize,
-}
-
-impl Reader<'_> {
-    fn take(&mut self, n: usize) -> Option<&[u8]> {
-        let s = self.buf.get(self.at..self.at + n)?;
-        self.at += n;
-        Some(s)
-    }
-    fn u8(&mut self) -> Option<u8> {
-        Some(self.take(1)?[0])
-    }
-    fn u16(&mut self) -> Option<u16> {
-        Some(u16::from_le_bytes(self.take(2)?.try_into().ok()?))
-    }
-    fn u64(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.take(8)?.try_into().ok()?))
-    }
-    fn str(&mut self) -> Option<String> {
-        let n = usize::from(self.u16()?);
-        String::from_utf8(self.take(n)?.to_vec()).ok()
     }
 }
 
@@ -576,5 +198,21 @@ mod tests {
         db.store(&mut record).unwrap();
         assert_eq!(UserDb::load(&record).unwrap(), db);
         assert!(UserDb::decode(&bytes[..10]).is_none());
+    }
+
+    #[test]
+    fn the_default_password_comes_back_and_a_deleted_qsecofr_with_it() {
+        let mut s = salt;
+        let mut db = UserDb::defaults(1, &mut s);
+        db.change_password("QSECOFR", "QSECOFR", "Quartz1", 2, salt())
+            .unwrap();
+        db.reset_secofr(3, salt());
+        assert_eq!(db.sign_on("QSECOFR", "QSECOFR"), Err(SignOnError::Expired));
+        db.create("ADMIN2", "pw", Privilege::ALL, "", 4, salt())
+            .unwrap();
+        db.delete("QSECOFR").unwrap();
+        db.reset_secofr(5, salt());
+        assert_eq!(db.list()[0].name, "QSECOFR");
+        assert!(db.list()[0].privileges.has(Privilege::ALL));
     }
 }

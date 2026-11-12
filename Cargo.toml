@@ -18,6 +18,8 @@ members = [
     "lic/vrm",
     "lic/console",
     "lic/svctools",
+    "lic/scrkit",
+    "lic/svcusers",
     "lic/diskimg",
     "lic/osobjects",
     "lic/blockdev",

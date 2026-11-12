@@ -3,13 +3,12 @@
 // root directory of this project.
 
 //! The process-message encoding of what SST asks the storage service
-//! for: the disk facts, the logs, the hardware table, privileges and
-//! refusals (feature `wire`).
+//! for: the disk facts, the logs and the hardware table (feature
+//! `wire`). Privileges and refusals have theirs in `svcusers`.
 
-use ipc::{Dec, Wire, WireError, wire_struct};
+use ipc::wire_struct;
 
 use crate::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow};
-use crate::users::{Privilege, SignOnError};
 
 wire_struct!(DiskUnit {
     asp,
@@ -60,33 +59,10 @@ wire_struct!(ParityUnit {
     percent
 });
 
-impl Wire for Privilege {
-    fn put(&self, out: &mut Vec<u8>) {
-        self.0.put(out);
-    }
-    fn get(d: &mut Dec<'_>) -> Result<Self, WireError> {
-        Ok(Self(u64::get(d)?))
-    }
-}
-
-impl Wire for SignOnError {
-    fn put(&self, out: &mut Vec<u8>) {
-        self.code().put(out);
-        match self {
-            Self::BadPassword(why) => why.put(out),
-            _ => String::new().put(out),
-        }
-    }
-    fn get(d: &mut Dec<'_>) -> Result<Self, WireError> {
-        let code = u8::get(d)?;
-        let why = String::get(d)?;
-        Ok(Self::from_code(code, why))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::users::{Privilege, SignOnError};
 
     #[test]
     fn values_round_trip() {

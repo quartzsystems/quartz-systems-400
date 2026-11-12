@@ -651,6 +651,7 @@ pub fn audit_lic(system: &mut System) {
 /// `signon USER PASSWORD` on the serial console: a service tools user
 /// ID, as DST checks it.
 fn serial_sign_on(system: &mut System, line: &str) {
+    use svctools::users::LicUsers as _;
     let mut w = line.split_whitespace();
     if w.next() != Some("signon") {
         system.out.serial("Sign on first: signon USER PASSWORD\n");

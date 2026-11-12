@@ -3514,6 +3514,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
+name = "scrkit"
+version = "0.1.0"
+dependencies = [
+ "console",
+]
+
+[[package]]
 name = "sda"
 version = "0.1.0"
 dependencies = [
@@ -4091,12 +4098,22 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 name = "svctools"
 version = "0.1.0"
 dependencies = [
- "argon2",
  "console",
  "hwqual",
  "ipc",
  "licpart",
  "release",
+ "scrkit",
+ "svcusers",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "svcusers"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "ipc",
  "thiserror 2.0.21",
 ]
 

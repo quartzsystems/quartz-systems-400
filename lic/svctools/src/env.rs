@@ -15,7 +15,7 @@ use crate::dst::signon::message;
 use crate::install::lic::{LicEvent, LicKind};
 use crate::install::options::{IplOptions, MajorOptions};
 use crate::install::os::{DeviceKind, InstallDevice, OsOptions};
-use crate::users::{Privilege, SignOnError, UserDb};
+use crate::users::{LicUsers, Privilege, SignOnError, UserDb};
 
 /// A configured disk unit, as the disk configuration displays show it.
 #[derive(Debug, Clone, PartialEq, Eq)]

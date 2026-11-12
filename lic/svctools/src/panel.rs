@@ -5,12 +5,14 @@
 //! A panel is one screen and what Enter and the function keys do on it.
 //! A runner keeps a stack of panels: the top one is shown, F12 goes back
 //! one, F3 goes back to the first, and a panel can push another, replace
-//! itself, or end the whole application with an outcome.
+//! itself, or end the whole application with an outcome. The stack and
+//! what a panel may ask of it are the screen kit's (`scrkit::panel`);
+//! the panels here ask a [`DstEnv`] for what they show.
 
 use console::Screen;
+use scrkit::panel::{End, Stack};
 
 use crate::env::DstEnv;
-use crate::ui;
 
 /// How an application ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,29 +33,10 @@ pub enum Outcome {
     Continue,
 }
 
-/// What a panel asks of the runner after a key.
-pub enum Flow {
-    /// Nothing changes; the message line is cleared.
-    Stay,
-    /// Stay and show a message.
-    Message(String),
-    /// Stay and show an error (red).
-    Error(String),
-    /// Show another panel on top.
-    Push(Box<dyn Panel>),
-    /// Back to the previous panel.
-    Pop,
-    /// Back to the first panel.
-    PopAll,
-    /// Show another panel in this one's place.
-    Replace(Box<dyn Panel>),
-    /// Forget every panel and start over with this one.
-    Reset(Box<dyn Panel>),
-    /// Back `n` panels, with a message for the one revealed.
-    Unwind(usize, Option<(String, bool)>),
-    /// End the application.
-    Exit(Outcome),
-}
+/// What a panel asks of the runner after a key: stay (with a message
+/// or an error), push, pop, replace, reset, unwind, or exit with an
+/// [`Outcome`].
+pub type Flow = scrkit::panel::Flow<Box<dyn Panel>, Outcome>;
 
 /// One screen's behavior.
 pub trait Panel {
@@ -76,8 +59,15 @@ pub trait Panel {
 
 /// The stack of panels and the message line.
 pub struct Runner {
-    stack: Vec<Box<dyn Panel>>,
-    message: Option<(String, bool)>,
+    stack: Stack<Box<dyn Panel>>,
+}
+
+/// Back from the first panel is [`Outcome::Exit`].
+fn outcome(end: Option<End<Outcome>>) -> Option<Outcome> {
+    end.map(|e| match e {
+        End::Left => Outcome::Exit,
+        End::Outcome(o) => o,
+    })
 }
 
 impl Runner {
@@ -85,91 +75,39 @@ impl Runner {
     #[must_use]
     pub fn new(root: Box<dyn Panel>) -> Self {
         Self {
-            stack: vec![root],
-            message: None,
+            stack: Stack::new(root),
         }
     }
 
     /// The screen to show now.
     pub fn screen(&self, env: &mut dyn DstEnv) -> Screen {
-        let top = self.stack.last().expect("never empty");
-        let mut s = top.render(env);
-        if let Some((text, error)) = &self.message {
-            ui::message(&mut s, text, *error);
-        }
+        let mut s = self.stack.top().render(env);
+        self.stack.put_message(&mut s);
         s
     }
 
     /// Name of the panel on top.
     #[must_use]
     pub fn top(&self) -> &'static str {
-        self.stack.last().expect("never empty").name()
+        self.stack.top().name()
     }
 
     /// Panels on the stack.
     #[must_use]
     pub fn depth(&self) -> usize {
-        self.stack.len()
+        self.stack.depth()
     }
 
     /// Enter was pressed with these field contents.
     pub fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Option<Outcome> {
-        let flow = self
-            .stack
-            .last_mut()
-            .expect("never empty")
-            .enter(fields, env);
-        self.apply(flow)
+        let flow = self.stack.top_mut().enter(fields, env);
+        outcome(self.stack.apply(flow))
     }
 
     /// A function key was pressed.
     pub fn function(&mut self, key: u8, env: &mut dyn DstEnv) -> Option<Outcome> {
-        let flow = self
-            .stack
-            .last_mut()
-            .expect("never empty")
-            .function(key, env);
-        self.apply(flow)
-    }
-
-    fn apply(&mut self, flow: Flow) -> Option<Outcome> {
-        self.message = None;
-        match flow {
-            Flow::Stay => {}
-            Flow::Message(m) => self.message = Some((m, false)),
-            Flow::Error(m) => self.message = Some((m, true)),
-            Flow::Push(p) => self.stack.push(p),
-            Flow::Pop => {
-                if self.stack.len() == 1 {
-                    return Some(Outcome::Exit);
-                }
-                self.stack.pop();
-            }
-            Flow::PopAll => {
-                if self.stack.len() == 1 {
-                    return Some(Outcome::Exit);
-                }
-                self.stack.truncate(1);
-            }
-            Flow::Replace(p) => {
-                self.stack.pop();
-                self.stack.push(p);
-            }
-            Flow::Reset(p) => {
-                self.stack.clear();
-                self.stack.push(p);
-            }
-            Flow::Unwind(n, message) => {
-                let keep = self.stack.len().saturating_sub(n).max(1);
-                if keep == self.stack.len() && n > 0 {
-                    return Some(Outcome::Exit);
-                }
-                self.stack.truncate(keep);
-                self.message = message;
-            }
-            Flow::Exit(o) => return Some(o),
-        }
-        None
+        let flow = self.stack.top_mut().function(key, env);
+        outcome(self.stack.apply(flow))
     }
 }
 
@@ -177,6 +115,7 @@ impl Runner {
 mod tests {
     use super::*;
     use crate::env::MemEnv;
+    use crate::ui;
 
     struct Counter(u32);
 

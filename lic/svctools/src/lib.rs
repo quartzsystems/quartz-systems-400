@@ -3,11 +3,13 @@
 // root directory of this project.
 
 //! Service tools: the Dedicated Service Tools screens that run before
-//! the object store opens, the service tools user IDs, and the screen
-//! kit the attended IPL and the installer are built from. Every screen
-//! is a `console::Screen` built by [`ui`]; an application is a stack of
-//! [`panel::Panel`]s driven by Enter and function keys from the console
-//! and asking its environment ([`env::DstEnv`]) for everything else.
+//! the object store opens, the service tools user IDs QS/400 ships and
+//! keeps in the LIC record, and the installer's screens. Every screen
+//! is a `console::Screen` built by the screen kit's builders (`scrkit`,
+//! here as [`ui`]); an application is a stack of [`panel::Panel`]s over
+//! the kit's panel stack, driven by Enter and function keys from the
+//! console and asking its environment ([`env::DstEnv`]) for everything
+//! else.
 //! Phase 8's SST shows the same panels inside a job through another
 //! environment, asking first before it changes disks or user IDs.
 

@@ -16,6 +16,7 @@ use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, 
 use svctools::install::lic::{LicEvent, LicKind};
 use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
 use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
+use svctools::users::LicUsers;
 use svctools::{DstEnv, UserDb};
 use sysval::{IPL_NAMES, SysVals};
 
