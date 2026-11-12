@@ -26,6 +26,8 @@ pub struct AnsiDisplay<W: Write + Send> {
     /// The cells the terminal shows, once something was drawn.
     shown: Option<Vec<Cell>>,
     size: (usize, usize),
+    /// What the caller calls it, for the log.
+    name: String,
 }
 
 /// The SGR parameters of an attribute.
@@ -87,7 +89,16 @@ impl<W: Write + Send> AnsiDisplay<W> {
             out,
             shown: None,
             size: (0, 0),
+            name: "ansi".to_string(),
         }
+    }
+
+    /// Name the display for the log, as the caller would (the line it
+    /// is on).
+    #[must_use]
+    pub fn named(mut self, name: &str) -> Self {
+        self.name = name.to_string();
+        self
     }
 
     /// Forget what the terminal shows: the next draw repaints all of it
@@ -173,7 +184,7 @@ impl<W: Write + Send> Display for AnsiDisplay<W> {
 
     fn describe(&self) -> String {
         let (rows, cols) = self.size;
-        format!("serial terminal, {cols}x{rows} grid, ANSI sequences")
+        format!("{} {cols}x{rows}", self.name)
     }
 }
 
@@ -381,7 +392,8 @@ mod tests {
         d.get_mut().clear();
         d.draw(&s).unwrap();
         assert!(text(d.get_mut()).contains("Title"));
-        assert_eq!(d.describe(), "serial terminal, 80x24 grid, ANSI sequences");
+        assert_eq!(d.describe(), "ansi 80x24");
+        assert_eq!(d.named("ttyS0").describe(), "ttyS0 80x24");
     }
 
     #[test]
