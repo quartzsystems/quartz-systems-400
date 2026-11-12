@@ -38,7 +38,9 @@ a connection), and `sysctl` reads and writes `/proc/sys/net` with the
   `is_exists`, `is_not_found` and `is_not_supported` cover the cases
   callers branch on.
 - Routes QS/400 adds carry protocol `RTPROT_QS400` (81) so they can be
-  told from kernel, boot and router-advertisement routes.
+  told from kernel, boot and router-advertisement routes. The number
+  and the nftables table's name (`qs400`) are QS/400's, in
+  `tcpcfg::net::kernel`; `netlink` takes both from its caller.
 - A route without a gateway but with an interface is installed
   link-scoped. Tables above 255 go in `RTA_TABLE`.
 - Bonds are created with `IFLA_INFO_KIND bond`; slaves are taken down,

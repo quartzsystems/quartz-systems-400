@@ -100,7 +100,12 @@ UKI"). The boot image now grows with the kernel only.
 **Tooling.** The build pipeline is a library, `tools/buildkit`, that
 another repository pins and drives with its own product description
 (`BUILDKIT.md`); `tools/build` is QS/400's over it, with the same
-commands and the same artifacts.
+commands and the same artifacts. The console, the screen kit of the
+attended IPL and the installer (`lic/scrkit`), the service tools user
+IDs (`lic/svcusers`), mirrored and parity protection
+(`storage/protect`), the ublk server and the netlink client are crates
+with no QS/400 in them, which the same repositories take; QS/400's
+screens and the bytes on its disks are as they were.
 
 **Fixes since V1R1M0**
 

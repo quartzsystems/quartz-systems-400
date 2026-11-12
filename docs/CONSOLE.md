@@ -8,6 +8,15 @@ client"). All of them are one 24×80 cell grid drawn by one renderer
 (`lic/console`); `screen` returns that grid as text and does not depend
 on how it is drawn.
 
+The crate knows no product: `slic` gives it QS/400's identity
+(`console::Identity`: the banner of the SRC display from `release`, and
+`C6001090` as the code after which the sign-on display may show). It
+draws on anything that is a `console::Display`: the framebuffer, and a
+serial terminal in ANSI sequences (`console::ansi`, with the terminal's
+keys decoded to 5250 keys). QS/400 attaches the framebuffer only; its
+serial line is the service console. `docs/BUILDKIT.md` section 10 has
+what another product does with the rest.
+
 ## The console display
 
 `slic` links the console's `tn5250` terminal to `QCONSOLE` over the

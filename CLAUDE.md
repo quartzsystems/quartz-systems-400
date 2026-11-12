@@ -147,8 +147,10 @@ tools/        host-side tools
                 (fetch, config with the baseline, build of each UKI kind), src/userland/
                 (build + ELF check), src/image/ (cpio, initramfs, disk over diskimg's layout,
                 iso, manifest), src/notices/ and licenses/; tests/neutral.rs (no OS crate in
-                its graph, no product named); fixture/ the product qsdemo in a workspace of
-                its own, built from git dependencies and booted by `build fixture`
+                its graph, no product named; the same for console, scrkit, svcusers, protect,
+                ublk and netlink); fixture/ the product qsdemo in a workspace of its own, built
+                from git dependencies and booted by `build fixture` (init/src/ panel.rs, raid.rs,
+                net.rs: its panel, its mirrored set through ublk, its route)
   conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
                 src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
                 db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
@@ -199,15 +201,24 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   release/      QS/400's VxRyMz identity, build ID, product IDs, PTF names (one source of truth)
   vrm/          release identity for any product: Release, build.rs's capture (VERSION, the
                 build ID from git, under the product's environment prefix), release_from_env!
-  console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
-  svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
-                src/dst/ (disk/, environment, tools, security), src/install/, src/users/
+  console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens; display.rs the
+                Display trait (the framebuffer's renderer, ansi.rs the serial terminal and its
+                keys); service.rs takes its Identity (banner, ready code) from the caller; the
+                feature `session` (default) is the sign-on display and the 5250 terminal
+  scrkit/       the screen kit for any product: ui.rs the 24x80 screen builders, panel.rs the
+                panel stack (Stack, Flow) and a Panel/Runner over the caller's environment
+  svcusers/     service tools user IDs for any product: salted hashes, privileges, lockout,
+                store.rs where they are kept (UserStore, FileStore), wire.rs (feature `wire`)
+  svctools/     DST screens and the installer's over scrkit: src/ui/ its builders and SST's
+                menu, panel.rs Panel over DstEnv and the Runner, src/dst/ (disk/, environment,
+                tools, security), src/install/, src/users/ the shipped users and their LIC TLV
   diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup (an older
                 system's IFS partition too); build + installer; layout.rs a disk as an
                 ordered list of partitions and the one writer (Plan is one description)
-  ublk/         the ublk server the storage service serves the IFS volume with: abi.rs the
-                kernel's layouts, target.rs requests to block calls, device.rs add, start,
-                resize, stop; sys.rs the io_uring rings, the descriptor map, xfs growfs
+  ublk/         a ublk server (the storage service serves the IFS volume with it): abi.rs the
+                kernel's layouts, target.rs requests to block calls and BlockTarget (any
+                BlockDev), device.rs add, start, resize, stop, recover (a device kept across
+                its server's restart); sys.rs the io_uring rings, the descriptor map, xfs growfs
   hwrsrc/       hardware resources: src/scan/ (pci, nic, storage), src/table/ names, rescans,
                 packaging and logical trees, uevent.rs, proto.rs and client.rs the service's
                 socket (/run/qs400/hwrsrc.sock), view.rs what WRKHDWRSC/DSPHDWRSC and QGYRHR* show
@@ -305,7 +316,15 @@ service/      service: the problem log (docs/SERVICE.md)
 storage/      the object store and the names and code pages it holds
   store/        object store: src/page/, src/btree/, src/asp/ (units, superblock, io.rs with
                 SharedIo, src/asp/ifs/ the IFS volume: map, extents, growth, IfsIo),
-                src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
+                src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/;
+                mirrored and parity protection over protect (asp/mirror.rs, asp/parity/: the
+                table, the operations, format.rs the store's constants); tests/sets_bytes.rs
+                the digests of the units' bytes
+  protect/      disk protection over BlockDev units, no store: state.rs UnitState, src/mirror/
+                (I/O over the halves, the resume copy and its map), src/parity/ (engine,
+                geometry, gf, ppl: RAID 5/6 with partial parity), spare.rs, src/set/ a set as
+                one block device (MirrorSet, ParitySet, Window); labels and records are the
+                caller's (docs/BUILDKIT.md section 10)
   qsname/       object, library and member name rules; 10-byte CP037 Name
   ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv/ the
                 CCSID conversions (tables from cp/*.csv, double-byte cp/*.dbcs and the
@@ -505,6 +524,8 @@ ifs/          the integrated file system
                 src/stmf/ CPYTOSTMF/CPYFRMSTMF and the IMPF stream files, msg.rs IBM's messages
 net/          TCP/IP: configuration, sockets, TLS, servers
   netlink/      the kernel's network layer: a netlink client, nftables, /proc/net and sysctl
+                (the routing protocol number and the nft table's name are the caller's;
+                QS/400's are tcpcfg's RTPROT_QS400 and NFT_TABLE)
   dhcp/         the DHCPv4 client of *IP4DHCP interfaces: messages, the lease state machine
                 (renew, rebind, release); the service runs one per link (stgsvc/tcp/leases.rs)
   cmncfg/       communications objects: *LIND, controller and device names, line status
@@ -647,8 +668,10 @@ cargo run -p build -- test        # the QEMU disk suite: 134 steps, about an hou
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
-cargo run -p build -- fixture     # the fixture product qsdemo built through buildkit from git dependencies at HEAD and booted, its own ESP label and A/B record (abrec) asserted (docs/BUILDKIT.md); the disk suite's last step
-cargo test -p buildkit -p vrm     # the pipeline's library (no OS crate in its graph, no product named), release identity
+cargo run -p build -- fixture     # the fixture product qsdemo built through buildkit from git dependencies at HEAD and booted, its own ESP label and A/B record (abrec) asserted, and its panel (framebuffer and serial), mirrored set through ublk (member removed, server restarted, rebuilt) and route (docs/BUILDKIT.md); the disk suite's last step
+cargo test -p buildkit -p vrm     # the pipeline's library (no OS crate in its graph, no product named; the same for the crates an appliance takes beside it), release identity
+cargo test -p protect -p store    # disk protection alone (sets as block devices) and under the store; store's tests/sets_bytes.rs compares the units' bytes with the digests of before the split
+cargo test -p scrkit -p svcusers -p console   # the screen kit, the service tools user IDs, the console (ANSI display and keys; --no-default-features: without the 5250 session)
 cargo test -p abrec -p licpart    # the A/B record for any product; QS/400's LIC record over it, byte for byte as before (tests/bytes.rs)
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo run -p build -- notices [--check]   # NOTICES.txt from Cargo.lock (fails on a license outside deny.toml)

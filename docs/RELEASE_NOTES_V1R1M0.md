@@ -552,7 +552,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:462` | `ALWREPCHG(*NO)` on an after trigger does not yet |
 | `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:463` | refuse the program's own change of the same record ( |
 | `BLOCKED(rel)` | `docs/SYSAPI.md:568` | the DRDA requester), and a CLI call made by a procedure |
-| `BLOCKED(rel)` | `docs/TCPIP.md:1166` | VT and 3270 sessions and |
+| `BLOCKED(rel)` | `docs/TCPIP.md:1168` | VT and 3270 sessions and |
 | `BLOCKED(rel)` | `docs/WORKMGMT.md:1250` | a program running |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/compdiags.rs:11` | `OPTION(*EVENTF)` is accepted by every compiler command |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/dbmoncmd.rs:85` | a monitor watches one job or every job. |

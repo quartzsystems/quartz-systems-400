@@ -14,7 +14,10 @@ The code: `tools/buildkit/src/` (`product.rs`, `ctx.rs`, `host/`,
 `kernel/`, `userland/`, `image/`, `notices/`), `lic/diskimg/src/layout.rs`
 (the general disk description), `lic/vrm` (release identity),
 `lic/abrec` (the A/B record), `tools/buildkit/fixture/` (a second
-product, built and booted by `build fixture`).
+product, built and booted by `build fixture`). Beside the pipeline, for
+a product with an installer and a service console of its own (section
+10): `lic/console`, `lic/scrkit`, `lic/svcusers`, `storage/protect`,
+`lic/ublk` and `net/netlink`.
 
 ## 1. The product description
 
@@ -226,6 +229,33 @@ fixture's GPT type under the magic `QSDEMOAB`, sequence 1 in copy A,
 which `licpart` does not read as a LIC record. `build test` (the disk
 suite) runs it as its last step.
 
+The fixture's PID 1 then does what an appliance's installer and service
+console do with the crates of section 10, and the step asserts each on
+its console (`fixture/init/src/panel.rs`, `raid.rs`, `net.rs`):
+
+- **A panel.** A menu built with `scrkit` under the identity `QSDEMO
+  V0R3M0 fixture`, system `QSDEMO1`, shown by `console` on the
+  framebuffer (the step gives QEMU a display adapter; the fixture reads
+  `/dev/fb0` back and counts what is lit) and on the serial console in
+  ANSI sequences (the step finds the title and `System:  QSDEMO1` drawn
+  there, and no `QS/400` anywhere). The bytes a terminal would send
+  (`9` Enter, `2` Enter, F5, `1` Enter) go through `KeyDecoder` and end
+  the panel with its outcome.
+- **A protected set.** Two 96 MiB image files on the data partition,
+  mirrored by `protect::set::MirrorSet`, served as `/dev/ublkb0` by
+  `ublk` from a process of its own, formatted by `xfsfmt`, mounted and
+  written; member 1 detached and its file deleted, the data read back
+  from the device (caches dropped); the server killed, a read left
+  waiting, a new server recovering the device under the mounted xfs,
+  the read answered and more written; a new file put in member 1's
+  place and resumed; the two members compared byte for byte.
+- **A route.** `198.51.100.0/24` on `lo` added through `netlink` with
+  routing protocol 83 and read back from the kernel with it.
+
+And `cargo tree` of the fixture's PID 1 names `console`, `scrkit`,
+`protect`, `ublk` and `netlink`, and none of `release`, `licpart`,
+`store`, `svctools`, `tn5250` or `ccsid`.
+
 ## 4. Environment variables
 
 The pipeline's own variables carry the product's prefix:
@@ -277,10 +307,25 @@ Notes on the edges:
 - The fetch step keeps QS/400's kernel line: a `6.18.y` pin from
   kernel.org's `v6.x` directory.
 
+**Beside the pipeline.** What an appliance's installer and service
+console are made of is not in `tools/build` either, and no longer in a
+QS/400-shaped crate (handoff 14). Each of these is neutral and takes
+what names its owner from the caller; section 10 has the detail.
+
+| Crate | What it is | From its caller |
+|---|---|---|
+| `console` | the 24x80 screen with 5250 attributes, the field editor, the font, evdev keyboards, the SRC display and application screens, on the framebuffer and on a serial terminal | its `Identity` (the banner: product, release, build; the code after which a sign-on may show), the system name, the command-line key of the scale |
+| `scrkit` | the screen builders and the panel stack | every title, the system name, the function key line, the messages; the environment its panels ask and the outcome they end with |
+| `svcusers` | service tools user IDs: salted hashes, privileges, lockout | the users it ships with, and where they are kept (`UserStore`) |
+| `protect` | mirrored and parity protection, resynchronization, hot spares, over `BlockDev` units; a set as one `BlockDev` | what identifies a member and records its state; the resume map's keeper; the on-disk constants of its sets |
+| `ublk` | a kernel block device served by a process | the device behind it (a `Target`, or any `BlockDev`); whether it outlives its server |
+| `netlink` | rtnetlink, sock_diag, nftables, sysctl | the routing protocol number of its routes, the name of its nftables table |
+
 ## 6. Crates another repository takes
 
-`build fixture` builds all ten as git dependencies. What an appliance
-should know of each:
+`build fixture` builds all fifteen as git dependencies, and its PID 1
+runs `console`, `scrkit`, `protect`, `ublk` and `netlink`. What an
+appliance should know of each:
 
 | Crate | As it is |
 |---|---|
@@ -292,8 +337,13 @@ should know of each:
 | `ipc` | neutral: the wire codec, frames, `rpc!`, Unix socket channels |
 | `abrec` | product-neutral: the two-copy A/B record with its header, sequence, CRC and slot selection (`AbPart`, `encode`/`decode`, `newest`/`target`). The magic, the format version, the partition's GPT type and the slot size come from the caller's `Spec`; the payload is opaque bytes. The fixture's PID 1 uses it with its own |
 | `licpart` | QS/400's record over `abrec`: the magic `QS400LIC`, the LIC partition's type GUID, the IPL state in the payload (slots, keylock, the IPL system values, the install answers) and the resume record `QS400RSJ` beside the copies. An appliance takes `abrec`, not this |
-| `console` | QS/400's: it prints `release`'s banner (QS/400's release when pinned from elsewhere), and brings `tn5250` and `ccsid` |
-| `svctools` | QS/400's: the DST and installer screens, over `console`, `licpart`, `release` and `hwqual` |
+| `console` | product-neutral (section 10). With `default-features = false` it is the screen, the editor, the font, the keyboards, the SRC display and the two displays, and depends on nothing else of this repository; the default feature `session` adds the sign-on display and the 5250 terminal, with `tn5250` and `ccsid` |
+| `scrkit` | product-neutral: `ui` and `panel` over `console` |
+| `svcusers` | product-neutral: `UserDb`, `Privilege`, `UserStore` and `FileStore`; `ipc` with the feature `wire` |
+| `protect` | product-neutral: over `blockdev` only. It writes no label of its own (section 10) |
+| `ublk` | product-neutral: `Device`, `Target`, `BlockTarget`, `Options` |
+| `netlink` | product-neutral: nothing of this repository under it |
+| `svctools` | QS/400's: the DST and installer screens, over `scrkit`, `svcusers`, `console`, `licpart`, `release` and `hwqual`. An appliance takes the three neutral ones, not this |
 
 They build from outside because cargo resolves a git dependency's
 `workspace = true` keys against the workspace in the checkout. `release`
@@ -385,4 +435,271 @@ What handoff 13 left open, closed:
 | 5 | The section 7 baseline again | at `d3ba4fc20`, the tree's `initramfs`, `uki`, `disk`, `iso` and `manifest` steps over the baseline's userland binaries (`slic` `9da4d5848808`, `qsjob` `fcca815edd23`, `instload` `49872df9deea`), `QS400_BUILD_ID=buildkit-baseline`: the seven artifact hashes of section 7 by `diff` of the sums; `manifest.json` differs in `cargo_lock_sha256` only (`Cargo.lock` gained `abrec`) |
 | 6 | The tree's own userland still boots, installs and switches slots | as in section 7, `slic` links `licpart`, `abrec` and `diskimg`, so its bytes are other bytes; QEMU on the tree's own `build all`: the IPL, telnet sign-on (51), the LIC PTF to slot B and back (164), the automatic install, the boot of the installed disk and the interactive install |
 
-`console` and `svctools` stay QS/400's, as section 6 says.
+`console` and `svctools` stay QS/400's, as section 6 said then; handoff
+14 (section 10) took `console` out of that and split `svctools`.
+
+## 10. Handoff 14: the screen kit, disk protection, netlink
+
+QS/VS and QS/MC get an installer and a service tools console with
+software RAID on their load-source disks. Four things they need were
+inside QS/400 crates in a QS/400-specific form; each is now a neutral
+crate and QS/400's use of it. Nothing QS/400 shows or writes changed:
+the screens are the same bytes, and so are the units of an ASP.
+
+### What each crate takes from its caller
+
+**`console`.** `Console::open*` takes an `Identity`: the banner on the
+SRC display's first line (QS/400 passes `release::banner()`) and the
+reference code after which a sign-on display may show (`C6001090`). The
+system name comes with each `ShowSrc`, as before. `Scale::from_cmdline`
+takes the command-line key (`qs400.console.scale` is slic's). The crate
+no longer depends on `release`. QS/400's own screens stay behind a
+feature: `session`, on by default, is the sign-on display, the console
+as the terminal of a 5250 session, and the `tn5250` and `ccsid`
+dependencies; with `default-features = false` none of that is compiled.
+The font is the one `.txt` file of `font/` (it keeps its name, which
+Access for Web serves and the client repositories carry).
+
+**`scrkit`.** `ui` is the screen builders `svctools` had (`header`,
+`menu`, `menu_after`, `menu_at`, `list`, `form`, `form_wide`, `text`,
+`confirm`, `message`): the fixed words (`Selection`, `Select one of the
+following:`, `System:`, `F10=Continue   F12=Cancel`) are Quartz's and
+name no product; titles, the system name, the function key line and the
+messages are arguments. `panel` is the stack: `Stack<P>` and
+`Flow<P, O>` over any panel type and outcome, and a ready
+`Panel<E, O>` and `Runner<E, O>` for a caller whose panels ask one
+environment type `E`. `svctools` keeps its own `Panel` trait over the
+same `Stack` and `Flow`, because its environment is a borrowed trait
+object (`&mut dyn DstEnv`, which `slic` implements over borrowed state);
+its `Outcome`, `dst/`, `install/`, `env.rs` and SST's menu layout stay
+with it.
+
+**`svcusers`.** `UserDb` (create, delete, sign on, change and reset a
+password, enable, privileges, the last-administrator rule), Argon2id
+hashes with the caller's salt, three wrong passwords disable an ID. The
+caller makes the users it ships (`UserDb::push`) and keeps the bytes of
+`UserDb::encode` through a `UserStore`; `FileStore` is one in a file
+(written beside, flushed, renamed). `svctools::users` is now QS/400's
+part only: `LicUsers::defaults` (`QSECOFR`, `QSRV`, `11111111`,
+`22222222`), `reset_secofr`, and `load`/`store` in TLV `0x0102` of the
+LIC record. The bytes are the same.
+
+**`protect`.** Over `blockdev` and nothing else of this repository:
+
+- `UnitState`, with the bytes a unit table records.
+- `mirror`: `Halves` is the I/O over the members of a mirrored set lent
+  for one transfer (read from one, alternating; write and flush to every
+  member that takes writes; a failing member noted for the caller to
+  take out of service; a block that fails the caller's check on one
+  member read from the next and rewritten). `copy_step` is the
+  resynchronization, a megabyte chunk at a time, over a `ResumeIo` the
+  caller implements (read the member in step, whether a block is wanted,
+  write, flush, save the map); `ResumeState` is the map of chunks done,
+  encoded under a magic of the caller's.
+- `parity`: the RAID 5 and RAID 6 engine with its partial-parity log
+  (`Engine`, `Geometry`, `gf`, `ppl`, `ParityDev`, `SetHandle`). A
+  caller's `Format` gives the two magics its slots and state page carry
+  and its test for a damaged page; `Geometry::new` takes the pages at
+  the head of each member the set leaves alone.
+- `spare::smallest_fit` and `spare::take`: which hot spare takes a
+  failed member's place.
+- `set`: a protected set as one `BlockDev`, for a caller with no pool:
+  `MirrorSet` (two or more members; suspend, detach, replace, resume
+  with a `ResumeJournal`, hot spare takeover) and `ParitySet` (the
+  members' rows end to end; synchronization and rebuild in steps,
+  detach, replace, hot spare takeover, verify), and `Window`, a run of
+  a device's blocks as a device.
+
+`store` is built on it: `asp/io.rs` lends each span's units to
+`Halves`, `asp/mirror.rs` runs `copy_step` (its `ResumeIo` copies every
+allocated page and none of the reserved ones), `asp/parity/` keeps the
+table and the operations and passes `FORMAT` (`QS400PPL`, `QS400PST`,
+the page trailer's checksum) and a head of three pages, `asp/spare.rs`
+asks `smallest_fit`. Its API is as it was (`slic` did not change for
+it).
+
+**`ublk`.** `Device::start` over any `Target`; `BlockTarget` makes any
+`BlockDev` one. `Device::start_with(target, Options { recovery: true })`
+adds the device so that it outlives its server, and
+`Device::recover(id, target)` is the next server taking it over.
+
+**`netlink`.** `Route::new(family, dst, len, protocol)` and
+`Nft::open(table)` (and the `nft` builders) take what was
+`RTPROT_QS400` and the table `qs400`; QS/400's values are
+`tcpcfg::net::kernel::RTPROT_QS400` (81) and `NFT_TABLE`, and what it
+puts in the kernel is the same.
+
+### The reports
+
+**Can `console` drive a serial terminal as well as the framebuffer?**
+It could not. Its one renderer was the framebuffer's; `slic`'s serial
+console mode only kept the screen in memory for the service console's
+`screen` command. Now there is a trait, `console::Display` (`draw`,
+`describe`, `check_mode`), which the framebuffer's renderer implements,
+and a second implementation, `console::ansi::AnsiDisplay`, that draws
+the grid on anything that takes bytes with ordinary ANSI sequences:
+cursor addressing, SGR colors (the 5250 colors on the sixteen ANSI
+ones, high intensity as the bright ones), underline for input fields,
+reverse image and blink; nondisplay fields show nothing, and only the
+cells that changed are sent. `Console::add_display` shows every screen
+on it as well. `console::ansi::KeyDecoder` turns the terminal's bytes
+into the console's keys, which go in as `Command::Virtual`:
+
+| Key | From the terminal |
+|---|---|
+| Enter, Field Advance, Field Backspace, Backspace | CR or LF, Tab, `CSI Z`, BS or DEL |
+| cursor keys, Home, Insert, Delete, Page Up, Page Down | `CSI A`-`D` (and `SS3`), `CSI H` or `1~`, `2~`, `3~`, `5~`, `6~` |
+| F1 to F12 | `SS3 P`-`S`, `CSI 11~` to `24~`; or Esc and `1`-`9`, `0`, `-`, `=` |
+| F13 to F24 | the same with Shift (`CSI 1;2P`, `CSI 15;2~`, `CSI 25~` to `34~`); or Esc and `!@#$%^&*()_+` |
+| Field Exit, Reset, Attention, System Request | Ctrl+K, Ctrl+R, Ctrl+A (or Esc alone), Ctrl+T |
+
+QS/400 attaches no serial display: its serial line stays the service
+console.
+
+**Are the service tools user IDs separable from `licpart`?** Yes. Of
+`svctools::users`, two functions touched the LIC record (`load` and
+`store`, one TLV); the rest never did. The neutral part is `svcusers`,
+with the storage behind `UserStore`, so an appliance keeps its users in
+a state file (`FileStore`) or in a record of its own. What stayed in
+`svctools` is above.
+
+**Can the protection engine leave the store without a format change?**
+All of the engine did, and no byte changed. What did not move is where
+the store records a set, because that is store format:
+
+- the unit header (page 0 and the last page of each unit: unit and ASP
+  UUIDs, the unit number, the mirror partner), a store page sealed with
+  the store's page trailer;
+- the unit table and the parity table in the superblock (each unit's
+  state, partner and usable pages; each member's set, position, level
+  and state; the work under way), in the superblock's two slots.
+
+So `protect` writes no label of its own, and a set is opened from a
+record its caller keeps. What an appliance has to supply, exactly:
+
+1. **Which devices make the set, in member order**, and the set's size
+   in blocks (for a mirrored set) or its `Geometry` (for a parity set:
+   level, member count, blocks, head; made once by `ParitySet::plan`
+   and kept, whatever the size of a disk replaced since).
+2. **Each member's identity and state**, read from `members()` and
+   written to its own state whenever the set reports an event
+   (`drain_events`) and after `suspend`, `detach`, `replace`,
+   `take_spare` and the end of a resume or rebuild: `UnitState` for a
+   mirrored member, `Health` (with the rebuild mark) and the
+   synchronization mark for a parity set. A mirrored set has nothing on
+   its members that says one is stale: the record must be durable
+   before the appliance goes on after a member failed. A parity set
+   also records a failed member on the others' state pages, so a
+   record that is behind is corrected at open.
+3. **The resume map**, through `set::ResumeJournal` (`load`, `save`,
+   `clear`), encoded with a magic of its own.
+4. **For a parity set, a `Format`**: two eight-byte magics of its own
+   and its test for a damaged page (`|_| false` without checksums).
+5. **How it knows a disk**: by serial number or partition GUID from its
+   own record, or by a label of its own in blocks it keeps out of the
+   set with a `Window` (or a `Geometry` head).
+
+The fixture does this with a record in memory in its PID 1 (the server
+process is told the members and their states when it starts) and a
+resume map in a file under its own magic.
+
+`NEEDS-CODY`: whether the appliances should share an on-disk member
+label (a second metadata format beside the store's unit header and
+superblock, written by `protect` on each member) rather than each
+keeping the record above in its own state. None was defined here:
+nothing in this handoff needs one, and it is a format to freeze.
+
+**Does `ublk` serve any `BlockDev`, and survive its server's restart?**
+It served any `Target` already (the IFS volume is one); `BlockTarget`
+is the adapter for a `BlockDev`. It did not survive a restart: the
+device went with its server, which is what QS/400 wants (the storage
+service ending is the system ending). `Options::recovery` adds the
+device with `UBLK_F_USER_RECOVERY` and `UBLK_F_USER_RECOVERY_REISSUE`:
+when the server ends without `stop`, the kernel keeps `/dev/ublkbN`,
+holds new requests and requeues the ones the server had taken;
+`Device::recover` (`START_USER_RECOVERY`, retried while the kernel
+still sees the old server, the queue fetched again,
+`END_USER_RECOVERY`) lets them go on. A file system mounted on the
+device stays mounted across it. The target sees a request twice when
+the old server had it and did not answer, which a block device takes.
+QS/400 does not set the option. No QS/400 name was in its surface but
+its description and a comment.
+
+### Baseline and what was proven
+
+Section 0 at `6d5532fa8`, `QS400_BUILD_ID=buildkit-baseline`:
+
+| Artifact | SHA-256 before |
+|---|---|
+| `initramfs.cpio` | `4a20ac4f3fd54d7c094bdf334f547ebb6af3165d0eabdf0605f818045fdf83dc` |
+| `initramfs-media.cpio` | `8a8bf99c8aeb388c3db9ffdd4b1c01a6f2cd264874a233845dc7e06628e62b31` |
+| `uki-a` | `52d1653b5235a47c69c9b7bd66885fb6bb65286392ff050b203d6adb49b0dcf0` |
+| `uki-b` | `92ae467278b299c2afdca74b34150ca21503f56b41a295dff7e5ff2dd74983cc` |
+| `uki-d` | `72916f9d10b9466d6dc6a6757b11665cb451cfb1dfb57f6689143cd545aee7d3` |
+| disk image | `eb10ad38144b4babc4c65eff139c71c8f7da0aa003d45a9debc1b8f480deef5c` |
+| ISO | `ede05f6ef7255b12b59b77448061090bae8d7ffa949d7ce059a73ee04a306794` |
+| `manifest.json`, `git_rev` masked | `f088c2354162e6e16b04ba94456f5e40b5b295b3c46051b346daf81a34f43bb3` |
+
+As in section 7, the crates this handoff changes are linked by `slic`
+and `qsjob` (`console`, `svctools`, `store`, `netlink`, `tcpcfg`), so
+their bytes are other bytes with the same code in other crates. What
+that leaves to prove was proven in three ways:
+
+- **The pipeline.** The final tree's `initramfs`, `uki`, `disk`, `iso`
+  and `manifest` steps over the baseline's userland binaries:
+  the seven artifact hashes above again, by `diff` of the sums;
+  `manifest.json` differs in `cargo_lock_sha256` only (`Cargo.lock`
+  gained `scrkit`, `svcusers` and `protect`).
+- **The disks.** `storage/store/tests/sets_bytes.rs` runs fixed
+  operations on a mirrored pair (started, resumed part way, suspended,
+  a half replaced, a hot spare) and on RAID 5 and RAID 6 sets
+  (synchronizing, active, exposed, rebuilding, rebuilt) and digests
+  every unit's image at thirteen stops, with the resume map's bytes. The
+  digests in `tests/golden/sets.txt` were written by the code before the
+  split (commit `1cd01bfc4`, one commit ahead of the baseline and
+  nothing but the test); the code after it gives the same, on Windows
+  and on Linux. The same bytes from the same operations is both
+  directions at once: what the old code wrote is what the new code
+  writes and opens, and the reverse. (Object headers and the superblock
+  carry the release, so a build of another release runs the scenarios
+  and reads everything back without comparing digests.) `fmtcheck` has
+  the `store` format at its versions with `protect`'s four format files
+  in place of the ones that moved, re-locked (`update --force`, the one
+  format touched).
+- **The screens.** Every DST, installer, SST and sign-on golden under
+  `tools/conformance/golden/` is unchanged and passes; no golden file
+  was rewritten.
+
+And the final tree's own `build all` ran under QEMU where the moved
+code runs, every step passing: the IPL with its SRC display and the
+telnet sign-on (disk steps 1 and 51); from the install suite the
+automatic install and the boot of the installed disk (1, 2), a two-disk
+install mirrored through the DST screens (4), a power pull during the
+synchronization, which went on from the 768 chunks its map had (5), an
+IPL with a half missing (6), the half resumed from DST and a service
+tools user disabled by three wrong passwords and enabled again (7), the
+four-unit mirror with a disk pulled, brought back and resumed with the
+system up (12), device parity RAID 5 synchronized across a power down,
+exposed with a disk pulled, read through parity and rebuilt (13), and
+the hot spare taking a pulled disk's place (16).
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Section 0 hashes, `store` tests and screen goldens identical before and after | the seven hashes identical for the final tree's steps over the same userland binaries (`manifest.json` in `cargo_lock_sha256` only); the userland itself differs because the crates it links moved (above); `store`'s integration tests pass unchanged (the unit tests of the parity layout, its field arithmetic and its log went to `protect` with their code); every screen golden passes and none was rewritten |
+| 2 | `console` builds without `release`; the screen kit builds without `svctools` | `cargo tree`: `console` reaches no `release`, and with `--no-default-features` no `tn5250` or `ccsid`; `scrkit` depends on `console` only (`tools/buildkit/tests/neutral.rs`, `the_appliance_crates_reach_no_product_crate`); the fixture's PID 1 is built with neither |
+| 3 | The protection crate builds without `store`; `store` passes its suite on top of it; old and new sets open in both directions | `protect` depends on `blockdev`, `crc`, `thiserror`, `tracing`; `store`'s suite passes on it, on Windows and on Linux; `tests/sets_bytes.rs` gives the digests the code before wrote at all thirteen stops; QEMU install steps 4, 5, 6, 7, 12, 13 and 16 pass on the final build |
+| 4 | `ublk` serves an arbitrary `BlockDev` and survives a server restart | `BlockTarget` over a `MemBlockDev` in `ublk`'s tests; in the fixture under QEMU the mirrored set is `/dev/ublkb0`, its server is killed with a read waiting, and the next server's `Device::recover` answers it under the mounted xfs |
+| 5 | `build fixture` passes its three new assertions | at `ec26964c0`: the panel (`QSDEMO Service Tools` under `QSDEMO V0R3M0 fixture`, 12420 bytes lit on the 1280x800 framebuffer, drawn on serial, ended by a terminal's keys), the set (made, written, member 1 removed and the data read back, the server restarted, the member replaced and rebuilt in 96 of 96 chunks, the members identical) and the route (`198.51.100.0/24` with protocol 83) |
+| 6 | The extended neutrality test passes | `cargo test -p buildkit --test neutral`: four tests; no `QS400`, `qs400` or `QS/400` outside the tests of `console`, `scrkit`, `svcusers`, `protect`, `ublk` and `netlink` (code, documentation, `build.rs` and `Cargo.toml`), and none of them reaches `release`, `licpart`, `store`, `svctools`, `slic` or `qsjob` with every feature on |
+
+`cargo deny`, `build notices --check` and `tools/fmtcheck` pass with no
+version bump.
+
+One commit of crate code came after the fixture's last boot:
+`ac98cf2fd` takes the serial display's line for a log
+(`AnsiDisplay::describe`) from its caller, so that the text audit's
+count does not grow. The fixture does not use it; `console`'s tests
+cover it. The fixture was not booted again on it: the build host's disk
+filled during that run.
