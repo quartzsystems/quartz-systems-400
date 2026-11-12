@@ -11,6 +11,7 @@ members = [
     "tools/conformance",
     # Licensed Internal Code: IPL, platform, console, DST, disks.
     "lic/slic",
+    "lic/abrec",
     "lic/licpart",
     "lic/sysval",
     "lic/release",

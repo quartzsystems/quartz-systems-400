@@ -14,3 +14,5 @@ ui/tn5250/tests/fixtures/startup/*.hex -text
 # The Secure Boot development key pair, byte for byte.
 tools/pesign/keys/** -text
 lic/osobjects/shipped/NOTICES.txt text eol=lf
+# The LIC record as written before abrec, byte for byte.
+lic/licpart/tests/golden/*.bin -text

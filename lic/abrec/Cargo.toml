@@ -1,0 +1,16 @@
+[package]
+name = "abrec"
+description = "A two-copy A/B record on a raw partition: header, sequence, CRC, slot selection, an opaque payload"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+crc.workspace = true
+uuid.workspace = true
+diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
+
+[lints]
+workspace = true

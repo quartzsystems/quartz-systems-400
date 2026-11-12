@@ -41,6 +41,9 @@ files = [
     "storage/store/src/obj/sysval.rs",
 ]
 
+# The copy's first 28 bytes and the choice between the two copies are
+# abrec's (lic/abrec), re-locked without a bump when they moved there:
+# lic/licpart/tests/bytes.rs holds the bytes the code before wrote.
 [[format]]
 name = "licpart"
 frozen_at = "V1R1M0"
@@ -49,6 +52,8 @@ version = [
     "lic/licpart/src/format/keyslot.rs::KEYSLOT_VERSION",
 ]
 files = [
+    "lic/abrec/src/format/mod.rs",
+    "lic/abrec/src/format/slot.rs",
     "lic/licpart/src/format/mod.rs",
     "lic/licpart/src/format/header.rs",
     "lic/licpart/src/format/history.rs",

@@ -138,7 +138,12 @@ or invalid copy with the next sequence number, then `fsync`; a read takes
 the newest copy whose CRC verifies. A torn write can only damage the stale
 copy; the unit test in [lic/licpart/tests/torn.rs](../lic/licpart/tests/torn.rs)
 cuts a write 100 bytes in and checks the previous record is served and the
-torn slot is reused next.
+torn slot is reused next. The two copies, the first 28 bytes of each and
+the choice between them are the `abrec` crate's (`lic/abrec`), which any
+product can use with its own magic and partition type; `licpart` gives it
+`QS400LIC` and the LIC partition's GUID, and
+[lic/licpart/tests/bytes.rs](../lic/licpart/tests/bytes.rs) keeps the bytes
+as they were written before the split.
 
 Record layout, little-endian:
 

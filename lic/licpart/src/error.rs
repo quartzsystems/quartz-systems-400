@@ -38,3 +38,17 @@ pub enum LicError {
     #[error("no LIC partition found by GPT type GUID")]
     NotFound,
 }
+
+impl From<abrec::AbError> for LicError {
+    fn from(e: abrec::AbError) -> Self {
+        use abrec::AbError as E;
+        match e {
+            E::Io(e) => Self::Io(e),
+            E::NoValidCopy => Self::NoValidCopy,
+            E::AlreadyInitialized => Self::AlreadyInitialized,
+            E::TooLarge { len, max } => Self::TooLarge { len, max },
+            E::Malformed(why) => Self::Malformed(why),
+            E::NotFound => Self::NotFound,
+        }
+    }
+}

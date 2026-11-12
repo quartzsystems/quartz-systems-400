@@ -190,7 +190,11 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
                 commands; ile/ the ILE build and display commands and the job sources over
                 the lent store with the sysapi provider),
                 src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
-  licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
+  abrec/        a two-copy A/B record for any product: src/format/ the copy's header, sequence
+                and CRC, slot.rs the choice of copy; part.rs AbPart over a Device; the magic,
+                the partition type GUID and the payload are the caller's (Spec)
+  licpart/      LIC partition: QS/400's record over abrec (src/format/), the resume area,
+                locate by GPT type GUID; tests/bytes.rs the bytes as written before abrec
   sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
   release/      QS/400's VxRyMz identity, build ID, product IDs, PTF names (one source of truth)
   vrm/          release identity for any product: Release, build.rs's capture (VERSION, the

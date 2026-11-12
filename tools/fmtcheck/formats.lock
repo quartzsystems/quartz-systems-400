@@ -42,7 +42,7 @@ hash = "7bd218412c6071dcbc26c5e38e5773e7099660944eca2d37588596da13f90233"
 [format.licpart]
 frozen_at = "V1R1M0"
 version = "1/1"
-hash = "538b34515a93e33ac53cc5c873d9fbba4d099670856d9576abd689372687cdd5"
+hash = "5b767761f73c9ddd8911e89ecdbd987d463bf5db65e1b5cefe8e3890cbc5f1b3"
 
 [format.licpgm]
 frozen_at = "V1R1M0"

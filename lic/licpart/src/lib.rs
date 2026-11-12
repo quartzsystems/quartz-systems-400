@@ -28,7 +28,7 @@ pub use format::history::{IplHistory, Outcome};
 pub use format::keyslot::{KEY_BYTES, KEYSLOT_VERSION, KeyPurpose, KeySlot};
 pub use format::pal::{PAL_MAX, PalEntry, Severity};
 pub use format::tlv::{TAG_USER_MIN, Tlv};
-pub use format::{FORMAT_VERSION, HISTORY_MAX, Record, SLOT_BYTES};
+pub use format::{FORMAT_VERSION, HISTORY_MAX, Record, SLOT_BYTES, SPEC};
 pub use locate::{LIC_TYPE_GUID, PARTITION_NAME};
 pub use part::{Device, LicPart, RESUME_MAX, RESUME_OFFSET, SERVICE_TAGS};
 

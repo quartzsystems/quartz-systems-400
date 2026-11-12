@@ -27,14 +27,9 @@ pub enum IplMode {
     Manual,
 }
 
-/// A boot slot on the ESP.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Slot {
-    /// `EFI/BOOT/BOOTX64.EFI`.
-    A,
-    /// `EFI/QS400/B.EFI`.
-    B,
-}
+/// A boot slot on the ESP: A is `EFI/BOOT/BOOTX64.EFI`, B is
+/// `EFI/QS400/B.EFI`. The record's two copies are named the same way.
+pub use abrec::Slot;
 
 impl IplType {
     fn as_u8(self) -> u8 {
@@ -70,27 +65,18 @@ impl IplMode {
     }
 }
 
-impl Slot {
-    fn as_u8(self) -> u8 {
-        match self {
-            Slot::A => 0,
-            Slot::B => 1,
-        }
+fn slot_u8(slot: Slot) -> u8 {
+    match slot {
+        Slot::A => 0,
+        Slot::B => 1,
     }
-    pub(crate) fn from_u8(v: u8) -> Result<Self, LicError> {
-        match v {
-            0 => Ok(Slot::A),
-            1 => Ok(Slot::B),
-            _ => Err(LicError::Malformed("slot")),
-        }
-    }
-    /// The other slot.
-    #[must_use]
-    pub fn other(self) -> Slot {
-        match self {
-            Slot::A => Slot::B,
-            Slot::B => Slot::A,
-        }
+}
+
+pub(crate) fn slot_from_u8(v: u8) -> Result<Slot, LicError> {
+    match v {
+        0 => Ok(Slot::A),
+        1 => Ok(Slot::B),
+        _ => Err(LicError::Malformed("slot")),
     }
 }
 
@@ -145,8 +131,8 @@ impl Header {
         out.push(u8::from(self.ipl_in_progress));
         out.push(self.last_ipl_type.as_u8());
         out.push(self.last_ipl_mode.as_u8());
-        out.push(self.last_slot.as_u8());
-        out.push(self.last_good_slot.as_u8());
+        out.push(slot_u8(self.last_slot));
+        out.push(slot_u8(self.last_good_slot));
         out.push(self.next_mode.map_or(0, |m| m.as_u8() + 1));
         out.push(self.install_stage);
         out.push(u8::from(self.auto_install));
@@ -163,8 +149,8 @@ impl Header {
         };
         let last_ipl_type = IplType::from_u8(r.u8()?)?;
         let last_ipl_mode = IplMode::from_u8(r.u8()?)?;
-        let last_slot = Slot::from_u8(r.u8()?)?;
-        let last_good_slot = Slot::from_u8(r.u8()?)?;
+        let last_slot = slot_from_u8(r.u8()?)?;
+        let last_good_slot = slot_from_u8(r.u8()?)?;
         let next_mode = match r.u8()? {
             0 => None,
             v => Some(IplMode::from_u8(v - 1)?),

@@ -17,6 +17,9 @@
 //!
 //! IPL history records, activity log entries and key slots are stored as
 //! TLVs with reserved tags.
+//!
+//! The first 28 bytes and the two copies are `abrec`'s, under [`SPEC`];
+//! everything from the header on is its payload.
 
 pub mod header;
 pub mod history;
@@ -24,7 +27,7 @@ pub mod keyslot;
 pub mod pal;
 pub mod tlv;
 
-use crc::{CRC_32_ISCSI, Crc};
+use abrec::Spec;
 
 use crate::error::LicError;
 use header::Header;
@@ -42,11 +45,19 @@ pub const SLOT_BYTES: usize = 64 * 1024;
 /// IPL history records kept.
 pub const HISTORY_MAX: usize = 16;
 
-const CRC_OFFSET: usize = 16;
-const CRC_START: usize = 20;
-const FIXED_LEN: usize = 56;
+/// The payload's fixed part: the header and the TLV count.
+const PAYLOAD_FIXED: usize = 28;
 
-pub(crate) const CRC32C: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
+/// The LIC record as `abrec` keeps it.
+pub const SPEC: Spec = Spec {
+    magic: MAGIC,
+    version: FORMAT_VERSION,
+    type_guid: diskimg::LIC_TYPE_GUID,
+    slot_bytes: SLOT_BYTES,
+    min_payload: PAYLOAD_FIXED,
+};
+
+pub(crate) use abrec::CRC32C;
 
 /// One decoded LIC record.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -145,12 +156,12 @@ impl Record {
 
     /// Serialize with CRC. Fails if the result does not fit a slot.
     pub fn encode(&self) -> Result<Vec<u8>, LicError> {
-        let mut out = Vec::with_capacity(FIXED_LEN + 256);
-        out.extend_from_slice(&MAGIC);
-        put_u32(&mut out, FORMAT_VERSION);
-        put_u32(&mut out, 0); // record_len, patched below
-        put_u32(&mut out, 0); // crc, patched below
-        put_u64(&mut out, self.sequence);
+        Ok(abrec::encode(&SPEC, self.sequence, &self.payload()?)?)
+    }
+
+    /// Everything after the sequence: the header and the TLVs.
+    pub(crate) fn payload(&self) -> Result<Vec<u8>, LicError> {
+        let mut out = Vec::with_capacity(PAYLOAD_FIXED + 256);
         self.header.encode(&mut out);
 
         let count = self.history.len() + self.pal.len() + self.keys.len() + self.tlvs.len();
@@ -185,46 +196,18 @@ impl Record {
         for t in &self.tlvs {
             t.encode(&mut out);
         }
-
-        let len = out.len();
-        if len > SLOT_BYTES {
-            return Err(LicError::TooLarge {
-                len,
-                max: SLOT_BYTES,
-            });
-        }
-        let len32 = u32::try_from(len).map_err(|_| LicError::TooLarge {
-            len,
-            max: SLOT_BYTES,
-        })?;
-        out[12..16].copy_from_slice(&len32.to_le_bytes());
-        let crc = CRC32C.checksum(&out[CRC_START..]);
-        out[CRC_OFFSET..CRC_OFFSET + 4].copy_from_slice(&crc.to_le_bytes());
         Ok(out)
     }
 
     /// Parse and verify one copy. Any defect is `Malformed`.
     pub fn decode(bytes: &[u8]) -> Result<Self, LicError> {
-        if bytes.len() < FIXED_LEN {
-            return Err(LicError::Malformed("shorter than the fixed part"));
-        }
-        if bytes[..8] != MAGIC {
-            return Err(LicError::Malformed("bad magic"));
-        }
-        let mut r = Reader::new(&bytes[8..]);
-        let version = r.u32()?;
-        if version != FORMAT_VERSION {
-            return Err(LicError::Malformed("unsupported format version"));
-        }
-        let len = usize::try_from(r.u32()?).map_err(|_| LicError::Malformed("record_len"))?;
-        if len < FIXED_LEN || len > bytes.len() || len > SLOT_BYTES {
-            return Err(LicError::Malformed("record_len out of range"));
-        }
-        let crc = r.u32()?;
-        if CRC32C.checksum(&bytes[CRC_START..len]) != crc {
-            return Err(LicError::Malformed("crc mismatch"));
-        }
-        let sequence = r.u64()?;
+        let frame = abrec::decode(&SPEC, bytes)?;
+        Self::from_payload(frame.sequence, frame.payload)
+    }
+
+    /// The record of a verified copy's payload.
+    pub(crate) fn from_payload(sequence: u64, payload: &[u8]) -> Result<Self, LicError> {
+        let mut r = Reader::new(payload);
         let header = Header::decode(&mut r)?;
         let count = r.u32()?;
 
@@ -236,7 +219,7 @@ impl Record {
             keys: Vec::new(),
             tlvs: Vec::new(),
         };
-        let mut r = Reader::new(&bytes[FIXED_LEN..len]);
+        let mut r = Reader::new(&payload[PAYLOAD_FIXED..]);
         for _ in 0..count {
             let t = Tlv::decode(&mut r)?;
             if t.tag == TAG_HISTORY {
@@ -332,6 +315,10 @@ mod tests {
     use super::*;
     use crate::format::header::{IplMode, IplType, Slot};
     use crate::format::history::Outcome;
+
+    const CRC_OFFSET: usize = 16;
+    const CRC_START: usize = 20;
+    const FIXED_LEN: usize = abrec::HEAD_LEN + PAYLOAD_FIXED;
 
     fn sample() -> Record {
         let mut r = Record::new(1_700_000_000);

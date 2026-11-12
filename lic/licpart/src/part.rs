@@ -4,12 +4,14 @@
 
 //! Reading and writing the two copies.
 
-use std::fs::File;
-use std::io::{self, Cursor, Read, Seek, SeekFrom, Write};
+use std::io::SeekFrom;
+
+use abrec::AbPart;
+pub use abrec::Device;
 
 use crate::error::LicError;
 use crate::format::header::Slot;
-use crate::format::{CRC32C, Record, SLOT_BYTES};
+use crate::format::{CRC32C, Record, SPEC};
 
 /// Offset of the resume journal area: well past the two record copies.
 pub const RESUME_OFFSET: u64 = 1024 * 1024;
@@ -23,55 +25,22 @@ const RESUME_HEADER: usize = 16;
 /// copy's.
 pub const SERVICE_TAGS: &[u16] = &[0x010A];
 
-/// A block device or anything standing in for one.
-pub trait Device: Read + Write + Seek {
-    /// Make earlier writes durable. Files call `sync_all`.
-    fn sync(&mut self) -> io::Result<()> {
-        self.flush()
-    }
-}
-
-impl Device for File {
-    fn sync(&mut self) -> io::Result<()> {
-        self.sync_all()
-    }
-}
-
-impl Device for Cursor<Vec<u8>> {}
-
-impl<D: Device + ?Sized> Device for Box<D> {
-    fn sync(&mut self) -> io::Result<()> {
-        (**self).sync()
-    }
-}
-
-impl<D: Device> Device for &mut D {
-    fn sync(&mut self) -> io::Result<()> {
-        (**self).sync()
-    }
-}
-
 /// The partition, open on a device.
 pub struct LicPart<D> {
-    dev: D,
-}
-
-fn slot_offset(slot: Slot) -> u64 {
-    match slot {
-        Slot::A => 0,
-        Slot::B => SLOT_BYTES as u64,
-    }
+    ab: AbPart<D>,
 }
 
 impl<D: Device> LicPart<D> {
     /// Wrap a device. No I/O happens until `read` or `write`.
     pub fn open(dev: D) -> Self {
-        Self { dev }
+        Self {
+            ab: AbPart::open(SPEC, dev),
+        }
     }
 
     /// Give the device back.
     pub fn into_device(self) -> D {
-        self.dev
+        self.ab.into_device()
     }
 
     /// First boot: both copies must be invalid. Writes defaults to copy A.
@@ -92,13 +61,10 @@ impl<D: Device> LicPart<D> {
 
     /// The newest valid copy.
     pub fn read(&mut self) -> Result<Record, LicError> {
-        let [a, b] = self.read_slots();
-        match (a, b) {
-            (Some(a), Some(b)) => Ok(if b.sequence > a.sequence { b } else { a }),
-            (Some(a), None) => Ok(a),
-            (None, Some(b)) => Ok(b),
-            (None, None) => Err(LicError::NoValidCopy),
-        }
+        let mut slots = self.read_slots();
+        abrec::newest(sequences(&slots))
+            .and_then(|s| slots[s.index()].take())
+            .ok_or(LicError::NoValidCopy)
     }
 
     /// Replace `rec` with the newest copy on disk, so a change made from
@@ -127,19 +93,10 @@ impl<D: Device> LicPart<D> {
     }
 
     fn write_keeping(&mut self, rec: &mut Record, keep: bool) -> Result<Slot, LicError> {
-        let [a, b] = self.read_slots();
-        let (target, newest) = match (&a, &b) {
-            (None, _) => (Slot::A, b.as_ref()),
-            (Some(_), None) => (Slot::B, a.as_ref()),
-            (Some(x), Some(y)) => {
-                if x.sequence <= y.sequence {
-                    (Slot::A, Some(y))
-                } else {
-                    (Slot::B, Some(x))
-                }
-            }
-        };
-        if keep && let Some(n) = newest {
+        let slots = self.read_slots();
+        let (target, sequence) = abrec::target(sequences(&slots));
+        // The copy that stays is the newest.
+        if keep && let Some(n) = &slots[target.other().index()] {
             for &tag in SERVICE_TAGS {
                 match n.tlv(tag) {
                     Some(data) => rec.set_tlv(tag, data.to_vec())?,
@@ -149,20 +106,17 @@ impl<D: Device> LicPart<D> {
                 }
             }
         }
-        rec.sequence = newest.map_or(0, |r| r.sequence) + 1;
-        let bytes = rec.encode()?;
-        self.dev.seek(SeekFrom::Start(slot_offset(target)))?;
-        self.dev.write_all(&bytes)?;
-        self.dev.sync()?;
+        rec.sequence = sequence;
+        self.ab.write_slot(target, sequence, &rec.payload()?)?;
         Ok(target)
     }
 
     /// The resume journal, if a valid one is recorded: a mirrored half
     /// being copied keeps its progress here across a crash.
     pub fn read_resume(&mut self) -> Option<Vec<u8>> {
-        self.dev.seek(SeekFrom::Start(RESUME_OFFSET)).ok()?;
+        self.ab.device().seek(SeekFrom::Start(RESUME_OFFSET)).ok()?;
         let mut header = [0u8; RESUME_HEADER];
-        self.dev.read_exact(&mut header).ok()?;
+        self.ab.device().read_exact(&mut header).ok()?;
         if header[..8] != RESUME_MAGIC {
             return None;
         }
@@ -172,7 +126,7 @@ impl<D: Device> LicPart<D> {
             return None;
         }
         let mut data = vec![0u8; len];
-        self.dev.read_exact(&mut data).ok()?;
+        self.ab.device().read_exact(&mut data).ok()?;
         (CRC32C.checksum(&data) == crc).then_some(data)
     }
 
@@ -189,39 +143,37 @@ impl<D: Device> LicPart<D> {
         out.extend_from_slice(&u32::try_from(data.len()).expect("checked").to_le_bytes());
         out.extend_from_slice(&CRC32C.checksum(data).to_le_bytes());
         out.extend_from_slice(data);
-        self.dev.seek(SeekFrom::Start(RESUME_OFFSET))?;
-        self.dev.write_all(&out)?;
-        self.dev.sync()?;
+        self.ab.device().seek(SeekFrom::Start(RESUME_OFFSET))?;
+        self.ab.device().write_all(&out)?;
+        self.ab.device().sync()?;
         Ok(())
     }
 
     /// Forget the resume journal.
     pub fn clear_resume(&mut self) -> Result<(), LicError> {
-        self.dev.seek(SeekFrom::Start(RESUME_OFFSET))?;
-        self.dev.write_all(&[0u8; RESUME_HEADER])?;
-        self.dev.sync()?;
+        self.ab.device().seek(SeekFrom::Start(RESUME_OFFSET))?;
+        self.ab.device().write_all(&[0u8; RESUME_HEADER])?;
+        self.ab.device().sync()?;
         Ok(())
     }
 
     fn read_slot(&mut self, slot: Slot) -> Option<Record> {
-        self.dev.seek(SeekFrom::Start(slot_offset(slot))).ok()?;
-        let mut buf = vec![0u8; SLOT_BYTES];
-        let mut got = 0;
-        while got < SLOT_BYTES {
-            match self.dev.read(&mut buf[got..]) {
-                Ok(0) => break,
-                Ok(n) => got += n,
-                Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
-                Err(_) => return None,
-            }
-        }
-        Record::decode(&buf[..got]).ok()
+        let copy = self.ab.read_slot(slot)?;
+        Record::from_payload(copy.sequence, &copy.payload).ok()
     }
+}
+
+/// The copies' sequence numbers, for the choice between them.
+fn sequences(slots: &[Option<Record>; 2]) -> [Option<u64>; 2] {
+    [0, 1].map(|i| slots[i].as_ref().map(|r| r.sequence))
 }
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
+    use crate::format::SLOT_BYTES;
 
     #[test]
     fn a_stale_writer_keeps_the_service_tlvs() {

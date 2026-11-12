@@ -5,7 +5,7 @@
 //! IPL history records, 28 bytes each, stored as reserved-tag TLVs.
 
 use crate::error::LicError;
-use crate::format::header::{IplMode, IplType, Slot};
+use crate::format::header::{IplMode, IplType, Slot, slot_from_u8};
 use crate::format::{Reader, put_u64};
 
 /// How an IPL ended.
@@ -97,7 +97,7 @@ impl IplHistory {
             end_time: r.u64()?,
             ipl_type: IplType::from_u8(r.u8()?)?,
             mode: IplMode::from_u8(r.u8()?)?,
-            slot: Slot::from_u8(r.u8()?)?,
+            slot: slot_from_u8(r.u8()?)?,
             final_src: r.bytes(8)?.try_into().expect("8 bytes"),
             outcome: Outcome::from_u8(r.u8()?)?,
         };
