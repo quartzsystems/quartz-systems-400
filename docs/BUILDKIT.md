@@ -229,9 +229,9 @@ Notes on the edges:
 
 - `buildkit` depends on `optical` for the ISO 9660 writer, besides
   `diskimg`, `blockdev` and `xfsfmt`. `optical` depends on `thiserror`
-  only, but it was not on the handoff's list of allowed crates; the ISO
-  step cannot be in the library without it. `NEEDS-CODY`: accept
-  `optical`, or have the media step stay in each product.
+  only and is an accepted dependency of the library (handoff 13a): the
+  ISO step cannot be in it otherwise. The neutrality test's allowed
+  list is these four.
 - `buildkit` does not depend on `pesign` (nor so on `certs`): the
   manifest's Secure Boot field comes through `Product::secure_boot_db`.
 - The hybrid image's second partition has `optical`'s Quartz media type
@@ -333,7 +333,7 @@ in its tests and compared byte for byte with the general one; `vrm` and
 | 5 | The nine crates compile from the fixture as git dependencies | `buildkit`, `vrm`, `diskimg`, `blockdev`, `xfsfmt`, `licpart`, `ipc`, `console`, `svctools`, by `git = "file://..."` at HEAD |
 | 6 | No `QS400`/`qs400` literal in `tools/buildkit/src` outside tests and docs | `cargo test -p buildkit --test neutral` (`names_no_product`) |
 
-Open, for Cody: `optical` as a dependency of the library; a neutral A/B
-record split out of `licpart`; a FAT label per product (section 5 and
-6). `cargo deny`, `build notices --check` and `tools/fmtcheck` pass with
+Open, for Cody: a neutral A/B record split out of `licpart`; a FAT label
+per product (section 5 and 6). `optical` is accepted as a dependency of
+the library. `cargo deny`, `build notices --check` and `tools/fmtcheck` pass with
 no version bump.

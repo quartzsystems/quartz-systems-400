@@ -10,7 +10,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// The crates of this repository `buildkit` may depend on: the disk
-/// layout and what it pulls in, and the ISO 9660 writer.
+/// layout and what it pulls in, and `optical`, the ISO 9660 writer the
+/// media step needs (accepted in handoff 13a).
 const ALLOWED: &[&str] = &["buildkit", "diskimg", "blockdev", "xfsfmt", "optical"];
 
 /// Crates it must never reach, whatever else changes.
