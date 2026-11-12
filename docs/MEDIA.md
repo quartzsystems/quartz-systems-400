@@ -529,6 +529,7 @@ with its tree copied onto a FAT32 stick, as Rufus does (the loose
 | `EFI.IMG` | the El Torito boot image: a FAT16 volume with `EFI/BOOT/BOOTX64.EFI` |
 | `EFI/BOOT/BOOTX64.EFI` | the media UKI (IPL type D) |
 | `QS400/LIC/qs400.efi` | a second record for the same extents |
+| `QS400/LIC/SLIC`, `QS400/LIC/QSJOB` | `slic` and the job program, which the media UKI's loader checks and runs (docs/INSTALL.md, "The media UKI") |
 | `QS400/MEDIA.MANIFEST` | the manifest |
 | `QS400A.EFI`, `QS400B.EFI` | the slot UKIs the installer copies onto the disk |
 | `QS400.TXT` | a few lines about the media |

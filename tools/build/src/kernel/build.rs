@@ -4,7 +4,8 @@
 
 //! Configure and compile the kernel. The UKI step is the same build with
 //! the initramfs embedded, once per UKI kind: slot A, slot B (they differ
-//! only in `qs400.slot=`) and the installation media.
+//! only in `qs400.slot=`) and the installation media (its initramfs
+//! holds the loader only, so it fits the ISO's boot image).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -39,12 +40,14 @@ pub fn kernel(ctx: &Ctx) -> Result<()> {
 /// `release` the service console flag is left off the command line.
 pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
     let src = fetch::fetch(ctx)?;
-    let cpio = ctx.paths.initramfs();
-    ensure!(
-        cpio.is_file(),
-        "missing {}; run `initramfs` first",
-        cpio.display()
-    );
+    for kind in UkiKind::ALL {
+        let cpio = ctx.paths.initramfs_of(kind);
+        ensure!(
+            cpio.is_file(),
+            "missing {}; run `initramfs` first",
+            cpio.display()
+        );
+    }
     let out_dir = ctx.paths.images();
     fs::create_dir_all(&out_dir)?;
     fs::create_dir_all(ctx.paths.kernel_build())?;
@@ -52,6 +55,7 @@ pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
     let mut outs = Vec::new();
     for kind in UkiKind::ALL {
         let line = kind.cmdline(!release);
+        let cpio = ctx.paths.initramfs_of(kind);
         let frag = ctx.paths.kernel_build().join("uki.config");
         fs::write(
             &frag,

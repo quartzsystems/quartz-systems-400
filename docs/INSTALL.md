@@ -28,10 +28,47 @@ with an ed25519 signature by the build key over the lines before it.
 
 Distribution media (`build iso`) also carries the media UKI at
 `EFI/BOOT/BOOTX64.EFI` and in the El Torito image, `QS400/LIC/qs400.efi`,
-and, when `QS400_INSTALL_RSP` names a file at build time,
+`slic` and the job program under `QS400/LIC/` (below) and, when `QS400_INSTALL_RSP` names a file at build time,
 `QS400/INSTALL.RSP`. The same image boots as a CD, written raw to a disk
 or USB stick, and with its tree copied onto FAT32 (`build test --media
 iso`, `iso-raw`, `iso-fat`).
+
+### The media UKI
+
+El Torito gives a boot image's size in sixteen bits of 512-byte sectors,
+so the image that holds the media UKI is 32 MiB at most
+(docs/PHASE1.md), and the system's programs alone pass that. The slot
+UKIs embed an initramfs with `/init` (`slic`) and `/qsjob`. The media
+UKI's (`initramfs-media.cpio`) holds a loader as `/init`
+(`lic/instload`) and the trusted keys, and no more, so the media UKI is
+the kernel and grows only with it; `slic` and the job program are the
+media's files `QS400/LIC/SLIC` and `QS400/LIC/QSJOB`, listed in the
+manifest. The slot UKIs are ordinary files of the media too and have no
+such limit.
+
+The loader, as PID 1:
+
+1. mounts `/proc`, `/sys` and `/dev` and finds the media as `slic` does
+   (`instload::locate`): the first block device whose file system holds
+   `QS400/MEDIA.MANIFEST`. A stick may take seconds to appear; it looks
+   four times a second, and after five seconds says what it is waiting
+   for on the serial port and the display;
+2. checks the manifest: signed by a key the UKI trusts
+   (`/qs400/keys/system.pub`) and of the UKI's release
+   (`instmedia::licfile::check_manifest`);
+3. reads both programs and checks each against the manifest's size and
+   SHA-256 (`check_file`); only then puts them at `/init` and `/qsjob`
+   in memory;
+4. runs `/init` in its own place, with the kernel's arguments. From here
+   the D IPL is `slic`'s, as before.
+
+Nothing from the media runs unchecked: under Secure Boot the firmware
+vouches for the media UKI, so for the loader and the keys in it, and
+the loader for what it runs. Media that does not check out is refused
+with the reason (`the installation media in /dev/sr0 cannot be used:
+...`) and looked at again every five seconds, so the right volume can be
+put in. A network boot of the media UKI (§3) needs the media in a drive
+as before: its payload was always read from there.
 
 A release (`build release`) adds, at the root, `NOTICES.txt` (every
 third-party component with its license, `build notices`) and

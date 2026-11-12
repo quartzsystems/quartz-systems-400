@@ -95,6 +95,7 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
         add("disk", &p)?;
     }
     add("initramfs", &ctx.paths.initramfs())?;
+    add("initramfs-media", &ctx.paths.initramfs_media())?;
     add("slic", &ctx.paths.slic())?;
     add("qsjob", &ctx.paths.qsjob())?;
     let config = kernel::config_path(ctx);

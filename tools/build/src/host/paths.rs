@@ -85,9 +85,30 @@ impl Paths {
         self.target.join(RUST_TARGET).join("release").join("qsjob")
     }
 
+    /// The built `instload` binary, the media UKI's `/init`.
+    pub fn instload(&self) -> PathBuf {
+        self.target
+            .join(RUST_TARGET)
+            .join("release")
+            .join("instload")
+    }
+
     /// The initramfs cpio.
     pub fn initramfs(&self) -> PathBuf {
         self.images().join("initramfs.cpio")
+    }
+
+    /// The media UKI's initramfs cpio: the loader and the trusted keys.
+    pub fn initramfs_media(&self) -> PathBuf {
+        self.images().join("initramfs-media.cpio")
+    }
+
+    /// The cpio a UKI of `kind` embeds.
+    pub fn initramfs_of(&self, kind: UkiKind) -> PathBuf {
+        match kind {
+            UkiKind::SlotA | UkiKind::SlotB => self.initramfs(),
+            UkiKind::Media => self.initramfs_media(),
+        }
     }
 
     /// Pointer file naming the current UKI of one kind.

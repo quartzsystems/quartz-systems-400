@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Build `slic` and `qsjob` for the musl target and prove both are
-//! static and stripped.
+//! Build `slic`, `qsjob` and `instload` (the media UKI's loader) for the
+//! musl target and prove each is static and stripped.
 
 pub mod elf;
 
@@ -26,7 +26,7 @@ const ELF_MACHINE: u16 = 62;
 /// `build userland`: the binaries, `slic` first.
 pub fn userland(ctx: &Ctx) -> Result<Vec<PathBuf>> {
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    info!("userland: cargo build --release -p slic -p qsjob --target {RUST_TARGET}");
+    info!("userland: cargo build --release -p slic -p qsjob -p instload --target {RUST_TARGET}");
     Cmd::new(cargo, "userland")
         .cwd(&ctx.paths.repo)
         .args([
@@ -37,6 +37,8 @@ pub fn userland(ctx: &Ctx) -> Result<Vec<PathBuf>> {
             "slic",
             "-p",
             "qsjob",
+            "-p",
+            "instload",
             "--target",
             RUST_TARGET,
         ])
@@ -44,7 +46,7 @@ pub fn userland(ctx: &Ctx) -> Result<Vec<PathBuf>> {
         .arg(&ctx.paths.target)
         .run(ctx)?;
 
-    let bins = vec![ctx.paths.slic(), ctx.paths.qsjob()];
+    let bins = vec![ctx.paths.slic(), ctx.paths.qsjob(), ctx.paths.instload()];
     for bin in &bins {
         check(bin)?;
     }

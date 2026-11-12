@@ -8,6 +8,8 @@
 //!   operating system's product load, the licensed programs, and on a
 //!   `SAVSYS` volume the security data and the configuration.
 //! - [`sign`]: the manifest's signature with the build key.
+//! - [`licfile`]: `slic` and the job program as files of the media,
+//!   which the media UKI's loader checks and runs.
 //! - [`rsp`]: the response file of an automatic install.
 //! - [`fetch`]: a response file over HTTP, HTTPS or TFTP.
 //! - [`savsys`]: the layout on a tape and on an optical volume, written
@@ -21,6 +23,7 @@
 pub mod error;
 pub mod fetch;
 pub mod layout;
+pub mod licfile;
 pub mod osload;
 pub mod rsp;
 pub mod savsys;

@@ -139,7 +139,7 @@ tools/        host-side tools
   build/        orchestrator: cargo run -p build -- <cmd>
     src/host/     cmd, paths, hash, doctor, deny, testrun, bench, fuzz, soak
     src/kernel/   fetch, config, build (slot A and B UKIs)
-    src/userland/ slic build + ELF check
+    src/userland/ slic, qsjob and instload build + ELF check
     src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest,
                   lp (product loads), release (signed media and release directory),
                   srcoffer (the kernel source offer)
@@ -199,6 +199,10 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   hwrsrc/       hardware resources: src/scan/ (pci, nic, storage), src/table/ names, rescans,
                 packaging and logical trees, uevent.rs, proto.rs and client.rs the service's
                 socket (/run/qs400/hwrsrc.sock), view.rs what WRKHDWRSC/DSPHDWRSC and QGYRHR* show
+  instload/     the installation media locator (locate.rs, slic's too) and the media UKI's /init
+                (load.rs): the loader that checks slic and the job program on the signed media
+                and runs them, so the ISO's boot image holds the kernel only (docs/INSTALL.md,
+                "The media UKI")
   hwqual/       QSHWQUAL (docs/QUALIFIED_HARDWARE.md): checks.rs the checks over the resource table
                 and a few sysfs/procfs files, report.rs the graded report, usb.rs the FAT stick;
                 the machine side lic/slic/src/ipl/hwqual.rs, the media menu
@@ -265,7 +269,7 @@ media/        save media (docs/MEDIA.md)
                 work/qsjob/src/panels/work2/media.rs (WRKIMGCLG, WRKIMGCLGE, WRKTAPCTG,
                 WRKMLBSTS)
   instmedia/    install media (docs/INSTALL.md, RECOVERY.md): layout.rs payloads, sign.rs the
-                manifest signature, rsp.rs the response file, savsys.rs the layout on tape and
+                manifest signature, licfile.rs the media's slic and job program checked against it, rsp.rs the response file, savsys.rs the layout on tape and
                 optical (written, recognised), osload.rs the OS install over a store, fetch/ the response file over HTTP(S), TFTP and PXE. The
                 installer is lic/slic/src/ipl/install.rs and instdev.rs, SAVSYS cpp/savsys.rs
 ptf/          PTFs (docs/PTF.md)
@@ -627,7 +631,7 @@ cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
 cargo run -p build -- kc          # the Knowledge Center (tools/kcbuild) into images/kc
 cargo run -p build -- release     # release build, KC and PTF baseline on the media, target/release/VRM/ with SHA256SUMS(.sig)
-cargo run -p build -- test        # the QEMU disk suite: 133 steps, about an hour on GitHub (83 hardware resources in a guest of its own)
+cargo run -p build -- test        # the QEMU disk suite: 134 steps, about an hour on GitHub (83 hardware resources in a guest of its own)
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
@@ -682,7 +686,7 @@ cargo test -p sshd                        # the SSH server end to end in memory
 cargo test -p netserver -p netsvrcfg -p ntlm   # NetServer: shares over a MemBackend IFS, two jobs, leases, print; config, APIs; NTLM
 (cd net/smb-server && cargo test)         # the vendored SMB library and its QS/400 patches (tests/qs400_*.rs); own target dir
 cargo test --manifest-path tools/smbtest/Cargo.toml   # the test client against the library on loopback; --test interop -- --ignored for smbclient/cifs
-cargo run -p conformance -- --only 166,167,168,169,170   # NetServer under QEMU: start, every smbtest scenario, the 1 GB copy, APIs and SQL, smbprobe (leases, locks, print)
+cargo run -p conformance -- --only 166,167,168,169,170,171   # NetServer under QEMU: start, every smbtest scenario, the 1 GB copy, APIs and SQL, smbprobe (leases, locks, print), Samba's smbclient and kernel CIFS mounts (skipped without smbclient)
 cargo run -p conformance -- --only 51,53,172   # telnet sign-on and recovery, named display sessions (DEVNAME, QMAXSGNACN vary-off, VRYCFG)
 QS400_RELEASE=V1R2M0 QS400_OLD_ISO=<V1R1M0 dev ISO> cargo run -p conformance -- --media iso --install --only 10   # the slip install from V1R1M0 (docs/INSTALL.md §4 builds the old media)
 cargo test -p licpgm -p lpstore -p lpbuild -p osobjects   # products, payloads, APIs, keys; the store; build lp

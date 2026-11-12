@@ -5,7 +5,10 @@
 //! `build iso`: UEFI-bootable installation media. The El Torito boot
 //! image holds the media UKI; the same UKI is also a plain file at
 //! `EFI/BOOT/BOOTX64.EFI` and `QS400/LIC/qs400.efi`, so a copy of the
-//! tree onto a FAT stick boots too. The image is a hybrid: its GPT
+//! tree onto a FAT stick boots too. The media UKI's initramfs holds
+//! only the loader, to fit the boot image whatever the system grows to;
+//! `slic` and the job program are `QS400/LIC/SLIC` and `QS400/LIC/QSJOB`,
+//! in the signed manifest. The image is a hybrid: its GPT
 //! makes the boot image an EFI System partition when the ISO is
 //! written raw to a disk (docs/MEDIA.md, "Hybrid install image").
 //! The product loads `build lp` makes go under `QS400/LP/`, a response
@@ -36,6 +39,10 @@ pub const LIC_FILE: &str = "QS400/LIC/qs400.efi";
 pub const SLOT_A_FILE: &str = manifest::SLOT_A;
 /// Slot B's UKI.
 pub const SLOT_B_FILE: &str = manifest::SLOT_B;
+/// `slic`, which the media UKI's loader runs.
+pub const SLIC_FILE: &str = instmedia::licfile::SLIC;
+/// The job program the loader puts beside it.
+pub const JOB_FILE: &str = instmedia::licfile::QSJOB;
 /// The text file at the root.
 pub const README_FILE: &str = "QS400.TXT";
 /// The db key's files, also in the boot image under `EFI/keys/`.
@@ -57,6 +64,10 @@ pub struct Parts<'a> {
     pub slot_a: Vec<u8>,
     /// Slot B's UKI.
     pub slot_b: Vec<u8>,
+    /// `slic`, which the media UKI's loader runs.
+    pub slic: Vec<u8>,
+    /// The job program.
+    pub qsjob: Vec<u8>,
     /// The readme.
     pub readme: String,
     /// Product loads: ID and SAVLICPGM stream.
@@ -78,6 +89,8 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
         (SLOT_A_FILE, &p.slot_a),
         (SLOT_B_FILE, &p.slot_b),
         (BOOT_FILE, &p.uki),
+        (SLIC_FILE, &p.slic),
+        (JOB_FILE, &p.qsjob),
     ]
     .map(|(path, data)| ManifestFile {
         path: path.to_string(),
@@ -114,6 +127,8 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     b.add_link(LIC_FILE, BOOT_FILE)?;
     b.add_file(SLOT_A_FILE, p.slot_a)?;
     b.add_file(SLOT_B_FILE, p.slot_b)?;
+    b.add_file(SLIC_FILE, p.slic)?;
+    b.add_file(JOB_FILE, p.qsjob)?;
     b.add_file(README_FILE, p.readme.into_bytes())?;
     for (path, data) in p.extra {
         b.add_file(&path, data)?;
@@ -231,6 +246,10 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let slot_a = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotA))?)?;
     let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
 
+    // The media UKI's loader takes both from the media.
+    let slic = fs::read(ctx.paths.slic()).context("no slic; run `userland` first")?;
+    let qsjob = fs::read(ctx.paths.qsjob()).context("no qsjob; run `userland` first")?;
+
     let efi = boot_image(ctx, &uki_bytes)?;
 
     let release = release::RELEASE.to_string();
@@ -276,6 +295,8 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         uki: uki_bytes,
         slot_a,
         slot_b,
+        slic,
+        qsjob,
         readme,
         lp,
         rsp,
@@ -378,6 +399,8 @@ mod tests {
             uki: b"uki".to_vec(),
             slot_a: b"slot a".to_vec(),
             slot_b: b"slot b".to_vec(),
+            slic: b"slic".to_vec(),
+            qsjob: b"job program".to_vec(),
             readme: "readme\n".into(),
             lp: vec![("QS00SS1".into(), b"os".to_vec())],
             rsp: Some("language = 2924\n".into()),
@@ -402,6 +425,8 @@ mod tests {
             (LIC_FILE, b"uki"),
             (SLOT_A_FILE, b"slot a"),
             (SLOT_B_FILE, b"slot b"),
+            (SLIC_FILE, b"slic"),
+            (JOB_FILE, b"job program"),
         ] {
             let e = img.lookup(path).unwrap();
             assert_eq!(img.read_file(&e).unwrap(), want, "{path}");
@@ -414,6 +439,9 @@ mod tests {
             .verifying_key()
             .to_bytes();
         instmedia::sign::verify(&m, &public).unwrap();
+        instmedia::licfile::check_manifest(&m, &public, "V1R0M0").unwrap();
+        instmedia::licfile::check_file(&m, SLIC_FILE, b"slic").unwrap();
+        instmedia::licfile::check_file(&m, JOB_FILE, b"job program").unwrap();
         let c = instmedia::Contents::of(m.clone()).unwrap();
         assert_eq!(c.products(), vec!["QS00SS1".to_string()]);
         let lp = img.lookup("QS400/LP/QS00SS1.SAVF").unwrap();

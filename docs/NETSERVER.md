@@ -28,7 +28,7 @@ built and proven.
   `QIBM_QZLS_*` exit points, NetServer function usage IDs, a `*NETSVR`
   object type. `WRKNETSVR` does not exist on IBM i either.
 
-## 2. Pieces and where they live (design)
+## 2. Pieces and where they live
 
 | Piece | Where | Holds |
 |---|---|---|
@@ -908,7 +908,7 @@ and the library's per-name and per-address lockouts would lock users out
 on rules IBM does not have. The server runs on a current-thread tokio
 runtime on a thread of its own; `serve_one` hands it one socket.
 
-## 7. Print shares (design)
+## 7. Print shares (built: `net/netserver/src/print/`, the library's `Share::print`)
 
 `CREATE` on a print share opens a spooled file in the share's output
 queue as the signed-on user; `WRITE`s add its data; `CLOSE` ends it.

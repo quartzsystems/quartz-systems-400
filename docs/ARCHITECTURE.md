@@ -67,7 +67,7 @@ TLS for fetching sources uses `rustls` with the pure-Rust `graviola` provider.
   `olddefconfig`. The orchestrator parses the final `.config` and fails if any
   required symbol is not `=y` (or not `=n` for the banned set). It does not
   trust the merge.
-- The image is compressed once, with xz: the initramfs is embedded uncompressed (`INITRAMFS_COMPRESSION_NONE`) and the kernel image carrying it is xz (`KERNEL_XZ`). Until V1R1M0 both were gzip; changed so the media UKI fits the 32 MiB an El Torito boot image can name.
+- The image is compressed once, with xz: the initramfs is embedded uncompressed (`INITRAMFS_COMPRESSION_NONE`) and the kernel image carrying it is xz (`KERNEL_XZ`). Until V1R1M0 both were gzip; changed so the media UKI fits the 32 MiB an El Torito boot image can name. Since V1R2M0 the media UKI's initramfs holds only a loader (`lic/instload`) that takes `slic` and the job program from the signed media, so that limit bounds the kernel alone (`INSTALL.md`, "The media UKI").
 - `RANDOM_TRUST_CPU` no longer exists as a Kconfig symbol in 6.18 (removed in
   6.2). The kernel trusts the CPU RNG by default (`random.trust_cpu=on`),
   which is the intended behaviour, so nothing is set.

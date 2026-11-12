@@ -91,6 +91,12 @@ with IBM i NetServer:
 - A 1 GB copy under QEMU runs at about 150 to 210 MB/s into the system
   and 90 to 115 MB/s out (`NETSERVER.md` §11).
 
+**Install media.** The media UKI is 13 MB, down from 31 MB at the edge
+of the 32 MiB an El Torito boot image can name: its initramfs holds only
+a loader, which takes `slic` and the job program from the media once
+the signed manifest and their hashes check out (`INSTALL.md`, "The media
+UKI"). The boot image now grows with the kernel only.
+
 **Fixes since V1R1M0**
 
 - `ENDJOB`, `HLDJOB` and `RLSJOB` of a batch job a subsystem had just
@@ -143,8 +149,7 @@ Each has its own handoff document for a later release.
 NetServer's are in `NETSERVER.md` §10. The main ones: the NetBIOS
 datagram service (UDP 138) and browsing are not built (clients connect by
 name or address); renaming a file or library above a leased member breaks
-no lease; the install ISO's boot image has about 1 MB of room left after
-NetServer joined `qsjob`.
+no lease.
 
 ## Before shipping (Cody)
 

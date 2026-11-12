@@ -32,9 +32,34 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
 
     let keys = trusted_keys(ctx)?;
 
+    let loader = ctx.paths.instload();
+    let loader = fs::read(&loader).with_context(|| format!("cannot read {}", loader.display()))?;
+
+    let out = ctx.paths.initramfs();
+    fs::create_dir_all(out.parent().context("no parent")?)?;
+    // The media's `/init` is the loader, which takes slic and the job
+    // program from the media (docs/INSTALL.md, "The media UKI").
+    for (path, init, job) in [
+        (&out, init, Some(job)),
+        (&ctx.paths.initramfs_media(), loader, None),
+    ] {
+        let bytes = write_newc(entries(init, keys.clone(), job));
+        fs::write(path, &bytes).with_context(|| format!("cannot write {}", path.display()))?;
+        info!(
+            "initramfs: {} ({} bytes, sha256 {})",
+            path.display(),
+            bytes.len(),
+            sha256_bytes(&bytes)
+        );
+    }
+    Ok(out)
+}
+
+/// The tree, in name order. `job` is `/qsjob`, which the media's leaves out.
+fn entries(init: Vec<u8>, keys: Vec<u8>, job: Option<Vec<u8>>) -> Vec<Entry> {
     // The kernel does not auto-mount devtmpfs for an initramfs, so a static
     // console node lets it open the initial console before slic runs.
-    let entries = vec![
+    let mut v = vec![
         Entry::dir("dev"),
         Entry::chardev("dev/console", 5, 1),
         Entry::file("init", init),
@@ -42,22 +67,10 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         Entry::dir("qs400"),
         Entry::dir("qs400/keys"),
         Entry::file("qs400/keys/system.pub", keys),
-        Entry::file("qsjob", job),
-        Entry::dir("run"),
-        Entry::dir("sys"),
     ];
-    let bytes = write_newc(entries);
-
-    let out = ctx.paths.initramfs();
-    fs::create_dir_all(out.parent().context("no parent")?)?;
-    fs::write(&out, &bytes).with_context(|| format!("cannot write {}", out.display()))?;
-    info!(
-        "initramfs: {} ({} bytes, sha256 {})",
-        out.display(),
-        bytes.len(),
-        sha256_bytes(&bytes)
-    );
-    Ok(out)
+    v.extend(job.map(|j| Entry::file("qsjob", j)));
+    v.extend([Entry::dir("run"), Entry::dir("sys")]);
+    v
 }
 
 /// Third-party signers the image trusts: a file of ed25519 public keys,
