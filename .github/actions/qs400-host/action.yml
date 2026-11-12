@@ -36,7 +36,8 @@ runs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           make flex bison bc perl xz-utils gpg gzip tar git libelf-dev libssl-dev \
-          qemu-system-x86 qemu-utils ovmf lsb-release wget software-properties-common gnupg
+          qemu-system-x86 qemu-utils ovmf lsb-release wget software-properties-common gnupg \
+          smbclient cifs-utils
         wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
         sudo bash /tmp/llvm.sh 21
         sudo apt-get install -y --no-install-recommends lld-21 llvm-21

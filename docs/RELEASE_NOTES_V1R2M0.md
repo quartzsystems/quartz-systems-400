@@ -159,9 +159,8 @@ The NetServer `NEEDS-CODY` items (`NETSERVER.md`):
   with Notepad, Word and Excel, and print; Windows point and print with
   an in-box class driver; a wrong password `QMAXSIGN` times disables the
   user for NetServer.
-- `sudo apt install smbclient cifs-utils` and `sudo modprobe cifs` in WSL,
-  then `cargo test --manifest-path tools/smbtest/Cargo.toml --test
-  interop -- --ignored`.
+- The kernel CIFS mounts of QEMU step 171 need root: confirm they pass on
+  CI (Samba's `smbclient` passes locally).
 - On an IBM i 7.5 system: whether the NetServer password is kept at
   `QPWDLVL` 4; the date format of a `VP` audit entry; the `QZLSCHSI`
   length bounds, the share-name characters, the `ZLSL0101` extension

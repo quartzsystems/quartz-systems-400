@@ -57,6 +57,7 @@ mod nameddev;
 mod navstep;
 mod netauto;
 mod netinst;
+mod netsvrinterop;
 mod netsvrprobe;
 mod netsvrstep;
 mod nettools;

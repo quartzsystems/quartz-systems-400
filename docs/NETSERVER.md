@@ -1383,9 +1383,12 @@ NDR 2.0, a put, get, rename, list and delete on every dialect signed and
 sealed, `print` to `SMBTEST_PRINT_SHARE`, a wrong password) and the kernel
 CIFS client (two `nosharesock` mounts per dialect: one mount's writes,
 renames and deletes seen from the other; `flock` on one mount refused on
-the other, which the kernel sends as an SMB2 LOCK). WSL's Ubuntu has none
-of it; `NEEDS-CODY`: `sudo apt install smbclient cifs-utils` and `sudo
-modprobe cifs`, then
+the other, which the kernel sends as an SMB2 LOCK). QEMU step 171
+(`tools/conformance/src/netsvrinterop.rs`) runs them against the guest
+when the host has `smbclient` (`sudo apt install smbclient cifs-utils`;
+CI's hosts do), the kernel mounts too when the harness is root or `sudo`
+asks nothing; a host without `smbclient` skips the step and says so. By
+hand, against any server:
 
 ```
 SMBTEST_HOST=127.0.0.1 SMBTEST_PORT=4450 SMBTEST_USER=NSUSER SMBTEST_PASSWORD=... \
@@ -1553,7 +1556,8 @@ oracle change the rules forbid.
 | Upgrade from V1R1M0: `QSERVER` entries added once, the customer's kept, work management objects kept across the slip install | `cargo test -p wm --test upgrade`, `-p instmedia --test install` | built |
 | V1R1M0 to V1R2M0 slip install with NetServer working on the upgraded system | install step 10 (`INSTALL.md` §4; needs a development build of tag `v1.1.0` as `QS400_OLD_ISO`) | built |
 | Windows 11, macOS, Linux kernel clients; Office documents; `QMAXSIGN` disabling from a real client | section 11 | `NEEDS-CODY` |
-| Samba `smbclient` and kernel CIFS interop | `cargo test --manifest-path tools/smbtest/Cargo.toml --test interop -- --ignored` | written; `NEEDS-CODY` (packages) |
+| Samba `smbclient` interop: share list over `srvsvc`, every dialect signed and sealed, print, a wrong password | QEMU 171 (smbclient 4.23.6) | built |
+| Linux kernel CIFS client: two mounts' writes and byte-range locks | QEMU 171 where the harness can mount (CI) | written; passes on CI to be confirmed |
 
 [MS-SMB2]: https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2
 [MS-NLMP]: https://learn.microsoft.com/openspecs/windows_protocols/ms-nlmp

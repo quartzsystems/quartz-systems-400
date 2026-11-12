@@ -688,6 +688,11 @@ impl Suite {
             "170 NetServer leases, locks and print",
             Self::netsvr_probe,
         )?);
+        reports.push(self.step(
+            &mut s,
+            "171 NetServer Samba and kernel clients",
+            Self::netsvr_interop,
+        )?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);

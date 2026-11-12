@@ -37,7 +37,7 @@ const GUEST_PRF: &str = "NSGUEST";
 /// A user name with no profile: signed on as the guest.
 const NOBODY: &str = "NSNOBODY";
 /// The print share, its output queue and its printer driver.
-const PRINT_SHARE: &str = "NSPRT";
+pub(crate) const PRINT_SHARE: &str = "NSPRT";
 const OUTQ: &str = "NSPRTQ";
 const DRIVER: &str = "QSProbe";
 /// A file share with a maximum of one user, and one that requires
@@ -178,7 +178,7 @@ fn file_share(name: &str, max: i32, extra: &str) -> String {
 
 /// The shares, users, queue, guest and driver store the scenarios need;
 /// what exists is left as it is.
-fn setup(s: &mut Session) -> Result<(), String> {
+pub(crate) fn setup(s: &mut Session) -> Result<(), String> {
     share_setup(s)?;
     s.command(
         &format!("crtusrprf USRPRF({USER2}) PASSWORD('{PASSWORD2}')"),
@@ -255,7 +255,7 @@ fn setup(s: &mut Session) -> Result<(), String> {
 
 /// Ends the server and starts it with its pending attributes made
 /// current (`QZLSSTRS` reset `1`).
-fn restart(s: &mut Session) -> Result<(), String> {
+pub(crate) fn restart(s: &mut Session) -> Result<(), String> {
     s.command("ENDTCPSVR SERVER(*NETSVR)", CMD)?;
     job_gone(s, "QZLSSERVER")?;
     quiet(s, "CALL PGM(QSYS/QZLSSTRS) PARM('1' X'00000000')")?;
