@@ -5,6 +5,11 @@ criteria. QS/400 is x86_64 only.
 
 ## What exists
 
+Since V1R2M0 the pipeline below is a library, `tools/buildkit`, that
+`tools/build` drives with QS/400's description and another product can
+drive with its own (`BUILDKIT.md`); the steps and their outputs are as
+described here.
+
 - `tools/build/`: the orchestrator. `cargo run -p build -- <cmd>`.
   - `fetch`: downloads `linux-<ver>.tar.xz` from kernel.org in Rust
     (`reqwest` over `rustls` + pure-Rust `graviola`), verifies the sha256

@@ -4,7 +4,7 @@
 
 //! SPDX license expressions as crates write them (`MIT OR Apache-2.0`,
 //! the old `MIT/Apache-2.0`, `(A OR B) AND C`, `X WITH Y`), and the
-//! choice of the licenses QS/400 takes a crate under: allowed ones only
+//! choice of the licenses the product takes a crate under: allowed ones only
 //! (`deny.toml`), the first by [`PREFERENCE`] where there is a choice.
 
 /// Which license to take when a crate offers several.

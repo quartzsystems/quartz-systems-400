@@ -136,14 +136,19 @@ See `docs/ARCHITECTURE.md`. Short form:
 ```
 kernel/       VERSION, SHA256, config/qs400.config
 tools/        host-side tools
-  build/        orchestrator: cargo run -p build -- <cmd>
-    src/host/     cmd, paths, hash, doctor, deny, testrun, bench, fuzz, soak
-    src/kernel/   fetch, config, build (slot A and B UKIs)
-    src/userland/ slic, qsjob and instload build + ELF check
-    src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest,
-                  lp (product loads), release (signed media and release directory),
-                  srcoffer (the kernel source offer)
-    src/notices/  NOTICES.txt from Cargo.lock and deny.toml's licenses
+  build/        QS/400's orchestrator, a thin binary over buildkit: cargo run -p build -- <cmd>
+    src/product.rs QS/400 as buildkit's Product: names, kernel symbols, packages, the
+                  initramfs of each UKI, command lines, the disk, doctor, deny, notices
+    src/host/     testrun, soak, bench, fuzz, fixture (build fixture)
+    src/image/    media (what QS/400 puts on its media), lp (product loads), ptf, release
+                  (signed media and release directory), srcoffer (the kernel source offer)
+  buildkit/     the pipeline as a library for any product (docs/BUILDKIT.md): product.rs the
+                description, ctx.rs, src/host/ (cmd, paths, hash, doctor, deny), src/kernel/
+                (fetch, config with the baseline, build of each UKI kind), src/userland/
+                (build + ELF check), src/image/ (cpio, initramfs, disk over diskimg's layout,
+                iso, manifest), src/notices/ and licenses/; tests/neutral.rs (no OS crate in
+                its graph, no product named); fixture/ the product qsdemo in a workspace of
+                its own, built from git dependencies and booted by `build fixture`
   conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
                 src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
                 db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
@@ -187,12 +192,15 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
                 src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
   licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
   sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
-  release/      VxRyMz identity, build ID, PTF names (one source of truth)
+  release/      QS/400's VxRyMz identity, build ID, product IDs, PTF names (one source of truth)
+  vrm/          release identity for any product: Release, build.rs's capture (VERSION, the
+                build ID from git, under the product's environment prefix), release_from_env!
   console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
   svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
                 src/dst/ (disk/, environment, tools, security), src/install/, src/users/
   diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup (an older
-                system's IFS partition too); build + installer
+                system's IFS partition too); build + installer; layout.rs a disk as an
+                ordered list of partitions and the one writer (Plan is one description)
   ublk/         the ublk server the storage service serves the IFS volume with: abi.rs the
                 kernel's layouts, target.rs requests to block calls, device.rs add, start,
                 resize, stop; sys.rs the io_uring rings, the descriptor map, xfs growfs
@@ -586,7 +594,7 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 Navigator and QAP; the service side is lic/slic/src/stgsvc/netsvr.rs and
                 nslogon.rs (sign-on), the APIs runtime/sysapi/src/netsvr.rs
 docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKUP.md,
-              CERTS.md, CL.md, CMD.md, CMD_OPEN_QUESTIONS.md, CONSOLE.md,
+              BUILDKIT.md, CERTS.md, CL.md, CMD.md, CMD_OPEN_QUESTIONS.md, CONSOLE.md,
               CPP_AUDIT.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md,
               DSPF.md, DST.md, FTP.md, HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md,
               HTTPADMIN_HANDOFF.md, IFS.md, ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md,
@@ -635,6 +643,8 @@ cargo run -p build -- test        # the QEMU disk suite: 134 steps, about an hou
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
+cargo run -p build -- fixture     # the fixture product qsdemo built through buildkit from git dependencies at HEAD and booted (docs/BUILDKIT.md); the disk suite's last step
+cargo test -p buildkit -p vrm     # the pipeline's library (no OS crate in its graph, no product named), release identity
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo run -p build -- notices [--check]   # NOTICES.txt from Cargo.lock (fails on a license outside deny.toml)
 cargo run -p kcbuild -- notes [--update]  # the release notes' SQL refusals and marker inventory, generated from the tree

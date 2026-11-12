@@ -97,6 +97,11 @@ a loader, which takes `slic` and the job program from the media once
 the signed manifest and their hashes check out (`INSTALL.md`, "The media
 UKI"). The boot image now grows with the kernel only.
 
+**Tooling.** The build pipeline is a library, `tools/buildkit`, that
+another repository pins and drives with its own product description
+(`BUILDKIT.md`); `tools/build` is QS/400's over it, with the same
+commands and the same artifacts.
+
 **Fixes since V1R1M0**
 
 - `ENDJOB`, `HLDJOB` and `RLSJOB` of a batch job a subsystem had just

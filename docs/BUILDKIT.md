@@ -1,0 +1,339 @@
+# buildkit: the build pipeline as a library
+
+`tools/buildkit` is the build pipeline with the product taken out: the
+pinned kernel, the static userland, the initramfs, the UKIs, the disk
+image, the installation media and the signed manifest, for whatever
+product a caller describes. `tools/build` is QS/400's orchestrator, a
+thin binary over it (`tools/build/src/product.rs` is the description).
+Another repository pins `buildkit` as a git dependency, writes its own
+description and a `main.rs`, and has the same pipeline: the same kernel
+pin layout, the same UKI and A/B ESP slots, with its own PID 1, kernel
+fragment, initramfs and disk layout. QS/MC and QS/VS start that way.
+
+The code: `tools/buildkit/src/` (`product.rs`, `ctx.rs`, `host/`,
+`kernel/`, `userland/`, `image/`, `notices/`), `lic/diskimg/src/layout.rs`
+(the general disk description), `lic/vrm` (release identity),
+`tools/buildkit/fixture/` (a second product, built and booted by `build
+fixture`).
+
+## 1. The product description
+
+A caller makes one `buildkit::Product` and hands it to `Ctx::new`. The
+fields:
+
+| Field | What it is | QS/400's |
+|---|---|---|
+| `id` | lower-case identifier: artifact names `<id>-<release>-<kind>-<hash>.efi` and `<id>-<release>-<hash>.img`, `KBUILD_BUILD_USER` and `_HOST`, the extraction marker `.<id>-extracted`, the HTTP user agent `<id>-build` | `qs400` |
+| `name` | the name as written, for the manifest's `product` | `QS/400` |
+| `vendor` | the ESP vendor directory (`EFI/<vendor>/B.EFI`) and the ISO file's prefix | `QS400` |
+| `env_prefix` | prefix of every environment variable the pipeline reads (section 4) | `QS400_` |
+| `key_prefix` | prefix of the product's kernel command-line keys (`Product::key`) | `qs400.` |
+| `repo` | the repository root, passed in by the caller; nothing in the library looks for it | two levels above `tools/build` |
+| `release`, `build_id` | the release in artifact names and the manifest, and the build ID beside it | from the `release` crate |
+| `fragments` | kernel configuration fragments under `kernel/config/`, merged in order after the baseline | `qs400.config` |
+| `required_y`, `required_n` | symbols the final `.config` must and must not have `=y`, past the baseline's | the PASE namespaces, ublk, tape, the HBAs and NICs, ... |
+| `cmdline` | the baked command line before each UKI's own words | `console=ttyS0,115200 console=tty0 panic=-1 quiet` |
+| `packages` | the userland packages built for `x86_64-unknown-linux-musl`, each checked static and stripped; `manifest` says whether the signed manifest lists the binary | `slic`, `qsjob`, `instload` |
+| `init` | the package that is `/init` in a plain initramfs (`image::initramfs::plain`) | `slic` |
+| `kinds` | the UKIs to build: `SlotA`, `SlotB`, `Media` | all three |
+| `uki_cmdline` | one UKI's command line; `dev` adds the development words | `qs400.slot=A`, ..., `qs400.svc=1` |
+| `initramfs` | the entries of one UKI kind's initramfs, from the built binaries (`image::initramfs::binary`) | slic, qsjob and the trusted keys; the loader alone for the media |
+| `disk_bytes`, `disk_parts`, `disk_guids` | the disk image: its default size, its partitions in order (`diskimg::layout::PartDesc`), fixed GUIDs | 4 GiB; `diskimg::Plan::parts` (ESP, LIC, ASP 1); `Guids::FIXED` |
+| `media` | what goes on the installation media around the media UKI (`image::iso::Media`), for a product that has media | the manifest, product loads, slot UKIs, slic and qsjob, the Knowledge Center, the PTF baseline |
+| `doctor` | rows `doctor` adds to its own | the OVMF firmware |
+| `deny` | graphs `deny` checks besides the workspace, each with its own advisory ignores | `tools/smbtest` |
+| `notices` | the notices file's place in the tree and its opening lines | `lic/osobjects/shipped/NOTICES.txt` |
+| `secure_boot_db` | the Secure Boot db certificate, whose SHA-256 the manifest records | `pesign`'s |
+
+The hooks are plain function pointers; nothing is generic over the
+product, and `Ctx` (the product, the paths, `verbose`, the `make` jobs)
+is the one argument every step takes.
+
+**The kernel baseline.** Every product's kernel gets a generated
+fragment first (`kernel::config::baseline_fragment`): the EFI stub, the
+baked command line with override, the embedded initramfs, xz, devtmpfs,
+proc, sysfs and tmpfs on; modules and debug information off. The
+product's fragments follow and have the last word; the final `.config`
+is then checked symbol by symbol against the baseline's lists and the
+product's.
+
+**The disk.** `diskimg::layout` describes a disk as an ordered list of
+partitions: a name, a GPT type, a size (`Fixed` bytes or `Rest` of the
+disk, last) and what it starts with (`Keep`, `Image` for the ESP the
+pipeline fills, `Wiped`, or an empty `Xfs`). `Layout::for_bytes` places
+them (the first 1 MiB in, the last ending on a 4 KiB boundary before the
+backup GPT) and `write_layout` writes the protective MBR, the GPT and
+the contents. QS/400's `Plan` is one such description (`Plan::parts`),
+and its writer is the general one; a unit test keeps the writer as it
+was before and proves both write the same bytes
+(`table::tests::the_general_writer_writes_the_same_disk`). The ESP holds
+slot A at `EFI/BOOT/BOOTX64.EFI` and slot B at `EFI/<VENDOR>/B.EFI`.
+
+**The media.** `image::iso` builds the UEFI El Torito ISO whose boot
+image carries the media UKI, hybrid so it boots written raw to a disk,
+around a tree the product supplies in order (`Item::File`, `Item::Link`
+and one `Item::Boot`).
+
+## 2. The steps
+
+Each is a function over `&Ctx`:
+
+| Step | Function |
+|---|---|
+| fetch | `kernel::fetch::fetch` |
+| kernel | `kernel::kernel` |
+| userland | `userland::userland` |
+| initramfs | `image::initramfs::initramfs` |
+| uki | `kernel::uki(ctx, dev)` |
+| disk | `image::disk::disk(ctx, bytes)` |
+| iso | `image::iso::iso` |
+| manifest | `image::manifest::manifest` |
+| doctor | `host::doctor::doctor` |
+| deny | `host::deny::deny` |
+| notices | `notices::notices(ctx, check)` |
+| all of them in order | `buildkit::all(ctx, dev)` |
+
+A consumer's `main.rs` is a clap enum and a `match` over these.
+
+## 3. Starting a new repository
+
+Taken from the fixture (`tools/buildkit/fixture/`), which is exactly
+this:
+
+```
+VERSION                      0.3.0, the product's own release (V0R3M0)
+rust-toolchain.toml          the pinned toolchain
+kernel/VERSION               the kernel pin, as QS/400's
+kernel/SHA256
+kernel/config/qsdemo.config  only what the baseline lacks
+init/                        the PID 1 package
+build/                       the orchestrator package
+Cargo.toml
+```
+
+`Cargo.toml`, with the QS/400 repository pinned by revision:
+
+```toml
+[workspace]
+resolver = "3"
+members = ["build", "init"]
+
+[workspace.dependencies]
+buildkit = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
+vrm = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
+diskimg = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
+
+# The userland check wants the image's binaries stripped.
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+```
+
+`build/build.rs` and `init/build.rs` capture the product's own release
+and build ID:
+
+```rust
+fn main() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    vrm::build::capture(repo, "QSDEMO_");
+}
+```
+
+`build/src/main.rs` is the description and the clap enum (the fixture's
+in full: `tools/buildkit/fixture/build/src/main.rs`):
+
+```rust
+const RELEASE: vrm::Release = vrm::release_from_env!("QSDEMO_");
+
+fn qsdemo() -> Result<Product> {
+    Ok(Product {
+        id: "qsdemo",
+        name: "QSDEMO",
+        vendor: "QSDEMO",
+        env_prefix: "QSDEMO_",
+        key_prefix: "qsdemo.",
+        repo: /* this crate's parent */,
+        release: RELEASE.to_string(),
+        build_id: env!("QSDEMO_BUILD_ID").to_string(),
+        fragments: &["qsdemo.config"],
+        required_y: &["VIRTIO_BLK", "XFS_FS", "SERIAL_8250_CONSOLE"],
+        required_n: &[],
+        cmdline: "console=ttyS0,115200 panic=-1",
+        packages: &[Package { name: "qsdemo-init", manifest: true }],
+        init: "qsdemo-init",
+        kinds: &[UkiKind::SlotA, UkiKind::SlotB],
+        uki_cmdline: |p, kind, _dev| { /* cmdline + qsdemo.slot=A|B */ },
+        initramfs: buildkit::image::initramfs::plain,
+        disk_bytes: 1024 * MIB,
+        disk_parts,   // ESP, an A/B record partition, one xfs data partition
+        disk_guids: || LayoutGuids::fixed(*b"QSDM", 3),
+        media: None,
+        doctor: |_| Vec::new(),
+        deny: &[],
+        notices: None,
+        secure_boot_db: || None,
+    })
+}
+```
+
+Then `cargo run -p qsdemo-build -- all` fetches the kernel, builds it,
+the userland, the initramfs, the two UKIs, the disk and the manifest
+under `target/`.
+
+`cargo run -p build -- fixture` (in this repository) proves it: it
+copies the fixture to a clean directory under the target directory,
+writes its `Cargo.toml` with `git = "file://<this repository>"` at HEAD
+(so the git-dependency form is what is built, and only committed work is
+seen), copies the kernel and toolchain pins and the kernel tarball this
+build already fetched, runs the fixture's own `all`, boots its disk
+image under QEMU with OVMF, and passes when the serial console shows
+`QSDEMO V0R3M0 fixture` (the fixture's release, which must differ from
+QS/400's) and QEMU exits cleanly after the power off. `build test` (the
+disk suite) runs it as its last step.
+
+## 4. Environment variables
+
+The pipeline's own variables carry the product's prefix:
+
+| Variable | Use |
+|---|---|
+| `<PREFIX>TARGET_DIR` | the output root; else `CARGO_TARGET_DIR`, else `<repo>/target` |
+| `<PREFIX>JOBS` | caps the kernel's `make -j` |
+| `<PREFIX>SIGNING_KEY` | the ed25519 key the manifest is signed with; else a development key under `target/keys/` |
+| `<PREFIX>BUILD_ID`, `<PREFIX>RELEASE` | read by `vrm::build::capture` in the product's `build.rs`: the build ID instead of `git describe`, a release other than `VERSION`'s |
+
+`CARGO`, `RUSTC` and `PATH` are read as cargo sets them. QS/400's other
+variables are QS/400's and stay in `tools/build` and the crates that
+read them: `QS400_TRUSTED_KEYS` (the initramfs), `QS400_INSTALL_RSP`
+(the media), `QS400_OVMF_CODE` and `QS400_OVMF_VARS` (`conformance`),
+`QS400_SB_KEY` and `QS400_SB_CERT` (`pesign`).
+
+## 5. What stays in `tools/build`
+
+- `main.rs`, the clap surface, and `product.rs`.
+- `image/media.rs`: what QS/400 puts on its media (the signed media
+  manifest through `instmedia`, the product loads, slic and the job
+  program for the media UKI's loader, the response file, the Knowledge
+  Center and PTF baseline trees, the db key in the boot image).
+- `image/lp.rs`, `ptf.rs`, `release.rs`, `srcoffer.rs`: product loads,
+  PTFs, the release directory and the kernel source offer.
+- `host/testrun.rs`, `soak.rs`, `bench.rs`, `fuzz.rs`, `fixture.rs`: the
+  QEMU suites and what runs beside them.
+- `licenses/linux-COPYING.txt`: the source offer's copy of the kernel's
+  license. The license texts the notices use moved with them to
+  `tools/buildkit/licenses/`.
+
+Notes on the edges:
+
+- `buildkit` depends on `optical` for the ISO 9660 writer, besides
+  `diskimg`, `blockdev` and `xfsfmt`. `optical` depends on `thiserror`
+  only, but it was not on the handoff's list of allowed crates; the ISO
+  step cannot be in the library without it. `NEEDS-CODY`: accept
+  `optical`, or have the media step stay in each product.
+- `buildkit` does not depend on `pesign` (nor so on `certs`): the
+  manifest's Secure Boot field comes through `Product::secure_boot_db`.
+- The hybrid image's second partition has `optical`'s Quartz media type
+  for every product.
+- `diskimg::fat` labels every FAT volume `QS400 ESP` with volume id
+  `QS40`, the fixture's too. `BLOCKED(buildkit)`: a label per product
+  changes `Spec`, which `slic`'s installer shares.
+- The fetch step keeps QS/400's kernel line: a `6.18.y` pin from
+  kernel.org's `v6.x` directory.
+
+## 6. Crates another repository takes
+
+`build fixture` builds all nine as git dependencies. What an appliance
+should know of each:
+
+| Crate | As it is |
+|---|---|
+| `buildkit` | product-neutral (a test fails on a product's name in its code) |
+| `vrm` | product-neutral: `Release`, `build::capture`, `release_from_env!` |
+| `diskimg` | the general layout is neutral; `Plan`, its GUIDs and partition names are QS/400's; the FAT label is QS/400's (above) |
+| `blockdev` | neutral |
+| `xfsfmt` | neutral; the default label is `QS400-IFS`, set `Options::label` (the layout writer does) |
+| `ipc` | neutral: the wire codec, frames, `rpc!`, Unix socket channels |
+| `licpart` | **QS/400's as it is.** The record's magic is `QS400LIC`, the resume record's `QS400RSJ`, it is found by QS/400's LIC partition type GUID, and its fields are QS/400's IPL state (slots, keylock, the IPL system values, the install answers). An appliance wanting an A/B record should take the header and slot logic, not the crate; `NEEDS-CODY`: split a neutral A/B record out, or let each appliance write its own |
+| `console` | QS/400's: it prints `release`'s banner (QS/400's release when pinned from elsewhere), and brings `tn5250` and `ccsid` |
+| `svctools` | QS/400's: the DST and installer screens, over `console`, `licpart`, `release` and `hwqual` |
+
+They build from outside because cargo resolves a git dependency's
+`workspace = true` keys against the workspace in the checkout. `release`
+itself is not reusable: its `build.rs` reads this repository's `VERSION`
+and `QS400_*` variables, which is why `vrm` exists.
+
+## 7. Baseline
+
+Section 0 of the handoff, at `6296b9ab8` (the tree had moved from
+`cb121aa9`: the media UKI's loader and QEMU step 171). `build all` twice
+with `QS400_BUILD_ID=buildkit-baseline` (the build ID is otherwise the
+commit, which every later commit changes); both runs agree.
+
+| Artifact | SHA-256 before |
+|---|---|
+| `initramfs.cpio` | `5da055cd9cb98250ab6554355452a85c5815a6e48501994f4d2dbb3b78d72fbc` |
+| `initramfs-media.cpio` | `ebe0366223c81c08c088cb9c405cac2eb3da83c1bdb77aa8b545ca8182fe68cc` |
+| `uki-a` | `ee58658aca3be6181c177999cbab08d95fec10a707306371a81f3492ce1b1b47` |
+| `uki-b` | `b683acafb24c2c73368d91cfb67436fb09e4c94230272e1bccb031b21db74e84` |
+| `uki-d` | `d3b4927607259c85391574dafc279e85dd48534dcdf5d055d4aa10ce4e7cb448` |
+| disk image | `5e46f7f996c2dc0966ee18cf590af431ffa59bbdeef975b34246b20083b728da` |
+| ISO | `2cd1b6684ec965ea544873afa148838928eee588a21d71ca873984f2061a04ab` |
+| `manifest.json`, `git_rev` masked | `2a903b19ea23d8e134ba4e6f6640e05dd5c28ae32d3ea7b5364964c5cda98f6d` |
+
+After, in two parts, because the handoff changes two kinds of thing:
+
+1. **The pipeline moved into the library (sections 1 and 2 of the
+   handoff, `976c9229e`).** Nothing the image links changed, and `build
+   all` gives every hash above again. The manifest's content differs in
+   one field, `cargo_lock_sha256`, since `Cargo.lock` gained the new
+   crate.
+2. **`diskimg` and `release` restructured (sections 3 and 4).** `slic`
+   and `qsjob` link both, so their bytes change (same code, moved
+   between crates and functions) and with them the slot initramfs, the
+   slot UKIs, the disk and the ISO; the media initramfs and `uki-d` do
+   not change. What the pipeline does with them is proven unchanged
+   another way: the userland binaries are built from the baseline commit
+   and the final tree's `initramfs`, `uki`, `disk`, `iso` and `manifest`
+   steps run over them.
+
+| Artifact | Before | After the library split | Final tree over the baseline's userland |
+|---|---|---|---|
+| `initramfs.cpio` | `5da055cd9cb9` | same | same |
+| `initramfs-media.cpio` | `ebe0366223c8` | same | same |
+| `uki-a` | `ee58658aca3b` | same | same |
+| `uki-b` | `b683acafb24c` | same | same |
+| `uki-d` | `d3b492760725` | same | same |
+| disk image | `5e46f7f996c2` | same | same |
+| ISO | `2cd1b6684ec9` | same | same |
+| `manifest.json`, `git_rev` masked | `2a903b19ea23` | differs in `cargo_lock_sha256` only | differs in `cargo_lock_sha256` only |
+
+"Same" is the full SHA-256 of the table above, compared by `diff` of
+the sums. The baseline's `slic` and `qsjob` were rebuilt from
+`6296b9ab8` at the same checkout path (the binaries carry the path, so
+a worktree elsewhere does not reproduce them) and matched the hashes the
+baseline's manifest recorded (`9da4d5848808`, `fcca815edd23`) before the
+final tree's steps ran over them.
+
+With the final tree's own userland the slot artifacts are other bytes
+(`slic` links the restructured `diskimg` and `release`). What that
+leaves to prove is behaviour, not layout: `diskimg`'s old writer is kept
+in its tests and compared byte for byte with the general one; `vrm` and
+`release` keep their tests; the QEMU steps below ran on the final tree.
+
+## 8. Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Section 0 hashes identical before and after | identical after the split; identical for the final tree over the same userland binaries; the final userland itself differs because sections 3 and 4 change crates it links (section 7) |
+| 2 | Every existing `build` subcommand and flag works as before; `build test` passes | the clap surface is unchanged but for the added `fixture`; `build all`, ran locally on the final tree: the disk boot, sign-on and system values, the five media steps (the media IPL of an installed disk among them), the automatic and the interactive install, both through the general disk writer in `slic`; the whole disk suite is CI's |
+| 3 | `buildkit` dependency test | `cargo test -p buildkit --test neutral`: no operating-system crate in `cargo tree -p buildkit`; its crates of this repository are `diskimg`, `blockdev`, `xfsfmt`, `optical` |
+| 4 | `build fixture` boots to the `QSDEMO` banner with its own release | `QSDEMO V0R3M0 fixture`, powered off |
+| 5 | The nine crates compile from the fixture as git dependencies | `buildkit`, `vrm`, `diskimg`, `blockdev`, `xfsfmt`, `licpart`, `ipc`, `console`, `svctools`, by `git = "file://..."` at HEAD |
+| 6 | No `QS400`/`qs400` literal in `tools/buildkit/src` outside tests and docs | `cargo test -p buildkit --test neutral` (`names_no_product`) |
+
+Open, for Cody: `optical` as a dependency of the library; a neutral A/B
+record split out of `licpart`; a FAT label per product (section 5 and
+6). `cargo deny`, `build notices --check` and `tools/fmtcheck` pass with
+no version bump.

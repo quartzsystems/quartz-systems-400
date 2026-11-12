@@ -290,6 +290,13 @@ options or user IDs asks first.
 recovery or partitions, no progress display during long disk actions.
 An SST sign-on is audited as `SS` (a code of ours).
 
+## The build orchestrator
+
+`cargo run -p build -- <cmd>` (`tools/build`) is QS/400's description
+over `tools/buildkit`, the pipeline as a library another repository can
+pin (`BUILDKIT.md`: the product description, the steps, starting a new
+repository, `build fixture`).
+
 ## CI and its runners
 
 `.github/workflows/ci.yml` runs on every push to a branch and every pull
