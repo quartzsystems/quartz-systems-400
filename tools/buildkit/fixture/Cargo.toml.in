@@ -20,6 +20,7 @@ vrm = { git = "@REPO@", rev = "@REV@" }
 diskimg = { git = "@REPO@", rev = "@REV@" }
 blockdev = { git = "@REPO@", rev = "@REV@" }
 xfsfmt = { git = "@REPO@", rev = "@REV@" }
+abrec = { git = "@REPO@", rev = "@REV@" }
 licpart = { git = "@REPO@", rev = "@REV@" }
 ipc = { git = "@REPO@", rev = "@REV@" }
 console = { git = "@REPO@", rev = "@REV@" }

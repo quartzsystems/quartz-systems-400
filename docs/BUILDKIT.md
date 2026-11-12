@@ -13,8 +13,8 @@ fragment, initramfs and disk layout. QS/MC and QS/VS start that way.
 The code: `tools/buildkit/src/` (`product.rs`, `ctx.rs`, `host/`,
 `kernel/`, `userland/`, `image/`, `notices/`), `lic/diskimg/src/layout.rs`
 (the general disk description), `lic/vrm` (release identity),
-`tools/buildkit/fixture/` (a second product, built and booted by `build
-fixture`).
+`lic/abrec` (the A/B record), `tools/buildkit/fixture/` (a second
+product, built and booted by `build fixture`).
 
 ## 1. The product description
 
@@ -123,6 +123,7 @@ members = ["build", "init"]
 buildkit = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
 vrm = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
 diskimg = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
+abrec = { git = "https://github.com/quartzsystems/quartz-systems-400", rev = "<commit>" }
 
 # The userland check wants the image's binaries stripped.
 [profile.release]
@@ -185,16 +186,45 @@ Then `cargo run -p qsdemo-build -- all` fetches the kernel, builds it,
 the userland, the initramfs, the two UKIs, the disk and the manifest
 under `target/`.
 
+The PID 1 keeps its state in an A/B record of its own (`init/src/main.rs`
+in full in the fixture): an `abrec::Spec` with the product's magic and
+the GPT type of the partition the disk description gives it, and a
+payload that is the product's business (QSDEMO's is a boot count).
+
+```rust
+const RECORD: abrec::Spec = abrec::Spec {
+    magic: *b"QSDEMOAB",
+    version: 1,
+    type_guid: uuid!("5d0f6f0e-3a57-4c1b-8a55-515344454d01"),
+    slot_bytes: 4096,
+    min_payload: 4,
+};
+
+let dev = OpenOptions::new().read(true).write(true).open(abrec::locate(&RECORD)?)?;
+let mut part = abrec::AbPart::open(RECORD, dev);
+let boots = match part.read() {
+    Ok(copy) => u32::from_le_bytes(copy.payload[..4].try_into()?),
+    Err(abrec::AbError::NoValidCopy) => 0,
+    Err(e) => return Err(e),
+};
+let (slot, sequence) = part.write(&(boots + 1).to_le_bytes())?;
+```
+
 `cargo run -p build -- fixture` (in this repository) proves it: it
 copies the fixture to a clean directory under the target directory,
 writes its `Cargo.toml` with `git = "file://<this repository>"` at HEAD
 (so the git-dependency form is what is built, and only committed work is
 seen), copies the kernel and toolchain pins and the kernel tarball this
-build already fetched, runs the fixture's own `all`, boots its disk
-image under QEMU with OVMF, and passes when the serial console shows
-`QSDEMO V0R3M0 fixture` (the fixture's release, which must differ from
-QS/400's) and QEMU exits cleanly after the power off. `build test` (the
-disk suite) runs it as its last step.
+build already fetched, runs the fixture's own `all`, boots a copy of its
+disk image under QEMU with OVMF, and passes when the serial console
+shows `QSDEMO V0R3M0 fixture` (the fixture's release, which must differ
+from QS/400's) and QEMU exits cleanly after the power off. It also
+asserts the two things a disk carries a product's name in: the ESP's
+FAT label and volume id are the fixture's (`QSDEMO ESP`, not `QS400
+ESP`), and the A/B record its PID 1 wrote is on the partition of the
+fixture's GPT type under the magic `QSDEMOAB`, sequence 1 in copy A,
+which `licpart` does not read as a LIC record. `build test` (the disk
+suite) runs it as its last step.
 
 ## 4. Environment variables
 
@@ -249,7 +279,7 @@ Notes on the edges:
 
 ## 6. Crates another repository takes
 
-`build fixture` builds all nine as git dependencies. What an appliance
+`build fixture` builds all ten as git dependencies. What an appliance
 should know of each:
 
 | Crate | As it is |
@@ -260,7 +290,8 @@ should know of each:
 | `blockdev` | neutral |
 | `xfsfmt` | neutral; the default label is `QS400-IFS`, set `Options::label` (the layout writer does) |
 | `ipc` | neutral: the wire codec, frames, `rpc!`, Unix socket channels |
-| `licpart` | **QS/400's as it is.** The record's magic is `QS400LIC`, the resume record's `QS400RSJ`, it is found by QS/400's LIC partition type GUID, and its fields are QS/400's IPL state (slots, keylock, the IPL system values, the install answers). An appliance wanting an A/B record should take the header and slot logic, not the crate; `NEEDS-CODY`: split a neutral A/B record out, or let each appliance write its own |
+| `abrec` | product-neutral: the two-copy A/B record with its header, sequence, CRC and slot selection (`AbPart`, `encode`/`decode`, `newest`/`target`). The magic, the format version, the partition's GPT type and the slot size come from the caller's `Spec`; the payload is opaque bytes. The fixture's PID 1 uses it with its own |
+| `licpart` | QS/400's record over `abrec`: the magic `QS400LIC`, the LIC partition's type GUID, the IPL state in the payload (slots, keylock, the IPL system values, the install answers) and the resume record `QS400RSJ` beside the copies. An appliance takes `abrec`, not this |
 | `console` | QS/400's: it prints `release`'s banner (QS/400's release when pinned from elsewhere), and brings `tn5250` and `ccsid` |
 | `svctools` | QS/400's: the DST and installer screens, over `console`, `licpart`, `release` and `hwqual` |
 
@@ -335,10 +366,21 @@ in its tests and compared byte for byte with the general one; `vrm` and
 | 2 | Every existing `build` subcommand and flag works as before; `build test` passes | the clap surface is unchanged but for the added `fixture`; `build all`, ran locally on the final tree: the disk boot, sign-on and system values, the five media steps (the media IPL of an installed disk among them), the automatic and the interactive install, both through the general disk writer in `slic`; the whole disk suite is CI's |
 | 3 | `buildkit` dependency test | `cargo test -p buildkit --test neutral`: no operating-system crate in `cargo tree -p buildkit`; its crates of this repository are `diskimg`, `blockdev`, `xfsfmt`, `optical` |
 | 4 | `build fixture` boots to the `QSDEMO` banner with its own release | `QSDEMO V0R3M0 fixture`, powered off |
-| 5 | The nine crates compile from the fixture as git dependencies | `buildkit`, `vrm`, `diskimg`, `blockdev`, `xfsfmt`, `licpart`, `ipc`, `console`, `svctools`, by `git = "file://..."` at HEAD |
+| 5 | The ten crates compile from the fixture as git dependencies | `buildkit`, `vrm`, `diskimg`, `abrec`, `blockdev`, `xfsfmt`, `licpart`, `ipc`, `console`, `svctools`, by `git = "file://..."` at HEAD |
 | 6 | No `QS400`/`qs400` literal in `tools/buildkit/src` outside tests and docs | `cargo test -p buildkit --test neutral` (`names_no_product`) |
 
-Open, for Cody: a neutral A/B record split out of `licpart`; a FAT label
-per product (section 5 and 6). `optical` is accepted as a dependency of
-the library. `cargo deny`, `build notices --check` and `tools/fmtcheck` pass with
-no version bump.
+`cargo deny`, `build notices --check` and `tools/fmtcheck` pass with no
+version bump.
+
+## 9. Handoff 13a
+
+What handoff 13 left open, closed:
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `optical` is an allowed dependency of `buildkit` | in the neutrality test's list and section 5 |
+| 2 | A neutral A/B record, `licpart` rebuilt on it, the bytes on disk identical | `lic/abrec`; `lic/licpart/tests/bytes.rs` compares a device written through `LicPart` (three record writes, the resume area) with `tests/golden/`, which the code before the change wrote at `bf2b492c5`, byte for byte, and reads that golden back; `fmtcheck` has the `licpart` format at version 1 with `abrec`'s two format files added to it, its hash re-locked (`update --force`, the one format that moved) |
+| 3 | The FAT label and volume id are the caller's | `diskimg::fat::Spec::label` and `volume_id`; `Product::esp_label` and `esp_volume_id`; QS/400 keeps `QS400 ESP` and `0x51533430` (`fat::tests::the_defaults_are_what_every_volume_had`, `product::tests::the_fat_volumes_keep_their_name`) |
+| 4 | The fixture uses `abrec` with its own magic and GUID and its own ESP label | `build fixture` asserts both on the booted disk (section 3) |
+
+`console` and `svctools` stay QS/400's, as section 6 says.

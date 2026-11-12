@@ -2,27 +2,81 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! QSDEMO's PID 1: mount `/proc`, say who we are on the console, power
-//! off. The kernel has the console open as our standard output.
+//! QSDEMO's PID 1: mount `/proc`, `/sys` and `/dev`, say who we are on
+//! the console, count the boot in the A/B record, power off. The kernel
+//! has the console open as our standard output.
 
 use std::ffi::CStr;
+use std::fs::OpenOptions;
 use std::io::Write as _;
+use std::time::Duration;
 
+use abrec::{AbError, AbPart, Slot, Spec};
 use rustix::mount::{MountFlags, mount};
 use rustix::system::{RebootCommand, reboot};
+use uuid::uuid;
 
 /// The release `build.rs` captured from the fixture's own `VERSION`.
 const RELEASE: vrm::Release = vrm::release_from_env!("QSDEMO_");
 
+/// QSDEMO's A/B record: its own magic, on the partition of its own GPT
+/// type (the orchestrator's `AB_TYPE`). The payload is the boot count.
+const RECORD: Spec = Spec {
+    magic: *b"QSDEMOAB",
+    version: 1,
+    type_guid: uuid!("5d0f6f0e-3a57-4c1b-8a55-515344454d01"),
+    slot_bytes: 4096,
+    min_payload: 4,
+};
+
+/// Count this boot in the record: the copy written, its sequence, the count.
+fn count_boot() -> Result<(Slot, u64, u32), String> {
+    // The disk may still be on its way.
+    let mut node = abrec::locate(&RECORD);
+    for _ in 0..100 {
+        if node.is_ok() {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+        node = abrec::locate(&RECORD);
+    }
+    let node = node.map_err(|e| e.to_string())?;
+    let dev = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&node)
+        .map_err(|e| format!("{}: {e}", node.display()))?;
+    let mut part = AbPart::open(RECORD, dev);
+    let before = match part.read() {
+        Ok(copy) => u32::from_le_bytes(copy.payload[..4].try_into().expect("four bytes")),
+        Err(AbError::NoValidCopy) => 0,
+        Err(e) => return Err(e.to_string()),
+    };
+    let boots = before + 1;
+    let (slot, sequence) = part
+        .write(&boots.to_le_bytes())
+        .map_err(|e| e.to_string())?;
+    Ok((slot, sequence, boots))
+}
+
 fn main() {
-    let _ = std::fs::create_dir_all("/proc");
-    let _ = mount("proc", "/proc", "proc", MountFlags::empty(), None::<&CStr>);
+    for (fs, at) in [("proc", "/proc"), ("sysfs", "/sys"), ("devtmpfs", "/dev")] {
+        let _ = std::fs::create_dir_all(at);
+        let _ = mount(fs, at, fs, MountFlags::empty(), None::<&CStr>);
+    }
     println!("QSDEMO {RELEASE} {}", env!("QSDEMO_BUILD_ID"));
+    let magic = String::from_utf8_lossy(&RECORD.magic);
+    match count_boot() {
+        Ok((slot, sequence, boots)) => {
+            println!("QSDEMO record {magic} copy {slot:?} sequence {sequence} boots {boots}");
+        }
+        Err(e) => println!("QSDEMO record {magic} failed: {e}"),
+    }
     let _ = std::io::stdout().flush();
     rustix::fs::sync();
     let _ = reboot(RebootCommand::PowerOff);
     // PID 1 must not return.
     loop {
-        std::thread::sleep(std::time::Duration::from_secs(3600));
+        std::thread::sleep(Duration::from_secs(3600));
     }
 }

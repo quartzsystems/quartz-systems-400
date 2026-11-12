@@ -20,8 +20,9 @@ use uuid::{Uuid, uuid};
 use {blockdev as _, console as _, ipc as _, licpart as _, svctools as _, xfsfmt as _};
 
 const MIB: u64 = 1024 * 1024;
-/// GPT type of QSDEMO's A/B record partition. Generated once for the
-/// fixture; a real product generates its own.
+/// GPT type of QSDEMO's A/B record partition, where its PID 1 keeps the
+/// record (`abrec`, under the same GUID and its own magic). Generated
+/// once for the fixture; a real product generates its own.
 const AB_TYPE: Uuid = uuid!("5d0f6f0e-3a57-4c1b-8a55-515344454d01");
 /// GPT type of QSDEMO's data partition.
 const DATA_TYPE: Uuid = uuid!("5d0f6f0e-3a57-4c1b-8a55-515344454d02");
@@ -72,8 +73,8 @@ fn qsdemo() -> Result<Product> {
     })
 }
 
-/// An ESP with both slots, a record of which slot boots, and one xfs
-/// data partition taking the rest.
+/// An ESP with both slots, the A/B record's partition (wiped: PID 1
+/// writes the first copy), and one xfs data partition taking the rest.
 fn disk_parts() -> Vec<PartDesc> {
     vec![
         PartDesc {

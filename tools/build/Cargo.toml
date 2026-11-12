@@ -26,6 +26,9 @@ pesign = { path = "../pesign", version = "0.1.0" }
 hex.workspace = true
 conformance = { path = "../../tools/conformance", version = "0.1.0" }
 diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
+abrec = { path = "../../lic/abrec", version = "0.1.0" }
+licpart = { path = "../../lic/licpart", version = "0.1.0" }
+uuid.workspace = true
 optical = { path = "../../media/optical", version = "0.1.0" }
 instmedia = { path = "../../media/instmedia", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }

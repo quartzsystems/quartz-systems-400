@@ -647,8 +647,9 @@ cargo run -p build -- test        # the QEMU disk suite: 134 steps, about an hou
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
-cargo run -p build -- fixture     # the fixture product qsdemo built through buildkit from git dependencies at HEAD and booted (docs/BUILDKIT.md); the disk suite's last step
+cargo run -p build -- fixture     # the fixture product qsdemo built through buildkit from git dependencies at HEAD and booted, its own ESP label and A/B record (abrec) asserted (docs/BUILDKIT.md); the disk suite's last step
 cargo test -p buildkit -p vrm     # the pipeline's library (no OS crate in its graph, no product named), release identity
+cargo test -p abrec -p licpart    # the A/B record for any product; QS/400's LIC record over it, byte for byte as before (tests/bytes.rs)
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo run -p build -- notices [--check]   # NOTICES.txt from Cargo.lock (fails on a license outside deny.toml)
 cargo run -p kcbuild -- notes [--update]  # the release notes' SQL refusals and marker inventory, generated from the tree

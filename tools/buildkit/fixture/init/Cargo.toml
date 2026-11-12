@@ -1,6 +1,6 @@
 [package]
 name = "qsdemo-init"
-description = "QSDEMO's PID 1: prints its release and powers off"
+description = "QSDEMO's PID 1: prints its release, counts the boot in its A/B record, powers off"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,6 +9,8 @@ build = "build.rs"
 
 [dependencies]
 vrm.workspace = true
+abrec.workspace = true
+uuid = "1.23.3"
 rustix = { version = "1.1.6", features = ["fs", "mount", "system"] }
 
 [build-dependencies]

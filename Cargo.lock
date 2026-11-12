@@ -353,6 +353,7 @@ dependencies = [
 name = "build"
 version = "0.1.0"
 dependencies = [
+ "abrec",
  "anyhow",
  "buildkit",
  "clap",
@@ -365,6 +366,7 @@ dependencies = [
  "hex",
  "instmedia",
  "kcbuild",
+ "licpart",
  "lpbuild",
  "optical",
  "pesign",
@@ -381,6 +383,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
