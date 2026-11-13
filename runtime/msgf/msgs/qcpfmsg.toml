@@ -6861,6 +6861,13 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF224C"
+sev = 40
+text = "The user ID number of QSECOFR cannot change."
+help = "QSECOFR always has user ID number 0. Leave UID out when changing QSECOFR."
+vars = []
+
+[[msg]]
 id = "CPF2253"
 sev = 40
 text = "Only the owner or a user with *ALLOBJ can secure &1 by a list."
@@ -6992,6 +6999,13 @@ sev = 40
 text = "The password data is not valid."
 help = "Correct what the message names and try the request again."
 vars = []
+
+[[msg]]
+id = "CPF22CE"
+sev = 40
+text = "The &1 value &2 is already another user profile's."
+help = "User and group ID numbers are unique. Give a number no profile has, or *GEN for the next free one."
+vars = ["*CHAR 3", "*CHAR 10"]
 
 [[msg]]
 id = "CPF22D2"

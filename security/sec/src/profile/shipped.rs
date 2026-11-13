@@ -329,6 +329,108 @@ pub static PROFILES: &[Shipped] = &[
     ),
 ];
 
+/// The UIDs IBM i gives the shipped profiles (the primary's,
+/// `tools/conformance/oracle/nfs/uids-primary.txt`): file servers and
+/// clients see these numbers. `QSOC` and `QUMB` (older releases') have
+/// none fixed.
+pub static UIDS: &[(&str, u32)] = &[
+    ("QANZAGENT", 4_294_770_731),
+    ("QAUTPROF", 4_294_770_709),
+    ("QBRMS", 4_294_770_708),
+    ("QCLUMGT", 4_294_770_724),
+    ("QCLUSTER", 4_294_770_725),
+    ("QCOLSRV", 4_294_770_715),
+    ("QDBSHR", 4_294_770_699),
+    ("QDBSHRDO", 4_294_770_717),
+    ("QDFTOWN", 102),
+    ("QDIRSRV", 4_294_770_712),
+    ("QDLFM", 4_294_770_718),
+    ("QDOC", 4_294_770_696),
+    ("QDSNX", 4_294_770_702),
+    ("QEJB", 4_294_770_716),
+    ("QEJBSVR", 4_294_770_729),
+    ("QFNC", 4_294_770_698),
+    ("QGATE", 4_294_770_701),
+    ("QIBMHELP", 4_294_770_732),
+    ("QIPP", 4_294_770_721),
+    ("QLPAUTO", 4_294_770_703),
+    ("QLPINSTALL", 4_294_770_704),
+    ("QLWISVR", 4_294_770_733),
+    ("QMGTC", 4_294_770_727),
+    ("QMSF", 4_294_770_707),
+    ("QNETSPLF", 4_294_770_706),
+    ("QNFSANON", 4_294_770_710),
+    ("QNTP", 4_294_770_720),
+    ("QPEX", 4_294_770_726),
+    ("QPGMR", 4_294_770_688),
+    ("QPM400", 4_294_770_719),
+    ("QRJE", 4_294_770_695),
+    ("QSECOFR", 0),
+    ("QSNADS", 4_294_770_697),
+    ("QSPL", 4_294_770_693),
+    ("QSPLJOB", 4_294_770_694),
+    ("QSRV", 4_294_770_691),
+    ("QSRVAGT", 4_294_770_730),
+    ("QSRVBAS", 4_294_770_690),
+    ("QSYS", 101),
+    ("QSYSOPR", 4_294_770_689),
+    ("QTCM", 4_294_770_723),
+    ("QTCP", 4_294_770_705),
+    ("QTFTP", 4_294_770_711),
+    ("QTMHHTP1", 4_294_770_714),
+    ("QTMHHTTP", 4_294_770_713),
+    ("QTMPLPD", 103),
+    ("QTSTRQS", 4_294_770_700),
+    ("QUSER", 4_294_770_692),
+    ("QWEBADMIN", 4_294_770_734),
+    ("QWSERVICE", 4_294_770_735),
+    ("QYCMCIMOM", 4_294_770_728),
+    ("QYPSJSVR", 4_294_770_722),
+];
+
+/// The lowest of the shipped profiles' high UIDs: generated numbers stay
+/// below it.
+pub const RESERVED_UIDS: u32 = 4_294_770_688;
+
+/// IBM's UID for the shipped profile `name`.
+#[must_use]
+pub fn uid_of(name: &str) -> Option<u32> {
+    UIDS.iter().find(|(n, _)| *n == name).map(|(_, u)| *u)
+}
+
+/// Give the shipped profiles IBM's UIDs where they have none yet (0,
+/// every one made before UIDs were fixed), and `QSECOFR` 0. A profile
+/// that has a UID keeps it (it may own objects a client knows by it),
+/// and a number another profile holds is left to it: that shipped
+/// profile then has none, which `DSPUSRPRF` shows. How many changed.
+pub fn number(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize> {
+    let mut used = std::collections::HashMap::new();
+    for name in objects::list(txn, qsys)? {
+        let (_, p) = objects::read(txn, qsys, &name)?;
+        if p.uid != 0 {
+            used.insert(p.uid, p.name);
+        }
+    }
+    let mut n = 0;
+    for (name, uid) in UIDS {
+        let Ok((id, mut p)) = objects::read(txn, qsys, name) else {
+            continue;
+        };
+        let want = if *name == "QSECOFR" {
+            p.uid != 0
+        } else {
+            p.uid == 0 && !used.contains_key(uid)
+        };
+        if want {
+            p.uid = *uid;
+            objects::write(txn, id, &p)?;
+            used.insert(*uid, p.name);
+            n += 1;
+        }
+    }
+    Ok(n)
+}
+
 /// The shipped profile `name`, if it is one.
 #[must_use]
 pub fn shipped(name: &str) -> Option<&'static Shipped> {
@@ -356,6 +458,8 @@ pub struct Installed {
     pub reowned: usize,
     /// Index entries built.
     pub indexed: usize,
+    /// Shipped profiles given IBM's UID ([`number`]).
+    pub numbered: usize,
 }
 
 /// The profile a shipped entry starts as.
@@ -393,6 +497,7 @@ pub fn profile_of(s: &Shipped, qsecurity: u8, pwdlvl: u8, now: u64) -> UsrPrf {
         u.pwdexpitv = crate::profile::payload::NOMAX;
     }
     u.locale = "*NONE".into();
+    u.uid = uid_of(s.name).unwrap_or(0);
     u.pwdchgblk = crate::profile::payload::NOMAX;
     if s.name == "QSECOFR" {
         u.pwd_none = false;
@@ -418,10 +523,13 @@ pub fn install(
         if objects::exists(txn, qsys, s.name) {
             continue;
         }
-        let u = profile_of(s, qsecurity, pwdlvl, now);
+        let mut u = profile_of(s, qsecurity, pwdlvl, now);
+        // `number` gives it its UID unless another profile holds it.
+        u.uid = 0;
         objects::create(txn, qsys, &u, "QSYS", Authority::EXCLUDE, now)?;
         done.profiles += 1;
     }
+    done.numbered = number(txn, qsys)?;
     if first {
         done.reowned = reown(txn, qsys)?;
         done.indexed = index::rebuild(txn, qsys)?;

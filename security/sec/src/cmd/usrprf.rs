@@ -218,13 +218,41 @@ fn beyond(env: &Env<'_>, p: &UsrPrf, before: SpecialAuth) -> SpecialAuth {
     added.without(env.actor.special_adopted())
 }
 
-/// Resolve `GID(*GEN)` and `UID(*GEN)`.
-fn numbers(txn: &mut Txn<'_>, env: &Env<'_>, p: &mut UsrPrf) -> Result<()> {
-    if p.uid == 0 {
+/// Resolve `GID(*GEN)` and `UID(*GEN)`, and refuse a number another
+/// profile has (`CPF22CE`). `QSECOFR`'s UID is 0 and never changes
+/// (`CPF224C`).
+fn numbers(txn: &mut Txn<'_>, env: &Env<'_>, p: &mut UsrPrf, k: &Keywords) -> Result<()> {
+    let given = |kw: &str| {
+        k.get(kw)
+            .is_some_and(|v| !v.trim().starts_with('*') && !v.trim().is_empty())
+    };
+    if p.name == "QSECOFR" {
+        if given("UID") {
+            return Err(SecError::msg(
+                "CPF224C",
+                "The user ID number of QSECOFR cannot change.",
+            ));
+        }
+        p.uid = 0;
+    } else if p.uid == 0 {
         p.uid = groups::next_id(txn, env.qsys, false)?;
     }
     if p.gid == u32::MAX {
         p.gid = groups::next_id(txn, env.qsys, true)?;
+    }
+    for (kw, gid) in [("UID", false), ("GID", true)] {
+        let n = if gid { p.gid } else { p.uid };
+        if !given(kw) || n == 0 {
+            continue;
+        }
+        if let Some(other) = groups::holder_of(txn, env.qsys, n, gid)?
+            && other != p.name
+        {
+            return Err(SecError::msg(
+                "CPF22CE",
+                format!("The {kw} value {n} is already user profile {other}'s."),
+            ));
+        }
     }
     Ok(())
 }
@@ -322,7 +350,7 @@ pub fn crtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
         ));
     }
     groups::validate(txn, env.qsys, &p)?;
-    numbers(txn, env, &mut p)?;
+    numbers(txn, env, &mut p, k)?;
     password(&mut p, k, env)?;
     objects::create(txn, env.qsys, &p, &env.actor.user, public(k)?, env.now)?;
     groups::ensure_gids(txn, env.qsys, &p)?;
@@ -350,7 +378,7 @@ pub fn chgusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
         ));
     }
     groups::validate(txn, env.qsys, &p)?;
-    numbers(txn, env, &mut p)?;
+    numbers(txn, env, &mut p, k)?;
     password(&mut p, k, env)?;
     if k.has("STATUS") && !p.disabled {
         p.signon_invalid = 0;

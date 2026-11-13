@@ -85,7 +85,28 @@ pub fn next_id(txn: &mut Txn<'_>, qsys: ObjectId, gid: bool) -> Result<u32> {
     }
     let starts = crate::seca::load(txn, qsys)?;
     let start = if gid { starts.gid } else { starts.uid };
-    Ok(crate::seca::next(&used, start, FIRST_ID))
+    // The shipped profiles' high UIDs do not move where numbers go next.
+    let low: Vec<u32> = used
+        .iter()
+        .copied()
+        .filter(|n| *n < crate::profile::shipped::RESERVED_UIDS)
+        .collect();
+    let mut n = crate::seca::next(&low, start, FIRST_ID);
+    while used.contains(&n) {
+        n += 1;
+    }
+    Ok(n)
+}
+
+/// The profile whose UID (`gid` false) or GID (`gid` true) is `n`.
+pub fn holder_of(txn: &mut Txn<'_>, qsys: ObjectId, n: u32, gid: bool) -> Result<Option<String>> {
+    for name in objects::list(txn, qsys)? {
+        let (_, p) = objects::read(txn, qsys, &name)?;
+        if (if gid { p.gid } else { p.uid }) == n {
+            return Ok(Some(p.name));
+        }
+    }
+    Ok(None)
 }
 
 /// Give each of `p`'s groups a `GID` if it has none, as IBM does when a
