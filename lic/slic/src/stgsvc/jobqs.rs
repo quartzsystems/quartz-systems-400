@@ -448,6 +448,8 @@ pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Resul
             let _ = signal(system, n, rustix::process::Signal::CONT);
         }
         system.end_requests.insert(n, immediate);
+        // A request of it waiting on an `intr` remote mount comes back.
+        super::ifsremote::interrupt_job(n);
         if let Some(j) = system.jobs.get(n) {
             let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
             super::security::js("N", (&name, &user, n), kind, &jobd);

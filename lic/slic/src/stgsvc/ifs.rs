@@ -138,6 +138,7 @@ pub fn start(system: &mut System) -> String {
     }
     let _ = IFS.set(r);
     if let Some(ifs) = get() {
+        super::ifsremote::start();
         keep_registry(system);
         keep_notices(system);
         keep_downloads(system);
@@ -373,15 +374,29 @@ pub fn parking<T>(allow: bool, f: impl FnOnce() -> T) -> (T, Option<Deferral>) {
     (r, DEFERRED.with(Cell::take))
 }
 
-/// Whether a request may be parked: an IFS operation while some job
-/// holds a lease, or a `QZLSFILE` job's poll for break orders.
+/// Whether job `handle`'s request may be parked: an IFS operation while
+/// some job holds a lease or a remote file system is mounted (or being
+/// mounted), or a `QZLSFILE` job's poll for break orders. A write carries its data
+/// (up to 1 MiB, kept in a copy while it may park): with remote mounts
+/// only, it may park only when its descriptor is a remote file's.
 #[must_use]
-pub fn may_park(op: &IfsOp) -> bool {
+pub fn may_park_for(op: &IfsOp, handle: Option<u64>) -> bool {
     match op {
-        IfsOp::LeaseOrders { .. } => true,
-        IfsOp::As { op, .. } => may_park(op),
-        _ => get().is_some_and(|i| !i.leases().is_empty()),
+        IfsOp::LeaseOrders { .. } | IfsOp::MountRemote { .. } | IfsOp::UnmountKind { .. } => true,
+        IfsOp::As { op, .. } => may_park_for(op, handle),
+        IfsOp::Write { fd, .. } | IfsOp::PWrite { fd, .. } => get().is_some_and(|i| {
+            !i.leases().is_empty()
+                || (i.has_remote() && handle.is_none_or(|h| i.fd_is_remote(owner_of(h), *fd)))
+        }),
+        _ => get().is_some_and(|i| !i.leases().is_empty() || i.has_remote()),
     }
+}
+
+/// Whether a parked request may run again: its breaks or orders came,
+/// or the remote work it waits for is done (`ifs::remote`).
+#[must_use]
+pub fn ready(d: &Deferral) -> bool {
+    get().is_some_and(|i| i.deferral_ready(d))
 }
 
 /// Whether some job holds a lease: a database open for change may then

@@ -67,10 +67,21 @@ pub struct Svc {
     doomed: Vec<u64>,
     /// The number of the next turn.
     next_turn: u64,
-    /// IFS requests waiting for another job's lease break, or polls for
-    /// break orders (`super::ifs::parking`): their connections are busy.
-    parked: Vec<(u64, Request, ifs::lease::defer::Deferral)>,
+    /// IFS requests waiting for another job's lease break, polls for
+    /// break orders, and requests waiting for a remote mount's work
+    /// (`super::ifs::parking`), with the request's token for its next
+    /// run (`ifs::remote::request`): their connections are busy.
+    parked: Vec<Parked>,
 }
+
+/// A parked request: its connection, the request, what it waits for,
+/// and its token.
+type Parked = (
+    u64,
+    Request,
+    ifs::lease::defer::Deferral,
+    Option<ifs::remote::request::Token>,
+);
 
 thread_local! {
     /// The service while a fiber runs.
@@ -244,6 +255,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
         };
         storage::tick_with(&mut svc.system, slice);
         ifsvol::tick(&mut svc.system);
+        super::ifsremote::tick(&mut svc.system);
         cmn::tick(&mut svc.system);
         super::perfcol::tick(&mut svc.system);
     }
@@ -366,7 +378,15 @@ fn answer(svc: &mut Svc, i: usize, req: Request) {
 fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
     let close = matches!(req, Request::Close {});
     let keep = match &req {
-        Request::IfsReq { op } if park && super::ifs::may_park(op) => Some(req.clone()),
+        Request::IfsReq { op }
+            if park
+                && super::ifs::may_park_for(
+                    op,
+                    svc.conns[i].ctx.as_ref().map(|c| c.job.handle),
+                ) =>
+        {
+            Some(req.clone())
+        }
         Request::Open { .. } if park && super::ifs::leased() => Some(req.clone()),
         _ => None,
     };
@@ -378,7 +398,7 @@ fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
     if let (Some(d), Some(req)) = (deferral, keep) {
         let id = svc.conns[i].id;
         svc.busy.push(id);
-        svc.parked.push((id, req, d));
+        svc.parked.push((id, req, d, ifs::remote::request::last()));
         return;
     }
     let _ = svc.conns[i].chan.send_raw(&reply);
@@ -392,7 +412,7 @@ fn parked_wait(svc: &Svc, wait: Duration) -> Duration {
     let now = std::time::Instant::now();
     svc.parked
         .iter()
-        .map(|(_, _, d)| d.until().saturating_duration_since(now))
+        .map(|(_, _, d, _)| d.until().saturating_duration_since(now))
         .fold(wait, Duration::min)
 }
 
@@ -408,17 +428,42 @@ fn wake_parked(svc: &mut Svc) {
         return;
     };
     leases.expire(now);
-    for (id, req, d) in std::mem::take(&mut svc.parked) {
+    for (id, req, d, token) in std::mem::take(&mut svc.parked) {
+        if matches!(d, ifs::lease::defer::Deferral::Remote { .. })
+            && svc.index(id).is_none_or(|i| hung_up(&svc.conns[i]))
+        {
+            // Its job went while it waited: what it queued is dropped as it
+            // arrives, and the connection ends at the next pass.
+            if let Some(t) = token {
+                ifs::remote::request::abandon(t);
+            }
+            svc.busy.retain(|b| *b != id);
+            continue;
+        }
         let late = now >= d.until();
-        if !late && !leases.ready(&d) {
-            svc.parked.push((id, req, d));
+        if !late && !super::ifs::ready(&d) {
+            svc.parked.push((id, req, d, token));
             continue;
         }
         svc.busy.retain(|b| *b != id);
         if let Some(i) = svc.index(id) {
+            if let Some(t) = token {
+                ifs::remote::request::rerun(t);
+            }
             answer_as(svc, i, req, !late);
+            ifs::remote::request::clear_rerun();
         }
     }
+}
+
+/// Whether a connection's job has gone (its end hung up).
+fn hung_up(c: &Conn) -> bool {
+    let mut fds = [PollFd::new(c.chan.stream(), PollFlags::empty())];
+    let t = Timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    poll(&mut fds, Some(&t)).is_ok() && fds[0].revents().intersects(PollFlags::HUP | PollFlags::ERR)
 }
 
 /// Whether a request is a statement or a command that may take turns:
@@ -856,10 +901,15 @@ fn wait_ready(svc: &Svc, wait: Duration) -> (bool, Vec<u64>) {
         .iter()
         .filter(|c| !svc.busy.contains(&c.id))
         .collect();
-    let mut fds = Vec::with_capacity(open.len() + 1);
+    let mut fds = Vec::with_capacity(open.len() + 2);
     fds.push(PollFd::new(&svc.listener, PollFlags::IN));
     for c in &open {
         fds.push(PollFd::new(c.chan.stream(), PollFlags::IN));
+    }
+    // Remote mounts' work finishing wakes the loop for parked requests.
+    let waker = super::ifsremote::wake_fd();
+    if let Some(w) = &waker {
+        fds.push(PollFd::new(w, PollFlags::IN));
     }
     let t = Timespec {
         tv_sec: i64::try_from(wait.as_secs()).unwrap_or(i64::MAX),
@@ -872,8 +922,11 @@ fn wait_ready(svc: &Svc, wait: Duration) -> (bool, Vec<u64>) {
         f.revents()
             .intersects(PollFlags::IN | PollFlags::HUP | PollFlags::ERR)
     };
+    if waker.is_some() {
+        super::ifsremote::drain();
+    }
     let accept = hit(&fds[0]);
-    let ready = fds[1..]
+    let ready = fds[1..=open.len()]
         .iter()
         .zip(&open)
         .filter(|(f, _)| hit(f))
