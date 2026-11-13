@@ -22,6 +22,7 @@ backend, which every test uses.
 | `text` | text-mode (`O_TEXTDATA`) conversion state |
 | `ops` | `Ifs<B>`: every operation, per-owner descriptors, audit hooks |
 | `save` | the `SAV` walk and per-object descriptor |
+| `remote` | mounts whose file system is elsewhere (`MOUNT TYPE(*NFS)`): the `RemoteFs` trait, the cache, the queue and its threads, requests across their runs (`docs/NFS.md` section 7) |
 
 The storage service owns one `Ifs<LinuxBackend>` over the xfs mounted
 at `/run/qs400/ifs`; jobs reach it through `stg` requests and never hold
@@ -44,6 +45,7 @@ buffers), ends its directory streams and drops its locks.
 | `/QOPT` | 6 | optical volumes through `OpticalView`; `Volumes` shows the loaded volumes of `optical::VolumeSet`, ISO images read-only, writable virtual volumes read-write (docs/MEDIA.md) | fold |
 | `/QNTC`, `/QFileSvr.400`, `/QDLS` | 7, 8, 9 | the directory exists; anything else is `ENOTSUP` (`CPFA0AD`) | |
 | a `MOUNT` point | 100 and up | a UDFS: backend `UDFS/QASPnn/NAME.udfs/` | as created |
+| a `MOUNT TYPE(*NFS)` point | 100 and up | a remote file system through `ifs::remote` (`docs/NFS.md` section 7); nothing is mounted inside it | exact, in the mount's path name CCSID |
 
 `Ifs::ensure_layout` makes the backend's top directories and the
 standard directories where they are missing, owned by `QSYS`:
@@ -569,6 +571,15 @@ waits: `F_SETLKW` answers `EAGAIN` while it would block and the job
 retries (as with data queues); a retry that would wait on an owner
 already waiting, directly or not, on the caller is `EDEADLK`.
 
+**Remote waits.** An operation on a remote mount that needs what its
+cache lacks, and every change it makes, queues work for the mount's
+threads and leaves `Deferral::Remote` with `EAGAIN` before it changes
+anything, as a lease wait does (`lease::defer`); the storage service
+parks the request and runs it again, with the same request token
+(`remote::request`), once the work is done. `LocalIfs::waiting` does the
+same for tests. A change is made once per request, however many runs
+it takes; `docs/NFS.md` section 7.2 has the rules.
+
 **Check-out** (`CHKOUT`) is persistent, in the record: others may read
 but not open for writing, rename or unlink (`EBUSY`); `CHKIN` by the
 user who checked out, the owner or `*ALLOBJ`.
@@ -897,7 +908,10 @@ locks 65, lease grant 66, lease report 67, lease orders 68, watch add
 69, watch end 70, lease reset 71, a call as another user 72, stat by
 file ID 73, open by file ID 74, a sub-owner's byte-range lock 75, a
 waiting lock 76, cancel a waiting lock 77, release a sub-owner's
-locks 78; 79 is free). The answer is an
+locks 78; 79 is free; for remote mounts, `docs/NFS.md` section 7: `MOUNT
+TYPE(*NFS)` 80, `UNMOUNT` by type and directory 81, the mount table 82,
+a block I/O helper's take 83 and post 84, answered as replies `Mounts`
+80 and `Helper` 81 besides the shared ones). The answer is an
 `IfsReply` whose variant is the method's return type, each a `Result`
 whose error is the IBM `errno` number; `Errno::message_id` gives the
 `CPExxxx` and `command_message` the `CPFA0xx` a command sends. A reply
@@ -1517,7 +1531,7 @@ gets the service's text forms (`ifscmd::text`).
 | `CHKOUT`, `CHKIN` | service | `check_out`, `check_in`; `SUBTREE(*ALL)` the files under | `CPCA08F`, `CPCA08A`; `CPFA0BF`, `CPFA0BE` |
 | `STRJRN`, `ENDJRN` | service | the journaling attributes stored on each object (`JRN` a `/QSYS.LIB` journal path) | text |
 | `CRTUDFS`, `DLTUDFS` | service | `crtudfs`, `dltudfs` | `CPCA1C0`, `CPCA1C1` |
-| `MOUNT`/`ADDMFS`, `UNMOUNT`/`RMVMFS` | service | `TYPE(*UDFS)` only (`ro` in `OPTIONS` mounts read-only); `*NFS` and `*NETWORK` are `CPFA0AD` | `CPCA1B0`, `CPCA1B1` |
+| `MOUNT`/`ADDMFS`, `UNMOUNT`/`RMVMFS` | service | `TYPE(*UDFS)` (`ro` in `OPTIONS` mounts read-only); `TYPE(*NFS)` through the registered NFS client, `OPTIONS` and `CCSID`/`CODEPAGE` passed on (`docs/NFS.md` section 7.5; without a client `CPFA0AD`); `UNMOUNT TYPE(*NFS *ALL) MNTOVRDIR(path or *ALL)`; other types `CPFA0AD` | `CPCA1B0`, `CPCA1B1` |
 | `DSPUDFS` | service | text | |
 | `RCLLNK` | service | `rcllnk` over all the metadata, whatever `OBJ` names | text; `CPFA0F1` when problems are left |
 | `SAV` | service | the links into a save stream (`docs/SAVE_FORMAT.md`), to a save file named by its `/QSYS.LIB` path | `CPC370C`, `CPF3837` |

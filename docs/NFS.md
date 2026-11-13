@@ -822,54 +822,195 @@ A file that is not this (another magic or version, cut short, longer)
 is reported in the service's log and the defaults are used: `AUTH_SYS`,
 the TCP/IP domain, no thread limit, 1024 handles, the check on.
 
-## 7. The client: an NFS mount in the IFS **(design)**
+## 7. The client: an NFS mount in the IFS
 
-The storage service is one thread over one store and must never wait
-for a network. A remote mount therefore works on a cache and never
-blocks the serve loop:
+The IFS half is built (`ifs/ifs/src/remote/`, `ifs/ifs/src/ops/remote/`,
+`ifs/ifscmd/src/cmds/udfs.rs`, `lic/slic/src/stgsvc/ifsremote.rs`); the
+NFS protocol client that implements its trait (`net/nfs/src/client/`)
+is wave 2. The IFS knows no protocol: names in it are generic.
 
-- `ifs::remote::RemoteFs` is the trait a remote file system implements
-  (blocking calls: `lookup`, `getattr`, `setattr`, `access`, `read`,
-  `write`, `commit`, `create`, `mkdir`, `symlink`, `mknod`, `remove`,
-  `rmdir`, `rename`, `link`, `readdir`, `readlink`, `statfs`,
-  `pathconf`, `open`, `close`, `lock`). `nfs::client::Mount` is the
-  implementation; tests use one in memory with delays and failures.
-- `FsKind::Remote` is a mount whose nodes are remote handles. An IFS
-  operation that reaches one answers from the mount's cache
-  (attributes, names, directory pages, data blocks); on a miss, or for
-  a change, it leaves a request in the mount's queue and a `Deferral`,
-  exactly as an operation that waits for a lease break does. Worker
-  threads of the service (one pool per mount, the "kernel" of the
-  client) run the queued calls; when one finishes the parked request
-  runs again and finds its answer. A change is queued once, under the
-  request's token, and its second run takes the result.
-- The attribute cache follows `acregmin`/`acregmax`/`acdirmin`/
-  `acdirmax` (`noac` turns it off); data blocks of `rsize` are cached
-  and validated by the file's change attribute or modification time;
-  writes are cached to `wsize` blocks and sent `UNSTABLE` then
-  `COMMIT`ted on `fsync` and close (`FILE_SYNC` with the export's
-  synchronous option or without block I/O daemons). `QNFSBIOD` jobs,
-  when started, take the read-ahead and write-behind work from the
-  same queue; without them the service's threads do it at the request.
+### 7.1 The interface
+
+| Item | What it is |
+|---|---|
+| `ifs::remote::RemoteFs` | a mounted remote file system: `root`, `getattr`, `setattr` (with an optional ctime guard), `lookup`, `access` (the bits of `remote::access`: `READ` 1, `LOOKUP` 2, `MODIFY` 4, `EXTEND` 8, `DELETE` 0x10, `EXECUTE` 0x20), `readlink`, `read(h, off, len) -> (data, eof)`, `write(h, off, data, Stable) -> WriteReply { count, committed, verifier }`, `commit -> verifier`, `create` (`CreateMode::Unchecked`/`Guarded`/`Exclusive(verifier)`), `mkdir`, `symlink`, `mknod` (FIFO; others `ENOTSUP`), `remove`, `rmdir`, `rename`, `link`, `readdir(dir, cookie, verifier, max) -> DirPage` (entries with attributes and handles when the server gives them), `statfs`, `pathconf`, `open`/`close` (share reservations; a stateless protocol returns an empty `OpenToken`), `lock`/`unlock`/`test` with a `LockOwner` (one per job), `unmount`. Every call blocks and takes a `Cred { uid, gid, gids }`; names are bytes as the server holds them |
+| `RHandle` | opaque handle bytes, at most 128 |
+| `RAttr` | kind, mode (with set-ID and sticky bits), nlink, uid, gid, size, used, file ID, rdev, atime/mtime/ctime in nanoseconds, a change value that moves on every change |
+| `RemoteError` | `Errno(Errno)`, `TimedOut` (a soft mount gave up: `ETIMEDOUT`), `Interrupted` (`EINTR`), `Stale` (`ESTALE`) |
+| `RemoteFactory` | `supports(kind)`, `mount(kind, mfs, options, MountCcsid, &Cred) -> Mounted { fs, info }`; the `OPTIONS` string is passed through as typed, the CCSIDs already resolved |
+| `RemoteInfo` | what the IFS uses of the options: `name` (shown by `DSPMFSINF`), `source`, `options` (in effect, shown), `read_only`, `nosuid`, `attr_times` (`acregmin`/`max`, `acdirmin`/`max`; `AttrTimes::NONE` is `noac`), `rsize`, `wsize`, `soft`, `intr`, `case_sensitive`, `keeps_open_unlinked` (v4: no hidden rename), `stateful_open`, `sync_writes`, `locks` (false: `ENOLCK`), `slow_after` (when a call counts as not answered) |
+| `MountCcsid` | `CCSID`/`CODEPAGE` as `CcsidSel::Binary`, `Ascii`, `Job` or `Ccsid(n)` for the data and the path names; defaults `*BINARY *ASCII` |
+| `MountInfo` | one row of the mount table (`IfsClient::mounts`): id, kind (`*NFS`, `*UDFS`, or the standard file systems' names), mount point, source, options, read-only, case sensitivity, `responding` (`None` for local ones), data and path CCSIDs |
+
+`ifs::remote::mem` is a remote file system in memory for tests (and for
+wave 2's): handles that go stale when their object is made again, mode
+bit checks, unstable writes a `restart` loses with a new verifier,
+locks, latency, a server that is down (calls wait, or time out),
+injected failures, and the threads that called it.
+
+### 7.2 Never waiting on the service's thread
+
+The storage service answers every job on one thread
+(`STORAGE_SERVICE.md`). A remote mount (`ifs::remote::RemoteMount`)
+owns a cache and a queue served by its own worker threads (four in the
+service, `ifsremote::THREADS`); the IFS on the service's thread only
+reads the cache and queues work:
+
+- An operation that needs something not cached queues a fetch
+  (identical fetches share one ticket, `remote::tickets`), records
+  `Deferral::Remote { fs, ticket, token, until }` and answers `EAGAIN`
+  before it changes anything, as a lease wait does. The loop
+  (`turns.rs`) parks the request; the worker finishing the ticket wakes
+  the loop through a socket pair it polls (`ifsremote::wake_fd`), and
+  the request runs again. Without the right to defer (outside a parked
+  request) the answer is `EAGAIN` and no change is queued. The loop
+  keeps a copy of a request that may park: with remote mounts, every
+  IFS request but a write to a descriptor that is not a remote file's.
+- A `MOUNT` whose request ends before the mount is made (its job ended,
+  its token abandoned or expired) ends the mount on the server when it
+  arrives (`Unclaimed`); so does one whose directory changed meanwhile.
+- A request keeps one `remote::request::Token` across its runs: the
+  loop stores it with the parked request and hands it back
+  (`request::rerun`); `lease::defer::deferring` opens each run with it.
+  A change is queued once under the token and a key made of the change
+  and its occurrence in the run; the next run finds its result there
+  (exactly once). The token also keeps a composite operation's finished
+  steps (`CPY`, `MOV`, `RMVLNK` of a tree: done steps, a file copy's
+  open descriptors and position), and which names the request already
+  changed, so a check made before its own change (`EEXIST` before a
+  `mkdir`, `ENOENT` before a removal) takes the change's result instead
+  of seeing the change. Once a run has deferred, nothing more it does is
+  queued or remembered.
+- What was fetched since the request began is fresh for it whatever the
+  cache's times (even with `noac`), so each run makes progress; a path
+  of uncached names is looked up in one piece of work.
+- Waits do not time out: `until` is a day away. A hard mount's request
+  stays parked through an outage without holding any lock, and other
+  jobs go on. A request whose job ended (its connection hung up) is
+  dropped from the parked list and its token abandoned; results that
+  arrive for it are dropped. `ENDJOB` marks the job's waiting requests
+  interrupted: on an `intr` mount they answer `EINTR`, elsewhere they go
+  on waiting.
+- A call running past `slow_after` makes the mount not responding;
+  `QSYSOPR` gets `CPDA1B9` reason 5 (still trying), and reason 7 when a
+  call is answered again (`ifsremote::tick`). `MountInfo::responding`
+  shows it. A soft mount's calls fail `ETIMEDOUT` (the client's retry
+  policy decides when).
+
+### 7.3 The cache
+
+- Attributes live `acregmin` to `acregmax` (directories `acdirmin` to
+  `acdirmax`), doubling while the change value holds. An open asks the
+  server again (close-to-open). A new change value drops the file's
+  cached data, link text and listing (unless the change is the mount's
+  own writes).
+- Names are cached positive and negative, good while the directory's
+  attributes are and its change value is the one they were looked up
+  under. Listings (every page, cookie and verifier) likewise; entries
+  without attributes are looked up. Changes made through the mount
+  update names and listings at once.
+- The server's access bits are cached per caller with the attributes'
+  life; a change of mode or owner drops them.
+- Data is cached in blocks of `rsize`, read ahead (four blocks in the
+  service) on sequential reads. Writes go to dirty blocks: full blocks
+  are written behind, unstable; `fsync`, the last close of an open,
+  `O_SYNC`/`O_DSYNC` writes, a size-changing `ftruncate` and `UNMOUNT`
+  write the rest and commit. Blocks are kept until committed; when the
+  commit's verifier is not the writes' (the server restarted) they are
+  sent again, stable. The first write-back error is answered by the
+  next `fsync` or close (the close still closes). Sizes and times seen
+  locally include writes not yet sent. `O_APPEND` writes at the size
+  the server gives at the time. Clean data past 64 MiB per mount goes,
+  oldest first; past 16 MiB dirty a write waits for the write-back.
+
+### 7.4 Operations on a remote object
+
+| Operation | On a remote object |
+|---|---|
+| `stat`, `lstat`, `fstat` | the attributes; `st_uid`/`st_gid` are the wire UID and GID; owner and group names from the profiles with those IDs (`QDFTOWN` when none); `st_ccsid` the mount's data CCSID; `st_vfs` the mount's id |
+| `access` | the server's access answer; `W_OK` on `ro` is `EROFS` |
+| `open`, `creat`, `openat` | close-to-open revalidation, the server's access answer, `O_TRUNC`, `O_CREAT` (unchecked), `O_CREAT|O_EXCL` (exclusive, then the mode), the protocol's open; FIFOs and devices `ENOTSUP`; share modes among local opens as for any file; `O_TEXTDATA` converts from the data CCSID |
+| `read`, `pread`, `write`, `pwrite`, `lseek`, `fsync`, `ftruncate`, `close` | through the cache (7.3) |
+| `mkdir`, `symlink`, `mkfifo` | the server's calls (mode less the umask; set-ID bits dropped on `nosuid`); sockets `ENOTSUP` |
+| `unlink`, `rmdir`, `rename`, `link` | within the mount; across file systems `EXDEV`; a file removed while open is renamed `.nfs`*fileid**token* and removed at its last close, unless `keeps_open_unlinked` |
+| `readlink`, symbolic links | resolved on the client; an absolute target from the local root |
+| `opendir`, `readdir`, `read_dir`, `chdir`, `getcwd` | the cached listing; search and list rights are the server's (`LOOKUP`, `READ`) |
+| `chmod`, `chown`, `lchown`, `utime`, `CHGOWN`, `CHGPGP` | `setattr`: the mode; the wire UID/GID; the profile's UID/GID; times (`None`: the server's clock). `CHGPGP *NONE` is `ENOTSUP` |
+| `CHGAUT` | `DTAAUT` for `*PUBLIC`, the owner or the group as mode bits; anything else (`OBJAUT`, `AUTL`, a private authority) `ENOTSUP`; `RVKAUT` `ENOTSUP`. `DSPAUT` shows the rows the mode bits make |
+| `Qp0lGetAttr`, `Qp0lSetAttr` | the attributes as for a local file, `QP0L_ATTR_LOCAL_REMOTE` remote; set-ID attributes set the mode; every other attribute `ENOTSUP` |
+| `CHKOUT`, `CHKIN`, `STRJRN`, `ENDJRN` | `ENOTSUP` |
+| `statvfs`, `pathconf` | the server's capacity (asked at most every 5 seconds) and limits; `ST_RDONLY`, `ST_NOSUID` from the mount |
+| `CPY`, `MOV`, removing a tree, `Qp0lProcessSubtree` | as for local files, across file systems in any direction; their steps are kept across runs (7.2) |
+| `SAV` | remote mounts are passed by (another system's objects); a path inside one is `ENOTSUP` |
+| `MOUNT` over a directory of a remote mount | `ENOTSUP` (nothing is mounted inside one) |
+| `Qp0lGetPathFromFileID`, `stat_by_id`, `open_by_id` | `ENOTSUP`: a remote object's number is its server's (and a remote mount cannot be exported) |
+| byte-range locks | the server's (`lock`, `unlock`, `test` with the job as owner; `F_SETLKW` answers `EAGAIN` while it would wait, as locally); released at close; `RemoteInfo::locks` false: `ENOLCK`. `lock_range_as` with sub-owner 0 is the same; another sub-owner, and `lock_wait`, are `ENOTSUP` (sub-owners and queued locks are a local server job's, for its own clients) |
+| `as_caller` | the calls run as the mapped user: the `Cred` sent is that profile's UID and its groups' GIDs; an open keeps the opener's |
+
+Authority is the server's: the IFS sends the job's credentials (its
+profile's UID, its group profiles' GIDs from the profile environment)
+and applies no local authority check to a remote object; `ro` and
+`nosuid` are enforced locally before any call. Names compare exactly;
+they are converted with the path name CCSID.
+
+### 7.5 `MOUNT TYPE(*NFS)`, `UNMOUNT`, the mount table
+
+`ifscmd::cmds::udfs::mount_with(c, TYPE, MFS, MNTOVRDIR, OPTIONS,
+MountCcsid)` (`mount_ccsid` reads the `CCSID` and `CODEPAGE` pairs) asks
+`IfsClient::mount_remote`: `*IOSYSCFG`; `MNTOVRDIR` an existing
+directory of a backend file system, not a mount point (`EBUSY`), not in
+a remote mount (`ENOTSUP`); `*ASCII` is 819 for the Latin EBCDIC job
+CCSIDs (another job CCSID is `ENOTSUP`), mixed CCSIDs `ENOTSUP`. The
+factory's mount runs on a thread of its own while the request waits;
+retries are the factory's. With no factory registered, or a type it does
+not make, the answer is `CPFA0AD` as before. The completion is
+`CPCA1B0`.
+
+`unmount(c, TYPE, MFS, MNTOVRDIR)`: `*UDFS` as before; `*NFS` and `*ALL`
+by `MNTOVRDIR` (a mount point, or `*ALL`) or, with `*MFS`, by what is
+mounted, through `IfsClient::unmount_kind`. A mount with an open, a
+current directory or a directory stream in it, or mounted over, is
+`EBUSY`; a remote one writes back what it holds, tells its server
+(`unmount`, whose refusal does not keep it) and ends its threads.
+`CPCA1B1`.
+
+The service registers no NFS client yet: `ifsremote::set_factory` is
+the hook wave 2 fills.
+
+### 7.6 Block I/O helpers (`QNFSBIOD`)
+
+A helper job (`*IOSYSCFG`) polls `IfsClient::remote_take` (IFS operation
+83): the first read-ahead block or write-behind block any mount has
+queued, as `HelperWork { id, fs, source, op: Read|Write, handle, off,
+len, data, sync, uid, gid, gids }`, or none. It makes the call over its
+own connection to `source` and posts `HelperResult { data, eof, count,
+stable, verifier, err }` with `remote_post(fs, id, r)` (operation 84);
+a write's result is checked against the block's generation, so data
+changed meanwhile is written again. Work not posted within 30 seconds
+goes back to the queue. The mount's own threads take the same work, so
+without helpers nothing changes. Wave 2's `QNFSBIOD` is this loop.
+
+### 7.7 The NFS client (wave 2) **(design)**
+
+`nfs::client::Mount` implements `RemoteFs`, and a factory registered
+with `ifsremote::set_factory` parses `OPTIONS` into its own settings and
+the `RemoteInfo` above:
+
 - `hard`: a call is retried for ever, `timeo` tenths of a second
-  doubling to 60 seconds, a message to `QSYSOPR` when the server stops
-  answering and when it answers again; the request stays parked and no
-  other job is held. `intr`: ending the job, or System Request 2,
-  takes the request back with `EINTR`. `soft`: after `retrans`
-  retransmissions the call fails with `ETIMEDOUT`. `retry` is the
-  number of times the mount itself is tried. `bg` is refused.
-- `vers=3` (the default, as `/etc/vfs` says) or `vers=4` (`4.0`, `4.1`);
-  `proto=tcp` or `udp` (v4 is TCP only); `rsize`, `wsize` up to 1 MiB;
-  `sec=sys`; `rw`/`ro`; `suid`/`nosuid`; `port=`, `mountport=`.
-  `CCSID`/`CODEPAGE` convert data and path names as the server's
-  `HOSTOPT` does.
-- The caller's credentials are `AUTH_SYS` with the job's user profile's
-  UID, GID and group profiles' GIDs.
-- Locks: `fcntl` byte-range locks on a remote file go to the server (NLM
-  for version 3, with `QNFSNSMD` and `QNFSNLMD` running, else `ENOLCK`;
-  `LOCK` for version 4) and are reclaimed after the server restarts.
-- `UNMOUNT TYPE(*NFS)` refuses while anything is open or current in the
-  mount; it flushes, tells the server's MOUNT daemon and ends the pool.
+  doubling to 60 seconds (`slow_after` is when the mount reports it);
+  `soft`: after `retrans` retransmissions the call fails `TimedOut`;
+  `intr` sets `RemoteInfo::intr`; `retry` is the number of times the
+  mount itself is tried; `bg` is refused.
+- `vers=3` (the default, as `/etc/vfs` says) or `vers=4` (`4.0`, `4.1`;
+  `stateful_open`, `keeps_open_unlinked`); `proto=tcp` or `udp` (v4 is
+  TCP only); `rsize`, `wsize` up to 1 MiB; `sec=sys`; `rw`/`ro`;
+  `suid`/`nosuid`; `acregmin` ... `acdirmax`, `noac`; `port=`,
+  `mountport=`.
+- The caller's credentials are `AUTH_SYS` with the `Cred` the IFS
+  passes.
+- Locks: NLM for version 3, with `QNFSNSMD` and `QNFSNLMD` running, else
+  `locks` false (`ENOLCK`); `LOCK` for version 4; reclaimed after the
+  server restarts.
 - Mounts last until the next IPL, as IBM's do. To have them back, put
   `MOUNT` in the startup program (`QSTRUP`).
 
@@ -1011,6 +1152,10 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | `RLSIFSLCK RMTLOCNAME()`, and `NFSSVRLCK(*YES)` while `*NLM` runs | `CPFA1B6` reason 1 without the daemon, 2 with it (the request to it is wave 2's) |
 | `QZNFNFSO` security flavors other than `AUTH_SYS` | `CPFA1BB` |
 | `HOSTOPT` in `/etc/exports` in another form than section 6.1's | the entry is `CPDA1C5` reason 9 |
+| On a remote mount: private authorities, authorization lists, object authorities (`CHGAUT`, `RVKAUT`), PC, archive, CCSID and storage attributes, `CHKOUT`/`CHKIN`, `STRJRN`/`ENDJRN`, `CHGPGP *NONE`, sockets, opening FIFOs and devices, `Qp0lGetPathFromFileID` | `ENOTSUP` (`CPFA0AD`), section 7.4 |
+| `SAV` of objects in a remote mount | passed by; a path inside one is `ENOTSUP` |
+| Mounting over a directory of a remote mount | `ENOTSUP` |
+| `MOUNT CCSID(*ASCII)` from a job CCSID with no ASCII counterpart; mixed or double-byte path CCSIDs | `ENOTSUP` |
 | `CVTRPCSRC`, `RPCGEN` | not shipped: the command is not found, as any command QS/400 lacks |
 | Remote calls through the binder (`PMAPPROC_CALLIT`, `RPCBPROC_CALLIT`, `RPCBPROC_BCAST`, `RPCBPROC_INDIRECT`) | `PROC_UNAVAIL` over TCP; no reply over UDP (RFC 1833: a failed indirect call is not answered) |
 | Double-byte data CCSIDs in `HOSTOPT`/`CCSID` | `CPDA1CA` |
