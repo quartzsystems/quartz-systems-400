@@ -12,7 +12,8 @@ use std::thread;
 use std::time::Duration;
 
 pub use console::Command;
-use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
+use licpart::ConsoleMode;
+use svctools::dst::console_mode::ModeText;
 
 use crate::ipl::Event;
 use crate::ipl::system::System;
@@ -85,8 +86,7 @@ pub fn console_mode(system: &System) -> ConsoleMode {
     system
         .lic
         .as_ref()
-        .and_then(|(_, r)| r.tlv(TAG_CONSOLE_MODE))
-        .and_then(ConsoleMode::decode)
+        .and_then(|(_, r)| ConsoleMode::of(r))
         .unwrap_or_default()
 }
 

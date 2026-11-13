@@ -10,7 +10,7 @@ use std::sync::mpsc::Receiver;
 use store::asp::parity::Level;
 use store::{Refusal, StoreError};
 pub use svctools::Outcome;
-use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
+use licpart::{ConsoleMode, TAG_CONSOLE_MODE};
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
 use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags};
 use svctools::install::lic::{LicEvent, LicKind};

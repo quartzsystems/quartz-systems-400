@@ -29,7 +29,8 @@ pub use error::Error;
 pub use layout::{Content, Layout, LayoutGuids, PartDesc, Placed, Size, write_layout};
 pub use plan::{
     ASP1_NAME, ASP1_TYPE_GUID, DEFAULT_DISK_BYTES, ESP_NAME, Guids, IFS_INDEX, IFS_NAME,
-    IFS_TYPE_GUID, LIC_NAME, LIC_TYPE_GUID, MIN_DISK_BYTES, Part, Plan, SECTOR,
+    IFS_TYPE_GUID, LIC_NAME, LIC_TYPE_GUID, MIN_DISK_BYTES, Part, Plan, SECTOR, SLOT_A_UKI,
+    SLOT_B_UKI,
 };
 pub use table::{read_table, write_image, write_image_with};
 pub use window::Window;

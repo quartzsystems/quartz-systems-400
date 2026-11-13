@@ -175,7 +175,33 @@ attributes (`licpart::ipla`, `KEYWORD=VALUE` lines: `CHGIPLA`,
 response file of an automatic install from the LIC install to the end
 of the operating system's, `0x0109` the slot an upgrade's LIC is copied
 into once the operating system is installed (docs/INSTALL.md). `0x010A`
-holds the hardware resource names (below).
+holds the hardware resource names (below). `0x0105` holds the console
+mode (`licpart::console`, one byte: 1 local, 2 serial) and `0x010B` the
+side of the next IPL in a partition (below); both are `licpart`'s own,
+so a hypervisor reads and writes them through `licpart` alone.
+
+### The side of the next IPL in a partition
+
+A system that did not come up through UEFI and whose CPU has the
+hypervisor flag is a partition with no firmware: nothing keeps
+`BootNext` or `BootOrder`. There `slic` puts the boot choice in the
+record, TLV `0x010B` (`licpart::iplsrc::IplSource`,
+`lic/slic/src/platform/partfw.rs`), four bytes:
+
+| Byte | Field | Values |
+|---|---|---|
+| 0 | version | 1 |
+| 1 | `next`: the slot of the next IPL only (what `BootNext` is) | 0 none, 1 slot A, 2 slot B |
+| 2 | `default`: the slot of every IPL after it (what `BootOrder` is) | 0 none (slot A), 1 slot A, 2 slot B |
+| 3 | reserved | 0 |
+
+`PWRDWNSYS IPLSRC()` and a pending LIC PTF set `next`; a LIC PTF that
+took effect, a LIC install and an upgrade set `default`. The
+hypervisor's side: before an IPL it reads the record, IPLs from `next`
+when there is one and clears it in the record (`IplSource::take`), and
+with none IPLs from `default`. A record without the TLV, data shorter
+than four bytes or of version 0, and a `default` of 0 all mean slot A.
+A machine with UEFI firmware never writes the TLV.
 
 The IPL attributes the operating system's start honours (the service's
 `iplcmd::at_ipl`): `CLRJOBQ(*YES)` clears every job queue,

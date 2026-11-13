@@ -4,7 +4,8 @@
 
 //! `Select DST console mode`: the local console (the display and its
 //! keyboard) or the serial console (`ttyS0`), kept in the LIC record
-//! and honoured at the next IPL.
+//! and honoured at the next IPL. The tag and its byte are `licpart`'s
+//! (`licpart::console`); the screens' words for a mode are here.
 
 use console::Screen;
 
@@ -13,54 +14,16 @@ use crate::env::DstEnv;
 use crate::panel::{Flow, Panel};
 use crate::ui;
 
-/// The TLV tag the mode is kept under in the LIC record.
-pub const TAG_CONSOLE_MODE: u16 = 0x0105;
+pub use licpart::console::{ConsoleMode, TAG_CONSOLE_MODE};
 
-/// Where the console is.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ConsoleMode {
-    /// The framebuffer and the keyboards; screens are echoed on serial.
-    #[default]
-    Local,
-    /// The serial port alone: screens as text, keys as typed lines.
-    Serial,
+/// How the screens name a mode (the tag and the byte are `licpart`'s).
+pub trait ModeText {
+    /// The mode as the screens name it.
+    fn text(self) -> &'static str;
 }
 
-impl ConsoleMode {
-    /// The option number, also the byte in the record.
-    #[must_use]
-    pub fn as_u8(self) -> u8 {
-        match self {
-            Self::Local => 1,
-            Self::Serial => 2,
-        }
-    }
-
-    /// From the record byte or an option number.
-    #[must_use]
-    pub fn from_u8(b: u8) -> Option<Self> {
-        match b {
-            1 => Some(Self::Local),
-            2 => Some(Self::Serial),
-            _ => None,
-        }
-    }
-
-    /// From the record's TLV data.
-    #[must_use]
-    pub fn decode(bytes: &[u8]) -> Option<Self> {
-        bytes.first().copied().and_then(Self::from_u8)
-    }
-
-    /// The record's TLV data.
-    #[must_use]
-    pub fn encode(self) -> Vec<u8> {
-        vec![self.as_u8()]
-    }
-
-    /// How the screens name it.
-    #[must_use]
-    pub fn text(self) -> &'static str {
+impl ModeText for ConsoleMode {
+    fn text(self) -> &'static str {
         match self {
             Self::Local => "Local console (display and keyboard)",
             Self::Serial => "Serial console (ttyS0)",
@@ -135,15 +98,6 @@ mod tests {
     use super::*;
     use crate::env::MemEnv;
     use crate::panel::Runner;
-
-    #[test]
-    fn modes_round_trip() {
-        for m in [ConsoleMode::Local, ConsoleMode::Serial] {
-            assert_eq!(ConsoleMode::decode(&m.encode()), Some(m));
-        }
-        assert_eq!(ConsoleMode::decode(&[]), None);
-        assert_eq!(ConsoleMode::decode(&[9]), None);
-    }
 
     #[test]
     fn selecting_a_mode_records_it() {

@@ -32,9 +32,9 @@ use crate::ipl::{Event, dst, instdev, media, power, storage};
 use crate::src;
 
 /// Slot A's path on the ESP.
-const SLOT_A: &str = "EFI/BOOT/BOOTX64.EFI";
+const SLOT_A: &str = diskimg::SLOT_A_UKI;
 /// Slot B's path on the ESP.
-const SLOT_B: &str = "EFI/QS400/B.EFI";
+const SLOT_B: &str = diskimg::SLOT_B_UKI;
 
 /// The LIC record's TLV tag for the response file of an automatic
 /// install, kept from the LIC install to the operating system's.
@@ -547,6 +547,33 @@ impl Env<'_> {
         }
     }
 
+    /// The firmware's boot entry for the new disk: firmware that only
+    /// boots what `BootOrder` names (a Dell's UEFI) would not find it. In
+    /// a partition the LIC record just written says side A instead.
+    fn register_boot(&mut self, name: &str, in_partition: bool) {
+        if in_partition {
+            self.system
+                .out
+                .serial("slic: install: side A is the IPL source in the LIC record
+");
+            return;
+        }
+        let lic_path = std::path::PathBuf::from(format!("/dev/{}", part_name(name, 2)));
+        match crate::platform::efivar::EfiFirmware::open_for(Some(&lic_path))
+            .and_then(|mut fw| fw.register_install())
+        {
+            Ok(()) => self
+                .system
+                .out
+                .serial("slic: install: boot entry QS/400 slot A first in BootOrder
+"),
+            Err(e) => self.system.out.serial(&format!(
+                "slic: install: boot entry not set ({e}); the firmware must boot EFI/BOOT/BOOTX64.EFI
+"
+            )),
+        }
+    }
+
     /// Write the LIC onto `device`, reporting each step; the record's
     /// install stage is `stage` (1: the operating system follows).
     pub(crate) fn write_lic(
@@ -628,7 +655,7 @@ impl Env<'_> {
                 .map_err(fail("Installing the Licensed Internal Code"))?;
         }
         // The console mode chosen in the media's DST follows the system.
-        let tag = svctools::dst::console_mode::TAG_CONSOLE_MODE;
+        let tag = licpart::TAG_CONSOLE_MODE;
         if let Some(mode) = self.system.lic.as_ref().and_then(|(_, r)| r.tlv(tag)) {
             record
                 .set_tlv(tag, mode.to_vec())
@@ -637,21 +664,22 @@ impl Env<'_> {
         keep_answers(&mut record, auto)?;
         record.header.install_stage = stage;
         record.header.auto_install = auto && stage == 1;
+        // In a partition no firmware keeps the boot order: the new
+        // disk's record says side A, for the hypervisor to read.
+        let in_partition = crate::platform::partfw::in_partition();
+        if in_partition {
+            let mut fw = crate::platform::partfw::PartFirmware::new();
+            ptf::slot::Firmware::boot_default(&mut fw, Slot::A)
+                .and_then(|()| fw.set(&mut record))
+                .map_err(fail("Installing the Licensed Internal Code"))?;
+        }
         part_lic
             .write(&mut record)
             .map_err(fail("Installing the Licensed Internal Code"))?;
         drop(part_lic);
         self.system.emit(&src::INSTALL_LIC_RECORD);
         report(LicEvent::StepDone(4), self);
-        // The firmware's boot entry for the new disk: firmware that only
-        // boots what BootOrder names (a Dell's UEFI) would not find it.
-        let lic_path = std::path::PathBuf::from(format!("/dev/{}", part_name(&name, 2)));
-        match crate::platform::efivar::EfiFirmware::open_for(Some(&lic_path)).and_then(|mut fw| fw.register_install()) {
-            Ok(()) => self.system.out.serial("slic: install: boot entry QS/400 slot A first in BootOrder\n"),
-            Err(e) => self.system.out.serial(&format!(
-                "slic: install: boot entry not set ({e}); the firmware must boot EFI/BOOT/BOOTX64.EFI\n"
-            )),
-        }
+        self.register_boot(&name, in_partition);
         self.system.emit(&src::INSTALL_LIC_COMPLETE);
         Ok(())
     }
@@ -739,7 +767,16 @@ impl Env<'_> {
             .set_tlv(ptf::slot::TAG_LIC_SLOTS, st.encode())
             .map_err(fail("Installing the Licensed Internal Code"))?;
         let told = crate::platform::efivar::EfiFirmware::open()
-            .and_then(|mut fw| ptf::slot::Firmware::boot_default(&mut fw, target));
+            .and_then(|mut fw| ptf::slot::Firmware::boot_default(&mut fw, target))
+            .or_else(|e| {
+                // In a partition the LIC record holds the default side.
+                if !crate::platform::partfw::in_partition() {
+                    return Err(e);
+                }
+                let mut fw = crate::platform::partfw::PartFirmware::new();
+                ptf::slot::Firmware::boot_default(&mut fw, target)?;
+                fw.set(&mut record)
+            });
         match told {
             Ok(()) => {
                 record

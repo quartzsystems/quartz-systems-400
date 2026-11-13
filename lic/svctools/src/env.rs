@@ -10,7 +10,7 @@
 
 use console::Screen;
 
-use crate::dst::console_mode::ConsoleMode;
+use crate::dst::console_mode::{ConsoleMode, ModeText};
 use crate::dst::signon::message;
 use crate::install::lic::{LicEvent, LicKind};
 use crate::install::options::{IplOptions, MajorOptions};

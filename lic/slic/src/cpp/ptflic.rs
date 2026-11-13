@@ -15,6 +15,7 @@ use ptf::{Action, PtfDb};
 use super::ptfcmd;
 use crate::ipl::system::{System, now_unix};
 use crate::platform::efivar::{self, EfiFirmware};
+use crate::platform::partfw::{self, PartFirmware};
 
 /// The ESP partition, written through the FAT code the installer uses.
 struct EspDev;
@@ -117,8 +118,16 @@ pub fn at_ipl(system: &mut System, db: &mut PtfDb) -> Vec<String> {
     }
     let mut out = Vec::new();
     let booted = system.boot.slot;
+    let mut part_fw = None;
     let (events, fw_err) = match EfiFirmware::open() {
         Ok(mut fw) => slot::at_ipl(&mut st, db, booted, &mut fw, now_unix()),
+        // In a partition the LIC record holds the choice.
+        Err(_) if partfw::in_partition() => {
+            let mut fw = PartFirmware::new();
+            let r = slot::at_ipl(&mut st, db, booted, &mut fw, now_unix());
+            part_fw = Some(fw);
+            r
+        }
         Err(e) => {
             let mut none = NoFirmware(e);
             slot::at_ipl(&mut st, db, booted, &mut none, now_unix())
@@ -128,6 +137,12 @@ pub fn at_ipl(system: &mut System, db: &mut PtfDb) -> Vec<String> {
         out.push(format!("boot order not changed: {e}"));
     }
     let _ = store(system, &st);
+    if let Some(fw) = part_fw
+        && let Some((part, record)) = system.lic.as_mut()
+        && let Err(e) = fw.commit(part, record)
+    {
+        out.push(format!("boot order not changed: {e}"));
+    }
     for ev in events {
         match ev {
             IplEvent::Applied(p) => {
@@ -160,8 +175,13 @@ impl Firmware for NoFirmware {
 }
 
 /// At power down (`slic`): arm the one-shot boot of the slot `IPLSRC`
-/// names, else of a pending LIC PTF's slot. What was armed.
-pub fn arm(record: &licpart::Record, iplsrc: Option<Slot>) -> Result<Option<Slot>, String> {
+/// names, else of a pending LIC PTF's slot. What was armed. In a
+/// partition the slot goes into the LIC record, which is written.
+pub fn arm<D: licpart::Device>(
+    part: &mut licpart::LicPart<D>,
+    record: &mut licpart::Record,
+    iplsrc: Option<Slot>,
+) -> Result<Option<Slot>, String> {
     let st = record
         .tlv(TAG_LIC_SLOTS)
         .map(SlotState::decode)
@@ -169,6 +189,14 @@ pub fn arm(record: &licpart::Record, iplsrc: Option<Slot>) -> Result<Option<Slot
     let Some(s) = slot::next_slot(&st, iplsrc) else {
         return Ok(None);
     };
-    EfiFirmware::open()?.boot_next(s)?;
+    match EfiFirmware::open() {
+        Ok(mut fw) => fw.boot_next(s)?,
+        Err(_) if partfw::in_partition() => {
+            let mut fw = PartFirmware::new();
+            fw.boot_next(s)?;
+            fw.commit(part, record)?;
+        }
+        Err(e) => return Err(e),
+    }
     Ok(Some(s))
 }

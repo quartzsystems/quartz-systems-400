@@ -108,7 +108,8 @@ Use Dedicated Service Tools (DST)
 ```
 
 `Select DST console mode` keeps its choice in the LIC record (TLV
-`0x0105`, one byte: 1 local, 2 serial). At the next IPL `slic` opens the
+`0x0105`, one byte: 1 local, 2 serial; the tag and the encoding are
+`licpart::console`'s, the screens `svctools`'). At the next IPL `slic` opens the
 framebuffer and the keyboards only for the local console; in serial
 mode the screens exist in memory, are echoed on `ttyS0` and are driven
 from the service console as described above. The installer carries the

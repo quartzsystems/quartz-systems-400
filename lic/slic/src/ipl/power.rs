@@ -48,10 +48,10 @@ fn arm_slot(system: &mut System, iplsrc: u8) {
         2 => Some(licpart::Slot::B),
         _ => None,
     };
-    let Some((_, record)) = system.lic.as_ref() else {
+    let Some((part, record)) = system.lic.as_mut() else {
         return;
     };
-    match crate::cpp::ptflic::arm(record, named) {
+    match crate::cpp::ptflic::arm(part, record, named) {
         Ok(Some(s)) => system
             .out
             .serial(&format!("slic: next IPL from slot {s:?}\n")),

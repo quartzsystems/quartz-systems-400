@@ -146,7 +146,10 @@ IPL finishes leaves the old slot bootable, so the next IPL retries.
 mounted on first use). The state is IPL state, so it is in the LIC
 record, TLV `0x0107`: the slot IPLs boot by default, the PTF waiting
 for its slot, a removal waiting, and each temporarily applied LIC PTF
-with the slot that holds it.
+with the slot that holds it. In a partition with no firmware the boot
+choice itself goes into the record too (TLV `0x010B`, docs/PHASE1.md
+"The side of the next IPL in a partition"), where `BootNext` and
+`BootOrder` are named below.
 
 - `APYPTF` of a LIC PTF writes its image (slot A's build, or slot B's
   when the PTF carries one, `Package::lic_b`) into the slot not booted

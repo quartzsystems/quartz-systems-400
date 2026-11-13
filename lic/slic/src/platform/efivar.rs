@@ -22,9 +22,9 @@ pub const ENTRY_A: u16 = 0x5141;
 /// Slot B's (`Boot5142`).
 pub const ENTRY_B: u16 = 0x5142;
 /// Slot A's path on the ESP.
-pub const PATH_A: &str = "EFI/BOOT/BOOTX64.EFI";
+pub const PATH_A: &str = diskimg::SLOT_A_UKI;
 /// Slot B's path on the ESP.
-pub const PATH_B: &str = "EFI/QS400/B.EFI";
+pub const PATH_B: &str = diskimg::SLOT_B_UKI;
 
 /// A slot's boot entry number and ESP path.
 #[must_use]

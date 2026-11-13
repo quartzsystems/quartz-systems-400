@@ -40,6 +40,11 @@ pub const ASP1_TYPE_GUID: Uuid = uuid!("3c5a9d7e-2b41-4c6f-9e08-515334304131");
 pub const IFS_TYPE_GUID: Uuid = uuid!("90afa14f-9e50-4da1-99ae-515334304946");
 /// ESP partition name.
 pub const ESP_NAME: &str = "QS400 ESP";
+/// Side A's UKI on the ESP: the removable-media path, which firmware
+/// boots with no boot entry.
+pub const SLOT_A_UKI: &str = "EFI/BOOT/BOOTX64.EFI";
+/// Side B's UKI on the ESP.
+pub const SLOT_B_UKI: &str = "EFI/QS400/B.EFI";
 /// LIC partition name.
 pub const LIC_NAME: &str = "QS400-LIC";
 /// An older system's IFS partition name (also its filesystem label).
