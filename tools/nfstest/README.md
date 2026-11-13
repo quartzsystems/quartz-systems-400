@@ -161,7 +161,8 @@ NSM, adds a forward for each (QMP `hostfwd_add`), then runs
 <guest>=<host> ...` (or the explicit `--port`/`--mountport`/`--nlmport`/
 `--nsmport`) and `--vers 4.0`/`4.1` with `--port` alone. `--callbacks`
 is not used through forwards. The 1 GB run is `nfstest bench ... --mib
-1024`.
+1024`. These are steps 173 to 176 (`tools/conformance/src/nfsstep/`,
+`docs/NFS.md` section 11).
 
 ## Findings
 

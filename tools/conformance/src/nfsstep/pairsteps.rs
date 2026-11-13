@@ -102,6 +102,18 @@ fn active(s: &mut Session, job: &str) -> Result<bool, String> {
         .any(|l| l.split_whitespace().next() == Some(job)))
 }
 
+/// Wait until `job` is in `WRKACTJOB` (it leaves the job queue).
+fn running(s: &mut Session, job: &str, limit: Duration) -> Result<(), String> {
+    let end = Instant::now() + limit;
+    while !active(s, job)? {
+        if Instant::now() > end {
+            return Err(format!("{job} did not become active within {limit:?}"));
+        }
+        std::thread::sleep(Duration::from_millis(500));
+    }
+    Ok(())
+}
+
 /// Wait until `job` has left `WRKACTJOB`; how long that took.
 fn gone(s: &mut Session, job: &str, limit: Duration) -> Result<Duration, String> {
     let t = Instant::now();
@@ -434,6 +446,8 @@ impl Suite {
             &format!("QSH CMD('echo written-during-the-outage > {over}/outage.txt')"),
             "NFSOUTW",
         )?;
+        running(&mut p.b, "NFSOUTW", Duration::from_secs(30))?;
+        // Longer than the mount's major timeout (3.5 s): not responding.
         std::thread::sleep(Duration::from_secs(15));
         if !active(&mut p.b, "NFSOUTW")? {
             return Err(format!(
@@ -479,11 +493,12 @@ impl Suite {
             ));
         }
         // An unexpected end of the server job.
+        let had = opr_count(&mut p.a, "CPFA1B5")?;
         let killed = p.a.command("dbgkill JOB(QNFSNFSD)", CMD)?;
         if !killed.contains("killed") {
             return Err(format!("dbgkill JOB(QNFSNFSD): {killed}"));
         }
-        if wait_opr(&mut p.a, "CPFA1B5", 1, Duration::from_secs(60))? == 0 {
+        if wait_opr(&mut p.a, "CPFA1B5", had + 1, Duration::from_secs(60))? <= had {
             return Err("no CPFA1B5 on A's QSYSOPR after QNFSNFSD was killed".into());
         }
         let (n, _) = start_servers(&mut p.a, "*SVR")?;
@@ -553,6 +568,7 @@ impl Suite {
             &["ok", "eintr", "etimedout", "err"].map(|x| format!("/tmp/NFSRI.{x}")),
         )?;
         let job = submit(&mut p.b, "CALL PGM(QGPL/NFSRI)", "NFSRI")?;
+        running(&mut p.b, "NFSRI", Duration::from_secs(30))?;
         std::thread::sleep(Duration::from_secs(8));
         if !active(&mut p.b, "NFSRI")? {
             return Err(format!("{job} did not wait on the hard mount"));

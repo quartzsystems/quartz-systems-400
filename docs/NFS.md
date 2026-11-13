@@ -2132,16 +2132,80 @@ below. Still to come: the QEMU steps (last item).
   daemon jobs' tests add the same through a `QNFSNFSD` job. The
   service's `stgsvc::nfs::ids`: a mount's owners as numbers, then as
   `profile@domain` once `*RGY` runs.
-- **QEMU** (`build test`), still to come: two QS/400 guests, one
-  exporting and one mounting, v3 and v4; locks across the guests; the
-  server ended and started with locks reclaimed; a `/QSYS.LIB` export
-  with text conversion; `nfstest` from the host against the guest's
-  export; the guest mounting a Linux `nfsd` export where the host has
-  one (skipped otherwise); 1 GB read and written both ways.
+- QEMU (`build test`), steps 173 to 184 in
+  `tools/conformance/src/nfsstep/`. **Written, not yet run.** On the
+  main guest, after the NetServer steps:
+  - 173 `STRNFSSVR SERVER(*ALL)` (`CPCA1BB`, a `CPIA1BB` per type), the
+    seven `QNFS*` jobs under `QSYSWRK`, `/etc/RPCBTAB` in whole 357-byte
+    records, `EXPORTFS OPTIONS('-I -O ''RW,ANON=4294770710''')
+    DIR('/nfstest')` (`CPCA1C4`) in `NFS_EXPORT_INFO` and in MOUNT's
+    `EXPORT` list, `DSPMFSINF OBJ('/')`; 111 and 2049 forwarded (TCP and
+    UDP, one host port each) and the binder's other ports learnt with
+    `nfstest probe` and forwarded at run time;
+  - 174 `nfstest` version 3 from the host: `nlm-grace` with
+    `--expect-grace` when the step starts within 60 s of the daemons'
+    start (else said, not run), every other version 3 scenario, then the
+    lock manager's after its 90 s grace period; `nlm-blocked-granted` is
+    left out (the server cannot call the host back through one-way
+    forwards); the README's `KNOWN` (`nlm-share`) is reported, not
+    failed;
+  - 175 `nfstest --vers 4.0` and `4.1` through the forwarded 2049;
+  - 176 `nfstest bench --mib 1024` (version 3; `QS400_NFS_BENCH_MIB`);
+  - 177 the guest mounting a Linux export, versions 3 and 4, when
+    `QS400_NFS_LINUX=host:/path` (as the guest reaches it; the export
+    `insecure`) is set, skipped otherwise;
+  - 178 a loopback mount, `UNMOUNT TYPE(*ALL) MNTOVRDIR(*ALL)`
+    (`CPCA1B1`), `ENDNFSSVR SERVER(*ALL)` (`CPCA1BC`): no NFS row in
+    `MOUNTED_FS_INFO`, no daemon job, nothing listening on 111 or 2049,
+    the binder silent from the host.
+
+  In a pair of guests of their own (A the suite's disk, B a copy), each
+  with a second virtio NIC on a private link (`-netdev socket,udp=` over
+  the host's loopback, or `-netdev dgram` with `QS400_NFS_LINK=dgram`),
+  a line description `NFSLNK` over it, A `192.168.77.1`
+  (`guesta.nfs.test`), B `192.168.77.2` (`guestb.nfs.test`), each name
+  in both host tables. User-mode forwards cannot carry this: a version
+  3 lock needs the server's binder on 111 and the restart notices go to
+  the client's, both ways. A exports `/nfstest` (root squashed),
+  `/nfsroot` (`ROOT=192.168.77.2`) and `/QSYS.LIB/NFSLIB.LIB`
+  (`ROOT=`, `HOSTOPT` data CCSID 819 for B); B mounts by A's name.
+  - 179 version 3: B writes, reads, renames, lists and removes through
+    QSH; A sees `QNFSANON` (`/nfstest`) and `QSECOFR` (`/nfsroot`) own
+    B's files; `MOUNTED_FS_INFO` and `DSPMFSINF` of the mount;
+  - 180 the same over version 4; B reads member `HELLO` as ASCII and
+    writes member `FROMB` in ASCII, A reads it as EBCDIC records;
+  - 181 a byte-range lock a batch job holds on one guest refuses the
+    other guest's (`EAGAIN`), both ways, versions 3 and 4;
+    `RLSIFSLCK RMTLOCNAME('guestb.nfs.test')` (`CPCA1C7`) frees B's;
+  - 182 with B's lock held, `ENDNFSSVR`/`STRNFSSVR SERVER(*ALL)` on A:
+    a write B made during the outage lands, B's `QSYSOPR` has
+    `CPDA1B9` twice, B's lock is reclaimed (A refused after the grace
+    period), B's descriptor writes after it; `dbgkill JOB(QNFSNFSD)`:
+    `CPFA1B5` on A's `QSYSOPR`, `STRNFSSVR SERVER(*SVR)`, B reads;
+  - 183 a `soft,timeo=5,retrans=1` read fails `ETIMEDOUT` within its
+    1.5 s major timeout while `*SVR` is ended; `ENDJOB` of a job waiting
+    on a `hard,intr` mount ends it;
+  - 184 a 1 GiB file (`QS400_NFS_COPY_MIB`) made on A, copied to B and
+    back with `CPY`, versions 3 and 4.
+
+  The byte-range locks and `errno`s come from small IR programs the
+  steps make on the guest (`nfsstep/prog.rs`, run in memory by its unit
+  test). A failed step writes the guests' job logs, `QSYSOPR`, jobs,
+  export and mount tables, binder file and the host's probe to
+  `nfs-<step>-<guest>.txt` in the suite's output directory; the
+  `nfstest` runs are kept in `nfs-174-nfstest.txt` and
+  `nfs-175-nfstest.txt`, the figures in `nfs-perf.txt`.
+
+  | Measured (`nfs-perf.txt`) | Version 3 | Version 4 |
+  |---|---|---|
+  | host to guest, `nfstest bench`, write | (to run) | not measured: `bench` is version 3 only |
+  | host to guest, `nfstest bench`, read | (to run) | not measured |
+  | guest A to guest B, `CPY` through the mount | (to run) | (to run) |
+  | guest B to guest A, `CPY` through the mount | (to run) | (to run) |
 
 ### 11.1 Proving a v3 mount under QEMU
 
-For the lead (no QEMU step exists yet). User networking: the guest is
+By hand; steps 173 to 176 do the same (section 11). User networking: the guest is
 `10.0.2.15`, a client on the host reaches it from `10.0.2.2`.
 
 1. Forward the binder and the server, both protocols, with QMP:

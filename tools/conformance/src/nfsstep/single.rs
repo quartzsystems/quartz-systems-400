@@ -94,6 +94,8 @@ impl Suite {
     /// Step 173's setup: `/nfstest` exported, `STRNFSSVR SERVER(*ALL)`,
     /// 111 and 2049 forwarded. The `CPIA1BB` and `CPDA1BA` counts.
     fn nfs_setup(&self, s: &mut Session) -> Result<(usize, usize), String> {
+        // Built before the start, so step 174 runs within the grace period.
+        host::binary()?;
         full_log(s)?;
         public_dir(s, EXPORT)?;
         export(s, EXPORT, &format!("RW,ANON={ANON_UID}"), "")?;

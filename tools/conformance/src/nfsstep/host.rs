@@ -12,10 +12,17 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-/// The `nfstest` binary: `QS400_NFSTEST`, or built into the target directory.
+/// The binary once built.
+static BUILT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
+/// The `nfstest` binary: `QS400_NFSTEST`, or built into the target
+/// directory (once a run).
 pub(crate) fn binary() -> Result<PathBuf, String> {
     if let Some(p) = std::env::var_os("QS400_NFSTEST") {
         return Ok(PathBuf::from(p));
+    }
+    if let Some(p) = BUILT.get() {
+        return Ok(p.clone());
     }
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let target = crate::target_dir().join("nfstest");
@@ -35,11 +42,12 @@ pub(crate) fn binary() -> Result<PathBuf, String> {
     if !st.success() {
         return Err("cargo build nfstest failed".into());
     }
-    Ok(target.join("release").join(if cfg!(windows) {
+    let p = target.join("release").join(if cfg!(windows) {
         "nfstest.exe"
     } else {
         "nfstest"
-    }))
+    });
+    Ok(BUILT.get_or_init(|| p).clone())
 }
 
 /// One run of `nfstest`.
