@@ -79,6 +79,11 @@ frozen_at = "V1R2M0"
 version = "1"
 hash = "0a3cd1075e1b2d952777fabd5acdd6d3c58f8bb24279cafc2ca55934f9ea1a9b"
 
+[format.nfs-v4-stable]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "b9aa67cbf5b7e55d3d827dafbbed5ce71258dded801b550efd547611405882dc"
+
 [format.oracle-fixtures]
 frozen_at = "V1R1M0"
 version = "1/1"
