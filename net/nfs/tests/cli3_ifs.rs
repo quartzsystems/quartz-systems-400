@@ -114,7 +114,10 @@ impl Client {
 
 fn put(c: &dyn IfsClient, path: &str, data: &[u8]) {
     let fd = c
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o644))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o644),
+        )
         .unwrap();
     write_all(c, fd, data).unwrap();
     c.close(fd).unwrap();
@@ -181,11 +184,17 @@ fn files_and_names_through_the_ifs() {
     assert!(w.job(9).stat("/home/exp/d", false).is_err());
     // Exclusive create.
     let fd = bob
-        .open("/mnt/x", OpenArgs::new(O_WRONLY | O_CREAT | O_EXCL).mode(0o600))
+        .open(
+            "/mnt/x",
+            OpenArgs::new(O_WRONLY | O_CREAT | O_EXCL).mode(0o600),
+        )
         .unwrap();
     bob.close(fd).unwrap();
     assert_eq!(
-        bob.open("/mnt/x", OpenArgs::new(O_WRONLY | O_CREAT | O_EXCL).mode(0o600)),
+        bob.open(
+            "/mnt/x",
+            OpenArgs::new(O_WRONLY | O_CREAT | O_EXCL).mode(0o600)
+        ),
         Err(Errno::EEXIST)
     );
     // 2,000 entries made on the server, listed here.
@@ -217,7 +226,10 @@ fn files_and_names_through_the_ifs() {
     assert_eq!(get(&ann, "/mnt/shared"), b"changed on the server");
     // Root squashing: QSECOFR is UID 0, the anonymous user there.
     put(&c.job("QSECOFR", 3), "/mnt/by-secofr", b"x");
-    assert_eq!(w.job(9).stat("/home/exp/by-secofr", false).unwrap().uid, ANON_UID);
+    assert_eq!(
+        w.job(9).stat("/home/exp/by-secofr", false).unwrap().uid,
+        ANON_UID
+    );
     // A handle gone stale: the file is removed on the server.
     put(&bob, "/mnt/gone", b"soon gone");
     let fd = bob.open("/mnt/gone", OpenArgs::new(O_RDONLY)).unwrap();
@@ -235,7 +247,10 @@ fn files_and_names_through_the_ifs() {
     c.mount(&s, "/mnt3", &format!("nosuid,{QUICK}"));
     put(&bob, "/mnt3/prog", b"#!");
     bob.chmod("/mnt3/prog", 0o4755).unwrap();
-    assert_eq!(w.job(9).stat("/home/exp/prog", false).unwrap().mode & 0o4000, 0);
+    assert_eq!(
+        w.job(9).stat("/home/exp/prog", false).unwrap().mode & 0o4000,
+        0
+    );
     // Unmount: every mount of the type.
     let sec = c.job("QSECOFR", 900);
     for at in ["/mnt", "/mnt2", "/mnt3"] {
@@ -249,7 +264,11 @@ fn a_hard_mount_waits_out_a_stop_and_resends_after_a_restart() {
     let s = ServerSys::start(false, false);
     let c = Client::new(&s);
     // Reported after 0.1 + 0.2 seconds of no answer.
-    c.mount(&s, "/mnt", "hard,timeo=1,retrans=1,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0");
+    c.mount(
+        &s,
+        "/mnt",
+        "hard,timeo=1,retrans=1,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0",
+    );
     let bob = c.job("BOB", 1);
     put(&bob, "/mnt/f", b"before");
     s.stop();
@@ -284,7 +303,10 @@ fn a_hard_mount_waits_out_a_stop_and_resends_after_a_restart() {
     // Data written behind, unstable; the server restarts and loses it.
     let data: Vec<u8> = (0..300_000u32).map(|i| (i % 253) as u8).collect();
     let fd = bob
-        .open("/mnt/big", OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o644))
+        .open(
+            "/mnt/big",
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o644),
+        )
         .unwrap();
     write_all(&bob, fd, &data).unwrap();
     let w = s.world();

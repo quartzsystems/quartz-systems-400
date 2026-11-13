@@ -152,7 +152,7 @@ impl ServerSys {
                 mount: free_port(),
                 nlm: free_port(),
             },
-            nlm: Mutex::new(with_nlm.then(|| Self::nlm_state(grace))),
+            nlm: Mutex::new(with_nlm.then(|| Self::nlm_state(Duration::ZERO))),
             grace,
             running: Mutex::new(None),
         });

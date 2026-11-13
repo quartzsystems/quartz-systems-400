@@ -19,7 +19,14 @@ use nfs::exports::mount::parse;
 
 fn mount(s: &ServerSys, opts: &str, env: &ClientEnv) -> Mount {
     let o = parse(&format!("{opts},{}", s.ports_opts())).unwrap();
-    client::connect("127.0.0.1:/home/exp", &o, MountCcsid::default(), &bob(), env).unwrap()
+    client::connect(
+        "127.0.0.1:/home/exp",
+        &o,
+        MountCcsid::default(),
+        &bob(),
+        env,
+    )
+    .unwrap()
 }
 
 #[test]
@@ -65,9 +72,16 @@ fn hard_rides_out_a_restart_and_reports_it_once() {
     let m = Arc::new(mount(&s, "hard,timeo=1,retrans=1", &env));
     let (root, _) = m.root().unwrap();
     let (f, _) = m
-        .create(&bob(), &root, b"f", CreateMode::Unchecked(SetAttr::default()))
+        .create(
+            &bob(),
+            &root,
+            b"f",
+            CreateMode::Unchecked(SetAttr::default()),
+        )
         .unwrap();
-    let w = m.write(&bob(), &f, 0, b"unstable", Stable::Unstable).unwrap();
+    let w = m
+        .write(&bob(), &f, 0, b"unstable", Stable::Unstable)
+        .unwrap();
     s.stop();
     // Several calls wait through the outage; the server is reported once.
     let waiting: Vec<_> = (0..3)
@@ -130,7 +144,12 @@ fn a_closed_connection_is_made_again() {
         s.stop();
         s.run();
         let (_, a) = m
-            .mkdir(&bob(), &root, format!("d{i}").as_bytes(), &SetAttr::default())
+            .mkdir(
+                &bob(),
+                &root,
+                format!("d{i}").as_bytes(),
+                &SetAttr::default(),
+            )
             .unwrap();
         assert_eq!(a.kind, ifs::remote::RKind::Dir);
     }
@@ -147,11 +166,22 @@ fn many_threads_call_at_once() {
             std::thread::spawn(move || {
                 let name = format!("t{i}");
                 let (f, _) = m
-                    .create(&bob(), &root, name.as_bytes(), CreateMode::Unchecked(SetAttr::default()))
+                    .create(
+                        &bob(),
+                        &root,
+                        name.as_bytes(),
+                        CreateMode::Unchecked(SetAttr::default()),
+                    )
                     .unwrap();
                 for k in 0..50u64 {
-                    m.write(&bob(), &f, k * 100, &[u8::try_from(i).unwrap(); 100], Stable::FileSync)
-                        .unwrap();
+                    m.write(
+                        &bob(),
+                        &f,
+                        k * 100,
+                        &[u8::try_from(i).unwrap(); 100],
+                        Stable::FileSync,
+                    )
+                    .unwrap();
                 }
                 m.getattr(&bob(), &f).unwrap().size
             })
