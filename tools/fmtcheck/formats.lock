@@ -69,6 +69,11 @@ frozen_at = "V1R2M0"
 version = "1"
 hash = "b4a8cc84b3bb248013aef805f628a25807551372292e4c9e9c185190a2a4e331"
 
+[format.nfs-nsm-monitor]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "0177ee9354e05f35bea7fc9049ed20ab7a3bddeac06690bb3a4efe4aff31c267"
+
 [format.nfs-options]
 frozen_at = "V1R2M0"
 version = "1"

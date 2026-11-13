@@ -492,3 +492,12 @@ frozen_at = "V1R2M0"
 doc = "docs/NFS.md"
 version = ["lic/slic/src/stgsvc/nfs/optfile.rs::FORMAT_VERSION"]
 files = ["lic/slic/src/stgsvc/nfs/optfile.rs"]
+
+# QNFSNSMD's monitored hosts, /QIBM/UserData/OS400/NFS/QNFSNSMD.MON
+# (docs/NFS.md section 6.3); /etc/STATD's form is the oracle's.
+[[format]]
+name = "nfs-nsm-monitor"
+frozen_at = "V1R2M0"
+doc = "docs/NFS.md"
+version = ["net/nfs/src/nsm/record.rs::VERSION"]
+files = ["net/nfs/src/nsm/record.rs"]
