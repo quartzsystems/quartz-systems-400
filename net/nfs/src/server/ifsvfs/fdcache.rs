@@ -54,7 +54,14 @@ impl FdCache {
     }
 
     /// Keeps `fd`: the descriptors to close to make room.
-    pub fn put(&mut self, fid: FileId, who: &Caller, mode: Mode, fd: i32, now: Instant) -> Vec<i32> {
+    pub fn put(
+        &mut self,
+        fid: FileId,
+        who: &Caller,
+        mode: Mode,
+        fd: i32,
+        now: Instant,
+    ) -> Vec<i32> {
         let mut out = Vec::new();
         while self.map.len() >= self.cap {
             let Some(k) = self
@@ -146,10 +153,19 @@ mod tests {
         let a = Caller::Uid { uid: 1 };
         let mut c = FdCache::new(2, Duration::from_secs(5));
         assert!(c.put(fid(1), &a, Mode::Read, 10, t).is_empty());
-        assert!(c.put(fid(1), &a, Mode::Write, 11, t + Duration::from_secs(1)).is_empty());
-        assert_eq!(c.get(fid(1), &a, Mode::Read, t + Duration::from_secs(2)), Some(10));
+        assert!(
+            c.put(fid(1), &a, Mode::Write, 11, t + Duration::from_secs(1))
+                .is_empty()
+        );
+        assert_eq!(
+            c.get(fid(1), &a, Mode::Read, t + Duration::from_secs(2)),
+            Some(10)
+        );
         // Full: the least recently used goes.
-        assert_eq!(c.put(fid(2), &a, Mode::Read, 12, t + Duration::from_secs(3)), vec![11]);
+        assert_eq!(
+            c.put(fid(2), &a, Mode::Read, 12, t + Duration::from_secs(3)),
+            vec![11]
+        );
         assert_eq!(c.get(fid(1), &Caller::Uid { uid: 2 }, Mode::Read, t), None);
         assert_eq!(c.drop_object(fid(1)), vec![10]);
         assert_eq!(c.expire(t + Duration::from_secs(9)), vec![12]);

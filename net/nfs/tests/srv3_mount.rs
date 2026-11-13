@@ -5,8 +5,10 @@
 //! MOUNT versions 3 and 1: `MNT` and its errors, the mount list
 //! (`DUMP`, `UMNT`, `UMNTALL`), `EXPORT`.
 
+#![allow(clippy::many_single_char_names)]
 mod srv3_common;
 
+use ifs::client::IfsClient;
 use nfs::server::HostPat;
 use nfs::types::mount::MOUNT_PROGRAM::{MOUNT_V1, MOUNT_V3};
 use nfs::types::mount::{dirpath, fhstatus, mountres3, mountstat3};
@@ -14,9 +16,18 @@ use srv3_common::{Client, World};
 
 const PEER: &str = "10.0.0.5:900";
 
-fn mnt(c: &Client, p: &dyn nfs::rpc::LocalProgram, path: &str) -> Result<(Vec<u8>, Vec<i32>), mountstat3> {
-    match c.call(p, &MOUNT_V3::Args::MOUNTPROC3_MNT(dirpath(path.as_bytes().to_vec()))) {
-        MOUNT_V3::Res::MOUNTPROC3_MNT(mountres3::MNT3_OK(ok)) => Ok((ok.fhandle.0, ok.auth_flavors)),
+fn mnt(
+    c: &Client,
+    p: &dyn nfs::rpc::LocalProgram,
+    path: &str,
+) -> Result<(Vec<u8>, Vec<i32>), mountstat3> {
+    match c.call(
+        p,
+        &MOUNT_V3::Args::MOUNTPROC3_MNT(dirpath(path.as_bytes().to_vec())),
+    ) {
+        MOUNT_V3::Res::MOUNTPROC3_MNT(mountres3::MNT3_OK(ok)) => {
+            Ok((ok.fhandle.0, ok.auth_flavors))
+        }
         MOUNT_V3::Res::MOUNTPROC3_MNT(mountres3::default(s)) => Err(s),
         r => panic!("{r:?}"),
     }
@@ -24,16 +35,16 @@ fn mnt(c: &Client, p: &dyn nfs::rpc::LocalProgram, path: &str) -> Result<(Vec<u8
 
 fn dump(c: &Client, p: &dyn nfs::rpc::LocalProgram) -> Vec<(String, String)> {
     match c.call(p, &MOUNT_V3::Args::MOUNTPROC3_DUMP) {
-        MOUNT_V3::Res::MOUNTPROC3_DUMP(l) => l
-            .0
-            .into_iter()
-            .map(|m| {
-                (
-                    String::from_utf8(m.ml_hostname.0).unwrap(),
-                    String::from_utf8(m.ml_directory.0).unwrap(),
-                )
-            })
-            .collect(),
+        MOUNT_V3::Res::MOUNTPROC3_DUMP(l) => {
+            l.0.into_iter()
+                .map(|m| {
+                    (
+                        String::from_utf8(m.ml_hostname.0).unwrap(),
+                        String::from_utf8(m.ml_directory.0).unwrap(),
+                    )
+                })
+                .collect()
+        }
         r => panic!("{r:?}"),
     }
 }
@@ -43,7 +54,6 @@ fn mnt_answers_the_handle_and_its_errors() {
     let w = World::new();
     let mut e = w.export(1, "/home/exp");
     w.write_file("/home/exp/file", b"x");
-    use ifs::client::IfsClient;
     w.job(9).mkdir("/home/exp/sub", 0o777).unwrap();
     e.access = Some(vec![HostPat::Net("10.0.0.0".parse().unwrap(), 24)]);
     w.put(e);
@@ -53,9 +63,18 @@ fn mnt_answers_the_handle_and_its_errors() {
     assert_eq!(fh, w.handle(1, "/home/exp"));
     assert_eq!(flavors, vec![1]);
     // A directory under the export.
-    assert_eq!(mnt(&c, &p, "/home/exp/sub").unwrap().0, w.handle(1, "/home/exp/sub"));
-    assert_eq!(mnt(&c, &p, "/home/exp/nope"), Err(mountstat3::MNT3ERR_NOENT));
-    assert_eq!(mnt(&c, &p, "/home/exp/file"), Err(mountstat3::MNT3ERR_NOTDIR));
+    assert_eq!(
+        mnt(&c, &p, "/home/exp/sub").unwrap().0,
+        w.handle(1, "/home/exp/sub")
+    );
+    assert_eq!(
+        mnt(&c, &p, "/home/exp/nope"),
+        Err(mountstat3::MNT3ERR_NOENT)
+    );
+    assert_eq!(
+        mnt(&c, &p, "/home/exp/file"),
+        Err(mountstat3::MNT3ERR_NOTDIR)
+    );
     assert_eq!(mnt(&c, &p, "/home"), Err(mountstat3::MNT3ERR_ACCES));
     assert_eq!(mnt(&c, &p, "/tmp"), Err(mountstat3::MNT3ERR_ACCES));
     let far = Client::new("10.9.0.5:900", 100);
@@ -85,7 +104,10 @@ fn the_mount_list_and_the_exports() {
         ]
     );
     assert_eq!(
-        c.call::<_, MOUNT_V3::Res>(&p, &MOUNT_V3::Args::MOUNTPROC3_UMNT(dirpath(b"/home/exp".to_vec()))),
+        c.call::<_, MOUNT_V3::Res>(
+            &p,
+            &MOUNT_V3::Args::MOUNTPROC3_UMNT(dirpath(b"/home/exp".to_vec()))
+        ),
         MOUNT_V3::Res::MOUNTPROC3_UMNT
     );
     assert_eq!(dump(&c, &p), vec![("client1".into(), "/home/two".into())]);
@@ -93,11 +115,15 @@ fn the_mount_list_and_the_exports() {
     assert!(dump(&c, &p).is_empty());
     match c.call(&p, &MOUNT_V3::Args::MOUNTPROC3_EXPORT) {
         MOUNT_V3::Res::MOUNTPROC3_EXPORT(x) => {
-            let got: Vec<(Vec<u8>, Vec<Vec<u8>>)> = x
-                .0
-                .into_iter()
-                .map(|n| (n.ex_dir.0, n.ex_groups.0.into_iter().map(|g| g.gr_name.0).collect()))
-                .collect();
+            let got: Vec<(Vec<u8>, Vec<Vec<u8>>)> =
+                x.0.into_iter()
+                    .map(|n| {
+                        (
+                            n.ex_dir.0,
+                            n.ex_groups.0.into_iter().map(|g| g.gr_name.0).collect(),
+                        )
+                    })
+                    .collect();
             assert_eq!(
                 got,
                 vec![
@@ -117,11 +143,19 @@ fn version_1_for_showmount() {
     w.put(e);
     let p = w.mountd();
     let c = Client::new(PEER, 100);
-    match c.call(&p, &MOUNT_V1::Args::MOUNTPROC_MNT(dirpath(b"/home/exp".to_vec()))) {
-        MOUNT_V1::Res::MOUNTPROC_MNT(fhstatus::V0(h)) => assert_eq!(h.to_vec(), w.handle(1, "/home/exp")),
+    match c.call(
+        &p,
+        &MOUNT_V1::Args::MOUNTPROC_MNT(dirpath(b"/home/exp".to_vec())),
+    ) {
+        MOUNT_V1::Res::MOUNTPROC_MNT(fhstatus::V0(h)) => {
+            assert_eq!(h.to_vec(), w.handle(1, "/home/exp"));
+        }
         r => panic!("{r:?}"),
     }
-    match c.call(&p, &MOUNT_V1::Args::MOUNTPROC_MNT(dirpath(b"/nowhere".to_vec()))) {
+    match c.call(
+        &p,
+        &MOUNT_V1::Args::MOUNTPROC_MNT(dirpath(b"/nowhere".to_vec())),
+    ) {
         MOUNT_V1::Res::MOUNTPROC_MNT(fhstatus::default(13)) => {}
         r => panic!("{r:?}"),
     }

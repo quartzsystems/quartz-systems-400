@@ -5,6 +5,7 @@
 //! Every NFS version 3 procedure against `IfsVfs` over a `MemBackend`,
 //! through real RPC messages: what each answers, and its errors.
 
+#![allow(clippy::many_single_char_names)]
 #![allow(clippy::too_many_lines)]
 
 mod srv3_common;
@@ -40,16 +41,35 @@ fn null_getattr_lookup_access_readlink() {
     assert_eq!(v.lookup(&root, "nope"), Err(S::NFS3ERR_NOENT));
     assert_eq!(v.lookup(&f, "x"), Err(S::NFS3ERR_NOTDIR));
     assert_eq!(v.lookup(&root, "a/b"), Err(S::NFS3ERR_INVAL));
-    assert_eq!(v.lookup(&root, &"n".repeat(256)), Err(S::NFS3ERR_NAMETOOLONG));
+    assert_eq!(
+        v.lookup(&root, &"n".repeat(256)),
+        Err(S::NFS3ERR_NAMETOOLONG)
+    );
     let fa = v.getattr(&f).unwrap();
-    assert_eq!((fa.r#type, fa.mode, fa.uid, fa.size), (t3::ftype3::NF3REG, 0o604, 100, 0));
+    assert_eq!(
+        (fa.r#type, fa.mode, fa.uid, fa.size),
+        (t3::ftype3::NF3REG, 0o604, 100, 0)
+    );
     // ACCESS: BOB owns it (read, write); ZED only reads.
-    let all = t3::ACCESS3_READ | t3::ACCESS3_MODIFY | t3::ACCESS3_EXTEND | t3::ACCESS3_EXECUTE | t3::ACCESS3_DELETE;
-    let acc = |c: &Client, h: &[u8]| match c.v3(&p, &Args::NFSPROC3_ACCESS(t3::ACCESS3args { object: fh(h), access: all })) {
+    let all = t3::ACCESS3_READ
+        | t3::ACCESS3_MODIFY
+        | t3::ACCESS3_EXTEND
+        | t3::ACCESS3_EXECUTE
+        | t3::ACCESS3_DELETE;
+    let acc = |c: &Client, h: &[u8]| match c.v3(
+        &p,
+        &Args::NFSPROC3_ACCESS(t3::ACCESS3args {
+            object: fh(h),
+            access: all,
+        }),
+    ) {
         Res::NFSPROC3_ACCESS(t3::ACCESS3res::NFS3_OK(ok)) => ok.access,
         r => panic!("{r:?}"),
     };
-    assert_eq!(acc(&c, &f), t3::ACCESS3_READ | t3::ACCESS3_MODIFY | t3::ACCESS3_EXTEND);
+    assert_eq!(
+        acc(&c, &f),
+        t3::ACCESS3_READ | t3::ACCESS3_MODIFY | t3::ACCESS3_EXTEND
+    );
     let zed = Client::new("10.0.0.5:901", 102);
     assert_eq!(acc(&zed, &f), t3::ACCESS3_READ);
     assert_eq!(
@@ -70,11 +90,17 @@ fn null_getattr_lookup_access_readlink() {
         r => panic!("{r:?}"),
     };
     assert_eq!(v.getattr(&l).unwrap().r#type, t3::ftype3::NF3LNK);
-    match c.v3(&p, &Args::NFSPROC3_READLINK(t3::READLINK3args { symlink: fh(&l) })) {
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_READLINK(t3::READLINK3args { symlink: fh(&l) }),
+    ) {
         Res::NFSPROC3_READLINK(t3::READLINK3res::NFS3_OK(ok)) => assert_eq!(ok.data.0, b"a.txt"),
         r => panic!("{r:?}"),
     }
-    match c.v3(&p, &Args::NFSPROC3_READLINK(t3::READLINK3args { symlink: fh(&f) })) {
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_READLINK(t3::READLINK3args { symlink: fh(&f) }),
+    ) {
         Res::NFSPROC3_READLINK(t3::READLINK3res::default(s, _)) => assert_eq!(s, S::NFS3ERR_INVAL),
         r => panic!("{r:?}"),
     }
@@ -87,7 +113,9 @@ fn read_write_commit_setattr() {
     let c = Client::new("10.0.0.5:900", 100);
     let v = V3 { p: &p, c: &c };
     let f = v.create(&root, "data").unwrap();
-    let r = v.write(&f, 0, b"hello world", t3::stable_how::UNSTABLE).unwrap();
+    let r = v
+        .write(&f, 0, b"hello world", t3::stable_how::UNSTABLE)
+        .unwrap();
     assert_eq!((r.count, r.committed), (11, t3::stable_how::UNSTABLE));
     assert_eq!(r.verf, w.instance.verf());
     assert_eq!(r.file_wcc.before.unwrap().size, 0);
@@ -99,8 +127,18 @@ fn read_write_commit_setattr() {
     assert_eq!(v.read(&f, 50, 5).unwrap(), (Vec::new(), true));
     assert_eq!(w.read_file("/home/exp/data"), b"hello WORLD");
     assert_eq!(v.read(&root, 0, 5), Err(S::NFS3ERR_ISDIR));
-    assert_eq!(v.write(&root, 0, b"x", t3::stable_how::UNSTABLE).err(), Some(S::NFS3ERR_ISDIR));
-    match c.v3(&p, &Args::NFSPROC3_COMMIT(t3::COMMIT3args { file: fh(&f), offset: 0, count: 0 })) {
+    assert_eq!(
+        v.write(&root, 0, b"x", t3::stable_how::UNSTABLE).err(),
+        Some(S::NFS3ERR_ISDIR)
+    );
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_COMMIT(t3::COMMIT3args {
+            file: fh(&f),
+            offset: 0,
+            count: 0,
+        }),
+    ) {
         Res::NFSPROC3_COMMIT(t3::COMMIT3res::NFS3_OK(ok)) => assert_eq!(ok.verf, w.instance.verf()),
         r => panic!("{r:?}"),
     }
@@ -117,10 +155,20 @@ fn read_write_commit_setattr() {
         Res::NFSPROC3_WRITE(t3::WRITE3res::default(S::NFS3ERR_INVAL, _))
     ));
     // SETATTR: size, mode, times; a guard that does not match.
-    v.setattr(&f, t3::sattr3 { size: Some(5), ..mode(0o600) }).unwrap();
+    v.setattr(
+        &f,
+        t3::sattr3 {
+            size: Some(5),
+            ..mode(0o600)
+        },
+    )
+    .unwrap();
     let a = v.getattr(&f).unwrap();
     assert_eq!((a.size, a.mode), (5, 0o600));
-    let t = t3::nfstime3 { seconds: 1_000_000, nseconds: 5 };
+    let t = t3::nfstime3 {
+        seconds: 1_000_000,
+        nseconds: 5,
+    };
     v.setattr(
         &f,
         t3::sattr3 {
@@ -133,7 +181,10 @@ fn read_write_commit_setattr() {
     let guard = t3::SETATTR3args {
         object: fh(&f),
         new_attributes: mode(0o644),
-        guard: Some(t3::nfstime3 { seconds: 1, nseconds: 0 }),
+        guard: Some(t3::nfstime3 {
+            seconds: 1,
+            nseconds: 0,
+        }),
     };
     match c.v3(&p, &Args::NFSPROC3_SETATTR(guard)) {
         Res::NFSPROC3_SETATTR(t3::SETATTR3res::default(s, f)) => {
@@ -156,7 +207,10 @@ fn read_write_commit_setattr() {
     let zed = Client::new("10.0.0.5:901", 102);
     let vz = V3 { p: &p, c: &zed };
     assert_eq!(vz.setattr(&f, mode(0o666)), Err(S::NFS3ERR_PERM));
-    assert_eq!(vz.write(&f, 0, b"x", t3::stable_how::UNSTABLE).err(), Some(S::NFS3ERR_ACCES));
+    assert_eq!(
+        vz.write(&f, 0, b"x", t3::stable_how::UNSTABLE).err(),
+        Some(S::NFS3ERR_ACCES)
+    );
 }
 
 #[test]
@@ -191,7 +245,10 @@ fn create_mkdir_mknod_remove_rmdir_rename_link() {
         t3::mknoddata3::NF3SOCK(no_sattr()),
         t3::mknoddata3::NF3CHR(t3::devicedata3 {
             dev_attributes: no_sattr(),
-            spec: t3::specdata3 { specdata1: 1, specdata2: 3 },
+            spec: t3::specdata3 {
+                specdata1: 1,
+                specdata2: 3,
+            },
         }),
     ] {
         let a = t3::MKNOD3args {
@@ -217,7 +274,9 @@ fn create_mkdir_mknod_remove_rmdir_rename_link() {
         link: dirop(&d, "f2"),
     };
     match c.v3(&p, &Args::NFSPROC3_LINK(a)) {
-        Res::NFSPROC3_LINK(t3::LINK3res::NFS3_OK(ok)) => assert_eq!(ok.file_attributes.unwrap().nlink, 2),
+        Res::NFSPROC3_LINK(t3::LINK3res::NFS3_OK(ok)) => {
+            assert_eq!(ok.file_attributes.unwrap().nlink, 2);
+        }
         r => panic!("{r:?}"),
     }
     let a = t3::RENAME3args {
@@ -234,7 +293,12 @@ fn create_mkdir_mknod_remove_rmdir_rename_link() {
     assert_eq!(v.lookup(&root, "f"), Err(S::NFS3ERR_NOENT));
     // REMOVE, RMDIR and their errors.
     assert_eq!(v.remove(&root, "d"), Err(S::NFS3ERR_ISDIR));
-    let rmdir = |name: &str| match c.v3(&p, &Args::NFSPROC3_RMDIR(t3::RMDIR3args { object: dirop(&root, name) })) {
+    let rmdir = |name: &str| match c.v3(
+        &p,
+        &Args::NFSPROC3_RMDIR(t3::RMDIR3args {
+            object: dirop(&root, name),
+        }),
+    ) {
         Res::NFSPROC3_RMDIR(t3::RMDIR3res::NFS3_OK(_)) => Ok(()),
         Res::NFSPROC3_RMDIR(t3::RMDIR3res::default(s, _)) => Err(s),
         r => panic!("{r:?}"),
@@ -255,16 +319,25 @@ fn fsstat_fsinfo_pathconf() {
     let (w, root) = setup();
     let p = w.nfs3();
     let c = Client::new("10.0.0.5:900", 100);
-    match c.v3(&p, &Args::NFSPROC3_FSSTAT(t3::FSSTAT3args { fsroot: fh(&root) })) {
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_FSSTAT(t3::FSSTAT3args { fsroot: fh(&root) }),
+    ) {
         Res::NFSPROC3_FSSTAT(t3::FSSTAT3res::NFS3_OK(ok)) => {
             assert!(ok.tbytes >= ok.fbytes && ok.fbytes >= ok.abytes);
             assert!(ok.obj_attributes.is_some());
         }
         r => panic!("{r:?}"),
     }
-    match c.v3(&p, &Args::NFSPROC3_FSINFO(t3::FSINFO3args { fsroot: fh(&root) })) {
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_FSINFO(t3::FSINFO3args { fsroot: fh(&root) }),
+    ) {
         Res::NFSPROC3_FSINFO(t3::FSINFO3res::NFS3_OK(ok)) => {
-            assert_eq!((ok.rtmax, ok.wtmax, ok.rtpref, ok.wtpref), (1 << 20, 1 << 20, 65536, 65536));
+            assert_eq!(
+                (ok.rtmax, ok.wtmax, ok.rtpref, ok.wtpref),
+                (1 << 20, 1 << 20, 65536, 65536)
+            );
             assert_eq!(
                 ok.properties,
                 t3::FSF3_LINK | t3::FSF3_SYMLINK | t3::FSF3_HOMOGENEOUS | t3::FSF3_CANSETTIME
@@ -272,16 +345,27 @@ fn fsstat_fsinfo_pathconf() {
         }
         r => panic!("{r:?}"),
     }
-    match c.v3(&p, &Args::NFSPROC3_PATHCONF(t3::PATHCONF3args { object: fh(&root) })) {
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_PATHCONF(t3::PATHCONF3args { object: fh(&root) }),
+    ) {
         Res::NFSPROC3_PATHCONF(t3::PATHCONF3res::NFS3_OK(ok)) => {
             assert_eq!(ok.name_max, 255);
             assert!(ok.no_trunc && ok.case_preserving);
-            assert!(ok.case_insensitive, "the root file system matches names without case");
+            assert!(
+                ok.case_insensitive,
+                "the root file system matches names without case"
+            );
         }
         r => panic!("{r:?}"),
     }
     // A handle that is not ours.
-    match c.v3(&p, &Args::NFSPROC3_FSINFO(t3::FSINFO3args { fsroot: fh(b"junk") })) {
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_FSINFO(t3::FSINFO3args {
+            fsroot: fh(b"junk"),
+        }),
+    ) {
         Res::NFSPROC3_FSINFO(t3::FSINFO3res::default(s, _)) => assert_eq!(s, S::NFS3ERR_BADHANDLE),
         r => panic!("{r:?}"),
     }
@@ -299,7 +383,9 @@ fn a_version_and_procedures_outside_nfs3() {
     let r = c.send(&p, &m).unwrap();
     assert!(matches!(
         nfs::rpc::client::results(&r),
-        Err(nfs::rpc::RpcError::Refused(nfs::rpc::AcceptError::ProcUnavail))
+        Err(nfs::rpc::RpcError::Refused(
+            nfs::rpc::AcceptError::ProcUnavail
+        ))
     ));
     // Version 2: PROG_MISMATCH 3 to 3.
     m[16..20].copy_from_slice(&2u32.to_be_bytes());

@@ -34,7 +34,10 @@ impl MemMountList {
     }
 
     fn with<T>(&self, f: impl FnOnce(&mut Vec<(String, String)>) -> T) -> T {
-        f(&mut self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner))
+        f(&mut self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner))
     }
 }
 

@@ -6,6 +6,7 @@
 //! `ROOT=`, `ANON=`, `ANON=-1`, `AUTH_NONE`, a UID no profile has, `RO`,
 //! `RW=`, `ACCESS=`, `NOSUID`, `VERS=`.
 
+#![allow(clippy::many_single_char_names)]
 mod srv3_common;
 
 use nfs::rpc::Credential;
@@ -94,7 +95,10 @@ fn read_only_exports_and_rw_lists() {
     assert_eq!(v.create(&root, "x"), Err(S::NFS3ERR_ROFS));
     assert_eq!(v.mkdir(&root, "x"), Err(S::NFS3ERR_ROFS));
     assert_eq!(v.remove(&root, "f"), Err(S::NFS3ERR_ROFS));
-    assert_eq!(v.write(&f, 0, b"x", t3::stable_how::FILE_SYNC).err(), Some(S::NFS3ERR_ROFS));
+    assert_eq!(
+        v.write(&f, 0, b"x", t3::stable_how::FILE_SYNC).err(),
+        Some(S::NFS3ERR_ROFS)
+    );
     assert_eq!(v.setattr(&f, mode(0o600)), Err(S::NFS3ERR_ROFS));
     // RW= another host: this one may only read.
     e.ro = false;

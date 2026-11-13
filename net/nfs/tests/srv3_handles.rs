@@ -8,6 +8,7 @@
 //! retransmissions (the duplicate request cache, exclusive create);
 //! the write verifier across a restart.
 
+#![allow(clippy::many_single_char_names)]
 mod srv3_common;
 
 use nfs::server::FileHandle;
@@ -60,7 +61,14 @@ fn handles_outlive_a_restart() {
     // A new start: a new write verifier, so the client writes again.
     let after = v2.write(&f, 0, b"KEPT", t3::stable_how::UNSTABLE).unwrap();
     assert_ne!(before.verf, after.verf);
-    match c.v3(&p2, &Args::NFSPROC3_COMMIT(t3::COMMIT3args { file: fh(&f), offset: 0, count: 0 })) {
+    match c.v3(
+        &p2,
+        &Args::NFSPROC3_COMMIT(t3::COMMIT3args {
+            file: fh(&f),
+            offset: 0,
+            count: 0,
+        }),
+    ) {
         Res::NFSPROC3_COMMIT(t3::COMMIT3res::NFS3_OK(ok)) => assert_eq!(ok.verf, after.verf),
         r => panic!("{r:?}"),
     }
@@ -139,7 +147,10 @@ fn a_retransmitted_rename_gets_the_kept_reply() {
         to: dirop(&root, "b"),
     });
     let first: Res = c.call_xid(&p, 4711, &args);
-    assert!(matches!(first, Res::NFSPROC3_RENAME(t3::RENAME3res::NFS3_OK(_))));
+    assert!(matches!(
+        first,
+        Res::NFSPROC3_RENAME(t3::RENAME3res::NFS3_OK(_))
+    ));
     // The same XID again: the first reply, not NOENT.
     let again: Res = c.call_xid(&p, 4711, &args);
     assert_eq!(again, first);
@@ -150,7 +161,10 @@ fn a_retransmitted_rename_gets_the_kept_reply() {
         Res::NFSPROC3_RENAME(t3::RENAME3res::default(S::NFS3ERR_NOENT, _))
     ));
     // Idempotent procedures are not kept.
-    assert!(c.d.handle(&c.message(9, &Args::NFSPROC3_NULL), c.peer, c.transport).is_some());
+    assert!(
+        c.d.handle(&c.message(9, &Args::NFSPROC3_NULL), c.peer, c.transport)
+            .is_some()
+    );
 }
 
 #[test]
@@ -173,5 +187,8 @@ fn an_exclusive_create_is_made_once() {
     let again = w.restarted();
     let p2 = again.nfs3();
     let v2 = V3 { p: &p2, c: &c };
-    assert_eq!(v2.create_how(&root, "x", t3::createhow3::EXCLUSIVE(verf)), Ok(a));
+    assert_eq!(
+        v2.create_how(&root, "x", t3::createhow3::EXCLUSIVE(verf)),
+        Ok(a)
+    );
 }

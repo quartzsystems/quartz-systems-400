@@ -41,7 +41,13 @@ pub fn send_res(st: &NlmState, peer: SocketAddr, vers: u32, procedure: u32, resu
         tracing::warn!("no lock manager at {} for a reply", peer.ip());
         return;
     };
-    if let Err(e) = c.call_raw(NLM_PROG::NUMBER, vers, procedure, &Credential::None, results) {
+    if let Err(e) = c.call_raw(
+        NLM_PROG::NUMBER,
+        vers,
+        procedure,
+        &Credential::None,
+        results,
+    ) {
         tracing::warn!("reply message to {peer} failed: {e}");
     }
 }
@@ -63,18 +69,29 @@ pub fn send_granted(st: &NlmState, b: &Blocked) -> Grant {
         return Grant::NoAnswer;
     };
     let cookie = st.cookie();
-    let args = match conv::testargs_bytes(b.vers, &cookie, b.exclusive, &b.lock) {
-        Ok(a) => a,
-        Err(_) => return Grant::Refused,
+    let Ok(args) = conv::testargs_bytes(b.vers, &cookie, b.exclusive, &b.lock) else {
+        return Grant::Refused;
     };
     let procedure = if b.msg { GRANTED_MSG } else { GRANTED };
     if b.msg {
         st.sent_grant(cookie.clone(), b.clone());
     }
     for _ in 0..st.cfg.grant_tries.max(1) {
-        match c.call_raw(NLM_PROG::NUMBER, b.vers, procedure, &Credential::None, &args) {
+        match c.call_raw(
+            NLM_PROG::NUMBER,
+            b.vers,
+            procedure,
+            &Credential::None,
+            &args,
+        ) {
             Ok(_) if b.msg => return Grant::Taken,
-            Ok(r) => return if granted(b.vers, &r) { Grant::Taken } else { Grant::Refused },
+            Ok(r) => {
+                return if granted(b.vers, &r) {
+                    Grant::Taken
+                } else {
+                    Grant::Refused
+                };
+            }
             Err(e) if e.is_retryable() => {}
             Err(_) => break,
         }
@@ -89,9 +106,11 @@ pub fn send_granted(st: &NlmState, b: &Blocked) -> Grant {
 fn granted(vers: u32, r: &[u8]) -> bool {
     let mut d = Decoder::new(r);
     if vers == 4 {
-        crate::types::nlm::nlm4_res::decode(&mut d).is_ok_and(|x| x.stat.stat == nlm4_stats::NLM4_GRANTED)
+        crate::types::nlm::nlm4_res::decode(&mut d)
+            .is_ok_and(|x| x.stat.stat == nlm4_stats::NLM4_GRANTED)
     } else {
-        crate::types::nlm::nlm_res::decode(&mut d).is_ok_and(|x| x.stat.stat == nlm_stats::nlm_granted)
+        crate::types::nlm::nlm_res::decode(&mut d)
+            .is_ok_and(|x| x.stat.stat == nlm_stats::nlm_granted)
     }
 }
 

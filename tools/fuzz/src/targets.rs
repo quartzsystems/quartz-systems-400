@@ -329,6 +329,10 @@ fn nfsnlm(data: &[u8]) {
     nfs::fuzzing::nlm(data);
 }
 
+fn nfsnsm(data: &[u8]) {
+    nfs::fuzzing::nsm(data);
+}
+
 fn nfs3(data: &[u8]) {
     nfs::fuzzing::nfs3(data);
 }
@@ -589,10 +593,21 @@ pub const TARGETS: &[Target] = &[
         max_len: 4096,
     },
     Target {
+        name: "nfsnsm",
+        what: "NSM: arguments and results decoded and encoded again, the status monitor answering calls",
+        run: nfsnsm,
+        seeds: &[b"\x02\0\0\0\0\x05host1\0\0\0\0\0\0\x09127.0.0.1\0\0\0\0\x01\x86\xb5\0\0\0\x02\0\0\0\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"],
+        dict: &[b"\0\0\0\x01", b"\0\0\0\0"],
+        max_len: 4096,
+    },
+    Target {
         name: "nfs3",
-        what: "NFS version 3: every procedure's arguments and results decoded and encoded again",
+        what: "NFS version 3: arguments and results decoded and encoded again, the server answering calls",
         run: nfs3,
-        seeds: &[b"\x01\0\0\0\x08abcdefgh"],
+        seeds: &[
+            b"\x01\0\0\0\x08abcdefgh",
+            b"\x03\x20\0\0\0\x20\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\0\0\0\x01f\0\0\0",
+        ],
         dict: &[b"\0\0\0\x01", b"\0\0\0\0", b"\0\0\0\x40"],
         max_len: 8192,
     },

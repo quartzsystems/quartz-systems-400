@@ -8,8 +8,10 @@
 //! encodes back to the bytes it came from, and decodes again to the
 //! same value; a difference is a bug and panics.
 //!
-//! Wave 2 adds its servers to [`rpc`] and its own entry points beside
-//! these; [`roundtrip`] and [`roundtrip_proc`] serve any generated type.
+//! [`mount`], [`nlm`], [`nsm`] and [`nfs3`] also serve the input as a call
+//! ([`server`]); [`roundtrip`] and [`roundtrip_proc`] serve any generated type.
+
+mod server;
 
 use std::fmt::Debug;
 use std::net::SocketAddr;
@@ -49,6 +51,15 @@ pub fn roundtrip_proc<P: ProcBody + PartialEq + Debug>(procedure: u32, data: &[u
     v.encode_body(&mut e).expect("a decoded value encodes");
     assert_eq!(e.as_bytes(), used, "re-encoding differs");
     assert_eq!(v.procedure(), procedure);
+}
+
+/// A served call's procedure, selector byte and arguments.
+fn served(data: &[u8]) -> (u32, u8, &[u8]) {
+    match data {
+        [p, s, rest @ ..] => (u32::from(*p), *s, rest),
+        [p] => (u32::from(*p), 0, &[]),
+        [] => (0, 0, &[]),
+    }
 }
 
 /// The first byte as a procedure number, and the rest.
@@ -157,16 +168,24 @@ pub fn rpcb(data: &[u8]) {
     }
 }
 
-/// MOUNT versions 1 and 3: every procedure's arguments and results.
+/// MOUNT versions 1 and 3: every procedure's arguments and results, and
+/// the server answering the input as a call ([`server`]).
 pub fn mount(data: &[u8]) {
     let (p, rest) = split(data);
     roundtrip_proc::<mount::MOUNT_PROGRAM::MOUNT_V1::Args>(p, rest);
     roundtrip_proc::<mount::MOUNT_PROGRAM::MOUNT_V1::Res>(p, rest);
     roundtrip_proc::<mount::MOUNT_PROGRAM::MOUNT_V3::Args>(p, rest);
     roundtrip_proc::<mount::MOUNT_PROGRAM::MOUNT_V3::Res>(p, rest);
+    let (p, sel, args) = served(data);
+    if sel & 1 == 1 {
+        server::call::<mount::MOUNT_PROGRAM::MOUNT_V3::Res>(server::Prog::Mount, 3, p, sel, args);
+    } else {
+        server::call::<mount::MOUNT_PROGRAM::MOUNT_V1::Res>(server::Prog::Mount, 1, p, sel, args);
+    }
 }
 
-/// NLM versions 1, 3 and 4 and NSM: every procedure's arguments and results.
+/// NLM versions 1, 3 and 4 and NSM: every procedure's arguments and results,
+/// and the lock manager answering the input as a call.
 pub fn nlm(data: &[u8]) {
     let (p, rest) = split(data);
     roundtrip_proc::<nlm::NLM_PROG::NLM_VERS::Args>(p, rest);
@@ -176,22 +195,35 @@ pub fn nlm(data: &[u8]) {
     roundtrip_proc::<nlm::NLM_PROG::NLM4_VERS::Args>(p, rest);
     roundtrip_proc::<nlm::NLM_PROG::NLM4_VERS::Res>(p, rest);
     roundtrip_proc::<nlm::NLM_PROG::NLM_SM::Args>(p, rest);
+    let (p, sel, args) = served(data);
+    match sel & 3 {
+        0 => server::call::<nlm::NLM_PROG::NLM_VERS::Res>(server::Prog::Nlm, 1, p, sel, args),
+        1 => server::call::<nlm::NLM_PROG::NLM_SM::Res>(server::Prog::Nlm, 2, p, sel, args),
+        2 => server::call::<nlm::NLM_PROG::NLM_VERSX::Res>(server::Prog::Nlm, 3, p, sel, args),
+        _ => server::call::<nlm::NLM_PROG::NLM4_VERS::Res>(server::Prog::Nlm, 4, p, sel, args),
+    }
     nsm(data);
 }
 
-/// NSM: every procedure's arguments and results.
+/// NSM: every procedure's arguments and results, and the monitor
+/// answering the input as a call.
 pub fn nsm(data: &[u8]) {
     let (p, rest) = split(data);
     roundtrip_proc::<nsm::SM_PROG::SM_VERS::Args>(p, rest);
     roundtrip_proc::<nsm::SM_PROG::SM_VERS::Res>(p, rest);
     roundtrip::<nsm::status>(data);
+    let (p, sel, args) = served(data);
+    server::call::<nsm::SM_PROG::SM_VERS::Res>(server::Prog::Nsm, 1, p, sel, args);
 }
 
-/// NFS version 3: every procedure's arguments and results.
+/// NFS version 3: every procedure's arguments and results, and the server
+/// answering the input as a call.
 pub fn nfs3(data: &[u8]) {
     let (p, rest) = split(data);
     roundtrip_proc::<nfs3::NFS_PROGRAM::NFS_V3::Args>(p, rest);
     roundtrip_proc::<nfs3::NFS_PROGRAM::NFS_V3::Res>(p, rest);
+    let (p, sel, args) = served(data);
+    server::call::<nfs3::NFS_PROGRAM::NFS_V3::Res>(server::Prog::Nfs3, 3, p, sel, args);
 }
 
 /// NFS version 4: the compound's arguments and results, and the callback's.

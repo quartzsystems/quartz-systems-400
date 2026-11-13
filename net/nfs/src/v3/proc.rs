@@ -11,20 +11,19 @@ use crate::server::gate::writable;
 use crate::server::vfs::{CreateHow, Special, Stable};
 use crate::server::{FileHandle, Gate, Req, Vfs, VfsError};
 use crate::types::nfs3::{
-    ACCESS3args, ACCESS3res, ACCESS3resfail, ACCESS3resok, COMMIT3args, COMMIT3res,
-    COMMIT3resfail, COMMIT3resok, CREATE3args, CREATE3res, CREATE3resfail, CREATE3resok,
-    FSF3_CANSETTIME, FSF3_HOMOGENEOUS, FSF3_LINK, FSF3_SYMLINK, FSINFO3args, FSINFO3res,
-    FSINFO3resfail, FSINFO3resok, FSSTAT3args, FSSTAT3res, FSSTAT3resfail, FSSTAT3resok,
-    GETATTR3args, GETATTR3res, GETATTR3resok, LINK3args, LINK3res, LINK3resfail, LINK3resok,
-    LOOKUP3args, LOOKUP3res, LOOKUP3resfail, LOOKUP3resok, MKDIR3args, MKDIR3res, MKDIR3resfail,
-    MKDIR3resok, MKNOD3args, MKNOD3res, MKNOD3resfail, MKNOD3resok, PATHCONF3args, PATHCONF3res,
-    PATHCONF3resfail, PATHCONF3resok, READ3args, READ3res, READ3resfail, READ3resok,
-    READLINK3args, READLINK3res, READLINK3resfail, READLINK3resok, REMOVE3args, REMOVE3res,
-    REMOVE3resfail, REMOVE3resok, RENAME3args, RENAME3res, RENAME3resfail, RENAME3resok,
-    RMDIR3args, RMDIR3res, RMDIR3resfail, RMDIR3resok, SETATTR3args, SETATTR3res,
-    SETATTR3resfail, SETATTR3resok, SYMLINK3args, SYMLINK3res, SYMLINK3resfail, SYMLINK3resok,
-    WRITE3args, WRITE3res, WRITE3resfail, WRITE3resok, createhow3, mknoddata3, nfspath3,
-    nfstime3, post_op_attr, stable_how,
+    ACCESS3args, ACCESS3res, ACCESS3resfail, ACCESS3resok, COMMIT3args, COMMIT3res, COMMIT3resfail,
+    COMMIT3resok, CREATE3args, CREATE3res, CREATE3resfail, CREATE3resok, FSF3_CANSETTIME,
+    FSF3_HOMOGENEOUS, FSF3_LINK, FSF3_SYMLINK, FSINFO3args, FSINFO3res, FSINFO3resfail,
+    FSINFO3resok, FSSTAT3args, FSSTAT3res, FSSTAT3resfail, FSSTAT3resok, GETATTR3args, GETATTR3res,
+    GETATTR3resok, LINK3args, LINK3res, LINK3resfail, LINK3resok, LOOKUP3args, LOOKUP3res,
+    LOOKUP3resfail, LOOKUP3resok, MKDIR3args, MKDIR3res, MKDIR3resfail, MKDIR3resok, MKNOD3args,
+    MKNOD3res, MKNOD3resfail, MKNOD3resok, PATHCONF3args, PATHCONF3res, PATHCONF3resfail,
+    PATHCONF3resok, READ3args, READ3res, READ3resfail, READ3resok, READLINK3args, READLINK3res,
+    READLINK3resfail, READLINK3resok, REMOVE3args, REMOVE3res, REMOVE3resfail, REMOVE3resok,
+    RENAME3args, RENAME3res, RENAME3resfail, RENAME3resok, RMDIR3args, RMDIR3res, RMDIR3resfail,
+    RMDIR3resok, SETATTR3args, SETATTR3res, SETATTR3resfail, SETATTR3resok, SYMLINK3args,
+    SYMLINK3res, SYMLINK3resfail, SYMLINK3resok, WRITE3args, WRITE3res, WRITE3resfail, WRITE3resok,
+    createhow3, mknoddata3, nfspath3, nfstime3, post_op_attr, stable_how,
 };
 
 /// A call's context.
@@ -68,7 +67,10 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
     }
 
     pub(super) fn getattr(&self, a: &GETATTR3args) -> GETATTR3res {
-        match self.open(&a.object.data).and_then(|(r, h)| self.vfs.getattr(&r, &h)) {
+        match self
+            .open(&a.object.data)
+            .and_then(|(r, h)| self.vfs.getattr(&r, &h))
+        {
             Ok(at) => GETATTR3res::NFS3_OK(GETATTR3resok {
                 obj_attributes: fattr(&at),
             }),
@@ -95,7 +97,11 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
 
     pub(super) fn lookup(&self, a: &LOOKUP3args) -> LOOKUP3res {
         let o = self.open(&a.what.dir.data);
-        match o.as_ref().map_err(|e| *e).and_then(|(r, h)| self.vfs.lookup(r, h, &a.what.name.0)) {
+        match o
+            .as_ref()
+            .map_err(|e| *e)
+            .and_then(|(r, h)| self.vfs.lookup(r, h, &a.what.name.0))
+        {
             Ok((n, d)) => LOOKUP3res::NFS3_OK(LOOKUP3resok {
                 object: fh3(&n.fh),
                 obj_attributes: Some(fattr(&n.attr)),
@@ -112,7 +118,11 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
 
     pub(super) fn access(&self, a: &ACCESS3args) -> ACCESS3res {
         let o = self.open(&a.object.data);
-        match o.as_ref().map_err(|e| *e).and_then(|(r, h)| self.vfs.access(r, h, a.access)) {
+        match o
+            .as_ref()
+            .map_err(|e| *e)
+            .and_then(|(r, h)| self.vfs.access(r, h, a.access))
+        {
             Ok((got, at)) => ACCESS3res::NFS3_OK(ACCESS3resok {
                 obj_attributes: post(at.as_ref()),
                 access: got,
@@ -128,7 +138,11 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
 
     pub(super) fn readlink(&self, a: &READLINK3args) -> READLINK3res {
         let o = self.open(&a.symlink.data);
-        match o.as_ref().map_err(|e| *e).and_then(|(r, h)| self.vfs.readlink(r, h)) {
+        match o
+            .as_ref()
+            .map_err(|e| *e)
+            .and_then(|(r, h)| self.vfs.readlink(r, h))
+        {
             Ok((t, at)) => READLINK3res::NFS3_OK(READLINK3resok {
                 symlink_attributes: post(at.as_ref()),
                 data: nfspath3(t),
@@ -145,7 +159,11 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
     pub(super) fn read(&self, a: &READ3args) -> READ3res {
         let o = self.open(&a.file.data);
         let count = a.count.min(MAX_IO);
-        match o.as_ref().map_err(|e| *e).and_then(|(r, h)| self.vfs.read(r, h, a.offset, count)) {
+        match o
+            .as_ref()
+            .map_err(|e| *e)
+            .and_then(|(r, h)| self.vfs.read(r, h, a.offset, count))
+        {
             Ok(d) => READ3res::NFS3_OK(READ3resok {
                 file_attributes: post(d.attr.as_ref()),
                 count: u32::try_from(d.data.len()).unwrap_or(u32::MAX),
@@ -384,7 +402,11 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
 
     pub(super) fn fsstat(&self, a: &FSSTAT3args) -> FSSTAT3res {
         let o = self.open(&a.fsroot.data);
-        match o.as_ref().map_err(|e| *e).and_then(|(r, h)| self.vfs.fsstat(r, h)) {
+        match o
+            .as_ref()
+            .map_err(|e| *e)
+            .and_then(|(r, h)| self.vfs.fsstat(r, h))
+        {
             Ok((s, at)) => FSSTAT3res::NFS3_OK(FSSTAT3resok {
                 obj_attributes: post(at.as_ref()),
                 tbytes: s.tbytes,
@@ -405,7 +427,10 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
     }
 
     pub(super) fn fsinfo(&self, a: &FSINFO3args) -> FSINFO3res {
-        match self.open(&a.fsroot.data).and_then(|(r, h)| self.vfs.getattr(&r, &h)) {
+        match self
+            .open(&a.fsroot.data)
+            .and_then(|(r, h)| self.vfs.getattr(&r, &h))
+        {
             Ok(at) => FSINFO3res::NFS3_OK(FSINFO3resok {
                 obj_attributes: Some(fattr(&at)),
                 rtmax: MAX_IO,
@@ -422,13 +447,22 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
                 },
                 properties: FSF3_LINK | FSF3_SYMLINK | FSF3_HOMOGENEOUS | FSF3_CANSETTIME,
             }),
-            Err(e) => FSINFO3res::default(status(e), FSINFO3resfail { obj_attributes: None }),
+            Err(e) => FSINFO3res::default(
+                status(e),
+                FSINFO3resfail {
+                    obj_attributes: None,
+                },
+            ),
         }
     }
 
     pub(super) fn pathconf(&self, a: &PATHCONF3args) -> PATHCONF3res {
         let o = self.open(&a.object.data);
-        match o.as_ref().map_err(|e| *e).and_then(|(r, h)| self.vfs.pathconf(r, h)) {
+        match o
+            .as_ref()
+            .map_err(|e| *e)
+            .and_then(|(r, h)| self.vfs.pathconf(r, h))
+        {
             Ok((p, at)) => PATHCONF3res::NFS3_OK(PATHCONF3resok {
                 obj_attributes: post(at.as_ref()),
                 linkmax: p.linkmax,

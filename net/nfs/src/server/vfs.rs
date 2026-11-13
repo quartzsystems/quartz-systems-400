@@ -290,6 +290,7 @@ pub struct FsStat {
 
 /// What `PATHCONF` answers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct PathConf {
     /// Most links.
     pub linkmax: u32,
@@ -378,8 +379,7 @@ pub trait Vfs {
     fn getattr(&self, r: &Req, fh: &FileHandle) -> VResult<Attr>;
     /// Sets attributes; with `guard`, only when the change time is it
     /// (`NotSync`).
-    fn setattr(&self, r: &Req, fh: &FileHandle, a: &SetAttr, guard: Option<Time>)
-    -> VResult<Wcc>;
+    fn setattr(&self, r: &Req, fh: &FileHandle, a: &SetAttr, guard: Option<Time>) -> VResult<Wcc>;
     /// The object `name` in `dir` (`.` and `..` too; `..` of the
     /// export's root is the root), and the directory's attributes.
     fn lookup(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<(Node, Option<Attr>)>;
@@ -390,8 +390,14 @@ pub trait Vfs {
     /// Up to `count` bytes at `off`.
     fn read(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<ReadData>;
     /// Writes `data` at `off`.
-    fn write(&self, r: &Req, fh: &FileHandle, off: u64, data: &[u8], stable: Stable)
-    -> VResult<Written>;
+    fn write(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        off: u64,
+        data: &[u8],
+        stable: Stable,
+    ) -> VResult<Written>;
     /// Makes earlier unstable writes stable: the write verifier.
     fn commit(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<([u8; 8], Wcc)>;
     /// Makes a regular file.
@@ -399,26 +405,56 @@ pub trait Vfs {
     /// Makes a directory.
     fn mkdir(&self, r: &Req, dir: &FileHandle, name: &[u8], a: &SetAttr) -> VResult<Made>;
     /// Makes a symbolic link to `target` (the client's bytes).
-    fn symlink(&self, r: &Req, dir: &FileHandle, name: &[u8], target: &[u8], a: &SetAttr)
-    -> VResult<Made>;
+    fn symlink(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        target: &[u8],
+        a: &SetAttr,
+    ) -> VResult<Made>;
     /// Makes a special file (FIFOs only: the others are `NotSupp`).
-    fn mknod(&self, r: &Req, dir: &FileHandle, name: &[u8], what: Special, a: &SetAttr)
-    -> VResult<Made>;
+    fn mknod(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        what: Special,
+        a: &SetAttr,
+    ) -> VResult<Made>;
     /// Removes a non-directory.
     fn remove(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<Wcc>;
     /// Removes an empty directory.
     fn rmdir(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<Wcc>;
     /// Renames, replacing what `to`/`to_name` names.
-    fn rename(&self, r: &Req, from: &FileHandle, from_name: &[u8], to: &FileHandle, to_name: &[u8])
-    -> VResult<(Wcc, Wcc)>;
+    fn rename(
+        &self,
+        r: &Req,
+        from: &FileHandle,
+        from_name: &[u8],
+        to: &FileHandle,
+        to_name: &[u8],
+    ) -> VResult<(Wcc, Wcc)>;
     /// Links `fh` as `name` in `dir`.
-    fn link(&self, r: &Req, fh: &FileHandle, dir: &FileHandle, name: &[u8])
-    -> VResult<(Option<Attr>, Wcc)>;
+    fn link(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        dir: &FileHandle,
+        name: &[u8],
+    ) -> VResult<(Option<Attr>, Wcc)>;
     /// Entries after `cookie` (0: the first), at most `max`; a cookie
     /// other than 0 needs the page's `verf` (`BadCookie`). With `plus`,
     /// each entry's handle and attributes.
-    fn readdir(&self, r: &Req, dir: &FileHandle, cookie: u64, verf: [u8; 8], max: usize, plus: bool)
-    -> VResult<DirPage>;
+    fn readdir(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        cookie: u64,
+        verf: [u8; 8],
+        max: usize,
+        plus: bool,
+    ) -> VResult<DirPage>;
     /// Space and objects.
     fn fsstat(&self, r: &Req, fh: &FileHandle) -> VResult<(FsStat, Option<Attr>)>;
     /// Names and links.
@@ -429,11 +465,26 @@ pub trait Vfs {
     fn close(&self, open: u64) -> VResult<()>;
     /// Locks a range for `sub`; with `wait`, a lock that cannot be had
     /// now is queued.
-    fn lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64, wait: bool)
-    -> VResult<LockOutcome>;
+    fn lock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+        wait: bool,
+    ) -> VResult<LockOutcome>;
     /// The lock that would refuse this one.
-    fn test_lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64)
-    -> VResult<Option<Conflict>>;
+    fn test_lock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+    ) -> VResult<Option<Conflict>>;
     /// Unlocks a range of `sub`'s.
     fn unlock(&self, r: &Req, fh: &FileHandle, sub: u64, start: u64, len: u64) -> VResult<()>;
     /// Takes back a queued lock: whether it was still queued.

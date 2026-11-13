@@ -299,27 +299,39 @@ impl MemExports {
 
     /// Adds or replaces (by ID) an export.
     pub fn put(&self, e: MemExport) {
-        let mut l = self.list.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut l = self
+            .list
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         l.retain(|x| x.id != e.id);
         l.push(Arc::new(e));
     }
 
     /// Removes the export with ID `id` (`EXPORTFS -U`).
     pub fn remove(&self, id: u32) {
-        let mut l = self.list.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut l = self
+            .list
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         l.retain(|x| x.id != id);
     }
 }
 
 impl ExportTable for MemExports {
     fn by_id(&self, id: u32) -> Option<Arc<dyn ExportView>> {
-        let l = self.list.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let l = self
+            .list
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         l.iter()
             .find(|e| e.id == id)
             .map(|e| Arc::clone(e) as Arc<dyn ExportView>)
     }
     fn all(&self) -> Vec<Arc<dyn ExportView>> {
-        let l = self.list.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let l = self
+            .list
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         l.iter()
             .map(|e| Arc::clone(e) as Arc<dyn ExportView>)
             .collect()

@@ -161,7 +161,11 @@ impl World {
 
     /// The server job's file system (owner 1).
     pub fn vfs(&self) -> IfsVfs<LocalIfs<MemBackend>> {
-        IfsVfs::new(self.job(1), Arc::clone(&self.instance), ifsvfs::Config::default())
+        IfsVfs::new(
+            self.job(1),
+            Arc::clone(&self.instance),
+            ifsvfs::Config::default(),
+        )
     }
 
     /// The file ID of `path`.
@@ -318,7 +322,12 @@ impl Client {
     }
 
     /// Calls `args` with XID `xid`, decoding `R`.
-    pub fn call_xid<A: ProcBody, R: ProcBody>(&self, p: &dyn LocalProgram, xid: u32, args: &A) -> R {
+    pub fn call_xid<A: ProcBody, R: ProcBody>(
+        &self,
+        p: &dyn LocalProgram,
+        xid: u32,
+        args: &A,
+    ) -> R {
         let reply = self.send(p, &self.message(xid, args)).expect("a reply");
         let res = nfs::rpc::client::results(&reply).expect("accepted");
         let mut d = Decoder::new(&res);
@@ -382,7 +391,12 @@ pub struct V3<'a> {
 impl V3<'_> {
     /// `LOOKUP`: the handle, or the status.
     pub fn lookup(&self, dir: &[u8], name: &str) -> Result<Vec<u8>, t3::nfsstat3> {
-        match self.c.v3(self.p, &NFS_V3::Args::NFSPROC3_LOOKUP(t3::LOOKUP3args { what: dirop(dir, name) })) {
+        match self.c.v3(
+            self.p,
+            &NFS_V3::Args::NFSPROC3_LOOKUP(t3::LOOKUP3args {
+                what: dirop(dir, name),
+            }),
+        ) {
             NFS_V3::Res::NFSPROC3_LOOKUP(t3::LOOKUP3res::NFS3_OK(ok)) => Ok(ok.object.data),
             NFS_V3::Res::NFSPROC3_LOOKUP(t3::LOOKUP3res::default(s, _)) => Err(s),
             r => panic!("{r:?}"),
@@ -391,7 +405,10 @@ impl V3<'_> {
 
     /// `GETATTR`.
     pub fn getattr(&self, f: &[u8]) -> Result<t3::fattr3, t3::nfsstat3> {
-        match self.c.v3(self.p, &NFS_V3::Args::NFSPROC3_GETATTR(t3::GETATTR3args { object: fh(f) })) {
+        match self.c.v3(
+            self.p,
+            &NFS_V3::Args::NFSPROC3_GETATTR(t3::GETATTR3args { object: fh(f) }),
+        ) {
             NFS_V3::Res::NFSPROC3_GETATTR(t3::GETATTR3res::NFS3_OK(ok)) => Ok(ok.obj_attributes),
             NFS_V3::Res::NFSPROC3_GETATTR(t3::GETATTR3res::default(s)) => Err(s),
             r => panic!("{r:?}"),
@@ -399,7 +416,12 @@ impl V3<'_> {
     }
 
     /// `CREATE` (`how`): the handle.
-    pub fn create_how(&self, dir: &[u8], name: &str, how: t3::createhow3) -> Result<Vec<u8>, t3::nfsstat3> {
+    pub fn create_how(
+        &self,
+        dir: &[u8],
+        name: &str,
+        how: t3::createhow3,
+    ) -> Result<Vec<u8>, t3::nfsstat3> {
         let a = t3::CREATE3args {
             r#where: dirop(dir, name),
             how,
@@ -430,7 +452,13 @@ impl V3<'_> {
     }
 
     /// `WRITE`: count, committed, verifier.
-    pub fn write(&self, f: &[u8], off: u64, data: &[u8], stable: t3::stable_how) -> Result<t3::WRITE3resok, t3::nfsstat3> {
+    pub fn write(
+        &self,
+        f: &[u8],
+        off: u64,
+        data: &[u8],
+        stable: t3::stable_how,
+    ) -> Result<t3::WRITE3resok, t3::nfsstat3> {
         let a = t3::WRITE3args {
             file: fh(f),
             offset: off,
@@ -461,7 +489,12 @@ impl V3<'_> {
 
     /// `REMOVE`.
     pub fn remove(&self, dir: &[u8], name: &str) -> Result<(), t3::nfsstat3> {
-        match self.c.v3(self.p, &NFS_V3::Args::NFSPROC3_REMOVE(t3::REMOVE3args { object: dirop(dir, name) })) {
+        match self.c.v3(
+            self.p,
+            &NFS_V3::Args::NFSPROC3_REMOVE(t3::REMOVE3args {
+                object: dirop(dir, name),
+            }),
+        ) {
             NFS_V3::Res::NFSPROC3_REMOVE(t3::REMOVE3res::NFS3_OK(_)) => Ok(()),
             NFS_V3::Res::NFSPROC3_REMOVE(t3::REMOVE3res::default(s, _)) => Err(s),
             r => panic!("{r:?}"),

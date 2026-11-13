@@ -35,7 +35,11 @@ pub fn anonymous(export: &dyn ExportView) -> Option<Caller> {
 ///
 /// [`VfsError::Acces`] when the caller is anonymous and the export
 /// refuses anonymous callers.
-pub fn caller(cred: &Credential, peer: IpAddr, export: &dyn ExportView) -> Result<Caller, VfsError> {
+pub fn caller(
+    cred: &Credential,
+    peer: IpAddr,
+    export: &dyn ExportView,
+) -> Result<Caller, VfsError> {
     match cred {
         Credential::Sys(p) if p.uid == 0 && export.root_access(peer) => Ok(Caller::Uid { uid: 0 }),
         Credential::Sys(p) if p.uid != 0 => Ok(Caller::Uid { uid: p.uid }),
@@ -72,8 +76,14 @@ mod tests {
         assert_eq!(caller(&Credential::None, peer, &e), Err(VfsError::Acces));
         assert_eq!(fallback(&Caller::Uid { uid: 7 }, &e), None);
         e.anon = Anon::Uid(9);
-        assert_eq!(caller(&Credential::None, peer, &e), Ok(Caller::Uid { uid: 9 }));
-        assert_eq!(fallback(&Caller::Uid { uid: 7 }, &e), Some(Caller::Uid { uid: 9 }));
+        assert_eq!(
+            caller(&Credential::None, peer, &e),
+            Ok(Caller::Uid { uid: 9 })
+        );
+        assert_eq!(
+            fallback(&Caller::Uid { uid: 7 }, &e),
+            Some(Caller::Uid { uid: 9 })
+        );
         assert_eq!(fallback(&Caller::Uid { uid: 9 }, &e), None);
     }
 }

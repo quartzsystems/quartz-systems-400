@@ -7,6 +7,7 @@
 //! reclaims, shares, the `_MSG` forms, the 32-bit versions, and a
 //! client's restart told through the status monitor freeing its locks.
 
+#![allow(clippy::many_single_char_names)]
 #![allow(clippy::too_many_lines)]
 
 mod srv3_common;
@@ -36,9 +37,9 @@ use nfs::server::run::{self, Common, Listeners};
 use nfs::server::{Clock, ExportTable, ManualClock, SystemClock};
 use nfs::types::nlm::NLM_PROG::{NLM_SM, NLM_VERSX, NLM4_VERS};
 use nfs::types::nlm::{
-    fsh_access, fsh_mode, netobj, nlm_lock, nlm_lockargs, nlm_share, nlm_shareargs, nlm_stats,
-    nlm4_cancargs, nlm4_lock, nlm4_lockargs, nlm4_res, nlm4_stat, nlm4_stats, nlm4_testargs,
-    nlm4_testrply, nlm4_unlockargs, nlm_sm_status,
+    fsh_access, fsh_mode, netobj, nlm_lock, nlm_lockargs, nlm_share, nlm_shareargs, nlm_sm_status,
+    nlm_stats, nlm4_cancargs, nlm4_lock, nlm4_lockargs, nlm4_res, nlm4_stat, nlm4_stats,
+    nlm4_testargs, nlm4_testrply, nlm4_unlockargs,
 };
 use nfs::types::nsm::SM_PROG::SM_VERS;
 use nfs::types::nsm::stat_chge;
@@ -72,9 +73,13 @@ impl Program for Catcher {
     }
     fn call(&self, ctx: &CallContext, d: &mut Decoder<'_>) -> Answer {
         let args = d.rest().to_vec();
-        self.got.lock().unwrap().push((ctx.vers, ctx.procedure, args.clone()));
+        self.got
+            .lock()
+            .unwrap()
+            .push((ctx.vers, ctx.procedure, args.clone()));
         if ctx.procedure == 5 && ctx.vers == 4 {
-            let a = nlm4_testargs::decode(&mut Decoder::new(&args)).map_err(|_| AcceptError::GarbageArgs)?;
+            let a = nlm4_testargs::decode(&mut Decoder::new(&args))
+                .map_err(|_| AcceptError::GarbageArgs)?;
             let stat = if self.take.load(Ordering::SeqCst) {
                 nlm4_stats::NLM4_GRANTED
             } else {
@@ -89,7 +94,12 @@ impl Program for Catcher {
     }
 }
 
-fn cfg(locator: Arc<FixedLocator>, clock: Arc<dyn Clock>, grace: Duration, monitor: bool) -> NlmConfig {
+fn cfg(
+    locator: Arc<FixedLocator>,
+    clock: Arc<dyn Clock>,
+    grace: Duration,
+    monitor: bool,
+) -> NlmConfig {
     NlmConfig {
         monitor,
         locator,
@@ -177,7 +187,10 @@ fn setup() -> Setup {
     }
 }
 
-fn nlm(s: &Setup, st: &Arc<NlmState>) -> Nlm<IfsVfs<ifs::client::LocalIfs<ifs::backend::mem::MemBackend>>> {
+fn nlm(
+    s: &Setup,
+    st: &Arc<NlmState>,
+) -> Nlm<IfsVfs<ifs::client::LocalIfs<ifs::backend::mem::MemBackend>>> {
     Nlm::new(s.w.vfs(), s.w.gate(), Arc::clone(st))
 }
 
@@ -191,45 +204,93 @@ fn client(peer: &str) -> Client {
 #[test]
 fn two_clients_conflict_and_a_local_job_too() {
     let s = setup();
-    let st = NlmState::new(cfg(Arc::clone(&s.locator), Arc::new(SystemClock), Duration::ZERO, false));
+    let st = NlmState::new(cfg(
+        Arc::clone(&s.locator),
+        Arc::new(SystemClock),
+        Duration::ZERO,
+        false,
+    ));
     let p = nlm(&s, &st);
     let c = client("10.0.0.5:700");
     let a = lock("clientA", 1, &s.file, 0, 10);
     let b = lock("clientB", 7, &s.file, 5, 1);
-    assert_eq!(stat_of(&c.call(&p, &lockargs(a.clone(), false, false))), nlm4_stats::NLM4_GRANTED);
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(a.clone(), false, false))),
+        nlm4_stats::NLM4_GRANTED
+    );
     // B: TEST names A's lock.
     match c.call(&p, &test_args(b.clone())) {
         NLM4_VERS::Res::NLMPROC4_TEST(t) => match t.test_stat {
             nlm4_testrply::NLM4_DENIED(h) => {
-                assert_eq!((h.svid, h.oh.0, h.l_offset, h.l_len, h.exclusive), (1, a.oh.0.clone(), 0, 10, true));
+                assert_eq!(
+                    (h.svid, h.oh.0, h.l_offset, h.l_len, h.exclusive),
+                    (1, a.oh.0.clone(), 0, 10, true)
+                );
             }
-            x => panic!("{x:?}"),
+            x @ nlm4_testrply::default(_) => panic!("{x:?}"),
         },
         r => panic!("{r:?}"),
     }
-    assert_eq!(stat_of(&c.call(&p, &lockargs(b.clone(), false, false))), nlm4_stats::NLM4_DENIED);
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(b.clone(), false, false))),
+        nlm4_stats::NLM4_DENIED
+    );
     // The same owner again: no conflict with itself.
-    assert_eq!(stat_of(&c.call(&p, &lockargs(lock("clientA", 1, &s.file, 2, 2), false, false))), nlm4_stats::NLM4_GRANTED);
-    assert_eq!(stat_of(&c.call(&p, &unlock_args(a.clone()))), nlm4_stats::NLM4_GRANTED);
-    assert_eq!(stat_of(&c.call(&p, &lockargs(b.clone(), false, false))), nlm4_stats::NLM4_GRANTED);
-    assert_eq!(stat_of(&c.call(&p, &unlock_args(b.clone()))), nlm4_stats::NLM4_GRANTED);
+    assert_eq!(
+        stat_of(&c.call(
+            &p,
+            &lockargs(lock("clientA", 1, &s.file, 2, 2), false, false)
+        )),
+        nlm4_stats::NLM4_GRANTED
+    );
+    assert_eq!(
+        stat_of(&c.call(&p, &unlock_args(a.clone()))),
+        nlm4_stats::NLM4_GRANTED
+    );
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(b.clone(), false, false))),
+        nlm4_stats::NLM4_GRANTED
+    );
+    assert_eq!(
+        stat_of(&c.call(&p, &unlock_args(b.clone()))),
+        nlm4_stats::NLM4_GRANTED
+    );
     // A local job's lock is in the way too.
     let j = s.w.job(2);
-    let fd = j.open("/home/exp/f", OpenArgs::new(O_RDWR | O_CREAT).mode(0o666)).unwrap();
-    j.lock_range(fd, F_SETLK, RangeKind::Write, SEEK_SET, 0, 4).unwrap();
-    assert_eq!(stat_of(&c.call(&p, &lockargs(a.clone(), false, false))), nlm4_stats::NLM4_DENIED);
-    assert_eq!(stat_of(&c.call(&p, &test_args(a.clone()))), nlm4_stats::NLM4_DENIED);
+    let fd = j
+        .open("/home/exp/f", OpenArgs::new(O_RDWR | O_CREAT).mode(0o666))
+        .unwrap();
+    j.lock_range(fd, F_SETLK, RangeKind::Write, SEEK_SET, 0, 4)
+        .unwrap();
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(a.clone(), false, false))),
+        nlm4_stats::NLM4_DENIED
+    );
+    assert_eq!(
+        stat_of(&c.call(&p, &test_args(a.clone()))),
+        nlm4_stats::NLM4_DENIED
+    );
     j.close(fd).unwrap();
-    assert_eq!(stat_of(&c.call(&p, &lockargs(a, false, false))), nlm4_stats::NLM4_GRANTED);
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(a, false, false))),
+        nlm4_stats::NLM4_GRANTED
+    );
     // A handle that is no longer good.
     assert_eq!(
-        stat_of(&c.call(&p, &lockargs(lock("clientA", 1, b"junk", 0, 1), false, false))),
+        stat_of(&c.call(
+            &p,
+            &lockargs(lock("clientA", 1, b"junk", 0, 1), false, false)
+        )),
         nlm4_stats::NLM4_STALE_FH
     );
 }
 
 /// Serves `catcher` on a loopback UDP port until `stop`.
-fn serve_catcher<'s>(sc: &'s std::thread::Scope<'s, '_>, catcher: Arc<Catcher>, stop: &'s AtomicBool) -> SocketAddr {
+fn serve_catcher<'s>(
+    sc: &'s std::thread::Scope<'s, '_>,
+    catcher: Arc<Catcher>,
+    stop: &'s AtomicBool,
+) -> SocketAddr {
     let u = UdpSocket::bind("127.0.0.1:0").unwrap();
     u.set_read_timeout(Some(Duration::from_millis(50))).unwrap();
     let addr = u.local_addr().unwrap();
@@ -246,7 +307,12 @@ fn serve_catcher<'s>(sc: &'s std::thread::Scope<'s, '_>, catcher: Arc<Catcher>, 
 #[test]
 fn a_blocked_lock_is_granted_by_callback_or_cancelled() {
     let s = setup();
-    let st = NlmState::new(cfg(Arc::clone(&s.locator), Arc::new(SystemClock), Duration::ZERO, false));
+    let st = NlmState::new(cfg(
+        Arc::clone(&s.locator),
+        Arc::new(SystemClock),
+        Duration::ZERO,
+        false,
+    ));
     let p = nlm(&s, &st);
     let c = client(LOCAL);
     let stop = AtomicBool::new(false);
@@ -255,15 +321,28 @@ fn a_blocked_lock_is_granted_by_callback_or_cancelled() {
     std::thread::scope(|sc| {
         let _guard = StopOnDrop(&stop);
         let addr = serve_catcher(sc, Arc::clone(&catcher), &stop);
-        s.locator.put(Host::Addr(IpAddr::from([127, 0, 0, 1])), 100_021, 4, addr);
+        s.locator
+            .put(Host::Addr(IpAddr::from([127, 0, 0, 1])), 100_021, 4, addr);
         let a = lock("clientA", 1, &s.file, 0, 10);
         let b = lock("clientB", 2, &s.file, 0, 10);
-        assert_eq!(stat_of(&c.call(&p, &lockargs(a.clone(), false, false))), nlm4_stats::NLM4_GRANTED);
-        assert_eq!(stat_of(&c.call(&p, &lockargs(b.clone(), true, false))), nlm4_stats::NLM4_BLOCKED);
+        assert_eq!(
+            stat_of(&c.call(&p, &lockargs(a.clone(), false, false))),
+            nlm4_stats::NLM4_GRANTED
+        );
+        assert_eq!(
+            stat_of(&c.call(&p, &lockargs(b.clone(), true, false))),
+            nlm4_stats::NLM4_BLOCKED
+        );
         // Asked again while it waits: still blocked, queued once.
-        assert_eq!(stat_of(&c.call(&p, &lockargs(b.clone(), true, false))), nlm4_stats::NLM4_BLOCKED);
+        assert_eq!(
+            stat_of(&c.call(&p, &lockargs(b.clone(), true, false))),
+            nlm4_stats::NLM4_BLOCKED
+        );
         assert_eq!(st.blocked_count(), 1);
-        assert_eq!(stat_of(&c.call(&p, &unlock_args(a.clone()))), nlm4_stats::NLM4_GRANTED);
+        assert_eq!(
+            stat_of(&c.call(&p, &unlock_args(a.clone()))),
+            nlm4_stats::NLM4_GRANTED
+        );
         // The job's poll names the token; the grant goes to the client.
         let vfs = s.w.vfs();
         let mut news = ClientNews(s.w.job(1));
@@ -279,9 +358,15 @@ fn a_blocked_lock_is_granted_by_callback_or_cancelled() {
         let g = nlm4_testargs::decode(&mut Decoder::new(&got[0].2)).unwrap();
         assert_eq!(g.alock.oh.0, b.oh.0);
         // B holds it now.
-        assert_eq!(stat_of(&c.call(&p, &test_args(a.clone()))), nlm4_stats::NLM4_DENIED);
+        assert_eq!(
+            stat_of(&c.call(&p, &test_args(a.clone()))),
+            nlm4_stats::NLM4_DENIED
+        );
         // A waits, then cancels: nothing granted when B unlocks.
-        assert_eq!(stat_of(&c.call(&p, &lockargs(a.clone(), true, false))), nlm4_stats::NLM4_BLOCKED);
+        assert_eq!(
+            stat_of(&c.call(&p, &lockargs(a.clone(), true, false))),
+            nlm4_stats::NLM4_BLOCKED
+        );
         let cancel = NLM4_VERS::Args::NLMPROC4_CANCEL(nlm4_cancargs {
             cookie: netobj(b"x".to_vec()),
             block: true,
@@ -289,20 +374,42 @@ fn a_blocked_lock_is_granted_by_callback_or_cancelled() {
             alock: a.clone(),
         });
         assert_eq!(stat_of(&c.call(&p, &cancel)), nlm4_stats::NLM4_GRANTED);
-        assert_eq!(stat_of(&c.call(&p, &cancel)), nlm4_stats::NLM4_DENIED, "nothing left to cancel");
-        assert_eq!(stat_of(&c.call(&p, &unlock_args(b.clone()))), nlm4_stats::NLM4_GRANTED);
+        assert_eq!(
+            stat_of(&c.call(&p, &cancel)),
+            nlm4_stats::NLM4_DENIED,
+            "nothing left to cancel"
+        );
+        assert_eq!(
+            stat_of(&c.call(&p, &unlock_args(b.clone()))),
+            nlm4_stats::NLM4_GRANTED
+        );
         assert!(news.poll(0).unwrap().locks.is_empty());
-        assert_eq!(stat_of(&c.call(&p, &test_args(a.clone()))), nlm4_stats::NLM4_GRANTED);
+        assert_eq!(
+            stat_of(&c.call(&p, &test_args(a.clone()))),
+            nlm4_stats::NLM4_GRANTED
+        );
         // A grant the client refuses is given back.
         catcher.take.store(false, Ordering::SeqCst);
-        assert_eq!(stat_of(&c.call(&p, &lockargs(a.clone(), false, false))), nlm4_stats::NLM4_GRANTED);
-        assert_eq!(stat_of(&c.call(&p, &lockargs(b.clone(), true, false))), nlm4_stats::NLM4_BLOCKED);
-        assert_eq!(stat_of(&c.call(&p, &unlock_args(a.clone()))), nlm4_stats::NLM4_GRANTED);
+        assert_eq!(
+            stat_of(&c.call(&p, &lockargs(a.clone(), false, false))),
+            nlm4_stats::NLM4_GRANTED
+        );
+        assert_eq!(
+            stat_of(&c.call(&p, &lockargs(b.clone(), true, false))),
+            nlm4_stats::NLM4_BLOCKED
+        );
+        assert_eq!(
+            stat_of(&c.call(&p, &unlock_args(a.clone()))),
+            nlm4_stats::NLM4_GRANTED
+        );
         for t in news.poll(1000).unwrap().locks {
             st.granted_token(t);
         }
         assert_eq!(grant_ready(&st, &vfs), 0);
-        assert_eq!(stat_of(&c.call(&p, &test_args(a.clone()))), nlm4_stats::NLM4_GRANTED);
+        assert_eq!(
+            stat_of(&c.call(&p, &test_args(a.clone()))),
+            nlm4_stats::NLM4_GRANTED
+        );
         stop.store(true, Ordering::SeqCst);
     });
 }
@@ -311,26 +418,51 @@ fn a_blocked_lock_is_granted_by_callback_or_cancelled() {
 fn the_grace_period_takes_reclaims_only() {
     let s = setup();
     let clock = Arc::new(ManualClock::default());
-    let st = NlmState::new(cfg(Arc::clone(&s.locator), Arc::clone(&clock) as Arc<dyn Clock>, Duration::from_secs(90), false));
+    let st = NlmState::new(cfg(
+        Arc::clone(&s.locator),
+        Arc::clone(&clock) as Arc<dyn Clock>,
+        Duration::from_secs(90),
+        false,
+    ));
     let p = nlm(&s, &st);
     let c = client("10.0.0.5:700");
     let a = lock("clientA", 1, &s.file, 0, 10);
     let b = lock("clientB", 1, &s.file, 20, 10);
     assert!(st.in_grace());
-    assert_eq!(stat_of(&c.call(&p, &lockargs(b.clone(), false, false))), nlm4_stats::NLM4_DENIED_GRACE_PERIOD);
-    assert_eq!(stat_of(&c.call(&p, &test_args(b.clone()))), nlm4_stats::NLM4_DENIED_GRACE_PERIOD);
-    assert_eq!(stat_of(&c.call(&p, &lockargs(a.clone(), false, true))), nlm4_stats::NLM4_GRANTED);
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(b.clone(), false, false))),
+        nlm4_stats::NLM4_DENIED_GRACE_PERIOD
+    );
+    assert_eq!(
+        stat_of(&c.call(&p, &test_args(b.clone()))),
+        nlm4_stats::NLM4_DENIED_GRACE_PERIOD
+    );
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(a.clone(), false, true))),
+        nlm4_stats::NLM4_GRANTED
+    );
     // UNLOCK is taken in the grace period.
-    assert_eq!(stat_of(&c.call(&p, &unlock_args(a.clone()))), nlm4_stats::NLM4_GRANTED);
+    assert_eq!(
+        stat_of(&c.call(&p, &unlock_args(a.clone()))),
+        nlm4_stats::NLM4_GRANTED
+    );
     clock.advance(Duration::from_secs(91));
     assert!(!st.in_grace());
-    assert_eq!(stat_of(&c.call(&p, &lockargs(b, false, false))), nlm4_stats::NLM4_GRANTED);
+    assert_eq!(
+        stat_of(&c.call(&p, &lockargs(b, false, false))),
+        nlm4_stats::NLM4_GRANTED
+    );
 }
 
 #[test]
 fn shares_msg_forms_and_32_bit_versions() {
     let s = setup();
-    let st = NlmState::new(cfg(Arc::clone(&s.locator), Arc::new(SystemClock), Duration::ZERO, false));
+    let st = NlmState::new(cfg(
+        Arc::clone(&s.locator),
+        Arc::new(SystemClock),
+        Duration::ZERO,
+        false,
+    ));
     let p = nlm(&s, &st);
     let c = client(LOCAL);
     let stop = AtomicBool::new(false);
@@ -338,8 +470,10 @@ fn shares_msg_forms_and_32_bit_versions() {
     std::thread::scope(|sc| {
         let _guard = StopOnDrop(&stop);
         let addr = serve_catcher(sc, Arc::clone(&catcher), &stop);
-        s.locator.put(Host::Addr(IpAddr::from([127, 0, 0, 1])), 100_021, 4, addr);
-        s.locator.put(Host::Addr(IpAddr::from([127, 0, 0, 1])), 100_021, 3, addr);
+        s.locator
+            .put(Host::Addr(IpAddr::from([127, 0, 0, 1])), 100_021, 4, addr);
+        s.locator
+            .put(Host::Addr(IpAddr::from([127, 0, 0, 1])), 100_021, 3, addr);
         // LOCK_MSG: no results now, LOCK_RES to the client's lock manager.
         let m = NLM4_VERS::Args::NLMPROC4_LOCK_MSG(nlm4_lockargs {
             cookie: netobj(b"m1".to_vec()),
@@ -349,11 +483,17 @@ fn shares_msg_forms_and_32_bit_versions() {
             reclaim: false,
             state: 1,
         });
-        assert_eq!(c.call::<_, NLM4_VERS::Res>(&p, &m), NLM4_VERS::Res::NLMPROC4_LOCK_MSG);
+        assert_eq!(
+            c.call::<_, NLM4_VERS::Res>(&p, &m),
+            NLM4_VERS::Res::NLMPROC4_LOCK_MSG
+        );
         let got = catcher.got.lock().unwrap().clone();
         assert_eq!((got[0].0, got[0].1), (4, 12));
         let r = nlm4_res::decode(&mut Decoder::new(&got[0].2)).unwrap();
-        assert_eq!((r.cookie.0.clone(), r.stat.stat), (b"m1".to_vec(), nlm4_stats::NLM4_GRANTED));
+        assert_eq!(
+            (r.cookie.0.clone(), r.stat.stat),
+            (b"m1".to_vec(), nlm4_stats::NLM4_GRANTED)
+        );
         // Version 3: a 32-bit lock and shares.
         let l3 = nlm_lock {
             caller_name: b"clientC".to_vec(),
@@ -392,16 +532,31 @@ fn shares_msg_forms_and_32_bit_versions() {
             NLM_VERSX::Res::NLM_SHARE(r) | NLM_VERSX::Res::NLM_UNSHARE(r) => r.stat,
             r => panic!("{r:?}"),
         };
-        assert_eq!(sh(&share("pc1", fsh_mode::fsm_DW, fsh_access::fsa_RW)), nlm_stats::nlm_granted);
-        assert_eq!(sh(&share("pc2", fsh_mode::fsm_DN, fsh_access::fsa_W)), nlm_stats::nlm_denied);
-        assert_eq!(sh(&share("pc2", fsh_mode::fsm_DN, fsh_access::fsa_R)), nlm_stats::nlm_granted);
-        let NLM_VERSX::Args::NLM_SHARE(u) = share("pc1", fsh_mode::fsm_DW, fsh_access::fsa_RW) else {
+        assert_eq!(
+            sh(&share("pc1", fsh_mode::fsm_DW, fsh_access::fsa_RW)),
+            nlm_stats::nlm_granted
+        );
+        assert_eq!(
+            sh(&share("pc2", fsh_mode::fsm_DN, fsh_access::fsa_W)),
+            nlm_stats::nlm_denied
+        );
+        assert_eq!(
+            sh(&share("pc2", fsh_mode::fsm_DN, fsh_access::fsa_R)),
+            nlm_stats::nlm_granted
+        );
+        let NLM_VERSX::Args::NLM_SHARE(u) = share("pc1", fsh_mode::fsm_DW, fsh_access::fsa_RW)
+        else {
             unreachable!()
         };
         assert_eq!(sh(&NLM_VERSX::Args::NLM_UNSHARE(u)), nlm_stats::nlm_granted);
-        assert_eq!(sh(&share("pc2", fsh_mode::fsm_DN, fsh_access::fsa_W)), nlm_stats::nlm_granted);
+        assert_eq!(
+            sh(&share("pc2", fsh_mode::fsm_DN, fsh_access::fsa_W)),
+            nlm_stats::nlm_granted
+        );
         // A `_RES` this host did not ask for: no lock client here.
-        let r = c.send(&p, &c.message(5, &NLM4_VERS::Args::NLMPROC4_UNLOCK_RES(r))).unwrap();
+        let r = c
+            .send(&p, &c.message(5, &NLM4_VERS::Args::NLMPROC4_UNLOCK_RES(r)))
+            .unwrap();
         assert!(matches!(
             nfs::rpc::client::results(&r),
             Err(nfs::rpc::RpcError::Refused(AcceptError::ProcUnavail))
@@ -426,7 +581,12 @@ fn shares_msg_forms_and_32_bit_versions() {
 fn the_monitors_callback_frees_a_restarted_clients_locks() {
     let s = setup();
     let locator = Arc::clone(&s.locator);
-    let nst = NlmState::new(cfg(Arc::clone(&locator), Arc::new(SystemClock), Duration::ZERO, true));
+    let nst = NlmState::new(cfg(
+        Arc::clone(&locator),
+        Arc::new(SystemClock),
+        Duration::ZERO,
+        true,
+    ));
     let store = Box::new(MemStatdStore::default());
     let (sst, before) = NsmState::start(
         store,
@@ -451,12 +611,12 @@ fn the_monitors_callback_frees_a_restarted_clients_locks() {
         ready.fetch_add(1, Ordering::SeqCst);
     };
     let nlm_udp = UdpSocket::bind("127.0.0.1:0").unwrap();
-    let nsm_udp = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let mon_udp = UdpSocket::bind("127.0.0.1:0").unwrap();
     let lo = Host::Addr(IpAddr::from([127, 0, 0, 1]));
     locator.put(lo.clone(), 100_021, 2, nlm_udp.local_addr().unwrap());
-    locator.put(lo.clone(), 100_024, 1, nsm_udp.local_addr().unwrap());
+    locator.put(lo.clone(), 100_024, 1, mon_udp.local_addr().unwrap());
     let nlm_addr = nlm_udp.local_addr().unwrap();
-    let nsm_addr = nsm_udp.local_addr().unwrap();
+    let mon_addr = mon_udp.local_addr().unwrap();
     let exports: Arc<dyn ExportTable> = Arc::clone(&s.w.exports) as Arc<dyn ExportTable>;
     std::thread::scope(|sc| {
         let _guard = StopOnDrop(&stop);
@@ -470,16 +630,20 @@ fn the_monitors_callback_frees_a_restarted_clients_locks() {
                 stop: &stop,
                 ready: Some(&on_ready),
             };
-            run::nlmd(c, &exports, &nst, || s.w.vfs(), || -> Box<dyn NewsSource> {
-                Box::new(ClientNews(s.w.job(1)))
-            })
+            run::nlmd(
+                c,
+                &exports,
+                &nst,
+                || s.w.vfs(),
+                || -> Box<dyn NewsSource> { Box::new(ClientNews(s.w.job(1))) },
+            )
             .unwrap();
         });
         sc.spawn(|| {
             let c = Common {
                 listeners: Listeners {
                     tcp: None,
-                    udp: Some(nsm_udp),
+                    udp: Some(mon_udp),
                 },
                 binder: None,
                 stop: &stop,
@@ -500,17 +664,34 @@ fn the_monitors_callback_frees_a_restarted_clients_locks() {
         };
         let mut n = RpcClient::new(nlm_addr, Proto::Udp, ccfg.clone());
         let cred = Credential::sys(b"clientA", 100, 100, &[]);
-        let call = |n: &mut RpcClient, a: &NLM4_VERS::Args| n.call_proc::<NLM4_VERS::Args, NLM4_VERS::Res>(&cred, a).unwrap();
+        let call = |n: &mut RpcClient, a: &NLM4_VERS::Args| {
+            n.call_proc::<NLM4_VERS::Args, NLM4_VERS::Res>(&cred, a)
+                .unwrap()
+        };
         let a = lock("clientA", 1, &s.file, 0, 10);
         let b = lock("clientB", 1, &s.file, 0, 10);
-        assert_eq!(stat_of(&call(&mut n, &lockargs(a, false, false))), nlm4_stats::NLM4_GRANTED);
+        assert_eq!(
+            stat_of(&call(&mut n, &lockargs(a, false, false))),
+            nlm4_stats::NLM4_GRANTED
+        );
         // The lock manager asked the monitor to watch clientA.
         let mon = sst.monitored();
         assert_eq!(mon.len(), 1);
-        assert_eq!((mon[0].mon_name.as_slice(), mon[0].my_prog, mon[0].my_vers, mon[0].my_proc), (&b"clientA"[..], 100_021, 2, 1));
-        assert_eq!(stat_of(&call(&mut n, &lockargs(b.clone(), false, false))), nlm4_stats::NLM4_DENIED);
+        assert_eq!(
+            (
+                mon[0].mon_name.as_slice(),
+                mon[0].my_prog,
+                mon[0].my_vers,
+                mon[0].my_proc
+            ),
+            (&b"clientA"[..], 100_021, 2, 1)
+        );
+        assert_eq!(
+            stat_of(&call(&mut n, &lockargs(b.clone(), false, false))),
+            nlm4_stats::NLM4_DENIED
+        );
         // clientA restarted: its monitor tells ours, ours calls the lock manager back.
-        let mut m = RpcClient::new(nsm_addr, Proto::Udp, ccfg.clone());
+        let mut m = RpcClient::new(mon_addr, Proto::Udp, ccfg.clone());
         let r = m
             .call_proc::<SM_VERS::Args, SM_VERS::Res>(
                 &Credential::None,
@@ -523,7 +704,9 @@ fn the_monitors_callback_frees_a_restarted_clients_locks() {
         assert_eq!(r, SM_VERS::Res::SM_NOTIFY);
         let end = Instant::now() + Duration::from_secs(10);
         loop {
-            if stat_of(&call(&mut n, &lockargs(b.clone(), false, false))) == nlm4_stats::NLM4_GRANTED {
+            if stat_of(&call(&mut n, &lockargs(b.clone(), false, false)))
+                == nlm4_stats::NLM4_GRANTED
+            {
                 break;
             }
             assert!(Instant::now() < end, "clientA's lock was not freed");

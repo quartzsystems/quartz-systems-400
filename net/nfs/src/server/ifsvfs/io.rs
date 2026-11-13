@@ -27,7 +27,9 @@ use crate::types::nfs3::{
 };
 
 fn now_nanos() -> i64 {
-    let d = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    let d = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
     i64::try_from(d.as_nanos()).unwrap_or(i64::MAX)
 }
 
@@ -49,7 +51,12 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_lookup(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<(Node, Option<Attr>)> {
+    pub(crate) fn do_lookup(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+    ) -> VResult<(Node, Option<Attr>)> {
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, dir)?;
             if !is_dir(&st) {
@@ -70,7 +77,12 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_access(&self, r: &Req, fh: &FileHandle, want: u32) -> VResult<(u32, Option<Attr>)> {
+    pub(crate) fn do_access(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        want: u32,
+    ) -> VResult<(u32, Option<Attr>)> {
         let w = writable(r);
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, fh)?;
@@ -102,12 +114,22 @@ impl<C: IfsClient> IfsVfs<C> {
                 return Err(Fail::V(VfsError::Inval));
             }
             let t = a.c.readlink(&path)?;
-            Ok((text::to_client(r.opts.path_ccsid, &t)?, Some(attr_of(r, &st))))
+            Ok((
+                text::to_client(r.opts.path_ccsid, &t)?,
+                Some(attr_of(r, &st)),
+            ))
         })
     }
 
     /// A descriptor for I/O on the object; one that fails is opened again once.
-    fn io<T>(&self, a: &As<'_>, st: &Stat, fh: &FileHandle, mode: Mode, f: impl Fn(i32) -> Result<T, ifs::Errno>) -> Fr<T> {
+    fn io<T>(
+        &self,
+        a: &As<'_>,
+        st: &Stat,
+        fh: &FileHandle,
+        mode: Mode,
+        f: impl Fn(i32) -> Result<T, ifs::Errno>,
+    ) -> Fr<T> {
         let _ = st;
         let fd = self.fd(a, fh.fid, mode)?;
         match f(fd) {
@@ -120,7 +142,13 @@ impl<C: IfsClient> IfsVfs<C> {
         }
     }
 
-    pub(crate) fn do_read(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<ReadData> {
+    pub(crate) fn do_read(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        off: u64,
+        count: u32,
+    ) -> VResult<ReadData> {
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, fh)?;
             match ftype_of(st.mode) {
@@ -150,7 +178,14 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_write(&self, r: &Req, fh: &FileHandle, off: u64, data: &[u8], stable: Stable) -> VResult<Written> {
+    pub(crate) fn do_write(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        off: u64,
+        data: &[u8],
+        stable: Stable,
+    ) -> VResult<Written> {
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, fh)?;
             match ftype_of(st.mode) {
@@ -174,7 +209,11 @@ impl<C: IfsClient> IfsVfs<C> {
                 }
                 done += n;
             }
-            let committed = if r.opts.sync { Stable::FileSync } else { stable };
+            let committed = if r.opts.sync {
+                Stable::FileSync
+            } else {
+                stable
+            };
             let fd = self.fd(a, fh.fid, Mode::Write)?;
             if committed != Stable::Unstable {
                 a.c.fsync(fd, committed == Stable::DataSync)?;
@@ -192,7 +231,13 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_commit(&self, r: &Req, fh: &FileHandle, _off: u64, _count: u32) -> VResult<([u8; 8], Wcc)> {
+    pub(crate) fn do_commit(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        _off: u64,
+        _count: u32,
+    ) -> VResult<([u8; 8], Wcc)> {
         self.run(r, |a| {
             let (_, st) = self.locate(a, r, fh)?;
             if is_dir(&st) {
@@ -215,7 +260,15 @@ impl<C: IfsClient> IfsVfs<C> {
     }
 
     /// Applies `s` to the object at `path` (now `st`).
-    pub(crate) fn apply(&self, a: &As<'_>, r: &Req, fh: &FileHandle, path: &str, st: &Stat, s: &SetAttr) -> Fr<()> {
+    pub(crate) fn apply(
+        &self,
+        a: &As<'_>,
+        r: &Req,
+        fh: &FileHandle,
+        path: &str,
+        st: &Stat,
+        s: &SetAttr,
+    ) -> Fr<()> {
         let link = ftype_of(st.mode) == FileType::Lnk;
         if let Some(m) = s.mode {
             let mut m = m & 0o7777;
@@ -257,13 +310,22 @@ impl<C: IfsClient> IfsVfs<C> {
             if s.atime == SetTime::Server && s.mtime == SetTime::Server {
                 a.c.utime(path, None)?;
             } else {
-                a.c.utime(path, Some((pick(s.atime, st.atime), pick(s.mtime, st.mtime))))?;
+                a.c.utime(
+                    path,
+                    Some((pick(s.atime, st.atime), pick(s.mtime, st.mtime))),
+                )?;
             }
         }
         Ok(())
     }
 
-    pub(crate) fn do_setattr(&self, r: &Req, fh: &FileHandle, s: &SetAttr, guard: Option<Time>) -> VResult<Wcc> {
+    pub(crate) fn do_setattr(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        s: &SetAttr,
+        guard: Option<Time>,
+    ) -> VResult<Wcc> {
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, fh)?;
             if let Some(g) = guard
@@ -299,17 +361,20 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_pathconf(&self, r: &Req, fh: &FileHandle) -> VResult<(PathConf, Option<Attr>)> {
+    pub(crate) fn do_pathconf(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+    ) -> VResult<(PathConf, Option<Attr>)> {
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, fh)?;
             let v = a.c.statvfs(&path)?;
-            let linkmax = a
-                .c
-                .pathconf(&path, PC_LINK_MAX)
-                .ok()
-                .flatten()
-                .and_then(|n| u32::try_from(n).ok())
-                .unwrap_or(u32::MAX);
+            let linkmax =
+                a.c.pathconf(&path, PC_LINK_MAX)
+                    .ok()
+                    .flatten()
+                    .and_then(|n| u32::try_from(n).ok())
+                    .unwrap_or(u32::MAX);
             Ok((
                 PathConf {
                     linkmax,

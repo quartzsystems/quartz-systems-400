@@ -33,14 +33,25 @@ pub fn cookie_of(name: &str) -> u64 {
 /// The cookie verifier of a directory.
 #[must_use]
 pub fn verf_of(fid: FileId) -> [u8; 8] {
-    let h = fid.to_bytes().iter().fold(0x6e66_7333_7665_7266_u64, |h, b| {
-        (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
-    });
+    let h = fid
+        .to_bytes()
+        .iter()
+        .fold(0x6e66_7333_7665_7266_u64, |h, b| {
+            (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
+        });
     h.to_be_bytes()
 }
 
 impl<C: IfsClient> IfsVfs<C> {
-    pub(crate) fn do_readdir(&self, r: &Req, dir: &FileHandle, cookie: u64, verf: [u8; 8], max: usize, plus: bool) -> VResult<DirPage> {
+    pub(crate) fn do_readdir(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        cookie: u64,
+        verf: [u8; 8],
+        max: usize,
+        plus: bool,
+    ) -> VResult<DirPage> {
         let want = verf_of(dir.fid);
         if cookie != 0 && verf != want && verf != [0; 8] {
             return Err(VfsError::BadCookie);
@@ -50,13 +61,12 @@ impl<C: IfsClient> IfsVfs<C> {
             if !is_dir(&st) {
                 return Err(Fail::V(VfsError::NotDir));
             }
-            let mut all: Vec<(u64, String, u64)> = a
-                .c
-                .read_dir(&path)?
-                .into_iter()
-                .map(|e| (cookie_of(&e.name), e.name, e.ino))
-                .filter(|(c, _, _)| *c > cookie)
-                .collect();
+            let mut all: Vec<(u64, String, u64)> =
+                a.c.read_dir(&path)?
+                    .into_iter()
+                    .map(|e| (cookie_of(&e.name), e.name, e.ino))
+                    .filter(|(c, _, _)| *c > cookie)
+                    .collect();
             all.sort();
             let mut n = all.len().min(max.max(1));
             // Never end a page between two entries of one cookie.

@@ -41,7 +41,9 @@ pub struct NsmConfig {
 
 impl std::fmt::Debug for NsmConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NsmConfig").field("me", &self.me).finish_non_exhaustive()
+        f.debug_struct("NsmConfig")
+            .field("me", &self.me)
+            .finish_non_exhaustive()
     }
 }
 
@@ -73,7 +75,9 @@ pub struct NsmState {
 
 impl std::fmt::Debug for NsmState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NsmState").field("state", &self.state()).finish_non_exhaustive()
+        f.debug_struct("NsmState")
+            .field("state", &self.state())
+            .finish_non_exhaustive()
     }
 }
 
@@ -98,7 +102,10 @@ impl NsmState {
     /// # Errors
     ///
     /// The store's.
-    pub fn start(store: Box<dyn StatdStore>, cfg: NsmConfig) -> io::Result<(Arc<Self>, Vec<MonRecord>)> {
+    pub fn start(
+        store: Box<dyn StatdStore>,
+        cfg: NsmConfig,
+    ) -> io::Result<(Arc<Self>, Vec<MonRecord>)> {
         let old = store.read_state()?.as_deref().and_then(decode_state);
         let state = next_state(old);
         store.write_state(&encode_state(state))?;
@@ -122,13 +129,20 @@ impl NsmState {
     /// From now on [`Work`] goes to a worker: what it reads.
     pub fn worker(&self) -> mpsc::Receiver<Work> {
         let (tx, rx) = mpsc::sync_channel(WORK_QUEUE);
-        *self.work.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(tx);
+        *self
+            .work
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(tx);
         rx
     }
 
     /// Does `w` on the worker, or now when there is none.
     pub fn later(&self, w: Work) {
-        let tx = self.work.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let tx = self
+            .work
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
         match tx {
             Some(tx) => {
                 if tx.try_send(w).is_err() {
@@ -152,7 +166,9 @@ impl NsmState {
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
-        self.inner.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     fn save(&self, g: &Inner) {
@@ -202,8 +218,9 @@ impl NsmState {
     /// `SM_UNMON_ALL`: every host for one local program.
     pub fn unmonitor_all(&self, my_name: &[u8], prog: u32, vers: u32, proc_: u32) {
         let mut g = self.lock();
-        g.mon
-            .retain(|m| !(m.my_name == my_name && (m.my_prog, m.my_vers, m.my_proc) == (prog, vers, proc_)));
+        g.mon.retain(|m| {
+            !(m.my_name == my_name && (m.my_prog, m.my_vers, m.my_proc) == (prog, vers, proc_))
+        });
         self.save(&g);
     }
 
@@ -243,7 +260,11 @@ impl NsmState {
             .ok()
             .and_then(|n| n.parse::<IpAddr>().ok())
             .map_or(Host::Addr(IpAddr::from([127, 0, 0, 1])), Host::Addr);
-        let Some(addr) = self.cfg.locator.find(&host, m.my_prog, m.my_vers, Proto::Udp) else {
+        let Some(addr) = self
+            .cfg
+            .locator
+            .find(&host, m.my_prog, m.my_vers, Proto::Udp)
+        else {
             tracing::warn!("no program {} {} to call back", m.my_prog, m.my_vers);
             return;
         };

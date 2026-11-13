@@ -122,6 +122,9 @@ impl std::fmt::Debug for NlmConfig {
     }
 }
 
+/// A share reservation's holder: (host, owner handle, file handle).
+type ShareKey = (Vec<u8>, Vec<u8>, Vec<u8>);
+
 #[derive(Debug, Default)]
 struct Tables {
     owners: HashMap<OwnerKey, u64>,
@@ -130,7 +133,7 @@ struct Tables {
     /// Hosts holding locks, and whether they are monitored.
     hosts: HashMap<Vec<u8>, bool>,
     blocked: HashMap<u64, Blocked>,
-    shares: HashMap<(Vec<u8>, Vec<u8>, Vec<u8>), Share>,
+    shares: HashMap<ShareKey, Share>,
     granted: HashMap<Vec<u8>, Granted>,
     cookie: u64,
     /// Tokens granted before their request was kept.
@@ -151,7 +154,9 @@ pub struct NlmState {
 
 impl std::fmt::Debug for NlmState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NlmState").field("cfg", &self.cfg).finish_non_exhaustive()
+        f.debug_struct("NlmState")
+            .field("cfg", &self.cfg)
+            .finish_non_exhaustive()
     }
 }
 
@@ -177,7 +182,9 @@ impl NlmState {
     }
 
     fn t(&self) -> MutexGuard<'_, Tables> {
-        self.t.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.t
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Whether only reclaims are taken.
@@ -232,14 +239,13 @@ impl NlmState {
     /// One not kept yet is remembered (its request is being kept).
     pub fn granted_token(&self, token: u64) {
         let mut t = self.t();
-        match t.blocked.remove(&token) {
-            Some(b) => t.ready.push(b),
-            None => {
-                if t.early.len() >= 4096 {
-                    t.early.remove(0);
-                }
-                t.early.push(token);
+        if let Some(b) = t.blocked.remove(&token) {
+            t.ready.push(b);
+        } else {
+            if t.early.len() >= 4096 {
+                t.early.remove(0);
             }
+            t.early.push(token);
         }
     }
 
@@ -250,12 +256,18 @@ impl NlmState {
 
     /// The lock client's side, if this host has one.
     pub fn set_client(&self, c: Arc<dyn LockClient>) {
-        *self.client.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(c);
+        *self
+            .client
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(c);
     }
 
     /// The lock client.
     pub fn client(&self) -> Option<Arc<dyn LockClient>> {
-        self.client.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+        self.client
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     /// The token of a waiting request for the same owner, file, range and kind.
@@ -377,13 +389,20 @@ impl NlmState {
     /// From now on [`Work`] goes to a worker: what it reads.
     pub fn worker(&self) -> mpsc::Receiver<Work> {
         let (tx, rx) = mpsc::sync_channel(256);
-        *self.work.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(tx);
+        *self
+            .work
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(tx);
         rx
     }
 
     /// Does `w` on the worker, or now when there is none.
     pub fn later(&self, w: Work) {
-        let tx = self.work.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let tx = self
+            .work
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
         match tx {
             Some(tx) => {
                 if tx.try_send(w).is_err() {
@@ -407,7 +426,11 @@ impl NlmState {
 /// The kind of an exclusive flag.
 #[must_use]
 pub fn kind(exclusive: bool) -> LockKind {
-    if exclusive { LockKind::Write } else { LockKind::Read }
+    if exclusive {
+        LockKind::Write
+    } else {
+        LockKind::Read
+    }
 }
 
 /// The lock client's side of the protocol, when this host also mounts

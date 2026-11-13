@@ -6,6 +6,7 @@
 //! `dircount` and `maxcount`, the cookie verifier, `NFS3ERR_TOOSMALL`,
 //! and paging through 2,000 entries while the directory changes.
 
+#![allow(clippy::many_single_char_names)]
 mod srv3_common;
 
 use std::collections::HashSet;
@@ -27,7 +28,14 @@ fn world() -> (World, Vec<u8>) {
 
 type Page = (Vec<(String, u64)>, [u8; 8], bool);
 
-fn readdir(c: &Client, p: &dyn nfs::rpc::LocalProgram, dir: &[u8], cookie: u64, verf: [u8; 8], count: u32) -> Result<Page, S> {
+fn readdir(
+    c: &Client,
+    p: &dyn nfs::rpc::LocalProgram,
+    dir: &[u8],
+    cookie: u64,
+    verf: [u8; 8],
+    count: u32,
+) -> Result<Page, S> {
     let a = t3::READDIR3args {
         dir: fh(dir),
         cookie,
@@ -49,7 +57,15 @@ fn readdir(c: &Client, p: &dyn nfs::rpc::LocalProgram, dir: &[u8], cookie: u64, 
     }
 }
 
-fn plus(c: &Client, p: &dyn nfs::rpc::LocalProgram, dir: &[u8], cookie: u64, verf: [u8; 8], dircount: u32, maxcount: u32) -> Result<(Vec<t3::entryplus3>, [u8; 8], bool), S> {
+fn plus(
+    c: &Client,
+    p: &dyn nfs::rpc::LocalProgram,
+    dir: &[u8],
+    cookie: u64,
+    verf: [u8; 8],
+    dircount: u32,
+    maxcount: u32,
+) -> Result<(Vec<t3::entryplus3>, [u8; 8], bool), S> {
     let a = t3::READDIRPLUS3args {
         dir: fh(dir),
         cookie,
@@ -85,7 +101,10 @@ fn small_directories_dots_and_errors() {
     let (more, _, _) = readdir(&c, &p, &root, 2, verf, 4096).unwrap();
     assert_eq!(more.len(), 3);
     // Room for no entry.
-    assert_eq!(readdir(&c, &p, &root, 0, [0; 8], 120), Err(S::NFS3ERR_TOOSMALL));
+    assert_eq!(
+        readdir(&c, &p, &root, 0, [0; 8], 120),
+        Err(S::NFS3ERR_TOOSMALL)
+    );
     // Another directory's verifier with a cookie.
     let sub = {
         w.job(9).mkdir("/home/exp/sub", 0o777).unwrap();
@@ -93,7 +112,10 @@ fn small_directories_dots_and_errors() {
     };
     let (_, sverf, _) = readdir(&c, &p, &sub, 0, [0; 8], 4096).unwrap();
     assert_ne!(sverf, verf);
-    assert_eq!(readdir(&c, &p, &root, 5, sverf, 4096), Err(S::NFS3ERR_BAD_COOKIE));
+    assert_eq!(
+        readdir(&c, &p, &root, 5, sverf, 4096),
+        Err(S::NFS3ERR_BAD_COOKIE)
+    );
     // A file is not a directory.
     let f = w.handle(1, "/home/exp/a");
     assert_eq!(readdir(&c, &p, &f, 0, [0; 8], 4096), Err(S::NFS3ERR_NOTDIR));

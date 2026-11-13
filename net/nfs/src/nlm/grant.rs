@@ -31,7 +31,13 @@ pub fn grant_ready(st: &NlmState, vfs: &dyn Vfs) -> usize {
 
 /// Polls `news` (waiting up to `poll_ms` each time) and sends grants
 /// until `stop` is set.
-pub fn grant_loop(st: &NlmState, vfs: &dyn Vfs, news: &mut dyn NewsSource, stop: &AtomicBool, poll_ms: u32) {
+pub fn grant_loop(
+    st: &NlmState,
+    vfs: &dyn Vfs,
+    news: &mut dyn NewsSource,
+    stop: &AtomicBool,
+    poll_ms: u32,
+) {
     while !stop.load(Ordering::Relaxed) {
         match news.poll(poll_ms) {
             Ok(n) => {

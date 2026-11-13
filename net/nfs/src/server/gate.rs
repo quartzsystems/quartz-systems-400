@@ -42,7 +42,12 @@ impl Gate {
     /// [`VfsError::Acces`] when the client's address may not use the
     /// export, the version is not one it allows, or the caller is
     /// anonymous and refused.
-    pub fn req(&self, ctx: &CallContext, export: Arc<dyn ExportView>, vers: u32) -> Result<Req, VfsError> {
+    pub fn req(
+        &self,
+        ctx: &CallContext,
+        export: Arc<dyn ExportView>,
+        vers: u32,
+    ) -> Result<Req, VfsError> {
         let peer = ctx.peer.ip();
         if !export.allows(peer) || !export.version_allowed(vers) {
             return Err(VfsError::Acces);
@@ -64,7 +69,12 @@ impl Gate {
     /// [`VfsError::BadHandle`] for bytes that are not a handle,
     /// [`VfsError::Stale`] when its export is gone or exports another
     /// directory now, and those of [`Gate::req`].
-    pub fn open(&self, ctx: &CallContext, fh: &[u8], vers: u32) -> Result<(Req, FileHandle), VfsError> {
+    pub fn open(
+        &self,
+        ctx: &CallContext,
+        fh: &[u8],
+        vers: u32,
+    ) -> Result<(Req, FileHandle), VfsError> {
         let h = FileHandle::from_bytes(fh)?;
         let e = self.exports.by_id(h.export).ok_or(VfsError::Stale)?;
         if e.root_id().ino != h.root_ino {

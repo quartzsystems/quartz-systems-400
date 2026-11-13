@@ -79,7 +79,10 @@ impl FixedLocator {
 
     /// Says `prog` `vers` on `host` is at `addr` (any transport).
     pub fn put(&self, host: Host, prog: u32, vers: u32, addr: SocketAddr) {
-        let mut m = self.map.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut m = self
+            .map
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         m.retain(|(h, p, v, _)| !(h == &host && *p == prog && *v == vers));
         m.push((host, prog, vers, addr));
     }
@@ -87,7 +90,10 @@ impl FixedLocator {
 
 impl Locator for FixedLocator {
     fn find(&self, host: &Host, prog: u32, vers: u32, _proto: Proto) -> Option<SocketAddr> {
-        let m = self.map.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let m = self
+            .map
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         m.iter()
             .find(|(h, p, v, _)| h == host && *p == prog && *v == vers)
             .map(|e| e.3)

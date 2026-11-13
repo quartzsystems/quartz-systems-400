@@ -191,17 +191,31 @@ pub struct MemStatdStore {
 
 impl StatdStore for MemStatdStore {
     fn read_state(&self) -> io::Result<Option<Vec<u8>>> {
-        Ok(self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone())
+        Ok(self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone())
     }
     fn write_state(&self, bytes: &[u8]) -> io::Result<()> {
-        *self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(bytes.to_vec());
+        *self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(bytes.to_vec());
         Ok(())
     }
     fn read_monitored(&self) -> io::Result<Option<Vec<u8>>> {
-        Ok(self.monitored.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone())
+        Ok(self
+            .monitored
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone())
     }
     fn write_monitored(&self, bytes: &[u8]) -> io::Result<()> {
-        *self.monitored.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(bytes.to_vec());
+        *self
+            .monitored
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(bytes.to_vec());
         Ok(())
     }
 }
@@ -214,7 +228,10 @@ mod tests {
     fn statd_is_the_oracles_form() {
         assert_eq!(encode_state(1), [0xF1, 0x15]);
         assert_eq!(decode_state(&[0xF1, 0x15]), Some(1));
-        assert_eq!(decode_state(&encode_state(4_294_967_295)), Some(4_294_967_295));
+        assert_eq!(
+            decode_state(&encode_state(4_294_967_295)),
+            Some(4_294_967_295)
+        );
         assert_eq!(decode_state(&[0xF1, 0xC1]), None);
         assert_eq!(decode_state(&[]), None);
     }

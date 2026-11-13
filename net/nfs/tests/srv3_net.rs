@@ -6,6 +6,7 @@
 //! binder, a client finds them through it and mounts, writes and reads
 //! over TCP and UDP with `RpcClient`; at the stop they unregister.
 
+#![allow(clippy::many_single_char_names)]
 mod srv3_common;
 
 use std::net::{SocketAddr, TcpListener, UdpSocket};
@@ -51,6 +52,7 @@ fn cfg() -> ClientConfig {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn mount_write_read_over_tcp_and_udp() {
     let w = World::new();
     let e = w.export(1, "/home/exp");
@@ -106,7 +108,10 @@ fn mount_write_read_over_tcp_and_udp() {
             let nport = b.getport(100_003, 3, p).unwrap().expect("NFS registered");
             let mut m = RpcClient::new(SocketAddr::from(([127, 0, 0, 1], mport)), proto, cfg());
             let root = match m
-                .call_proc::<MOUNT_V3::Args, MOUNT_V3::Res>(&cred, &MOUNT_V3::Args::MOUNTPROC3_MNT(dirpath(b"/home/exp".to_vec())))
+                .call_proc::<MOUNT_V3::Args, MOUNT_V3::Res>(
+                    &cred,
+                    &MOUNT_V3::Args::MOUNTPROC3_MNT(dirpath(b"/home/exp".to_vec())),
+                )
                 .unwrap()
             {
                 MOUNT_V3::Res::MOUNTPROC3_MNT(mountres3::MNT3_OK(ok)) => ok.fhandle.0,
@@ -128,7 +133,11 @@ fn mount_write_read_over_tcp_and_udp() {
                 r => panic!("{r:?}"),
             };
             // A 300 KiB write in one call (more than a datagram over TCP only).
-            let data: Vec<u8> = (0..(if proto == Proto::Tcp { 300 * 1024 } else { 8000 }))
+            let data: Vec<u8> = (0..(if proto == Proto::Tcp {
+                300 * 1024
+            } else {
+                8000
+            }))
                 .map(|i| u8::try_from(i % 251).unwrap())
                 .collect();
             let wr = n
@@ -168,7 +177,10 @@ fn mount_write_read_over_tcp_and_udp() {
         n.join().unwrap();
         // Both daemons unregistered at their stop.
         let left: Vec<u32> = b.dump().unwrap().into_iter().map(|r| r.r_prog).collect();
-        assert!(!left.contains(&100_003) && !left.contains(&100_005), "{left:?}");
+        assert!(
+            !left.contains(&100_003) && !left.contains(&100_005),
+            "{left:?}"
+        );
         bstop.store(true, Ordering::SeqCst);
     });
 }

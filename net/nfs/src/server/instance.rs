@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! What one start of a server has: its write verifier (NFSv3 `WRITE`
-//! and `COMMIT`, NFSv4's boot verifier), which differs at every start so
+//! What one start of a server has: its write verifier (`NFSv3` `WRITE`
+//! and `COMMIT`, `NFSv4`'s boot verifier), which differs at every start so
 //! a client sends again what it wrote unstable before; and the clock
 //! its grace period runs on ([`Clock`], a [`ManualClock`] for tests).
 
@@ -46,14 +46,21 @@ impl Default for ManualClock {
 impl ManualClock {
     /// Moves it on by `d`.
     pub fn advance(&self, d: Duration) {
-        let mut o = self.off.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut o = self
+            .off
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         *o += d;
     }
 }
 
 impl Clock for ManualClock {
     fn now(&self) -> Instant {
-        self.base + *self.off.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.base
+            + *self
+                .off
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 }
 
@@ -75,11 +82,15 @@ impl Instance {
         let t = now.duration_since(UNIX_EPOCH).unwrap_or_default();
         let n = STARTS.fetch_add(1, Ordering::Relaxed);
         let secs = u32::try_from(t.as_secs() & 0xffff_ffff).unwrap_or(0);
-        let low = t.subsec_nanos() ^ std::process::id().rotate_left(16)
+        let low = t.subsec_nanos()
+            ^ std::process::id().rotate_left(16)
             ^ u32::try_from(n & 0xffff_ffff).unwrap_or(0).rotate_left(8);
         let mut verf = [0u8; 8];
         verf[..4].copy_from_slice(&secs.to_be_bytes());
-        verf[4..].copy_from_slice(&low.wrapping_add(u32::try_from(n & 0xff).unwrap_or(0)).to_be_bytes());
+        verf[4..].copy_from_slice(
+            &low.wrapping_add(u32::try_from(n & 0xff).unwrap_or(0))
+                .to_be_bytes(),
+        );
         Self { verf, started: now }
     }
 

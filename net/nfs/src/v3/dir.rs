@@ -42,7 +42,12 @@ fn cost(e: &DirEntry, plus: bool) -> (usize, usize) {
 
 /// The entries that fit: `.` and `..` first, then as many as `dirmax`
 /// and `max` allow; whether all did.
-fn fit(mut list: Vec<DirEntry>, plus: bool, dirmax: usize, max: usize) -> Result<(Vec<DirEntry>, bool), VfsError> {
+fn fit(
+    mut list: Vec<DirEntry>,
+    plus: bool,
+    dirmax: usize,
+    max: usize,
+) -> Result<(Vec<DirEntry>, bool), VfsError> {
     let (mut info, mut all) = (0usize, HEAD);
     let mut n = 0;
     for e in &list {
@@ -68,7 +73,13 @@ fn fit(mut list: Vec<DirEntry>, plus: bool, dirmax: usize, max: usize) -> Result
 
 impl<V: Vfs + ?Sized> Procs<'_, V> {
     /// `.` and `..` of a page from `cookie`.
-    fn dots(&self, r: &Req, dir: &crate::server::FileHandle, cookie: u64, plus: bool) -> Result<Vec<DirEntry>, VfsError> {
+    fn dots(
+        &self,
+        r: &Req,
+        dir: &crate::server::FileHandle,
+        cookie: u64,
+        plus: bool,
+    ) -> Result<Vec<DirEntry>, VfsError> {
         let mut out = Vec::new();
         if cookie == 0 {
             let at = self.vfs.getattr(r, dir)?;
@@ -76,7 +87,7 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
                 name: b".".to_vec(),
                 fileid: at.fileid,
                 cookie: 1,
-                node: plus.then(|| Node { fh: *dir, attr: at }),
+                node: plus.then_some(Node { fh: *dir, attr: at }),
             });
         }
         if cookie <= 1 {
@@ -92,9 +103,19 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
     }
 
     /// A page: the entries, the verifier, eof and the directory's attributes.
-    #[allow(clippy::type_complexity)]
-    fn page(&self, dirfh: &[u8], cookie: u64, verf: [u8; 8], dirmax: usize, max: usize, plus: bool)
-    -> Result<(Vec<DirEntry>, [u8; 8], bool, Option<crate::server::Attr>), (VfsError, Option<crate::server::Attr>)> {
+    #[allow(clippy::type_complexity, clippy::result_large_err)]
+    fn page(
+        &self,
+        dirfh: &[u8],
+        cookie: u64,
+        verf: [u8; 8],
+        dirmax: usize,
+        max: usize,
+        plus: bool,
+    ) -> Result<
+        (Vec<DirEntry>, [u8; 8], bool, Option<crate::server::Attr>),
+        (VfsError, Option<crate::server::Attr>),
+    > {
         let (r, h) = self.open(dirfh).map_err(|e| (e, None))?;
         let fail = |e: VfsError| (e, self.vfs.getattr(&r, &h).ok());
         let mut list = if cookie <= 2 {

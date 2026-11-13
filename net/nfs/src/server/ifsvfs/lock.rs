@@ -15,8 +15,8 @@ use ifs::client::{Caller, IfsClient};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::ops::OpenArgs;
 use ifs::ops::flags::{
-    F_GETLK, F_SETLK, O_RDONLY, O_RDWR, O_SHARE_NONE, O_SHARE_RDONLY, O_SHARE_RDWR,
-    O_SHARE_WRONLY, O_WRONLY, SEEK_SET,
+    F_GETLK, F_SETLK, O_RDONLY, O_RDWR, O_SHARE_NONE, O_SHARE_RDONLY, O_SHARE_RDWR, O_SHARE_WRONLY,
+    O_WRONLY, SEEK_SET,
 };
 
 use super::fdcache::Mode;
@@ -45,7 +45,11 @@ fn conflict(l: &RangeLock) -> Conflict {
             LockKind::Read
         },
         start: l.start,
-        len: if l.end == u64::MAX { 0 } else { l.end - l.start },
+        len: if l.end == u64::MAX {
+            0
+        } else {
+            l.end - l.start
+        },
     }
 }
 
@@ -57,7 +61,9 @@ fn kind_of(k: LockKind) -> (RangeKind, Mode) {
 }
 
 /// Whom the descriptors that hold locks are kept for: the job.
-static JOB: Caller = Caller::Profile { name: String::new() };
+static JOB: Caller = Caller::Profile {
+    name: String::new(),
+};
 
 impl<C: IfsClient> IfsVfs<C> {
     /// A descriptor that holds byte-range locks: the job's own. A lock is
@@ -71,7 +77,13 @@ impl<C: IfsClient> IfsVfs<C> {
         self.fd(&job, fh.fid, mode)
     }
 
-    pub(crate) fn do_open(&self, r: &Req, fh: &FileHandle, access: ShareAccess, deny: ShareDeny) -> VResult<u64> {
+    pub(crate) fn do_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        access: ShareAccess,
+        deny: ShareDeny,
+    ) -> VResult<u64> {
         let acc = match access {
             ShareAccess::Read => O_RDONLY,
             ShareAccess::Write => O_WRONLY,
@@ -99,7 +111,16 @@ impl<C: IfsClient> IfsVfs<C> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn do_lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64, wait: bool) -> VResult<LockOutcome> {
+    pub(crate) fn do_lock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+        wait: bool,
+    ) -> VResult<LockOutcome> {
         let (rk, mode) = kind_of(kind);
         let (s, l) = range(start, len);
         self.run(r, |a| {
@@ -129,17 +150,35 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_test_lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64) -> VResult<Option<crate::server::vfs::Conflict>> {
+    pub(crate) fn do_test_lock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+    ) -> VResult<Option<crate::server::vfs::Conflict>> {
         let (rk, mode) = kind_of(kind);
         let (s, l) = range(start, len);
         self.run(r, |a| {
             let _ = self.locate(a, r, fh)?;
             let fd = self.lock_fd(fh, mode)?;
-            Ok(a.c.lock_range_as(fd, sub, F_GETLK, rk, SEEK_SET, s, l)?.as_ref().map(conflict))
+            Ok(a.c
+                .lock_range_as(fd, sub, F_GETLK, rk, SEEK_SET, s, l)?
+                .as_ref()
+                .map(conflict))
         })
     }
 
-    pub(crate) fn do_unlock(&self, r: &Req, fh: &FileHandle, sub: u64, start: u64, len: u64) -> VResult<()> {
+    pub(crate) fn do_unlock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        start: u64,
+        len: u64,
+    ) -> VResult<()> {
         let (s, l) = range(start, len);
         self.run(r, |a| {
             let _ = self.locate(a, r, fh)?;

@@ -13,6 +13,7 @@
 //! `NM_LOCK`, asks the local status monitor to watch the host
 //! (`NLM4_DENIED_NOLOCKS` when it will not).
 
+#![allow(clippy::many_single_char_names)]
 use super::call;
 use super::conv::lock_of;
 use super::state::{Blocked, NlmState, Share, kind};
@@ -74,13 +75,22 @@ impl<V: Vfs> Core<'_, V> {
             Err(s) => return out(s),
         };
         let sub = self.st.sub_of(&l);
-        match self.vfs.test_lock(&r, &h, sub, kind(a.exclusive), l.offset, l.len) {
+        match self
+            .vfs
+            .test_lock(&r, &h, sub, kind(a.exclusive), l.offset, l.len)
+        {
             Ok(None) => out(nlm4_stats::NLM4_GRANTED),
             Ok(Some(c)) => {
-                let (svid, oh) = self
-                    .st
-                    .owner_of(c.sub)
-                    .unwrap_or_else(|| (i32::from_ne_bytes(u32::try_from(c.owner & 0x7fff_ffff).unwrap_or(0).to_ne_bytes()), Vec::new()));
+                let (svid, oh) = self.st.owner_of(c.sub).unwrap_or_else(|| {
+                    (
+                        i32::from_ne_bytes(
+                            u32::try_from(c.owner & 0x7fff_ffff)
+                                .unwrap_or(0)
+                                .to_ne_bytes(),
+                        ),
+                        Vec::new(),
+                    )
+                });
                 nlm4_testres {
                     cookie: a.cookie.clone(),
                     test_stat: nlm4_testrply::NLM4_DENIED(nlm4_holder {

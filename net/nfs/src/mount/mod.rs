@@ -19,12 +19,14 @@ pub mod list;
 use std::sync::Arc;
 
 use self::list::MountList;
-use crate::rpc::{Answer, AcceptError, CallContext, Credential, LocalProgram, decode_args, encode_res};
+use crate::rpc::{
+    AcceptError, Answer, CallContext, Credential, LocalProgram, decode_args, encode_res,
+};
 use crate::server::export::within;
 use crate::server::{ExportView, Gate, Vfs, VfsError, text};
 use crate::types::mount::{
-    MOUNT_PROGRAM, dirpath, exportnode, exports, fhandle3, fhstatus, groupnode, groups,
-    mountbody, mountlist, mountres3, mountres3_ok, mountstat3, name,
+    MOUNT_PROGRAM, dirpath, exportnode, exports, fhandle3, fhstatus, groupnode, groups, mountbody,
+    mountlist, mountres3, mountres3_ok, mountstat3, name,
 };
 use crate::xdr::Decoder;
 
@@ -85,7 +87,11 @@ impl<V: Vfs> Mountd<V> {
         })
     }
 
-    fn mnt(&self, ctx: &CallContext, path: &[u8]) -> Result<(String, [u8; 32], Vec<i32>), mountstat3> {
+    fn mnt(
+        &self,
+        ctx: &CallContext,
+        path: &[u8],
+    ) -> Result<(String, [u8; 32], Vec<i32>), mountstat3> {
         let Some((e, p)) = self.exported(ctx, path) else {
             return Err(mountstat3::MNT3ERR_ACCES);
         };

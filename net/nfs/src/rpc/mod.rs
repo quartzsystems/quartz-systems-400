@@ -57,6 +57,6 @@ pub use client::{ClientConfig, Proto, RpcClient, RpcError};
 pub use drc::DuplicateCache;
 pub use msg::{AcceptError, Denied};
 pub use server::{
-    Answer, CallContext, Dispatcher, LocalProgram, Program, Transport, decode_args, encode_res, serve_datagram,
-    serve_stream, serve_tcp,
+    Answer, CallContext, Dispatcher, LocalProgram, Program, Transport, decode_args, encode_res,
+    serve_datagram, serve_stream, serve_tcp,
 };

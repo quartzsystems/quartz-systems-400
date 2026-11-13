@@ -11,6 +11,7 @@
 //! accepting, lets the threads end, and unregisters. Nothing global is
 //! touched: every thread is scoped to the call.
 
+#![allow(clippy::many_single_char_names)]
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::sync::Arc;
@@ -81,7 +82,9 @@ impl std::fmt::Debug for Common<'_> {
 #[must_use]
 pub fn nfs3_cache() -> Arc<DuplicateCache> {
     Arc::new(DuplicateCache::new(drc::TTL, drc::ENTRIES, |p, v, n| {
-        p == crate::types::nfs3::NFS_PROGRAM::NUMBER && v == 3 && drc::NFS3_NONIDEMPOTENT.contains(&n)
+        p == crate::types::nfs3::NFS_PROGRAM::NUMBER
+            && v == 3
+            && drc::NFS3_NONIDEMPOTENT.contains(&n)
     }))
 }
 
@@ -179,7 +182,16 @@ fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &Atom
         match (&mut &*s).read(&mut buf) {
             Ok(0) => return,
             Ok(n) => rb.push(&buf[..n]),
-            Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => continue,
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    io::ErrorKind::WouldBlock
+                        | io::ErrorKind::TimedOut
+                        | io::ErrorKind::Interrupted
+                ) =>
+            {
+                continue;
+            }
             Err(_) => return,
         }
         loop {
@@ -209,7 +221,13 @@ fn datagrams<P: LocalProgram>(u: &UdpSocket, d: &Dispatcher, p: &P, stop: &Atomi
                     let _ = u.send_to(&reply, peer);
                 }
             }
-            Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => {}
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    io::ErrorKind::WouldBlock
+                        | io::ErrorKind::TimedOut
+                        | io::ErrorKind::Interrupted
+                ) => {}
             Err(e) => {
                 tracing::warn!("datagram socket failed: {e}");
                 std::thread::sleep(TICK);
@@ -225,12 +243,33 @@ fn datagrams<P: LocalProgram>(u: &UdpSocket, d: &Dispatcher, p: &P, stop: &Atomi
 /// # Errors
 ///
 /// A listener's, and a registration the binder refused.
-pub fn serve<P, F>(c: Common<'_>, d: &Dispatcher, prog: u32, versions: &[u32], make: F, extra: Option<&(dyn Fn() + Sync)>) -> io::Result<()>
+pub fn serve<P, F>(
+    c: Common<'_>,
+    d: &Dispatcher,
+    prog: u32,
+    versions: &[u32],
+    make: F,
+    extra: Option<&(dyn Fn() + Sync)>,
+) -> io::Result<()>
 where
     P: LocalProgram,
     F: Fn() -> P + Sync,
 {
-    let owner = c.binder.as_ref().map_or_else(String::new, |r| r.owner.clone());
+    let Common {
+        listeners,
+        binder,
+        stop,
+        ready,
+    } = c;
+    let c = Parts {
+        listeners,
+        binder,
+        ready,
+    };
+    let owner = c
+        .binder
+        .as_ref()
+        .map_or_else(String::new, |r| r.owner.clone());
     let list = entries(&c.listeners, prog, versions, &owner)?;
     if let Some(r) = &c.binder {
         register(r, &list)?;
@@ -238,14 +277,13 @@ where
     if let Some(t) = &c.listeners.tcp {
         t.set_nonblocking(true)?;
     }
-    let stop = c.stop;
     let make = &make;
     std::thread::scope(|sc| {
         if let Some(u) = &c.listeners.udp {
             sc.spawn(move || datagrams(u, d, &make(), stop));
         }
         if let Some(x) = extra {
-            sc.spawn(move || x());
+            sc.spawn(x);
         }
         if let Some(f) = c.ready {
             f();
@@ -301,14 +339,26 @@ where
 /// # Errors
 ///
 /// Those of [`serve`].
-pub fn mountd<V, F>(c: Common<'_>, exports: &Arc<dyn ExportTable>, list: &Arc<dyn MountList>, vfs: F) -> io::Result<()>
+pub fn mountd<V, F>(
+    c: Common<'_>,
+    exports: &Arc<dyn ExportTable>,
+    list: &Arc<dyn MountList>,
+    vfs: F,
+) -> io::Result<()>
 where
     V: Vfs,
     F: Fn() -> V + Sync,
 {
     let d = Dispatcher::new();
     let make = || Mountd::new(vfs(), Gate::new(Arc::clone(exports)), Arc::clone(list));
-    serve(c, &d, crate::types::mount::MOUNT_PROGRAM::NUMBER, &[1, 3], make, None)
+    serve(
+        c,
+        &d,
+        crate::types::mount::MOUNT_PROGRAM::NUMBER,
+        &[1, 3],
+        make,
+        None,
+    )
 }
 
 /// `QNFSNLMD`: NLM versions 1, 3 and 4 (version 2, the monitor's
@@ -319,7 +369,13 @@ where
 /// # Errors
 ///
 /// Those of [`serve`].
-pub fn nlmd<V, F, N>(c: Common<'_>, exports: &Arc<dyn ExportTable>, state: &Arc<NlmState>, vfs: F, news: N) -> io::Result<()>
+pub fn nlmd<V, F, N>(
+    c: Common<'_>,
+    exports: &Arc<dyn ExportTable>,
+    state: &Arc<NlmState>,
+    vfs: F,
+    news: N,
+) -> io::Result<()>
 where
     V: Vfs,
     F: Fn() -> V + Sync,
@@ -346,7 +402,14 @@ where
         });
     };
     let make = || Nlm::new(vfs(), Gate::new(Arc::clone(exports)), Arc::clone(state));
-    serve(c, &d, crate::types::nlm::NLM_PROG::NUMBER, &[1, 3, 4], make, Some(&extra))
+    serve(
+        c,
+        &d,
+        crate::types::nlm::NLM_PROG::NUMBER,
+        &[1, 3, 4],
+        make,
+        Some(&extra),
+    )
 }
 
 /// `QNFSNSMD`: the status monitor; `before` (the hosts monitored before
@@ -373,7 +436,10 @@ pub fn nsmd(c: Common<'_>, state: &Arc<NsmState>, before: Vec<MonRecord>) -> io:
                     .unwrap_or_default();
                 let left = st.notify_hosts(&hosts, stop);
                 for h in left {
-                    tracing::warn!("host {} not told of the restart", String::from_utf8_lossy(&h));
+                    tracing::warn!(
+                        "host {} not told of the restart",
+                        String::from_utf8_lossy(&h)
+                    );
                 }
             });
             let rx = rx.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -385,5 +451,19 @@ pub fn nsmd(c: Common<'_>, state: &Arc<NsmState>, before: Vec<MonRecord>) -> io:
         });
     };
     let nsm = Nsm::new(Arc::clone(state));
-    serve(c, &d, crate::types::nsm::SM_PROG::NUMBER, &[1], || nsm.clone(), Some(&extra))
+    serve(
+        c,
+        &d,
+        crate::types::nsm::SM_PROG::NUMBER,
+        &[1],
+        || nsm.clone(),
+        Some(&extra),
+    )
+}
+
+/// [`Common`] taken apart by [`serve`].
+struct Parts<'a> {
+    listeners: Listeners,
+    binder: Option<Registration>,
+    ready: Option<&'a (dyn Fn() + Sync)>,
 }

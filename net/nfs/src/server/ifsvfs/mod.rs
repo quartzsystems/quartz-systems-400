@@ -332,7 +332,14 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
     fn read(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<ReadData> {
         self.do_read(r, fh, off, count)
     }
-    fn write(&self, r: &Req, fh: &FileHandle, off: u64, data: &[u8], stable: Stable) -> VResult<Written> {
+    fn write(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        off: u64,
+        data: &[u8],
+        stable: Stable,
+    ) -> VResult<Written> {
         self.do_write(r, fh, off, data, stable)
     }
     fn commit(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<([u8; 8], Wcc)> {
@@ -344,10 +351,24 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
     fn mkdir(&self, r: &Req, dir: &FileHandle, name: &[u8], s: &SetAttr) -> VResult<Made> {
         self.do_mkdir(r, dir, name, s)
     }
-    fn symlink(&self, r: &Req, dir: &FileHandle, name: &[u8], target: &[u8], s: &SetAttr) -> VResult<Made> {
+    fn symlink(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        target: &[u8],
+        s: &SetAttr,
+    ) -> VResult<Made> {
         self.do_symlink(r, dir, name, target, s)
     }
-    fn mknod(&self, r: &Req, dir: &FileHandle, name: &[u8], what: Special, s: &SetAttr) -> VResult<Made> {
+    fn mknod(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        what: Special,
+        s: &SetAttr,
+    ) -> VResult<Made> {
         self.do_mknod(r, dir, name, what, s)
     }
     fn remove(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<Wcc> {
@@ -356,13 +377,34 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
     fn rmdir(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<Wcc> {
         self.do_remove(r, dir, name, true)
     }
-    fn rename(&self, r: &Req, from: &FileHandle, fname: &[u8], to: &FileHandle, tname: &[u8]) -> VResult<(Wcc, Wcc)> {
+    fn rename(
+        &self,
+        r: &Req,
+        from: &FileHandle,
+        fname: &[u8],
+        to: &FileHandle,
+        tname: &[u8],
+    ) -> VResult<(Wcc, Wcc)> {
         self.do_rename(r, from, fname, to, tname)
     }
-    fn link(&self, r: &Req, fh: &FileHandle, dir: &FileHandle, name: &[u8]) -> VResult<(Option<Attr>, Wcc)> {
+    fn link(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        dir: &FileHandle,
+        name: &[u8],
+    ) -> VResult<(Option<Attr>, Wcc)> {
         self.do_link(r, fh, dir, name)
     }
-    fn readdir(&self, r: &Req, dir: &FileHandle, cookie: u64, verf: [u8; 8], max: usize, plus: bool) -> VResult<DirPage> {
+    fn readdir(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        cookie: u64,
+        verf: [u8; 8],
+        max: usize,
+        plus: bool,
+    ) -> VResult<DirPage> {
         self.do_readdir(r, dir, cookie, verf, max, plus)
     }
     fn fsstat(&self, r: &Req, fh: &FileHandle) -> VResult<(FsStat, Option<Attr>)> {
@@ -382,10 +424,27 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
         }
         self.base.close(fd).map_err(VfsError::from)
     }
-    fn lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64, wait: bool) -> VResult<LockOutcome> {
+    fn lock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+        wait: bool,
+    ) -> VResult<LockOutcome> {
         self.do_lock(r, fh, sub, kind, start, len, wait)
     }
-    fn test_lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64) -> VResult<Option<Conflict>> {
+    fn test_lock(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+    ) -> VResult<Option<Conflict>> {
         self.do_test_lock(r, fh, sub, kind, start, len)
     }
     fn unlock(&self, r: &Req, fh: &FileHandle, sub: u64, start: u64, len: u64) -> VResult<()> {

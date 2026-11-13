@@ -74,12 +74,10 @@ impl FileHandle {
         if b[29..] != c[1..] {
             return Err(VfsError::BadHandle);
         }
-        let n32 = |r: std::ops::Range<usize>| {
-            u32::from_be_bytes(b[r].try_into().unwrap_or_default())
-        };
-        let n64 = |r: std::ops::Range<usize>| {
-            u64::from_be_bytes(b[r].try_into().unwrap_or_default())
-        };
+        let n32 =
+            |r: std::ops::Range<usize>| u32::from_be_bytes(b[r].try_into().unwrap_or_default());
+        let n64 =
+            |r: std::ops::Range<usize>| u64::from_be_bytes(b[r].try_into().unwrap_or_default());
         Ok(Self {
             export: n32(1..5),
             fid: FileId {
@@ -113,7 +111,11 @@ mod tests {
         for i in 0..LEN {
             let mut bad = b;
             bad[i] ^= 1;
-            assert_eq!(FileHandle::from_bytes(&bad), Err(VfsError::BadHandle), "{i}");
+            assert_eq!(
+                FileHandle::from_bytes(&bad),
+                Err(VfsError::BadHandle),
+                "{i}"
+            );
         }
         assert_eq!(FileHandle::from_bytes(&b[..31]), Err(VfsError::BadHandle));
     }

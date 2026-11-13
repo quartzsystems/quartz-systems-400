@@ -11,6 +11,7 @@
 //! cleared on everything made. A file made for a host with a data
 //! CCSID is tagged with it.
 
+#![allow(clippy::many_single_char_names)]
 use ifs::Errno;
 use ifs::client::IfsClient;
 use ifs::ops::flags::{O_CCSID, O_CREAT, O_EXCL, O_WRONLY};
@@ -72,7 +73,13 @@ impl<C: IfsClient> IfsVfs<C> {
         if r.export.nosuid() { m & !0o6000 } else { m }
     }
 
-    pub(crate) fn do_create(&self, r: &Req, dir: &FileHandle, name: &[u8], how: CreateHow) -> VResult<Made> {
+    pub(crate) fn do_create(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        how: CreateHow,
+    ) -> VResult<Made> {
         let n = new_name(r, name)?;
         self.run(r, |a| {
             let (dpath, dst) = self.dir_of(a, r, dir)?;
@@ -84,7 +91,8 @@ impl<C: IfsClient> IfsVfs<C> {
             };
             let existed = if excl { None } else { a.c.stat(&p, false).ok() };
             let mode = sattr.map_or(0o600, |s| Self::mode_for(r, &s, 0o644));
-            let mut args = OpenArgs::new(O_WRONLY | O_CREAT | if excl { O_EXCL } else { 0 }).mode(mode);
+            let mut args =
+                OpenArgs::new(O_WRONLY | O_CREAT | if excl { O_EXCL } else { 0 }).mode(mode);
             if let Some(c) = r.opts.data_ccsid {
                 args.oflag |= O_CCSID;
                 args.conversion_id = u32::from(c);
@@ -125,7 +133,13 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_mkdir(&self, r: &Req, dir: &FileHandle, name: &[u8], s: &SetAttr) -> VResult<Made> {
+    pub(crate) fn do_mkdir(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        s: &SetAttr,
+    ) -> VResult<Made> {
         let n = new_name(r, name)?;
         self.run(r, |a| {
             let (dpath, dst) = self.dir_of(a, r, dir)?;
@@ -151,7 +165,14 @@ impl<C: IfsClient> IfsVfs<C> {
         Ok(())
     }
 
-    pub(crate) fn do_symlink(&self, r: &Req, dir: &FileHandle, name: &[u8], target: &[u8], s: &SetAttr) -> VResult<Made> {
+    pub(crate) fn do_symlink(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        target: &[u8],
+        s: &SetAttr,
+    ) -> VResult<Made> {
         let n = new_name(r, name)?;
         let t = text::from_client(r.opts.path_ccsid, target)?;
         if t.is_empty() || t.contains('\0') {
@@ -166,7 +187,14 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_mknod(&self, r: &Req, dir: &FileHandle, name: &[u8], what: Special, s: &SetAttr) -> VResult<Made> {
+    pub(crate) fn do_mknod(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        what: Special,
+        s: &SetAttr,
+    ) -> VResult<Made> {
         if what != Special::Fifo {
             return Err(VfsError::NotSupp);
         }
@@ -180,10 +208,22 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_remove(&self, r: &Req, dir: &FileHandle, name: &[u8], rmdir: bool) -> VResult<Wcc> {
+    pub(crate) fn do_remove(
+        &self,
+        r: &Req,
+        dir: &FileHandle,
+        name: &[u8],
+        rmdir: bool,
+    ) -> VResult<Wcc> {
         let n = match name {
             b"." => return Err(VfsError::Inval),
-            b".." => return Err(if rmdir { VfsError::Exist } else { VfsError::Inval }),
+            b".." => {
+                return Err(if rmdir {
+                    VfsError::Exist
+                } else {
+                    VfsError::Inval
+                });
+            }
             _ => text::name(r.opts.path_ccsid, name)?,
         };
         self.run(r, |a| {
@@ -210,7 +250,14 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_rename(&self, r: &Req, from: &FileHandle, fname: &[u8], to: &FileHandle, tname: &[u8]) -> VResult<(Wcc, Wcc)> {
+    pub(crate) fn do_rename(
+        &self,
+        r: &Req,
+        from: &FileHandle,
+        fname: &[u8],
+        to: &FileHandle,
+        tname: &[u8],
+    ) -> VResult<(Wcc, Wcc)> {
         let dots = |n: &[u8]| n == b"." || n == b"..";
         if dots(fname) || dots(tname) {
             return Err(VfsError::Inval);
@@ -243,7 +290,13 @@ impl<C: IfsClient> IfsVfs<C> {
         })
     }
 
-    pub(crate) fn do_link(&self, r: &Req, fh: &FileHandle, dir: &FileHandle, name: &[u8]) -> VResult<(Option<crate::server::vfs::Attr>, Wcc)> {
+    pub(crate) fn do_link(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        dir: &FileHandle,
+        name: &[u8],
+    ) -> VResult<(Option<crate::server::vfs::Attr>, Wcc)> {
         let n = new_name(r, name)?;
         self.run(r, |a| {
             let (fpath, fst) = self.locate(a, r, fh)?;

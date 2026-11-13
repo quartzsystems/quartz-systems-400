@@ -75,9 +75,9 @@ impl<V: Vfs> Nlm<V> {
         }
     }
 
-    fn result(&self, ctx: &CallContext, procedure: u32, r: Reply) -> Result<(), AcceptError> {
+    fn result(&self, ctx: &CallContext, procedure: u32, r: &Reply) -> Result<(), AcceptError> {
         let c = self.state.client().ok_or(AcceptError::ProcUnavail)?;
-        c.result(ctx.peer, procedure, &r);
+        c.result(ctx.peer, procedure, r);
         Ok(())
     }
 
@@ -112,19 +112,19 @@ impl<V: Vfs> Nlm<V> {
                 Res::NLMPROC4_GRANTED_MSG
             }
             Args::NLMPROC4_TEST_RES(a) => {
-                self.result(ctx, 11, Reply::Test(a))?;
+                self.result(ctx, 11, &Reply::Test(a))?;
                 Res::NLMPROC4_TEST_RES
             }
             Args::NLMPROC4_LOCK_RES(a) => {
-                self.result(ctx, 12, Reply::Res(a))?;
+                self.result(ctx, 12, &Reply::Res(a))?;
                 Res::NLMPROC4_LOCK_RES
             }
             Args::NLMPROC4_CANCEL_RES(a) => {
-                self.result(ctx, 13, Reply::Res(a))?;
+                self.result(ctx, 13, &Reply::Res(a))?;
                 Res::NLMPROC4_CANCEL_RES
             }
             Args::NLMPROC4_UNLOCK_RES(a) => {
-                self.result(ctx, 14, Reply::Res(a))?;
+                self.result(ctx, 14, &Reply::Res(a))?;
                 Res::NLMPROC4_UNLOCK_RES
             }
             Args::NLMPROC4_GRANTED_RES(a) => {
@@ -144,7 +144,9 @@ impl<V: Vfs> Nlm<V> {
 
     fn v1(&self, ctx: &CallContext, d: &mut Decoder<'_>) -> Answer {
         use NLM_PROG::NLM_VERS::{Args, Res};
-        use conv::{cancargs, lockargs, res_down, res_up, testargs, testres_down, testres_up, unlockargs};
+        use conv::{
+            cancargs, lockargs, res_down, res_up, testargs, testres_down, testres_up, unlockargs,
+        };
         let c = self.core(ctx);
         let res = match decode_args::<Args>(ctx, d)? {
             Args::NLM_NULL => Res::NLM_NULL,
@@ -174,19 +176,19 @@ impl<V: Vfs> Nlm<V> {
                 Res::NLM_GRANTED_MSG
             }
             Args::NLM_TEST_RES(a) => {
-                self.result(ctx, 11, Reply::Test(testres_up(&a)))?;
+                self.result(ctx, 11, &Reply::Test(testres_up(&a)))?;
                 Res::NLM_TEST_RES
             }
             Args::NLM_LOCK_RES(a) => {
-                self.result(ctx, 12, Reply::Res(res_up(&a)))?;
+                self.result(ctx, 12, &Reply::Res(res_up(&a)))?;
                 Res::NLM_LOCK_RES
             }
             Args::NLM_CANCEL_RES(a) => {
-                self.result(ctx, 13, Reply::Res(res_up(&a)))?;
+                self.result(ctx, 13, &Reply::Res(res_up(&a)))?;
                 Res::NLM_CANCEL_RES
             }
             Args::NLM_UNLOCK_RES(a) => {
-                self.result(ctx, 14, Reply::Res(res_up(&a)))?;
+                self.result(ctx, 14, &Reply::Res(res_up(&a)))?;
                 Res::NLM_UNLOCK_RES
             }
             Args::NLM_GRANTED_RES(a) => {
@@ -232,19 +234,19 @@ impl<V: Vfs> Nlm<V> {
                 Res::NLM_GRANTED_MSG
             }
             Args::NLM_TEST_RES(a) => {
-                self.result(ctx, 11, Reply::Test(testres_up(&a)))?;
+                self.result(ctx, 11, &Reply::Test(testres_up(&a)))?;
                 Res::NLM_TEST_RES
             }
             Args::NLM_LOCK_RES(a) => {
-                self.result(ctx, 12, Reply::Res(res_up(&a)))?;
+                self.result(ctx, 12, &Reply::Res(res_up(&a)))?;
                 Res::NLM_LOCK_RES
             }
             Args::NLM_CANCEL_RES(a) => {
-                self.result(ctx, 13, Reply::Res(res_up(&a)))?;
+                self.result(ctx, 13, &Reply::Res(res_up(&a)))?;
                 Res::NLM_CANCEL_RES
             }
             Args::NLM_UNLOCK_RES(a) => {
-                self.result(ctx, 14, Reply::Res(res_up(&a)))?;
+                self.result(ctx, 14, &Reply::Res(res_up(&a)))?;
                 Res::NLM_UNLOCK_RES
             }
             Args::NLM_GRANTED_RES(a) => {
@@ -253,7 +255,9 @@ impl<V: Vfs> Nlm<V> {
             }
             Args::NLM_SHARE(a) => Res::NLM_SHARE(shareres_down(&c.share(&shareargs(&a)))),
             Args::NLM_UNSHARE(a) => Res::NLM_UNSHARE(shareres_down(&c.unshare(&shareargs(&a)))),
-            Args::NLM_NM_LOCK(a) => Res::NLM_NM_LOCK(res_down(&c.lock(&lockargs(&a), false, false))),
+            Args::NLM_NM_LOCK(a) => {
+                Res::NLM_NM_LOCK(res_down(&c.lock(&lockargs(&a), false, false)))
+            }
             Args::NLM_FREE_ALL(a) => {
                 c.free_all(&notify(&a));
                 Res::NLM_FREE_ALL

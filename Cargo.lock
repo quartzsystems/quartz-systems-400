@@ -2477,6 +2477,7 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "ifs",
+ "sec",
  "socket2",
  "thiserror 2.0.21",
  "tracing",

@@ -6,6 +6,7 @@
 //! single-byte CCSID, path names in the host's CCSID; and an export of
 //! `/QSYS.LIB` (libraries, files and members as directories and files).
 
+#![allow(clippy::many_single_char_names)]
 mod srv3_common;
 
 use ifs::client::IfsClient;
@@ -21,7 +22,12 @@ const PEER: &str = "10.0.0.5:900";
 fn tagged(w: &World, path: &str, ccsid: u32, data: &[u8]) {
     let j = w.job(9);
     let fd = j
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID).mode(0o666).conv(ccsid))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID)
+                .mode(0o666)
+                .conv(ccsid),
+        )
         .unwrap();
     ifs::client::write_all(&j, fd, data).unwrap();
     j.close(fd).unwrap();
@@ -59,17 +65,26 @@ fn tagged_text_is_converted_for_the_host() {
     // Sizes are the converted size (one byte a character).
     assert_eq!(v.getattr(&e).unwrap().size, 12);
     v.write(&e, 0, b"HELLO", t3::stable_how::FILE_SYNC).unwrap();
-    assert_eq!(w.read_file("/home/exp/e.txt"), ccsid::to_ebcdic("HELLO, world").unwrap());
+    assert_eq!(
+        w.read_file("/home/exp/e.txt"),
+        ccsid::to_ebcdic("HELLO, world").unwrap()
+    );
     // UTF-8 is served as stored.
     let u = v.lookup(&root, "u.txt").unwrap();
     assert_eq!(v.read(&u, 0, 100).unwrap().0, b"Hello");
     // A file made through the export takes the host's CCSID.
     v.create(&root, "new.txt").unwrap();
-    assert_eq!(w.job(9).stat("/home/exp/new.txt", false).unwrap().ccsid, 819);
+    assert_eq!(
+        w.job(9).stat("/home/exp/new.txt", false).unwrap().ccsid,
+        819
+    );
     // Another host, *BINARY: as stored.
     let other = Client::new("10.0.0.6:900", 100);
     let vo = V3 { p: &p, c: &other };
-    assert_eq!(vo.read(&e, 0, 5).unwrap().0, &ccsid::to_ebcdic("HELLO").unwrap()[..]);
+    assert_eq!(
+        vo.read(&e, 0, 5).unwrap().0,
+        &ccsid::to_ebcdic("HELLO").unwrap()[..]
+    );
 }
 
 #[test]

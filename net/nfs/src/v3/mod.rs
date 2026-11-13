@@ -29,7 +29,12 @@ pub const MAX_IO: u32 = 1 << 20;
 pub const PREF_IO: u32 = 64 * 1024;
 
 /// One NFS version 3 call against `vfs`.
-pub fn call<V: Vfs + ?Sized>(vfs: &V, gate: &Gate, ctx: &CallContext, d: &mut Decoder<'_>) -> Answer {
+pub fn call<V: Vfs + ?Sized>(
+    vfs: &V,
+    gate: &Gate,
+    ctx: &CallContext,
+    d: &mut Decoder<'_>,
+) -> Answer {
     use NFS_PROGRAM::NFS_V3::{Args, Res};
     let p = proc::Procs { vfs, gate, ctx };
     let res = match decode_args::<Args>(ctx, d)? {

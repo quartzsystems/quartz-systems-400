@@ -55,7 +55,9 @@ pub fn sm_unmon(addr: SocketAddr, cfg: &ClientConfig, m: &mon_id) -> Result<i32,
 ///
 /// The transport's.
 pub fn sm_unmon_all(addr: SocketAddr, cfg: &ClientConfig, m: &my_id) -> Result<i32, RpcError> {
-    match client(addr, cfg).call_proc::<Args, Res>(&Credential::None, &Args::SM_UNMON_ALL(m.clone()))? {
+    match client(addr, cfg)
+        .call_proc::<Args, Res>(&Credential::None, &Args::SM_UNMON_ALL(m.clone()))?
+    {
         Res::SM_UNMON_ALL(r) => Ok(r.state),
         _ => Err(bad()),
     }
@@ -81,7 +83,12 @@ pub fn sm_stat(addr: SocketAddr, cfg: &ClientConfig, host: &[u8]) -> Result<sm_s
 /// # Errors
 ///
 /// The transport's.
-pub fn sm_notify(addr: SocketAddr, cfg: &ClientConfig, me: &[u8], state: i32) -> Result<(), RpcError> {
+pub fn sm_notify(
+    addr: SocketAddr,
+    cfg: &ClientConfig,
+    me: &[u8],
+    state: i32,
+) -> Result<(), RpcError> {
     let a = Args::SM_NOTIFY(stat_chge {
         mon_name: me.to_vec(),
         state,
