@@ -218,6 +218,20 @@ impl Suite {
         if !mfs.contains("File system type") {
             return Err(format!("DSPMFSINF OBJ('/'):\n{mfs}"));
         }
+        // The binder and the server in the kernel's socket table.
+        let net = sql(
+            s,
+            "SELECT LOCAL_PORT, PROTOCOL, TCP_STATE FROM QSYS2/NETSTAT_INFO WHERE LOCAL_PORT IN (111, 2049)",
+        )?;
+        let listening = |port: &str| {
+            net.lines().any(|l| {
+                let w: Vec<&str> = l.split_whitespace().collect();
+                w.first() == Some(&port) && w.contains(&"TCP") && w.contains(&"LISTEN")
+            })
+        };
+        if !listening("111") || !listening("2049") {
+            return Err(format!("NETSTAT_INFO lacks 111 or 2049 listening:\n{net}"));
+        }
         let probe = self.nfs_probe()?;
         for want in ["portmapper", "nfs", "mountd", "nlockmgr", "status"] {
             if !probe.contains(want) {
@@ -233,7 +247,7 @@ impl Suite {
             .collect();
         let map = self.nfs.borrow().map.clone();
         Ok(format!(
-            "{started} daemons started ({running} running already): {} in QSYSWRK; /etc/RPCBTAB {records} records; {EXPORT} in NFS_EXPORT_INFO and the EXPORT list; {} registrations, forwards {map:?}",
+            "{started} daemons started ({running} running already): {} in QSYSWRK; /etc/RPCBTAB {records} records; {EXPORT} in NFS_EXPORT_INFO and the EXPORT list; 111 and 2049 listening in NETSTAT_INFO; {} registrations, forwards {map:?}",
             jobs.join(" "),
             host::registrations(&probe).len()
         ))
