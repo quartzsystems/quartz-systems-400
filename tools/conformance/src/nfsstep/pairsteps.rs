@@ -87,10 +87,12 @@ fn rm(s: &mut Session, paths: &[String]) -> Result<(), String> {
 
 /// `SBMJOB` of `cmd` to `QBATCH`; the job's `number/user/name`.
 fn submit(s: &mut Session, cmd: &str, job: &str) -> Result<String, String> {
-    let out = s.command(
-        &format!("SBMJOB CMD({cmd}) JOB({job}) JOBQ(QGPL/QBATCH)"),
-        CMD,
-    )?;
+    submit_to(s, cmd, job, "QGPL/QBATCH")
+}
+
+/// `SBMJOB` of `cmd` to `jobq`; the job's `number/user/name`.
+fn submit_to(s: &mut Session, cmd: &str, job: &str, jobq: &str) -> Result<String, String> {
+    let out = s.command(&format!("SBMJOB CMD({cmd}) JOB({job}) JOBQ({jobq})"), CMD)?;
     crate::qsh::submitted(&out)
 }
 
@@ -464,10 +466,12 @@ impl Suite {
         end_servers(&mut p.a, "*ALL")?;
         super::daemons_gone(&mut p.a)?;
         let down = Instant::now();
-        let writer = submit(
+        // QBATCH runs one job at a time and the holder is it.
+        let writer = submit_to(
             &mut p.b,
             &format!("QSH CMD('echo written-during-the-outage > {over}/outage.txt')"),
             "NFSOUTW",
+            "QSYS/QSYSNOMAX",
         )?;
         running(&mut p.b, "NFSOUTW", Duration::from_secs(30))?;
         // Longer than the mount's major timeout (3.5 s): not responding.
