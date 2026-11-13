@@ -439,36 +439,48 @@ impl Suite {
             .unwrap_or(1024);
         super::pairsteps::room(s, mib + 256)?;
         self.nfs_probe()?;
-        let mut a = vec!["bench".to_string()];
-        a.extend(self.nfs_target("nfsbench"));
-        a.extend(["--mib".into(), mib.to_string()]);
-        let r3 = host::run(&a, Duration::from_mins(60))?;
+        // Version 3 in the server's preferred size (`FSINFO`) and in
+        // 64 KiB; 4.1, which has no preference, in 1 MiB and 64 KiB.
+        let mut runs = Vec::new();
+        for bs in [None, Some(65_536)] {
+            let mut a = vec!["bench".to_string()];
+            a.extend(self.nfs_target("nfsbench"));
+            a.extend(["--mib".into(), mib.to_string()]);
+            if let Some(bs) = bs {
+                a.extend(["--bs".into(), bs.to_string()]);
+            }
+            runs.push(("3", host::run(&a, Duration::from_mins(60))?));
+        }
         // Version 4.1 needs only the forwarded 2049 (after the grace period).
         self.nfs_after_grace();
         let port = host::host_port(&self.nfs.borrow().map, 2049).ok_or("2049 is not forwarded")?;
-        let a4: Vec<String> = [
-            "bench",
-            "127.0.0.1",
-            EXPORT,
-            "nfsbench",
-            "--vers",
-            "4.1",
-            "--port",
-            &port.to_string(),
-            "--mib",
-            &mib.to_string(),
-        ]
-        .iter()
-        .map(|s| (*s).to_string())
-        .collect();
-        let r4 = host::run(&a4, Duration::from_mins(60))?;
-        let text = format!(
-            "$ {}\n{}{}\n$ {}\n{}{}\n",
-            r3.line, r3.out, r3.err, r4.line, r4.out, r4.err
-        );
+        for bs in [1_048_576, 65_536] {
+            let a4: Vec<String> = [
+                "bench",
+                "127.0.0.1",
+                EXPORT,
+                "nfsbench",
+                "--vers",
+                "4.1",
+                "--port",
+                &port.to_string(),
+                "--mib",
+                &mib.to_string(),
+                "--bs",
+                &bs.to_string(),
+            ]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect();
+            runs.push(("4.1", host::run(&a4, Duration::from_mins(60))?));
+        }
+        let text: String = runs
+            .iter()
+            .map(|(_, r)| format!("$ {}\n{}{}\n", r.line, r.out, r.err))
+            .collect();
         let _ = std::fs::write(self.out_dir.join("nfs-176-bench.txt"), &text);
         let mut lines = Vec::new();
-        for (vers, r) in [("3", &r3), ("4.1", &r4)] {
+        for (vers, r) in &runs {
             let (Some(w), Some(rd)) = (
                 host::value(&r.out, "write MiB/s: "),
                 host::value(&r.out, "read MiB/s: "),
