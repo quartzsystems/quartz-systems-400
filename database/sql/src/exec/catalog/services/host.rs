@@ -194,6 +194,107 @@ pub struct ServerShare {
     pub publish: bool,
 }
 
+/// One host option of an NFS export (`HOSTOPT`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct NfsHostOpt {
+    /// The host, address, network or netgroup.
+    pub host: String,
+    /// The data CCSID, 65535 for `*BINARY`.
+    pub data_ccsid: Option<u32>,
+    /// The path name CCSID.
+    pub path_ccsid: Option<u32>,
+    /// Writes are synchronous.
+    pub sync: bool,
+}
+
+/// An export as `NFS_EXPORT_INFO` shows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)] // one per column
+pub struct NfsExport {
+    /// The export ID.
+    pub id: u32,
+    /// The exported directory.
+    pub path: String,
+    /// `ro`.
+    pub read_only: bool,
+    /// The `rw=` hosts, `:` between; `None` without `rw=`.
+    pub rw_hosts: Option<String>,
+    /// The `access=` hosts; `None` is every host.
+    pub access_hosts: Option<String>,
+    /// The `root=` hosts; `None` for none.
+    pub root_hosts: Option<String>,
+    /// The anonymous UID; `None` when unknown users are refused.
+    pub anon_uid: Option<u32>,
+    /// That UID's profile, when one has it.
+    pub anon_user: Option<String>,
+    /// `nosuid`.
+    pub nosuid: bool,
+    /// The flavors, `:` between (`SYS`).
+    pub flavors: String,
+    /// The versions, `:` between (`3:4`).
+    pub versions: String,
+    /// `public`.
+    pub public: bool,
+    /// `root`: the `NFSv4` pseudo-root.
+    pub pseudo_root: bool,
+    /// `nfsroot=`.
+    pub nfsroot: Option<String>,
+    /// `exname=`.
+    pub exname: Option<String>,
+    /// The host options.
+    pub hosts: Vec<NfsHostOpt>,
+    /// The job that exported it, qualified.
+    pub by: String,
+    /// When, seconds since 1970.
+    pub since: u64,
+}
+
+/// A file system's `statvfs` figures.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FsFigures {
+    /// The block size.
+    pub block_size: u64,
+    /// Blocks in all.
+    pub blocks: u64,
+    /// Blocks free.
+    pub free: u64,
+    /// Blocks free to a user without special authority.
+    pub available: u64,
+    /// Files in all.
+    pub files: u64,
+    /// Files free.
+    pub files_free: u64,
+    /// The longest name.
+    pub name_max: u32,
+}
+
+/// A mounted file system as `MOUNTED_FS_INFO` shows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MountedFs {
+    /// The mount's ID.
+    pub id: u32,
+    /// Its type as `/etc/vfs` names it (`root`, `udfs`, `nfs3` ...).
+    pub kind: String,
+    /// The directory mounted over.
+    pub at: String,
+    /// What is mounted: `host:/path`, a UDFS's path; empty for none.
+    pub source: String,
+    /// The mount's options; empty for none.
+    pub options: String,
+    /// Read only.
+    pub read_only: bool,
+    /// Names compare exactly.
+    pub case_sensitive: bool,
+    /// A remote file system's server answers; `None` for a local one.
+    pub responding: Option<bool>,
+    /// The data CCSID of a remote mount.
+    pub data_ccsid: Option<u32>,
+    /// The path name CCSID of a remote mount.
+    pub path_ccsid: Option<u32>,
+    /// `statvfs`, when it is cheap (never waits for a network).
+    pub figures: Option<FsFigures>,
+}
+
 /// A PTF as the PTF database has it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Ptf {
@@ -575,6 +676,16 @@ pub trait SystemHost {
 
     /// The `QZLS*` shares (`SERVER_SHARE_INFO`).
     fn server_shares(&self) -> Option<Result<Vec<ServerShare>, String>> {
+        None
+    }
+
+    /// The NFS export table (`NFS_EXPORT_INFO`).
+    fn nfs_exports(&self) -> Option<Result<Vec<NfsExport>, String>> {
+        None
+    }
+
+    /// The mounted file systems (`MOUNTED_FS_INFO`).
+    fn mounted_file_systems(&self) -> Option<Result<Vec<MountedFs>, String>> {
         None
     }
 

@@ -24,6 +24,10 @@ pub const TEXT: &str = include_str!("shapes.txt");
 /// optional parameters are null, as IBM documents them.
 pub const PLAN: &str = include_str!("shapes_plan.txt");
 
+/// QS/400's own views, which no release of IBM i has (docs/SQL.md
+/// section 9): written here, not captured.
+pub const QS400: &str = include_str!("shapes_qs400.txt");
+
 /// A column, parameter or result type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Col {
@@ -239,7 +243,11 @@ fn index() -> &'static Index {
     I.get_or_init(|| {
         let mut views = HashMap::new();
         let mut routines: HashMap<String, Vec<Shape>> = HashMap::new();
-        for s in parse(TEXT).into_iter().chain(parse(PLAN)) {
+        for s in parse(TEXT)
+            .into_iter()
+            .chain(parse(PLAN))
+            .chain(parse(QS400))
+        {
             let key = format!("{}.{}", s.schema, s.name);
             if s.kind == 'V' {
                 views.insert(key, s);

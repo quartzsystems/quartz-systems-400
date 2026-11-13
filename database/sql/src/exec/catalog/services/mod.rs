@@ -33,6 +33,7 @@ mod locks;
 mod msgfdata;
 mod netstat;
 mod netsvr;
+mod nfs;
 mod objects;
 pub mod plancache;
 pub mod procs;
@@ -236,6 +237,18 @@ const VIEWS: &[View] = &[
         name: "SERVER_SHARE_INFO",
         no_value: &[],
         rows: netsvr::shares,
+    },
+    View {
+        schema: "QSYS2",
+        name: "NFS_EXPORT_INFO",
+        no_value: &[],
+        rows: nfs::exports,
+    },
+    View {
+        schema: "QSYS2",
+        name: "MOUNTED_FS_INFO",
+        no_value: &[],
+        rows: nfs::mounts,
     },
     View {
         schema: "QSYS2",

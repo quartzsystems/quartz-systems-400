@@ -329,6 +329,83 @@ impl SystemHost for Mock {
         ]))
     }
 
+    fn nfs_exports(&self) -> Option<Result<Vec<host::NfsExport>, String>> {
+        let base = host::NfsExport {
+            flavors: "SYS".into(),
+            versions: "3:4".into(),
+            by: "000123/QSECOFR/QPADEV0001".into(),
+            since: 1_767_225_600,
+            ..host::NfsExport::default()
+        };
+        Some(Ok(vec![
+            host::NfsExport {
+                id: 1,
+                path: "/home".into(),
+                read_only: true,
+                rw_hosts: Some("admin".into()),
+                anon_uid: Some(4_294_770_710),
+                anon_user: Some("QNFSANON".into()),
+                hosts: vec![
+                    host::NfsHostOpt {
+                        host: "pc1".into(),
+                        data_ccsid: Some(819),
+                        path_ccsid: Some(819),
+                        sync: false,
+                    },
+                    host::NfsHostOpt {
+                        host: "@10.0.0.0/8".into(),
+                        data_ccsid: Some(65535),
+                        path_ccsid: Some(1208),
+                        sync: true,
+                    },
+                ],
+                ..base.clone()
+            },
+            host::NfsExport {
+                id: 2,
+                path: "/QOpenSys/data".into(),
+                root_hosts: Some("admin".into()),
+                nosuid: true,
+                versions: "4".into(),
+                pseudo_root: true,
+                exname: Some("/data".into()),
+                ..base
+            },
+        ]))
+    }
+
+    fn mounted_file_systems(&self) -> Option<Result<Vec<host::MountedFs>, String>> {
+        Some(Ok(vec![
+            host::MountedFs {
+                id: 1,
+                kind: "root".into(),
+                at: "/".into(),
+                figures: Some(host::FsFigures {
+                    block_size: 4096,
+                    blocks: 1000,
+                    free: 600,
+                    available: 500,
+                    files: 64,
+                    files_free: 32,
+                    name_max: 255,
+                }),
+                ..host::MountedFs::default()
+            },
+            host::MountedFs {
+                id: 101,
+                kind: "nfs3".into(),
+                at: "/mnt/srv".into(),
+                source: "srv:/export".into(),
+                options: "rw,hard,vers=3".into(),
+                case_sensitive: true,
+                responding: Some(false),
+                data_ccsid: Some(819),
+                path_ccsid: Some(819),
+                ..host::MountedFs::default()
+            },
+        ]))
+    }
+
     fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {
         Some(Ok(vec![host::Ptf {
             id: "QS00001".into(),
@@ -1125,6 +1202,37 @@ fn server_share_info() {
     assert_eq!(
         db.rows("SELECT PATH_NAME, PERMISSIONS, COALESCE(MAXIMUM_CONNECTIONS, -9), FILE_EXTENSION_COUNT, LENGTH(FILE_EXTENSIONS), COALESCE(OUTPUT_QUEUE, '-') FROM QSYS2.SERVER_SHARE_INFO WHERE SERVER_SHARE_NAME = 'QIBM'"),
         vec![row(&["/QIBM", "RW", "-9", "1", "7", "-"])]
+    );
+}
+
+#[test]
+fn nfs_export_info() {
+    let mut db = Db::new(true);
+    // One row per host option; an export without any has one, its
+    // host columns null.
+    assert_eq!(
+        db.rows("SELECT EXPORT_ID, PATH_NAME, READ_ONLY, COALESCE(READ_WRITE_HOSTS, '-'), HOST_OPTION_HOST, HOST_DATA_CCSID, HOST_PATH_CCSID, HOST_WRITE_MODE, ANONYMOUS_UID, ANONYMOUS_USER FROM QSYS2.NFS_EXPORT_INFO WHERE EXPORT_ID = 1 ORDER BY HOST_OPTION_HOST"),
+        vec![
+            row(&["1", "/home", "YES", "admin", "@10.0.0.0/8", "65535", "1208", "SYNC", "4294770710", "QNFSANON"]),
+            row(&["1", "/home", "YES", "admin", "pc1", "819", "819", "ASYNC", "4294770710", "QNFSANON"]),
+        ]
+    );
+    assert_eq!(
+        db.rows("SELECT COALESCE(HOST_OPTION_HOST, '-'), ROOT_HOSTS, NOSUID, NFS_VERSIONS, PSEUDO_ROOT, EXPORT_NAME, COALESCE(ANONYMOUS_UID, -1), SECURITY_FLAVORS, PUBLIC_FILE_HANDLE, EXPORTED_BY, CHAR(EXPORT_TIMESTAMP) FROM QSYS2.NFS_EXPORT_INFO WHERE PATH_NAME = '/QOpenSys/data'"),
+        vec![row(&["-", "admin", "YES", "4", "YES", "/data", "-1", "SYS", "NO", "000123/QSECOFR/QPADEV0001", "2026-01-01 00:00:00.000000"])]
+    );
+}
+
+#[test]
+fn mounted_fs_info() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT MOUNT_ID, FILE_SYSTEM_TYPE, MOUNTED_OVER_PATH, COALESCE(MOUNTED_FILE_SYSTEM, '-'), COALESCE(RESPONDING, '-'), BLOCK_SIZE, AVAILABLE_BLOCKS, MAXIMUM_NAME_LENGTH, CASE_SENSITIVE FROM QSYS2.MOUNTED_FS_INFO WHERE MOUNT_ID = 1"),
+        vec![row(&["1", "root", "/", "-", "-", "4096", "500", "255", "NO"])]
+    );
+    assert_eq!(
+        db.rows("SELECT FILE_SYSTEM_TYPE, MOUNTED_FILE_SYSTEM, MOUNT_OPTIONS, RESPONDING, DATA_CCSID, COALESCE(TOTAL_BLOCKS, -1), READ_ONLY FROM QSYS2.MOUNTED_FS_INFO WHERE FILE_SYSTEM_TYPE LIKE 'nfs%'"),
+        vec![row(&["nfs3", "srv:/export", "rw,hard,vers=3", "NO", "819", "-1", "NO"])]
     );
 }
 

@@ -6,7 +6,8 @@
 //! current export table ([`table`]), the daemon registry
 //! ([`registry`]), the NFS options of `QZNFNFSO` ([`optfile`]),
 //! `EXPORTFS` ([`export`]), `RLSIFSLCK`
-//! ([`locks`]) and the APIs ([`api`]). The daemon jobs and the job's
+//! ([`locks`]), the APIs ([`api`]) and the `QSYS2` views ([`sql`]). The
+//! daemon jobs and the job's
 //! commands reach it through `stg::nfs`.
 
 pub mod api;
@@ -14,6 +15,7 @@ pub mod export;
 pub mod locks;
 pub mod optfile;
 pub mod registry;
+pub mod sql;
 pub mod table;
 
 use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};

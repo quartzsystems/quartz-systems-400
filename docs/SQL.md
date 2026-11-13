@@ -299,6 +299,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `NETSTAT_INFO`, `NETSTAT_JOB_INFO`, `NETSTAT_INTERFACE_INFO`, `NETSTAT_ROUTE_INFO` | partial: socket options and sequence counters null | pub400 | `sql::services` |
 | `SOFTWARE_PRODUCT_INFO`, `PTF_INFO`, `JOB_DESCRIPTION_INFO` | supported (no registration columns, no job switches) | pub400 | `sql::services` |
 | `SERVER_SHARE_INFO` | supported: NetServer's file and print shares from `QAZLSSHR`, current connections from the session table (`docs/NETSERVER.md` 4); the value spellings (`RW`, `USERASCII`) are `NEEDS-CODY`, pub400 showing no rows | pub400 | `sql::services` |
+| `NFS_EXPORT_INFO`, `MOUNTED_FS_INFO` | QS/400's own (a documented difference, below): the NFS export table, one row per export and host option; every mounted file system with its type as `/etc/vfs` names it (`MOUNTED_FS_INFO` answers SQL0443 until the IFS mount table is reachable from the service: `BLOCKED(rel)`) | none | `sql::services` |
 | `IFS_OBJECT_STATISTICS`, `IFS_READ`, `IFS_READ_UTF8`, `IFS_READ_BINARY` | supported | pub400 | `sql::services` |
 | `CALL QSYS2.QCMDEXC` (both forms), `IFS_WRITE`, `IFS_WRITE_UTF8`, `IFS_WRITE_BINARY` | supported: qualified, or unqualified when no other procedure has the name; named arguments | pub400 | `sql::services` |
 | `JOB_QUEUE_INFO`, `SUBSYSTEM_INFO`, `SUBSYSTEM_POOL_INFO` | partial: `CONTROLLING_SUBSYSTEM` always NO | pub400 | `sql::services` |
@@ -361,6 +362,33 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `ADDPFCST`, `RMVPFCST`, `CHGPFCST`, `DSPCPCST`, `DSPFD TYPE(*CST)` | supported, the primary's messages; not yet run end to end under QEMU | primary | `sys-cpps` |
 | `WRKPFCST`, `EDTCPCST` | supported: `QSDBCST` panels as 7.1 shows them (options 2, 4, 6; a sequence verifies a constraint in check pending again); F15, F16, F17, F22 and F11 not yet | primary (`verified/oracle71/audit/wrkpfcst`, `edtcpcst`) | `uim --test audit_panels` |
 | Query/400 (`WRKQRY`, `RUNQRY`, product QS00QU1) | not in this work: a follow-on product | | |
+
+**QS/400's own services (documented differences).** No release of IBM i
+has these; their shapes are written in `services/shapes_qs400.txt`,
+not captured, and `SVCCOLS` does not list them:
+
+- `QSYS2.NFS_EXPORT_INFO` (`NFS_EXPORT`): the NFS export table
+  (`docs/NFS.md` 8). One row per export and host option (`HOSTOPT`); an
+  export without host options has one row with the four `HOST_` columns
+  null. `EXPORT_ID`, `PATH_NAME`, `READ_ONLY`, `READ_WRITE_HOSTS` (the
+  `rw=` list, `:` between; null without one), `ACCESS_HOSTS` (null:
+  every host), `ROOT_HOSTS`, `ANONYMOUS_UID` (null: `ANON=-1` refuses
+  unknown users), `ANONYMOUS_USER`, `NOSUID`, `SECURITY_FLAVORS`
+  (`SYS`), `NFS_VERSIONS` (`3:4`, `3`, `4`), `PUBLIC_FILE_HANDLE`,
+  `PSEUDO_ROOT`, `NFS_ROOT`, `EXPORT_NAME`, `HOST_OPTION_HOST`,
+  `HOST_DATA_CCSID` (65535 for `*BINARY`), `HOST_PATH_CCSID`,
+  `HOST_WRITE_MODE` (`SYNC`, `ASYNC`), `EXPORTED_BY` (the job,
+  qualified), `EXPORT_TIMESTAMP`.
+- `QSYS2.MOUNTED_FS_INFO` (`MOUNTED_FS`): every mounted file system.
+  `MOUNT_ID`, `FILE_SYSTEM_TYPE` (`/etc/vfs`'s names: `root`,
+  `qopensys`, `qsys`, `qdls`, `qopt`, `udfs`, `nfs3`, `nfs4`, `ntc`,
+  `rfs`), `MOUNTED_OVER_PATH`, `MOUNTED_FILE_SYSTEM` (`host:/path`, a
+  UDFS's path), `MOUNT_OPTIONS`, `READ_ONLY`, `CASE_SENSITIVE`,
+  `RESPONDING` (null for a local file system), `DATA_CCSID`,
+  `PATH_CCSID`, and `statvfs`'s `BLOCK_SIZE`, `TOTAL_BLOCKS`,
+  `FREE_BLOCKS`, `AVAILABLE_BLOCKS`, `TOTAL_FILES`, `FREE_FILES`,
+  `MAXIMUM_NAME_LENGTH` for local file systems (null for a remote one:
+  reading them would wait for its server).
 
 ## 9a. Authority
 

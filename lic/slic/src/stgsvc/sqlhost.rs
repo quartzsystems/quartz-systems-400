@@ -199,6 +199,14 @@ impl SystemHost for SqlHost {
         with_system(super::netsvr::sql_shares)
     }
 
+    fn nfs_exports(&self) -> Option<Result<Vec<host::NfsExport>, String>> {
+        with_system(|s| Ok(super::nfs::sql::exports(s)))
+    }
+
+    fn mounted_file_systems(&self) -> Option<Result<Vec<host::MountedFs>, String>> {
+        with_system(super::nfs::sql::mounts).flatten()
+    }
+
     fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {
         use ptf::status::{Action, Status};
         with_system(|system| {
