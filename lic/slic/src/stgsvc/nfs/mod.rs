@@ -258,9 +258,26 @@ pub fn job_ended(system: &mut System, number: u32, job: &str) {
         s.registry.gone(number);
         d
     };
-    if let Some((daemon, false)) = gone {
+    let asked = system
+        .jobs
+        .get(number)
+        .is_some_and(|j| subsystem_ending(&system.sbs, &system.ended_sbs, &j.subsystem));
+    if let Some((daemon, false)) = gone
+        && !asked
+    {
         ended_unasked(system, daemon, job, 0);
     }
+}
+
+/// Whether `sbs` is ending or has ended (`ENDSBS`, `ENDSYS`,
+/// `PWRDWNSYS`): its jobs were asked to end, even those it had to end at
+/// once.
+fn subsystem_ending(
+    active: &std::collections::BTreeMap<String, super::sbs::Active>,
+    ended: &std::collections::BTreeSet<String>,
+    sbs: &str,
+) -> bool {
+    active.get(sbs).is_some_and(|a| a.ending.is_some()) || ended.contains(sbs)
 }
 
 /// `CPFA1B8` for `what`.
@@ -421,4 +438,35 @@ pub fn ship_etc(system: &mut System) {
             let _ = c.close(fd);
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::sbs::Active;
+    use super::subsystem_ending;
+
+    /// A power down ends `QSYSWRK` at once: its daemons' ends were asked
+    /// for, so `QSYSOPR` gets no `CPFA1B5` (seven came at every IPL).
+    #[test]
+    fn a_subsystem_ending_asks_its_daemons_to_end() {
+        let mut m = std::collections::BTreeMap::new();
+        let mut a = Active {
+            lib: "QSYS".into(),
+            monitor: 9,
+            ending: None,
+            maxjobs: 0,
+            pools: Vec::new(),
+        };
+        let mut gone = std::collections::BTreeSet::new();
+        m.insert("QSYSWRK".to_string(), a.clone());
+        assert!(!subsystem_ending(&m, &gone, "QSYSWRK"));
+        a.ending = Some((true, 0));
+        m.insert("QSYSWRK".to_string(), a);
+        assert!(subsystem_ending(&m, &gone, "QSYSWRK"));
+        assert!(!subsystem_ending(&m, &gone, ""));
+        // Its monitor ended before the daemon's connection went.
+        m.clear();
+        gone.insert("QSYSWRK".to_string());
+        assert!(subsystem_ending(&m, &gone, "QSYSWRK"));
+    }
 }
