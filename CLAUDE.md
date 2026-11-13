@@ -25,6 +25,7 @@ kernel is the only inherited component; every process above it is ours.
 | SQL | the SQL engine to the Db2 for i SQL dialect, 7.5 level: DDL, queries, SQL PL and triggers, types, dynamic and embedded SQL, `QSQCLI`, DRDA, the `QSYS2` services, the plan cache, `STRSQL` | `SQL.md` |
 | pre-release | V1R1M0 made releasable: QS00 product IDs, every accepted-and-ignored clause implemented or refused, hot spares and the DST options, storage thresholds, power and system values, time zones, CCSIDs, function usage, the `QIBM_QSY_*` exit points, CI and releases from a tag, Secure Boot signing, `NOTICES.txt`, the kernel source offer, reproducible media; QS/400 Access for Web (`net/accessweb`, QS00AFW) | `PHASE12.md` Release gate, `RELEASE_NOTES_V1R1M0.md`, `releasing.md`, `ACCESSWEB.md` |
 | V1R2M0 | NetServer: SMB 2.0.2 to 3.1.1 file and print serving over the IFS (the vendored `net/smb-server` with QS/400's patches, `net/netserver`, `net/netsvrcfg`, `security/ntlm`), `QZLSSERVER`/`QZLSFILE`, the `QZLS*` APIs, Navigator and QAP, system-wide leases and change notify, point and print; `tools/smbtest` | `NETSERVER.md`, `RELEASE_NOTES_V1R2M0.md` |
+| V1R2M0 | NFS: the server (versions 3, 4.0, 4.1, MOUNT, NLM, NSM, the binder) and the client (`MOUNT TYPE(*NFS)`) over ONC RPC with XDR generated from descriptions (`net/xdrgen`, `net/nfs`), the daemon jobs in `QSYSWRK`, `EXPORTFS` and `/etc/exports`, remote mounts in the IFS (`ifs::remote`), file IDs by xfs handle (`ifs/fhandle`), `QZNFRTVE`/`QZNFNFSO`, `QSYS2.NFS_EXPORT_INFO` and `MOUNTED_FS_INFO`, Navigator and QAP; `tools/nfstest` | `NFS.md`, `RELEASE_NOTES_V1R2M0.md` |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -174,6 +175,10 @@ tools/        host-side tools
   smbtest/      the NetServer test client over the `smb` client crate (other authors than the
                 server), outside the workspace with its own Cargo.lock; scenarios, loopback and
                 interop tests; `build deny` checks its graph with its own advisory ignores
+  nfstest/      the NFS test client, outside the workspace with its own Cargo.lock and no
+                dependency on net/nfs: the NFSWolf crates for portmap, MOUNT and NFSv3, NLM,
+                NSM and NFSv4 by hand (src/wire/); scenarios, `probe`, `bench`; loopback tests
+                against the server; `build deny` checks its graph
   smbprobe/     a second NetServer client from the server library's own test helpers, for what
                 smbtest's crate cannot ask: leases, locks, durable reconnect, print shares,
                 spoolss, share enumeration; QEMU step 170 runs it (it shares authors with the
@@ -514,8 +519,13 @@ ifs/          the integrated file system
                 devices, /QSYS.LIB, /QOPT; src/resolve/ the resolver and casefold index,
                 src/lock/ share modes and byte ranges, src/text/, src/ops/ Ifs and every
                 operation, src/save/, src/client/ the IfsClient trait (LocalIfs, Unavailable)
-                and its wire codecs; tests/linux-xfs.sh runs the LinuxBackend tests as root
+                and its wire codecs (caller.rs: calls as another user for the NFS jobs);
+                src/remote/ a mount whose file system is elsewhere (RemoteFs, the cache, the
+                queue and its worker threads, request tokens, mem.rs a remote in memory);
+                tests/linux-xfs.sh runs the LinuxBackend tests as root
   xfsfmt/       a pure-Rust mkfs for the XFS v5 root (docs/IFS.md "Disk format")
+  fhandle/      the kernel's file handles behind a safe API (handle_at, open_by): src/raw.rs
+                the two system calls, the only unsafe; LinuxBackend opens file IDs by them
   qsyslib/      the IFS over the store, for the service: view.rs /QSYS.LIB (StoreQsys),
                 env.rs profiles, UID/GID and authorization lists, audit.rs QAUDJRN entries,
                 savf.rs, access.rs one transaction per call (MemAccess for tests)
@@ -613,6 +623,21 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 the print$ driver store, src/nbss/ port 139, route.rs the ClientGuid peek,
                 server.rs NetServer (build, serve_one, release); the jobs are
                 work/qsjob/src/work/netsvr/ (QZLSSERVER, QZLSFILE)
+  xdrgen/       the XDR description compiler (RFC 4506 with RPC programs): lexer, parser,
+                model, the Rust writer; a build dependency of net/nfs
+  nfs/          NFS (docs/NFS.md): x/*.x the descriptions, src/types/ what build.rs makes of
+                them, src/xdr/, src/rpc/ (messages, record marking, the dispatcher, the
+                duplicate request cache, the client, back.rs the back channel), src/rpcb/ the
+                binder and /etc/RPCBTAB, src/exports/ (/etc/exports, netgroups, EXPORTFS flags,
+                MOUNT options), src/server/ (Vfs, IfsVfs over IfsClient, file handles, the
+                gate, cred, text, run.rs the daemons' loops), src/mount/, src/v3/, src/nlm/,
+                src/nsm/, src/v4/ (compound, attr/, state/ with stable.rs, cb, the pseudo-file
+                system), src/registry/ the NFSv4 identity mapping, src/client/ a mounted
+                export as an ifs::remote::RemoteFs (v3, v4/, nlm, restart), src/fuzzing/. The
+                service side is lic/slic/src/stgsvc/nfs/ (export table, daemon registry,
+                options, client.rs the factory, sql.rs) and cpp/nfscmd.rs; the jobs
+                work/qsjob/src/work/nfs/ (QNFSRPCD, QNFSNFSD, QNFSMNTD, QNFSNLMD, QNFSNSMD,
+                QNFSBIOD, QNFSRGYD) and command/nfs.rs; the APIs runtime/sysapi/src/nfs.rs
   netsvrcfg/    NetServer's configuration: attributes current and pending, shares, the
                 QAZLSCFG/QAZLSSHR files (frozen at V1R2M0), the ZLSL/ZLSS and QS/400 QSL*
                 formats, the 13 QZLS* APIs over bytes, the session table, an API client for
@@ -624,7 +649,7 @@ docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKU
               DSPF.md, DST.md, FTP.md, HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md,
               HTTPADMIN_HANDOFF.md, IFS.md, ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md,
               LICPGM.md, MEDIA.md, MENUS.md, MSGF.md, NAVIGATOR.md,
-              NAVIGATOR_HANDOFF.md, NETSERVER.md, NET_OPEN_QUESTIONS.md, PERF.md, PHASE0.md,
+              NAVIGATOR_HANDOFF.md, NETSERVER.md, NET_OPEN_QUESTIONS.md, NFS.md, PERF.md, PHASE0.md,
               PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
               PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md,
               PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QUALIFIED_HARDWARE.md,
@@ -725,6 +750,11 @@ cargo test -p netserver -p netsvrcfg -p ntlm   # NetServer: shares over a MemBac
 (cd net/smb-server && cargo test)         # the vendored SMB library and its QS/400 patches (tests/qs400_*.rs); own target dir
 cargo test --manifest-path tools/smbtest/Cargo.toml   # the test client against the library on loopback; --test interop -- --ignored for smbclient/cifs
 cargo run -p conformance -- --only 166,167,168,169,170,171   # NetServer under QEMU: start, every smbtest scenario, the 1 GB copy, APIs and SQL, smbprobe (leases, locks, print), Samba's smbclient and kernel CIFS mounts (skipped without smbclient)
+cargo test -p xdrgen -p nfs -p fhandle     # NFS: the XDR compiler, RPC, the binder, the servers over an IFS in memory, the client against them on loopback
+cargo test -p ifs --test remote_mount --test remote_ops --test remote_fail --test remote_cache --test remote_data   # remote mounts over a remote in memory
+cargo test --manifest-path tools/nfstest/Cargo.toml   # the independent NFS client against the server on loopback; --test interop -- --ignored for a Linux nfsd and the kernel client
+cargo test -p sys-cpps --test nfs_prompts  # the NFS command prompts against the primary's screens
+cargo clippy -p slic -p qsjob --all-targets --target x86_64-unknown-linux-musl   # also runs on Windows with the musl target installed (lint only)
 cargo run -p conformance -- --only 51,53,172   # telnet sign-on and recovery, named display sessions (DEVNAME, QMAXSGNACN vary-off, VRYCFG)
 QS400_RELEASE=V1R2M0 QS400_OLD_ISO=<V1R1M0 dev ISO> cargo run -p conformance -- --media iso --install --only 10   # the slip install from V1R1M0 (docs/INSTALL.md §4 builds the old media)
 cargo test -p licpgm -p lpstore -p lpbuild -p osobjects   # products, payloads, APIs, keys; the store; build lp
@@ -815,6 +845,8 @@ first (`git ls-files -z | xargs -0 touch -c`).
   `AF_PACKET`, the guest agent's `AF_VSOCK` listener), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls),
   `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks) and
   `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack),
+  `ifs/fhandle/src/raw.rs` (`name_to_handle_at` and `open_by_handle_at`
+  through `libc::syscall`, the IFS opening an object by its xfs handle),
   `qsh/pase/src/platform.rs` (fork, unshare, the ID maps, pivot_root and exec of a PASE
   program) and `tools/fuzz/src/cov.rs` (the fuzzer reading LLVM's coverage counters; host
   tool only). Tests that call generated code (`runtime/codegen/tests/`,
