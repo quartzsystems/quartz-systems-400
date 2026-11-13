@@ -248,16 +248,132 @@ job table (ended, crashed) leaves the registry at the next request.
 Both need `*IOSYSCFG` (`CPFA1B8`).
 
 **A daemon job** (`work/qsjob/src/work/nfs/`, `batch.rs` routes the
-eight programs there) runs `lifecycle`: `Hello { daemon }` (refused to a
-job not named as the type's), its type's `serve` (one module each:
-`rpcd`, `biod`, `rgyd`, `nfsd`, `mntd`, `nsmd`, `nlmd`), `Ready { ports
-}` with what it registered with the binder, then a wait of half a
-second at a time until `ShouldEnd`, `ENDJOB` or its subsystem's end,
-`Gone`, and `CPCA1B2` in its log. Today every `serve` is the one
-`BLOCKED(rel)` hook of its daemon: it answers that it cannot serve, so
-the job logs `CPI9C11` and `CPFA1BC`, leaves the registry and ends with
-code 20 without ever reporting ready. Nothing claims to serve. The
-lifecycle is tested with a serve that serves (`work::nfs::tests`).
+eight programs there) runs `lifecycle` (`mod.rs`):
+
+1. `Hello { daemon }` (refused to a job not named as the type's): its
+   index among its type's jobs, and for the binder `RTVRPCREG`.
+2. Its type's `serve` (one module each: `rpcd`, `biod`, `rgyd`, `nfsd`,
+   `mntd`, `nsmd`, `nlmd`), generic over `host::Host` (what the
+   daemon's threads ask of the job: a file system client of the
+   thread's own, `NfsOp`s from any thread, the addresses, the relay,
+   host names, a `Locator`; `JobHost` is the job's, the tests have one
+   over an IFS in memory). It binds the sockets, registers with the
+   binder (`running::register`, the registrations in the oracle's form:
+   netid `tcp`/`udp`, the address `::.p1.p2`, owner `4294967295`; the
+   binder's own owner `0`), and starts the daemon's loop on a thread of
+   its own (`running::Running::spawn`), which says when it serves. A
+   failure (a port in use, the binder not answering or refusing, the
+   status monitor's files) is `Serve::Unavailable`: the job logs the
+   error number's message, `CPFA1CC` for the binder, then `CPFA1BC`,
+   leaves the registry (`Gone`) and ends with code 20 without
+   reporting ready.
+3. `Ready { ports }`: what it registered, so `NfsOp::Daemons`
+   (`STRNFSSVR` waits on it; `NETSTAT` and Navigator show it) has the
+   real ports. Ready therefore means the sockets are bound and the
+   binder took every registration.
+4. A wait of half a second at a time until `ShouldEnd` (`ENDNFSSVR`),
+   `ENDJOB` or its subsystem's end (`ENDSBS QSYSWRK`, `PWRDWNSYS`). At
+   each pause the daemon's tick runs (the lock manager's orders).
+5. The end: the loop's stop flag is set; it stops accepting, each
+   connection thread ends after the call it is answering, and the job
+   gives it 10 seconds (`running::END_BOUND`) before it goes on without
+   it (the job's end then closes what is left). The registrations are
+   unset, `Gone`, and `CPCA1B2` (`CPCA1B5` for the binder) in its log;
+   end code 0.
+6. A loop that stops by itself while nobody asked it to (its socket
+   failed, a thread panicked) makes the job log the error number's
+   message and `CPFA1B5` (`CPFA1CB` with the error number for the
+   binder), and ask `NfsOp::Failed { errno }`: the service sends the
+   same message to `QSYSOPR` and forgets the job; end code 30. A job
+   that ends without either (killed, crashed) is found by the service
+   when the job ends (`served::end_job` calls `stgsvc::nfs::job_ended`):
+   if it was in the registry and not asked to end, `QSYSOPR` gets
+   `CPFA1B5` (`CPFA1CB`, error number 0) there.
+
+Each daemon thread that touches the IFS has a link of its own
+(`host::thread_link`, `hello_thread`). Every link of a job is the same
+job to the service, and the IFS owner of a request is the job's handle
+(`stgsvc::ifs::owner_of`), so all of a daemon job's links are one
+owner: a lock token one thread queued is named by another thread's
+`lease_orders` poll, and an open made on one thread is closed on
+another. A thread's link closing releases nothing (`JobCtx::thread`);
+the job's end releases the owner.
+
+The jobs are submitted under `QSECOFR` (`stgsvc::nfs::DAEMON_USER`)
+with the job descriptions `QP0LNFSD` and `QP0LRPCD`, whose `USER` is
+`QUSER` as on the primary: `SBMJOB USER()` wins, as for IBM's. The
+oracle's `/etc/RPCBTAB` is owned by the account that last started the
+binder, which suggests IBM runs the daemons as the user of `STRNFSSVR`;
+that stays `NEEDS-CODY` (section 12). `WRKACTJOB` shows the function
+`PGM-QZNFxxxx` while the job starts, as `QZLSSERVER` does, then none.
+
+**The daemons as built.**
+
+- `QNFSRPCD` (`rpcd.rs`): `rpcb::Binder` (portmap 2, rpcbind 3 and 4)
+  on TCP and UDP 111 through `run::serve`. Its own rows (100000
+  versions 2, 3 and 4 on `tcp` and `udp`, owner `0`) are registered
+  first. Every change of the table goes to a writer thread with a link
+  of its own, which writes the latest table to `/etc/RPCBTAB`
+  (`rpcbtab::encode`, CCSID 37, mode 666, owned by the job's user); the
+  job's end waits for the last write. With `RTVRPCREG(*YES)` the file is
+  read back at the start (the binder's own rows left out, made again):
+  a row whose daemon is gone stays in the table as a stale row, as on
+  IBM's; a client using it finds no one on the port, and the daemon's
+  next start replaces it (each registration is unset before it is set).
+- `QNFSNFSD` (`nfsd.rs`, `NBRSVR` jobs): see "Several `QNFSNFSD` jobs"
+  below. The program a thread serves is `nfsd::program(vfs, gate)`
+  (version 3 today, `nfsd::VERSIONS`; the seam for NFSv4).
+- `QNFSMNTD` (`mntd.rs`): `run::mountd`, MOUNT versions 1 and 3, on a
+  port the system gives (TCP and UDP the same number when it is free),
+  registered. The mount list is `MemMountList`, empty at each start.
+- `QNFSNSMD` (`nsmd.rs`): `NsmState::start` over `statd::IfsStatd`
+  (`/etc/STATD` and the monitored hosts' file through the IFS, section
+  6.3), then `run::nsmd` on a free port, registered; `SM_NOTIFY` to the
+  hosts monitored before, five rounds five seconds apart, naming this
+  host as `CFGTCP` names it (`HOSTNAME.DOMAIN`, lower case).
+- `QNFSNLMD` (`nlmd.rs`): `run::nlmd`, versions 1, 3 and 4 registered (2
+  served, not registered), on a free port; the monitor asked for every
+  host's first lock; blocked locks granted through the IFS news
+  (`ClientNews` over a link of its own); grace 90 seconds from the
+  start. At each pause it takes its release orders (`NfsOp::Orders`):
+  `NlmState::release_client(host)` drops the host's locks, waiting
+  requests and shares, the job logs `CPCA1C9` with the host name, and
+  `NfsOp::OrderDone { id, count, errno }` reports the count.
+- `QNFSBIOD` (`biod.rs`, `NBRBIO` jobs): the helper loop of section 7.6
+  on a thread with a link of its own: `remote_take`, the call, then
+  `remote_post`; without work it waits 50 ms doubling to a second. The
+  call itself is `biod::block_io()`, which today has no NFS client to
+  make it with and answers `None`: the loop then takes no work at all,
+  so the mounts' own threads do every block (`BLOCKED(rel)`). The job
+  is ready and ends as the others.
+- `QNFSRGYD` (`rgyd.rs`): **QS/400's meaning of `*RGY`.** The identity
+  mapping is answered by the storage service from the profiles' UIDs
+  and GIDs (`NfsOp::NameOfUid`, `NameOfGid`, `UidOfName`, `GidOfName`,
+  the index `qsyslib::env` keeps), asked by each server thread directly
+  (one request, kept in the job), and `NfsOp::Mapping` says whether
+  names are mapped and the `NFSv4` domain (`QZNFNFSO`'s, else the TCP/IP
+  domain name of `CHGTCPDMN`, lower case). Names are mapped while
+  `QNFSRGYD` is ready: then v4 owners are `profile@domain`; while it is
+  not, they are numeric strings, as for a client and server whose
+  domains differ. IBM documents `QNFSRGYD` as the daemon that does the
+  mapping; on QS/400 its running turns the mapping on, and its loop
+  holds the seam where a registry service of its own would go
+  (`rgyd::registry_service`).
+
+**The export table in a daemon** (`view.rs`). `JobExports` is the
+`server::ExportTable` the job's threads share: the service's table
+(`NfsOp::Exports`), each entry parsed (`exports::file::entry`), its
+root's file ID found by `stat`, its host lists matched through
+`/etc/netgroup` (read in CCSID 1208 at each refresh; a file that cannot
+be used is reported in the job's output and no netgroup is known) and
+the system's names (`names::HostNames`: the host table and the name
+servers of `CFGTCP`, `HOSTSCHPTY` first, each answer kept a minute). A
+thread of each daemon asks `NfsOp::Generation` once a second and reads
+the table again when it moved, so `EXPORTFS` is seen within a second
+(and a removed export's handles are stale at once: the gate checks the
+table on every call). An entry whose directory is gone is left out. A
+host no `HOSTOPT` names gets `*BINARY` data, UTF-8 path names and
+`*SYNC` writes.
 
 **The commands** (`work/qsjob/src/command/nfs.rs`, in the job).
 `STRNFSSVR SERVER(*ALL)` asks for each type in IBM's order: `*RPC`,
@@ -278,28 +394,40 @@ within 30 seconds), `ENDRPCBIND` its end (`CPCA1B5`, `CPFA1CA`).
 `SERVER(*GSS)` logs `CPI9C10` and ends with `CPFA1BC` (`CPFA1BE` for
 `ENDNFSSVR`); `*ALL` leaves it out.
 
-**Several `QNFSNFSD` jobs.** The first job owns the listeners. It
-serves UDP itself and gives each TCP connection to the job chosen by
-the client's address (`sockets::relay::give`), so one client's NFSv4
-state is in one job. What several clients share is in the storage
-service: share reservations (the opens' share modes), delegations (the
-lease table NetServer uses: a read delegation is a read lease, and a
-break is `CB_RECALL`) and byte-range locks. Each job is multithreaded:
-one thread per connection, each with its own link to the service.
-**(design)**
+**Several `QNFSNFSD` jobs** (`nfsd.rs`). The job of index 1 binds TCP
+and UDP 2049 and registers program 100003 with the binder; the others
+bind nothing and report ready with no ports. The first serves UDP on a
+thread of its own and accepts TCP; each connection goes to the job its
+client's address hashes to (`nfsd::pick`: FNV-1a of the IPv4 address,
+an IPv4-mapped IPv6 one taken as IPv4, over the ready, not ending
+server jobs in index order, asked of the registry once a second), so
+one client's state is in one job. Another job's connection is handed
+over with the descriptor relay (`sockets::relay::give` to the job's
+relay identifier, as `QZLSSERVER` gives them to `QZLSFILE`); one the
+relay refuses is served by the first job. The other jobs take what is
+handed to them (`relay::take`, half a second at a time); a job that
+ends gives what is still queued for it to the first job. Each job
+serves each connection on a thread with its own link and its own
+`IfsVfs`; the job's threads share the export table, one
+`Dispatcher` with the duplicate request cache (`run::nfs3_cache`), and
+the `Instance` (the write verifier, new at each job start, so a client
+resends what it had not committed). `QZNFNFSO`'s most server threads
+(0: no limit) caps the connection threads of one job: a connection
+beyond it waits for one to end. What several clients share is in the
+storage service: share reservations (the opens' share modes), the
+lease table and byte-range locks. NFSv4 joins at `nfsd::program`
+(section 5.10).
 
-**Restart and grace.** The storage service keeps the server's boot
-verifier and, in `/QIBM/UserData/OS400/NFS/`, the stable-storage records
-RFC 7530 section 9.6.3 asks for (client IDs with confirmed state). A
-`QNFSNFSD` start after an end, a crash or an IPL begins a 90-second
-grace period in which only reclaims are accepted (`NFS4ERR_GRACE`,
-`NLM4_DENIED_GRACE_PERIOD`); NSM's state number in `/etc/STATD` goes up
-by two and `QNFSNSMD` sends `SM_NOTIFY` to the hosts it monitored.
-**(design)**
+**Restart and grace.** Each `QNFSNFSD` start has a new write verifier,
+each `QNFSNLMD` start a 90-second grace period in which only reclaims
+take locks (`NLM4_DENIED_GRACE_PERIOD`), and each `QNFSNSMD` start the
+next odd state number in `/etc/STATD` and `SM_NOTIFY` to the hosts it
+monitored, whose lock managers then reclaim. The NLM daemon's locks are
+its job's, so the job's end (or crash) releases them in the service. The
+stable-storage records RFC 7530 section 9.6.3 asks for are NFSv4's
+(section 5.10). **(design for v4)**
 
-The loops each daemon job runs (register, serve, unregister) are
-`nfs::server::run` (section 5.9); the jobs, their sockets and their
-links are the job agent's.
+The loops each daemon job runs are `nfs::server::run` (section 5.9).
 ## 5. The server over the IFS
 
 Built in `net/nfs/src/server/` (shared by every protocol), `v3/`,
@@ -595,8 +723,25 @@ factory, and at `stop` lets the threads end and unregisters. `nlmd`
 registers versions 1, 3 and 4 (not 2) and runs the grant poll and the
 `_RES` sender beside; `nsmd` runs the notices of the start and the
 callbacks. All links of one daemon job are one IFS owner: tokens queued
-by one thread are named by the poll of another (for the job agent:
-the service's owner of each link must be the job, not the link).
+by one thread are named by the poll of another. As built, the service's
+owner of a request is the job's handle whatever link it came on
+(`hello_thread` gives a thread's link the job's `JobInfo`), so this
+holds without a change.
+
+How the jobs use them (section 4): `QNFSMNTD`, `QNFSNLMD` and
+`QNFSNSMD` call `mountd`, `nlmd` and `nsmd` with `binder: None` and
+register themselves (`running::register`), because the oracle's
+`/etc/RPCBTAB` rows have the wildcard address `::.p1.p2` and owner
+`4294967295` while `run`'s own registration writes the listener's
+address and the owner given; they unset the same rows at the end.
+`QNFSRPCD` runs `serve` with the binder in the dispatcher.
+`QNFSNFSD` does not use `nfsd`: the first job's accept loop decides
+which job serves each connection, so `nfsd.rs` has its own accept and
+connection loops (the same record handling as `run`'s) around
+`Dispatcher::handle_with`. Each daemon's thread factory makes the
+thread's `IfsVfs` over a link of its own (`host::thread_vfs`); a thread
+that gets no link panics, its scope ends the loop, and the job reports
+it as a loop that stopped.
 
 A thread's own program is a `rpc::LocalProgram` (the `Program` trait
 without `Send`/`Sync`), handed to `Dispatcher::handle_with(msg, peer,
@@ -957,8 +1102,8 @@ path), `v4_nfsroot` (`NFSROOT=`, default `/`), `v4_root` (`ROOT`),
 |---|---|---|---|
 | `/etc/exports` | 1208 when `EXPORTFS -F` makes it; read in its own | the user (`EDTF`), `EXPORTFS -I -F` | section 6.1 |
 | `/etc/netgroup` | its own | the user | `name member ...`, a member a triple `(host,user,domain)` or another group; only the host field is used, empty for any host, `-` for none; `#` comments, `\` continues a line; a group that contains itself (directly or not, or more than 16 deep) makes the file unusable (`CPDA1C5` reason 8), a line not of the form reason 17 (`nfs::exports::netgroup`) |
-| `/etc/RPCBTAB` | 37 | `QNFSRPCD` | 357-byte records `program version netid uaddr owner`, a new line, zeros. Read back by `RTVRPCREG(*YES)` **(design)** |
-| `/etc/STATD` | 37 | `QNFSNSMD` | the state number as text and a new line **(design)** |
+| `/etc/RPCBTAB` | 37 | `QNFSRPCD` | 357-byte records `program version netid uaddr owner`, a new line, zeros; written at every change of the binder's table, mode 666, owned by the user of the binder's job; read back by `RTVRPCREG(*YES)` (section 4) |
+| `/etc/STATD` | 37 | `QNFSNSMD` | the state number as EBCDIC digits and a new line (`X'F115'` for 1), mode 600, owned by `QSYS`; the next odd number at each start of `QNFSNSMD` |
 | `/etc/netconfig` | 819 | shipped | the transports `tcp`, `tcp_ord`, `udp` (visible, `inet`), the primary's lines, Quartz-written comments |
 | `/etc/vfs` | 1208 | shipped | the file system names and numbers of the primary's, `%defaultvfs udfs nfs3`, Quartz-written comments |
 
@@ -976,8 +1121,8 @@ unexport and export again keeps its file handles valid), and every
 change moves the table's generation, which a daemon asks for
 (`NfsOp::Generation`) to know when to read the table again. The
 service's own records are under `/QIBM/UserData/OS400/NFS/`: the NFS
-options (section 6.2); the v4 stable storage and NSM's monitored hosts
-are wave 2's.
+options (section 6.2) and NSM's monitored hosts (section 6.3, kept by
+`QNFSNSMD`); the v4 stable storage is section 5.10's.
 
 ### 6.1 `/etc/exports`
 
@@ -1082,6 +1227,34 @@ Frozen at V1R2M0 (`tools/fmtcheck/formats.toml`, format
 A file that is not this (another magic or version, cut short, longer)
 is reported in the service's log and the defaults are used: `AUTH_SYS`,
 the TCP/IP domain, no thread limit, 1024 handles, the check on.
+
+### 6.3 The status monitor's hosts
+
+`/QIBM/UserData/OS400/NFS/QNFSNSMD.MON`, written by `QNFSNSMD` through its
+job's IFS client (`work/qsjob/src/work/nfs/statd.rs`) each time a host is
+monitored or forgotten, made with mode 600 and CCSID 65535, the
+directory made when missing. Frozen at V1R2M0
+(`tools/fmtcheck/formats.toml`, format `nfs-nsm-monitor`, the codec
+`net/nfs/src/nsm/record.rs`), big-endian:
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `QSMN` |
+| 4 | 2 | version, 1 |
+| 6 | 2 | zero |
+| 8 | 4 | hosts, n |
+| | | per host: |
+| | 2 + m | the host monitored (`mon_name`): its length m, at most 1024, and the bytes |
+| | 2 + k | the local name to call back (`my_name`), the same way |
+| | 4 | the program to call back (`my_prog`) |
+| | 4 | its version (`my_vers`) |
+| | 4 | its procedure (`my_proc`) |
+| | 16 | the private bytes the callback carries |
+
+At a start the hosts are read (a file not in this form is taken as
+none), the file is written empty, and each host is sent `SM_NOTIFY`.
+The hosts' own state numbers are not kept: a callback carries the one
+the notice brings.
 
 ## 7. The client: an NFS mount in the IFS
 
@@ -1541,12 +1714,29 @@ a command QS/400 does not ship, and `CMDNFS`'s related menu `CMDJVA`
 
 `OBJ` with `LCLBRNGLCK(*YES)` releases every byte-range lock local jobs
 hold on the object, `OBJMFS(*YES)` those on every object of its file
-system (`Ifs::release_ranges` over the IFS's lock table; opens stay);
-`CPCA1C9`. Locks NFS clients hold are the `*NLM` daemon's: while it
-does not run no client holds one, so `NFSSVRLCK(*YES)` has nothing to
-release. `RMTLOCNAME` without the daemon is `CPFA1B6` reason 1; with it
-running, and `NFSSVRLCK(*YES)` with it running, the request to it
-(`CPCA1C7`) is wave 2's (`BLOCKED(rel)`, `CPFA1B6` reason 2 meanwhile).
+system (`Ifs::release_ranges` over the IFS's lock table, whoever holds
+them, the `*NLM` daemon's included; opens stay); `CPCA1C9`. Locks NFS
+clients hold are the `*NLM` daemon's (`stgsvc/nfs/locks.rs`):
+
+- `NFSSVRLCK(*YES)` with `OBJ` while the daemon is ready: the service
+  unlocks, as the daemon's job, every range its NLM sub-owners
+  (`0x4E4C000000000000` up) hold on the object (with `OBJMFS(*YES)`, on
+  every object of its file system), at once; then `LCLBRNGLCK` as
+  above, and `CPCA1C9`. The daemon's own tables keep the owners; a
+  client's later `UNLOCK` of a range already gone is answered as any
+  unlock. While the daemon does not run no client holds a lock, so
+  there is nothing to release.
+- `RMTLOCNAME(host)`: without the daemon ready, `CPFA1B6` reason 1
+  (the reason code for "the `*NLM` daemon is not running"); with it, an
+  order is queued in the registry for the daemon's job and the command
+  ends with `CPCA1C7` (the job and the host), as IBM's does: the release
+  is the daemon's. The daemon takes its orders at its next pause (half a
+  second at most, `NfsOp::Orders`), releases everything the host holds
+  (`NlmState::release_client`: locks, waiting requests, shares), logs
+  `CPCA1C9` with the host name in its own job log and reports the count
+  (`NfsOp::OrderDone`). An order for a daemon that ends first goes with
+  it.
+
 `*IOSYSCFG` (`CPFA1B8`).
 
 ### 8.2 The APIs
@@ -1667,8 +1857,8 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | Exporting `/QOPT`, `/QDLS`, `/QNTC`, `/QFileSvr.400`, an NFS mount | `CPDA1C5` |
 | `MOUNT OPTIONS('bg')`, an option not in section 7 | `CPFA1B0` |
 | `STRNFSSVR SERVER(*GSS)`, `ENDNFSSVR SERVER(*GSS)` | `CPI9C10` in the job log, then `CPFA1BC` / `CPFA1BE`; `*ALL` leaves `*GSS` out; a job routed to `QZNFGSSD` ends at once with the same two messages |
-| The daemons' network service (this wave) | every daemon job ends without reporting ready (`CPI9C11`, `CPFA1BC`), so `STRNFSSVR` ends with `CPFA1BC` (`BLOCKED(rel)`, `work/qsjob/src/work/nfs/`) |
-| `RLSIFSLCK RMTLOCNAME()`, and `NFSSVRLCK(*YES)` while `*NLM` runs | `CPFA1B6` reason 1 without the daemon, 2 with it (the request to it is wave 2's) |
+| The block I/O helpers' calls (`QNFSBIOD`) while the NFS client is not built | the helpers take no work; the mounts' own threads do every block (`BLOCKED(rel)`, `biod::block_io`) |
+| `RLSIFSLCK RMTLOCNAME()` while `*NLM` does not run | `CPFA1B6` reason 1 |
 | `QZNFNFSO` security flavors other than `AUTH_SYS` | `CPFA1BB` |
 | `HOSTOPT` in `/etc/exports` in another form than section 6.1's | the entry is `CPDA1C5` reason 9 |
 | On a remote mount: private authorities, authorization lists, object authorities (`CHGAUT`, `RVKAUT`), PC, archive, CCSID and storage attributes, `CHKOUT`/`CHKIN`, `STRJRN`/`ENDJRN`, `CHGPGP *NONE`, sockets, opening FIFOs and devices, `Qp0lGetPathFromFileID` | `ENOTSUP` (`CPFA0AD`), section 7.4 |
@@ -1812,6 +2002,63 @@ Nothing is accepted and ignored. What is not done is refused as below.
   and the server's reading of a `CB_COMPOUND` reply): a reply's results
   must decode. Without instrumentation, `net/nfs/tests/wire_fuzz.rs` runs
   the same entry points over random and mutated input.
+- **Built** (the daemon jobs, `cargo test -p qsjob work::nfs`, Linux):
+  `work/qsjob/src/work/nfs/tests.rs` runs each daemon's `lifecycle`
+  over a registry double and an IFS in memory, serving real RPC on
+  loopback: the binder's rows in `DUMP` and `/etc/RPCBTAB` byte for byte
+  in the codec's form (CCSID 37, mode 666), its end, and a stale row
+  read back with `RTVRPCREG(*YES)`; a `MOUNT` and an NFSv3 `LOOKUP` and
+  `READ` through `QNFSMNTD` and two `QNFSNFSD` jobs (the relay a queue;
+  the connection handed over when the address hashes to the second),
+  `MNT3ERR_ACCES` for a directory not exported and the mount taken once
+  `EXPORTFS` moved the generation, every registration gone at the end;
+  `/etc/STATD` (`X'F115'`, mode 600, `QSYS`, CCSID 37) and `X'F315'`
+  after a restart, an NLM reclaim granted in the grace period with the
+  host in `QNFSNSMD.MON`, and an `RLSIFSLCK` order carried out (count 1,
+  `CPCA1C9`); `QNFSBIOD` and `QNFSRGYD` ready and ended; a daemon that
+  cannot start (`CPFA1BC`, `CPFA1CC` for the binder), a loop that stops
+  by itself (`CPFA1B5`, `CPFA1CB`, `Failed`, code 30) and an end that
+  runs the end actions. `running.rs`: the registrations' form; `nfsd.rs`:
+  one address one job; `names.rs`: the host table both ways.
+  `cargo test -p stg --test nfs_link`: the new requests over the link.
+  `lic/slic` (`stgsvc::nfs::registry`): release orders handed to the
+  ready lock manager once and dropped with it.
+
+### 11.1 Proving a v3 mount under QEMU
+
+For the lead (no QEMU step exists yet). User networking: the guest is
+`10.0.2.15`, a client on the host reaches it from `10.0.2.2`.
+
+1. Forward the binder and the server, both protocols, with QMP:
+   `hostfwd_add n0 tcp:127.0.0.1:H111-10.0.2.15:111`, the same for
+   `udp`, and for 2049 (the harness's `tcp::forward_port` and
+   `smallsvr::forward_udp`).
+2. At the service console (or Command Entry), as `QSECOFR`:
+   ```
+   mkdir dir('/home/nfsexp')
+   chgaut obj('/home/nfsexp') user(*PUBLIC) dtaaut(*RWX)
+   exportfs options('-I -O rw') dir('/home/nfsexp')
+   strnfssvr server(*all) strjobtimo(60)
+   ```
+   (`EXPORTFS` before `STRNFSSVR` is fine: the daemons read the table at
+   their start and once a second.) `CPCA1BB` ends the start; `WRKACTJOB
+   SBS(QSYSWRK)` shows the seven `QNFS*` jobs.
+3. The other daemons' ports are not fixed: IBM has no parameter or
+   option that pins `mountd`'s, `lockd`'s or `statd`'s, so QS/400 adds
+   none. The harness asks the binder through the forwarded 111
+   (`rpcinfo -p 127.0.0.1` with a portmapper port of `H111`, or
+   `nfs::rpcb::BinderClient::at(127.0.0.1:H111).dump()`) and adds a
+   forward for each port it answers (`hostfwd_add` at run time; the
+   guest ports are what the binder lists, the host ports fresh).
+4. From the host: `nfstest` (or `RpcClient`) `MNT` of `/home/nfsexp`
+   on the forwarded MOUNT port, then `CREATE`, `WRITE`, `COMMIT`,
+   `READ` on the forwarded 2049; the guest checks the file
+   (`ifs cat /home/nfsexp/...`). A kernel mount needs the forwarded
+   ports and `mount -t nfs -o vers=3,proto=tcp,port=H2049,mountport=HMNT,nolock 127.0.0.1:/home/nfsexp /mnt`
+   (as root; `nolock` unless `lockd`'s and `statd`'s ports are
+   forwarded too, which a client on the host cannot be told).
+5. `endnfssvr server(*all)` (`CPCA1BC`); the binder's `DUMP` then lists
+   only its own rows, and `/etc/RPCBTAB` holds those.
 
 ## 12. NEEDS-CODY
 
