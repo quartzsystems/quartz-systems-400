@@ -79,6 +79,7 @@ fn live(system: &System, number: u32) -> bool {
 }
 
 /// One request from a job.
+#[allow(clippy::too_many_lines)] // one arm a request
 pub fn request(system: &mut System, job: &JobInfo, me: &Principal, op: NfsOp) -> NfsReply {
     let q = format!("{:06}/{}/{}", job.number, job.user, job.name);
     {
@@ -164,6 +165,100 @@ pub fn request(system: &mut System, job: &JobInfo, me: &Principal, op: NfsOp) ->
             client::restarted(&name, state);
             NfsReply::Done
         }
+        NfsOp::Orders => NfsReply::Orders {
+            orders: state().registry.take_orders(job.number),
+        },
+        NfsOp::OrderDone { id, count, errno } => {
+            state().registry.order_done(id, count, errno);
+            NfsReply::Done
+        }
+        NfsOp::Failed { errno } => {
+            let gone = {
+                let mut s = state();
+                let d = s.registry.job(job.number);
+                s.registry.gone(job.number);
+                d
+            };
+            if let Some((daemon, false)) = gone {
+                ended_unasked(system, daemon, &q, errno);
+            }
+            NfsReply::Done
+        }
+        NfsOp::NameOfUid { uid } => NfsReply::Name {
+            name: ids(system, job, |m| m.profile_of_uid(uid)),
+        },
+        NfsOp::NameOfGid { gid } => NfsReply::Name {
+            name: ids(system, job, |m| m.profile_of_gid(gid)),
+        },
+        NfsOp::UidOfName { name } => NfsReply::Id {
+            id: ids(system, job, |m| m.uid_of(&name.to_ascii_uppercase())),
+        },
+        NfsOp::GidOfName { name } => NfsReply::Id {
+            id: ids(system, job, |m| m.gid_of(&name.to_ascii_uppercase())),
+        },
+        NfsOp::Mapping => NfsReply::Mapping {
+            enabled: state().registry.ready(Daemon::Rgy) > 0,
+            domain: domain(system),
+        },
+    }
+}
+
+/// The profile index, answered for `job`.
+fn ids<T>(system: &mut System, job: &JobInfo, f: impl FnOnce(&dyn ifs::meta::IdMap) -> T) -> T {
+    super::ifs::with_ids(system, job.handle, f)
+}
+
+/// The `NFSv4` domain: the options', else the TCP/IP domain name
+/// (`CHGTCPDMN`), lower case.
+pub fn domain(system: &mut System) -> String {
+    let o = options(system).domain;
+    let d = if o.trim().is_empty() {
+        super::tcp::with(system, |_, rt| {
+            tcpcfg::resolver::HostConfig::from_config(&rt.cfg).dmn_name
+        })
+        .unwrap_or_default()
+    } else {
+        o
+    };
+    d.trim().to_ascii_lowercase()
+}
+
+/// A daemon job ended without being asked to: `QSYSOPR` is told,
+/// `CPFA1CB` (with the error number) for the binder, `CPFA1B5` for the
+/// others.
+fn ended_unasked(system: &mut System, daemon: Daemon, job: &str, errno: i32) {
+    let (msgid, data) = if daemon == Daemon::Rpc {
+        ("CPFA1CB", errno.to_be_bytes().to_vec())
+    } else {
+        ("CPFA1B5", Vec::new())
+    };
+    eprintln!("qsstg: nfs: {job} ({}) ended unasked", daemon.keyword());
+    let text = super::msgs::text(system, msgid, &[&errno.to_string()]);
+    let m = wm::obj::msgq::QMsg {
+        msgid: msgid.into(),
+        msgf: ("QCPFMSG".into(), "QSYS".into()),
+        severity: 40,
+        data,
+        text,
+        job: ("SCPF".into(), "QSYS".into(), 0),
+        from_pgm: daemon.program().into(),
+        ..wm::obj::msgq::QMsg::default()
+    };
+    let _ = super::msgs::send(system, "QSYS", "QSYSOPR", m);
+}
+
+/// Job `number` ended (`served::end_job`): a daemon job still in the
+/// registry ended without saying so (it crashed or was killed), and one
+/// not asked to end is reported to `QSYSOPR`.
+pub fn job_ended(system: &mut System, number: u32, job: &str) {
+    let gone = {
+        let mut s = state();
+        let d = s.registry.job(number);
+        s.registry.gone(number);
+        d
+    };
+    if let Some((daemon, false)) = gone {
+        ended_unasked(system, daemon, job, 0);
     }
 }
 

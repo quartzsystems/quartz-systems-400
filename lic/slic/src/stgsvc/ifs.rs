@@ -118,6 +118,16 @@ fn with_lent<T>(system: &mut System, job: JobHandle, f: impl FnOnce() -> T) -> T
     r
 }
 
+/// Run `f` over the profiles' UIDs and GIDs (`qsyslib::env`'s index)
+/// for the job `handle` (the NFS identity mapping).
+pub fn with_ids<T>(
+    system: &mut System,
+    handle: u64,
+    f: impl FnOnce(&dyn ifs::meta::IdMap) -> T,
+) -> T {
+    with_lent(system, JobHandle(handle), || f(&StoreEnv::new(&Lent)))
+}
+
 /// Whether `path` is a mount point (`/proc/self/mountinfo`).
 fn mounted(path: &str) -> bool {
     std::fs::read_to_string("/proc/self/mountinfo")

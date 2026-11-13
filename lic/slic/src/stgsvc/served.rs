@@ -425,6 +425,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     super::joblog::spool(system, ctx, abnormal);
     super::spool::job_ended(system, &who);
     super::wtr::job_ended(system, ctx.job.number);
+    super::nfs::job_ended(system, ctx.job.number, &ctx.job.qualified());
     completion_message(system, ctx);
     // `end_db` dropped it.
     ctx.qtemp = None;

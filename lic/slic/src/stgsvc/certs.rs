@@ -40,7 +40,7 @@ const SERVER_PROFILES: &[&str] = &["QSYS", "QTCP", "QUSER", "QTMHHTTP", "QTMHHTP
 const CACHE_SECS: u64 = 600;
 
 /// The system as the store files' owner.
-fn system_principal() -> Principal {
+pub(crate) fn system_principal() -> Principal {
     Principal {
         user: "QSYS".into(),
         spcaut: SpecialAuth::ALL.0,
