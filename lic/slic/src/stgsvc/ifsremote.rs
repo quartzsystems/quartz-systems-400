@@ -30,8 +30,9 @@ const NOT_RESPONDING: u32 = 5;
 /// Reason: the server responded.
 const RESPONDED: u32 = 7;
 
-/// Worker threads per mount.
-pub(crate) const THREADS: usize = 4;
+/// Worker threads per mount: as many calls in flight, so a server that
+/// syncs every write (`*SYNC`) shares its syncs among them.
+pub(crate) const THREADS: usize = 8;
 
 static WAKE: OnceLock<(UnixStream, UnixStream)> = OnceLock::new();
 static EVENTS: Mutex<Vec<RemoteEvent>> = Mutex::new(Vec::new());
