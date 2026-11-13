@@ -703,6 +703,12 @@ impl Suite {
         reports.push(self.step(&mut s, "176 NFS bench from the host", Self::nfs_bench)?);
         reports.push(self.step(&mut s, "177 NFS Linux export", Self::nfs_linux)?);
         reports.push(self.step(&mut s, "178 NFS end", Self::nfs_end)?);
+        // An IPL in its middle.
+        reports.push(self.step(
+            &mut s,
+            "185 NFS handles across a restart and an IPL",
+            Self::nfs_handles,
+        )?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);

@@ -37,6 +37,10 @@ pub enum Command {
     },
     /// Print the scenario names.
     List,
+    /// Make a file and save its version 3 handle in this local file.
+    HandleSave(std::path::PathBuf),
+    /// Use the handle saved in this local file: no `MOUNT`, no `LOOKUP`.
+    HandleUse(std::path::PathBuf),
 }
 
 /// The server, the export and the client's choices.
@@ -99,6 +103,8 @@ nfstest probe HOST [--pmap-port N] [--port-map G=H ...] [EXPORT]
                                                the binder's table and the export list
 nfstest bench HOST EXPORT SCRATCH [--mib N] [--bs N] [options]
                                                sequential write then read, MiB/s
+nfstest handle save|use HOST EXPORT SCRATCH --file F
+                                               a v3 handle kept in F and used again later
 nfstest --list                                 the scenario names
 options: --vers 3|4.0|4.1  --proto tcp|udp  --pmap-port N  --port N  --mountport N
   --nlmport N  --nsmport N  --port-map GUEST=HOST (repeatable; GUEST:HOST too)
@@ -145,6 +151,7 @@ impl Target {
         let mut t = Target::new("", "", "");
         let mut mib = 1024;
         let mut bs = 0;
+        let mut file = None;
         match it.peek().map(|s| s.as_str()) {
             Some("probe") => {
                 t.command = Command::Probe;
@@ -153,6 +160,14 @@ impl Target {
             Some("bench") => {
                 t.command = Command::Bench { mib: 0, bs: 0 };
                 it.next();
+            }
+            Some("handle") => {
+                it.next();
+                t.command = match it.next().map(String::as_str) {
+                    Some("save") => Command::HandleSave(std::path::PathBuf::new()),
+                    Some("use") => Command::HandleUse(std::path::PathBuf::new()),
+                    _ => return Err(Error::Usage("handle save|use".into())),
+                };
             }
             _ => {}
         }
@@ -205,6 +220,7 @@ impl Target {
                 "--entries" => t.entries = num(&value(a)?)?,
                 "--mib" => mib = num(&value(a)?)?,
                 "--bs" => bs = num(&value(a)?)?,
+                "--file" => file = Some(std::path::PathBuf::from(value(a)?)),
                 "--only" => {
                     t.only = value(a)?.split(',').map(str::to_string).collect();
                 }
@@ -221,13 +237,25 @@ impl Target {
                 t.host.clone_from(host);
                 t.export.clone_from(export);
             }
-            (Command::Run | Command::Bench { .. }, [host, export, scratch]) => {
+            (
+                Command::Run
+                | Command::Bench { .. }
+                | Command::HandleSave(_)
+                | Command::HandleUse(_),
+                [host, export, scratch],
+            ) => {
                 let base = Target::new(host, export, scratch);
                 t.host = base.host;
                 t.export = base.export;
                 t.scratch = base.scratch;
-                if let Command::Bench { .. } = t.command {
-                    t.command = Command::Bench { mib, bs };
+                match &mut t.command {
+                    Command::Bench { .. } => t.command = Command::Bench { mib, bs },
+                    Command::HandleSave(f) | Command::HandleUse(f) => {
+                        *f = file
+                            .take()
+                            .ok_or_else(|| Error::Usage("handle needs --file".into()))?;
+                    }
+                    _ => {}
                 }
             }
             _ => return Err(Error::Usage("wrong number of arguments".into())),
@@ -296,5 +324,12 @@ mod tests {
             Command::List
         );
         assert!(Target::from_args(&args("h /e")).is_err());
+        assert_eq!(
+            Target::from_args(&args("handle use h /e s --file k --port 9"))
+                .unwrap()
+                .command,
+            Command::HandleUse("k".into())
+        );
+        assert!(Target::from_args(&args("handle save h /e s")).is_err());
     }
 }

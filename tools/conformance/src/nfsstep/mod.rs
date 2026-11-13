@@ -14,6 +14,7 @@
 //! | 176 | `nfstest bench` from the host, MiB/s |
 //! | 177 | the guest mounting a Linux export (`QS400_NFS_LINUX`), skipped without it |
 //! | 178 | `UNMOUNT TYPE(*ALL)`, `ENDNFSSVR SERVER(*ALL)`, the jobs and ports gone |
+//! | 185 | a version 3 handle the host saved, used again after a restart of the daemons and after an IPL |
 //!
 //! In a pair of guests of their own (`pair`), A exporting and B
 //! mounting over a private link (`192.168.77.0/24`): 179 version 3, 180

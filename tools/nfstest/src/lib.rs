@@ -17,6 +17,7 @@ pub mod callback;
 pub mod cli;
 pub mod ctx;
 pub mod error;
+pub mod handle;
 pub mod report;
 pub mod rpc;
 pub mod scenarios;

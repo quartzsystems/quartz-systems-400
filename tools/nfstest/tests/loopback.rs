@@ -114,6 +114,38 @@ fn bench_writes_and_reads_back() {
 }
 
 #[test]
+fn a_saved_handle_used_again() {
+    let s = common::start(&common::Options::default());
+    let pmap = s.pmap_port.to_string();
+    let dir = std::env::temp_dir().join(format!("nfstest-handle-{}", std::process::id()));
+    let file = dir.to_string_lossy().to_string();
+    let base = [
+        "127.0.0.1",
+        common::EXPORT,
+        "scratch",
+        "--pmap-port",
+        &pmap,
+        "--uid",
+        "100",
+        "--gid",
+        "100",
+        "--file",
+        &file,
+    ];
+    let mut save = vec!["handle", "save"];
+    save.extend(base);
+    let (code, out) = run(&save);
+    assert_eq!(code, 0, "{out}");
+    assert!(out.starts_with("ok handle-save: "), "{out}");
+    let mut again = vec!["handle", "use"];
+    again.extend(base);
+    let (code, out) = run(&again);
+    let _ = std::fs::remove_file(&dir);
+    assert_eq!(code, 0, "{out}");
+    assert!(out.starts_with("ok handle-use: "), "{out}");
+}
+
+#[test]
 fn the_grace_period_after_a_start() {
     let s = common::start(&common::Options {
         grace: std::time::Duration::from_secs(60),

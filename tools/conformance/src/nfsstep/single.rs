@@ -553,6 +553,66 @@ impl Suite {
             "the loopback mount unmounted by UNMOUNT *ALL; daemons ended (CPCA1BC), none active; 111 and 2049 not listening; /etc/RPCBTAB {before} then {left} records; the binder silent from the host"
         ))
     }
+
+    /// Step 185: a version 3 handle the host saved names its file again
+    /// after `ENDNFSSVR`/`STRNFSSVR` and after an IPL, used on 2049 with
+    /// no `MOUNT` and no `LOOKUP` (file IDs resolve by the xfs handle).
+    pub(crate) fn nfs_handles(&self, s: &mut Session) -> Result<String, String> {
+        let r = self.nfs_handles_body(s);
+        self.nfs_checked(s, "185", r)
+    }
+
+    fn nfs_handles_body(&self, s: &mut Session) -> Result<String, String> {
+        self.nfs_ensure(s)?;
+        self.nfs_probe()?;
+        let file = self.out_dir.join("nfs-185-handle.txt");
+        let path = file.to_string_lossy().to_string();
+        let handle = |cmd: &str, args: Vec<String>| -> Result<String, String> {
+            let mut a = vec!["handle".to_string(), cmd.to_string()];
+            a.extend(args);
+            a.extend(["--file".into(), path.clone()]);
+            let r = host::run(&a, Duration::from_secs(120))?;
+            let line = format!("ok handle-{cmd}: ");
+            match r.out.lines().find_map(|l| l.strip_prefix(&line)) {
+                Some(said) if r.code == Some(0) => Ok(said.to_string()),
+                _ => Err(format!("{}:\n{}{}", r.line, r.out, r.err)),
+            }
+        };
+        let saved = handle("save", self.nfs_target(SCRATCH))?;
+        // Only NFS's port from here on: the handle alone.
+        let port = host::host_port(&self.nfs.borrow().map, 2049).ok_or("2049 is not forwarded")?;
+        let direct = || {
+            vec![
+                "127.0.0.1".to_string(),
+                EXPORT.into(),
+                SCRATCH.into(),
+                "--port".into(),
+                port.to_string(),
+            ]
+        };
+        end_servers(s, "*ALL")?;
+        daemons_gone(s)?;
+        start_servers(s, "*ALL")?;
+        self.nfs.borrow_mut().started = Some(Instant::now());
+        let restarted = handle("use", direct())?;
+        // An IPL: the forwards stay (the same QEMU), the daemons do not.
+        s.send("pwrdwn restart")?;
+        s.expect("SRC D1001090", Duration::from_secs(120))?;
+        s.expect_in_order(crate::steps::SRC_SEQUENCE, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        crate::tcp::guest_address(s)?;
+        self.nfs.borrow_mut().started = None;
+        full_log(s)?;
+        start_servers(s, "*ALL")?;
+        self.nfs.borrow_mut().started = Some(Instant::now());
+        let after_ipl = handle("use", direct())?;
+        end_servers(s, "*ALL")?;
+        daemons_gone(s)?;
+        self.nfs.borrow_mut().started = None;
+        Ok(format!(
+            "saved ({saved}); after ENDNFSSVR/STRNFSSVR: {restarted}; after an IPL: {after_ipl}"
+        ))
+    }
 }
 
 #[cfg(test)]

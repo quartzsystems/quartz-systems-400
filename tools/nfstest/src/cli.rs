@@ -51,6 +51,23 @@ pub fn run(args: &[String], out: &mut dyn Write) -> i32 {
                 1
             }
         },
+        Command::HandleSave(ref f) | Command::HandleUse(ref f) => {
+            let r = if matches!(t.command, Command::HandleSave(_)) {
+                crate::handle::save(&c, f)
+            } else {
+                crate::handle::use_saved(&c, f)
+            };
+            match r {
+                Ok(s) => {
+                    let _ = write!(out, "{s}");
+                    0
+                }
+                Err(e) => {
+                    let _ = writeln!(out, "fail handle: {e}");
+                    1
+                }
+            }
+        }
         _ => {
             let r = scenarios::run_all(&c);
             let _ = write!(out, "{r}");
