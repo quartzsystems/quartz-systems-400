@@ -164,10 +164,27 @@ fn register(reg: &Registration, list: &[rpcb]) -> io::Result<()> {
     Ok(())
 }
 
+/// Takes the registrations back, briefly: the binder may be gone (it
+/// ends first at `ENDNFSSVR`). TCP, else UDP, one short attempt each;
+/// after the first that fails nothing more is tried.
 fn unregister(reg: &Registration, list: &[rpcb]) {
-    let mut b = binder(reg);
+    let quick = ClientConfig {
+        timeout: Duration::from_millis(500),
+        retransmits: 0,
+        reserved_port: false,
+        ..ClientConfig::default()
+    };
+    let mut tcp = BinderClient::at(reg.binder, Proto::Tcp, quick.clone());
+    let mut b = if tcp.rpc().connect().is_ok() {
+        tcp
+    } else {
+        BinderClient::at(reg.binder, Proto::Udp, quick)
+    };
     for r in list {
-        let _ = b.unset(r);
+        if let Err(e) = b.unset(r) {
+            tracing::warn!("the binder did not take the registrations back: {e}");
+            return;
+        }
     }
 }
 
