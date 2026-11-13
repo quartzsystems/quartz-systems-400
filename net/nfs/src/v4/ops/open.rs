@@ -663,7 +663,6 @@ impl Cx<'_> {
             || acc & !o.access != 0
             || deny & !o.deny != 0
             || o.used_access & (1 << acc) == 0
-            || o.used_deny & (1 << deny) == 0
         {
             return Err(nfsstat4::NFS4ERR_INVAL);
         }
