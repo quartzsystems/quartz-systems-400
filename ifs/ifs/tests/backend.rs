@@ -196,3 +196,149 @@ fn linux_backend_conformance() {
 fn ifs_over_linux() {
     ifs_over(ifs::backend::linux::LinuxBackend::open(&linux_dir()).unwrap());
 }
+
+/// File IDs over a backend: an inode number the backend reuses never
+/// meets its old generation, a restart keeps generations rising, and an
+/// ID is found again by walking once the remembered paths are gone.
+fn ids_over<B: Backend + Clone>(b: B) {
+    use ifs::ops::audit::FileId;
+    use ifs::ops::{Config, Ifs};
+    let env = common::env();
+    let q = || Box::new(ifs::vfs::qsys::MemQsys::new(sec::auth::bits::Auth::EXCLUDE));
+    let ifs = Ifs::new(b.clone(), q(), Config::default());
+    ifs.ensure_layout(&env).unwrap();
+    let sec = common::user("QSECOFR");
+    let audit = ifs::ops::audit::NoAudit;
+    let cx = ifs::Ctx {
+        owner: ifs::Owner(1),
+        principal: &sec,
+        env: &env,
+        audit: &audit,
+        job_ccsid: 37,
+    };
+    let id_of = |ifs: &Ifs<B>, p: &str| {
+        let s = ifs.stat(&cx, p).unwrap();
+        FileId {
+            fs: s.vfs,
+            ino: s.ino,
+            generation: s.ino_gen,
+        }
+    };
+    ifs.mkdir(&cx, "/home/ids", 0o755).unwrap();
+    let fd = ifs.creat(&cx, "/home/ids/first", 0o644).unwrap();
+    ifs.close(&cx, fd).unwrap();
+    let old = id_of(&ifs, "/home/ids/first");
+    ifs.unlink(&cx, "/home/ids/first").unwrap();
+    // Make files until the backend hands the number out again (xfs does
+    // soon); the new object has another generation.
+    for i in 0..200 {
+        let p = format!("/home/ids/f{i}");
+        let fd = ifs.creat(&cx, &p, 0o644).unwrap();
+        ifs.close(&cx, fd).unwrap();
+        let id = id_of(&ifs, &p);
+        if id.ino == old.ino {
+            assert_ne!(id.generation, old.generation);
+            break;
+        }
+    }
+    assert_eq!(ifs.stat_by_id(&cx, old).err(), Some(ifs::Errno::ESTALE));
+    // After a restart.
+    let again = Ifs::new(b, q(), Config::default());
+    let kept = id_of(&again, "/home/ids/f0");
+    again.mkdir(&cx, "/home/ids/later", 0o755).unwrap();
+    let later = id_of(&again, "/home/ids/later");
+    assert!(later.generation > kept.generation);
+    assert!(later.generation > ifs::meta::generation::BLOCK);
+    again.forget_ids();
+    assert_eq!(again.stat_by_id(&cx, kept).unwrap().0, "/home/ids/f0");
+    again.remove_tree(&cx, "/home/ids").unwrap();
+}
+
+#[test]
+fn ids_over_mem() {
+    ids_over(ifs::backend::mem::MemBackend::new());
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[ignore = "needs root and a file system with trusted xattrs (tests/linux-xfs.sh)"]
+fn ids_over_linux() {
+    let dir = linux_dir();
+    let b = ifs::backend::linux::LinuxBackend::open(&dir).unwrap();
+    ids_over(Shared(std::sync::Arc::new(b)));
+}
+
+/// A backend shared by two `Ifs` (a restart over the same volume).
+#[cfg(target_os = "linux")]
+#[derive(Clone)]
+struct Shared(std::sync::Arc<ifs::backend::linux::LinuxBackend>);
+
+#[cfg(target_os = "linux")]
+impl Backend for Shared {
+    type File = ifs::backend::linux::LinuxFile;
+    fn stat(&self, p: &str) -> ifs::Result<ifs::backend::BStat> {
+        self.0.stat(p)
+    }
+    fn readdir(&self, p: &str) -> ifs::Result<Vec<ifs::backend::DirEntry>> {
+        self.0.readdir(p)
+    }
+    fn mkdir(&self, p: &str, mode: u32) -> ifs::Result<()> {
+        self.0.mkdir(p, mode)
+    }
+    fn rmdir(&self, p: &str) -> ifs::Result<()> {
+        self.0.rmdir(p)
+    }
+    fn create(&self, p: &str, mode: u32) -> ifs::Result<Self::File> {
+        self.0.create(p, mode)
+    }
+    fn open(&self, p: &str, write: bool) -> ifs::Result<Self::File> {
+        self.0.open(p, write)
+    }
+    fn mknod(&self, p: &str, kind: ifs::backend::Kind, mode: u32) -> ifs::Result<()> {
+        self.0.mknod(p, kind, mode)
+    }
+    fn unlink(&self, p: &str) -> ifs::Result<()> {
+        self.0.unlink(p)
+    }
+    fn rename(&self, from: &str, to: &str, replace: bool) -> ifs::Result<()> {
+        self.0.rename(from, to, replace)
+    }
+    fn link(&self, existing: &str, new: &str) -> ifs::Result<()> {
+        self.0.link(existing, new)
+    }
+    fn symlink(&self, target: &str, p: &str) -> ifs::Result<()> {
+        self.0.symlink(target, p)
+    }
+    fn readlink(&self, p: &str) -> ifs::Result<String> {
+        self.0.readlink(p)
+    }
+    fn set_times(
+        &self,
+        p: &str,
+        atime: Option<ifs::backend::Nanos>,
+        mtime: Option<ifs::backend::Nanos>,
+    ) -> ifs::Result<()> {
+        self.0.set_times(p, atime, mtime)
+    }
+    fn set_mode(&self, p: &str, mode: u32) -> ifs::Result<()> {
+        self.0.set_mode(p, mode)
+    }
+    fn set_owner(&self, p: &str, uid: u32, gid: u32) -> ifs::Result<()> {
+        self.0.set_owner(p, uid, gid)
+    }
+    fn xattr_get(&self, p: &str, name: &str) -> ifs::Result<Option<Vec<u8>>> {
+        self.0.xattr_get(p, name)
+    }
+    fn xattr_set(&self, p: &str, name: &str, value: &[u8]) -> ifs::Result<()> {
+        self.0.xattr_set(p, name, value)
+    }
+    fn xattr_list(&self, p: &str) -> ifs::Result<Vec<String>> {
+        self.0.xattr_list(p)
+    }
+    fn xattr_remove(&self, p: &str, name: &str) -> ifs::Result<()> {
+        self.0.xattr_remove(p, name)
+    }
+    fn statfs(&self) -> ifs::Result<ifs::backend::StatFs> {
+        self.0.statfs()
+    }
+}

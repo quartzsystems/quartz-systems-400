@@ -41,7 +41,7 @@ mkdir "$work/mnt"
 mount -o loop "$work/xfs.img" "$work/mnt"
 
 status=0
-for t in linux_backend_conformance ifs_over_linux; do
+for t in linux_backend_conformance ifs_over_linux ids_over_linux; do
     mkdir "$work/mnt/$t"
     QS400_IFS_TEST_DIR="$work/mnt/$t" "$bin" --ignored --exact "$t" || status=1
 done
