@@ -135,7 +135,7 @@ impl<V: Vfs> Nlm<V> {
             Args::NLMPROC4_UNSHARE(a) => Res::NLMPROC4_UNSHARE(c.unshare(&a)),
             Args::NLMPROC4_NM_LOCK(a) => Res::NLMPROC4_NM_LOCK(c.lock(&a, false, false)),
             Args::NLMPROC4_FREE_ALL(a) => {
-                c.free_all(&a);
+                c.free_all(&a)?;
                 Res::NLMPROC4_FREE_ALL
             }
         };
@@ -259,7 +259,7 @@ impl<V: Vfs> Nlm<V> {
                 Res::NLM_NM_LOCK(res_down(&c.lock(&lockargs(&a), false, false)))
             }
             Args::NLM_FREE_ALL(a) => {
-                c.free_all(&notify(&a));
+                c.free_all(&notify(&a))?;
                 Res::NLM_FREE_ALL
             }
         };

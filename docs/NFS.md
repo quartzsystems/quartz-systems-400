@@ -46,9 +46,9 @@ end says what is built and proven.
 | XDR runtime | `net/nfs/src/xdr/` | **Built.** `Encoder`, `Decoder` (the slice is the byte budget; a depth limit, 64 by default), the `Xdr` and `ProcBody` traits, `Error` |
 | RPC | `net/nfs/src/rpc/` | **Built.** Messages, record marking, `AUTH_NONE` and `AUTH_SYS` (others refused), the `Program` trait and `Dispatcher`, TCP and UDP serve functions, the duplicate request cache, `RpcClient` (section 3.2) |
 | Binder | `net/nfs/src/rpcb/` | **Built.** `Binder` (portmap 2, rpcbind 3 and 4), the registration table and `GETSTAT` counts, universal addresses, `/etc/RPCBTAB` (byte for byte against the oracle's file), `BinderClient` (section 3.3) |
-| Protocols | `net/nfs/src/mount/`, `v3/`, `v4/`, `nlm/`, `nsm/` | each protocol's server procedures over the `Vfs` trait and its client calls |
+| Protocols | `net/nfs/src/mount/`, `v3/`, `v4/`, `nlm/`, `nsm/` | each protocol's server procedures over the `Vfs` trait and its client calls. **Built**: MOUNT 1 and 3, NFS 3, NLM 1, 3, 4, NSM 1 (section 5); `v4/` is design |
 | Export table | `net/nfs/src/exports/` | `/etc/exports`, `/etc/netgroup`, the option lists of `EXPORTFS` and `MOUNT`, host matching |
-| Server | `net/nfs/src/server/` | the `Vfs` trait (what the protocols ask of a file system), file handles, the mapping of credentials, the v4 state tables. **No job, store or service code** |
+| Server | `net/nfs/src/server/` | **Built**: the `Vfs` trait (what the protocols ask of a file system), `IfsVfs` over an `IfsClient`, file handles, the export view, the mapping of credentials, text conversion, the daemons' loops (section 5). The v4 state tables are design. **No job, store or service code** |
 | Client | `net/nfs/src/client/` | a mounted export as an `ifs::remote::RemoteFs`: version and transport negotiation, `soft`/`hard`/`intr`, reconnection, the NLM or v4 lock client |
 | Registry | `net/nfs/src/registry/` | the v4 identity mapping (`user@domain` and numeric strings to UID/GID and back) |
 | IFS groundwork | `ifs/ifs` | per-request identity for the daemons, lock owners within a job, file handles that survive an IPL, `ifs::remote`: a mount whose file system is remote (section 7) |
@@ -160,7 +160,10 @@ XID, program, version and procedure. `Answer` is
 `Err` sends `PROC_UNAVAIL`, `GARBAGE_ARGS` or `SYSTEM_ERR`. A
 `Dispatcher` holds the programs (`add`) and the cache (`set_cache`);
 `Dispatcher::handle(bytes, peer, transport)` is the whole server as
-bytes in and bytes out. `serve_tcp(&stream, &d, MAX_RECORD)` serves one
+bytes in and bytes out. A program whose state cannot cross
+threads (a daemon thread's own file system) is an `rpc::LocalProgram`,
+handed to `Dispatcher::handle_with(bytes, peer, transport, &[&p])`,
+looked at before the dispatcher's own programs. `serve_tcp(&stream, &d, MAX_RECORD)` serves one
 accepted connection, one call at a time with its replies in order (a
 daemon runs a thread per connection); `serve_datagram(&sock, &d)` one
 datagram.
@@ -293,10 +296,338 @@ grace period in which only reclaims are accepted (`NFS4ERR_GRACE`,
 by two and `QNFSNSMD` sends `SM_NOTIFY` to the hosts it monitored.
 **(design)**
 
-## 5. The server over the IFS **(design)**
+The loops each daemon job runs (register, serve, unregister) are
+`nfs::server::run` (section 5.9); the jobs, their sockets and their
+links are the job agent's.
+## 5. The server over the IFS
 
-`nfs::server::Vfs` is what the protocols need; the job implements it
-over `IfsClient` with these additions to the IFS (built first):
+Built in `net/nfs/src/server/` (shared by every protocol), `v3/`,
+`mount/`, `nlm/`, `nsm/`; no job, store or service code. NFSv4
+(`v4/`) is the next agent's and builds on the same `server` module
+(section 5.9).
+
+### 5.1 `Vfs`, `Req`, `VfsError`
+
+`server::Vfs` is what the protocols ask of a file system. Every call
+names a `Req` and handles:
+
+```rust
+pub struct Req { pub caller: Caller, pub export: Arc<dyn ExportView>, pub peer: IpAddr, pub opts: HostOpts }
+
+pub trait Vfs {
+    fn root(&self, r: &Req) -> VResult<Node>;
+    fn lookup_path(&self, r: &Req, path: &[u8]) -> VResult<Node>;            // MOUNT
+    fn getattr(&self, r: &Req, fh: &FileHandle) -> VResult<Attr>;
+    fn setattr(&self, r: &Req, fh: &FileHandle, a: &SetAttr, guard: Option<Time>) -> VResult<Wcc>;
+    fn lookup(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<(Node, Option<Attr>)>;
+    fn access(&self, r: &Req, fh: &FileHandle, want: u32) -> VResult<(u32, Option<Attr>)>; // ACCESS3_* bits
+    fn readlink(&self, r: &Req, fh: &FileHandle) -> VResult<(Vec<u8>, Option<Attr>)>;
+    fn read(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<ReadData>;
+    fn write(&self, r: &Req, fh: &FileHandle, off: u64, data: &[u8], stable: Stable) -> VResult<Written>;
+    fn commit(&self, r: &Req, fh: &FileHandle, off: u64, count: u32) -> VResult<([u8; 8], Wcc)>;
+    fn create(&self, r: &Req, dir: &FileHandle, name: &[u8], how: CreateHow) -> VResult<Made>;
+    fn mkdir(&self, r: &Req, dir: &FileHandle, name: &[u8], a: &SetAttr) -> VResult<Made>;
+    fn symlink(&self, r: &Req, dir: &FileHandle, name: &[u8], target: &[u8], a: &SetAttr) -> VResult<Made>;
+    fn mknod(&self, r: &Req, dir: &FileHandle, name: &[u8], what: Special, a: &SetAttr) -> VResult<Made>;
+    fn remove(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<Wcc>;
+    fn rmdir(&self, r: &Req, dir: &FileHandle, name: &[u8]) -> VResult<Wcc>;
+    fn rename(&self, r: &Req, from: &FileHandle, from_name: &[u8], to: &FileHandle, to_name: &[u8]) -> VResult<(Wcc, Wcc)>;
+    fn link(&self, r: &Req, fh: &FileHandle, dir: &FileHandle, name: &[u8]) -> VResult<(Option<Attr>, Wcc)>;
+    fn readdir(&self, r: &Req, dir: &FileHandle, cookie: u64, verf: [u8; 8], max: usize, plus: bool) -> VResult<DirPage>;
+    fn fsstat(&self, r: &Req, fh: &FileHandle) -> VResult<(FsStat, Option<Attr>)>;
+    fn pathconf(&self, r: &Req, fh: &FileHandle) -> VResult<(PathConf, Option<Attr>)>;
+    fn open(&self, r: &Req, fh: &FileHandle, access: ShareAccess, deny: ShareDeny) -> VResult<u64>;
+    fn close(&self, open: u64) -> VResult<()>;
+    fn lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64, wait: bool) -> VResult<LockOutcome>;
+    fn test_lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64) -> VResult<Option<Conflict>>;
+    fn unlock(&self, r: &Req, fh: &FileHandle, sub: u64, start: u64, len: u64) -> VResult<()>;
+    fn cancel_wait(&self, token: u64) -> VResult<bool>;
+    fn release_sub(&self, sub: u64) -> VResult<u32>;
+    fn lease(&self, r: &Req, fh: &FileHandle, tag: u64, key: [u8; 32], want: u8) -> VResult<u8>;
+    fn lease_report(&self, tag: u64, leases: &[([u8; 32], u8)]) -> VResult<()>;
+}
+```
+
+Names and paths cross it as the client's bytes in the host's path name
+CCSID, data as the client's bytes. `Attr` carries the protocol-neutral
+attributes (type, mode, links, UID, GID, size, used, rdev, `fsid` =
+export ID << 32 | file system, `fileid`, the three times, the change
+counter, owner and group profile names, the CCSID). `LockOutcome` is
+`Granted`, `Denied(Conflict)` or `Queued(token)`; `Conflict` names the
+holder's job and sub-owner. `VfsError` is one list (`Perm`, `NoEnt`,
+`Acces`, `Stale`, `BadHandle`, `NotSync`, `BadCookie`, `TooSmall`,
+`Busy` for a share reservation, `Again` for a lock, `Deadlock`, ...)
+with `From<Errno>`; each protocol maps it (`v3::conv::status`,
+`nlm::status_of`). `server::news::NewsSource` is the poll for granted
+lock tokens and lease breaks (`ClientNews` over any `IfsClient`).
+
+### 5.2 `IfsVfs`
+
+`server::ifsvfs::IfsVfs<C: IfsClient>` is the `Vfs` over the daemon
+job's client (tests: `LocalIfs<MemBackend>`; the job: its link). A
+daemon thread has its own (the client is not `Send`); what threads
+share is in `Arc`s (exports, the duplicate request cache, the start's
+`Instance`, the NLM and NSM tables). The job's umask is set to 0 when
+one is made (the client applied its own).
+
+- Each call runs as `as_caller(&req.caller)`; `ENOTENROLL` (from
+  `as_caller` or from any call) runs it once more as the export's
+  anonymous user (`cred::fallback`), or is `Acces` with `ANON=-1`.
+- A handle is found with `stat_by_id` as the caller; `ESTALE`,
+  `EBADFID` and `ENOENT` are `Stale` (and drop the object's kept
+  descriptors). The path found must lie under the export's root (whose
+  path the job resolves by the root's file ID and keeps), else
+  `BadHandle`. `..` of the export's root is the root.
+- Reads and writes go through a bounded cache of descriptors keyed by
+  (file ID, caller, read or write), 64 kept, each closed after 5
+  seconds unused, dropped when the object is removed, renamed over or
+  found stale. Authority is checked when it is opened and again on
+  every `READ` and `WRITE` (`access()` as the caller). An `OPEN` that a
+  share reservation refuses (`EBUSY`) closes this thread's kept
+  descriptors of the object and tries once more.
+- An open's number is its descriptor, the job's, so any thread of the
+  job may close it (NLM `UNSHARE` on another connection).
+- Byte-range locks are held by sub-owners through descriptors of the
+  job (read locks on one opened for reading, write locks on one opened
+  for writing): the caller needs only to reach the object, as a lock is
+  advisory. Offsets past `i64::MAX` are clamped and a range ending past
+  it runs to end of file. Blocking requests use `lock_wait`.
+
+### 5.3 File handles
+
+`server::handle::FileHandle`, 32 bytes, the same for NFSv3, NFSv4,
+MOUNT version 1 and NLM: the format byte (1), the export ID (4), the
+file ID (file system 4, object 8, generation 4), the export root's
+object number (8), and the low 24 bits of FNV-1a over the first 29
+bytes. All big-endian. The handle carries no secret. Every call passes
+`server::gate::Gate`: a handle of another length, format or check is
+`BadHandle`; an export ID no longer in the table, or an export now of
+another directory (its root number differs), is `Stale` (so
+`EXPORTFS -U` takes effect at once); a client address not in
+`ACCESS=`, or an NFS version not in `VERS=`, is `Acces`. A second
+handle of one call (`RENAME`, `LINK`) in another export is `XDev`.
+
+### 5.4 What the server needs of an export
+
+`server::export::ExportView` (the lead adapts NFS-2's export model to
+it), `ExportTable` (`by_id`, `all`, `for_path`: the longest export
+holding a path, by whole components, without regard to case outside
+`/QOpenSys`), and `MemExport`/`MemExports` with hosts as addresses and
+networks (`HostPat`):
+
+```rust
+pub trait ExportView: Send + Sync + Debug {
+    fn id(&self) -> u32;
+    fn path(&self) -> &str;
+    fn root_id(&self) -> FileId;
+    fn allows(&self, peer: IpAddr) -> bool;        // ACCESS=
+    fn writable(&self, peer: IpAddr) -> bool;      // not RO, in RW= if given
+    fn root_access(&self, peer: IpAddr) -> bool;   // ROOT=
+    fn anon(&self) -> Anon;                        // Default | Uid(u32) | Refuse
+    fn nosuid(&self) -> bool;
+    fn version_allowed(&self, vers: u32) -> bool;  // VERS=
+    fn flavors(&self) -> Vec<i32>;                 // SEC=: [1]
+    fn host_opts(&self, peer: IpAddr) -> HostOpts; // data CCSID (None: *BINARY), path name CCSID, sync
+    fn groups(&self) -> Vec<String>;               // what EXPORT lists
+}
+```
+
+Host names and netgroups are matched by the export model (NFS-2's),
+not here.
+
+### 5.5 Attributes and changes
+
+- `stat` to `fattr3`: the type from the mode's type bits (a `/QSYS.LIB`
+  object that is neither a directory nor a file is a regular file),
+  `mode & 0o7777` as `stat` shows the authorities (a missing primary
+  group's bits are 0), times to the nanosecond.
+- `SETATTR`: mode by `chmod` (`lchown` and no `chmod` for a link),
+  owner and group by `chown` with the unchanged one kept, size by
+  `ftruncate` (`IsDir` on a directory), times by `utime` (one time set
+  keeps the other; both server times set both to now). The guard
+  compares the change time exactly (`NotSync`).
+- With `NOSUID`, set-user-ID and set-group-ID bits are cleared on
+  everything made and every mode set.
+- Every change answers the directory's or file's attributes before and
+  after (`wcc_data`); a failure answers what can still be found.
+- An exclusive `CREATE` keeps its verifier in the new file's times
+  (access time the first four bytes as seconds, modification time the
+  last four): a retransmission after the duplicate request cache
+  forgot it, or after a restart, finds the file; another verifier is
+  `EXIST`. The client sets the real times next.
+- `MKNOD` makes FIFOs; sockets, character and block devices are
+  `NFS3ERR_NOTSUPP`, another type `NFS3ERR_BADTYPE`.
+- Names: empty, with `/` or NUL, or not valid in the host's path name
+  CCSID: `INVAL`; over 255 bytes on the wire: `NAMETOOLONG`; `.` or
+  `..` to make: `EXIST`.
+
+### 5.6 Text conversion
+
+As `NetServer` does it (`server::text`): with a data CCSID other than
+`*BINARY`, a file tagged with a single-byte CCSID other than the host's
+is converted byte for byte on read and write (sizes, offsets and locks
+are the file's); a file in a multi-byte or mixed CCSID, 65535 or the
+host's own is served as stored. A file made through the export is
+tagged with the host's data CCSID (else the IFS's default). Path names
+are converted between the host's path name CCSID (UTF-8 or a
+single-byte CCSID; others `INVAL`) and the IFS's UTF-8.
+
+### 5.7 NFS version 3
+
+`v3::call(vfs, gate, ctx, d)` answers one call; `v3::Nfs3<V>` is the
+`LocalProgram` of a thread serving version 3 alone. All 22 procedures.
+`FSINFO`: `rtmax`/`wtmax` 1 MiB, `rtpref`/`wtpref`/`dtpref` 64 KiB,
+multiples 4096, `maxfilesize` `i64::MAX`, `time_delta` 1 ns,
+`LINK|SYMLINK|HOMOGENEOUS|CANSETTIME`. `PATHCONF`: `name_max` 255,
+`no_trunc`, `chown_restricted`, case-insensitive per file system,
+case-preserving. A change through an export the client may not write is
+`NFS3ERR_ROFS`. `WRITE` with `count` above 1 MiB is `FBIG`, with less
+data than `count` `INVAL`; `*SYNC` hosts get `FILE_SYNC`. The write
+verifier is the `Instance`'s, new at every start. `READ` reports end of
+file at the size or on a short read. `ACCESS` asks `access()` as the
+caller for each bit (`LOOKUP` on directories, `EXECUTE` on files,
+`DELETE` on directories only; none of the changing bits on a
+read-only export). `JUKEBOX` is never answered.
+
+`READDIR`/`READDIRPLUS`: from cookie 0 the page starts with `.`
+(cookie 1) and `..` (cookie 2); then the file system's entries in
+cookie order, a cookie being the entry's name hashed (FNV-1a, 62
+bits, plus 3). So a cookie stays good while the directory changes: an
+entry removed is not seen, one added may be, none is seen twice or
+skipped; two names of one cookie stay on one page. The cookie
+verifier is the directory's file ID hashed; a cookie with another
+directory's verifier is `BAD_COOKIE` (a zero verifier is taken).
+Pages are cut to `count` (`READDIR`), or to `dircount` bytes of names
+and `maxcount` in all (`READDIRPLUS`), as XDR encodes them; a page
+that holds no entry is `TOOSMALL`.
+
+The duplicate request cache keeps `SETATTR`, `CREATE`, `MKDIR`,
+`SYMLINK`, `MKNOD`, `REMOVE`, `RMDIR`, `RENAME`, `LINK`
+(`server::run::nfs3_cache()`).
+
+### 5.8 MOUNT, NLM, NSM
+
+- **MOUNT** (`mount::Mountd<V>`, versions 1 and 3): `MNT` takes the
+  export or a directory under it (longest export wins; the path in the
+  host's path name CCSID); a path in no export, a host not allowed, or
+  a caller who cannot reach it: `MNT3ERR_ACCES`; missing:
+  `MNT3ERR_NOENT`; not a directory: `MNT3ERR_NOTDIR`; it answers the
+  handle and `[AUTH_SYS]`. Version 1's `MNT` answers the same 32 bytes
+  or the errno. The mount list (`mount::list::MountList`, the client's
+  `AUTH_SYS` machine name or address and the IFS path) is kept in
+  memory (`MemMountList`): the oracle has no `rmtab`-like file, so the
+  list starts empty with each start of `QNFSMNTD`. `EXPORT` (and v1
+  `EXPORTALL`) lists every export with its `groups()`.
+- **NLM** (`nlm::Nlm<V>`, versions 1, 3, 4 and 2 = `NLM_SM`): section
+  `nlm/mod.rs` has the rules. A lock owner (caller name without case,
+  `svid`, owner handle) is an IFS sub-owner from `0x4E4C000000000000`
+  up. Blocking: `NLM4_BLOCKED`, then `nlm::grant::grant_loop` (the
+  daemon's poll) calls the client back with `NLM_GRANTED`
+  (`GRANTED_MSG` if it asked with `LOCK_MSG`); a client that refuses it,
+  or does not answer in `grant_tries`, has it given back. A request
+  retransmitted while it waits is answered `BLOCKED` and queued once.
+  `CANCEL`: `GRANTED` when taken back (a lock granted meanwhile is
+  unlocked), `DENIED` when nothing waits. Grace period (90 s by
+  default, `NlmConfig::grace`, on a `Clock`): `LOCK`, `NM_LOCK`, `SHARE`
+  without reclaim and `TEST` are `NLM4_DENIED_GRACE_PERIOD`; `UNLOCK`
+  and `CANCEL` are taken. The first lock of a host (not `NM_LOCK`)
+  asks the local monitor `SM_MON` with `my_id` = (`127.0.0.1`, 100021,
+  2, 1); a refusal is `NLM4_DENIED_NOLOCKS`. `NLM_SM_NOTIFY` (from this
+  host only), `FREE_ALL` (from the host itself: its `AUTH_SYS` machine
+  name or address is the name, or from this host) and
+  `NlmState::release_client(vfs, name)` (`RLSIFSLCK RMTLOCNAME`) drop
+  every lock, waiting request and share of a host. `SHARE`/`UNSHARE`
+  are opens with share reservations. The `_MSG` forms are answered
+  with no results and their `_RES` sent to the client's lock manager
+  after the reply. `GRANTED` and the `_RES` messages a client would
+  receive go to `NlmState::set_client` (the mounting client's, a later
+  agent's); without one `GRANTED` is `DENIED` and those `_RES` are
+  `PROC_UNAVAIL`. Version 1 and 3 statuses version 4 adds are sent as
+  `nlm_denied_nolocks`. The duplicate request cache keeps procedures
+  2, 3, 4, 7, 8, 9, 20 to 23 (`server::run::nlm_cache()`).
+- **NSM** (`nsm::Nsm`, version 1): `SM_STAT` answers `stat_succ` and
+  the state; `SM_MON`, `SM_UNMON`, `SM_UNMON_ALL` only from this host
+  (elsewhere `stat_fail`, or the state with nothing changed);
+  `SM_SIMU_CRASH` only from this host (`PROC_UNAVAIL` from another):
+  the state up by two and every monitored host told; `SM_NOTIFY` from a
+  host calls back each local program monitoring it (by name without
+  case, or by the caller's address) with its private bytes. At a start
+  (`NsmState::start`) the state goes to the next odd number (1 from
+  none, +2 from odd, +1 from even), the hosts monitored before are
+  handed back and forgotten, and `run::nsmd` tells each (`SM_NOTIFY`
+  with this host's name, `notify_rounds` rounds). The files, through
+  `nsm::record::StatdStore`: `/etc/STATD` (EBCDIC digits and `X'15'`,
+  the oracle's form) and the monitored hosts,
+  `/QIBM/UserData/OS400/NFS/QNFSNSMD.MON`, a format of this release:
+  `QSMN`, version u16 1, two zero bytes, count u32, then per host
+  `mon_name` and `my_name` (u16 length, at most 1024 bytes),
+  `my_prog`, `my_vers`, `my_proc` (u32) and 16 private bytes;
+  big-endian.
+- Calls out go through `server::locate::Locator` (the client's NLM at
+  its address, the local NSM at `127.0.0.1`, a monitored host's NSM by
+  name): `BinderLocator` asks the host's port 111; tests use
+  `FixedLocator`. The client calls are `nlm::call` and `nsm::call`.
+
+### 5.9 The daemons' loops, and what NFSv4 shares
+
+`server::run` (no global state; every thread scoped to the call):
+
+```rust
+pub struct Listeners { pub tcp: Option<TcpListener>, pub udp: Option<UdpSocket> }
+pub struct Registration { pub binder: SocketAddr, pub owner: String }
+pub struct Common<'a> { pub listeners: Listeners, pub binder: Option<Registration>,
+                        pub stop: &'a AtomicBool, pub ready: Option<&'a (dyn Fn() + Sync)> }
+pub fn nfsd<P: LocalProgram, F: Fn() -> P + Sync>(c: Common<'_>, make: F) -> io::Result<()>;
+pub fn mountd<V: Vfs, F: Fn() -> V + Sync>(c: Common<'_>, exports: &Arc<dyn ExportTable>,
+    list: &Arc<dyn MountList>, vfs: F) -> io::Result<()>;
+pub fn nlmd<V: Vfs, F: Fn() -> V + Sync, N: Fn() -> Box<dyn NewsSource> + Sync>(c: Common<'_>,
+    exports: &Arc<dyn ExportTable>, state: &Arc<NlmState>, vfs: F, news: N) -> io::Result<()>;
+pub fn nsmd(c: Common<'_>, state: &Arc<NsmState>, before: Vec<MonRecord>) -> io::Result<()>;
+pub fn serve<P, F>(c: Common<'_>, d: &Dispatcher, prog: u32, versions: &[u32], make: F,
+    extra: Option<&(dyn Fn() + Sync)>) -> io::Result<()>;
+```
+
+Each registers its versions on its listeners' addresses with the binder
+(an earlier registration unset first), calls `ready`, serves UDP on one
+thread and each TCP connection on a thread with its own program from the
+factory, and at `stop` lets the threads end and unregisters. `nlmd`
+registers versions 1, 3 and 4 (not 2) and runs the grant poll and the
+`_RES` sender beside; `nsmd` runs the notices of the start and the
+callbacks. All links of one daemon job are one IFS owner: tokens queued
+by one thread are named by the poll of another (for the job agent:
+the service's owner of each link must be the job, not the link).
+
+A thread's own program is a `rpc::LocalProgram` (the `Program` trait
+without `Send`/`Sync`), handed to `Dispatcher::handle_with(msg, peer,
+transport, &[&program])`. NFSv4 shares: `Vfs` (extend it only for what
+is missing), `IfsVfs`, `FileHandle` (v4 handles are the same 32
+bytes), `Gate` (call `open(ctx, fh, 4)`), `cred`, `text`, `Instance`
+(the boot verifier), `Clock`, `NewsSource` (lease breaks for
+`CB_RECALL`), `Locator`, and `run::nfsd` with a program of versions 3
+and 4 that calls `v3::call` for version 3. Opens with share
+reservations are `Vfs::open`/`close`; v4 lock owners need their own
+sub-owner range (NLM's starts at `0x4E4C000000000000`).
+
+### 5.10 `/QSYS.LIB` and NFSv4 **(design)**
+
+- **`/QSYS.LIB`** exports show libraries, objects and members as
+  directories and files (built and tested over `MemQsys`: `.FILE` a
+  directory of `.MBR` files, a user space a file). `/QOPT` and `/QDLS`
+  cannot be exported (`CPDA1C5`); nor can `/QNTC`, `/QFileSvr.400` or
+  an NFS mount (the commands' agent).
+- **NFSv4.** The pseudo-file system joins the exports under one root
+  (read-only directories made of the exports' path components).
+  Compound operations of 4.0 and 4.1; stateful opens with share
+  reservations; byte-range locks; read delegations (write delegations
+  are not offered); `SETCLIENTID` and callbacks for 4.0;
+  `EXCHANGE_ID`, sessions, slots with exactly-once replies, the
+  backchannel, `RECLAIM_COMPLETE`, `SEQUENCE` for 4.1. Referrals are
+  refused (`fs_locations` is not a supported attribute), pNFS is refused
+  (`EXCHGID4_FLAG_USE_NON_PNFS`, `LAYOUT*` and `GETDEVICE*` answer
+  `NFS4ERR_NOTSUPP`). NFSv4 `owner`/`owner_group` are `profile@domain`
+  through the registry, the domain from `QZNFNFSO`.
+
+### 5.11 What the IFS gives the daemons
 
 - **Identity per request** (built, `docs/IFS.md` "Calls as another
   user"). A daemon thread's calls name the caller:
@@ -358,36 +689,6 @@ over `IfsClient` with these additions to the IFS (built first):
   (`NLM4_DEADLCK`). NFSv4 answers `NFS4ERR_DENIED` and the client
   polls. Share reservations are the opens' share modes, enforced
   between jobs; `QNFSNFSD` holds leases and watches as `QZLSFILE` does.
-- **Attributes.** Mode bits, owner and group from the object's
-  authorities as `stat` shows them; `SETATTR` of mode maps to the data
-  authorities the way `chmod` does. ACLs beyond mode bits are refused
-  (section 10). NFSv4 `owner`/`owner_group` are `profile@domain` through
-  the registry, the domain from `QZNFNFSO` (default: the TCP/IP domain
-  name).
-- **Exports.** `RO`, `RW=`, `ACCESS=`, `ROOT=`, `ANON=`, `NOSUID`,
-  `SEC=sys` (others refused), `VERS=3:4`, `PUBLIC`, `ROOT` (the v4
-  pseudo-root), `NFSROOT=`; per-host `HOSTOPT` (data CCSID, path name
-  CCSID, synchronous writes). Host lists hold names, addresses, networks
-  (`@net/len`) and netgroups. A host not allowed sees `MNT3ERR_ACCES`,
-  `NFS3ERR_ACCES` or `NFS4ERR_ACCESS`.
-- **`/QSYS.LIB`** exports show libraries, objects and members as
-  directories and files (`.FILE` a directory of `.MBR` files, save files
-  and user spaces as files). With a data CCSID other than `*BINARY` in
-  `HOSTOPT`, members and stream files tagged with a text CCSID are
-  converted on read and write (single-byte CCSIDs; a file size is the
-  converted size). Path names are converted between the path name CCSID
-  and the IFS's names. `/QOPT` and `/QDLS` cannot be exported
-  (`CPDA1C5`); nor can `/QNTC`, `/QFileSvr.400` or an NFS mount.
-- **NFSv4.** The pseudo-file system joins the exports under one root
-  (read-only directories made of the exports' path components).
-  Compound operations of 4.0 and 4.1; stateful opens with share
-  reservations; byte-range locks; read delegations (write delegations
-  are not offered); `SETCLIENTID` and callbacks for 4.0;
-  `EXCHANGE_ID`, sessions, slots with exactly-once replies, the
-  backchannel, `RECLAIM_COMPLETE`, `SEQUENCE` for 4.1. Referrals are
-  refused (`fs_locations` is not a supported attribute), pNFS is refused
-  (`EXCHGID4_FLAG_USE_NON_PNFS`, `LAYOUT*` and `GETDEVICE*` answer
-  `NFS4ERR_NOTSUPP`).
 
 ## 6. `/etc` files
 
@@ -650,8 +951,8 @@ the export table and the mount table **(design, a later wave)**.
 
 ## 9. Security mapping
 
-The IFS side is built (`docs/IFS.md`, "Calls as another user"); the
-daemons' use of it is design.
+The IFS side is built (`docs/IFS.md`, "Calls as another user"), and
+the server's use of it (`server::cred`, `server::ifsvfs`; section 5.2).
 
 | On the wire | On QS/400 |
 |---|---|
@@ -661,7 +962,7 @@ daemons' use of it is design.
 | `AUTH_NONE` | the anonymous user |
 | the anonymous user | `ANON=uid` (default the UID of `QNFSANON`); `-1` refuses |
 | mode bits | the data authorities of owner, primary group and `*PUBLIC`, as `stat` and `chmod` map them |
-| a set-user-ID bit | cleared on files made through an export with `NOSUID` |
+| a set-user-ID or set-group-ID bit | cleared on everything made, and every mode set, through an export with `NOSUID` |
 | ports | calls from ports of 1024 and up are accepted (IBM's default); the client sends from a reserved port when it can |
 
 Auditing follows the caller's profile: the `QAUDJRN` entries are those
@@ -713,9 +1014,36 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | `CVTRPCSRC`, `RPCGEN` | not shipped: the command is not found, as any command QS/400 lacks |
 | Remote calls through the binder (`PMAPPROC_CALLIT`, `RPCBPROC_CALLIT`, `RPCBPROC_BCAST`, `RPCBPROC_INDIRECT`) | `PROC_UNAVAIL` over TCP; no reply over UDP (RFC 1833: a failed indirect call is not answered) |
 | Double-byte data CCSIDs in `HOSTOPT`/`CCSID` | `CPDA1CA` |
+| A path name CCSID neither UTF-8 nor single-byte | the name is `NFS3ERR_INVAL` |
+| `MKNOD` of a socket, a character or a block device | `NFS3ERR_NOTSUPP` (another type `NFS3ERR_BADTYPE`) |
+| `SM_MON`, `SM_UNMON`, `SM_UNMON_ALL` from another host | `stat_fail`; the state with nothing changed |
+| `SM_SIMU_CRASH`, `NLM_SM_NOTIFY` (NLM version 2) from another host; `FREE_ALL` for a host other than the caller | `PROC_UNAVAIL` |
+| NLM `GRANTED` and the `_RES` messages but `GRANTED_RES` while this host has no lock client | `GRANTED`: `NLM4_DENIED`; the others `PROC_UNAVAIL` |
+| NFSv3 `JUKEBOX` | never answered |
 
-## 11. Tests **(design)**
+## 11. Tests
 
+- **Built** (`cargo test -p nfs`, the server): `tests/srv3_procs.rs`
+  every NFSv3 procedure and its errors through RPC messages in memory;
+  `srv3_security.rs` root squash, `ROOT=`, `ANON=`, `ANON=-1`,
+  `AUTH_NONE`, an unknown UID, `RO`, `RW=`, `ACCESS=`, `VERS=`,
+  `NOSUID`, the wire's GIDs ignored; `srv3_handles.rs` stale after
+  remove and a new file, handles and exclusive create after a restart
+  (a new `Ifs` over the same `MemBackend`), the export table checked
+  on every call, `XDEV`, the duplicate request cache on `RENAME`, the
+  write verifier across a restart; `srv3_dir.rs` `READDIRPLUS` over
+  2,000 entries while 50 go and 50 come (none twice, none skipped),
+  `BAD_COOKIE`, `TOOSMALL`; `srv3_text.rs` data and path name
+  conversion, a `/QSYS.LIB` export over `MemQsys`; `srv3_mount.rs`;
+  `srv3_net.rs` `mountd` and `nfsd` over loopback TCP and UDP with a
+  binder; `srv3_nlm.rs` conflicts between clients and with a local
+  job, a blocked lock granted by callback, refused grants given back,
+  cancel, grace and reclaim, shares, `LOCK_MSG`, version 3, `FREE_ALL`,
+  and `nlmd` with `nsmd` over loopback freeing a restarted client's
+  locks through `SM_NOTIFY`; `srv3_nsm.rs` the state across starts in
+  `/etc/STATD`'s form, local-only monitoring, `SM_SIMU_CRASH`, the
+  notices of a start; `srv3_fuzz.rs` the served fuzz entry points.
+  **Design** (below): the client, v4, `nfstest`, QEMU.
 - `cargo test -p xdrgen -p nfs`: the compiler; every generated type's
   round trip; the RFCs' examples; the server over a `Vfs` in memory and
   the client against it over loopback (v3, 4.0, 4.1; UDP and TCP; locks;
@@ -733,7 +1061,9 @@ Nothing is accepted and ignored. What is not done is refused as below.
   (the binder end to end, `/etc/RPCBTAB`), `nfsmount`, `nfsnlm` (and
   NSM), `nfs3`, `nfs4` (the compound and the callback compound), each a
   decode, encode and decode again that must agree (`nfs::fuzzing`);
-  `exports`. Without instrumentation, `net/nfs/tests/wire_fuzz.rs` runs
+  `exports`. `nfsmount`, `nfsnlm`, `nfsnsm` and `nfs3` also send
+  the input as a call to the server over an IFS in memory
+  (`nfs::fuzzing::server`): a reply's results must decode. Without instrumentation, `net/nfs/tests/wire_fuzz.rs` runs
   the same entry points over random and mutated input.
 
 ## 12. NEEDS-CODY

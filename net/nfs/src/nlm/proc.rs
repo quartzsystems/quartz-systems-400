@@ -278,8 +278,9 @@ impl<V: Vfs> Core<'_, V> {
     }
 
     /// `FREE_ALL`: taken from the host itself (its `AUTH_SYS` machine
-    /// name or its address is the name) or from this host.
-    pub(super) fn free_all(&self, a: &nlm4_notify) {
+    /// name or its address is the name) or from this host; from another,
+    /// `PROC_UNAVAIL`.
+    pub(super) fn free_all(&self, a: &nlm4_notify) -> Result<(), crate::rpc::AcceptError> {
         let peer = self.ctx.peer.ip();
         let mine = match &self.ctx.cred {
             crate::rpc::Credential::Sys(p) => p.machinename.eq_ignore_ascii_case(&a.name),
@@ -287,8 +288,10 @@ impl<V: Vfs> Core<'_, V> {
         };
         if mine || crate::nsm::local(peer) || a.name == peer.to_string().as_bytes() {
             self.st.release_client(self.vfs, &a.name);
+            Ok(())
         } else {
-            tracing::warn!("FREE_ALL from {peer} for another host refused");
+            // Another host's locks are not this caller's to free.
+            Err(crate::rpc::AcceptError::ProcUnavail)
         }
     }
 }
