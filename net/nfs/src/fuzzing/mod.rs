@@ -226,10 +226,16 @@ pub fn nfs3(data: &[u8]) {
     server::call::<nfs3::NFS_PROGRAM::NFS_V3::Res>(server::Prog::Nfs3, 3, p, sel, args);
 }
 
-/// NFS version 4: the compound's arguments and results, and the callback's.
+/// NFS version 4: the compound's arguments and results, and the
+/// callback's; the server answering the input as a call (procedure 0 or
+/// 1 by the first byte's low bit) and the server's reading of a
+/// client's `CB_COMPOUND` reply.
 pub fn nfs4(data: &[u8]) {
     roundtrip::<nfs4::COMPOUND4args>(data);
     roundtrip::<nfs4::COMPOUND4res>(data);
     roundtrip::<nfs4::CB_COMPOUND4args>(data);
     roundtrip::<nfs4::CB_COMPOUND4res>(data);
+    let (p, sel, args) = served(data);
+    server::call::<nfs4::NFS4_PROGRAM::NFS_V4::Res>(server::Prog::Nfs4, 4, p & 1, sel, args);
+    let _ = crate::v4::cb::reply_status(data);
 }

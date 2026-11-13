@@ -42,6 +42,7 @@ use crate::server::{ExportTable, FileHandle, Gate, Instance, MemExport, MemExpor
 use crate::types::rpc::call_body;
 use crate::types::{mount, nfs3, nlm, nsm};
 use crate::v3::Nfs3;
+use crate::v4::{Nfs34, Server};
 use crate::xdr::{Decoder, ProcBody};
 
 /// Inputs served before the system is made again.
@@ -51,6 +52,7 @@ type Fs = IfsVfs<LocalIfs<MemBackend>>;
 
 struct Sys {
     nfs3: Nfs3<Fs>,
+    nfs4: Nfs34<Fs>,
     mountd: Mountd<Fs>,
     nlm: Nlm<Fs>,
     nsm: Nsm,
@@ -113,7 +115,7 @@ fn build() -> Option<Sys> {
     let exports = Arc::new(MemExports::new());
     exports.put(MemExport::new(1, "/home/fz", rid));
     let table: Arc<dyn ExportTable> = exports;
-    let gate = Gate::new(table);
+    let gate = Gate::new(Arc::clone(&table));
     let instance = Arc::new(Instance::new());
     let vfs = || IfsVfs::new(job(), Arc::clone(&instance), ifsvfs::Config::default());
     let rpc = ClientConfig {
@@ -142,12 +144,39 @@ fn build() -> Option<Sys> {
         },
     )
     .ok()?;
+    // NFSv4 with no callbacks reachable and a short lease, so inputs
+    // reach expiry and revocation too.
+    let clock: Arc<dyn crate::server::Clock> = Arc::new(SystemClock);
+    let v4 = Server::new(
+        crate::v4::Config {
+            lease: Duration::from_millis(5),
+            grace: Duration::ZERO,
+            courtesy: Duration::from_millis(5),
+            recall_wait: Duration::from_millis(5),
+            ..crate::v4::Config::default()
+        },
+        Arc::clone(&table),
+        Arc::clone(&instance),
+        Arc::clone(&clock),
+        Arc::new(crate::registry::Registry::new(
+            Arc::new(crate::registry::MemIdMap {
+                domain: "fuzz".into(),
+                users: vec![("BOB".into(), 100)],
+                groups: Vec::new(),
+            }),
+            crate::registry::TTL,
+            clock,
+        )),
+        Arc::new(crate::v4::state::stable::MemStable::new()),
+        Arc::new(crate::v4::cb::NoCallbacks),
+    );
     let mut nfs_d = Dispatcher::new();
     nfs_d.set_cache(crate::server::run::nfs3_cache());
     let mut nlm_d = Dispatcher::new();
     nlm_d.set_cache(crate::server::run::nlm_cache());
     Some(Sys {
         nfs3: Nfs3::new(vfs(), gate.clone()),
+        nfs4: v4.program(vfs()),
         mountd: Mountd::new(vfs(), gate.clone(), Arc::new(MemMountList::new())),
         nlm: Nlm::new(vfs(), gate, locks),
         nsm: Nsm::new(monitor),
@@ -186,6 +215,7 @@ fn place_handles(args: &mut [u8], root: &[u8; 32]) {
 pub(super) enum Prog {
     Mount,
     Nfs3,
+    Nfs4,
     Nlm,
     Nsm,
 }
@@ -220,6 +250,7 @@ pub(super) fn call<R: ProcBody + std::fmt::Debug>(
         let (number, d, local): (u32, &Dispatcher, &dyn LocalProgram) = match prog {
             Prog::Mount => (mount::MOUNT_PROGRAM::NUMBER, &s.plain, &s.mountd),
             Prog::Nfs3 => (nfs3::NFS_PROGRAM::NUMBER, &s.nfs_d, &s.nfs3),
+            Prog::Nfs4 => (nfs3::NFS_PROGRAM::NUMBER, &s.nfs_d, &s.nfs4),
             Prog::Nlm => (nlm::NLM_PROG::NUMBER, &s.nlm_d, &s.nlm),
             Prog::Nsm => (nsm::SM_PROG::NUMBER, &s.plain, &s.nsm),
         };
