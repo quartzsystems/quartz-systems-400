@@ -13,6 +13,7 @@
 //! ([`super::text`]).
 
 pub mod fdcache;
+mod jobfds;
 
 mod attr;
 mod change;
@@ -95,14 +96,14 @@ pub(crate) struct As<'a> {
 pub struct IfsVfs<C: IfsClient> {
     base: C,
     instance: Arc<Instance>,
-    fds: RefCell<FdCache>,
+    fds: Arc<jobfds::Member>,
     roots: RefCell<HashMap<u32, (FileId, String)>>,
 }
 
 impl<C: IfsClient> std::fmt::Debug for IfsVfs<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IfsVfs")
-            .field("fds", &self.fds.borrow().len())
+            .field("fds", &self.fds.cache().len())
             .finish_non_exhaustive()
     }
 }
@@ -113,10 +114,11 @@ impl<C: IfsClient> IfsVfs<C> {
     /// client applied its own.
     pub fn new(base: C, instance: Arc<Instance>, cfg: Config) -> Self {
         let _ = base.umask(0);
+        let fds = jobfds::join(&instance, FdCache::new(cfg.fds, cfg.idle));
         Self {
             base,
             instance,
-            fds: RefCell::new(FdCache::new(cfg.fds, cfg.idle)),
+            fds,
             roots: RefCell::new(HashMap::new()),
         }
     }
@@ -128,12 +130,12 @@ impl<C: IfsClient> IfsVfs<C> {
 
     /// Descriptors kept now.
     pub fn cached_fds(&self) -> usize {
-        self.fds.borrow().len()
+        self.fds.cache().len()
     }
 
     /// Closes every kept descriptor.
     pub fn flush(&self) {
-        let fds = self.fds.borrow_mut().drain();
+        let fds = self.fds.cache().drain();
         self.close_all(&fds);
     }
 
@@ -146,6 +148,7 @@ impl<C: IfsClient> IfsVfs<C> {
     /// Runs `f` as the request's caller, again as the export's
     /// anonymous user when the caller is no profile.
     pub(crate) fn run<T>(&self, r: &Req, f: impl Fn(&As<'_>) -> Fr<T>) -> VResult<T> {
+        let _busy = self.fds.enter();
         self.sweep();
         match self.once(&r.caller, &f) {
             Ok(v) => Ok(v),
@@ -169,8 +172,12 @@ impl<C: IfsClient> IfsVfs<C> {
     }
 
     fn sweep(&self) {
-        let old = self.fds.borrow_mut().expire(Instant::now());
+        let now = Instant::now();
+        let old = self.fds.cache().expire(now);
         self.close_all(&old);
+        // Other threads of the job that idle keep nothing past its time.
+        let theirs = jobfds::expire_idle(&self.instance, &self.fds, now);
+        self.close_all(&theirs);
     }
 
     /// The export's root path, as the job resolves it.
@@ -219,14 +226,22 @@ impl<C: IfsClient> IfsVfs<C> {
 
     /// Closes the kept descriptors of an object.
     pub(crate) fn forget_object(&self, fid: FileId) {
-        let fds = self.fds.borrow_mut().drop_object(fid);
+        let fds = self.fds.cache().drop_object(fid);
         self.close_all(&fds);
+    }
+
+    /// Closes every kept descriptor of an object, the job's other idle
+    /// threads' too (a share reservation refused an open).
+    pub(crate) fn forget_object_everywhere(&self, fid: FileId) {
+        self.forget_object(fid);
+        let theirs = jobfds::evict_object(&self.instance, &self.fds, fid);
+        self.close_all(&theirs);
     }
 
     /// A kept descriptor of `fid` for `mode`, opened as the caller.
     pub(crate) fn fd(&self, a: &As<'_>, fid: FileId, mode: Mode) -> Fr<i32> {
         let now = Instant::now();
-        if let Some(fd) = self.fds.borrow_mut().get(fid, a.who, mode, now) {
+        if let Some(fd) = self.fds.cache().get(fid, a.who, mode, now) {
             return Ok(fd);
         }
         let flags = match mode {
@@ -234,14 +249,14 @@ impl<C: IfsClient> IfsVfs<C> {
             Mode::Write => ifs::ops::flags::O_WRONLY,
         };
         let (fd, _) = a.c.open_by_id(fid, ifs::ops::OpenArgs::new(flags))?;
-        let out = self.fds.borrow_mut().put(fid, a.who, mode, fd, now);
+        let out = self.fds.cache().put(fid, a.who, mode, fd, now);
         self.close_all(&out);
         Ok(fd)
     }
 
     /// A descriptor failed: it is not kept.
     pub(crate) fn drop_fd(&self, fd: i32) {
-        if self.fds.borrow().holds(fd) {
+        if self.fds.cache().holds(fd) {
             let _ = self.base.close(fd);
         }
     }
@@ -419,7 +434,7 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
     }
     fn close(&self, open: u64) -> VResult<()> {
         let fd = i32::try_from(open).map_err(|_| VfsError::Inval)?;
-        if self.fds.borrow().holds(fd) {
+        if self.fds.cache().holds(fd) {
             // A kept descriptor is not an open of this kind.
             return Err(VfsError::Inval);
         }

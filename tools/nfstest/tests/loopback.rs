@@ -9,11 +9,7 @@ mod common;
 
 /// Scenarios that fail against the server on main: findings for the
 /// server's owner, each in `tools/nfstest/README.md` ("Findings").
-const KNOWN: &[&str] = &[
-    // A daemon thread's cached write descriptor holds a share reservation
-    // until the thread's next call (ifsvfs::fdcache's lazy sweep).
-    "nlm-share",
-];
+const KNOWN: &[&str] = &[];
 
 fn run(args: &[&str]) -> (i32, String) {
     let args: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();

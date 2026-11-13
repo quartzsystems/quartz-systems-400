@@ -78,6 +78,11 @@ impl<V: Vfs> Nfs3<V> {
     pub fn new(vfs: V, gate: Gate) -> Self {
         Self { vfs, gate }
     }
+
+    /// The file system underneath.
+    pub fn vfs(&self) -> &V {
+        &self.vfs
+    }
 }
 
 impl<V: Vfs> LocalProgram for Nfs3<V> {

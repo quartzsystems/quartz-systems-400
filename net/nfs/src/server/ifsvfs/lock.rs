@@ -100,8 +100,9 @@ impl<C: IfsClient> IfsVfs<C> {
             match a.c.open_by_id(fh.fid, OpenArgs::new(acc | share)) {
                 Ok((fd, _)) => Ok(fd),
                 Err(Errno::EBUSY) => {
-                    // Our own kept descriptors may be what is in the way.
-                    self.forget_object(fh.fid);
+                    // Kept descriptors, this thread's or another idle
+                    // thread's of the job, may be what is in the way.
+                    self.forget_object_everywhere(fh.fid);
                     Ok(a.c.open_by_id(fh.fid, OpenArgs::new(acc | share))?.0)
                 }
                 Err(e) => Err(Fail::from(e)),

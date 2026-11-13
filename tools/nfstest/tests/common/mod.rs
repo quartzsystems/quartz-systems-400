@@ -58,6 +58,44 @@ fn principal(name: &str) -> Principal {
     p
 }
 
+/// The `NFSv4` server over the world, its owners `profile@example.com`.
+fn v4_server(w: &Arc<World>) -> Arc<nfs::v4::Server> {
+    let clock: Arc<dyn Clock> = Arc::new(SystemClock);
+    let ids = nfs::registry::MemIdMap {
+        domain: "example.com".into(),
+        users: vec![
+            ("QSECOFR".into(), 0),
+            ("QSYS".into(), 101),
+            ("BOB".into(), 100),
+            ("ANN".into(), 103),
+            ("QNFSANON".into(), ANON_UID),
+            ("QDFTOWN".into(), 104),
+        ],
+        groups: vec![("DEV".into(), 500)],
+    };
+    let reg = Arc::new(nfs::registry::Registry::new(
+        Arc::new(ids),
+        nfs::registry::TTL,
+        Arc::clone(&clock),
+    ));
+    nfs::v4::Server::new(
+        nfs::v4::Config::default(),
+        Arc::clone(&w.exports),
+        Arc::clone(&w.instance),
+        clock,
+        reg,
+        Arc::new(nfs::v4::state::stable::MemStable::new()),
+        Arc::new(nfs::v4::cb::TcpConnector {
+            cfg: ClientConfig {
+                timeout: Duration::from_secs(2),
+                retransmits: 0,
+                reserved_port: false,
+                ..ClientConfig::default()
+            },
+        }),
+    )
+}
+
 fn env() -> MemEnv {
     MemEnv::default()
         .user("QSECOFR", 0)
@@ -77,6 +115,8 @@ pub struct Options {
     pub grace: Duration,
     /// Where the server calls nfstest's lock manager back (port).
     pub callback_nlm: Option<u16>,
+    /// Serve `NFSv4` too (`nfsd4`, versions 3 and 4 on one port).
+    pub v4: bool,
 }
 
 impl Default for Options {
@@ -84,6 +124,7 @@ impl Default for Options {
         Options {
             grace: Duration::ZERO,
             callback_nlm: None,
+            v4: false,
         }
     }
 }
@@ -311,6 +352,7 @@ pub fn start(o: &Options) -> Server {
         let (stop, ready) = (Arc::clone(&stop), ready.clone());
         let w = Arc::clone(&w);
         let reg = reg("QNFSNFSD");
+        let v4 = o.v4.then(|| v4_server(&w));
         threads.push(std::thread::spawn(move || {
             let c = Common {
                 listeners: listeners(),
@@ -318,7 +360,19 @@ pub fn start(o: &Options) -> Server {
                 stop: &stop,
                 ready: Some(&ready),
             };
-            run::nfsd(c, || Nfs3::new(w.vfs(), w.gate())).unwrap();
+            match v4 {
+                Some(srv) => {
+                    let w2 = Arc::clone(&w);
+                    run::nfsd4(
+                        c,
+                        &srv,
+                        || w.vfs(),
+                        move || Box::new(ClientNews(w2.job(1))) as Box<dyn NewsSource>,
+                    )
+                    .unwrap();
+                }
+                None => run::nfsd(c, || Nfs3::new(w.vfs(), w.gate())).unwrap(),
+            }
         }));
     }
     {

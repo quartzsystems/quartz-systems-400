@@ -106,7 +106,10 @@ fn a_version_3_server_refuses_version_4() {
 }
 
 fn real(vers: &str) {
-    let s = common::start(&common::Options::default());
+    let s = common::start(&common::Options {
+        v4: true,
+        ..common::Options::default()
+    });
     let pmap = s.pmap_port.to_string();
     let mut a = args(0, vers, &[]);
     let at = a.iter().position(|x| x == "--port").unwrap();
@@ -119,13 +122,11 @@ fn real(vers: &str) {
 }
 
 #[test]
-#[ignore = "needs the v4 server (NFS-6)"]
 fn every_4_0_scenario_against_the_server() {
     real("4.0");
 }
 
 #[test]
-#[ignore = "needs the v4 server (NFS-6)"]
 fn every_4_1_scenario_against_the_server() {
     real("4.1");
 }
