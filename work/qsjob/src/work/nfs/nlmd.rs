@@ -2,9 +2,10 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `QNFSNLMD`: the lock manager, NLM versions 1, 3 and 4 on a port the
-//! system gives, registered with the binder (version 2, the monitor's
-//! callback, is served but not registered). Blocked locks are granted
+//! `QNFSNLMD`: the lock manager, NLM versions 1 to 4 on a port the
+//! system gives, registered with the binder as IBM's are (version 2 is
+//! the monitor's callback: a status monitor finds it by that version).
+//! Blocked locks are granted
 //! through the IFS's news (`lease_orders`) on a thread of their own;
 //! the grace period begins at the start. `RLSIFSLCK RMTLOCNAME` reaches
 //! it as an order the job takes at its pauses: the host's locks, waits
@@ -35,7 +36,7 @@ use super::{DaemonEnv, Serve, Started};
 /// NLM's registered versions.
 pub const PROG: Prog = Prog {
     number: NLM_PROG::NUMBER,
-    versions: &[1, 3, 4],
+    versions: &[1, 2, 3, 4],
 };
 
 /// The lock manager's settings on this system.

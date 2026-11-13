@@ -577,6 +577,10 @@ fn shares_msg_forms_and_32_bit_versions() {
     });
 }
 
+fn lo_ip() -> IpAddr {
+    IpAddr::from([127, 0, 0, 1])
+}
+
 #[test]
 fn the_monitors_callback_frees_a_restarted_clients_locks() {
     let s = setup();
@@ -613,20 +617,37 @@ fn the_monitors_callback_frees_a_restarted_clients_locks() {
     let nlm_udp = UdpSocket::bind("127.0.0.1:0").unwrap();
     let mon_udp = UdpSocket::bind("127.0.0.1:0").unwrap();
     let lo = Host::Addr(IpAddr::from([127, 0, 0, 1]));
-    locator.put(lo.clone(), 100_021, 2, nlm_udp.local_addr().unwrap());
     locator.put(lo.clone(), 100_024, 1, mon_udp.local_addr().unwrap());
     let nlm_addr = nlm_udp.local_addr().unwrap();
     let mon_addr = mon_udp.local_addr().unwrap();
+    // The lock manager registers with a binder; the monitor's callback
+    // (NLM_SM, version 2) is found there, as on a system (it was not
+    // registered, and no restart notice reached a client's mounts).
+    let bsock = UdpSocket::bind("127.0.0.1:0").unwrap();
+    bsock
+        .set_read_timeout(Some(Duration::from_millis(50)))
+        .unwrap();
+    let baddr = bsock.local_addr().unwrap();
+    let mut bd = nfs::rpc::Dispatcher::new();
+    bd.add(Arc::new(nfs::rpcb::Binder::default()));
     let exports: Arc<dyn ExportTable> = Arc::clone(&s.w.exports) as Arc<dyn ExportTable>;
     std::thread::scope(|sc| {
         let _guard = StopOnDrop(&stop);
+        sc.spawn(|| {
+            while !stop.load(Ordering::Relaxed) {
+                let _ = nfs::rpc::serve_datagram(&bsock, &bd);
+            }
+        });
         sc.spawn(|| {
             let c = Common {
                 listeners: Listeners {
                     tcp: Some(TcpListener::bind("127.0.0.1:0").unwrap()),
                     udp: Some(nlm_udp),
                 },
-                binder: None,
+                binder: Some(run::Registration {
+                    binder: baddr,
+                    owner: "QNFSNLMD".into(),
+                }),
                 stop: &stop,
                 ready: Some(&on_ready),
             };
@@ -662,6 +683,13 @@ fn the_monitors_callback_frees_a_restarted_clients_locks() {
             reserved_port: false,
             ..ClientConfig::default()
         };
+        let mut binder = nfs::rpcb::BinderClient::at(baddr, Proto::Udp, ccfg.clone());
+        let sm = binder
+            .getport(100_021, 2, 17)
+            .unwrap()
+            .expect("NLM_SM (version 2) registered with the binder");
+        assert_eq!(sm, nlm_addr.port());
+        locator.put(lo.clone(), 100_021, 2, SocketAddr::new(lo_ip(), sm));
         let mut n = RpcClient::new(nlm_addr, Proto::Udp, ccfg.clone());
         let cred = Credential::sys(b"clientA", 100, 100, &[]);
         let call = |n: &mut RpcClient, a: &NLM4_VERS::Args| {

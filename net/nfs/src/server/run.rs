@@ -438,8 +438,9 @@ where
     )
 }
 
-/// `QNFSNLMD`: NLM versions 1, 3 and 4 (version 2, the monitor's
-/// callback, is served but not registered) over a [`Vfs`] per thread;
+/// `QNFSNLMD`: NLM versions 1, 3 and 4, and version 2 (the monitor's
+/// callback, `NLM_SM`, which a status monitor looks up by that version)
+/// over a [`Vfs`] per thread;
 /// a thread of its own polls `news` for granted locks and calls the
 /// clients back, another sends the `_RES` messages.
 ///
@@ -483,7 +484,7 @@ where
         c,
         &d,
         crate::types::nlm::NLM_PROG::NUMBER,
-        &[1, 3, 4],
+        &[1, 2, 3, 4],
         make,
         Some(&extra),
     )

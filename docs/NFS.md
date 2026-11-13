@@ -331,8 +331,9 @@ that stays `NEEDS-CODY` (section 12). `WRKACTJOB` shows the function
   6.3), then `run::nsmd` on a free port, registered; `SM_NOTIFY` to the
   hosts monitored before, five rounds five seconds apart, naming this
   host as `CFGTCP` names it (`HOSTNAME.DOMAIN`, lower case).
-- `QNFSNLMD` (`nlmd.rs`): `run::nlmd`, versions 1, 3 and 4 registered (2
-  served, not registered), on a free port; the monitor asked for every
+- `QNFSNLMD` (`nlmd.rs`): `run::nlmd`, versions 1 to 4 registered as
+  IBM's are (2 is `NLM_SM`, the monitor's callback, which a status
+  monitor finds by that version), on a free port; the monitor asked for every
   host's first lock; blocked locks granted through the IFS news
   (`ClientNews` over a link of its own); grace 90 seconds from the
   start. At each pause it takes its release orders (`NfsOp::Orders`):
@@ -778,7 +779,7 @@ Each registers its versions on its listeners' addresses with the binder
 (an earlier registration unset first), calls `ready`, serves UDP on one
 thread and each TCP connection on a thread with its own program from the
 factory, and at `stop` lets the threads end and unregisters. `nlmd`
-registers versions 1, 3 and 4 (not 2) and runs the grant poll and the
+registers versions 1 to 4 (2 is `NLM_SM`) and runs the grant poll and the
 `_RES` sender beside; `nsmd` runs the notices of the start and the
 callbacks. All links of one daemon job are one IFS owner: tokens queued
 by one thread are named by the poll of another. As built, the service's
