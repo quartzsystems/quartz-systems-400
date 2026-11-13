@@ -550,8 +550,16 @@ one is made (the client applied its own).
   seconds unused, dropped when the object is removed, renamed over or
   found stale. Authority is checked when it is opened and again on
   every `READ` and `WRITE` (`access()` as the caller). An `OPEN` that a
-  share reservation refuses (`EBUSY`) closes this thread's kept
-  descriptors of the object and tries once more.
+  share reservation refuses (`EBUSY`) closes the kept descriptors of
+  the object, this thread's and those of the job's other threads not
+  in a call (`ifsvfs::jobfds`: the threads of one server start share a
+  registry; a thread marks itself busy for the length of a call), and
+  tries once more; every call also closes the other idle threads'
+  descriptors unused past their time. A local job's
+  open that a kept descriptor refuses waits for that time at most (5
+  seconds) or for any call of the job; an IFS lease per kept
+  descriptor, broken by the local open, would end that wait at once
+  (a daemon news loop for the v3 job is needed for it).
 - An open's number is its descriptor, the job's, so any thread of the
   job may close it (NLM `UNSHARE` on another connection).
 - Byte-range locks are held by sub-owners through descriptors of the
@@ -1668,17 +1676,20 @@ look the type up first (`EISDIR`, `ENOTDIR`); `rename` and `link` use
 `SAVEFH`; `readdir` asks for the attributes and `filehandle`. Locks:
 `LOCK` (the first from the open, `open_to_lock_owner4`), `LOCKU`,
 `LOCKT`, the lock owner made of the IFS lock owner; `DENIED` is
-`EAGAIN`. Owners and groups are sent as numeric strings; a string that
-is not a number reads as UID/GID 65534 (the client has no
-`user@domain` mapping; NFS-6's registry, section 5.10, is the
-server's). The client's `fattr4` decoder (`v4/attr.rs`) covers only
-what it asks for; NFS-6's `v4/attr` is the server's full table (a
-duplication the lead may fold). **Recovery**: `BADSESSION` or
+`EAGAIN`. Owners and groups go through `ClientEnv::registry` (a
+`registry::Registry`, `QNFSRGYD`'s mapping) as `profile@domain` when
+it is given, else as numeric strings; a string that maps to nothing
+reads as UID/GID 65534. The client's `fattr4` codec (`v4/attr.rs`)
+covers only what it asks for and sets; NFS-6's `v4/attr` encodes a
+server's `Attr` and decodes what a client sets, the other directions,
+so it is not shared. **Recovery**: `BADSESSION` or
 `DEADSESSION` makes a new session (the client ID kept); a
 `CREATE_SESSION` refused, `STALE_CLIENTID`, `EXPIRED` or
 `STALE_STATEID` makes a new client ID, then every open is reclaimed
-(`OPEN` `CLAIM_PREVIOUS`) and every range locked again (`LOCK` with
-`reclaim`), then `RECLAIM_COMPLETE`. One thread recovers; the others
+(`OPEN` `CLAIM_PREVIOUS`, as the user who opened it) and every range
+locked again (`LOCK` with `reclaim`), then `RECLAIM_COMPLETE`. A
+`CLOSE` of an owner's last open of a file unlocks its ranges first
+(4.0 refuses it with `LOCKS_HELD`). One thread recovers; the others
 wait and send again with the stateids then in effect. Every open is
 closed at unmount, then (4.1) `DESTROY_SESSION` and
 `DESTROY_CLIENTID`.
@@ -1724,7 +1735,10 @@ and `QNFSNLMD` are ready (`locks`). `MOUNT` checks the options and
 `CPFA1BB` (value, option), `CPFA1C6`, `CPDA1CA`; an `errno` from the
 mount is `MOUNT`'s usual `errno` message. The NFS options of
 `QZNFNFSO` change nothing in the client: its flavor is always
-`AUTH_SYS` and it maps no `user@domain` names.
+`AUTH_SYS`. The service gives the client no registry yet, so its
+version 4 mounts send and read owners as numbers (wiring
+`QNFSRGYD`'s registry into `ClientEnv::registry` is the service's
+next step).
 
 **Refused by the client**: `bg` and any option not in the table
 (`CPFA1B0`); `sec=` other than `sys`, `vers=2`, `proto=udp` with
@@ -1939,34 +1953,44 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | NFSv3 `JUKEBOX` | never answered |
 | The client: `RPCSEC_GSS`, delegations, pNFS, NFSv4.2, `mknod` of devices and sockets, blocking lock requests | `AUTH_SYS` only; no callback path (no delegation offered; one given anyway is returned); `EXCHGID4_FLAG_USE_NON_PNFS`; minor versions 0 and 1 only; `ENOTSUP`; the IFS polls (section 7.7) |
 | Version 3 locks on a mount of a server whose binder cannot be reached | `ENOLCK` (IBM has no option naming the lock manager's port) |
-| NFSv4 `user@domain` owners seen by the client | UID/GID 65534 (numeric strings are sent and read) |
+| NFSv4 `user@domain` owners seen by a client without a registry | UID/GID 65534 (numeric strings are sent and read) |
 
 ## 11. Tests
 
-- **Built** (`cargo test -p nfs`, the server): `tests/srv3_procs.rs`
-  every NFSv3 procedure and its errors through RPC messages in memory;
-  `srv3_security.rs` root squash, `ROOT=`, `ANON=`, `ANON=-1`,
-  `AUTH_NONE`, an unknown UID, `RO`, `RW=`, `ACCESS=`, `VERS=`,
-  `NOSUID`, the wire's GIDs ignored; `srv3_handles.rs` stale after
-  remove and a new file, handles and exclusive create after a restart
-  (a new `Ifs` over the same `MemBackend`), the export table checked
-  on every call, `XDEV`, the duplicate request cache on `RENAME`, the
-  write verifier across a restart; `srv3_dir.rs` `READDIRPLUS` over
-  2,000 entries while 50 go and 50 come (none twice, none skipped),
-  `BAD_COOKIE`, `TOOSMALL`; `srv3_text.rs` data and path name
-  conversion, a `/QSYS.LIB` export over `MemQsys`; `srv3_mount.rs`;
-  `srv3_net.rs` `mountd` and `nfsd` over loopback TCP and UDP with a
-  binder; `srv3_nlm.rs` conflicts between clients and with a local
-  job, a blocked lock granted by callback, refused grants given back,
+Built and run by `cargo test -p xdrgen -p nfs` (the XDR compiler, every
+generated type's round trip, the RFCs' examples, and the unit tests:
+the attribute bitmaps and codecs, the stable record format, the
+registry and its cache, pseudo handles and trees, ranges and
+identifiers), `cargo test -p ifs` (remote mounts over a `RemoteFs` in
+memory, the daemons' identity, lock owners, handles) and the files
+below. Still to come: the QEMU steps (last item).
+
+- **The server, version 3, MOUNT, NLM, NSM** (`net/nfs/tests/srv3_*`):
+  `srv3_procs.rs` every NFSv3 procedure and its errors through RPC
+  messages in memory; `srv3_security.rs` root squash, `ROOT=`, `ANON=`,
+  `ANON=-1`, `AUTH_NONE`, an unknown UID, `RO`, `RW=`, `ACCESS=`,
+  `VERS=`, `NOSUID`, the wire's GIDs ignored; `srv3_handles.rs` stale
+  after remove and a new file, handles and exclusive create after a
+  restart (a new `Ifs` over the same `MemBackend`), the export table
+  checked on every call, `XDEV`, the duplicate request cache on
+  `RENAME`, the write verifier across a restart; `srv3_dir.rs`
+  `READDIRPLUS` over 2,000 entries while 50 go and 50 come (none twice,
+  none skipped), `BAD_COOKIE`, `TOOSMALL`; `srv3_text.rs` data and path
+  name conversion, a `/QSYS.LIB` export over `MemQsys`;
+  `srv3_mount.rs`; `srv3_net.rs` `mountd` and `nfsd` over loopback TCP
+  and UDP with a binder; `srv3_stop.rs` a daemon ending at once when
+  the binder is gone; `srv3_fdshare.rs` one thread's kept write
+  descriptor giving way to another thread's NLM `SHARE` denying
+  writes; `srv3_nlm.rs` conflicts between clients and with a local job,
+  a blocked lock granted by callback, refused grants given back,
   cancel, grace and reclaim, shares, `LOCK_MSG`, version 3, `FREE_ALL`,
   and `nlmd` with `nsmd` over loopback freeing a restarted client's
   locks through `SM_NOTIFY`; `srv3_nsm.rs` the state across starts in
   `/etc/STATD`'s form, local-only monitoring, `SM_SIMU_CRASH`, the
   notices of a start; `srv3_fuzz.rs` the served fuzz entry points.
-  **Design** (below): the client, `nfstest`, QEMU.
-- **Built** (`cargo test -p nfs`, NFSv4): `tests/srv4_compound.rs` the
-  `NULL` procedure, minor version 2, `OP_ILLEGAL` (an unknown number, a
-  4.1 number in 4.0, `OP_ILLEGAL` itself), `BADXDR`, the first error
+- **The server, NFSv4** (`srv4_*`): `srv4_compound.rs` the `NULL`
+  procedure, minor version 2, `OP_ILLEGAL` (an unknown number, a 4.1
+  number in 4.0, `OP_ILLEGAL` itself), `BADXDR`, the first error
   ending the compound, 4.1's position rules and 4.0's operations in
   4.1, the pNFS, `WANT_DELEGATION`, `OPENATTR`, `SET_SSV` and
   `SP4_MACH_CRED` refusals, the pseudo file system with two exports and
@@ -1987,84 +2011,78 @@ Nothing is accepted and ignored. What is not done is refused as below.
   and an NLM client of another job; `srv4_v41.rs` `EXCHANGE_ID`'s
   cases, `CREATE_SESSION`'s sequence and kept reply, slots (the kept
   reply, false retry, misordered, bad slot, uncached, too many
-  operations, a bad session), the current stateid, `CLAIM_FH`, `CLOSE`'s
-  invalid stateid, `TEST_STATEID`, `FREE_STATEID`, `DESTROY_SESSION`,
-  `DESTROY_CLIENTID`, `RECLAIM_COMPLETE`, `BIND_CONN_TO_SESSION`, an
-  administrator's revocation; `srv4_grace.rs` a restart with opens and
-  locks reclaimed by a 4.0 and a 4.1 client, `GRACE`, `NO_GRACE`, the
-  period ending at `RECLAIM_COMPLETE` and at its time, a restart within
-  the period, the stable records; `srv4_deleg.rs` a 4.0 client's
-  callback program on loopback TCP: the `CB_NULL` probe, a read
-  delegation, its recall by another client's open for writing
-  (`DELAY`) and by a local job's write (the IFS break order),
-  `DELEGRETURN`, revocation, `DELEGPURGE`, no delegation without a
-  callback path; `srv4_net.rs` `run::nfsd4` over loopback TCP: version
-  3 on the same port, a 4.1 session whose backchannel is its own
-  connection, a delegation recalled with `CB_SEQUENCE` and `CB_RECALL`
-  on it; `srv4_text.rs` text conversion through an open, a path name in
-  the host's CCSID, a `/QSYS.LIB` export through the pseudo file
-  system; `srv4_fuzz.rs` the `nfs4` entry point over mutated
-  compounds. Unit tests: the attribute bitmaps and codec, the stable
-  record format, the registry and its cache, pseudo handles and trees,
-  ranges and identifiers.
-
-- **Built** (`cargo test -p nfs`, the client): `tests/cli3_calls.rs`
-  every version 3 call and its errors against the server over loopback
-  TCP and UDP, root squashing and the server's authority, the mount's
-  refusals, `port=`/`mountport=` with no binder, `retry=`;
-  `cli3_retry.rs` `soft` timing out after one major timeout (measured),
-  `hard` through a stop and a restart with the not-responding and
-  responding hooks once each and the write verifier changed, `intr`
-  and `nointr`, a closed connection made again, eight threads at once;
-  `cli3_ifs.rs` the whole client through an `Ifs` (data, append,
-  truncate, names, links, 2,000 entries, two jobs on one file,
-  close-to-open, exclusive create, `ro`, `nosuid`, root squashing, a
-  stale handle, `QSYSOPR`'s events once each way, data sent again
-  after a restart); `cli3_locks.rs` locks between two mounts through
-  `nlmd`, the client's `SM_MON` with its tag, the server restarting,
-  the notice through a client-side `nsmd` and `nlmd` to the mounts,
-  reclaim in the grace period, `ENOLCK` without the local monitor;
-  `cli4_client.rs` version 4.1 and 4.0 against a scripted responder
-  (`tests/cli4_common`): the calls, opens, locks between two mounts,
-  `vers=4` falling back, `DELAY`, a lost session, slots under 12
-  threads, the lease, a restart with opens and locks reclaimed; the
-  same scenarios against NFS-6's server are `#[ignore]`d until it
-  exists. The fuzz entry `nfscli` (`client::fuzz`).
-  **Design** (below): v4 server, `nfstest`, QEMU.
-- `cargo test -p xdrgen -p nfs`: the compiler; every generated type's
-  round trip; the RFCs' examples; the server over a `Vfs` in memory and
-  the client against it over loopback (v3, 4.0, 4.1; UDP and TCP; locks;
-  grace and reclaim; `soft` and `hard` against a server that stops).
-- `cargo test -p ifs`: remote mounts over a `RemoteFs` in memory; the
-  daemons' identity; lock owners; handles.
-- `tools/nfstest` (`cargo test --manifest-path tools/nfstest/Cargo.toml`):
-  **built.** `tests/loopback.rs` brings this server up on loopback (a
-  binder over TCP and UDP, `mountd`, `nfsd`, `nlmd`, `nsmd` over an IFS in
-  memory) and runs every NFS 3, MOUNT, NLM and NSM scenario through the
-  command line, with the client's own portmapper and lock manager for
-  `GRANTED`; `probe`, `bench`, and `nlm-grace` in a grace period.
-  `tests/v4_scripted.rs` runs the 4.0 and 4.1 scenarios that need no file
-  data against a responder written for the tests; against this server
-  they wait for `v4/` (ignored). `tests/interop.rs` (ignored): a Linux
-  `nfsd` export (`NFSTEST_LINUX`) and the Linux kernel client mounting
-  this server. The scenarios that fail against the server are the test's
-  `KNOWN` list, each a finding in the README.
-- QEMU (`build test`): two QS/400 guests, one exporting and one
-  mounting, v3 and v4; locks across the guests; the server ended and
-  started with locks reclaimed; a `/QSYS.LIB` export with text
-  conversion; `nfstest` from the host against the guest's export; the
-  guest mounting a Linux `nfsd` export where the host has one (skipped
-  otherwise); 1 GB read and written both ways.
-- Fuzz: `nfsrpc` (record marking, calls, the dispatcher), `nfsrpcb`
+  operations, a bad session), the current stateid, `CLAIM_FH`,
+  `CLOSE`'s invalid stateid, `TEST_STATEID`, `FREE_STATEID`,
+  `DESTROY_SESSION`, `DESTROY_CLIENTID`, `RECLAIM_COMPLETE`,
+  `BIND_CONN_TO_SESSION`, an administrator's revocation;
+  `srv4_grace.rs` a restart with opens and locks reclaimed by a 4.0
+  and a 4.1 client, `GRACE`, `NO_GRACE`, the period ending at
+  `RECLAIM_COMPLETE` and at its time, a restart within the period, the
+  stable records; `srv4_deleg.rs` a 4.0 client's callback program on
+  loopback TCP: the `CB_NULL` probe, a read delegation, its recall by
+  another client's open for writing (`DELAY`) and by a local job's
+  write (the IFS break order), `DELEGRETURN`, revocation,
+  `DELEGPURGE`, no delegation without a callback path; `srv4_net.rs`
+  `run::nfsd4` over loopback TCP: version 3 on the same port, a 4.1
+  session whose backchannel is its own connection, a delegation
+  recalled with `CB_SEQUENCE` and `CB_RECALL` on it; `srv4_text.rs`
+  text conversion through an open, a path name in the host's CCSID, a
+  `/QSYS.LIB` export through the pseudo file system; `srv4_fuzz.rs`
+  the `nfs4` entry point over mutated compounds.
+- **The client** (`cli*`, against the server on loopback through
+  `tests/cli_common`: a binder, `mountd`, `nfsd` or `nfsd4`, `nlmd`,
+  stopped, started and restarted on the same ports): `cli3_calls.rs`
+  every version 3 call and its errors over TCP and UDP, root squashing
+  and the server's authority, the mount's refusals,
+  `port=`/`mountport=` with no binder, `retry=`; `cli3_retry.rs`
+  `soft` timing out after one major timeout (measured), `hard` through
+  a stop and a restart with the not-responding and responding hooks
+  once each and the write verifier changed, `intr` and `nointr`, a
+  closed connection made again, eight threads at once; `cli3_ifs.rs`
+  the whole client through an `Ifs` (data, append, truncate, names,
+  links, 2,000 entries, two jobs on one file, close-to-open, exclusive
+  create, `ro`, `nosuid`, root squashing, a stale handle, `QSYSOPR`'s
+  events once each way, data sent again after a restart);
+  `cli3_locks.rs` locks between two mounts through `nlmd`, the
+  client's `SM_MON` with its tag, the server restarting, the notice
+  through a client-side `nsmd` and `nlmd` to the mounts, reclaim in the
+  grace period, `ENOLCK` without the local monitor; `cli4_client.rs`
+  4.1 and 4.0 against a scripted responder (`tests/cli4_common`: the
+  calls, opens, locks between two mounts, `vers=4` falling back,
+  `DELAY`, a lost session, slots under 12 threads, the lease, a restart
+  reclaimed) and against the real server (the calls and locks, owners
+  through the registry and as numbers without it, the server's instance
+  replaced with an open and a lock held: the client ID and session made
+  again, both reclaimed in the grace period, the lock standing after
+  it); `cli4_ifs.rs` the whole 4.1 and 4.0 client through an `Ifs`
+  against the real server (as `cli3_ifs.rs`, the restart reclaiming the
+  open as its opener); `cli34_mixed.rs` a version 3 and a version 4
+  mount of one export seeing each other's changes, an NLM lock and a v4
+  `LOCK` conflicting both ways. The fuzz entry `nfscli`
+  (`client::fuzz`).
+- **`tools/nfstest`** (`cargo test --manifest-path
+  tools/nfstest/Cargo.toml`, a client written apart from the server):
+  `tests/loopback.rs` brings this server up on loopback (a binder over
+  TCP and UDP, `mountd`, `nfsd`, `nlmd`, `nsmd` over an IFS in memory)
+  and runs every NFS 3, MOUNT, NLM and NSM scenario through the command
+  line, with the client's own portmapper and lock manager for
+  `GRANTED`; `probe`, `bench`, and `nlm-grace` in a grace period; no
+  scenario is in the `KNOWN` list of failures. `tests/v4_scripted.rs`
+  runs the 4.0 and 4.1 scenarios that need no file data against a
+  responder written for the tests and against this server (`nfsd4`).
+  `tests/interop.rs` (ignored): a Linux `nfsd` export (`NFSTEST_LINUX`)
+  and the Linux kernel client mounting this server.
+- **Fuzz**: `nfsrpc` (record marking, calls, the dispatcher), `nfsrpcb`
   (the binder end to end, `/etc/RPCBTAB`), `nfsmount`, `nfsnlm` (and
   NSM), `nfs3`, `nfs4` (the compound and the callback compound), each a
   decode, encode and decode again that must agree (`nfs::fuzzing`);
-  `exports`. `nfsmount`, `nfsnlm`, `nfsnsm`, `nfs3` and `nfs4` also send
-  the input as a call to the server over an IFS in memory
-  (`nfs::fuzzing::server`; `nfs4` with a short lease and no callbacks,
-  and the server's reading of a `CB_COMPOUND` reply): a reply's results
-  must decode. Without instrumentation, `net/nfs/tests/wire_fuzz.rs` runs
-  the same entry points over random and mutated input.
+  `exports`; `nfscli` (what a server answers the client). `nfsmount`,
+  `nfsnlm`, `nfsnsm`, `nfs3` and `nfs4` also send the input as a call
+  to the server over an IFS in memory (`nfs::fuzzing::server`; `nfs4`
+  with a short lease and no callbacks, and the server's reading of a
+  `CB_COMPOUND` reply): a reply's results must decode. Without
+  instrumentation, `net/nfs/tests/wire_fuzz.rs` runs the same entry
+  points over random and mutated input.
 - **Built** (the daemon jobs, `cargo test -p qsjob work::nfs`, Linux):
   `work/qsjob/src/work/nfs/tests.rs` runs each daemon's `lifecycle`
   over a registry double and an IFS in memory, serving real RPC on
@@ -2097,6 +2115,12 @@ Nothing is accepted and ignored. What is not done is refused as below.
   the ready lock manager and every ready server job, dropped with them.
   `cargo test -p nfs --lib registry`: owners as numbers with the mapping
   off.
+- **QEMU** (`build test`), still to come: two QS/400 guests, one
+  exporting and one mounting, v3 and v4; locks across the guests; the
+  server ended and started with locks reclaimed; a `/QSYS.LIB` export
+  with text conversion; `nfstest` from the host against the guest's
+  export; the guest mounting a Linux `nfsd` export where the host has
+  one (skipped otherwise); 1 GB read and written both ways.
 
 ### 11.1 Proving a v3 mount under QEMU
 
