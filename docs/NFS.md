@@ -555,11 +555,11 @@ one is made (the client applied its own).
   in a call (`ifsvfs::jobfds`: the threads of one server start share a
   registry; a thread marks itself busy for the length of a call), and
   tries once more; every call also closes the other idle threads'
-  descriptors unused past their time. A local job's
-  open that a kept descriptor refuses waits for that time at most (5
-  seconds) or for any call of the job; an IFS lease per kept
-  descriptor, broken by the local open, would end that wait at once
-  (a daemon news loop for the v3 job is needed for it).
+  descriptors unused past their time (5 seconds). A local job's open
+  that an idle thread's kept descriptor refuses is still refused until
+  the job's next call after that time; an IFS lease per kept
+  descriptor, broken by the local open, would end it at once (it needs
+  a news loop in the version 3 daemon job).
 - An open's number is its descriptor, the job's, so any thread of the
   job may close it (NLM `UNSHARE` on another connection).
 - Byte-range locks are held by sub-owners through descriptors of the
