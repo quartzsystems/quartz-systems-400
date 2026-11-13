@@ -11,11 +11,13 @@
 //! and shares go, and the job log says so.
 
 use std::cell::OnceCell;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
 use ifscmd::Msg;
-use nfs::nlm::state::{GRACE, LockClient, NlmConfig, NlmState};
+use nfs::client::nlm::PRIV_TAG;
+use nfs::nlm::state::{GRACE, Lock, LockClient, NlmConfig, NlmState, Reply};
 use nfs::rpc::ClientConfig;
 use nfs::server::news::{ClientNews, NewsSource};
 use nfs::server::run::{self, Common};
@@ -51,13 +53,40 @@ fn config<H: Host>(host: &H) -> NlmConfig {
     }
 }
 
-/// The mounting client's side of this lock manager (`NlmState::set_client`):
-/// what a server this system mounts sends back, its restart notices among
-/// them. None yet: `NLM_GRANTED` to this host is then `DENIED` and the
-/// `_RES` messages `PROC_UNAVAIL` (docs/NFS.md section 5.8).
-fn lock_client<H: Host>(_host: &Arc<H>) -> Option<Arc<dyn LockClient>> {
-    // BLOCKED(rel): the NFS client's restart notices through the lock manager (NFS-7): a LockClient whose restarted() sends NfsOp::ServerRestarted for a notice tagged nfs::client::nlm::PRIV_TAG.
-    None
+/// The mounting client's side of this lock manager
+/// (`NlmState::set_client`): a server this system mounts restarted (the
+/// notice from this system's monitor carries the client's tag), so the
+/// service tells the client's mounts of it, which reclaim their locks
+/// (`NfsOp::ServerRestarted`). The client calls its servers
+/// synchronously and waits for no grant: `NLM_GRANTED` to this host is
+/// `DENIED`, an `_RES` message is dropped (and reported).
+pub struct JobLockClient<H: Host> {
+    host: Arc<H>,
+}
+
+impl<H: Host> LockClient for JobLockClient<H> {
+    fn granted(&self, _peer: SocketAddr, _exclusive: bool, _lock: &Lock) -> bool {
+        false
+    }
+    fn result(&self, peer: SocketAddr, procedure: u32, _res: &Reply) {
+        eprintln!("qsjob: QNFSNLMD: NLM result {procedure} from {peer}: no call waits for it");
+    }
+    fn restarted(&self, mon_name: &[u8], state: i32, private: [u8; 16]) {
+        if private != PRIV_TAG {
+            return;
+        }
+        self.host.op(NfsOp::ServerRestarted {
+            name: String::from_utf8_lossy(mon_name).into_owned(),
+            state,
+        });
+    }
+}
+
+/// The lock client this lock manager tells.
+pub fn lock_client<H: Host>(host: &Arc<H>) -> Arc<dyn LockClient> {
+    Arc::new(JobLockClient {
+        host: Arc::clone(host),
+    })
 }
 
 /// Carry out the release orders queued for this job.
@@ -102,9 +131,7 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, _started: Started, host: &Arc<H>
         return Serve::Unavailable(f);
     }
     let state = NlmState::new(config(&**host));
-    if let Some(c) = lock_client(host) {
-        state.set_client(c);
-    }
+    state.set_client(lock_client(host));
     let instance = Arc::new(Instance::new());
     let h = Arc::clone(host);
     let (st, inst) = (Arc::clone(&state), Arc::clone(&instance));
