@@ -25,7 +25,8 @@ end says what is built and proven.
   (section 12).
 - Things the handoff guessed that IBM does not have, and QS/400
   therefore does not add: `STRNFSSVR RETRY()`, `CHGNFSA`, `WRKNFSEXP`,
-  `/etc/rpcbind`, `/etc/fstab`, `QIBM_QSTRTNFS`, a `QSYS2` NFS service.
+  `/etc/rpcbind`, `/etc/fstab`, `QIBM_QSTRTNFS`, an IBM `QSYS2` NFS service
+  (the two views below are QS/400's own).
   IBM has, and QS/400 adds, `STRNFSSVR RTVRPCREG()` and `SERVER(*GSS)`
   (refused, section 10), `RPCBIND`, `ENDRPCBIND`, `/etc/RPCBTAB`,
   `/etc/STATD`, `/etc/netconfig`, `/etc/vfs`, and the APIs `QZNFRTVE` and
@@ -56,8 +57,8 @@ end says what is built and proven.
 | Jobs | `work/qsjob/src/work/nfs/` | `QNFSRPCD`, `QNFSNFSD`, `QNFSMNTD`, `QNFSNLMD`, `QNFSNSMD`, `QNFSBIOD`, `QNFSRGYD`, implementing `Vfs` over the job's IFS client |
 | Commands | `command/sys-cpps/cmds/`, `lic/slic/src/cpp/nfscmd.rs`, `work/qsjob/src/command/nfs.rs` | section 8 |
 | APIs | `runtime/sysapi/src/nfs.rs` | `QZNFRTVE`, `QZNFNFSO` |
-| SQL | `database/sql/src/exec/catalog/services/nfs.rs` | `QSYS2.NFS_EXPORT_INFO`, `QSYS2.MOUNTED_FS_INFO`; the NFS ports in `NETSTAT_*` |
-| Navigator, QAP | `net/navigator/src/routes/nfs/`, `work/qap-proto/src/ops/nfs.rs` | NFS Exports and Mounts pages; the `Nfs` service in the next draft version |
+| SQL | `database/sql/src/exec/catalog/services/nfs.rs`, `lic/slic/src/stgsvc/nfs/sql.rs` | **Built.** `QSYS2.NFS_EXPORT_INFO`, `QSYS2.MOUNTED_FS_INFO` (section 8.3); the NFS ports in `NETSTAT_*` need nothing of their own |
+| Navigator, QAP | `net/navigator/src/routes/nfs/`, `work/qsjob/src/work/httpnav/nfs.rs`; `work/qap-proto/src/ops/nfs.rs`, `net/qapd/src/nfs.rs`, `work/qsjob/src/work/qap/nfs.rs` | **Built.** NFS Exports, Servers and Mounts pages; the `Nfs` service, 13, of QAP version 11 (draft) (section 8.3) |
 | Test client | `tools/nfstest` | scenarios against a server over loopback or a forwarded port |
 
 Dependencies point one way: `xdrgen` knows nothing; `nfs` depends on
@@ -1088,8 +1089,30 @@ running, and `NFSSVRLCK(*YES)` with it running, the request to it
   that is not the option's is `CPF3C21`, an option not 1 to 6
   `CPF3C3C`.
 
-`QSYS2.NFS_EXPORT_INFO` and `QSYS2.MOUNTED_FS_INFO` are QS/400's views of
-the export table and the mount table **(design, a later wave)**.
+### 8.3 SQL, Navigator, QAP
+
+- **SQL.** `QSYS2.NFS_EXPORT_INFO` and `QSYS2.MOUNTED_FS_INFO` are
+  QS/400's views of the export table and the mount table
+  (`database/sql/src/exec/catalog/services/nfs.rs`, the shapes in
+  `services/shapes_qs400.txt`, the rows from `stgsvc/nfs/sql.rs` through
+  `SqlHost`); their columns are `docs/SQL.md` section 9's. An export is
+  one row per host option, or one row with the host columns null.
+  `MOUNTED_FS_INFO` is the service's IFS mount table, `statvfs` read
+  for the local file systems only (a remote one's would wait). The
+  daemons' sockets need nothing more: `NETSTAT_INFO` and
+  `NETSTAT_JOB_INFO` (and `NETSTAT`'s panels) list every socket the
+  kernel has, with the job holding it, so a listening `QNFSNFSD` shows
+  2049 and the binder 111 as any server's ports do.
+- **Navigator.** Network > NFS (`net/navigator/src/routes/nfs/`, the
+  environment `src/env/nfs.rs`, live in
+  `work/qsjob/src/work/httpnav/nfs.rs`): `/nfs` the exports, with Add,
+  Properties, Remove and Export all; `/nfs/servers` the daemons, Start
+  and End of each type or all; `/nfs/mounts` the mount table, Mount and
+  Unmount. Every change is the command itself (`EXPORTFS`, `STRNFSSVR`,
+  `ENDNFSSVR`, `MOUNT TYPE(*NFS)`, `UNMOUNT TYPE(*NFS)`) run through the
+  analyzer as the signed-on user, its messages shown as the command's.
+- **QAP.** The `Nfs` service, 13, of version 11 (draft; docs/QAP.md
+  "Service 13 `Nfs`").
 
 ## 9. Security mapping
 
