@@ -81,7 +81,7 @@ impl<C: IfsClient> IfsVfs<C> {
                 Err(e) => Err(Fail::from(e)),
             }
         })?;
-        Ok(self.new_open(fd))
+        Ok(Self::new_open(fd))
     }
 
     #[allow(clippy::too_many_arguments)]

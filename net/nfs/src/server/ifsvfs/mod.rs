@@ -96,8 +96,6 @@ pub struct IfsVfs<C: IfsClient> {
     instance: Arc<Instance>,
     fds: RefCell<FdCache>,
     roots: RefCell<HashMap<u32, (FileId, String)>>,
-    opens: RefCell<HashMap<u64, i32>>,
-    next_open: std::cell::Cell<u64>,
 }
 
 impl<C: IfsClient> std::fmt::Debug for IfsVfs<C> {
@@ -119,8 +117,6 @@ impl<C: IfsClient> IfsVfs<C> {
             instance,
             fds: RefCell::new(FdCache::new(cfg.fds, cfg.idle)),
             roots: RefCell::new(HashMap::new()),
-            opens: RefCell::new(HashMap::new()),
-            next_open: std::cell::Cell::new(1),
         }
     }
 
@@ -244,7 +240,7 @@ impl<C: IfsClient> IfsVfs<C> {
 
     /// A descriptor failed: it is not kept.
     pub(crate) fn drop_fd(&self, fd: i32) {
-        if self.fds.borrow_mut().forget(fd) {
+        if self.fds.borrow().holds(fd) {
             let _ = self.base.close(fd);
         }
     }
@@ -253,11 +249,10 @@ impl<C: IfsClient> IfsVfs<C> {
         self.instance.verf()
     }
 
-    pub(crate) fn new_open(&self, fd: i32) -> u64 {
-        let n = self.next_open.get();
-        self.next_open.set(n + 1);
-        self.opens.borrow_mut().insert(n, fd);
-        n
+    /// An open's number: its descriptor, the job's, so any thread of the
+    /// job may end it.
+    pub(crate) fn new_open(fd: i32) -> u64 {
+        u64::from(fd.cast_unsigned())
     }
 }
 
@@ -302,8 +297,6 @@ pub(crate) fn node_of(r: &Req, st: &Stat) -> Node {
 impl<C: IfsClient> Drop for IfsVfs<C> {
     fn drop(&mut self) {
         self.flush();
-        let opens: Vec<i32> = self.opens.borrow_mut().drain().map(|(_, fd)| fd).collect();
-        self.close_all(&opens);
     }
 }
 
@@ -382,7 +375,11 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
         self.do_open(r, fh, access, deny)
     }
     fn close(&self, open: u64) -> VResult<()> {
-        let fd = self.opens.borrow_mut().remove(&open).ok_or(VfsError::Inval)?;
+        let fd = i32::try_from(open).map_err(|_| VfsError::Inval)?;
+        if self.fds.borrow().holds(fd) {
+            // A kept descriptor is not an open of this kind.
+            return Err(VfsError::Inval);
+        }
         self.base.close(fd).map_err(VfsError::from)
     }
     fn lock(&self, r: &Req, fh: &FileHandle, sub: u64, kind: LockKind, start: u64, len: u64, wait: bool) -> VResult<LockOutcome> {

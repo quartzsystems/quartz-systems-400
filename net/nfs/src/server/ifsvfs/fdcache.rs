@@ -90,6 +90,12 @@ impl FdCache {
         self.map.len() != before
     }
 
+    /// Whether `fd` is kept here.
+    #[must_use]
+    pub fn holds(&self, fd: i32) -> bool {
+        self.map.values().any(|e| e.0 == fd)
+    }
+
     /// Those unused since before `now - idle`: to close.
     pub fn expire(&mut self, now: Instant) -> Vec<i32> {
         let idle = self.idle;
