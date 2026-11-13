@@ -168,7 +168,7 @@ is not used through forwards. The 1 GB run is `nfstest bench ... --mib
 What the loopback run found in the server (in `KNOWN` until fixed;
 none is now):
 
-- `nlm-share` (fixed):  an NLM `SHARE` with deny-write of a file the same client
+- `nlm-share` (fixed): an NLM `SHARE` with deny-write of a file the same client
   has just written through NFS version 3 is `NLM4_DENIED`, and stays
   denied while the writing connection is idle; one more NFS call on that
   connection and it is granted. The `nfsd` thread's cached write
