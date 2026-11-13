@@ -4,8 +4,8 @@
 
 //! The encoder: XDR into a `Vec<u8>`, padding with zeros to 4 bytes.
 
-use super::error::{Error, Result};
 use super::Xdr;
+use super::error::{Error, Result};
 
 /// XDR into a growing buffer.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -87,10 +87,13 @@ impl Encoder {
 
     /// A length checked against `max`.
     fn put_len(&mut self, len: usize, max: u32) -> Result<()> {
-        let n = u32::try_from(len).ok().filter(|n| *n <= max).ok_or(Error::TooLong {
-            len: len as u64,
-            max,
-        })?;
+        let n = u32::try_from(len)
+            .ok()
+            .filter(|n| *n <= max)
+            .ok_or(Error::TooLong {
+                len: len as u64,
+                max,
+            })?;
         self.put_u32(n);
         Ok(())
     }
@@ -111,7 +114,10 @@ impl Encoder {
     /// A fixed-length array of exactly `n` items.
     pub fn put_fixed_array<T: Xdr>(&mut self, v: &[T], n: u32) -> Result<()> {
         if u32::try_from(v.len()).ok() != Some(n) {
-            return Err(Error::FixedLength { len: v.len(), want: n });
+            return Err(Error::FixedLength {
+                len: v.len(),
+                want: n,
+            });
         }
         v.iter().try_for_each(|x| x.encode(self))
     }

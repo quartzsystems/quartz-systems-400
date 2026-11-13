@@ -689,8 +689,8 @@ enum nfs_lock_type4 {
 
 enum ssv_subkey4 {
     SSV4_SUBKEY_MIC_I2T = 1,
-    SSV4_SUBKEY_SEAL_I2T = 2,
-    SSV4_SUBKEY_MIC_T2I = 3,
+    SSV4_SUBKEY_MIC_T2I = 2,
+    SSV4_SUBKEY_SEAL_I2T = 3,
     SSV4_SUBKEY_SEAL_T2I = 4
 };
 

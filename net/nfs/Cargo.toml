@@ -11,6 +11,7 @@ ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
+socket2 = "=0.6.5"
 
 [build-dependencies]
 xdrgen = { path = "../xdrgen", version = "0.1.0" }

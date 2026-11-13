@@ -6,9 +6,9 @@
 //! is trusted: each is checked against its bound and the bytes left
 //! before anything is allocated. Structs and unions count their depth.
 
+use super::Xdr;
 use super::encode::pad_len;
 use super::error::{Error, Result};
-use super::Xdr;
 
 /// How deeply items may nest by default.
 pub const MAX_DEPTH: u32 = 64;
@@ -87,10 +87,14 @@ impl<'a> Decoder<'a> {
 
     /// `n` bytes as they are.
     pub fn get_raw(&mut self, n: usize) -> Result<&'a [u8]> {
-        let end = self.pos.checked_add(n).filter(|e| *e <= self.buf.len()).ok_or(Error::Short {
-            need: n as u64,
-            left: self.remaining(),
-        })?;
+        let end = self
+            .pos
+            .checked_add(n)
+            .filter(|e| *e <= self.buf.len())
+            .ok_or(Error::Short {
+                need: n as u64,
+                left: self.remaining(),
+            })?;
         let b = self.buf.get(self.pos..end).unwrap_or_default();
         self.pos = end;
         Ok(b)

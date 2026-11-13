@@ -24,6 +24,7 @@ command sequence that settles it.
 |---|---|---|
 | `cmdd71/*.xml` | `QCDRCMDD` through JTOpen's `Command.getXML` on the primary | the definitions of `STRNFSSVR`, `ENDNFSSVR`, `EXPORTFS`/`CHGNFSEXP`, `MOUNT`/`ADDMFS`, `UNMOUNT`/`RMVMFS`, `DSPMFSINF`/`STATFS`, `RLSIFSLCK`, `RPCBIND`, `ENDRPCBIND`, `CVTRPCSRC`/`RPCGEN` |
 | `messages.txt` | `MessageFile.getMessage` per ID over `CPFA1xx`, `CPDA1xx`, `CPIA1xx`, `CPCA1xx` | the IDs and severities that concern NFS, RPC, mounts and locks. IBM's text is not kept |
+| `etc/RPCBTAB.bin` | the probe's read of `/etc/RPCBTAB` on the primary | the 24 records as IBM wrote them (8568 bytes); `net/nfs`'s `RPCBTAB` codec reads and writes them byte for byte |
 | `objects-primary.txt` | `DSPOBJD OBJ(QSYS/*ALL)` filtered | the commands, menus, daemon programs (`QZNF*`), job descriptions and classes, `QNFSANON` |
 | `../qsysinc/H/QZNFRTVE.txt`, `QZNFNFSO.txt` | `QSYSINC/H` on pub400 | the two NFS APIs: Retrieve NFS Export Information (`EXPE0100`, `EXPE0200`) and Perform NFS Options (`NFOP0100`-`NFOP0301`) |
 | `uids-primary.txt` | `probes/UidProbe.java` (JTOpen `User.getUserID`, `getGroupID`, `getStatus`) on the primary | the UID, GID and status of every shipped profile: `QSECOFR` 0, `QSYS` 101, `QDFTOWN` 102, `QTMPLPD` 103, the others fixed numbers from 4294770688 up (`QNFSANON` 4294770710); no shipped profile has a GID. Also found there: a UID in use is `CPF22CE` (`&1` is `UID` or `GID`, `&2` the number), `QSECOFR`'s UID cannot change (`CPF224C`) |
