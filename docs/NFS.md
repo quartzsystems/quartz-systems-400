@@ -2331,6 +2331,6 @@ an oracle change the rules forbid.
 | Fuzz targets `nfsrpc`, `nfsrpcb`, `nfsmount`, `nfsnlm`, `nfsnsm`, `nfs3`, `nfs4`, `nfsexports`, `nfscli` | `cargo run -p build -- fuzz --target NAME`; the same entry points over random input in `wire_fuzz`, `srv3_fuzz`, `srv4_fuzz` | registered; the instrumented runs not run |
 | QEMU: two guests exporting and mounting (v3, v4), locks across guests, crash and reclaim, `/QSYS.LIB` text conversion, `nfstest` from the host, handles across a restart and an IPL | `build test` steps 173 to 185 (section 11) | run and passing (177 skipped: no Linux export on this host) |
 | Performance: 1 GB read and written both ways under QEMU | section 11 (steps 176, 184) | measured |
-| A slip install from V1R1M0 with the NFS objects | install step 10 | not run since NFS |
+| A slip install from V1R1M0 with the NFS objects | install step 10 (`QSYSWRK` routing entries 2120 to 2127 added, `QNFSANON` and `QSYS` with their shipped UIDs) | run and passing |
 | A Linux and a macOS client; QS/400 mounting a Linux `nfsd`; an export to the Dell host | section 12 | `NEEDS-CODY` |
 | IBM's daemon user and `WRKACTJOB` appearance, `/etc/exports` with `HOSTOPT`, the routing entries' classes, a disabled profile's UID | section 12 | `NEEDS-CODY` |
