@@ -202,6 +202,23 @@ impl DaemonEnv for JobEnv<'_> {
     }
 }
 
+/// The `nfs` crate's notes at `INFO` and above (a status monitor's
+/// notices and callbacks, a host not reached) to standard error: the
+/// serial console.
+fn log_to_console() {
+    use tracing_subscriber::filter::{LevelFilter, Targets};
+    use tracing_subscriber::prelude::*;
+    let layer = tracing_subscriber::fmt::layer()
+        .with_writer(std::io::stderr)
+        .with_ansi(false)
+        .without_time();
+    let only = Targets::new().with_target("nfs", LevelFilter::INFO);
+    let _ = tracing_subscriber::registry()
+        .with(layer)
+        .with(only)
+        .try_init();
+}
+
 /// The daemon `program` runs, as its routing entry calls it.
 pub fn run(c: &mut Console, link: &Shared, daemon: Daemon, number: u32) -> u16 {
     stg::remote::status(link, Status::Run, &format!("PGM-{}", daemon.program()));
@@ -213,6 +230,7 @@ pub fn run(c: &mut Console, link: &Shared, daemon: Daemon, number: u32) -> u16 {
         env.log(&Msg::new("CPFA1BC").chars("*GSS", 8), MsgType::Diag);
         return 20;
     }
+    log_to_console();
     let host = match JobHost::start(number, daemon.job_name()) {
         Ok(h) => Arc::new(h),
         Err(e) => {

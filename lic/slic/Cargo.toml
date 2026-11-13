@@ -66,6 +66,7 @@ spool = { path = "../../work/spool", version = "0.1.0" }
 print = { path = "../../work/print", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
+tracing-subscriber.workspace = true
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 cl = { path = "../../command/cl", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }

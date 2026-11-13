@@ -3897,6 +3897,7 @@ dependencies = [
  "tcpcfg",
  "tls",
  "tn5250",
+ "tracing-subscriber",
  "ublk",
  "uim",
  "uuid",

@@ -754,7 +754,11 @@ The duplicate request cache keeps `SETATTR`, `CREATE`, `MKDIR`,
 - Calls out go through `server::locate::Locator` (the client's NLM at
   its address, the local NSM at `127.0.0.1`, a monitored host's NSM by
   name): `BinderLocator` asks the host's port 111; tests use
-  `FixedLocator`. The client calls are `nlm::call` and `nsm::call`.
+  `FixedLocator`. The daemon jobs use `SystemLocator`
+  (`work/qsjob/src/work/nfs/host.rs`): a name through the host table and
+  the name servers of `CFGTCP` (the C library's resolver knows neither),
+  then `BinderLocator` at the address. The client calls are `nlm::call`
+  and `nsm::call`.
 
 ### 5.9 The daemons' loops, and what NFSv4 shares
 

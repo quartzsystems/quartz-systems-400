@@ -120,6 +120,7 @@ pub fn run() -> ! {
     };
     let mut system = System::new(Outputs::open(), Boot::read());
     system.role = Role::Storage;
+    nfs::log_to_console();
     let opened = open(&mut system, &start).and_then(|text| {
         // The descriptions in QSYS, QTIMZON moved from a V1R0M0 name.
         timzon::after_install(&mut system);

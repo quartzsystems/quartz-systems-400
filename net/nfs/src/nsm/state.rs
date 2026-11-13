@@ -249,6 +249,13 @@ impl NsmState {
             .filter(|m| same_host(&m.mon_name, name) || m.mon_name == ip.as_bytes())
             .cloned()
             .collect();
+        tracing::info!(
+            host = %String::from_utf8_lossy(name),
+            %peer,
+            state,
+            callbacks = hit.len(),
+            "a monitored host restarted"
+        );
         for m in &hit {
             self.call_back(m, state);
         }
@@ -300,6 +307,9 @@ impl NsmState {
             }
             left.retain(|name| !self.notify_one(name, state));
         }
+        for name in &left {
+            tracing::warn!(host = %String::from_utf8_lossy(name), "a host was not told of this restart");
+        }
         left
     }
 
@@ -309,7 +319,12 @@ impl NsmState {
         let Some(addr) = self.cfg.locator.find(&host, SM_PROG::NUMBER, 1, Proto::Udp) else {
             return false;
         };
-        super::call::sm_notify(addr, &self.cfg.rpc, self.cfg.me.as_bytes(), state).is_ok()
+        let told =
+            super::call::sm_notify(addr, &self.cfg.rpc, self.cfg.me.as_bytes(), state).is_ok();
+        if told {
+            tracing::info!(host = %String::from_utf8_lossy(name), %addr, state, "told of this restart");
+        }
+        told
     }
 }
 
