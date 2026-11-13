@@ -7,9 +7,9 @@ table, the server and the client) and `tools/nfstest` (the test client).
 TYPE(*NFS)` mounts a remote export into the IFS, with IBM's commands,
 daemon jobs and `/etc/exports`. Target release V1R2M0.
 
-This document is the contract between the parts. Sections marked
-**(design)** are decided and not yet built; the acceptance table at the
-end says what is built and proven.
+This document is the contract between the parts and the record of
+what was built; the acceptance table at the end says what is proven
+and what still waits for a run.
 
 ## 1. What the oracles settled
 
@@ -38,7 +38,7 @@ end says what is built and proven.
   same: nothing starts NFS at IPL unless `QSTRUP` is changed; exports
   made by `EXPORTFS` without `-A` last until the next IPL, as do mounts.
 
-## 2. Pieces and where they live **(design)**
+## 2. Pieces and where they live
 
 | Piece | Where | Holds |
 |---|---|---|
@@ -2200,3 +2200,47 @@ Each line says what would settle it.
   all eight with `QSYSCLS20`'s values.
 - A Linux and a macOS client mounting a QS/400 export (v3, 4.0, 4.1),
   and QS/400 mounting a Linux export; an export to the Dell host.
+
+## Acceptance
+
+Status on 2026-11-13. "Built" means built and proven by the tests
+named, run on the Windows host. "Built, not run" means the code and
+its tests are written and lint clean for the musl target but the
+tests are Linux-only and have not run: the build host's WSL disk was
+full for the second half of this handoff, so nothing ran under Linux
+or QEMU after the first wave. `NEEDS-CODY` items need a real client or
+an oracle change the rules forbid.
+
+| Item | Proof | Status |
+|---|---|---|
+| Oracle facts: commands, prompts, menus, messages with their variable formats, objects, `/etc` files, `DSPMFSINF` display and listing, the APIs' headers, shipped UIDs | `tools/conformance/oracle/nfs/`, `tools/conformance/golden/nfs/` | done |
+| XDR compiler; descriptions of RPC, the binder, MOUNT, NFS 3, NLM, NSM, NFS 4.0/4.1; the runtime's limits | `cargo test -p xdrgen`, `-p nfs --test wire_vectors --test wire_fuzz` | built |
+| ONC RPC: record marking, `AUTH_NONE`/`AUTH_SYS`, `RPCSEC_GSS` refused, dispatcher, duplicate request cache, client over TCP and UDP | `--test wire_rpc` | built |
+| The binder (portmap 2, rpcbind 3/4), `/etc/RPCBTAB` byte for byte with the primary's | `--test wire_rpcb` | built |
+| Commands: 13 definitions as the primary's XML, 51 prompt screens, menus `CMDNFS`/`CMDMFS`/`CMDRPC` | `cargo test -p sys-cpps --test nfs_prompts`, `-p menus` | built (rows 1 to 23; row 24 holds IBM's message text) |
+| Messages: 90 IDs with IBM's severities and variables, Quartz text; help at 100%; no new literals | `cargo test -p msgf -p helpaudit`, `cargo run -p textaudit` | built |
+| `/etc/exports`, `/etc/netgroup`, `EXPORTFS` flags, `MOUNT` options, host matching | `cargo test -p nfs --lib exports` | built; IBM's `HOSTOPT` file syntax `NEEDS-CODY` |
+| Export table, daemon registry, NFS options file, `EXPORTFS`/`CHGNFSEXP` | `cargo test -p stg --test nfs_link`; `cargo test -p slic stgsvc::nfs` | link built; service tests built, not run |
+| `DSPMFSINF`/`STATFS` display and listing | `cargo test -p uim --test nfs_panels` | built; an NFS mount's fields `NEEDS-CODY` |
+| `QZNFRTVE`, `QZNFNFSO` | `cargo test -p sysapi --test nfs` | built |
+| IFS: calls as another user, file IDs across restarts, sub-owner and waiting locks, share modes across jobs | `cargo test -p ifs --test server_calls --test handles`, `-p stg --test ifs_server` | built |
+| File IDs by xfs handle (`ifs/fhandle`) | `cargo test -p fhandle`; `ifs/ifs/tests/linux-xfs.sh` | fallback built; the xfs path needs root, not run |
+| Shipped profiles' UIDs, unique UID and GID, the upgrade | `cargo test -p sec --test usrprf` | built |
+| IFS remote mounts: cache, queue, request tokens, every operation, hard/soft/intr, write-behind, unmount | `cargo test -p ifs --test remote_mount --test remote_ops --test remote_fail --test remote_cache --test remote_data`, `-p stg --test ifs_remote`, `-p ifscmd` | built; the service's park and wake of remote waits (`turns.rs`) not run |
+| NFSv3 server (22 procedures), MOUNT 1/3, NLM 1/3/4, NSM over the IFS; exports' security; handles; text conversion; `/QSYS.LIB` | `cargo test -p nfs` (`srv3_*`) | built |
+| NFSv4.0 and 4.1 server: compound, attributes, pseudo-file system, state, delegations, sessions and backchannel, grace and reclaim | `cargo test -p nfs` (`srv4_*`) | built |
+| Kept descriptors yield to share-denying opens (other clients at once; local jobs through a lease) | `--test srv3_fdshare --test srv3_kept` | built |
+| NFS client v3, 4.0, 4.1 against the servers on loopback and through an `Ifs`; restart and reclaim; v3 and v4 mounts of one export | `cargo test -p nfs` (`cli3_*`, `cli4_*`, `cli34_mixed`) | built |
+| `MOUNT TYPE(*NFS)` in the service: the factory, option checks, owners through the registry | `cargo test -p slic stgsvc::nfs::client stgsvc::nfs::ids` | built, not run |
+| The daemon jobs serve (binder, server with relay and v4, mount, NLM, NSM, BIOD, RGY), start and end, unexpected end, `RLSIFSLCK` orders, restart notices | `cargo test -p qsjob work::nfs` (17 tests) | built, not run |
+| `tools/nfstest`: independent client, about 90 scenarios, `probe`, `bench` | `cargo test --manifest-path tools/nfstest/Cargo.toml` (v3, NLM, NSM, 4.0, 4.1 against the servers on loopback, no known failure) | built |
+| `QSYS2.NFS_EXPORT_INFO`, `QSYS2.MOUNTED_FS_INFO`; NFS ports in `NETSTAT_*` | `cargo test -p sql --test services` | built in memory; NETSTAT by the kernel's socket table, not run |
+| Navigator Network > NFS | `cargo test -p navigator --test nfs`, the crawler | built; the live side not run |
+| QAP version 11 draft, `Nfs` service | `cargo test -p qap-proto --test version11`, `-p qapd --test nfs` | built, draft |
+| Formats frozen at V1R2M0: `nfs-options`, `nfs-nsm-monitor`, `nfs-v4-stable` | `cargo run -p fmtcheck` | built |
+| Fuzz targets `nfsrpc`, `nfsrpcb`, `nfsmount`, `nfsnlm`, `nfsnsm`, `nfs3`, `nfs4`, `nfsexports`, `nfscli` | `cargo run -p build -- fuzz --target NAME`; the same entry points over random input in `wire_fuzz`, `srv3_fuzz`, `srv4_fuzz` | registered; the instrumented runs not run |
+| QEMU: two guests exporting and mounting (v3, v4), locks across guests, crash and reclaim, `/QSYS.LIB` text conversion, `nfstest` from the host | `build test` steps 173 onward (section 11) | not run |
+| Performance: 1 GB read and written both ways under QEMU | section 11 | not run |
+| A slip install from V1R1M0 with the NFS objects | install step 10 | not run since NFS |
+| A Linux and a macOS client; QS/400 mounting a Linux `nfsd`; an export to the Dell host | section 12 | `NEEDS-CODY` |
+| IBM's daemon user and `WRKACTJOB` appearance, `/etc/exports` with `HOSTOPT`, the routing entries' classes, a disabled profile's UID | section 12 | `NEEDS-CODY` |
