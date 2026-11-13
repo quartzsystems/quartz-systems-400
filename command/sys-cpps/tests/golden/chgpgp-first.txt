@@ -1,14 +1,15 @@
-                         Change Primary Group (CHGPGP)                          
+                          Change Primary Group (CHGPGP)                         
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
  Object . . . . . . . . . . . . . > '/home/qstest'                              
+                                                                                
  New primary group  . . . . . . . > DEV           Name, *NONE                   
- New data authority . . . . . . .   *OLDPGP       Number, *OLDPGP, *PRIVATE...  
- New object authority . . . . . .   *NONE         Number, *NONE, *ALL...        
+ New data authority . . . . . . .   *OLDPGP       *OLDPGP, *PRIVATE, *RWX...    
+ New object authority . . . . . .   *NONE         *NONE, *ALL, *OBJEXIST...     
                        + for more values                                        
- Revoke old authority . . . . . .   *YES          Number, *NO, *YES             
- Symbolic link  . . . . . . . . .   *NO           Number, *NO, *YES             
+ Revoke old authority . . . . . .   *YES          *NO, *YES                     
+ Symbolic link  . . . . . . . . .   *NO           *NO, *YES                     
  Directory subtree  . . . . . . . > *ALL          *NONE, *ALL                   
                                                                                 
                                                                                 
@@ -17,8 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
-                                                                                
                                                                          Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

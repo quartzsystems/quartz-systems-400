@@ -5,13 +5,12 @@
  Subsystem description  . . . . . > MYSBS         Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
  Storage pools:                                                                 
-   Pool identifier  . . . . . . .   > 1             1-10                        
-   Storage size or name . . . . .     *BASE         Number, *BASE, *NOSTG...    
-   Activity level . . . . . . . .     1             0-32767                     
-                       + for more values                                        
+   Pool identifier  . . . . . . .   1             1-10                          
+   Storage size or name . . . . .   *BASE         Number, *BASE, *NOSTG...      
+   Activity level . . . . . . . .   1             0-32767                       
+                + for more values                                               
  Maximum jobs . . . . . . . . . .   *NOMAX        0-1000, *NOMAX                
  Description  . . . . . . . . . .   *BLANK                                      
-                                                                                
                                                                                 
                                                                                 
                                                                                 
@@ -22,3 +21,4 @@
                                                                          Bottom 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
  F13=How to use this display        F24=More keys                               
+                                                                                

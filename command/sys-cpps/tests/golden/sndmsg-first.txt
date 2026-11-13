@@ -1,8 +1,11 @@
-                             Send Message (SNDMSG)                              
+                              Send Message (SNDMSG)                             
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
  Message text . . . . . . . . . . > 'note'                                      
+                                                                                
+                                                                                
+                                                                                
  To user profile  . . . . . . . . > *SYSOPR       Name, *SYSOPR, *ALLACT...     
  To message queue . . . . . . . .                 Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
@@ -15,10 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
-                                                                                
-                                                                                
-                                                                                
                                                                          Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -819,16 +819,54 @@ note = "IFS objects: the journaling attributes are stored, no entries written"
 note = "IFS objects: the stored journaling attributes removed"
 
 [cmd.MOUNT]
-note = "TYPE(*UDFS); *IOSYSCFG"
+note = "TYPE(*UDFS) and TYPE(*NFS) (docs/NFS.md section 7); *IOSYSCFG"
 
 [cmd.ADDMFS]
 note = "as MOUNT"
 
 [cmd.UNMOUNT]
-note = "TYPE(*UDFS)"
+note = "TYPE(*UDFS), TYPE(*NFS), TYPE(*ALL), MNTOVRDIR(*ALL)"
 
 [cmd.RMVMFS]
 note = "as UNMOUNT"
+
+# --- NFS (docs/NFS.md section 8): the export table in the service
+# (lic/slic/src/cpp/nfscmd.rs), the daemons started by the job
+# (work/qsjob/src/command/nfs.rs), DSPMFSINF a panel at a display
+# (work/qsjob/src/panels/info/mfsinf.rs) and the service's text
+# otherwise
+[cmd.EXPORTFS]
+note = "the export table (lic/slic/src/stgsvc/nfs/); *IOSYSCFG"
+
+[cmd.CHGNFSEXP]
+note = "as EXPORTFS"
+
+[cmd.STRNFSSVR]
+site = "job"
+note = "submits the daemon jobs and waits for them to report ready; *IOSYSCFG"
+
+[cmd.ENDNFSSVR]
+site = "job"
+note = "ends the daemon jobs in the reverse order; *IOSYSCFG"
+
+[cmd.RPCBIND]
+site = "job"
+note = "the binder daemon alone; *IOSYSCFG"
+
+[cmd.ENDRPCBIND]
+site = "job"
+note = "the binder daemon alone; *IOSYSCFG"
+
+[cmd.DSPMFSINF]
+site = "job"
+note = "a panel at a display; the service's text otherwise and OUTPUT(*PRINT)"
+
+[cmd.STATFS]
+site = "job"
+note = "as DSPMFSINF"
+
+[cmd.RLSIFSLCK]
+note = "OBJ: the local byte-range locks on an object or its file system; RMTLOCNAME and NFSSVRLCK need the *NLM daemon"
 
 [cmd.RCLLNK]
 note = "reclaims the whole IFS metadata whatever OBJ names"

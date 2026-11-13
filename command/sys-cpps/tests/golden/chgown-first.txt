@@ -1,11 +1,12 @@
-                             Change Owner (CHGOWN)                              
+                              Change Owner (CHGOWN)                             
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
  Object . . . . . . . . . . . . . > '/home/qstest'                              
+                                                                                
  New owner  . . . . . . . . . . . > ANNE          Name                          
- Revoke current owner authority .   *YES          Number, *NO, *YES             
- Symbolic link  . . . . . . . . .   *NO           Number, *NO, *YES             
+ Revoke current owner authority .   *YES          *NO, *YES                     
+ Symbolic link  . . . . . . . . .   *NO           *NO, *YES                     
  Directory subtree  . . . . . . . > *ALL          *NONE, *ALL                   
                                                                                 
                                                                                 
@@ -17,8 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
-                                                                                
                                                                          Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

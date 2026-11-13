@@ -66,6 +66,7 @@
                           SPCVAL((*INCLUDE I) (*OMIT O)) +
                           PROMPT('Include or omit')
  E2:         ELEM       TYPE(*CHAR) LEN(255) DFT(*) SPCVAL((*)) +
+                          INLPMTLEN(50) +
                           EXPR(*YES) PROMPT('Pattern')
              ELEM       TYPE(*CHAR) LEN(1) RSTD(*YES) DFT(*INCLUDE) +
                           SPCVAL((*INCLUDE I) (*OMIT O)) +

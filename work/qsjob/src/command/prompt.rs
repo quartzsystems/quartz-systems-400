@@ -93,7 +93,8 @@ pub fn panel(s: &Screen) -> Panel {
         }
         let attr = if i == 0 {
             1
-        } else if i >= 22 {
+        } else if (21..23).contains(&i) {
+            // The keys, rows 22 and 23.
             2
         } else {
             0

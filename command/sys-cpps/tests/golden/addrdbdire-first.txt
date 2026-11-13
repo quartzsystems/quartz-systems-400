@@ -3,16 +3,15 @@
  Type choices, press Enter.                                                     
                                                                                 
  Entry:                                                                         
-   Relational database  . . . . .   > REMOTE1             Character value       
-   Relational database alias  . .     *NONE               *NONE                 
+   Relational database  . . . . .   REMOTE1             Character value         
+   Relational database alias  . .   *NONE               *NONE                   
  Remote location:                                                               
-   Name or address  . . . . . . .   > REMOTE.EXAMPLE.COM                        
-   Type . . . . . . . . . . . . .     *IP           *SNA, *IP                   
+   Name or address  . . . . . . .   REMOTE.EXAMPLE.COM                          
+                                                                                
+                                                                                
+                                                                                
+   Type . . . . . . . . . . . . .   *IP           *SNA, *IP                     
  Text . . . . . . . . . . . . . .   *BLANK                                      
-                                                                                
-                                                                                
-                                                                                
-                                                                                
                                                                                 
                                                                                 
                                                                                 
@@ -22,3 +21,4 @@
                                                                          Bottom 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
  F13=How to use this display        F24=More keys                               
+                                                                                

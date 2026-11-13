@@ -94,6 +94,7 @@ pub struct Prompter {
     keywords: bool,
     keyset: u8,
     keyparm_only: bool,
+    conds_closed: bool,
     expanded: HashMap<usize, usize>,
     message: String,
     error: Option<Path>,
@@ -170,6 +171,7 @@ impl Prompter {
             keywords: false,
             keyset: 0,
             keyparm_only,
+            conds_closed: false,
             expanded,
             message: String::new(),
             error: None,
@@ -257,21 +259,22 @@ impl Prompter {
     }
 
     /// The label and comment lines around a source line's parameters.
-    fn with_source(&self, items: &mut Vec<Line>) {
+    fn with_source(&self, lines: &mut layout::Lines) {
         let Some((label, comment)) = &self.source else {
             return;
         };
         let line = |text: &str, value: &str, step: usize, width: usize| Line::Value {
             label: text.to_string(),
             indent: 0,
+            field_indent: 0,
             field: Some((width, value.to_string())),
             protected: None,
             choices: String::new(),
             marker: false,
             path: Path::parm(SOURCE_PARM).step(step),
         };
-        items.insert(0, line("Label", label, 0, 10));
-        items.push(line("Comment", comment, 1, layout::MAX_WIDTH));
+        lines.push_line(true, line("Label", label, 0, 10));
+        lines.push_line(false, line("Comment", comment, 1, layout::MAX_WIDTH));
     }
 
     /// The display as it stands.
@@ -282,29 +285,47 @@ impl Prompter {
             return self.window_screen(w);
         }
         let mut lines = self.lines();
-        self.with_source(&mut lines.items);
+        self.with_source(&mut lines);
         let mut s = Screen::default();
         s.center(1, &format!("{} ({})", self.def.prompt, self.name));
+        if lines.items.is_empty() {
+            // Nothing to type: the title, the keys on row 22 and a word
+            // on what to do.
+            s.put(
+                FIRST_ROW + PAGE_ROWS + 1,
+                LABEL_COL,
+                "F3=Exit   F5=Refresh   F12=Cancel   F13=How to use this display   F24=More keys",
+            );
+            s.message = if self.message.is_empty() {
+                "This command has no parameters: Enter runs it, F3 leaves.".into()
+            } else {
+                self.message.clone()
+            };
+            return s;
+        }
         s.put(3, LABEL_COL, "Type choices, press Enter.");
-        let pages = lines.items.len().div_ceil(PAGE_ROWS).max(1);
-        let page = self.page.min(pages - 1);
-        let start = page * PAGE_ROWS;
+        let pages = lines.pages(PAGE_ROWS);
+        let page = self.page.min(pages.len() - 1);
+        let start = pages[page];
+        let end = pages.get(page + 1).copied().unwrap_or(lines.items.len());
         let mut row = FIRST_ROW;
-        for line in lines.items.iter().skip(start).take(PAGE_ROWS) {
+        for line in &lines.items[start..end] {
             Self::draw(&mut s, row, line);
             row += 1;
         }
+        // IBM's rows: More... or Bottom on 21, the keys on 22 and 23,
+        // the message on 24.
         s.right(
-            22,
-            if page + 1 < pages {
+            FIRST_ROW + PAGE_ROWS,
+            if page + 1 < pages.len() {
                 "More..."
             } else {
                 "Bottom"
             },
         );
         let (k1, k2) = self.keys(lines.has_additional);
-        s.put(23, LABEL_COL, &k1);
-        s.put(24, LABEL_COL, &k2);
+        s.put(FIRST_ROW + PAGE_ROWS + 1, LABEL_COL, &k1);
+        s.put(FIRST_ROW + PAGE_ROWS + 2, LABEL_COL, &k2);
         if !self.message.is_empty() {
             s.message.clone_from(&self.message);
         }
@@ -327,25 +348,41 @@ impl Prompter {
                 "F16=Command complete   F24=More keys".into(),
             );
         }
-        let f10 = if has_additional {
-            "   F10=Additional parameters"
+        // Without F10, F13 fits on the first row, as IBM's shows it.
+        if has_additional {
+            (
+                "F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel".into(),
+                "F13=How to use this display        F24=More keys".into(),
+            )
         } else {
-            ""
-        };
-        (
-            format!("F3=Exit   F4=Prompt   F5=Refresh{f10}   F12=Cancel"),
-            "F13=How to use this display        F24=More keys".into(),
-        )
+            (
+                "F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display"
+                    .into(),
+                "F24=More keys".into(),
+            )
+        }
     }
 
     fn draw(s: &mut Screen, row: usize, line: &Line) {
         match line {
-            Line::Blank => {}
-            Line::Title(t) => s.center(row, t),
-            Line::Head { label, indent } => s.put(row, LABEL_COL + indent, label),
+            Line::Blank | Line::Cont => {}
+            // `Additional Parameters` sits at column 29: centred, the odd
+            // blank on the right.
+            Line::Title(t) => s.put(row, (COLS - t.chars().count().min(COLS)) / 2, t),
+            Line::Head {
+                label,
+                indent,
+                more,
+            } => {
+                s.put(row, LABEL_COL + indent, label);
+                if let Some(p) = more {
+                    s.field(row, MARKER_COL, 1, "", Some(p.clone()));
+                }
+            }
             Line::Value {
                 label,
                 indent,
+                field_indent,
                 field,
                 protected,
                 choices,
@@ -362,7 +399,7 @@ impl Prompter {
                 if *marker {
                     s.put(row, MARKER_COL + indent, ">");
                 }
-                let col = FIELD_COL + indent;
+                let col = FIELD_COL + field_indent;
                 let width = match (field, protected) {
                     (Some((w, v)), _) => {
                         s.field(row, col, *w, v, Some(path.clone()));
@@ -403,11 +440,21 @@ impl Prompter {
                     s.put(row, ccol, &c);
                 }
             }
-            Line::More { path, indent } => {
-                s.put(row, 24 + indent, "+ for more values");
+            Line::More {
+                path,
+                indent,
+                groups,
+            } => {
+                // A list of groups: the text at 17 and the field at 35.
+                let (text, field) = if *groups {
+                    (17 + indent, MARKER_COL + indent)
+                } else {
+                    (24 + indent, FIELD_COL + indent)
+                };
+                s.put(row, text, "+ for more values");
                 s.field(
                     row,
-                    FIELD_COL + indent,
+                    field,
                     1,
                     "",
                     Some(Path::parm(path.parm).step(usize::MAX)),
@@ -492,6 +539,7 @@ impl Prompter {
             keywords: self.keywords,
             keyparm_only: self.keyparm_only,
             expanded: &self.expanded,
+            conds_closed: self.conds_closed,
         }
     }
 
@@ -540,6 +588,7 @@ impl Prompter {
                     *self.expanded.entry(parm).or_insert(1) += 1;
                     return Step::Show;
                 }
+                self.conds_closed = false;
                 if self.keyparm_only {
                     self.keyparm_only = false;
                     return Step::Show;
@@ -573,10 +622,10 @@ impl Prompter {
             }
             8 | PAGE_DOWN => {
                 let mut lines = self.lines();
-                self.with_source(&mut lines.items);
-                if self.page + 1 < lines.items.len().div_ceil(PAGE_ROWS) {
+                self.with_source(&mut lines);
+                if self.page + 1 < lines.pages(PAGE_ROWS).len() {
                     self.page += 1;
-                } else {
+                } else if !self.missing_required(&shown) {
                     self.message = "Already at the last page.".into();
                 }
                 Step::Show
@@ -586,6 +635,20 @@ impl Prompter {
                 Step::Show
             }
             10 => {
+                let has_additional = self.lines().has_additional;
+                if self.keyparm_only && self.def.pmtovrpgm.is_some() {
+                    // The key parameters' display of a command with a
+                    // prompt override program: F10 is refused, the rest
+                    // shows without its conditions decided.
+                    self.keyparm_only = false;
+                    self.conds_closed = true;
+                    self.message = "F10 is not active on this display.".into();
+                    return Step::Show;
+                }
+                if !has_additional && !self.keyparm_only {
+                    self.message = "F10 is not active on this display.".into();
+                    return Step::Show;
+                }
                 self.additional = true;
                 self.keyparm_only = false;
                 Step::Show
@@ -635,6 +698,34 @@ impl Prompter {
             self.texts.insert(path, values[n - 1].clone());
         }
         Step::Show
+    }
+
+    /// Page Down past the last page: a required parameter on the
+    /// display without a value is the message, as IBM's prompter
+    /// checks them there (`+` at the end when there are more).
+    fn missing_required(&mut self, shown: &Screen) -> bool {
+        let empty: Vec<Path> = shown
+            .fields
+            .iter()
+            .filter_map(|f| f.path.clone())
+            .filter(|p| {
+                p.parm != SOURCE_PARM
+                    && p.steps.is_empty()
+                    && self.def.parms.get(p.parm).is_some_and(|d| d.min > 0)
+                    && self.texts.get(p).is_none_or(|t| t.trim().is_empty())
+            })
+            .collect();
+        let Some(first) = empty.first() else {
+            return false;
+        };
+        let kwd = &self.def.parms[first.parm].kwd;
+        let mut m = format!("A value is needed for {kwd}.");
+        if empty.len() > 1 {
+            m = format!("{m:<78}+");
+        }
+        self.message = m;
+        self.error = Some(first.clone());
+        true
     }
 
     /// The values a field accepts, for the choices window.

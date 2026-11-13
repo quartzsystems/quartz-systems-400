@@ -228,6 +228,12 @@ pub const DIRECT: &[&str] = &[
     "CHGPFCST",
     "DSPCPCST",
     "RMVPFCST",
+    // --- NFS (lic/slic/src/cpp/nfscmd.rs)
+    "CHGNFSEXP",
+    "DSPMFSINF",
+    "EXPORTFS",
+    "RLSIFSLCK",
+    "STATFS",
     // --- IFS commands (lic/slic/src/cpp/ifscmd.rs)
     "ADDLNK",
     "ADDMFS",
@@ -830,6 +836,13 @@ pub const JOB_SITE: &[&str] = &[
     // --- certificates (work/qsjob/src/panels/certs.rs)
     "QSWRKCRT",
     "QSWRKAPPID",
+    // --- NFS: the daemons and DSPMFSINF (command/nfs.rs, panels/info/mfsinf.rs)
+    "STRNFSSVR",
+    "ENDNFSSVR",
+    "RPCBIND",
+    "ENDRPCBIND",
+    "DSPMFSINF",
+    "STATFS",
     // --- QSH and environment variables (work/qsjob/src/qsh/)
     "QSH",
     "STRQSH",

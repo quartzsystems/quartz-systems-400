@@ -1,4 +1,4 @@
-                       Work with Active Jobs (WRKACTJOB)                        
+                        Work with Active Jobs (WRKACTJOB)                       
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
@@ -18,7 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
                                                                          Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

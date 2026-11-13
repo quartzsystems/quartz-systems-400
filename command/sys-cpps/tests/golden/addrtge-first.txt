@@ -1,4 +1,4 @@
-                          Add Routing Entry (ADDRTGE)                           
+                           Add Routing Entry (ADDRTGE)                          
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
@@ -6,8 +6,9 @@
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Routing entry sequence number  . > 10            1-9999                        
  Comparison data:                                                               
-   Compare value  . . . . . . . .   > QCMDI                                     
-   Starting position  . . . . . .     1             1-80                        
+   Compare value  . . . . . . . .   QCMDI                                       
+                                                                                
+   Starting position  . . . . . .   1             1-80                          
  Program to call  . . . . . . . . > QCMD          Name                          
    Library  . . . . . . . . . . .     QSYS          Name, *LIBL, *CURLIB        
  Class  . . . . . . . . . . . . .   *SBSD         Name, *SBSD                   
@@ -15,10 +16,9 @@
  Maximum active routing steps . .   *NOMAX        1-1000, *NOMAX                
  Storage pool identifier  . . . .   1             1-10                          
  Thread resources affinity:                                                     
-   Group  . . . . . . . . . . . .     *SYSVAL       *NOGROUP, *GROUP            
-   Level  . . . . . . . . . . . .     *NORMAL       *NORMAL, *HIGH              
- Resources affinity group . . . .   *NO           *NO, *YES                     
+   Group  . . . . . . . . . . . .   *SYSVAL       *NOGROUP, *GROUP              
+   Level  . . . . . . . . . . . .   *NORMAL       *NORMAL, *HIGH                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
                                                                                 
-                                                                         Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               

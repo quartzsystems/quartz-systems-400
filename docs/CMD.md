@@ -195,13 +195,27 @@ elements and a qualified name's parts indented under it), the label
 from column 2 dotted to column 33, a `>` marker in column 35 for a
 value the caller gave, the field from column 37, the choices (`Name`,
 `*YES, *NO`, `1-99`) from column 51 or just past the field; 16 rows
-per page, `More...` or `Bottom` on row 22, the keys on rows 23 and 24.
-Parameters with `PMTCTL(*PMTRQS)` appear after `F10=Additional
-parameters`; `PMTCTL(label)` parameters appear when their condition
-holds, the display re-evaluated after Enter; a condition over a
-parameter with no value yet is undecided and shows after `F10`. A
-field is as wide as its longest special, single or listed value
-(`INLPMTLEN(n)` sets it); a qualified parameter defaulting to a
+per page, `More...` or `Bottom` on row 21, the keys on rows 22 and 23
+(`F13` joins the first row when there is no `F10`), the message on row
+24. A page breaks between parameters: a group, a list and the
+`Additional Parameters` title stay with their parameter. Parameters
+with `PMTCTL(*PMTRQS)` appear after `F10=Additional parameters`;
+`PMTCTL(label)` parameters appear when their condition holds, the
+display re-evaluated after Enter; a condition over a parameter with no
+value yet is undecided, and the display stops at that parameter until
+it is decided (or `F10` shows everything, on a command that has
+`*PMTRQS` parameters; without any, `F10` is refused). On the key
+parameters' display of a command with `PMTOVRPGM`, `F10` is refused and
+the other parameters show undecided. Page Down past the last page names
+a required parameter without a value. A field is as wide as its type
+(a path name 50, a text up to 80 whole and a longer one 256, wrapping
+onto the rows below; an element's field stays at column 37, a
+qualifier's is indented) or its longest special, single or listed
+value (`INLPMTLEN(n)` sets it); a command without parameters shows its
+title, the keys on row 22 and a message. These rules come from the
+primary's prompts of `tools/conformance/golden/nfs/` (V7R1M0), which
+`command/sys-cpps/tests/nfs_prompts.rs` compares character for
+character on rows 1 to 23. A qualified parameter defaulting to a
 single value shows its other qualifiers blank. The comparison with
 pub400's prompts is `tools/conformance/golden/phase11/COVERAGE.md`. F3 and F12 cancel, F4 on
 a field prompts its choices, F5 refreshes, F9 shows every parameter,

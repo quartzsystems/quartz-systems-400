@@ -1,4 +1,4 @@
-                            Create Library (CRTLIB)                             
+                             Create Library (CRTLIB)                            
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
@@ -6,7 +6,8 @@
  Library type . . . . . . . . . .   *NOPE         *PROD, *TEST                  
  Description  . . . . . . . . . . > 'Test library'                              
                                                                                 
-                             Additional Parameters                              
+                                                                                
+                            Additional Parameters                               
                                                                                 
  Auxiliary storage pool . . . . .   1             1-32                          
  Public authority . . . . . . . .   *LIBCRTAUT    Name, *LIBCRTAUT, *CHANGE...  
@@ -17,8 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
-                                                                                
                                                                          Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
 CPD0084 TYPE: *NOPE is not one of the values allowed                            

@@ -8,6 +8,7 @@
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Source member  . . . . . . . . .   *OBJ          Name, *OBJ                    
  Source stream file . . . . . . .                                               
+                                                                                
  Commitment control . . . . . . .   *CHG          *CHG, *UR, *ALL, *RS, *CS...  
  Relational database  . . . . . .   *LOCAL              *LOCAL                  
  Compile type . . . . . . . . . .   *PGM          *PGM, *SRVPGM, *MODULE        
@@ -17,8 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
-                                                                                
                                                                          Bottom 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
  F13=How to use this display        F24=More keys                               
+                                                                                

@@ -1,4 +1,4 @@
-                         How to Use the Command Prompt                          
+                          How to Use the Command Prompt                         
                                                                                 
  Type a value in each field you want to set and press Enter.                    
  A value shown is the default; leave it to keep it.                             

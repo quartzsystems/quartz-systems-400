@@ -186,12 +186,11 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             Box::new(move |c| udfs::dspudfs(c, &u))
         }
         "MOUNT" | "ADDMFS" => {
-            let (ty, mfs, over, opts) =
-                (parms.name("TYPE"), p("MFS"), p("MNTOVRDIR"), p("OPTIONS"));
+            let (ty, mfs, over, opts) = (fs_type(parms), p("MFS"), p("MNTOVRDIR"), p("OPTIONS"));
             Box::new(move |c| udfs::mount(c, &ty, &mfs, &over, &opts))
         }
         "UNMOUNT" | "RMVMFS" => {
-            let (ty, mfs, over) = (parms.name("TYPE"), p("MFS"), p("MNTOVRDIR"));
+            let (ty, mfs, over) = (fs_type(parms), p("MFS"), p("MNTOVRDIR"));
             Box::new(move |c| udfs::unmount(c, &ty, &mfs, &over))
         }
         "RCLLNK" => Box::new(|c| admin::rcllnk(c, false)),
@@ -228,6 +227,17 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
     }
     Some(reply(out, ""))
+}
+
+/// `MOUNT`'s and `UNMOUNT`'s `TYPE` as its special value: the block
+/// holds IBM's mapped integers (`-1` `*NFS`, `-2` `*UDFS`, `-4` `*ALL`).
+fn fs_type(parms: &Parms) -> String {
+    match parms.int("TYPE") {
+        Some(-1) => "*NFS".into(),
+        Some(-2) => "*UDFS".into(),
+        Some(-4) => "*ALL".into(),
+        _ => parms.name("TYPE"),
+    }
 }
 
 /// A value, or `dft` when it is empty.

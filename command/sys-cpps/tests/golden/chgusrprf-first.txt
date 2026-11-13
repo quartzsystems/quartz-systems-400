@@ -1,9 +1,12 @@
-                        Change User Profile (CHGUSRPRF)                         
+                         Change User Profile (CHGUSRPRF)                        
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
  User profile . . . . . . . . . . > ANNE          Name                          
  User password  . . . . . . . . .   *SAME                                       
+                                                                                
+                                                                                
+                                                                                
  Set password to expired  . . . .   *SAME         *SAME, *NO, *YES              
  Status . . . . . . . . . . . . .   *SAME         *SAME, *ENABLED, *DISABLED    
  User class . . . . . . . . . . .   *SAME         *SAME, *USER, *SYSOPR...      
@@ -14,11 +17,8 @@
  Initial menu . . . . . . . . . .   *SAME         Name, *SAME, *SIGNOFF         
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Limit capabilities . . . . . . .   *SAME         *SAME, *NO, *PARTIAL, *YES    
- Description  . . . . . . . . . .   *SAME                                       
                                                                                 
-                                                                                
-                                                                                
-                                                                                
-                                                                         Bottom 
+                                                                        More... 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
  F13=How to use this display        F24=More keys                               
+                                                                                

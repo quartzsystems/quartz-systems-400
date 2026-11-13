@@ -113,10 +113,11 @@ impl Screen {
         self.rows[row - 1] = chars.into_iter().collect();
     }
 
-    /// Put text centered on a row.
+    /// Put text centered on a row, an odd blank on the left, as IBM's
+    /// prompter centres the title.
     pub fn center(&mut self, row: usize, text: &str) {
         let n = text.chars().count().min(COLS);
-        let col = (COLS - n) / 2 + 1;
+        let col = (COLS - n).div_ceil(2) + 1;
         self.put(row, col, text);
     }
 
@@ -127,10 +128,15 @@ impl Screen {
         self.put(row, col.max(1), text);
     }
 
-    /// Add a field; its value is drawn into the row.
+    /// Add a field; its value is drawn into the row, and into the rows
+    /// below from column 1 when the field is longer than the row.
     pub fn field(&mut self, row: usize, col: usize, len: usize, value: &str, path: Option<Path>) {
-        let shown: String = value.chars().take(len).collect();
-        self.put(row, col, &shown);
+        let shown: Vec<char> = value.chars().take(len).collect();
+        let first = (COLS + 1).saturating_sub(col).min(shown.len());
+        self.put(row, col, &shown[..first].iter().collect::<String>());
+        for (k, chunk) in shown[first..].chunks(COLS).enumerate() {
+            self.put(row + 1 + k, 1, &chunk.iter().collect::<String>());
+        }
         self.fields.push(Field {
             row: u8::try_from(row).unwrap_or(1),
             col: u8::try_from(col).unwrap_or(1),

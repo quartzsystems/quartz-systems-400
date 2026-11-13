@@ -6,19 +6,19 @@
  Message file . . . . . . . . . .   QCPFMSG       Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Message data field values  . . .   *NONE                                       
- Message text . . . . . . . . . . > 'hello'                                     
- To call stack entry queue:                                                     
-   Relationship . . . . . . . . .     *PRV          *PRV, *SAME                 
-   Call stack entry . . . . . . .     *             *, *CTLBDY, *PGMBDY...      
-     Module . . . . . . . . . . .       *NONE         Name, *NONE               
-     Bound program  . . . . . . .       *NONE         Name, *NONE               
- To message queue . . . . . . . .   *TOPGMQ       Name, *TOPGMQ, *SYSOPR        
-   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
-                       + for more values                                        
- To user profile  . . . . . . . .                 Name, *REQUESTER, *SYSOPR...  
- Message type . . . . . . . . . .   *INFO         *INFO, *INQ, *COMP, *DIAG...  
- CL var for KEYVAR (4)  . . . . .                 Character value               
                                                                                 
-                                                                         Bottom 
+                                                                                
+                                                                                
+ Message text . . . . . . . . . . > 'hello'                                     
+                                                                                
+                                                                                
+                                                                                
+ To call stack entry queue:                                                     
+   Relationship . . . . . . . . .   *PRV          *PRV, *SAME                   
+   Call stack entry . . . . . . .   *             *, *CTLBDY, *PGMBDY, *PGMNAME 
+     Module . . . . . . . . . . .     *NONE         Name, *NONE                 
+     Bound program  . . . . . . .     *NONE         Name, *NONE                 
+                                                                        More... 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
  F13=How to use this display        F24=More keys                               
+                                                                                

@@ -27,8 +27,12 @@ pub const FIELD_COL: usize = 37;
 pub const FIRST_ROW: usize = 5;
 /// Rows of parameters on a page.
 pub const PAGE_ROWS: usize = 16;
-/// The widest field on one line.
+/// The room on the field's first row.
 pub const MAX_WIDTH: usize = 44;
+/// The field of a long text parameter (it wraps over rows).
+pub const LONG_TEXT: usize = 256;
+/// The field of a path name.
+pub const PATH_WIDTH: usize = 50;
 
 /// One line of the display.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -43,13 +47,19 @@ pub enum Line {
         label: String,
         /// Indentation.
         indent: usize,
+        /// A list of groups: the one-character field at column 35 that
+        /// asks for more entries.
+        more: Option<Path>,
     },
     /// A value line.
     Value {
         /// The prompt text, before the dot leaders.
         label: String,
-        /// Indentation.
+        /// Indentation of the prompt text.
         indent: usize,
+        /// Indentation of the field: a qualifier's is indented, an
+        /// element's is not.
+        field_indent: usize,
         /// The field: width and value; `None` when protected.
         field: Option<(usize, String)>,
         /// The text shown instead of a field (`?*` selective prompting).
@@ -67,7 +77,25 @@ pub enum Line {
         path: Path,
         /// Indentation.
         indent: usize,
+        /// A list of groups: the text at column 17 and a one-character
+        /// field at column 35.
+        groups: bool,
     },
+    /// A row a long field continues on.
+    Cont,
+}
+
+impl Line {
+    /// The rows a field of `width` from column `col` takes.
+    #[must_use]
+    pub fn rows_of(width: usize, col: usize) -> usize {
+        let first = super::COLS + 1 - col.min(super::COLS);
+        if width <= first {
+            1
+        } else {
+            1 + (width - first).div_ceil(super::COLS)
+        }
+    }
 }
 
 /// How the display is being looked at.
@@ -88,6 +116,9 @@ pub struct View<'a> {
     pub keyparm_only: bool,
     /// How many entries of each list show.
     pub expanded: &'a HashMap<usize, usize>,
+    /// The `PMTCTL` conditions are not evaluated yet: the key
+    /// parameters' display was left with a key other than Enter.
+    pub conds_closed: bool,
 }
 
 /// The lines, and whether any parameter waits behind `F10`.
@@ -99,6 +130,60 @@ pub struct Lines {
     pub has_additional: bool,
     /// Which parameters are shown.
     pub visible: Vec<bool>,
+    /// Where a page may break: `true` on the first line of each
+    /// parameter's block (a group, a list and the `Additional
+    /// Parameters` title stay with their parameter).
+    pub starts: Vec<bool>,
+}
+
+impl Lines {
+    /// The first line of each page: a block that does not fit what is
+    /// left of a page starts the next one; one longer than a page is
+    /// cut where the page ends.
+    #[must_use]
+    pub fn pages(&self, rows: usize) -> Vec<usize> {
+        let mut out = vec![0];
+        let mut used = 0;
+        let mut i = 0;
+        while i < self.items.len() {
+            let mut end = i + 1;
+            while end < self.items.len() && !self.starts.get(end).copied().unwrap_or(true) {
+                end += 1;
+            }
+            let len = end - i;
+            if used > 0 && used + len > rows && len <= rows {
+                out.push(i);
+                used = 0;
+            }
+            for k in i..end {
+                if used == rows {
+                    out.push(k);
+                    used = 0;
+                }
+                used += 1;
+            }
+            i = end;
+        }
+        out
+    }
+
+    /// Add a line that starts no block (a source line's fields).
+    pub fn push_line(&mut self, at_start: bool, line: Line) {
+        if at_start {
+            self.items.insert(0, line);
+            self.starts.insert(0, true);
+        } else {
+            self.items.push(line);
+            self.starts.push(true);
+        }
+    }
+
+    fn push_block(&mut self, lines: Vec<Line>) {
+        for (k, l) in lines.into_iter().enumerate() {
+            self.items.push(l);
+            self.starts.push(k == 0);
+        }
+    }
 }
 
 /// Lay the definition out for a view.
@@ -108,6 +193,10 @@ pub fn lines(def: &CmdDef, v: &View<'_>) -> Lines {
     let mut additional: Vec<(usize, &Parm)> = Vec::new();
     out.visible = vec![false; def.parms.len()];
     let has_keyparm = def.parms.iter().any(|p| p.keyparm);
+    let has_pmtrqs = def
+        .parms
+        .iter()
+        .any(|p| matches!(p.pmtctl, Some(PmtCtlRef::PmtRqs)));
     for (i, p) in def.parms.iter().enumerate() {
         if p.constant.is_some() {
             continue;
@@ -117,11 +206,24 @@ pub fn lines(def: &CmdDef, v: &View<'_>) -> Lines {
         }
         if v.keyparm_only && has_keyparm && !p.keyparm {
             // IBM offers F10 on the key parameters' display when the
-            // command has additional or conditional parameters.
-            if p.pmtctl.is_some() {
+            // command has additional or conditional parameters, unless
+            // a prompt override program fills in the rest.
+            if p.pmtctl.is_some() && def.pmtovrpgm.is_none() {
                 out.has_additional = true;
             }
             continue;
+        }
+        // A parameter whose condition cannot be decided yet ends the
+        // display there: it and those after it show once the
+        // controlling parameters have values, or with F10 on a command
+        // that has additional parameters, as IBM's prompter does.
+        let undecided = matches!(&p.pmtctl, Some(PmtCtlRef::Label { label })
+            if v.conds_closed || !pmtctl_decided(def, label, v.texts));
+        if undecided && !v.all && (!v.additional || v.conds_closed) {
+            if has_pmtrqs {
+                out.has_additional = true;
+            }
+            break;
         }
         let shown = v.all
             || match &p.pmtctl {
@@ -132,12 +234,7 @@ pub fn lines(def: &CmdDef, v: &View<'_>) -> Lines {
                     }
                     v.additional
                 }
-                Some(PmtCtlRef::Label { label }) if !pmtctl_decided(def, label, v.texts) => {
-                    if !v.additional {
-                        out.has_additional = true;
-                    }
-                    v.additional
-                }
+                Some(PmtCtlRef::Label { .. }) if undecided => true,
                 Some(PmtCtlRef::Label { label }) => pmtctl_holds(def, label, v.texts),
             };
         if !shown {
@@ -147,16 +244,20 @@ pub fn lines(def: &CmdDef, v: &View<'_>) -> Lines {
         if matches!(p.pmtctl, Some(PmtCtlRef::PmtRqs)) && !v.all {
             additional.push((i, p));
         } else {
-            parm_lines(def, i, p, v, &mut out.items);
+            let mut block = Vec::new();
+            parm_lines(def, i, p, v, &mut block);
+            out.push_block(block);
         }
     }
-    if !additional.is_empty() {
-        out.items.push(Line::Blank);
-        out.items.push(Line::Title("Additional Parameters".into()));
-        out.items.push(Line::Blank);
-        for (i, p) in additional {
-            parm_lines(def, i, p, v, &mut out.items);
+    for (k, (i, p)) in additional.into_iter().enumerate() {
+        let mut block = Vec::new();
+        if k == 0 {
+            block.push(Line::Blank);
+            block.push(Line::Title("Additional Parameters".into()));
+            block.push(Line::Blank);
         }
+        parm_lines(def, i, p, v, &mut block);
+        out.push_block(block);
     }
     out
 }
@@ -243,7 +344,7 @@ fn parm_lines(def: &CmdDef, i: usize, p: &Parm, v: &View<'_>, out: &mut Vec<Line
         def,
         p,
         &path,
-        0,
+        (0, 0),
         p.prompt_text(),
         sel,
         marker,
@@ -259,7 +360,7 @@ fn item_lines(
     def: &CmdDef,
     p: &Parm,
     path: &Path,
-    indent: usize,
+    (indent, findent): (usize, usize),
     label: &str,
     sel: Option<Sel>,
     marker: bool,
@@ -274,12 +375,22 @@ fn item_lines(
             let entry = path.step(k);
             let lbl = if k == 0 { label } else { "" };
             if p.ty.is_group() {
-                group_or_qual(def, p, &entry, indent, lbl, sel, marker && k == 0, v, out);
+                group_or_qual(
+                    def,
+                    p,
+                    &entry,
+                    (indent, findent),
+                    lbl,
+                    sel,
+                    marker && k == 0,
+                    v,
+                    out,
+                );
             } else {
                 value_line(
                     p,
                     &entry,
-                    indent,
+                    (indent, findent),
                     lbl,
                     sel,
                     marker && k == 0,
@@ -292,14 +403,25 @@ fn item_lines(
         out.push(Line::More {
             path: path.clone(),
             indent,
+            groups: matches!(p.ty, ParmType::Elem { .. }),
         });
         return;
     }
     if p.ty.is_group() {
-        group_or_qual(def, p, path, indent, label, sel, marker, v, out);
+        group_or_qual(def, p, path, (indent, findent), label, sel, marker, v, out);
         return;
     }
-    value_line(p, path, indent, label, sel, marker, choices_text, v, out);
+    value_line(
+        p,
+        path,
+        (indent, findent),
+        label,
+        sel,
+        marker,
+        choices_text,
+        v,
+        out,
+    );
 }
 
 /// A qualified name (the first part on the label's line, the rest
@@ -310,7 +432,7 @@ fn group_or_qual(
     def: &CmdDef,
     p: &Parm,
     path: &Path,
-    indent: usize,
+    (indent, findent): (usize, usize),
     label: &str,
     sel: Option<Sel>,
     marker: bool,
@@ -325,7 +447,11 @@ fn group_or_qual(
                 } else {
                     q.prompt_text().to_string()
                 };
-                let ind = if k == 0 { indent } else { indent + 2 };
+                let ind = if k == 0 {
+                    (indent, findent)
+                } else {
+                    (indent + 2, findent + 2)
+                };
                 // The name's row lists the parameter's single values
                 // too (`Name, *USRPRF`), as IBM's prompter does.
                 let mut c = choices(q);
@@ -353,16 +479,21 @@ fn group_or_qual(
             }
         }
         ParmType::Elem { .. } => {
+            // The first entry of a list of groups carries the field
+            // that asks for more entries.
+            let more = (p.is_list() && path.steps.last() == Some(&0))
+                .then(|| Path::parm(path.parm).step(usize::MAX));
             out.push(Line::Head {
                 label: format!("{label}:"),
                 indent,
+                more,
             });
             for (k, e) in p.items.iter().enumerate() {
                 item_lines(
                     def,
                     e,
                     &path.step(k),
-                    indent + 2,
+                    (indent + 2, findent),
                     e.prompt_text(),
                     sel,
                     marker && k == 0,
@@ -372,7 +503,17 @@ fn group_or_qual(
                 );
             }
         }
-        _ => value_line(p, path, indent, label, sel, marker, choices(p), v, out),
+        _ => value_line(
+            p,
+            path,
+            (indent, findent),
+            label,
+            sel,
+            marker,
+            choices(p),
+            v,
+            out,
+        ),
     }
 }
 
@@ -381,7 +522,7 @@ fn group_or_qual(
 fn value_line(
     p: &Parm,
     path: &Path,
-    indent: usize,
+    (indent, findent): (usize, usize),
     label: &str,
     sel: Option<Sel>,
     marker: bool,
@@ -390,21 +531,28 @@ fn value_line(
     out: &mut Vec<Line>,
 ) {
     let text = v.texts.get(path).cloned().unwrap_or_default();
-    let width = field_width(p).min(MAX_WIDTH.saturating_sub(indent)).max(1);
+    let width = field_width(p).max(1);
     let (field, protected) = if sel == Some(Sel::Show) {
         (None, Some(text))
     } else {
         (Some((width, text)), None)
     };
+    let rows = if field.is_some() {
+        Line::rows_of(width, FIELD_COL + findent)
+    } else {
+        1
+    };
     out.push(Line::Value {
         label: label.to_string(),
         indent,
+        field_indent: findent,
         field,
         protected,
         choices,
         marker,
         path: path.clone(),
     });
+    out.extend(std::iter::repeat_n(Line::Cont, rows - 1));
 }
 
 /// The width of a parameter's field: `INLPMTLEN` when it gives one;
@@ -442,6 +590,11 @@ pub fn field_width(p: &Parm) -> usize {
         ParmType::Name | ParmType::SName | ParmType::CName => 10,
         ParmType::Generic => 10,
         ParmType::VarName => 11,
+        // A path name shows 50 and a long text 256, wrapping onto the
+        // rows below; a shorter text shows whole.
+        ParmType::PName => (len.len as usize).clamp(1, PATH_WIDTH),
+        ParmType::Char if len.len as usize > 80 => LONG_TEXT,
+        ParmType::Char => (len.len as usize).max(1),
         _ => (len.len as usize).clamp(1, MAX_WIDTH),
     };
     base.max(longest)
@@ -461,6 +614,13 @@ pub fn choices(p: &Parm) -> String {
     match p.ty {
         ParmType::Name | ParmType::SName | ParmType::CName => parts.push("Name".into()),
         ParmType::Generic => parts.push("Name, generic*".into()),
+        ParmType::Dec
+        | ParmType::Int2
+        | ParmType::Int4
+        | ParmType::Uint2
+        | ParmType::Uint4
+        | ParmType::X
+            if p.rstd => {}
         ParmType::Dec
         | ParmType::Int2
         | ParmType::Int4

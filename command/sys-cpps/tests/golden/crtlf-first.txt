@@ -1,4 +1,4 @@
-                          Create Logical File (CRTLF)                           
+                           Create Logical File (CRTLF)                          
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
@@ -13,12 +13,12 @@
  Source listing options . . . . .   *SRC          *SRC, *SOURCE, *NOSRC...      
                        + for more values                                        
  System . . . . . . . . . . . . .   *LCL          *LCL, *RMT, *FILETYPE         
- Physical file data members:                                                    
-   Physical file  . . . . . . . .     *ALL          Name                        
-     Library  . . . . . . . . . .                     Name, *CURRENT, *LIBL...  
-   Members  . . . . . . . . . . .                   Name, *NONE                 
-                         + for more values                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
                                                                                 
                                                                         More... 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
  F13=How to use this display        F24=More keys                               
+                                                                                

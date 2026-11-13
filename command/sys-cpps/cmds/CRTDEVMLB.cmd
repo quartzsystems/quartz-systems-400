@@ -42,7 +42,7 @@
              PARM       KWD(ROBOTDEV) TYPE(*NAME) LEN(10) DFT(*NONE) +
                           SPCVAL((*NONE)) +
                           PROMPT('Robot device descriptions')
-             PARM       KWD(ROBOTHOST) TYPE(*CHAR) LEN(255) +
+             PARM       KWD(ROBOTHOST) TYPE(*CHAR) LEN(255) INLPMTLEN(17) +
                           DFT(*NONE) SPCVAL((*NONE)) +
                           PROMPT('Robot host')
              PARM       KWD(LCLINTNETA) TYPE(*CHAR) LEN(15) +

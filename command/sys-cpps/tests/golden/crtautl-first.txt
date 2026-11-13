@@ -1,9 +1,10 @@
-                      Create Authorization List (CRTAUTL)                       
+                       Create Authorization List (CRTAUTL)                      
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
  Authorization list . . . . . . . > PAYROLL       Name                          
  Description  . . . . . . . . . .   *BLANK                                      
+                                                                                
  Public authority . . . . . . . .   *EXCLUDE      *EXCLUDE, *ALL, *CHANGE, *USE 
                                                                                 
                                                                                 
@@ -17,8 +18,7 @@
                                                                                 
                                                                                 
                                                                                 
-                                                                                
-                                                                                
                                                                          Bottom 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

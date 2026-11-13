@@ -3,10 +3,10 @@
  Type choices, press Enter.                                                     
                                                                                 
  Call stack entry message queue:                                                
-   Relationship . . . . . . . . .     *SAME         *SAME, *PRV                 
-   Call stack entry . . . . . . .     *             *, *CTLBDY, *PGMBDY...      
-     Module . . . . . . . . . . .       *NONE         Name, *NONE               
-     Bound program  . . . . . . .       *NONE         Name, *NONE               
+   Relationship . . . . . . . . .   *SAME         *SAME, *PRV                   
+   Call stack entry . . . . . . .   *             *, *CTLBDY, *PGMBDY, *PGMNAME 
+     Module . . . . . . . . . . .     *NONE         Name, *NONE                 
+     Bound program  . . . . . . .     *NONE         Name, *NONE                 
  Message queue  . . . . . . . . .   *PGMQ         Name, *PGMQ, *EXT             
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Message type . . . . . . . . . . > *ANY          *ANY, *NEXT, *PRV, *INFO...   
@@ -15,10 +15,10 @@
  Remove message . . . . . . . . .   *YES          *YES, *NO, *KEEPEXCP          
  Coded character set ID . . . . .   *JOB          1-65535, *JOB, *HEX           
  CL var for KEYVAR (4)  . . . . .                 Character value               
- CL var for MSG . . . . . . . . .                                               
- CL var for MSGLEN (5 0)  . . . .                 Number                        
- CL var for SECLVL  . . . . . . .                                               
+                                                                                
+                                                                                
                                                                                 
                                                                         More... 
- F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
- F13=How to use this display        F24=More keys                               
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                
