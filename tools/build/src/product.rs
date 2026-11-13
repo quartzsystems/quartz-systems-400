@@ -312,6 +312,8 @@ pub const REQUIRED_Y: &[&str] = &[
     "TCG_CRB",
     "USB_UAS",
     "XFS_FS",
+    // File IDs to objects through xfs handles (ifs/fhandle).
+    "FHANDLE",
     "EXT4_FS",
     "VFAT_FS",
     "NLS_CODEPAGE_437",

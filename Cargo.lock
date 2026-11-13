@@ -1308,6 +1308,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "fhandle"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "fiat-crypto"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1934,6 +1941,7 @@ name = "ifs"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "fhandle",
  "ipc",
  "optical",
  "rustix",
