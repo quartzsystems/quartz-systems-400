@@ -33,6 +33,8 @@ pub(super) struct Open {
     pub access: u32,
     pub deny: u32,
     pub stateid: stateid4,
+    /// Who opened it (reclaimed as them).
+    pub cred: crate::rpc::Credential,
 }
 
 /// The locks one owner holds on one file.
@@ -352,11 +354,10 @@ pub(super) fn reclaim(core: &Core) {
         st.owners.clear();
         st.opens.iter().map(|(k, o)| (*k, o.clone())).collect()
     };
-    let cred = core.owner.clone();
     for (id, o) in opens {
         match open_wire(
             core,
-            &cred,
+            &o.cred,
             &Claim::Previous(o.fh.clone()),
             o.owner,
             o.access,
@@ -387,6 +388,9 @@ pub(super) fn reclaim(core: &Core) {
             .find(|o| o.fh == fh && o.owner == owner)
             .cloned();
         for r in l.held {
+            let cred = open
+                .as_ref()
+                .map_or_else(|| core.owner.clone(), |o| o.cred.clone());
             match lock_wire(core, &cred, &fh, owner, r, open.as_ref(), true) {
                 Ok(Ok(())) => {}
                 other => tracing::warn!(?other, "a lock was not reclaimed"),

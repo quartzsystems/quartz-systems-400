@@ -195,7 +195,7 @@ impl ServerSys {
         Server::new(
             V4Config {
                 grace: self.grace,
-                lease: Duration::from_secs(30),
+                lease: Duration::from_secs(300),
                 ..V4Config::default()
             },
             Arc::clone(&w.exports) as Arc<dyn ExportTable>,

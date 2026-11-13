@@ -384,3 +384,68 @@ fn owners_are_numbers_without_a_registry() {
     // The server writes BOB@example.com: unknown without a registry.
     assert_eq!(a.uid, Cred::NOBODY);
 }
+
+/// The server's instance replaced with an open and a lock held: the
+/// client ID (4.0) or the session and client ID (4.1) made again, the
+/// open and the lock reclaimed in the grace period, `RECLAIM_COMPLETE`;
+/// another client's new lock is refused while it lasts and conflicts
+/// after it.
+fn restart_against(vers: &str) {
+    let (s, addr, reg) = v4_server();
+    let m = mount(addr, vers, "c1", Some(&reg)).unwrap();
+    let c = bob();
+    let (root, _) = m.root().unwrap();
+    let (f, _) = m
+        .create(
+            &c,
+            &root,
+            b"held",
+            CreateMode::Unchecked(SetAttr::default()),
+        )
+        .unwrap();
+    let rw = Share {
+        read: true,
+        write: true,
+        ..Share::default()
+    };
+    let t = m.open(&c, &f, rw, LockOwner(4)).unwrap();
+    m.lock(&c, &f, LockOwner(4), LockKind::Write, 0, 100, &t)
+        .unwrap();
+    m.write(&c, &f, 0, b"before", Stable::FileSync).unwrap();
+    s.restart();
+    let srv = s.v4.lock().unwrap().clone().unwrap();
+    assert!(srv.in_grace());
+    // The open goes on working: its state was reclaimed first.
+    m.write(&c, &f, 0, b"after!", Stable::FileSync)
+        .unwrap_or_else(|e| panic!("{vers}: {e:?}"));
+    assert_eq!(m.read(&c, &f, 0, 6).unwrap().0, b"after!");
+    // After the grace period another client finds the lock in place.
+    s.advance(Duration::from_secs(31));
+    assert!(!srv.in_grace());
+    let m2 = mount(addr, vers, "c2", Some(&reg)).unwrap();
+    let f2 = m2.lookup(&c, &m2.root().unwrap().0, b"held").unwrap().0;
+    let t2 = m2.open(&c, &f2, rw, LockOwner(1)).unwrap();
+    assert_eq!(
+        m2.lock(&c, &f2, LockOwner(1), LockKind::Write, 0, 1, &t2)
+            .unwrap_err(),
+        RemoteError::Errno(Errno::EAGAIN),
+        "{vers}: the reclaimed lock stands"
+    );
+    m.unlock(&c, &f, LockOwner(4), 0, 100).unwrap();
+    m2.lock(&c, &f2, LockOwner(1), LockKind::Write, 0, 1, &t2)
+        .unwrap();
+    m.close(&c, &f, &t).unwrap();
+    m2.close(&c, &f2, &t2).unwrap();
+    m.unmount().unwrap();
+    m2.unmount().unwrap();
+}
+
+#[test]
+fn a_restart_of_the_v4_server_is_reclaimed_over_4_1() {
+    restart_against("4.1");
+}
+
+#[test]
+fn a_restart_of_the_v4_server_is_reclaimed_over_4_0() {
+    restart_against("4.0");
+}

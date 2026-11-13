@@ -427,6 +427,7 @@ impl RemoteFs for V4 {
             access: OPEN4_SHARE_ACCESS_WRITE,
             deny: 0,
             stateid: op.stateid,
+            cred: c.clone(),
         };
         self.close_wire(&c, &o)?;
         Ok((op.fh, rattr(&op.attrs, self.core.reg())))
@@ -625,6 +626,7 @@ impl RemoteFs for V4 {
                 access,
                 deny,
                 stateid: op.stateid,
+                cred: self.cred(cred),
             },
         );
         Ok(OpenToken(id.to_be_bytes().to_vec()))
@@ -644,6 +646,18 @@ impl RemoteFs for V4 {
             .values()
             .any(|x| x.fh == o.fh && x.owner == o.owner);
         if !left {
+            // 4.0 refuses to close while the owner holds locks there
+            // (`LOCKS_HELD`): they go first.
+            let held = self
+                .core
+                .state()
+                .locks
+                .get(&(o.fh.clone(), o.owner))
+                .map(|l| l.held.clone())
+                .unwrap_or_default();
+            for r in held {
+                let _ = self.unlock(cred, &o.fh, LockOwner(o.owner), r.off, r.len);
+            }
             self.core.state().locks.remove(&(o.fh.clone(), o.owner));
         }
         self.close_wire(&self.cred(cred), &o)
