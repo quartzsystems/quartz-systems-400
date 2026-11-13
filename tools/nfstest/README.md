@@ -134,9 +134,8 @@ old session then `BADSESSION`), the same file scenarios as `v41-*` with
   against the server on main are listed in `KNOWN` with the finding.
 - `tests/v4_scripted.rs`: the version 4 scenarios that need no file data
   against a scripted responder (`tests/v4fake/`, written from the RFCs
-  for the tests); that QS/400's server refuses version 4 today; and,
-  ignored until the version 4 server lands (NFS-6), every 4.0 and 4.1
-  scenario against it.
+  for the tests); that a version 3 server refuses version 4; and every
+  4.0 and 4.1 scenario against QS/400's server (`nfsd4`).
 
 ## Interop
 
@@ -166,10 +165,10 @@ is not used through forwards. The 1 GB run is `nfstest bench ... --mib
 
 ## Findings
 
-What the loopback run found in the server on main (in `KNOWN` until
-fixed):
+What the loopback run found in the server (in `KNOWN` until fixed;
+none is now):
 
-- `nlm-share`: an NLM `SHARE` with deny-write of a file the same client
+- `nlm-share` (fixed):  an NLM `SHARE` with deny-write of a file the same client
   has just written through NFS version 3 is `NLM4_DENIED`, and stays
   denied while the writing connection is idle; one more NFS call on that
   connection and it is granted. The `nfsd` thread's cached write
@@ -177,4 +176,7 @@ fixed):
   mode, and its idle time is only checked on the thread's next call
   (`IfsVfs::sweep`). The same descriptor would refuse a version 4 `OPEN`
   with `OPEN4_SHARE_DENY_WRITE` and a local job's `open` with
-  `O_SHARE_NONE`.
+  `O_SHARE_NONE`. Now a share refusal closes the idle threads' kept
+  descriptors of the object across the job (`server/ifsvfs/jobfds.rs`)
+  and the open is tried once more (`net/nfs/tests/srv3_fdshare.rs`); a
+  local job's open still waits for the job's next call (docs/NFS.md 5.2).
