@@ -197,10 +197,14 @@ pub fn request(system: &mut System, job: &JobInfo, me: &Principal, op: NfsOp) ->
         NfsOp::GidOfName { name } => NfsReply::Id {
             id: ids(system, job, |m| m.gid_of(&name.to_ascii_uppercase())),
         },
-        NfsOp::Mapping => NfsReply::Mapping {
-            enabled: state().registry.ready(Daemon::Rgy) > 0,
-            domain: domain(system),
-        },
+        NfsOp::Mapping => {
+            // The state's guard goes before `domain`, which locks it again.
+            let enabled = state().registry.ready(Daemon::Rgy) > 0;
+            NfsReply::Mapping {
+                enabled,
+                domain: domain(system),
+            }
+        }
     }
 }
 
@@ -444,6 +448,41 @@ pub fn ship_etc(system: &mut System) {
 mod tests {
     use super::super::sbs::Active;
     use super::subsystem_ending;
+
+    /// A version 4 client's first owner made `QNFSNFSD` ask `Mapping`,
+    /// whose answer held the state's lock while `domain` took it again:
+    /// the storage service stopped for good. A watchdog ends the test
+    /// process if the answer never comes.
+    #[test]
+    fn the_mapping_answer_does_not_lock_the_state_twice() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let done = Arc::new(AtomicBool::new(false));
+        let d2 = Arc::clone(&done);
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(20));
+            if !d2.load(Ordering::SeqCst) {
+                eprintln!("NfsOp::Mapping deadlocked");
+                std::process::abort();
+            }
+        });
+        super::state().options = Some(stg::nfs::NfsOptions::default());
+        let mut system = crate::ipl::system::System::new(
+            crate::platform::console::Outputs::open(),
+            crate::ipl::cmdline::Boot::parse(""),
+        );
+        let r = super::request(
+            &mut system,
+            &wm::table::JobInfo::default(),
+            &sec::auth::principal::Principal::default(),
+            stg::nfs::NfsOp::Mapping,
+        );
+        done.store(true, Ordering::SeqCst);
+        assert!(matches!(
+            r,
+            stg::nfs::NfsReply::Mapping { enabled: false, .. }
+        ));
+    }
 
     /// A power down ends `QSYSWRK` at once: its daemons' ends were asked
     /// for, so `QSYSOPR` gets no `CPFA1B5` (seven came at every IPL).
