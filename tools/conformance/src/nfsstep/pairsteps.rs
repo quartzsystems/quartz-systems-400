@@ -232,30 +232,53 @@ fn locked(
     }
 }
 
-/// B's view of a file on a mount through QSH, and A's of the same file:
-/// write, read back, rename, list; the owner A records; remove.
+/// A QSH script run on B as `QSECOFR` (UID 0 on the wire) in a batch
+/// job: the console's job is `QSYS`'s (UID 101), which no export
+/// squashes. The script touches `/tmp/<job>.done` when every command in
+/// it succeeded.
+fn as_root(b: &mut Session, job: &str, script: &str) -> Result<(), String> {
+    let done = format!("/tmp/{job}.done");
+    b.command(&format!("svc.ifs rm {done}"), CMD)?;
+    let out = b.command(
+        &format!(
+            "SBMJOB CMD(QSH CMD('{script} && touch {done}')) JOB({job}) JOBQ(QGPL/QBATCH) USER(QSECOFR)"
+        ),
+        CMD,
+    )?;
+    let id = crate::qsh::submitted(&out)?;
+    wait_path(b, &done, NET).map(|_| ()).map_err(|e| {
+        let log = b
+            .command(&format!("svc.dspjoblog JOB({id})"), CMD)
+            .unwrap_or_default();
+        format!("{e}: {id} as QSECOFR, {script}:\n{log}")
+    })
+}
+
+/// A file on a mount from B and the same file on A: made, written and
+/// renamed by `QSECOFR` on B, read back and listed by B's console job,
+/// its owner on A, then removed from B.
 fn files(p: &mut Pair, over: &str, adir: &str, tag: &str, owner: &str) -> Result<String, String> {
     let d = format!("{over}/{tag}");
     let text = format!("from-guest-b-{tag}");
-    let out = qsh(
+    let up = tag.to_ascii_uppercase();
+    as_root(
         &mut p.b,
-        &format!(
-            "mkdir {d} && echo {text} > {d}/f1.txt && cat {d}/f1.txt && mv {d}/f1.txt {d}/f2.txt && ls -l {d}"
-        ),
-        NET,
+        &format!("NFSF{up}"),
+        &format!("mkdir {d} && echo {text} > {d}/f1.txt && mv {d}/f1.txt {d}/f2.txt"),
     )?;
+    let out = qsh(&mut p.b, &format!("cat {d}/f2.txt && ls -l {d}"), NET)?;
     if !out.contains(&text) || !out.contains("f2.txt") {
-        return Err(format!("B's write, read and rename on {over}:\n{out}"));
+        return Err(format!("B's read and list on {over}:\n{out}"));
     }
     let on_a = format!("{adir}/{tag}/f2.txt");
     let st = stat(&mut p.a, &on_a)?.ok_or_else(|| format!("A has no {on_a}"))?;
     if st.owner != owner || st.size < text.len() as u64 {
         return Err(format!("A's {on_a}: {st:?}, not owned by {owner}"));
     }
-    qsh(
+    as_root(
         &mut p.b,
+        &format!("NFSR{up}"),
         &format!("rm {d}/f2.txt && rmdir {d} && ls {over}"),
-        NET,
     )?;
     if stat(&mut p.a, &format!("{adir}/{tag}"))?.is_some() {
         return Err(format!("{adir}/{tag} is still on A after B removed it"));
