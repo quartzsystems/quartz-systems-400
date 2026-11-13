@@ -4,28 +4,43 @@
 
 //! The NFS daemon jobs (docs/NFS.md section 4): `QSYSWRK` routes
 //! `QNFSRPCD` ... to `QZNFRPCD` ..., and each job runs [`lifecycle`]: it
-//! says hello to the service's registry, serves (each daemon's own
-//! module's `serve`), reports ready with what it registered, then waits
-//! until `ENDNFSSVR`, `ENDJOB` or its subsystem's end asks it to stop,
-//! and leaves the registry.
+//! says hello to the service's registry, starts serving (each daemon's
+//! own module's `serve`: its sockets bound and registered with the
+//! binder, its loop on a thread of its own), reports ready with what it
+//! registered, then waits until `ENDNFSSVR`, `ENDJOB` or its
+//! subsystem's end asks it to stop; the loop then finishes what is in
+//! flight within a bound, the registrations go, and the job leaves the
+//! registry. A loop that stops by itself is reported (`CPFA1B5`,
+//! `CPFA1CB` for the binder) to `QSYSOPR`.
 
 pub mod biod;
+pub mod host;
 pub mod mntd;
+pub mod names;
 pub mod nfsd;
 pub mod nlmd;
 pub mod nsmd;
 pub mod rgyd;
 pub mod rpcd;
+pub mod running;
+pub mod statd;
+pub mod view;
 
+#[cfg(test)]
+mod tests;
+
+use std::sync::Arc;
 use std::time::Duration;
 
 use ifscmd::Msg;
 use qir::MsgType;
-use stg::nfs::{Daemon, NfsOp, NfsPort, NfsReply};
+use stg::nfs::{Daemon, NfsOp, NfsReply};
 use stg::{Client, Shared};
 use wm::job::Status;
 
 use crate::console::Console;
+use host::{Host, JobHost};
+use running::{Fail, Running};
 
 /// What a daemon was told when it registered.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -39,14 +54,13 @@ pub struct Started {
 }
 
 /// What a daemon's `serve` did.
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(not(test), allow(dead_code))] // Ready: the serving daemons of NFS wave 2
+#[derive(Debug)]
 pub enum Serve {
     /// Serving, with what it registered with the binder: the job is
     /// ready.
-    Ready(Vec<NfsPort>),
-    /// It cannot serve: the job ends without reporting ready.
-    Unavailable,
+    Ready(Running),
+    /// It cannot serve, and why: the job ends without reporting ready.
+    Unavailable(Fail),
 }
 
 /// What the lifecycle needs of the job, so it runs over a double.
@@ -57,6 +71,11 @@ pub trait DaemonEnv {
     fn idle(&mut self) -> bool;
     /// A message to the job log.
     fn log(&mut self, m: &Msg, kind: MsgType);
+}
+
+/// The message saying what failed, by its error number.
+fn errno_msg(f: &Fail) -> Option<Msg> {
+    (f.errno != 0).then(|| Msg::errno(ifs::errno::linux::from_linux(f.errno), ""))
 }
 
 /// Run a daemon job through its life; the job's end code.
@@ -78,11 +97,14 @@ pub fn lifecycle(
         _ => return 20,
     };
     match serve(env, &started) {
-        Serve::Unavailable => {
-            env.log(
-                &Msg::new("CPI9C11").chars(daemon.keyword(), 4),
-                MsgType::Info,
-            );
+        Serve::Unavailable(f) => {
+            eprintln!("qsjob: {}: not started: {}", daemon.job_name(), f.what);
+            if let Some(m) = errno_msg(&f) {
+                env.log(&m, MsgType::Diag);
+            }
+            if daemon == Daemon::Rpc {
+                env.log(&Msg::new("CPFA1CC").bin4(i64::from(f.errno)), MsgType::Diag);
+            }
             env.log(
                 &Msg::new("CPFA1BC").chars(daemon.keyword(), 8),
                 MsgType::Diag,
@@ -90,17 +112,66 @@ pub fn lifecycle(
             env.op(NfsOp::Gone);
             20
         }
-        Serve::Ready(ports) => {
-            env.op(NfsOp::Ready { ports });
+        Serve::Ready(mut r) => {
+            env.op(NfsOp::Ready {
+                ports: r.ports.clone(),
+            });
+            let mut failed = None;
             while env.idle() {
+                if let Some(f) = r.failure() {
+                    failed = Some(f);
+                    break;
+                }
+                r.tick(env);
                 if matches!(env.op(NfsOp::ShouldEnd), NfsReply::Flag { yes: true }) {
                     break;
                 }
             }
+            if let Some(f) = failed {
+                eprintln!("qsjob: {}: ended: {}", daemon.job_name(), f.what);
+                r.stop();
+                if let Some(m) = errno_msg(&f) {
+                    env.log(&m, MsgType::Diag);
+                }
+                let m = if daemon == Daemon::Rpc {
+                    Msg::new("CPFA1CB").bin4(i64::from(f.errno))
+                } else {
+                    Msg::new("CPFA1B5")
+                };
+                env.log(&m, MsgType::Diag);
+                // The service tells QSYSOPR and forgets the job.
+                env.op(NfsOp::Failed { errno: f.errno });
+                return 30;
+            }
+            if !r.stop() {
+                eprintln!(
+                    "qsjob: {}: calls still running at the end",
+                    daemon.job_name()
+                );
+            }
             env.op(NfsOp::Gone);
-            env.log(&Msg::new("CPCA1B2"), MsgType::Comp);
+            let done = if daemon == Daemon::Rpc {
+                "CPCA1B5"
+            } else {
+                "CPCA1B2"
+            };
+            env.log(&Msg::new(done), MsgType::Comp);
             0
         }
+    }
+}
+
+/// Start `daemon`'s service over `host`.
+pub fn serve_with<H: Host>(env: &mut dyn DaemonEnv, started: Started, host: &Arc<H>) -> Serve {
+    match started.daemon {
+        Daemon::Rpc => rpcd::serve(env, started, host),
+        Daemon::Bio => biod::serve(env, started, host),
+        Daemon::Rgy => rgyd::serve(env, started, host),
+        Daemon::Svr => nfsd::serve(env, started, host),
+        Daemon::Mnt => mntd::serve(env, started, host),
+        Daemon::Nsm => nsmd::serve(env, started, host),
+        Daemon::Nlm => nlmd::serve(env, started, host),
+        Daemon::Gss => Serve::Unavailable(Fail::new("Kerberos is not supported")),
     }
 }
 
@@ -140,124 +211,18 @@ pub fn run(c: &mut Console, link: &Shared, daemon: Daemon, number: u32) -> u16 {
         env.log(&Msg::new("CPFA1BC").chars("*GSS", 8), MsgType::Diag);
         return 20;
     }
-    let mut serve = |e: &mut dyn DaemonEnv, s: &Started| match daemon {
-        Daemon::Rpc => rpcd::serve(e, *s),
-        Daemon::Bio => biod::serve(e, *s),
-        Daemon::Rgy => rgyd::serve(e, *s),
-        Daemon::Svr => nfsd::serve(e, *s),
-        Daemon::Mnt => mntd::serve(e, *s),
-        Daemon::Nsm => nsmd::serve(e, *s),
-        Daemon::Nlm | Daemon::Gss => nlmd::serve(e, *s),
+    let host = match JobHost::start(number, daemon.job_name()) {
+        Ok(h) => Arc::new(h),
+        Err(e) => {
+            eprintln!("qsjob: {}: the link thread: {e}", daemon.job_name());
+            env.log(
+                &Msg::new("CPFA1BC").chars(daemon.keyword(), 8),
+                MsgType::Diag,
+            );
+            return 20;
+        }
     };
+    let mut serve = |e: &mut dyn DaemonEnv, s: &Started| serve_with(e, *s, &host);
     stg::remote::status(link, Status::Selw, "");
     lifecycle(&mut env, daemon, &mut serve)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// A registry of one job and a clock of pauses.
-    struct Fake {
-        ops: Vec<String>,
-        log: Vec<String>,
-        idles: u32,
-        end_after: u32,
-        refuse: bool,
-    }
-
-    impl DaemonEnv for Fake {
-        fn op(&mut self, op: NfsOp) -> NfsReply {
-            self.ops.push(
-                format!("{op:?}")
-                    .split([' ', '{'])
-                    .next()
-                    .unwrap_or("")
-                    .to_string(),
-            );
-            match op {
-                NfsOp::Hello { .. } if self.refuse => NfsReply::Refused {
-                    msgid: "CPFA1B4".into(),
-                    data: Vec::new(),
-                    text: String::new(),
-                },
-                NfsOp::Hello { .. } => NfsReply::Hello {
-                    index: 1,
-                    restore: true,
-                },
-                NfsOp::ShouldEnd => NfsReply::Flag {
-                    yes: self.idles >= self.end_after,
-                },
-                _ => NfsReply::Done,
-            }
-        }
-        fn idle(&mut self) -> bool {
-            self.idles += 1;
-            true
-        }
-        fn log(&mut self, m: &Msg, _: MsgType) {
-            self.log.push(m.id.clone());
-        }
-    }
-
-    fn fake() -> Fake {
-        Fake {
-            ops: Vec::new(),
-            log: Vec::new(),
-            idles: 0,
-            end_after: 3,
-            refuse: false,
-        }
-    }
-
-    /// A test-only serve that serves: ready, until ENDNFSSVR.
-    #[test]
-    fn a_serving_daemon_is_ready_until_asked_to_end() {
-        let mut f = fake();
-        let mut serve = |_: &mut dyn DaemonEnv, s: &Started| {
-            assert!(s.restore && s.index == 1);
-            Serve::Ready(vec![NfsPort {
-                program: 100_000,
-                version: 4,
-                proto: "tcp".into(),
-                port: 111,
-            }])
-        };
-        assert_eq!(lifecycle(&mut f, Daemon::Rpc, &mut serve), 0);
-        assert_eq!(f.ops.first().map(String::as_str), Some("Hello"));
-        assert_eq!(f.ops.get(1).map(String::as_str), Some("Ready"));
-        assert_eq!(f.ops.last().map(String::as_str), Some("Gone"));
-        assert_eq!(f.idles, 3);
-        assert_eq!(f.log, ["CPCA1B2"]);
-    }
-
-    /// Today's daemons: none reports ready, each ends saying why.
-    #[test]
-    fn every_daemon_today_ends_without_claiming_to_serve() {
-        for d in Daemon::ALL {
-            let mut f = fake();
-            let mut serve = |e: &mut dyn DaemonEnv, s: &Started| match d {
-                Daemon::Rpc => rpcd::serve(e, *s),
-                Daemon::Bio => biod::serve(e, *s),
-                Daemon::Rgy => rgyd::serve(e, *s),
-                Daemon::Svr => nfsd::serve(e, *s),
-                Daemon::Mnt => mntd::serve(e, *s),
-                Daemon::Nsm => nsmd::serve(e, *s),
-                Daemon::Nlm | Daemon::Gss => nlmd::serve(e, *s),
-            };
-            assert_eq!(lifecycle(&mut f, d, &mut serve), 20, "{d:?}");
-            assert!(!f.ops.contains(&"Ready".to_string()), "{d:?}");
-            assert_eq!(f.ops.last().map(String::as_str), Some("Gone"));
-            assert_eq!(f.log, ["CPI9C11", "CPFA1BC"]);
-        }
-    }
-
-    #[test]
-    fn a_job_the_registry_refuses_ends() {
-        let mut f = fake();
-        f.refuse = true;
-        let mut serve = |_: &mut dyn DaemonEnv, _: &Started| Serve::Ready(Vec::new());
-        assert_eq!(lifecycle(&mut f, Daemon::Svr, &mut serve), 20);
-        assert_eq!(f.ops, ["Hello"]);
-    }
 }
