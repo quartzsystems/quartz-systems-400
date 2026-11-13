@@ -374,9 +374,12 @@ that stays `NEEDS-CODY` (section 12). `WRKACTJOB` shows the function
   lookups and `Mapping`, asked at most every two seconds, the
   registry keeping the answers 600 s); with the mapping off
   (`IdMap::mapping` false) owners are sent as numbers and only numbers
-  are taken (`NFS4ERR_BADOWNER` for a name). The NFS client's own v4
-  mapping (in the service) is the lead's to connect (`ClientEnv` has no
-  registry on main at this writing).
+  are taken (`NFS4ERR_BADOWNER` for a name). The NFS client in the
+  service maps the same way (`stgsvc::nfs::ids`: `ClientEnv::registry`
+  over the profiles as the service's thread last indexed them, taken
+  again when a profile, group or list changes, names mapped while
+  `*RGY` is ready, the same domain), so a v4 mount shows and sets owners
+  as `profile@domain` while `QNFSRGYD` runs and as numbers otherwise.
 
 **The export table in a daemon** (`view.rs`). `JobExports` is the
 `server::ExportTable` the job's threads share: the service's table
@@ -555,11 +558,20 @@ one is made (the client applied its own).
   in a call (`ifsvfs::jobfds`: the threads of one server start share a
   registry; a thread marks itself busy for the length of a call), and
   tries once more; every call also closes the other idle threads'
-  descriptors unused past their time (5 seconds). A local job's open
-  that an idle thread's kept descriptor refuses is still refused until
-  the job's next call after that time; an IFS lease per kept
-  descriptor, broken by the local open, would end it at once (it needs
-  a news loop in the version 3 daemon job).
+  descriptors unused past their time (5 seconds). Each kept descriptor
+  also holds an IFS lease (read and handle caching, as `QZLSFILE`'s
+  opens do; `ifsvfs::kept`, tag `1 << 63 | fd`, never a delegation's,
+  `ifsvfs::Config::leases`): a local job's (or `NetServer`'s) open
+  that its share mode refuses breaks the handle caching, and the job's
+  news poller (`kept::JobNews`, the `NewsSource` of `QNFSNFSD`'s
+  `v4::Server::background` thread, which runs with or without v4
+  clients, and of `QNFSNLMD`'s grant poll) takes the descriptor from
+  whichever thread keeps it (after the call that thread is in, at most
+  2 seconds), gives the lease back and closes it; the open goes on
+  then, with no further NFS call. Other break orders (delegations) are
+  passed on to the v4 server. A descriptor whose thread stays in a call
+  past the bound is left; the IFS ends the wait at its break time-out
+  (35 seconds) and the open is refused as before.
 - An open's number is its descriptor, the job's, so any thread of the
   job may close it (NLM `UNSHARE` on another connection).
 - Byte-range locks are held by sub-owners through descriptors of the
@@ -2114,7 +2126,12 @@ below. Still to come: the QEMU steps (last item).
   `lic/slic` (`stgsvc::nfs::registry`): release orders handed once to
   the ready lock manager and every ready server job, dropped with them.
   `cargo test -p nfs --lib registry`: owners as numbers with the mapping
-  off.
+  off. `net/nfs/tests/srv3_kept.rs`: a local job's `O_SHARE_NONE` open
+  after an NFSv3 `WRITE` goes through once the poller carries out the
+  break, with no further NFS call; other break orders passed on. The
+  daemon jobs' tests add the same through a `QNFSNFSD` job. The
+  service's `stgsvc::nfs::ids`: a mount's owners as numbers, then as
+  `profile@domain` once `*RGY` runs.
 - **QEMU** (`build test`), still to come: two QS/400 guests, one
   exporting and one mounting, v3 and v4; locks across the guests; the
   server ended and started with locks reclaimed; a `/QSYS.LIB` export

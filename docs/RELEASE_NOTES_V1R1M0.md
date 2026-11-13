@@ -483,10 +483,10 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `database/sql/tests/trigger.rs:266` | in exec::reads); every row its scan keeps here. |
 | `BLOCKED(rel)` | `docs/DB_OPEN_QUESTIONS.md:283` | the database |
 | `NEEDS-CODY` | `docs/NFS.md:244` | IBM's user, section 12), as the service's own |
-| `NEEDS-CODY` | `docs/NFS.md:1187` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
-| `NEEDS-CODY` | `docs/NFS.md:1822` | the primary's `EXPE0100` |
-| `NEEDS-CODY` | `docs/NFS.md:1864` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
-| `NEEDS-CODY` | `docs/NFS.md:2129` | 12. |
+| `NEEDS-CODY` | `docs/NFS.md:1207` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
+| `NEEDS-CODY` | `docs/NFS.md:1848` | the primary's `EXPE0100` |
+| `NEEDS-CODY` | `docs/NFS.md:1890` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
+| `NEEDS-CODY` | `docs/NFS.md:2181` | 12. |
 | `BLOCKED(rel)` | `docs/PHASE12.md:99` | SAVLICPGM writes no IFS records, RSTLICPGM restores none |
 | `BLOCKED(rel)` | `docs/PHASE12.md:104` | at jobcmd.rs:153 |
 | `BLOCKED(rel)` | `docs/PHASE12.md:138` | (b855a775) |
@@ -570,7 +570,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1450` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:87` | the plan cache (`sql::exec::plan::cache`) keeps |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:98` | a package's statements are kept (`db::sqlpkg`) |
-| `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:49` | IBM's, |
+| `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:50` | IBM's, |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:119` | the request holds the service until it answers |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:305` | commands whose processing program runs in the |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:470` | the job's own variables live in the job; the |
