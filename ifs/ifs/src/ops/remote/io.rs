@@ -277,6 +277,40 @@ impl<B: Backend> Ifs<B> {
         }
     }
 
+    /// `RLSIFSLCK` of a remote object (or its whole mount): every local
+    /// open of it that took locks unlocks all of its owner's on the
+    /// server, without waiting. How many opens did.
+    pub(crate) fn remote_release(
+        rest: &mut Rest<B::File>,
+        key: crate::lock::ObjKey,
+        whole_fs: bool,
+    ) -> usize {
+        let mut n = 0;
+        for o in rest.opens.values_mut() {
+            let on = if whole_fs {
+                o.key.fs == key.fs
+            } else {
+                o.key == key
+            };
+            if let (true, OpenKind::Remote(r)) = (on, &mut o.kind)
+                && r.locked
+            {
+                r.mount.background(
+                    Mutation::Unlock {
+                        h: r.h.clone(),
+                        owner: LockOwner(r.owner.0),
+                        off: 0,
+                        len: 0,
+                    },
+                    &r.cred,
+                );
+                r.locked = false;
+                n += 1;
+            }
+        }
+        n
+    }
+
     /// `fstat` of a remote open.
     pub(crate) fn remote_fstat(cx: &Ctx<'_>, o: &Open<B::File>) -> Result<Option<Stat>> {
         let OpenKind::Remote(r) = &o.kind else {

@@ -393,3 +393,29 @@ fn server_job_calls_on_a_remote_mount() {
     );
     c.close(fd).unwrap();
 }
+
+#[test]
+fn releasing_locks_of_a_remote_file_unlocks_on_the_server() {
+    use ifs::lock::range::RangeKind;
+    use ifs::ops::flags::{F_SETLK, SEEK_SET};
+    let r = mounted();
+    let c = r.client("QSECOFR", 1);
+    put(&c, "/mnt/l", b"locked");
+    let fd = c.open("/mnt/l", OpenArgs::new(O_RDWR)).unwrap();
+    c.lock_range(fd, F_SETLK, RangeKind::Write, SEEK_SET, 0, 0)
+        .unwrap();
+    let before = r.server.calls_of("unlock");
+    let sec = remote_common::user("QSECOFR");
+    let audit = ifs::ops::audit::MemAudit::default();
+    let cx = ifs::ops::Ctx {
+        owner: ifs::ops::Owner(2),
+        principal: &sec,
+        env: &*r.env,
+        audit: &audit,
+        job_ccsid: 37,
+    };
+    let (n, _) = ifs::lease::defer::deferring(true, || r.ifs.release_ranges(&cx, "/mnt/l", false));
+    assert_eq!(n, Ok(1));
+    remote_common::until(|| r.server.calls_of("unlock") > before);
+    c.close(fd).unwrap();
+}

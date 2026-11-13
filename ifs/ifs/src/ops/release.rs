@@ -19,6 +19,10 @@ impl<B: Backend> Ifs<B> {
         let (mut sys, rest) = self.split(&mut st);
         let r = sys.resolve(&cwd, path, true, Some(cx))?;
         let key = r.node.key();
+        if matches!(r.node, crate::resolve::Node::Remote { .. }) {
+            // A remote file's locks are its server's: unlocked there.
+            return Ok(Self::remote_release(rest, key, whole_fs));
+        }
         Ok(if whole_fs {
             rest.locks.release_ranges_on(key.fs)
         } else {

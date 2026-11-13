@@ -945,6 +945,7 @@ reads the cache and queues work:
 | `MOUNT` over a directory of a remote mount | `ENOTSUP` (nothing is mounted inside one) |
 | `Qp0lGetPathFromFileID`, `stat_by_id`, `open_by_id` | `ENOTSUP`: a remote object's number is its server's (and a remote mount cannot be exported) |
 | byte-range locks | the server's (`lock`, `unlock`, `test` with the job as owner; `F_SETLKW` answers `EAGAIN` while it would wait, as locally); released at close; `RemoteInfo::locks` false: `ENOLCK`. `lock_range_as` with sub-owner 0 is the same; another sub-owner, and `lock_wait`, are `ENOTSUP` (sub-owners and queued locks are a local server job's, for its own clients) |
+| `RLSIFSLCK` (`Ifs::release_ranges`) of a remote object or its mount | each local open of it that took locks unlocks its job's on the server, without waiting; locks other clients hold there are the server's |
 | `as_caller` | the calls run as the mapped user: the `Cred` sent is that profile's UID and its groups' GIDs; an open keeps the opener's |
 
 Authority is the server's: the IFS sends the job's credentials (its

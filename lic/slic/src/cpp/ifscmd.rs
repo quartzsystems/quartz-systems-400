@@ -187,7 +187,14 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         "MOUNT" | "ADDMFS" => {
             let (ty, mfs, over, opts) = (fs_type(parms), p("MFS"), p("MNTOVRDIR"), p("OPTIONS"));
-            Box::new(move |c| udfs::mount(c, &ty, &mfs, &over, &opts))
+            let (cc, cp) = (ccsid_pair(parms, "CCSID"), ccsid_pair(parms, "CODEPAGE"));
+            // OPTIONS goes to the mount as typed (`*DFT` too).
+            Box::new(
+                move |c| match udfs::mount_ccsid([&cc[0], &cc[1]], [&cp[0], &cp[1]]) {
+                    Ok(ccsid) => udfs::mount_with(c, &ty, &mfs, &over, &opts, ccsid),
+                    Err(v) => Reply::errno(ifs::Errno::EINVAL, &v),
+                },
+            )
         }
         "UNMOUNT" | "RMVMFS" => {
             let (ty, mfs, over) = (fs_type(parms), p("MFS"), p("MNTOVRDIR"));
@@ -267,6 +274,22 @@ fn words(parms: &Parms, kwd: &str) -> Vec<String> {
         })
         .filter(|w| !w.is_empty())
         .collect()
+}
+
+/// `MOUNT`'s `CCSID` or `CODEPAGE` pair in the words `udfs::mount_ccsid`
+/// reads (`*ASCII` -1, `*JOBCCSID` -2, `*BINARY` -3); empty when not given.
+fn ccsid_pair(parms: &Parms, kwd: &str) -> [String; 2] {
+    if !parms.specified(kwd) {
+        return [String::new(), String::new()];
+    }
+    let e = parms.elems(kwd);
+    [0, 1].map(|i| match e.get(i).copied().flatten().and_then(int_of) {
+        Some(-1) => "*ASCII".into(),
+        Some(-2) => "*JOBCCSID".into(),
+        Some(-3) => "*BINARY".into(),
+        Some(n) => n.to_string(),
+        None => String::new(),
+    })
 }
 
 /// An integer value.
