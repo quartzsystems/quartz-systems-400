@@ -625,10 +625,15 @@ impl Suite {
         s.expect_in_order(crate::steps::SRC_SEQUENCE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         crate::tcp::guest_address(s)?;
+        // `EXPORTFS -I` lasts until the IPL: exported again, as before it.
         self.nfs.borrow_mut().started = None;
-        full_log(s)?;
-        start_servers(s, "*ALL")?;
-        self.nfs.borrow_mut().started = Some(Instant::now());
+        self.nfs_setup(s)?;
+        let opr = super::opr_count(s, "CPFA1B5")? + super::opr_count(s, "CPFA1CB")?;
+        if opr != 0 {
+            return Err(format!(
+                "the power down left {opr} CPFA1B5/CPFA1CB on QSYSOPR: the daemons' ends were asked for"
+            ));
+        }
         let after_ipl = handle("use", direct())?;
         end_servers(s, "*ALL")?;
         daemons_gone(s)?;
