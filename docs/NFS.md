@@ -665,6 +665,7 @@ impl Server {
     pub fn background(&self, vfs: &dyn Vfs, news: &mut dyn NewsSource, stop: &AtomicBool);
     pub fn tick(&self, vfs: &dyn Vfs);                // one round of it (tests)
     pub fn lease_break(&self, tag: u64, keep: u8);    // what background does with a break order
+    pub fn revoke(&self, vfs: &dyn Vfs, which: impl Fn(&[u8]) -> bool) -> usize; // RLSIFSLCK: by client owner
 }
 
 // nfs::server::run: the hook QNFSNFSD calls in place of nfsd
@@ -691,6 +692,202 @@ refuse) and `created` (`time_create`). `ExportView` gained default
 methods for the pseudo file system: `v4_name` (`EXNAME=`, default the
 path), `v4_nfsroot` (`NFSROOT=`, default `/`), `v4_root` (`ROOT`),
 `v4_public` (`PUBLIC`).
+
+#### 5.10.2 The server as built (`net/nfs/src/v4/`)
+
+- **`COMPOUND`** (`v4/compound.rs`). The header is decoded by hand and
+  each operation only when its turn comes: a number the minor version
+  lacks (4.0: above 39; any: not in `nfs_opnum4`) answers `OP_ILLEGAL`
+  with `NFS4ERR_OP_ILLEGAL`, arguments that do not decode
+  `NFS4ERR_BADXDR` for that operation; evaluation stops at the first
+  error. Minor version 2 and up: `NFS4ERR_MINOR_VERS_MISMATCH`, no
+  results. The current and saved filehandles and (4.1) the current
+  stateid follow RFC 8881 section 16.2.3.1.2 (a new filehandle clears
+  it; `SAVEFH`/`RESTOREFH` carry it). 4.0: more than 128 operations, or
+  a reply past 1 MiB + 12 KiB, is `NFS4ERR_RESOURCE`. 4.1: `SEQUENCE`
+  first (`NFS4ERR_SEQUENCE_POS` later); else `EXCHANGE_ID`,
+  `CREATE_SESSION`, `DESTROY_SESSION`, `BIND_CONN_TO_SESSION` or
+  `DESTROY_CLIENTID` alone (`NFS4ERR_NOT_ONLY_OP`), anything else
+  `NFS4ERR_OP_NOT_IN_SESSION`; `BIND_CONN_TO_SESSION` after `SEQUENCE`
+  is `NOT_ONLY_OP`. The session's limits: `NFS4ERR_REQ_TOO_BIG`,
+  `NFS4ERR_TOO_MANY_OPS` (on `SEQUENCE`), `NFS4ERR_REP_TOO_BIG` and
+  `NFS4ERR_REP_TOO_BIG_TO_CACHE` (on the operation that would pass
+  them). 4.0's `SETCLIENTID`, `SETCLIENTID_CONFIRM`, `RENEW`,
+  `OPEN_CONFIRM`, `RELEASE_LOCKOWNER` in a 4.1 compound are
+  `NFS4ERR_NOTSUPP`; 4.1's operations in a 4.0 compound are not 4.0
+  operation numbers, so RFC 7530 makes them `OP_ILLEGAL` (not
+  `NOTSUPP`). Version 4 shares program 100003 with version 3
+  (`Nfs34`); version 4 has no duplicate request cache (4.0's kept seqid
+  replies and 4.1's slots are its exactly-once mechanisms).
+- **Filehandles.** Export objects have the 32-byte handle of section
+  5.3 and pass the `Gate` at version 4 (`VERS=`, `ACCESS=`, root squash,
+  `ANON=`; a refused host or caller is `NFS4ERR_ACCESS`); persistent
+  (`fh_expire_type` 0). Pseudo directories have 32-byte handles of
+  format 2 (`v4::pseudo`).
+- **The pseudo file system** (`v4::pseudo`), built per request from
+  the exports the client's address may use with version 4: each export
+  is placed at its `v4_name()` below its `v4_nfsroot()`, its path
+  components becoming read-only pseudo directories (mode 0555, owner
+  `QSYS`, `fsid` (2^32, 0), which no export ID makes). An export with
+  `ROOT` (or placed at `/`) is what `PUTROOTFH` names; `PUTPUBFH` is
+  the `PUBLIC` export's root, else the root. `LOOKUP` from a pseudo
+  directory into an export, or from an export's directory onto another
+  export's root, crosses into that export (its own `fsid`);
+  `mounted_on_fileid` of an export's root is its place's number;
+  `LOOKUPP` from an export's root goes back to its pseudo directory, or
+  to the directory of the export it is inside. Names compare without
+  case outside `/QOpenSys`. Changes in pseudo directories are
+  `NFS4ERR_ROFS`.
+- **Attributes** (`v4/attr/`, table-driven): supported are the
+  REQUIRED ones and `aclsupport` (0), `cansettime`, `case_insensitive`
+  and `case_preserving` (the file system's `pathconf`),
+  `chown_restricted`, `fileid`, `files_avail/free/total`,
+  `homogeneous`, `maxfilesize`, `maxlink`, `maxname` (255), `maxread`
+  and `maxwrite` (1 MiB), `mode`, `no_trunc`, `numlinks`, `owner`,
+  `owner_group`, `rawdev`, `space_avail/free/total/used`,
+  `time_access`, `time_access_set`, `time_create` (the IFS's creation
+  time), `time_delta` (1 ns), `time_metadata`, `time_modify`,
+  `time_modify_set`, `mounted_on_fileid`, and 4.1's
+  `suppattr_exclcreat` (`size`, `mode`, `owner`, `owner_group`).
+  Asked in `GETATTR`, an unsupported attribute is left out and a
+  write-only one is `NFS4ERR_INVAL`; sent in `SETATTR`, `CREATE` or
+  `OPEN`, an unsupported one is `NFS4ERR_ATTRNOTSUPP`, a read-only one
+  `NFS4ERR_INVAL`, values that do not decode `NFS4ERR_BADXDR`.
+  `VERIFY`/`NVERIFY` encode the object's values for the same bits and
+  compare the bytes (`rdattr_error` and the write-only times
+  `NFS4ERR_INVAL`).
+- **Identity** (`nfs::registry`): `owner` is the profile name and the
+  domain, `owner_group` the group profile's; an ID with no profile is
+  sent as its number. Taken: `name@domain` (case ignored) and numbers;
+  another domain or an unknown name is `NFS4ERR_BADOWNER`, bytes that
+  are not UTF-8 `NFS4ERR_BADCHAR` (4.0) or `NFS4ERR_INVAL` (4.1).
+  Answers are cached (`TTL`, 600 s; `clear` drops them).
+- **State** (`v4/state/`), one table per job behind the `Server`'s
+  mutex, never held across a file system call. Client IDs and stateid
+  `other`s start with the start's 32-bit boot number (from the
+  `Instance`): an ID of an earlier start is `NFS4ERR_STALE_CLIENTID` or
+  `NFS4ERR_STALE_STATEID`. Opens are `Vfs::open`s with their share
+  reservation (`NFS4ERR_SHARE_DENIED` from any other open: another
+  client, another job, a local program); a second `OPEN` of one owner
+  on one file upgrades the stateid (the IFS open made again with the
+  union); `OPEN_DOWNGRADE` to an access used before and a deny within
+  the current one (else `NFS4ERR_INVAL`). I/O through an open or lock
+  stateid uses the open's own descriptor (`read_open`, `write_open`,
+  `setattr_open`; without the access, `NFS4ERR_OPENMODE`); the
+  anonymous and READ-bypass stateids go through the kept descriptors,
+  which a deny refuses (`NFS4ERR_LOCKED`). Lock owners are IFS
+  sub-owners from `0x4E34_0000_0000_0000` with the boot number's low 16
+  bits in bits 32 to 47 (two jobs never share one; NLM's are
+  `0x4E4C...`), their locks taken through the open's descriptor
+  (`lock_open`), so they conflict with v4 clients of any job, NLM
+  clients and local jobs; `NFS4ERR_DENIED` names the holder (client ID
+  0 and a description for one that is not a v4 owner of this job).
+  Blocking types are answered at once. 4.0: seqids per open and lock
+  owner with the last reply kept (a retransmission gets it, also when
+  its stateid moved on or was closed), `OPEN4_RESULT_CONFIRM` for a new
+  owner and `OPEN_CONFIRM`; `CLOSE` with locks held is
+  `NFS4ERR_LOCKS_HELD`. 4.1: seqids ignored, stateid seqid 0 matches
+  any, `CLOSE` releases the locks and answers the invalid stateid.
+  Special stateids: anonymous, READ bypass (`WRITE` with it:
+  `NFS4ERR_BAD_STATEID`), 4.1's current and invalid. Gone stateids
+  answer `NFS4ERR_EXPIRED`, `NFS4ERR_DELEG_REVOKED` (4.1; 4.0
+  `EXPIRED`) or `NFS4ERR_ADMIN_REVOKED` (`Server::revoke`, for
+  `RLSIFSLCK`).
+- **Leases and courtesy.** The lease is 90 s, renewed by any request
+  naming the client (a stateid, a client ID, `RENEW`, `SEQUENCE`). A
+  client whose lease ran out keeps its state while nothing needs it;
+  its state goes when another client's open, lock or delegation finds
+  it in the way (that request then goes on), or 270 s after the lease
+  ran out (`Config::courtesy`; a local job in its way waits that long).
+  Unconfirmed clients go after one lease; open owners with nothing open
+  are forgotten after one.
+- **Client IDs.** 4.0 `SETCLIENTID`/`SETCLIENTID_CONFIRM` as RFC 7530
+  section 16.33.5: another principal with an unexpired client holding
+  state is `NFS4ERR_CLID_INUSE` (with its callback address); the same
+  verifier and principal is a callback update (the ID kept, applied at
+  confirmation); a new verifier is a restart (the old ID's state goes
+  at confirmation); a wrong confirmation is `NFS4ERR_STALE_CLIENTID`.
+  4.1 `EXCHANGE_ID` as RFC 8881 section 18.35.4's nine cases
+  (`NFS4ERR_NOENT`, `NOT_SAME`, `PERM`, `CLID_INUSE`); flags a client
+  may not send are `NFS4ERR_INVAL`; the reply has
+  `EXCHGID4_FLAG_USE_NON_PNFS`, `SP4_NONE`, the system name as server
+  owner and scope, and the implementation `quartzsystems.net` /
+  `Config::impl_name`. `SP4_MACH_CRED` is `NFS4ERR_INVAL` (it needs
+  `RPCSEC_GSS`), `SP4_SSV` `NFS4ERR_ENCR_ALG_UNSUPP` (no algorithm is
+  offered).
+- **Sessions.** `CREATE_SESSION` has its own sequence (the kept reply
+  for a retransmission, `NFS4ERR_SEQ_MISORDERED`) and confirms the
+  client. Fore channel: header padding 0, requests and replies up to
+  1 MiB + 16 KiB, kept replies up to 64 KiB, at most 64 operations and
+  64 slots (the client's smaller values win); back channel: the
+  client's attributes, one slot. `CREATE_SESSION4_FLAG_PERSIST` and
+  `CONN_RDMA` are not granted (cleared in the reply); `CONN_BACK_CHAN`
+  makes the connection the backchannel when it is TCP. `SEQUENCE`:
+  `NFS4ERR_BADSESSION`, `BADSLOT`, `SEQ_MISORDERED`, `DELAY` (the slot
+  busy); a retransmission is answered with the kept reply
+  (`sa_cachethis`) or `NFS4ERR_RETRY_UNCACHED_REP`, one whose request
+  differs `NFS4ERR_SEQ_FALSE_RETRY` (a digest of the request);
+  `sr_highest_slotid` and the target are the table's; status flags
+  `CB_PATH_DOWN`, `CB_PATH_DOWN_SESSION`, `RECALLABLE_STATE_REVOKED`,
+  `ADMIN_STATE_REVOKED`. With `SP4_NONE` a connection is bound to the
+  fore channel by its first `SEQUENCE`. `DESTROY_SESSION` (on a bound
+  connection, else `NFS4ERR_CONN_NOT_BOUND_TO_SESSION`; last in its own
+  session's compound), `BIND_CONN_TO_SESSION` (fore; back and both on a
+  TCP connection, else `NFS4ERR_INVAL`; never RDMA), `BACKCHANNEL_CTL`
+  (`AUTH_NONE` or `AUTH_SYS`, else `NFS4ERR_INVAL`),
+  `DESTROY_CLIENTID` (`NFS4ERR_CLIENTID_BUSY` with sessions or state),
+  `TEST_STATEID`, `FREE_STATEID` (`NFS4ERR_LOCKS_HELD` for an open, a
+  delegation or a lock stateid holding locks), `SECINFO_NO_NAME`
+  (`AUTH_SYS`; the current filehandle is consumed, as by 4.1's
+  `SECINFO`).
+- **Read delegations.** Offered with an `OPEN` for reading alone when
+  the client's callback path works (4.0: `CB_NULL` answered; 4.1: a
+  session with a live backchannel and a usable flavor), no open of this
+  job writes the file, the client holds none on it, no grace period
+  runs, and the IFS grants a read and handle lease (`Vfs::lease`, tag
+  the delegation's number). 4.1 wants: `NO_DELEG`, `CANCEL`, or a
+  write delegation alone answer `OPEN_DELEGATE_NONE_EXT`
+  (`WND4_NOT_WANTED`, `WND4_CANCELLED`, `WND4_RESOURCE`); refusals are
+  `WND4_CONTENTION` or `WND4_RESOURCE`. A recall (`CB_RECALL`; 4.1 in
+  `CB_COMPOUND` after `CB_SEQUENCE` on the session's backchannel) is
+  sent when the IFS orders the lease broken (another job's or a local
+  program's write, truncation, lock, rename, removal or overwriting
+  open; `Server::lease_break` from the job's poll), or when another
+  client of this job opens the file for writing, writes it, sets its
+  attributes, removes or renames it (that request answers
+  `NFS4ERR_DELAY` until the delegation is returned). `DELEGRETURN`
+  reports the lease gone; one not returned within `recall_wait` (90 s)
+  is revoked. A failed callback marks the path down (`RENEW` answers
+  `NFS4ERR_CB_PATH_DOWN` while delegations are held). Write
+  delegations are never offered.
+- **Grace** (`v4/state/stable.rs`). At `Server::new` the stable
+  records name the clients that may reclaim (those holding state at the
+  last start, and those that still could when that start's grace
+  period had not ended). While any may, a grace period of 90 s runs:
+  `OPEN` with `CLAIM_NULL` or `CLAIM_FH`, `LOCK` without `reclaim`,
+  `LOCKT`, `WRITE` and size changes with special stateids, `REMOVE`
+  and `RENAME` are `NFS4ERR_GRACE`; `CLAIM_PREVIOUS` and `LOCK` with
+  `reclaim` are taken from a client the records name (else
+  `NFS4ERR_NO_GRACE`; `CLAIM_PREVIOUS` of a write delegation, or a
+  reclaimed lock through an open that was not reclaimed,
+  `NFS4ERR_RECLAIM_BAD`); after the period, or after the client's
+  `RECLAIM_COMPLETE`, `NFS4ERR_NO_GRACE`. The period ends early when
+  every client named is done: 4.1's `RECLAIM_COMPLETE` (a second is
+  `NFS4ERR_COMPLETE_ALREADY`; `rca_one_fs` needs a filehandle and
+  changes nothing, the period being the server's), and for a 4.0
+  client its first request for new state (it may still reclaim after
+  it). A client is recorded when it first holds state and forgotten
+  when it goes.
+- **Stable record format** (`v4::state::stable`, `encode`/`decode`;
+  `file_name(n)` is `/QIBM/UserData/OS400/NFS/QNFSV4CL.nnn` for the
+  job's number), a format of this release, big-endian: `QSN4`, version
+  u16 1, flags u16 (1: that start's grace period ended), count u32, then
+  per client the owner's length u16 (at most 1024), the owner bytes
+  (`nfs_client_id4.id` or `co_ownerid`), the minor version u8 and flags
+  u8 (1 holds state, 2 may still reclaim). Damaged records count as
+  none. For `tools/fmtcheck`: format `nfs-v4-stable`, source
+  `net/nfs/src/v4/state/stable.rs`, version constant `VERSION`.
+
 ### 5.11 What the IFS gives the daemons
 
 - **Identity per request** (built, `docs/IFS.md` "Calls as another
@@ -1229,9 +1426,18 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | pNFS | `NFS4ERR_NOTSUPP`; `EXCHGID4_FLAG_USE_NON_PNFS` |
 | Referrals, `fs_locations`, migration | the attribute is not supported |
 | ACLs beyond mode bits (`ACL`, `dacl`, `sacl`, NFSv3 `NFSACL` program 100227) | the attribute is not supported; `PROG_UNAVAIL` |
-| Write delegations, directory delegations | never offered; `GET_DIR_DELEGATION` `NFS4ERR_NOTSUPP` |
+| Write delegations, directory delegations | never offered (4.1 wants: `OPEN_DELEGATE_NONE_EXT`); `GET_DIR_DELEGATION` `NFS4ERR_NOTSUPP` |
 | Named attributes (`OPENATTR`) | `NFS4ERR_NOTSUPP` |
 | NFSv4.2 | minor version 2: `NFS4ERR_MINOR_VERS_MISMATCH` |
+| `GETDEVICEINFO`, `GETDEVICELIST`, `LAYOUTGET`, `LAYOUTCOMMIT`, `LAYOUTRETURN`, `WANT_DELEGATION` | `NFS4ERR_NOTSUPP` |
+| NFSv4.1 state protection `SP4_MACH_CRED` / `SP4_SSV`; `SET_SSV` | `EXCHANGE_ID`: `NFS4ERR_INVAL` / `NFS4ERR_ENCR_ALG_UNSUPP`; `SET_SSV`: `NFS4ERR_INVAL` |
+| Persistent sessions, RDMA (`CREATE_SESSION4_FLAG_PERSIST`, `CONN_RDMA`, `bctsa_use_conn_in_rdma_mode`) | not granted: cleared in the reply |
+| `CLAIM_DELEGATE_PREV`, `CLAIM_DELEG_PREV_FH`, `DELEGPURGE` (delegations do not outlive a client's restart) | `NFS4ERR_NOTSUPP` |
+| NFSv4 blocking locks (`READW_LT`, `WRITEW_LT`) | answered at once (`NFS4ERR_DENIED`); no `CB_NOTIFY_LOCK` |
+| NFSv4 mandatory locking on `READ`/`WRITE` | locks are advisory, as the IFS's |
+| NFSv4.1 operations in a 4.0 compound | `OP_ILLEGAL` (`NFS4ERR_OP_ILLEGAL`), as RFC 7530 has it |
+| 4.0's `SETCLIENTID`, `SETCLIENTID_CONFIRM`, `RENEW`, `OPEN_CONFIRM`, `RELEASE_LOCKOWNER` in a 4.1 compound | `NFS4ERR_NOTSUPP` |
+| `RECLAIM_COMPLETE` with `rca_one_fs` | taken: the grace period is the server's, so only the client's whole completion ends it |
 | Exporting `/QOPT`, `/QDLS`, `/QNTC`, `/QFileSvr.400`, an NFS mount | `CPDA1C5` |
 | `MOUNT OPTIONS('bg')`, an option not in section 7 | `CPFA1B0` |
 | `STRNFSSVR SERVER(*GSS)`, `ENDNFSSVR SERVER(*GSS)` | `CPI9C10` in the job log, then `CPFA1BC` / `CPFA1BE`; `*ALL` leaves `*GSS` out; a job routed to `QZNFGSSD` ends at once with the same two messages |
@@ -1275,7 +1481,50 @@ Nothing is accepted and ignored. What is not done is refused as below.
   locks through `SM_NOTIFY`; `srv3_nsm.rs` the state across starts in
   `/etc/STATD`'s form, local-only monitoring, `SM_SIMU_CRASH`, the
   notices of a start; `srv3_fuzz.rs` the served fuzz entry points.
-  **Design** (below): the client, v4, `nfstest`, QEMU.
+  **Design** (below): the client, `nfstest`, QEMU.
+- **Built** (`cargo test -p nfs`, NFSv4): `tests/srv4_compound.rs` the
+  `NULL` procedure, minor version 2, `OP_ILLEGAL` (an unknown number, a
+  4.1 number in 4.0, `OP_ILLEGAL` itself), `BADXDR`, the first error
+  ending the compound, 4.1's position rules and 4.0's operations in
+  4.1, the pNFS, `WANT_DELEGATION`, `OPENATTR`, `SET_SSV` and
+  `SP4_MACH_CRED` refusals, the pseudo file system with two exports and
+  a host allowed one (crossing, `fsid`, `LOOKUPP` back, `ROFS`,
+  `PUTPUBFH`, `SECINFO`), attributes (left out, write-only,
+  `VERIFY`/`NVERIFY`, `ATTRNOTSUPP`, owners by name, number and another
+  domain), 4.0's operation limit; `srv4_v40.rs` a 4.0 client's life
+  (`SETCLIENTID` to `CLOSE`, `OPEN_CONFIRM`, old and bad stateids, a
+  size through the open, owners), `OPEN` and `CLOSE` retransmissions,
+  `SETCLIENTID`'s rules (`CLID_INUSE`, a restart dropping the old
+  state), the lease running out after courtesy, a lapsed client giving
+  way, share reservations between clients and with a local job,
+  upgrades and downgrades, directory operations, `READDIR` paging
+  while the directory changes, root squash, `RO` and `ANON=-1`;
+  `srv4_locks.rs` two v4 clients (`DENIED` with the holder, `LOCKT`,
+  ranges, downgrade, `LOCKU`, `LOCKS_HELD`, `RELEASE_LOCKOWNER`), a
+  `LOCK` retransmission, bad seqids, `OPENMODE`, a local job's lock
+  and an NLM client of another job; `srv4_v41.rs` `EXCHANGE_ID`'s
+  cases, `CREATE_SESSION`'s sequence and kept reply, slots (the kept
+  reply, false retry, misordered, bad slot, uncached, too many
+  operations, a bad session), the current stateid, `CLAIM_FH`, `CLOSE`'s
+  invalid stateid, `TEST_STATEID`, `FREE_STATEID`, `DESTROY_SESSION`,
+  `DESTROY_CLIENTID`, `RECLAIM_COMPLETE`, `BIND_CONN_TO_SESSION`, an
+  administrator's revocation; `srv4_grace.rs` a restart with opens and
+  locks reclaimed by a 4.0 and a 4.1 client, `GRACE`, `NO_GRACE`, the
+  period ending at `RECLAIM_COMPLETE` and at its time, a restart within
+  the period, the stable records; `srv4_deleg.rs` a 4.0 client's
+  callback program on loopback TCP: the `CB_NULL` probe, a read
+  delegation, its recall by another client's open for writing
+  (`DELAY`) and by a local job's write (the IFS break order),
+  `DELEGRETURN`, revocation, `DELEGPURGE`, no delegation without a
+  callback path; `srv4_net.rs` `run::nfsd4` over loopback TCP: version
+  3 on the same port, a 4.1 session whose backchannel is its own
+  connection, a delegation recalled with `CB_SEQUENCE` and `CB_RECALL`
+  on it; `srv4_text.rs` text conversion through an open, a path name in
+  the host's CCSID, a `/QSYS.LIB` export through the pseudo file
+  system; `srv4_fuzz.rs` the `nfs4` entry point over mutated
+  compounds. Unit tests: the attribute bitmaps and codec, the stable
+  record format, the registry and its cache, pseudo handles and trees,
+  ranges and identifiers.
 - `cargo test -p xdrgen -p nfs`: the compiler; every generated type's
   round trip; the RFCs' examples; the server over a `Vfs` in memory and
   the client against it over loopback (v3, 4.0, 4.1; UDP and TCP; locks;
@@ -1293,9 +1542,11 @@ Nothing is accepted and ignored. What is not done is refused as below.
   (the binder end to end, `/etc/RPCBTAB`), `nfsmount`, `nfsnlm` (and
   NSM), `nfs3`, `nfs4` (the compound and the callback compound), each a
   decode, encode and decode again that must agree (`nfs::fuzzing`);
-  `exports`. `nfsmount`, `nfsnlm`, `nfsnsm` and `nfs3` also send
+  `exports`. `nfsmount`, `nfsnlm`, `nfsnsm`, `nfs3` and `nfs4` also send
   the input as a call to the server over an IFS in memory
-  (`nfs::fuzzing::server`): a reply's results must decode. Without instrumentation, `net/nfs/tests/wire_fuzz.rs` runs
+  (`nfs::fuzzing::server`; `nfs4` with a short lease and no callbacks,
+  and the server's reading of a `CB_COMPOUND` reply): a reply's results
+  must decode. Without instrumentation, `net/nfs/tests/wire_fuzz.rs` runs
   the same entry points over random and mutated input.
 
 ## 12. NEEDS-CODY
