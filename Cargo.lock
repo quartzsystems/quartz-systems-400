@@ -2463,6 +2463,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nfs"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "ifs",
+ "thiserror 2.0.21",
+ "tracing",
+ "xdrgen",
+]
+
+[[package]]
 name = "ntlm"
 version = "0.1.0"
 
@@ -4953,6 +4964,13 @@ dependencies = [
  "signature",
  "spki",
  "tls_codec",
+]
+
+[[package]]
+name = "xdrgen"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.21",
 ]
 
 [[package]]

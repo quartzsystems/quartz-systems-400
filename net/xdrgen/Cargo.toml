@@ -1,0 +1,13 @@
+[package]
+name = "xdrgen"
+description = "QS/400 XDR description compiler: the XDR language of RFC 4506 with RPC programs, parsed to a model and written out as Rust types with their codecs (net/nfs's build uses it)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[lints]
+workspace = true
