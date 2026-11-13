@@ -586,4 +586,48 @@ impl IfsClient for RemoteIfs {
     fn lock_release_sub(&self, sub: u64) -> Result<u32> {
         reply_as!(self.call(IfsOp::LockReleaseSub { sub }), Mask)
     }
+    fn mount_remote(
+        &self,
+        kind: &str,
+        mfs: &str,
+        over: &str,
+        options: &str,
+        ccsid: ifs::remote::MountCcsid,
+    ) -> Result<u32> {
+        reply_as!(
+            self.call(IfsOp::MountRemote {
+                kind: kind.into(),
+                mfs: mfs.into(),
+                over: over.into(),
+                options: options.into(),
+                ccsid
+            }),
+            Mask
+        )
+    }
+    fn unmount_kind(&self, kind: &str, over: &str) -> Result<u32> {
+        reply_as!(
+            self.call(IfsOp::UnmountKind {
+                kind: kind.into(),
+                over: over.into()
+            }),
+            Mask
+        )
+    }
+    fn mounts(&self) -> Result<Vec<ifs::remote::MountInfo>> {
+        reply_as!(self.call(IfsOp::Mounts), Mounts)
+    }
+    fn remote_take(&self) -> Result<Option<ifs::remote::HelperWork>> {
+        reply_as!(self.call(IfsOp::RemoteTake), Helper)
+    }
+    fn remote_post(&self, fs: u32, id: u64, r: &ifs::remote::HelperResult) -> Result<()> {
+        reply_as!(
+            self.call(IfsOp::RemotePost {
+                fs,
+                id,
+                r: r.clone()
+            }),
+            Unit
+        )
+    }
 }

@@ -694,3 +694,53 @@ fn reclaim_and_save() {
     assert_eq!(l.links[0].name, "HELLO.MBR");
     assert_eq!(l.links[0].objtype, "MBR");
 }
+
+#[test]
+fn nfs_mounts() {
+    use ifs::remote::mem::{MemFactory, MemServer};
+    use ifs::remote::{CcsidSel, RemoteConfig, RemoteInfo};
+    let s = Sys::new();
+    let c = s.as_user("QSECOFR", 1);
+    done(&c.with(|c| dirs::md(c, &dirs::Md::new("/nfs"))), "CPCA083");
+    let mount = |c: &dyn IfsClient| {
+        let cc = udfs::mount_ccsid(["*BINARY", "819"], ["", ""]).unwrap();
+        udfs::mount_with(c, "*NFS", "srv:/exp", "/nfs", "rw,soft", cc)
+    };
+    // No NFS client yet: refused as before.
+    refused(&c.waiting(mount), "CPFA0AD");
+    let server = std::sync::Arc::new(MemServer::new());
+    server.put_file("hello", b"hi");
+    let f = std::sync::Arc::new(MemFactory::new("*NFS"));
+    f.add("srv:/exp", server, RemoteInfo::default());
+    s.ifs
+        .set_remote_factory(Some(f.clone()), RemoteConfig::default());
+    done(&c.waiting(mount), "CPCA1B0");
+    assert_eq!(f.last_options.lock().unwrap().as_deref(), Some("rw,soft"));
+    assert_eq!(
+        f.last_ccsid.lock().unwrap().unwrap().path,
+        CcsidSel::Ccsid(819)
+    );
+    assert_eq!(c.stat("/nfs/hello", true).unwrap().size, 2);
+    refused(&c.waiting(mount), "CPFA09E");
+    // By what is mounted, then everything.
+    done(
+        &c.waiting(|c| udfs::unmount(c, "*NFS", "srv:/exp", "*MFS")),
+        "CPCA1B1",
+    );
+    refused(
+        &c.waiting(|c| udfs::unmount(c, "*NFS", "", "/nfs")),
+        "CPFA0A2",
+    );
+    done(&c.waiting(mount), "CPCA1B0");
+    done(
+        &c.waiting(|c| udfs::unmount(c, "*ALL", "", "*ALL")),
+        "CPCA1B1",
+    );
+    assert_eq!(udfs::mount_ccsid(["X", ""], ["", ""]), Err("X".into()));
+    assert_eq!(
+        udfs::mount_ccsid(["", ""], ["*JOBCCSID", "850"])
+            .unwrap()
+            .path,
+        CcsidSel::Ccsid(850)
+    );
+}

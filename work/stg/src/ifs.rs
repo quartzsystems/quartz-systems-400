@@ -339,6 +339,24 @@ pub enum IfsOp {
     LockReleaseSub {
         sub: u64,
     },
+    MountRemote {
+        kind: String,
+        mfs: String,
+        over: String,
+        options: String,
+        ccsid: ifs::remote::MountCcsid,
+    },
+    UnmountKind {
+        kind: String,
+        over: String,
+    },
+    Mounts,
+    RemoteTake,
+    RemotePost {
+        fs: u32,
+        id: u64,
+        r: ifs::remote::HelperResult,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -421,6 +439,11 @@ wire_enum!(IfsOp {
     76 => LockWait { fd, sub, kind, whence, start, len },
     77 => LockCancel { token },
     78 => LockReleaseSub { sub },
+    80 => MountRemote { kind, mfs, over, options, ccsid },
+    81 => UnmountKind { kind, over },
+    82 => Mounts,
+    83 => RemoteTake,
+    84 => RemotePost { fs, id, r },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -429,30 +452,84 @@ wire_enum!(IfsOp {
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum IfsReply {
-    Unit { r: Result<()> },
-    Fd { r: Result<i32> },
-    Int { r: Result<i32> },
-    Bytes { r: Result<Vec<u8>> },
-    Size { r: Result<u64> },
-    Stat { r: Result<Stat> },
-    Text { r: Result<String> },
-    Handle { r: Result<u64> },
-    Entries { r: Result<Vec<DirEnt>> },
-    Lock { r: Result<Option<RangeLock>> },
-    Mask { r: Result<u32> },
-    Limit { r: Result<Option<i64>> },
-    StatVfs { r: Result<StatVfs> },
-    Attrs { r: Result<Vec<Attr>> },
-    AuthList { r: Result<AuthList> },
-    Walk { r: Result<Vec<WalkEntry>> },
-    Udfs { r: Result<UdfsInfo> },
-    Report { r: Result<Report> },
-    Locks { r: Result<Vec<LockInfo>> },
-    OwnerLocks { r: Result<Vec<(ObjKey, LockInfo)>> },
-    Orders { r: Result<ifs::lease::News> },
-    Found { r: Result<(String, Stat)> },
-    Opened { r: Result<(i32, String)> },
-    Queued { r: Result<Option<u64>> },
+    Unit {
+        r: Result<()>,
+    },
+    Fd {
+        r: Result<i32>,
+    },
+    Int {
+        r: Result<i32>,
+    },
+    Bytes {
+        r: Result<Vec<u8>>,
+    },
+    Size {
+        r: Result<u64>,
+    },
+    Stat {
+        r: Result<Stat>,
+    },
+    Text {
+        r: Result<String>,
+    },
+    Handle {
+        r: Result<u64>,
+    },
+    Entries {
+        r: Result<Vec<DirEnt>>,
+    },
+    Lock {
+        r: Result<Option<RangeLock>>,
+    },
+    Mask {
+        r: Result<u32>,
+    },
+    Limit {
+        r: Result<Option<i64>>,
+    },
+    StatVfs {
+        r: Result<StatVfs>,
+    },
+    Attrs {
+        r: Result<Vec<Attr>>,
+    },
+    AuthList {
+        r: Result<AuthList>,
+    },
+    Walk {
+        r: Result<Vec<WalkEntry>>,
+    },
+    Udfs {
+        r: Result<UdfsInfo>,
+    },
+    Report {
+        r: Result<Report>,
+    },
+    Locks {
+        r: Result<Vec<LockInfo>>,
+    },
+    OwnerLocks {
+        r: Result<Vec<(ObjKey, LockInfo)>>,
+    },
+    Orders {
+        r: Result<ifs::lease::News>,
+    },
+    Found {
+        r: Result<(String, Stat)>,
+    },
+    Opened {
+        r: Result<(i32, String)>,
+    },
+    Queued {
+        r: Result<Option<u64>>,
+    },
+    Mounts {
+        r: Result<Vec<ifs::remote::MountInfo>>,
+    },
+    Helper {
+        r: Result<Option<ifs::remote::HelperWork>>,
+    },
 }
 
 wire_enum!(IfsReply {
@@ -480,6 +557,8 @@ wire_enum!(IfsReply {
     21 => Found { r },
     22 => Opened { r },
     23 => Queued { r },
+    80 => Mounts { r },
+    81 => Helper { r },
 });
 
 /// The answer `Err(EUNKNOWN)` for a reply of the wrong shape.
@@ -745,6 +824,23 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         },
         IfsOp::LockReleaseSub { sub } => R::Mask {
             r: c.lock_release_sub(sub),
+        },
+        IfsOp::MountRemote {
+            kind,
+            mfs,
+            over,
+            options,
+            ccsid,
+        } => R::Mask {
+            r: c.mount_remote(&kind, &mfs, &over, &options, ccsid),
+        },
+        IfsOp::UnmountKind { kind, over } => R::Mask {
+            r: c.unmount_kind(&kind, &over),
+        },
+        IfsOp::Mounts => R::Mounts { r: c.mounts() },
+        IfsOp::RemoteTake => R::Helper { r: c.remote_take() },
+        IfsOp::RemotePost { fs, id, r } => R::Unit {
+            r: c.remote_post(fs, id, &r),
         },
     }
 }
