@@ -133,3 +133,15 @@ impl Program for Nsm {
         encode_res(&res)
     }
 }
+
+impl crate::rpc::LocalProgram for Nsm {
+    fn program(&self) -> u32 {
+        Program::program(self)
+    }
+    fn versions(&self) -> &[u32] {
+        Program::versions(self)
+    }
+    fn call(&self, ctx: &CallContext, d: &mut Decoder<'_>) -> Answer {
+        Program::call(self, ctx, d)
+    }
+}

@@ -32,7 +32,7 @@ pub mod ifsvfs;
 pub mod instance;
 pub mod locate;
 pub mod news;
-// pub mod run;
+pub mod run;
 pub mod text;
 pub mod vfs;
 

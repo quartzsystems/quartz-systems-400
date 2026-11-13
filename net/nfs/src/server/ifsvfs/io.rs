@@ -136,7 +136,9 @@ impl<C: IfsClient> IfsVfs<C> {
                 self.io(a, &st, fh, Mode::Read, |fd| a.c.pread(fd, want, off))?
             };
             let end = off.saturating_add(data.len() as u64);
-            let eof = end >= st.size;
+            // A short read is the end of file too (a member's size may count
+            // more than its data reads).
+            let eof = end >= st.size || data.len() < want;
             if let Some(x) = Xlate::between(st.ccsid, r.opts.data_ccsid) {
                 x.to_client(&mut data);
             }
