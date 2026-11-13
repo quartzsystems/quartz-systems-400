@@ -11,6 +11,7 @@
 //! taken again with `reclaim` when the server restarted
 //! ([`super::restart`]).
 
+use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -21,6 +22,7 @@ use ifs::remote::{LockConflict, LockKind, LockOwner, RResult, RemoteError};
 
 use super::channel::{Channel, Status};
 use super::env::ClientEnv;
+use super::ranges::{self, Range};
 use super::settings::Policy;
 use crate::rpc::{ClientConfig, Credential, Proto};
 use crate::rpcb::BinderClient;
@@ -41,26 +43,8 @@ const NLM_SM_VERS: i32 = 2;
 /// `NLM_SM_NOTIFY`.
 const NLM_SM_NOTIFY: i32 = 1;
 
-/// A lock this mount holds on the server.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Held {
-    fh: Vec<u8>,
-    owner: u64,
-    exclusive: bool,
-    off: u64,
-    /// 0: to the end.
-    len: u64,
-}
-
-impl Held {
-    fn end(&self) -> u64 {
-        if self.len == 0 {
-            u64::MAX
-        } else {
-            self.off.saturating_add(self.len)
-        }
-    }
-}
+/// The ranges each (file handle, owner) holds on the server.
+type Held = HashMap<(Vec<u8>, u64), Vec<Range>>;
 
 /// The lock client of one mount.
 pub struct Locker {
@@ -75,7 +59,7 @@ pub struct Locker {
     monitored: AtomicBool,
     nsm_state: AtomicI32,
     cookie: AtomicU64,
-    held: Mutex<Vec<Held>>,
+    held: Mutex<Held>,
 }
 
 impl std::fmt::Debug for Locker {
@@ -113,7 +97,7 @@ impl Locker {
             monitored: AtomicBool::new(false),
             nsm_state: AtomicI32::new(0),
             cookie: AtomicU64::new(1),
-            held: Mutex::new(Vec::new()),
+            held: Mutex::new(HashMap::new()),
         });
         super::restart::register(&l);
         l
@@ -308,14 +292,14 @@ impl Locker {
         let exclusive = kind == LockKind::Write;
         self.send_lock(fh, owner, exclusive, off, len, false)?;
         let mut h = self.held.lock().unwrap_or_else(PoisonError::into_inner);
-        subtract(&mut h, fh, owner.0, off, len);
-        h.push(Held {
-            fh: fh.to_vec(),
-            owner: owner.0,
-            exclusive,
-            off,
-            len,
-        });
+        ranges::add(
+            h.entry((fh.to_vec(), owner.0)).or_default(),
+            Range {
+                exclusive,
+                off,
+                len,
+            },
+        );
         Ok(())
     }
 
@@ -345,13 +329,13 @@ impl Locker {
                 },
             }
         }
-        subtract(
-            &mut self.held.lock().unwrap_or_else(PoisonError::into_inner),
-            fh,
-            owner.0,
-            off,
-            len,
-        );
+        let mut h = self.held.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(v) = h.get_mut(&(fh.to_vec(), owner.0)) {
+            ranges::cut(v, off, len);
+            if v.is_empty() {
+                h.remove(&(fh.to_vec(), owner.0));
+            }
+        }
         Ok(())
     }
 
@@ -414,13 +398,17 @@ impl Locker {
             .unwrap_or_else(PoisonError::into_inner)
             .clone();
         let mut got = 0;
-        for h in &held {
-            match self.send_lock(&h.fh, LockOwner(h.owner), h.exclusive, h.off, h.len, true) {
-                Ok(()) => got += 1,
-                Err(e) => {
-                    tracing::warn!(?e, server = %self.name, "a lock was not reclaimed");
-                    let mut v = self.held.lock().unwrap_or_else(PoisonError::into_inner);
-                    v.retain(|x| x != h);
+        for ((fh, owner), rs) in &held {
+            for r in rs {
+                match self.send_lock(fh, LockOwner(*owner), r.exclusive, r.off, r.len, true) {
+                    Ok(()) => got += 1,
+                    Err(e) => {
+                        tracing::warn!(?e, server = %self.name, "a lock was not reclaimed");
+                        let mut v = self.held.lock().unwrap_or_else(PoisonError::into_inner);
+                        if let Some(l) = v.get_mut(&(fh.clone(), *owner)) {
+                            ranges::cut(l, r.off, r.len);
+                        }
+                    }
                 }
             }
         }
@@ -433,68 +421,8 @@ impl Locker {
         self.held
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
-            .len()
-    }
-}
-
-/// Take `[off, off + len)` (0: to the end) of `owner`'s locks on `fh`
-/// out of `held`.
-fn subtract(held: &mut Vec<Held>, fh: &[u8], owner: u64, off: u64, len: u64) {
-    let end = if len == 0 {
-        u64::MAX
-    } else {
-        off.saturating_add(len)
-    };
-    let mut out = Vec::with_capacity(held.len());
-    for h in held.drain(..) {
-        if h.fh != fh || h.owner != owner || h.end() <= off || h.off >= end {
-            out.push(h);
-            continue;
-        }
-        if h.off < off {
-            out.push(Held {
-                len: off - h.off,
-                ..h.clone()
-            });
-        }
-        if h.end() > end {
-            out.push(Held {
-                off: end,
-                len: if h.len == 0 { 0 } else { h.end() - end },
-                ..h
-            });
-        }
-    }
-    *held = out;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn h(off: u64, len: u64) -> Held {
-        Held {
-            fh: vec![1],
-            owner: 7,
-            exclusive: true,
-            off,
-            len,
-        }
-    }
-
-    #[test]
-    fn ranges_are_cut() {
-        let mut v = vec![h(0, 100)];
-        subtract(&mut v, &[1], 7, 10, 10);
-        assert_eq!(v, vec![h(0, 10), h(20, 80)]);
-        let mut v = vec![h(50, 0)];
-        subtract(&mut v, &[1], 7, 60, 10);
-        assert_eq!(v, vec![h(50, 10), h(70, 0)]);
-        let mut v = vec![h(0, 0)];
-        subtract(&mut v, &[1], 7, 0, 0);
-        assert!(v.is_empty());
-        let mut v = vec![h(0, 10)];
-        subtract(&mut v, &[1], 8, 0, 0);
-        assert_eq!(v.len(), 1, "another owner's stays");
+            .values()
+            .map(Vec::len)
+            .sum()
     }
 }

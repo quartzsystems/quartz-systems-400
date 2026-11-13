@@ -57,3 +57,53 @@ pub fn mnt3(s: mountstat3) -> RemoteError {
         S::MNT3_OK | S::MNT3ERR_IO | S::MNT3ERR_SERVERFAULT => Errno::EIO,
     })
 }
+
+/// An NFS version 4 status of an operation that failed (the session,
+/// client ID, grace and delay ones are handled before this).
+#[must_use]
+pub fn nfs4(s: crate::types::nfs4::nfsstat4) -> RemoteError {
+    use crate::types::nfs4::nfsstat4 as S;
+    let e = match s {
+        S::NFS4ERR_STALE | S::NFS4ERR_BADHANDLE | S::NFS4ERR_FHEXPIRED => {
+            return RemoteError::Stale;
+        }
+        S::NFS4ERR_DELAY | S::NFS4ERR_GRACE => return RemoteError::TimedOut,
+        S::NFS4ERR_PERM => Errno::EPERM,
+        S::NFS4ERR_NOENT => Errno::ENOENT,
+        S::NFS4ERR_NXIO => Errno::ENXIO,
+        S::NFS4ERR_ACCESS | S::NFS4ERR_WRONGSEC | S::NFS4ERR_WRONG_CRED => Errno::EACCES,
+        S::NFS4ERR_EXIST => Errno::EEXIST,
+        S::NFS4ERR_XDEV => Errno::EXDEV,
+        S::NFS4ERR_NOTDIR => Errno::ENOTDIR,
+        S::NFS4ERR_ISDIR => Errno::EISDIR,
+        S::NFS4ERR_INVAL
+        | S::NFS4ERR_BADCHAR
+        | S::NFS4ERR_BADNAME
+        | S::NFS4ERR_BADOWNER
+        | S::NFS4ERR_BAD_COOKIE
+        | S::NFS4ERR_TOOSMALL
+        | S::NFS4ERR_BAD_RANGE
+        | S::NFS4ERR_SYMLINK
+        | S::NFS4ERR_WRONG_TYPE => Errno::EINVAL,
+        S::NFS4ERR_FBIG => Errno::EFBIG,
+        S::NFS4ERR_NOSPC | S::NFS4ERR_DQUOT => Errno::ENOSPC,
+        S::NFS4ERR_ROFS => Errno::EROFS,
+        S::NFS4ERR_MLINK => Errno::EMLINK,
+        S::NFS4ERR_NAMETOOLONG => Errno::ENAMETOOLONG,
+        S::NFS4ERR_NOTEMPTY => Errno::ENOTEMPTY,
+        // The guard (`VERIFY`) no longer holds: nothing changed.
+        S::NFS4ERR_NOT_SAME | S::NFS4ERR_DENIED | S::NFS4ERR_LOCKED => Errno::EAGAIN,
+        S::NFS4ERR_SHARE_DENIED | S::NFS4ERR_FILE_OPEN => Errno::EBUSY,
+        S::NFS4ERR_DEADLOCK => Errno::EDEADLK,
+        S::NFS4ERR_LOCK_RANGE | S::NFS4ERR_LOCK_NOTSUPP | S::NFS4ERR_NO_GRACE => Errno::ENOLCK,
+        S::NFS4ERR_NOTSUPP
+        | S::NFS4ERR_ATTRNOTSUPP
+        | S::NFS4ERR_BADTYPE
+        | S::NFS4ERR_OP_ILLEGAL
+        | S::NFS4ERR_MOVED => Errno::ENOTSUP,
+        S::NFS4ERR_MINOR_VERS_MISMATCH => Errno::EPROTONOSUPPORT,
+        S::NFS4ERR_OPENMODE => Errno::EBADF,
+        _ => Errno::EIO,
+    };
+    RemoteError::Errno(e)
+}
