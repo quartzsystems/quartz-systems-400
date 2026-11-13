@@ -10076,3 +10076,494 @@ sev = 40
 text = "Member &1 not added to file &2 in library &3."
 help = "The file already has a member of that name. Choose another name, or remove or rename the existing member, and try the request again."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+# NFS, the RPC binder, mounted file systems and file system locks
+# (docs/NFS.md). Identifiers, severities and variable formats are the
+# primary's (V7R1M0, QMHRTVM RTVM0400; tools/conformance/oracle/nfs/
+# messages.txt), where IBM's *CCHAR *VARY 4 is written *CHAR *VARY 4;
+# the words are Quartz's.
+
+[[msg]]
+id = "CPFA1B0"
+sev = 40
+text = "The options list has an option that is not known."
+help = "An option, or the way it is written, is not one the command takes. The error is at or near position &1 of the list. See the command's help for the options it takes, correct the list and try again."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA1B1"
+sev = 40
+text = "An option appears more than once in the options list."
+help = "Option &1 is given more than once; it may appear only once. Remove the extra one and try again."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1B2"
+sev = 30
+text = "The option flags given do not go together."
+help = "The flags -A, -I, -O and -U were combined in a way the command does not take. See the command's help for the combinations it takes and try again."
+
+[[msg]]
+id = "CPFA1B3"
+sev = 30
+text = "DIR cannot be given with the -A flag."
+help = "-A works on every entry of /etc/exports, so no directory is named. Leave out DIR or the -A flag and try again."
+
+[[msg]]
+id = "CPFA1B4"
+sev = 40
+text = "NFS found an internal error."
+help = "The Network File System stopped a request because of an error of its own; the error number is &1. Look at the messages before this one in the job log, then try again. If the error comes back, report it with WRKPRB."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA1B5"
+sev = 40
+text = "An NFS server daemon ended when it was not asked to."
+help = "NFS requests may fail until the daemon runs again. Find the reason in the daemon's job log, correct it and start the daemon with STRNFSSVR."
+
+[[msg]]
+id = "CPFA1B6"
+sev = 40
+text = "Locks on &3 were not released, reason code &1."
+help = "The file system locks on &3 could not be released (error number &2). Reason 1: the *NLM NFS server daemon is not running; start it with STRNFSSVR SERVER(*NLM) and try again. Reason 2: a file system error; see the messages before this one in the job log."
+vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1B7"
+sev = 40
+text = "&1 could not be opened."
+help = "Job &2 may hold &1 open for its own use alone. Have that job close it, or end the job, and try the release of the locks again."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1B8"
+sev = 40
+text = "&1 needs *IOSYSCFG special authority."
+help = "Only a user profile with *IOSYSCFG special authority may use &1. Ask your security officer for it."
+vars = ["*CHAR 20"]
+
+[[msg]]
+id = "CPFA1B9"
+sev = 40
+text = "Not known whether the &1 NFS server daemon started in time."
+help = "The &1 daemon did not report that it was ready within the &2 seconds STRNFSSVR allowed; it may not have started. Find the daemon's job from the message before this one and look at its job log. If it is not running, correct what stopped it and try again, or end every daemon with ENDNFSSVR SERVER(*ALL) and start them again."
+vars = ["*CHAR 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA1BB"
+sev = 40
+text = "An option in the options list has a value that is not valid."
+help = "Option &2 was given the value &1, which is outside what the option takes. See the option's help and give a value it takes."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1BC"
+sev = 40
+text = "The NFS server daemons were not all started."
+help = "STRNFSSVR stopped because the &1 daemon may not have started. The messages before this one in the job log say why. Correct the problem and try again, or end every daemon with ENDNFSSVR, wait for the jobs to end and start them again."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "CPFA1BD"
+sev = 40
+text = "Not known whether the &1 NFS server daemon ended in time."
+help = "The &1 daemon did not end within the &2 seconds ENDNFSSVR allowed; it may still be running. Find its job from the message before this one and look at its job log, or end every daemon with ENDNFSSVR SERVER(*ALL)."
+vars = ["*CHAR 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA1BE"
+sev = 40
+text = "The NFS server daemons were not all ended."
+help = "ENDNFSSVR stopped because one or more daemons may still be running. The messages before this one in the job log name the daemon; look at its job log, correct the problem and try again."
+
+[[msg]]
+id = "CPFA1BF"
+sev = 40
+text = "&1 cannot be reached: its file system is not mounted."
+help = "&1 is in file system &2, which is not mounted now. Mount it with MOUNT or ADDMFS and try again."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1C0"
+sev = 40
+text = "&1 cannot be reached: a directory in its path has a file system mounted over it."
+help = "Objects below a directory that has a file system mounted over it are hidden until it is unmounted. DSPMFSINF shows which directory is mounted over; UNMOUNT the file system there and try again."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1C3"
+sev = 30
+text = "The -I and -O flags need DIR."
+help = "With -I or -O the command works on one directory, which DIR names. Give DIR and try again."
+
+[[msg]]
+id = "CPFA1C4"
+sev = 30
+text = "The -U flag needs DIR or the -A flag."
+help = "-U removes exports: name the directory with DIR, or give -A to remove every export of /etc/exports, and try again."
+
+[[msg]]
+id = "CPFA1C5"
+sev = 40
+text = "&1 is read only."
+help = "The request changes &1, which is marked read only. Clear the read only attribute with CHGATR and try again. A name of *N means the object could not be named; see the messages before this one."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1C6"
+sev = 40
+text = "MFS is not of the form host:path."
+help = "For TYPE(*NFS) the file system to mount is a host name or address, a colon, and the path of the export on that host, as in server:/home/data. Correct MFS and try again."
+
+[[msg]]
+id = "CPFA1C7"
+sev = 30
+text = "&1 could not be worked on."
+help = "The request on &1 failed with error number &2. When the error number is 0, the messages before this one say why; otherwise look up the error number, correct the problem and try again."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA1C9"
+sev = 40
+text = "The RPC binder daemon was not started."
+help = "RPCBIND stopped because the binder may not have started. The messages before this one in the job log say why. Correct the problem and try again, or end the binder with ENDRPCBIND and start it again."
+
+[[msg]]
+id = "CPFA1CA"
+sev = 40
+text = "The RPC binder daemon was not ended."
+help = "ENDRPCBIND stopped because the binder may still be running. Look at the binder's job log, correct the problem and try again."
+
+[[msg]]
+id = "CPFA1CB"
+sev = 40
+text = "The RPC binder daemon ended when it was not asked to."
+help = "The binder stopped with error number &1. Find the reason in its job log, correct it and start it again with RPCBIND."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA1CC"
+sev = 40
+text = "The RPC binder daemon cannot go on."
+help = "The binder met an error it cannot recover from; the error number is &1. See the messages before this one, correct the problem and start the binder again."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA1CD"
+sev = 40
+text = "/etc/netconfig could not be used."
+help = "Reading /etc/netconfig failed with error number &1. Check that the file exists and that each line names a transport in the file's form, then try again."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA1CE"
+sev = 40
+text = "No address was found for host &1."
+help = "The host name could not be turned into an address. Check its spelling, the host table (CFGTCP option 10) and the domain name servers, and try again."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA1CF"
+sev = 40
+text = "The job's CCSID has no ASCII counterpart."
+help = "An ASCII CCSID matching the job's default CCSID &1 was not found. Change the job's CCSID with CHGJOB, or name the CCSID or code page on the command."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPDA1B2"
+sev = 10
+text = "TYPE(*UDFS) needs MNTOVRDIR or MFS."
+help = "To unmount a user-defined file system, name the directory it is mounted over (MNTOVRDIR) or the file system itself (MFS)."
+
+[[msg]]
+id = "CPDA1B3"
+sev = 10
+text = "TYPE(*UDFS) takes MNTOVRDIR or MFS, not both."
+help = "Name either the directory the user-defined file system is mounted over or the file system itself, and try again."
+
+[[msg]]
+id = "CPDA1B4"
+sev = 10
+text = "MFS goes with TYPE(*UDFS) only."
+help = "For other types, name the directory mounted over with MNTOVRDIR, or change TYPE to *UDFS."
+
+[[msg]]
+id = "CPDA1B5"
+sev = 10
+text = "MNTOVRDIR is needed."
+help = "Name the directory the file system is mounted over and try again."
+
+[[msg]]
+id = "CPDA1B6"
+sev = 0
+text = "Give RMTLOCNAME or OBJ."
+help = "Name the remote host whose locks are released (RMTLOCNAME) or the object whose locks are released (OBJ)."
+
+[[msg]]
+id = "CPDA1B7"
+sev = 0
+text = "RMTLOCNAME and OBJ cannot both be given."
+help = "Locks are released either for a remote host or for an object. Give one of the two and try again."
+
+[[msg]]
+id = "CPDA1B8"
+sev = 0
+text = "Give OPTIONS or DIR."
+help = "Name the export options, the directory, or both, and try again."
+
+[[msg]]
+id = "CPDA1B9"
+sev = 20
+text = "The Network File System reported a problem, reason code &1."
+help = "Reasons: 1 the *RPC daemon does not answer; 2 the *NSM daemon does not answer; 3 the UDP transport is not usable; 4 the TCP transport is not usable; 5 a server does not answer, still trying; 6 a server does not answer, the request was given up; 7 the server answers again; 8 the local *NLM daemon does not answer, still trying; 9 the local *NLM daemon does not answer, given up; 10 the local *NLM daemon answers again; 11 a call could not be sent; 12 a reply could not be sent; 13 a message could not be decoded; 14 the binder's saved registrations are damaged; 15 they could not be opened; 16 they could not be read or written; 17 /etc/STATD is damaged; 18 /etc/STATD could not be opened; 19 /etc/STATD could not be read or written; 20 a blocking lock needs a UDP transport and there is none; 21 a lock could not be taken; 22 a lock could not be released; 23 a lock could not be tested; 24 the *MNT daemon does not answer."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPDA1BA"
+sev = 10
+text = "The &1 NFS server daemon was running already."
+help = "The daemon did not need to be started. The command goes on with the other daemons asked for."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "CPDA1BB"
+sev = 10
+text = "NBRSVR goes with SERVER(*SVR) or SERVER(*ALL) only."
+help = "The number of server daemons applies only when they are started. Change SERVER, or leave NBRSVR out, and try again."
+
+[[msg]]
+id = "CPDA1BC"
+sev = 10
+text = "NBRBIO goes with SERVER(*BIO) or SERVER(*ALL) only."
+help = "The number of block I/O daemons applies only when they are started. Change SERVER, or leave NBRBIO out, and try again."
+
+[[msg]]
+id = "CPDA1BD"
+sev = 10
+text = "&1 NFS server daemon &2 of &3 was running already."
+help = "Of the &3 daemons of type &1 asked for, number &2 was running already and was not started again. The command goes on with the others."
+vars = ["*CHAR 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPDA1BE"
+sev = 10
+text = "The file system on top at that directory is of another type."
+help = "Only the file system mounted last over a directory can be unmounted, and it is not of the type asked for. DSPMFSINF shows its type; unmount it first, or use UNMOUNT TYPE(*ALL) to unmount everything mounted there."
+
+[[msg]]
+id = "CPDA1C1"
+sev = 0
+text = "The RPC server met an authentication problem, reason code &1."
+help = "Reasons: 1 the credentials could not be encoded; 2 the local host name is not known; 3 the user ID is not known; 4 the primary group ID is not known. The error number is &2."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPDA1C2"
+sev = 20
+text = "The RPC binder daemon has no transport to listen on."
+help = "None of the transports of /etc/netconfig could be opened; another binder may be running. End it with ENDRPCBIND and start it again with RPCBIND."
+
+[[msg]]
+id = "CPDA1C3"
+sev = 10
+text = "RTVRPCREG goes with SERVER(*RPC) or SERVER(*ALL) only."
+help = "Retrieving the saved registrations applies only when the binder is started. Change SERVER, or leave RTVRPCREG out, and try again."
+
+[[msg]]
+id = "CPDA1C4"
+sev = 10
+text = "&1 is not an entry of &2."
+help = "&2 has no entry for &1, so the export takes its options from OPTIONS and the defaults. To take them from &2, add the entry; to stop this message, give -I in OPTIONS."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPDA1C5"
+sev = 10
+text = "&1 was not exported, reason code &2."
+help = "Reasons: 1 /etc/exports does not exist; 2 it is damaged, delete it; 3 an entry is not written correctly; 4 a file system error; 5 it could not be read; 6 a name could not be converted; 7 it is in use; 8 /etc/netgroup gives too many hosts; 9 a host, client or netgroup name is not valid; 10 a host, client or netgroup is not known; 11 an option is not known; 12 an option is given twice; 13 the options are not written correctly; 14 no user profile has the UID given; 15 /etc/netgroup does not exist; 16 /etc/netgroup is damaged, delete it; 17 an entry of /etc/netgroup is not written correctly; 18 /etc/netgroup could not be read; 19 /etc/netgroup is in use; 20 an error that is not known; 21 the external name (EXNAME) does not start at the root (/) or the NFSROOT directory; 22 an option of NFS version 4 only, with VERS not including 4; 23 an error that is not known, and /etc/exports was not changed; 24 an error that is not known while reading the security defaults. The messages before this one in the job log say more."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "CPDA1C7"
+sev = 10
+text = "MNTOVRDIR(*ALL) needs TYPE(*ALL)."
+help = "Unmounting every file system at once is done with TYPE(*ALL). Change TYPE and try again."
+
+[[msg]]
+id = "CPDA1CA"
+sev = 30
+text = "CCSID &1 has no &2 counterpart."
+help = "No &2 CCSID matches CCSID &1, or the CCSID is double-byte, which this command does not convert. Give another CCSID or code page and try again."
+vars = ["*BIN 4", "*CHAR 9"]
+
+[[msg]]
+id = "CPDA1D8"
+sev = 30
+text = "LCLBRNGLCK(*YES) and OBJMFS(*YES) cannot go together."
+help = "Release either the local byte-range locks on the object or those of its whole file system. Change one of the two to *NO and try again."
+
+[[msg]]
+id = "CPDB416"
+sev = 30
+text = "CCSID and CODEPAGE cannot both be given."
+help = "Name the conversion one way only: by CCSID or by code page."
+
+[[msg]]
+id = "CPIA1B0"
+sev = 0
+text = "RPC met an authentication problem, reason code &1."
+help = "Reasons: 1 the client made no credentials; 2 the server found the credentials not valid; 3 the server takes none of the client's flavors; 4 the credentials could not be made. See the messages before this one."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPIA1B1"
+sev = 0
+text = "The RPC client met a problem, reason code &1."
+help = "The RPC status is &2 and the error number &3. Reasons: 1 the server address is not valid; 2 the call could not be encoded; 3 the reply could not be decoded; 4 no connection within the time allowed; 5 no reply within the time allowed; 6 a control request that is not valid."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPIA1B2"
+sev = 0
+text = "RPC met a transport problem, reason code &1."
+help = "The error number is &2. Reasons: 1 the transport could not be described; 2 the transport is not suitable; 3 a call could not be sent; 4 a reply could not be received; 5 the transport state could not be read; 6 no connection to the server; 7 the transport is in a bad state; 8 the transport is not known; 9 no local address could be bound."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPIA1B3"
+sev = 0
+text = "The RPC server met a problem, reason code &1."
+help = "The error number is &2. Reasons: 1 a call could not be decoded; 2 a reply could not be encoded; 3 the client closed the connection; 4 a control request that is not valid; 5 every listener has ended; 6 a server could not be registered."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPIA1B4"
+sev = 20
+text = "/etc/netconfig has a transport entry that is not valid."
+help = "A line of /etc/netconfig is not in the file's form; the error number is &1. Correct the line and try again."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPIA1B5"
+sev = 0
+text = "The network type is not one RPC knows."
+help = "The network types are VISIBLE, DATAGRAM_V, CIRCUIT_V, TCP and UDP. Give one of them and try again."
+
+[[msg]]
+id = "CPIA1B7"
+sev = 0
+text = "A name to address translation ended, reason code &1."
+help = "Reasons: 1 no storage; 2 done; 3 host not found; 4 service not found; 5 symbol not found; 6 an object could not be opened; 7 not authorized; 8 an object that is not known was freed; 9 arguments not valid; 10 an option that is not known; 11 a control request failed; 12 a system error; 13 an error that is not known."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPIA1B8"
+sev = 0
+text = "The RPC binder daemon could not be reached, reason code &1."
+help = "Reasons: 1 the binder does not answer; 2 portmap version 2 did not give the address; 3 rpcbind version 4 did not give it; 4 rpcbind version 3 did not give it; 5 a binder version that is not known. Check that the binder runs (RPCBIND starts it) and try again."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPIA1B9"
+sev = 0
+text = "The RPC binder daemon found no suitable transport, reason code &1."
+help = "Reasons: 1 no loopback transport; 2 no network transport. See the messages before this one."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPIA1BB"
+sev = 0
+text = "The &1 NFS server daemons started."
+help = "Every daemon of type &1 asked for is running."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPIA1BC"
+sev = 0
+text = "The &1 NFS server daemons ended."
+help = "Every daemon of type &1 asked to end has ended."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPIA1BF"
+sev = 0
+text = "/etc/RPCBTAB could not be used, reason code &1."
+help = "The error number is &2. Reasons: 1 the file is damaged or cut short, and the binder ends; 2 the file could not be opened, and the binder ends; 3 the file could not be read or written; 4 the file does not exist, and the binder runs without the saved registrations."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPIA1C0"
+sev = 0
+text = "/etc/netconfig is open for writing in another job."
+help = "The file could not be read. Have the other job close it and try again."
+
+[[msg]]
+id = "CPIA1C1"
+sev = 0
+text = "The RPC binder refused a registration from another host."
+help = "Programs register with the binder, or are removed from it, only from this system. The request came over the network and was refused."
+
+[[msg]]
+id = "CPCA1B2"
+sev = 0
+text = "The NFS server daemon ended."
+help = "The daemon was asked to end and has ended."
+
+[[msg]]
+id = "CPCA1B4"
+sev = 0
+text = "The RPC binder daemon started."
+help = "The binder is running and answers on port 111."
+
+[[msg]]
+id = "CPCA1B5"
+sev = 0
+text = "The RPC binder daemon ended."
+help = "The binder was asked to end and has ended."
+
+[[msg]]
+id = "CPCA1B6"
+sev = 0
+text = "The RPC binder daemon was running already."
+help = "The binder did not need to be started."
+
+[[msg]]
+id = "CPCA1BB"
+sev = 0
+text = "STRNFSSVR finished: the daemons asked for are running."
+help = "The messages before this one in the job log name each type of daemon started."
+
+[[msg]]
+id = "CPCA1BC"
+sev = 0
+text = "ENDNFSSVR finished: the daemons asked for have ended."
+help = "The messages before this one in the job log name each type of daemon ended."
+
+[[msg]]
+id = "CPCA1C4"
+sev = 0
+text = "&1 exported."
+help = "The export request for &1 is done; NFS clients allowed by its options can mount it."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA1C6"
+sev = 0
+text = "&1 entries exported, &2 not."
+help = "The messages before this one in the job log (DSPJOBLOG) say why an entry was not exported."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPCA1C7"
+sev = 0
+text = "The release of locks went to *NLM NFS server daemon job &1."
+help = "The locks NFS clients on host &2 hold on local files are to be released by job &1. Its job log says whether it did."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA1C9"
+sev = 0
+text = "The locks on &1 were released."
+help = "The file system locks held on &1 are released. The messages before this one in the job log say which."
+vars = ["*CHAR *VARY 4"]
