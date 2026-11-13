@@ -604,6 +604,22 @@ pub const TARGETS: &[Target] = &[
         dict: &[b"\0\0\0\x18", b"\0\0\0\x35", b"\0\0\0\x2a", b"\0\0\0\x2b", b"\0\0\x27\x3c", b"\0\0\0\x01"],
         max_len: 16384,
     },
+        name: "nfsexports",
+        what: "/etc/exports, /etc/netgroup, EXPORTFS flags, export and MOUNT option lists",
+        run: nfs::exports::fuzz,
+        seeds: &[
+            b"\x00/home/joe -ro,access=a:b HOSTOPT a:819:*ASCII:*ASYNC\n",
+            b"\x01-I -O 'ro,anon=0' -V",
+            b"\x02lab (gamma,,) servers\nservers (-,root,)\n",
+            b"\x03rw,soft,vers=4.1,actimeo=10",
+            b"\x04ro,rw=a:@10.0.0.0/8,root,anon=-1,vers=3:4",
+        ],
+        dict: &[
+            b"HOSTOPT", b"access=", b"rw=", b"root", b"anon=", b"@10.0.0.0/8", b"-O", b"\\\n",
+            b"(,,)",
+        ],
+        max_len: 4096,
+    },
 ];
 
 /// The target named `name`.
