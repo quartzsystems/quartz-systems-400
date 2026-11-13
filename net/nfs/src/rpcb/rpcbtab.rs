@@ -83,7 +83,7 @@ pub fn decode(b: &[u8]) -> Result<Vec<rpcb>, RpcbtabError> {
         let num = |s: &str| s.parse::<u32>().map_err(|_| RpcbtabError::Fields(i));
         if [netid, addr, owner]
             .iter()
-            .any(|s| s.is_empty() || !s.is_ascii())
+            .any(|s| s.is_empty() || !s.is_ascii() || s.contains(char::is_whitespace))
         {
             return Err(RpcbtabError::Fields(i));
         }

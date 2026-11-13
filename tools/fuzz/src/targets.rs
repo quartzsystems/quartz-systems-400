@@ -313,6 +313,30 @@ fn smb(data: &[u8]) {
     f::spoolss_request(data);
 }
 
+fn nfsrpc(data: &[u8]) {
+    nfs::fuzzing::rpc(data);
+}
+
+fn nfsrpcb(data: &[u8]) {
+    nfs::fuzzing::rpcb(data);
+}
+
+fn nfsmount(data: &[u8]) {
+    nfs::fuzzing::mount(data);
+}
+
+fn nfsnlm(data: &[u8]) {
+    nfs::fuzzing::nlm(data);
+}
+
+fn nfs3(data: &[u8]) {
+    nfs::fuzzing::nfs3(data);
+}
+
+fn nfs4(data: &[u8]) {
+    nfs::fuzzing::nfs4(data);
+}
+
 fn tls_client() -> &'static std::sync::Arc<tls::rustls::ClientConfig> {
     static CFG: OnceLock<std::sync::Arc<tls::rustls::ClientConfig>> = OnceLock::new();
     CFG.get_or_init(|| {
@@ -531,6 +555,54 @@ pub const TARGETS: &[Target] = &[
         seeds: &[b"\x00\x01Hello \x0E\x41\x41\x0F"],
         dict: &[b"\x0E", b"\x0F", b"\xFF\xFE"],
         max_len: 4096,
+    },
+    Target {
+        name: "nfsrpc",
+        what: "ONC RPC record marking, calls, credentials and the dispatcher",
+        run: nfsrpc,
+        seeds: &[b"\x80\0\0\x28\0\0\0\x01\0\0\0\0\0\0\0\x02\0\x06\x1a\xe4\0\0\0\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"],
+        dict: &[b"\x80\0\0", b"\0\0\0\x02", b"\0\x06\x1a\xe4", b"\0\x01\x86\xa0", b"\0\0\0\x01"],
+        max_len: 8192,
+    },
+    Target {
+        name: "nfsrpcb",
+        what: "the binder (portmap 2, rpcbind 3 and 4) end to end, and /etc/RPCBTAB",
+        run: nfsrpcb,
+        seeds: &[b"\x02\x03\0\x01\x86\xa3\0\0\0\x03\0\0\0\x03tcp\0\0\0\0\0\0\0\0\0"],
+        dict: &[b"\0\0\0\x03tcp\0", b"\0\0\0\x03udp\0", b"\0\0\0\x0b0.0.0.0.8.1\0", b"\0\x01\x86\xa3"],
+        max_len: 16384,
+    },
+    Target {
+        name: "nfsmount",
+        what: "MOUNT versions 1 and 3: arguments and results decoded and encoded again",
+        run: nfsmount,
+        seeds: &[b"\x01\0\0\0\x05/home\0\0\0"],
+        dict: &[b"\0\0\0\x01", b"\0\0\0\0"],
+        max_len: 4096,
+    },
+    Target {
+        name: "nfsnlm",
+        what: "NLM versions 1, 3 and 4 and NSM: arguments and results decoded and encoded again",
+        run: nfsnlm,
+        seeds: &[b"\x02\0\0\0\0\0\0\0\0\0\0\0\x01\0\0\0\x01a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"],
+        dict: &[b"\0\0\0\x01", b"\0\0\0\0"],
+        max_len: 4096,
+    },
+    Target {
+        name: "nfs3",
+        what: "NFS version 3: every procedure's arguments and results decoded and encoded again",
+        run: nfs3,
+        seeds: &[b"\x01\0\0\0\x08abcdefgh"],
+        dict: &[b"\0\0\0\x01", b"\0\0\0\0", b"\0\0\0\x40"],
+        max_len: 8192,
+    },
+    Target {
+        name: "nfs4",
+        what: "NFS version 4 compounds and callback compounds decoded and encoded again",
+        run: nfs4,
+        seeds: &[b"\0\0\0\0\0\0\0\x01\0\0\0\x03\0\0\0\x18\0\0\0\x0a\0\0\0\x09\0\0\0\x01\0\0\0\x03"],
+        dict: &[b"\0\0\0\x18", b"\0\0\0\x35", b"\0\0\0\x2a", b"\0\0\0\x2b", b"\0\0\x27\x3c", b"\0\0\0\x01"],
+        max_len: 16384,
     },
 ];
 

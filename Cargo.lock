@@ -1445,6 +1445,7 @@ dependencies = [
  "jrn",
  "mail",
  "netserver",
+ "nfs",
  "optical",
  "ptf",
  "qap-proto",
