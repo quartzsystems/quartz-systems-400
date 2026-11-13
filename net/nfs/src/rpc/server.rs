@@ -64,6 +64,40 @@ pub trait Program: Send + Sync {
     fn call(&self, ctx: &CallContext, args: &mut Decoder<'_>) -> Answer;
 }
 
+/// A program one thread serves: [`Program`] without `Send` and `Sync`,
+/// for state that cannot cross threads (a daemon thread's own link to
+/// the file system). A connection's thread hands its own to
+/// [`Dispatcher::handle_with`].
+pub trait LocalProgram {
+    /// The program number.
+    fn program(&self) -> u32;
+    /// The versions it has, lowest first.
+    fn versions(&self) -> &[u32];
+    /// Runs a procedure of a version it has. `Ok(None)` sends no reply.
+    fn call(&self, ctx: &CallContext, args: &mut Decoder<'_>) -> Answer;
+}
+
+/// The program a call is for: the thread's or the dispatcher's.
+enum Found<'a> {
+    Local(&'a dyn LocalProgram),
+    Shared(&'a dyn Program),
+}
+
+impl Found<'_> {
+    fn versions(&self) -> &[u32] {
+        match self {
+            Self::Local(p) => p.versions(),
+            Self::Shared(p) => p.versions(),
+        }
+    }
+    fn call(&self, ctx: &CallContext, args: &mut Decoder<'_>) -> Answer {
+        match self {
+            Self::Local(p) => p.call(ctx, args),
+            Self::Shared(p) => p.call(ctx, args),
+        }
+    }
+}
+
 /// The arguments of `ctx`'s procedure from a version's generated
 /// `Args`: `PROC_UNAVAIL` for a procedure it lacks, `GARBAGE_ARGS` when
 /// they do not decode or bytes are left over.
@@ -116,6 +150,18 @@ impl Dispatcher {
 
     /// The reply to the message `msg` from `peer`, or `None` for no reply.
     pub fn handle(&self, msg: &[u8], peer: SocketAddr, transport: Transport) -> Option<Vec<u8>> {
+        self.handle_with(msg, peer, transport, &[])
+    }
+
+    /// [`Self::handle`] with the calling thread's own programs too,
+    /// looked at before the dispatcher's.
+    pub fn handle_with(
+        &self,
+        msg: &[u8],
+        peer: SocketAddr,
+        transport: Transport,
+        local: &[&dyn LocalProgram],
+    ) -> Option<Vec<u8>> {
         let call = match msg::parse_call(msg) {
             Ok(c) => c,
             Err(CallError::Drop) => return None,
@@ -132,7 +178,15 @@ impl Dispatcher {
             return Some(msg::reply_auth_error(xid, auth_stat::AUTH_BADVERF));
         }
         let b = &call.body;
-        let Some(p) = self.programs.iter().find(|p| p.program() == b.prog) else {
+        let found = match local.iter().find(|p| p.program() == b.prog) {
+            Some(l) => Some(Found::Local(*l)),
+            None => self
+                .programs
+                .iter()
+                .find(|p| p.program() == b.prog)
+                .map(|p| Found::Shared(&**p)),
+        };
+        let Some(p) = found else {
             return Some(msg::reply_refused(xid, AcceptError::ProgUnavail));
         };
         let vs = p.versions();
