@@ -13,6 +13,7 @@
 pub mod api;
 pub mod client;
 pub mod export;
+pub mod ids;
 pub mod locks;
 pub mod optfile;
 pub mod registry;

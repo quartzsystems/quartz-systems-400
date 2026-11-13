@@ -6,7 +6,8 @@
 //! registered as the IFS's maker of `*NFS` mounts. A mount runs on its
 //! own thread, away from the service's: what it needs of the system
 //! (the host table and this system's name, whether this system's
-//! status monitor and lock manager run) is a snapshot [`refresh`] takes
+//! status monitor and lock manager run, the `NFSv4` identity mapping of
+//! `ids`) is a snapshot [`refresh`] takes
 //! on the service's thread before each `MOUNT`. `MOUNT`'s options and
 //! `MFS` are checked here first ([`check`]) so a bad one gets its own
 //! message. The server's reports are the IFS's (`CPDA1B9` from
@@ -84,6 +85,7 @@ fn env() -> ClientEnv {
         host_name: host_name.to_ascii_lowercase(),
         local,
         connections: super::super::ifsremote::THREADS * 2,
+        registry: Some(super::ids::registry()),
         ..ClientEnv::default()
     }
 }
@@ -105,6 +107,8 @@ pub fn refresh(system: &mut System) {
     let mut s = snap();
     s.hosts = hosts;
     s.lockd = lockd;
+    drop(s);
+    super::ids::refresh(system);
 }
 
 /// `MOUNT TYPE(*NFS)`'s own checks before the IFS is asked: the

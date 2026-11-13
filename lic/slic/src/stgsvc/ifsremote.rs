@@ -93,6 +93,7 @@ pub fn drain() {
 
 /// Report what the mounts said of their servers to `QSYSOPR`.
 pub fn tick(system: &mut System) {
+    super::nfs::ids::tick(system);
     let evs = std::mem::take(&mut *EVENTS.lock().unwrap_or_else(PoisonError::into_inner));
     for e in evs {
         let (reason, source) = match &e {
