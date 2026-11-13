@@ -433,6 +433,7 @@ fn send(
 pub(super) fn sent(core: &Core, h: &RHandle, k: u64, epoch: u64, r: RResult<(u64, Stable)>) {
     let mut c = core.cache();
     let i = c.inode(h);
+    let mut gone = 0;
     match r {
         Ok((verf, reached)) => {
             if let Some(b) = i.blocks.get_mut(&k)
@@ -450,17 +451,20 @@ pub(super) fn sent(core: &Core, h: &RHandle, k: u64, epoch: u64, r: RResult<(u64
                 };
                 if b.state == BState::Clean && !b.base {
                     // Only part of it was ever here: no use for reads.
-                    i.blocks.remove(&k);
+                    gone = i.blocks.remove(&k).map_or(0, |b| b.data.len());
                 }
             }
         }
         Err(e) => {
             // The data cannot be written: dropped, the error kept for
             // `fsync` and `close`.
-            i.blocks.remove(&k);
+            gone = i.blocks.remove(&k).map_or(0, |b| b.data.len());
             i.write_err.get_or_insert(e);
         }
     }
+    c.bytes = c.bytes.saturating_sub(gone);
+    // Written data is clean data: past the limit, the oldest goes.
+    c.trim();
 }
 
 fn write_block(core: &Core, h: &RHandle, cred: &Cred, k: u64, ok: &mut bool) {
@@ -529,15 +533,17 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
                     if vb == v {
                         let mut c = core.cache();
                         let i = c.inode(h);
+                        let mut gone = 0;
                         if let Some(b) = i.blocks.get_mut(&k)
                             && b.state == BState::Sent(vb)
                         {
                             b.state = BState::Clean;
                             b.dirty = None;
                             if !b.base {
-                                i.blocks.remove(&k);
+                                gone = i.blocks.remove(&k).map_or(0, |b| b.data.len());
                             }
                         }
+                        c.bytes = c.bytes.saturating_sub(gone);
                         continue;
                     }
                     // The server restarted: send it again, stable.
@@ -568,6 +574,7 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
     if let Ok(a) = a {
         c.put_attr(h, a);
     }
+    c.trim();
     let i = c.inode(h);
     if !i.has_dirty() {
         i.size_local = None;

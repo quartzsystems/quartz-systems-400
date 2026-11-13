@@ -651,12 +651,7 @@ impl RemoteMount {
         let end = off + data.len() as u64;
         let mut c = self.core.cache();
         if c.dirty_bytes() + data.len() > self.core.cfg.dirty_bytes {
-            drop(c);
-            return Need::Wait(self.push(Work::Mutate {
-                m: Mutation::FlushAll,
-                cred: cred.clone(),
-                token: None,
-            }));
+            return Need::Wait(self.write_back(c, cred));
         }
         // Blocks partly written before and not read: read them first.
         let mut need_read = None;
@@ -746,6 +741,40 @@ impl RemoteMount {
             }
         }
         Need::Ready(Ok(()))
+    }
+
+    /// Too much waits to be written: every block waiting goes out at
+    /// once, over all the workers (identical work is queued once), and
+    /// the ticket of the last is what a write waits for; data only sent
+    /// unstable waits for its commit.
+    fn write_back(&self, c: MutexGuard<'_, Cache>, cred: &Cred) -> u64 {
+        let waiting: Vec<(RHandle, u64)> = c
+            .inodes
+            .iter()
+            .flat_map(|(h, i)| {
+                i.blocks
+                    .iter()
+                    .filter(|(_, b)| b.state == BState::Dirty)
+                    .map(move |(k, _)| (h.clone(), *k))
+            })
+            .collect();
+        drop(c);
+        if waiting.is_empty() {
+            return self.push(Work::Mutate {
+                m: Mutation::FlushAll,
+                cred: cred.clone(),
+                token: None,
+            });
+        }
+        let mut last = 0;
+        for (h, block) in waiting {
+            last = self.push(Work::WriteBlock {
+                h,
+                cred: cred.clone(),
+                block,
+            });
+        }
+        last
     }
 
     /// Whether `h` has data not yet on the server, or a write-back
