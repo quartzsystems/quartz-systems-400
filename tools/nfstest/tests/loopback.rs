@@ -74,3 +74,71 @@ fn every_v3_scenario_against_the_server() {
         assert_eq!(code, i32::try_from(KNOWN.len()).unwrap());
     }
 }
+
+#[test]
+fn probe_lists_the_daemons_and_the_export() {
+    let s = common::start(&common::Options::default());
+    let pmap = s.pmap_port.to_string();
+    let (code, out) = run(&["probe", "127.0.0.1", "--pmap-port", &pmap]);
+    println!("{out}");
+    assert_eq!(code, 0);
+    for want in ["portmapper", "nfs", "mountd", "nlockmgr", "status"] {
+        assert!(out.contains(want), "{want} missing:\n{out}");
+    }
+    assert!(
+        out.contains(&format!("Export list for 127.0.0.1:\n{}", common::EXPORT)),
+        "{out}"
+    );
+}
+
+#[test]
+fn bench_writes_and_reads_back() {
+    let s = common::start(&common::Options::default());
+    let pmap = s.pmap_port.to_string();
+    let (code, out) = run(&[
+        "bench",
+        "127.0.0.1",
+        common::EXPORT,
+        "scratch",
+        "--pmap-port",
+        &pmap,
+        "--uid",
+        "100",
+        "--gid",
+        "100",
+        "--mib",
+        "8",
+    ]);
+    println!("{out}");
+    assert_eq!(code, 0, "{out}");
+    assert!(
+        out.contains("write MiB/s: ") && out.contains("read MiB/s: "),
+        "{out}"
+    );
+}
+
+#[test]
+fn the_grace_period_after_a_start() {
+    let s = common::start(&common::Options {
+        grace: std::time::Duration::from_secs(60),
+        ..common::Options::default()
+    });
+    let pmap = s.pmap_port.to_string();
+    let (code, out) = run(&[
+        "127.0.0.1",
+        common::EXPORT,
+        "scratch",
+        "--pmap-port",
+        &pmap,
+        "--uid",
+        "100",
+        "--gid",
+        "100",
+        "--expect-grace",
+        "--only",
+        "nlm-grace",
+    ]);
+    println!("{out}");
+    assert_eq!(code, 0, "{out}");
+    assert!(out.contains("ok nlm-grace"), "{out}");
+}

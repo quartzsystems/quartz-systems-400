@@ -59,7 +59,7 @@ end says what is built and proven.
 | APIs | `runtime/sysapi/src/nfs.rs` | `QZNFRTVE`, `QZNFNFSO` |
 | SQL | `database/sql/src/exec/catalog/services/nfs.rs`, `lic/slic/src/stgsvc/nfs/sql.rs` | **Built.** `QSYS2.NFS_EXPORT_INFO`, `QSYS2.MOUNTED_FS_INFO` (section 8.3); the NFS ports in `NETSTAT_*` need nothing of their own |
 | Navigator, QAP | `net/navigator/src/routes/nfs/`, `work/qsjob/src/work/httpnav/nfs.rs`; `work/qap-proto/src/ops/nfs.rs`, `net/qapd/src/nfs.rs`, `work/qsjob/src/work/qap/nfs.rs` | **Built.** NFS Exports, Servers and Mounts pages; the `Nfs` service, 13, of QAP version 11 (draft) (section 8.3) |
-| Test client | `tools/nfstest` | scenarios against a server over loopback or a forwarded port |
+| Test client | `tools/nfstest` | **Built.** Scenarios against a server over loopback or a forwarded port (`ok`/`fail`/`skip` lines, the exit code the failures), `probe` (`rpcinfo -p` and `showmount -e`), `bench`. Outside the workspace with its own lockfile, nothing of `net/nfs` in its binary: portmap, MOUNT and NFS 3 from the NFSWolf crates (Apache-2.0), NLM, NSM and NFS 4.0/4.1 written by hand from the RFCs (`tools/nfstest/README.md`) |
 
 Dependencies point one way: `xdrgen` knows nothing; `nfs` depends on
 `ifs` (for `IfsClient`-shaped types and `ifs::remote`), `ccsid` and
@@ -1784,7 +1784,18 @@ Nothing is accepted and ignored. What is not done is refused as below.
   grace and reclaim; `soft` and `hard` against a server that stops).
 - `cargo test -p ifs`: remote mounts over a `RemoteFs` in memory; the
   daemons' identity; lock owners; handles.
-- `tools/nfstest`: the scenarios a client runs against a server.
+- `tools/nfstest` (`cargo test --manifest-path tools/nfstest/Cargo.toml`):
+  **built.** `tests/loopback.rs` brings this server up on loopback (a
+  binder over TCP and UDP, `mountd`, `nfsd`, `nlmd`, `nsmd` over an IFS in
+  memory) and runs every NFS 3, MOUNT, NLM and NSM scenario through the
+  command line, with the client's own portmapper and lock manager for
+  `GRANTED`; `probe`, `bench`, and `nlm-grace` in a grace period.
+  `tests/v4_scripted.rs` runs the 4.0 and 4.1 scenarios that need no file
+  data against a responder written for the tests; against this server
+  they wait for `v4/` (ignored). `tests/interop.rs` (ignored): a Linux
+  `nfsd` export (`NFSTEST_LINUX`) and the Linux kernel client mounting
+  this server. The scenarios that fail against the server are the test's
+  `KNOWN` list, each a finding in the README.
 - QEMU (`build test`): two QS/400 guests, one exporting and one
   mounting, v3 and v4; locks across the guests; the server ended and
   started with locks reclaimed; a `/QSYS.LIB` export with text

@@ -28,11 +28,13 @@ use nfs::nsm::state::{NsmConfig, NsmState};
 use nfs::rpc::record::MAX_RECORD;
 use nfs::rpc::{ClientConfig, Dispatcher, serve_datagram, serve_tcp};
 use nfs::rpcb::Binder;
+use nfs::rpcb::uaddr::to_uaddr;
 use nfs::server::ifsvfs::{self, IfsVfs};
 use nfs::server::locate::{FixedLocator, Host};
 use nfs::server::news::{ClientNews, NewsSource};
 use nfs::server::run::{self, Common, Listeners, Registration};
 use nfs::server::{Anon, Clock, ExportTable, Gate, Instance, MemExport, MemExports, SystemClock};
+use nfs::types::rpcb::rpcb;
 use nfs::v3::Nfs3;
 use sec::auth::bits::Auth;
 use sec::auth::principal::Principal;
@@ -209,9 +211,23 @@ pub fn start(o: &Options) -> Server {
     bu.set_read_timeout(Some(Duration::from_millis(50)))
         .unwrap();
     bt.set_nonblocking(true).unwrap();
+    // The binder's own entries, as QNFSRPCD makes them (the oracle's
+    // /etc/RPCBTAB: versions 2 and 3).
+    let b = Binder::default();
+    for v in [2, 3] {
+        for netid in [&b"tcp"[..], b"udp"] {
+            b.register(rpcb {
+                r_prog: 100_000,
+                r_vers: v,
+                r_netid: netid.to_vec(),
+                r_addr: to_uaddr(baddr).into_bytes(),
+                r_owner: b"0".to_vec(),
+            });
+        }
+    }
     let bd = Arc::new({
         let mut d = Dispatcher::new();
-        d.add(Arc::new(Binder::default()));
+        d.add(Arc::new(b));
         d
     });
     {
