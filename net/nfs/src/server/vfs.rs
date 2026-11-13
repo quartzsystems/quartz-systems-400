@@ -496,4 +496,72 @@ pub trait Vfs {
     fn lease(&self, r: &Req, fh: &FileHandle, tag: u64, key: [u8; 32], want: u8) -> VResult<u8>;
     /// The leases still held on `tag`.
     fn lease_report(&self, tag: u64, leases: &[([u8; 32], u8)]) -> VResult<()>;
+
+    // NFSv4 (docs/NFS.md section 5.10): I/O and locks through an open of
+    // [`Vfs::open`], whose share reservation another descriptor of the
+    // job would collide with. A file system without them answers
+    // `NotSupp`.
+
+    /// Reads through the open `open` of the file.
+    fn read_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        off: u64,
+        count: u32,
+    ) -> VResult<ReadData> {
+        let _ = (r, fh, open, off, count);
+        Err(super::VfsError::NotSupp)
+    }
+    /// Writes through the open `open` of the file.
+    fn write_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        off: u64,
+        data: &[u8],
+        stable: Stable,
+    ) -> VResult<Written> {
+        let _ = (r, fh, open, off, data, stable);
+        Err(super::VfsError::NotSupp)
+    }
+    /// Sets attributes, a size through the open `open`.
+    fn setattr_open(&self, r: &Req, fh: &FileHandle, open: u64, a: &SetAttr) -> VResult<Wcc> {
+        let _ = (r, fh, open, a);
+        Err(super::VfsError::NotSupp)
+    }
+    /// Locks a range for `sub` through the open `open`, without waiting.
+    fn lock_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+    ) -> VResult<LockOutcome> {
+        let _ = (r, fh, open, sub, kind, start, len);
+        Err(super::VfsError::NotSupp)
+    }
+    /// Unlocks a range of `sub`'s through the open `open`.
+    fn unlock_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        sub: u64,
+        start: u64,
+        len: u64,
+    ) -> VResult<()> {
+        let _ = (r, fh, open, sub, start, len);
+        Err(super::VfsError::NotSupp)
+    }
+    /// When the object was made.
+    fn created(&self, r: &Req, fh: &FileHandle) -> VResult<Time> {
+        let _ = (r, fh);
+        Err(super::VfsError::NotSupp)
+    }
 }

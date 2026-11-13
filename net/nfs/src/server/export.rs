@@ -73,6 +73,22 @@ pub trait ExportView: Send + Sync + Debug {
     fn host_opts(&self, peer: IpAddr) -> HostOpts;
     /// The host names `EXPORT` lists for it (none: everyone).
     fn groups(&self) -> Vec<String>;
+    /// The name `NFSv4` clients see it by (`EXNAME=`, else its path).
+    fn v4_name(&self) -> String {
+        self.path().to_string()
+    }
+    /// Where the `NFSv4` pseudo file system starts for it (`NFSROOT=`).
+    fn v4_nfsroot(&self) -> String {
+        "/".to_string()
+    }
+    /// It is the root of the `NFSv4` pseudo file system (`ROOT`).
+    fn v4_root(&self) -> bool {
+        false
+    }
+    /// It holds the `NFSv4` public file handle (`PUBLIC`).
+    fn v4_public(&self) -> bool {
+        false
+    }
 }
 
 /// The exports.

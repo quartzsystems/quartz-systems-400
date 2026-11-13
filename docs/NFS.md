@@ -609,25 +609,88 @@ and 4 that calls `v3::call` for version 3. Opens with share
 reservations are `Vfs::open`/`close`; v4 lock owners need their own
 sub-owner range (NLM's starts at `0x4E4C000000000000`).
 
-### 5.10 `/QSYS.LIB` and NFSv4 **(design)**
+### 5.10 `/QSYS.LIB` and NFSv4
 
 - **`/QSYS.LIB`** exports show libraries, objects and members as
   directories and files (built and tested over `MemQsys`: `.FILE` a
   directory of `.MBR` files, a user space a file). `/QOPT` and `/QDLS`
   cannot be exported (`CPDA1C5`); nor can `/QNTC`, `/QFileSvr.400` or
   an NFS mount (the commands' agent).
-- **NFSv4.** The pseudo-file system joins the exports under one root
-  (read-only directories made of the exports' path components).
-  Compound operations of 4.0 and 4.1; stateful opens with share
-  reservations; byte-range locks; read delegations (write delegations
-  are not offered); `SETCLIENTID` and callbacks for 4.0;
-  `EXCHANGE_ID`, sessions, slots with exactly-once replies, the
-  backchannel, `RECLAIM_COMPLETE`, `SEQUENCE` for 4.1. Referrals are
-  refused (`fs_locations` is not a supported attribute), pNFS is refused
-  (`EXCHGID4_FLAG_USE_NON_PNFS`, `LAYOUT*` and `GETDEVICE*` answer
-  `NFS4ERR_NOTSUPP`). NFSv4 `owner`/`owner_group` are `profile@domain`
-  through the registry, the domain from `QZNFNFSO`.
 
+#### 5.10.1 The interfaces (built)
+
+What the job wires (`QNFSNFSD`, `QNFSRGYD`) and the client calls:
+
+```rust
+// nfs::registry: the identity mapping, one per job, shared by every thread
+pub trait IdMap: Send + Sync {                  // the job implements it over the service
+    fn domain(&self) -> String;                 // QZNFNFSO's NFSv4 domain, else the TCP/IP domain name
+    fn user_name(&self, uid: u32) -> Option<String>;
+    fn user_id(&self, name: &str) -> Option<u32>;      // name upper case
+    fn group_name(&self, gid: u32) -> Option<String>;
+    fn group_id(&self, name: &str) -> Option<u32>;
+}
+pub struct Registry;   // Registry::new(map: Arc<dyn IdMap>, ttl: Duration, clock: Arc<dyn Clock>)
+impl Registry {
+    pub fn owner(&self, uid: u32, name: Option<&str>) -> String;   // "BOB@domain", or "100" unmapped
+    pub fn group(&self, gid: u32, name: Option<&str>) -> String;
+    pub fn uid(&self, who: &[u8]) -> Result<u32, IdError>;         // IdError::BadOwner | BadChar
+    pub fn gid(&self, who: &[u8]) -> Result<u32, IdError>;
+    pub fn domain(&self) -> String;
+    pub fn clear(&self);                                           // a profile changed
+}
+pub const TTL: Duration;   // 600 s; MemIdMap is the in-memory IdMap
+
+// nfs::v4::state::stable: the stable records (format below)
+pub trait StableStore: Send + Sync {
+    fn load(&self) -> io::Result<StableImage>;      // none yet: StableImage::default()
+    fn store(&self, img: &StableImage) -> io::Result<()>;
+}
+pub fn file_name(n: u32) -> String;                 // job n's file under /QIBM/UserData/OS400/NFS/
+pub fn encode(img: &StableImage) -> Vec<u8>;
+pub fn decode(b: &[u8]) -> Result<StableImage, FormatError>;   // MemStable for tests
+
+// nfs::v4::cb: 4.0 callbacks (4.1 uses the session's own connection)
+pub trait CbConnector: Send + Sync {
+    fn connect(&self, netid: &str, uaddr: &str) -> Option<Box<dyn CbChannel>>;
+}
+pub struct TcpConnector { pub cfg: ClientConfig }   // over RpcClient; NoCallbacks reaches nobody
+
+// nfs::v4::Server: what a QNFSNFSD job's threads share
+impl Server {
+    pub fn new(cfg: v4::Config, exports: Arc<dyn ExportTable>, instance: Arc<Instance>,
+               clock: Arc<dyn Clock>, registry: Arc<Registry>, stable: Arc<dyn StableStore>,
+               cb: Arc<dyn CbConnector>) -> Arc<Server>;
+    pub fn program<V: Vfs>(self: &Arc<Self>, vfs: V) -> Nfs34<V>;   // LocalProgram 100003, versions 3 and 4
+    pub fn background(&self, vfs: &dyn Vfs, news: &mut dyn NewsSource, stop: &AtomicBool);
+    pub fn tick(&self, vfs: &dyn Vfs);                // one round of it (tests)
+    pub fn lease_break(&self, tag: u64, keep: u8);    // what background does with a break order
+}
+
+// nfs::server::run: the hook QNFSNFSD calls in place of nfsd
+pub fn nfsd4<V, F, N>(c: Common<'_>, server: &Arc<v4::Server>, vfs: F, news: N) -> io::Result<()>
+where V: Vfs, F: Fn() -> V + Sync, N: Fn() -> Box<dyn NewsSource> + Sync;
+```
+
+`nfsd4` registers 100003 versions 3 and 4, serves each connection with
+`server.program(vfs())` (version 3 is `v3::call` with its duplicate
+request cache) and runs `server.background(&vfs(), &mut *news(), stop)`
+beside them. Each TCP connection's program is told its connection
+(`rpc::LocalProgram::attach`, a default method; `rpc::back::BackChannel`):
+the 4.1 backchannel calls the client on it, and replies arriving on it
+are handed to their calls instead of the dispatcher. `v4::Config`'s
+defaults: lease and grace 90 s, courtesy 270 s, recall wait 90 s,
+callback time-out 5 s, 64 slots, 64 operations, 1 MiB I/O; the job sets
+`system` (the system name: `so_major_id`, server scope).
+
+The `Vfs` gained default methods (`NotSupp` unless implemented;
+`IfsVfs` implements them): `read_open`, `write_open`, `setattr_open`,
+`lock_open`, `unlock_open` (I/O and locks through an open's own
+descriptor, which a share reservation of the job's own would otherwise
+refuse) and `created` (`time_create`). `ExportView` gained default
+methods for the pseudo file system: `v4_name` (`EXNAME=`, default the
+path), `v4_nfsroot` (`NFSROOT=`, default `/`), `v4_root` (`ROOT`),
+`v4_public` (`PUBLIC`).
 ### 5.11 What the IFS gives the daemons
 
 - **Identity per request** (built, `docs/IFS.md` "Calls as another

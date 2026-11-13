@@ -26,7 +26,7 @@ use crate::server::handle::FileHandle;
 use crate::server::vfs::{Conflict, LockKind, LockOutcome, Req, ShareAccess, ShareDeny};
 
 /// The IFS's start and length of a range.
-fn range(start: u64, len: u64) -> (i64, i64) {
+pub(super) fn range(start: u64, len: u64) -> (i64, i64) {
     let s = i64::try_from(start).unwrap_or(i64::MAX);
     let l = match i64::try_from(len) {
         Ok(l) if s.checked_add(l).is_some() => l,
@@ -35,7 +35,7 @@ fn range(start: u64, len: u64) -> (i64, i64) {
     (s, l)
 }
 
-fn conflict(l: &RangeLock) -> Conflict {
+pub(super) fn conflict(l: &RangeLock) -> Conflict {
     Conflict {
         owner: l.owner.0,
         sub: l.sub,

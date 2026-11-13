@@ -75,6 +75,11 @@ pub trait LocalProgram {
     fn versions(&self) -> &[u32];
     /// Runs a procedure of a version it has. `Ok(None)` sends no reply.
     fn call(&self, ctx: &CallContext, args: &mut Decoder<'_>) -> Answer;
+    /// The connection the program serves, for calls back to the client
+    /// on it (`NFSv4.1`); told once when a TCP connection starts.
+    fn attach(&self, back: &Arc<super::back::BackChannel>) {
+        let _ = back;
+    }
 }
 
 /// The program a call is for: the thread's or the dispatcher's.

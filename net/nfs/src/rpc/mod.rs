@@ -11,6 +11,7 @@
 //!   UDP serve functions.
 //! - [`drc`]: the duplicate request cache.
 //! - [`client`]: [`RpcClient`] over TCP and UDP.
+//! - [`back`]: calls to a client on its own connection.
 //!
 //! A program over a generated procedure table:
 //!
@@ -46,6 +47,7 @@
 //! being `nfs::types::nsm::SM_PROG::SM_VERS`.
 
 pub mod auth;
+pub mod back;
 pub mod client;
 pub mod drc;
 pub mod msg;

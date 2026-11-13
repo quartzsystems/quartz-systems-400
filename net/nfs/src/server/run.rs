@@ -12,7 +12,7 @@
 //! touched: every thread is scoped to the call.
 
 #![allow(clippy::many_single_char_names)]
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::net::{SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -30,7 +30,8 @@ use crate::nsm::Nsm;
 use crate::nsm::record::MonRecord;
 use crate::nsm::state::NsmState;
 use crate::rpc::drc::{self, DuplicateCache};
-use crate::rpc::record::{MAX_RECORD, RecordBuf, frame};
+use crate::rpc::back::{BackChannel, is_reply};
+use crate::rpc::record::{MAX_RECORD, RecordBuf};
 use crate::rpc::{ClientConfig, Dispatcher, LocalProgram, Proto, Transport};
 use crate::rpcb::BinderClient;
 use crate::rpcb::uaddr::to_uaddr;
@@ -177,7 +178,10 @@ fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &Atom
     let _ = s.set_nodelay(true);
     let mut rb = RecordBuf::new(MAX_RECORD);
     let mut buf = vec![0u8; 64 * 1024];
-    let mut w = s;
+    let Ok(out) = s.try_clone() else { return };
+    let back = Arc::new(BackChannel::new(Box::new(out), peer));
+    p.attach(&back);
+    let _closed = Closer(&back);
     while !stop.load(Ordering::Relaxed) {
         match (&mut &*s).read(&mut buf) {
             Ok(0) => return,
@@ -197,8 +201,13 @@ fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &Atom
         loop {
             match rb.next_record() {
                 Ok(Some(m)) => {
+                    // A reply to one of the server's own calls back.
+                    if is_reply(&m) {
+                        back.deliver(&m);
+                        continue;
+                    }
                     if let Some(reply) = d.handle_with(&m, peer, Transport::Tcp, &[p])
-                        && w.write_all(&frame(&reply)).is_err()
+                        && back.send_record(&reply).is_err()
                     {
                         return;
                     }
@@ -207,7 +216,15 @@ fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &Atom
                 Err(_) => return,
             }
         }
-        let _ = w.flush();
+    }
+}
+
+/// Closes a connection's back channel when its thread ends.
+struct Closer<'a>(&'a BackChannel);
+
+impl Drop for Closer<'_> {
+    fn drop(&mut self) {
+        self.0.close();
     }
 }
 
@@ -332,6 +349,45 @@ where
     let (prog, versions) = (p.program(), p.versions().to_vec());
     drop(p);
     serve(c, &d, prog, &versions, make, None)
+}
+
+/// `QNFSNFSD` with NFS versions 3, 4.0 and 4.1: program 100003 from
+/// [`crate::v4::Server::program`] over a [`Vfs`] per thread (version 3
+/// with its duplicate request cache), and beside it the server's
+/// background thread ([`crate::v4::Server::background`]) on a [`Vfs`]
+/// of its own and the job's lease poll from `news`.
+///
+/// # Errors
+///
+/// Those of [`serve`].
+pub fn nfsd4<V, F, N>(
+    c: Common<'_>,
+    server: &Arc<crate::v4::Server>,
+    vfs: F,
+    news: N,
+) -> io::Result<()>
+where
+    V: Vfs,
+    F: Fn() -> V + Sync,
+    N: Fn() -> Box<dyn NewsSource> + Sync,
+{
+    let mut d = Dispatcher::new();
+    d.set_cache(nfs3_cache());
+    let stop = c.stop;
+    let extra = || {
+        let v = vfs();
+        let mut n = news();
+        server.background(&v, &mut *n, stop);
+    };
+    let make = || server.program(vfs());
+    serve(
+        c,
+        &d,
+        crate::types::nfs4::NFS4_PROGRAM::NUMBER,
+        &[3, 4],
+        make,
+        Some(&extra),
+    )
 }
 
 /// `QNFSMNTD`: MOUNT versions 1 and 3 over a [`Vfs`] per thread.

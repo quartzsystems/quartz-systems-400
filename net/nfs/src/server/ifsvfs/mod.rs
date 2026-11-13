@@ -19,6 +19,7 @@ mod change;
 mod dir;
 mod io;
 mod lock;
+mod openio;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -468,5 +469,55 @@ impl<C: IfsClient> Vfs for IfsVfs<C> {
     }
     fn lease_report(&self, tag: u64, leases: &[([u8; 32], u8)]) -> VResult<()> {
         self.base.lease_report(tag, leases).map_err(VfsError::from)
+    }
+    fn read_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        off: u64,
+        count: u32,
+    ) -> VResult<ReadData> {
+        self.do_read_open(r, fh, open, off, count)
+    }
+    fn write_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        off: u64,
+        data: &[u8],
+        stable: Stable,
+    ) -> VResult<Written> {
+        self.do_write_open(r, fh, open, off, data, stable)
+    }
+    fn setattr_open(&self, r: &Req, fh: &FileHandle, open: u64, a: &SetAttr) -> VResult<Wcc> {
+        self.do_setattr_open(r, fh, open, a)
+    }
+    fn lock_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        sub: u64,
+        kind: LockKind,
+        start: u64,
+        len: u64,
+    ) -> VResult<LockOutcome> {
+        self.do_lock_open(r, fh, open, sub, kind, start, len)
+    }
+    fn unlock_open(
+        &self,
+        r: &Req,
+        fh: &FileHandle,
+        open: u64,
+        sub: u64,
+        start: u64,
+        len: u64,
+    ) -> VResult<()> {
+        self.do_unlock_open(r, fh, open, sub, start, len)
+    }
+    fn created(&self, r: &Req, fh: &FileHandle) -> VResult<Time> {
+        self.do_created(r, fh)
     }
 }
