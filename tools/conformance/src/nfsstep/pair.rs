@@ -193,7 +193,7 @@ fn names(s: &mut Session, me: &str) -> Result<(), String> {
             "CHGTCPDMN HOSTNAME('{}') DMNNAME('NFS.TEST')",
             host.to_ascii_uppercase()
         ),
-        &["TCP1D09"],
+        &["TCP1D04"],
         CMD,
     )?;
     let table = s.command("svc.tcp host", CMD)?;
