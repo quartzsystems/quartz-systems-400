@@ -9,7 +9,7 @@
 //! monitor's files, a lock released by an `RLSIFSLCK` order, and the
 //! lifecycle's ends.
 
-#![allow(clippy::too_many_lines)]
+#![allow(clippy::too_many_lines, clippy::many_single_char_names)]
 
 use std::collections::{HashMap, VecDeque};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
@@ -67,6 +67,8 @@ struct Svc {
     orders: Vec<NfsOrder>,
     done: Vec<(u32, u32, i32)>,
     failed: Vec<u32>,
+    mapping: bool,
+    restarted: Vec<(String, i32)>,
 }
 
 impl Svc {
@@ -136,7 +138,24 @@ impl Svc {
             NfsOp::Options => NfsReply::Options {
                 options: NfsOptions::default(),
             },
-            NfsOp::UidOfName { name } if name == "QSYS" => NfsReply::Id { id: Some(101) },
+            NfsOp::UidOfName { name } => NfsReply::Id {
+                id: match name.as_str() {
+                    "QSYS" => Some(101),
+                    "BOB" => Some(100),
+                    _ => None,
+                },
+            },
+            NfsOp::NameOfUid { uid } => NfsReply::Name {
+                name: (uid == 100).then(|| "BOB".to_string()),
+            },
+            NfsOp::Mapping => NfsReply::Mapping {
+                enabled: self.mapping,
+                domain: "lab.example".into(),
+            },
+            NfsOp::ServerRestarted { name, state } => {
+                self.restarted.push((name, state));
+                NfsReply::Done
+            }
             NfsOp::Orders => NfsReply::Orders {
                 orders: std::mem::take(&mut self.orders),
             },
@@ -351,6 +370,9 @@ impl Host for TestHost {
     }
     fn host_name(&self) -> String {
         "qs400test".into()
+    }
+    fn system_name(&self) -> String {
+        "QS400TST".into()
     }
 }
 
@@ -831,4 +853,202 @@ fn a_daemon_asked_to_end_ends_its_loop() {
     assert_eq!(e.ops.get(1).map(String::as_str), Some("Ready"));
     assert_eq!(e.ops.last().map(String::as_str), Some("Gone"));
     assert_eq!(e.log, ["CPCA1B2"]);
+}
+
+fn bob() -> ifs::remote::Cred {
+    ifs::remote::Cred {
+        uid: 100,
+        gid: 100,
+        gids: vec![100],
+    }
+}
+
+fn client_env(w: &World) -> nfs::client::ClientEnv {
+    nfs::client::ClientEnv {
+        host_name: "client1".into(),
+        binder_port: w.binder.lock().unwrap().unwrap().port(),
+        reserved_port: false,
+        ..nfs::client::ClientEnv::default()
+    }
+}
+
+/// The server jobs' records of `NFSv4` clients, every job's.
+fn stable_clients(w: &World) -> Vec<nfs::v4::state::stable::StableClient> {
+    let mut out = Vec::new();
+    for n in 1..=2 {
+        if let Some(b) = w.get(&nfs::v4::state::stable::file_name(n))
+            && let Ok(img) = nfs::v4::state::stable::decode(&b)
+        {
+            out.extend(img.clients);
+        }
+    }
+    out
+}
+
+#[test]
+fn nfs4_through_the_server_jobs_with_its_records_across_a_restart() {
+    use ifs::remote::{CreateMode, LockOwner, RemoteFs, SetAttr, Share, Stable};
+    let w = World::new();
+    w.export(1, "/home/exp");
+    let _rpc = Job::start(&w, Daemon::Rpc);
+    let s1 = Job::start(&w, Daemon::Svr);
+    let s2 = Job::start(&w, Daemon::Svr);
+    let mut b = binder_of(&w);
+    assert!(
+        b.getport(100_003, 4, 6).unwrap().is_some(),
+        "version 4 registered"
+    );
+    let port = b.getport(100_003, 3, 6).unwrap().unwrap();
+    let o = nfs::exports::mount::parse(&format!(
+        "vers=4.1,soft,timeo=10,retrans=3,retry=1,port={port}"
+    ))
+    .unwrap();
+    let m = nfs::client::connect(
+        "127.0.0.1:/home/exp",
+        &o,
+        ifs::remote::MountCcsid::default(),
+        &bob(),
+        &client_env(&w),
+    )
+    .unwrap();
+    let c = bob();
+    let (root, _) = m.root().unwrap();
+    let (f, _) = m
+        .create(
+            &c,
+            &root,
+            b"v4file",
+            CreateMode::Guarded(SetAttr::default()),
+        )
+        .unwrap();
+    let share = Share {
+        read: true,
+        write: true,
+        ..Share::default()
+    };
+    // The open is held across the jobs' end, as a crash would leave it.
+    let _open = m.open(&c, &f, share, LockOwner(1)).unwrap();
+    assert_eq!(
+        m.write(&c, &f, 0, b"over v4", Stable::FileSync)
+            .unwrap()
+            .count,
+        7
+    );
+    assert_eq!(m.read(&c, &f, 0, 64).unwrap(), (b"over v4".to_vec(), true));
+    assert_eq!(w.get("/home/exp/v4file").unwrap(), b"over v4");
+    // The client holding state is recorded by the job that served it.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !stable_clients(&w).iter().any(|c| c.holds) {
+        assert!(Instant::now() < deadline, "no stable record written");
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    // Its connections went to the job its address hashes to.
+    let second = super::nfsd::pick(IpAddr::V4(Ipv4Addr::LOCALHOST), 2) == 1;
+    assert_eq!(w.relayed.load(Ordering::SeqCst) > 0, second);
+    drop(m);
+    assert_eq!(s2.end(&w).0, 0);
+    assert_eq!(s1.end(&w).0, 0);
+    // A new start names it as a client that may reclaim.
+    let _s1 = Job::start(&w, Daemon::Svr);
+    let _s2 = Job::start(&w, Daemon::Svr);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !stable_clients(&w).iter().any(|c| c.may_reclaim) {
+        assert!(
+            Instant::now() < deadline,
+            "the restart does not name the client: {:?}",
+            stable_clients(&w)
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
+}
+
+#[test]
+fn owners_are_names_only_while_the_registry_daemon_runs() {
+    let w = World::new();
+    let host = Arc::new(TestHost {
+        w: Arc::clone(&w),
+        number: 1,
+        index: Mutex::new(1),
+    });
+    let r = super::ids::registry(&host);
+    assert_eq!(r.owner(100, None), "100");
+    assert_eq!(
+        r.uid(b"BOB@lab.example"),
+        Err(nfs::registry::IdError::BadOwner)
+    );
+    w.svc().mapping = true;
+    let r = super::ids::registry(&host);
+    assert_eq!(r.owner(100, None), "BOB@lab.example");
+    assert_eq!(r.uid(b"bob@LAB.example"), Ok(100));
+    assert_eq!(r.uid(b"7"), Ok(7));
+}
+
+#[test]
+fn a_block_io_helper_reads_and_writes_through_the_client() {
+    use ifs::remote::{HelperOp, HelperWork};
+    let w = World::new();
+    w.export(1, "/home/exp");
+    w.put("/home/exp/blocks", b"0123456789");
+    let _rpc = Job::start(&w, Daemon::Rpc);
+    let _nfs = Job::start(&w, Daemon::Svr);
+    let _mnt = Job::start(&w, Daemon::Mnt);
+    let mut b = binder_of(&w);
+    let nport = b.getport(100_003, 3, 6).unwrap().unwrap();
+    let mport = b.getport(100_005, 3, 6).unwrap().unwrap();
+    let opts = format!("vers=3,proto=tcp,port={nport},mountport={mport}");
+    let mut h = super::biod::Helper::new(
+        Box::new(move |id: u32| {
+            if id == 7 {
+                Ok(opts.clone())
+            } else {
+                Err(ifs::Errno::ESTALE)
+            }
+        }),
+        client_env(&w),
+    );
+    let fh = FileHandle {
+        export: 1,
+        fid: w.fid("/home/exp/blocks"),
+        root_ino: w.fid("/home/exp").ino,
+    }
+    .to_bytes()
+    .to_vec();
+    let work = |op, off, len, data: &[u8]| HelperWork {
+        id: 1,
+        fs: 7,
+        source: "127.0.0.1:/home/exp".into(),
+        op,
+        handle: fh.clone(),
+        off,
+        len,
+        data: data.to_vec(),
+        sync: true,
+        uid: 100,
+        gid: 100,
+        gids: vec![100],
+    };
+    let r = h.run(&work(HelperOp::Read, 2, 4, b""));
+    assert_eq!((r.err, r.data.as_slice()), (None, &b"2345"[..]));
+    let r = h.run(&work(HelperOp::Write, 0, 2, b"ab"));
+    assert_eq!((r.err, r.count, r.stable), (None, 2, true));
+    assert_eq!(w.get("/home/exp/blocks").unwrap(), b"ab23456789");
+    // A mount the IFS does not know is given back failed, not held.
+    let mut gone = work(HelperOp::Read, 0, 4, b"");
+    gone.fs = 8;
+    assert_eq!(h.run(&gone).err, Some(ifs::Errno::ESTALE));
+}
+
+#[test]
+fn a_restart_notice_for_the_client_reaches_the_service() {
+    let w = World::new();
+    let host = Arc::new(TestHost {
+        w: Arc::clone(&w),
+        number: 1,
+        index: Mutex::new(1),
+    });
+    let c = super::nlmd::lock_client(&host);
+    c.restarted(b"server9", 5, [0; 16]);
+    assert!(w.svc().restarted.is_empty(), "not the client's");
+    c.restarted(b"server9", 7, nfs::client::nlm::PRIV_TAG);
+    assert_eq!(w.svc().restarted, [("server9".to_string(), 7)]);
 }
