@@ -3,14 +3,11 @@
 // root directory of this project.
 
 //! Walking a subtree (`Qp0lProcessSubtree`, `SAV`, `RCLLNK`, `WRKLNK`
-//! patterns) and finding a path from a file ID
-//! (`Qp0lGetPathFromFileID`).
+//! patterns); a path from a file ID is `super::byid`.
 
-use super::audit::FileId;
 use super::{Ctx, Ifs, Stat};
-use crate::backend::{self, Backend, Kind};
-use crate::errno::{Errno, Result};
-use crate::meta;
+use crate::backend::Backend;
+use crate::errno::Result;
 
 /// How to walk.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -98,41 +95,5 @@ impl<B: Backend> Ifs<B> {
             }
         }
         Ok(true)
-    }
-
-    /// `Qp0lGetPathFromFileID`: the first path (in name order) of the
-    /// object with this file ID, searching its file system.
-    pub fn path_from_file_id(&self, cx: &Ctx<'_>, id: FileId) -> Result<String> {
-        let mount = self
-            .lock()
-            .mounts
-            .get(id.fs)
-            .cloned()
-            .ok_or(Errno::EBADFID)?;
-        if !mount.is_backend() {
-            return Err(Errno::ENOTSUP);
-        }
-        let mut stack = vec![(mount.base.clone(), mount.at.clone())];
-        while let Some((rel, comps)) = stack.pop() {
-            let st = self.b.stat(&rel)?;
-            if st.ino == id.ino {
-                let (m, _) = meta::read(&self.b, &rel, &st, cx.env)?;
-                if id.generation == 0 || m.generation == id.generation {
-                    // The caller must be able to reach it.
-                    let p = crate::path::to_text(&comps);
-                    return self.lstat(cx, &p).map(|_| p);
-                }
-            }
-            if st.kind == Kind::Dir {
-                let mut ents = self.b.readdir(&rel)?;
-                ents.sort_by(|a, b| b.name.cmp(&a.name));
-                for e in ents {
-                    let mut c = comps.clone();
-                    c.push(e.name.clone());
-                    stack.push((backend::join(&rel, &e.name), c));
-                }
-            }
-        }
-        Err(Errno::ENOENT)
     }
 }

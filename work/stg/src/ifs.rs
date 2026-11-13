@@ -11,7 +11,7 @@
 //! clamps what it reads and takes.
 
 use ifs::backend::Nanos;
-use ifs::client::{CHUNK, IfsClient, WalkEntry};
+use ifs::client::{CHUNK, Caller, IfsClient, WalkEntry};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::lock::{LockInfo, ObjKey};
 use ifs::meta::reclaim::Report;
@@ -304,6 +304,41 @@ pub enum IfsOp {
         id: u64,
     },
     LeaseReset,
+    /// `op` run as `who` (a trusted server job's thread).
+    As {
+        who: Caller,
+        op: Box<IfsOp>,
+    },
+    StatById {
+        id: FileId,
+    },
+    OpenById {
+        id: FileId,
+        args: OpenArgs,
+    },
+    LockRangeAs {
+        fd: i32,
+        sub: u64,
+        cmd: i32,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    },
+    LockWait {
+        fd: i32,
+        sub: u64,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    },
+    LockCancel {
+        token: u64,
+    },
+    LockReleaseSub {
+        sub: u64,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -379,6 +414,13 @@ wire_enum!(IfsOp {
     69 => WatchAdd { path, tree },
     70 => WatchEnd { id },
     71 => LeaseReset,
+    72 => As { who, op },
+    73 => StatById { id },
+    74 => OpenById { id, args },
+    75 => LockRangeAs { fd, sub, cmd, kind, whence, start, len },
+    76 => LockWait { fd, sub, kind, whence, start, len },
+    77 => LockCancel { token },
+    78 => LockReleaseSub { sub },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -408,6 +450,9 @@ pub enum IfsReply {
     Locks { r: Result<Vec<LockInfo>> },
     OwnerLocks { r: Result<Vec<(ObjKey, LockInfo)>> },
     Orders { r: Result<ifs::lease::News> },
+    Found { r: Result<(String, Stat)> },
+    Opened { r: Result<(i32, String)> },
+    Queued { r: Result<Option<u64>> },
 }
 
 wire_enum!(IfsReply {
@@ -432,6 +477,9 @@ wire_enum!(IfsReply {
     18 => Locks { r },
     19 => OwnerLocks { r },
     20 => Orders { r },
+    21 => Found { r },
+    22 => Opened { r },
+    23 => Queued { r },
 });
 
 /// The answer `Err(EUNKNOWN)` for a reply of the wrong shape.
@@ -664,6 +712,63 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         },
         IfsOp::WatchEnd { id } => R::Unit { r: c.watch_end(id) },
         IfsOp::LeaseReset => R::Unit { r: c.lease_reset() },
+        IfsOp::As { who, op } => serve_as(c, &who, *op),
+        IfsOp::StatById { id } => R::Found {
+            r: c.stat_by_id(id),
+        },
+        IfsOp::OpenById { id, args } => R::Opened {
+            r: c.open_by_id(id, args),
+        },
+        IfsOp::LockRangeAs {
+            fd,
+            sub,
+            cmd,
+            kind,
+            whence,
+            start,
+            len,
+        } => R::Lock {
+            r: c.lock_range_as(fd, sub, cmd, kind, whence, start, len),
+        },
+        IfsOp::LockWait {
+            fd,
+            sub,
+            kind,
+            whence,
+            start,
+            len,
+        } => R::Queued {
+            r: c.lock_wait(fd, sub, kind, whence, start, len),
+        },
+        IfsOp::LockCancel { token } => R::Mask {
+            r: c.lock_cancel(token).map(u32::from),
+        },
+        IfsOp::LockReleaseSub { sub } => R::Mask {
+            r: c.lock_release_sub(sub),
+        },
+    }
+}
+
+/// Answer `op` as `who`: through `c.as_caller`, or with its error in the
+/// reply `op` has. An operation already for someone else is `EINVAL`.
+#[must_use]
+pub fn serve_as(c: &dyn IfsClient, who: &Caller, op: IfsOp) -> IfsReply {
+    if matches!(op, IfsOp::As { .. }) {
+        return refuse(op, Errno::EINVAL);
+    }
+    match c.as_caller(who) {
+        Ok(a) => serve(&*a, op),
+        Err(e) => refuse(op, e),
+    }
+}
+
+/// The reply `op` has, carrying `e`.
+#[must_use]
+pub fn refuse(op: IfsOp, e: Errno) -> IfsReply {
+    match op {
+        // Its own reply shape is the inner operation's.
+        IfsOp::As { op, .. } => refuse(*op, e),
+        op => serve(&ifs::client::Unavailable(e), op),
     }
 }
 

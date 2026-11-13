@@ -48,6 +48,12 @@ pub trait AuthEnv: IdMap {
     fn crtobjaud(&self) -> crate::meta::ObjAudit {
         crate::meta::ObjAudit::None
     }
+    /// The principal of an existing profile, for calls made as it
+    /// (`crate::client::caller`); `None` where the environment cannot
+    /// build one.
+    fn principal_of(&self, _profile: &str) -> Option<sec::auth::principal::Principal> {
+        None
+    }
 }
 
 /// An in-memory [`AuthEnv`].
@@ -59,6 +65,9 @@ pub struct MemEnv {
     pub autls: Vec<(String, AutlInfo)>,
     /// `QCRTOBJAUD`.
     pub qcrtobjaud: crate::meta::ObjAudit,
+    /// Principals for calls made as a profile; one not here is the
+    /// profile alone (no groups, no special authorities).
+    pub principals: Vec<sec::auth::principal::Principal>,
 }
 
 impl MemEnv {
@@ -80,6 +89,13 @@ impl MemEnv {
     #[must_use]
     pub fn autl(mut self, name: &str, info: AutlInfo) -> Self {
         self.autls.push((name.into(), info));
+        self
+    }
+
+    /// Give a profile's principal (its groups and special authorities).
+    #[must_use]
+    pub fn principal(mut self, p: sec::auth::principal::Principal) -> Self {
+        self.principals.push(p);
         self
     }
 }
@@ -123,6 +139,18 @@ impl AuthEnv for MemEnv {
     }
     fn crtobjaud(&self) -> crate::meta::ObjAudit {
         self.qcrtobjaud
+    }
+    fn principal_of(&self, profile: &str) -> Option<sec::auth::principal::Principal> {
+        if let Some(p) = self.principals.iter().find(|p| p.user == profile) {
+            return Some(p.clone());
+        }
+        self.profile_exists(profile)
+            .then(|| sec::auth::principal::Principal {
+                user: profile.into(),
+                qsecurity: 40,
+                objaud: "*NONE".into(),
+                ..sec::auth::principal::Principal::default()
+            })
     }
 }
 

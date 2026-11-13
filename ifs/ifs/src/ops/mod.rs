@@ -15,10 +15,12 @@ pub mod flags;
 
 mod attr;
 mod authcmd;
+mod byid;
 mod copy;
 mod dir;
 mod io;
 mod lease;
+mod locks;
 mod names;
 mod open;
 mod stat;
@@ -286,7 +288,7 @@ pub(crate) struct Rest<F> {
     opens: HashMap<u64, Open<F>>,
     next_open: u64,
     locks: LockTable,
-    next_gen: u32,
+    next_gen: meta::generation::GenClock,
 }
 
 pub(crate) struct State<F> {
@@ -304,6 +306,8 @@ pub struct Ifs<B: Backend> {
     st: Mutex<State<B::File>>,
     clock: Mutex<meta::change::Clock>,
     leases: std::sync::Arc<crate::lease::Leases>,
+    /// Paths of file IDs seen, for [`Ifs::stat_by_id`].
+    ids: Mutex<byid::IdCache>,
 }
 
 /// The directories every system has, with their `*PUBLIC` data
@@ -346,11 +350,12 @@ impl<B: Backend> Ifs<B> {
                     opens: HashMap::new(),
                     next_open: 1,
                     locks: LockTable::default(),
-                    next_gen: 1,
+                    next_gen: meta::generation::GenClock::default(),
                 },
             }),
             clock: Mutex::new(meta::change::Clock::default()),
             leases: std::sync::Arc::default(),
+            ids: Mutex::default(),
         }
     }
 
@@ -520,6 +525,7 @@ impl<B: Backend> Ifs<B> {
         let mut st = self.lock();
         let Some(os) = st.rest.owners.remove(&owner) else {
             st.rest.locks.release_owner(owner);
+            self.leases.locks_granted(&st.rest.locks.drain_granted());
             return;
         };
         for (_, fd) in os.fds {
@@ -534,6 +540,7 @@ impl<B: Backend> Ifs<B> {
             }
         }
         st.rest.locks.release_owner(owner);
+        self.leases.locks_granted(&st.rest.locks.drain_granted());
     }
 
     /// Owners with state (for displays and leak checks).
@@ -585,6 +592,7 @@ impl<B: Backend> Ifs<B> {
         let (mut sys, _) = self.split(&mut st);
         let r = sys.resolve(&cwd, path, follow, Some(cx))?;
         let (m, _) = sys.meta(&r.node, Some(cx))?;
+        self.note_id(&r);
         Ok((r, m))
     }
 
@@ -635,10 +643,13 @@ impl<B: Backend> Ifs<B> {
         }
     }
 
-    pub(crate) fn next_generation(rest: &mut Rest<B::File>) -> u32 {
-        let g = rest.next_gen;
-        rest.next_gen = rest.next_gen.wrapping_add(1).max(1);
-        g
+    /// A new object's generation (`meta::generation`), kept above every
+    /// one given before, across restarts.
+    pub(crate) fn next_generation(&self, rest: &mut Rest<B::File>) -> u32 {
+        rest.next_gen.take(&self.b).unwrap_or_else(|e| {
+            tracing::warn!(error = %e, "IFS generation mark not kept");
+            rest.next_gen.take_unkept()
+        })
     }
 
     /// Whether the mount holding a node is read-only.

@@ -10,6 +10,7 @@
 
 pub mod range;
 pub mod share;
+pub mod wait;
 
 use std::collections::HashMap;
 
@@ -71,12 +72,21 @@ pub enum Held {
     Range(RangeLock),
 }
 
+/// A lock's holder: the owner and its sub-owner.
+pub type Holder = (Owner, u64);
+
 /// Every object's locks.
 #[derive(Debug, Default)]
 pub struct LockTable {
     objs: HashMap<ObjKey, ObjLocks>,
-    /// Owners waiting on another owner (`F_SETLKW` retries).
-    waits: HashMap<Owner, Owner>,
+    /// Holders waiting on another holder (`F_SETLKW` retries).
+    waits: HashMap<Holder, Holder>,
+    /// Queued lock requests ([`wait`]), oldest first.
+    queue: Vec<wait::Waiter>,
+    /// The last queued request's token.
+    next_token: u64,
+    /// Queued requests granted, not yet told ([`LockTable::drain_granted`]).
+    granted: Vec<(Owner, u64)>,
 }
 
 impl LockTable {
@@ -95,17 +105,22 @@ impl LockTable {
         Ok(())
     }
 
-    /// Drop an open; with `last_of_owner` the owner's byte-range locks
-    /// on the object go too (POSIX: any close drops them).
+    /// Drop an open; with `drop_ranges` the owner's own byte-range locks
+    /// on the object go too (POSIX: any close drops them). Its
+    /// sub-owners' locks stay: they end by unlock, [`Self::release_sub`]
+    /// or the owner's end.
     pub fn close(&mut self, key: ObjKey, id: u64, owner: Owner, drop_ranges: bool) {
         if let Some(o) = self.objs.get_mut(&key) {
             o.opens.retain(|x| x.id != id);
             if drop_ranges {
-                o.ranges.retain(|l| l.owner != owner);
+                o.ranges.retain(|l| l.owner != owner || l.sub != 0);
             }
             if o.opens.is_empty() && o.ranges.is_empty() {
                 self.objs.remove(&key);
             }
+        }
+        if drop_ranges {
+            self.grant(key);
         }
     }
 
@@ -145,55 +160,61 @@ impl LockTable {
         if o.path.is_empty() {
             o.path = path.to_string();
         }
+        let me = (want.owner, want.sub);
         if want.kind != RangeKind::Unlock
             && let Some(holder) = o
                 .ranges
                 .iter()
                 .find(|l| range::blocks(l, &want))
-                .map(|l| l.owner)
+                .map(|l| (l.owner, l.sub))
         {
             if blocking {
                 // Does the holder wait, directly or not, on us?
-                let mut at = holder;
-                let mut hops = 0;
-                while let Some(&next) = self.waits.get(&at) {
-                    if next == want.owner {
-                        return Err(Errno::EDEADLK);
-                    }
-                    at = next;
-                    hops += 1;
-                    if hops > 1024 {
-                        break;
-                    }
+                if self.waits_on(holder, me) {
+                    return Err(Errno::EDEADLK);
                 }
-                self.waits.insert(want.owner, holder);
+                self.waits.insert(me, holder);
             }
             return Err(Errno::EAGAIN);
         }
-        self.waits.remove(&want.owner);
+        self.waits.remove(&me);
+        let unlock = want.kind == RangeKind::Unlock;
         range::apply(&mut o.ranges, want);
         if o.opens.is_empty() && o.ranges.is_empty() {
             self.objs.remove(&key);
+        }
+        if unlock {
+            self.grant(key);
         }
         Ok(())
     }
 
     /// Stop waiting (an owner gave up an `F_SETLKW`).
     pub fn cancel_wait(&mut self, owner: Owner) {
-        self.waits.remove(&owner);
+        self.waits.retain(|(o, _), _| *o != owner);
     }
 
     /// Drop everything an owner holds; returns the open ids it had.
     pub fn release_owner(&mut self, owner: Owner) -> Vec<u64> {
         let mut ids = Vec::new();
-        self.objs.retain(|_, o| {
+        let mut freed = Vec::new();
+        self.objs.retain(|k, o| {
             ids.extend(o.opens.iter().filter(|x| x.owner == owner).map(|x| x.id));
             o.opens.retain(|x| x.owner != owner);
+            let before = o.ranges.len();
             o.ranges.retain(|l| l.owner != owner);
+            if o.ranges.len() != before {
+                freed.push(*k);
+            }
             !(o.opens.is_empty() && o.ranges.is_empty())
         });
-        self.waits.remove(&owner);
-        self.waits.retain(|_, v| *v != owner);
+        self.waits
+            .retain(|(o, _), (v, _)| *o != owner && *v != owner);
+        self.queue.retain(|w| w.want.owner != owner);
+        self.granted.retain(|(o, _)| *o != owner);
+        for k in freed {
+            self.grant(k);
+        }
         ids
     }
 

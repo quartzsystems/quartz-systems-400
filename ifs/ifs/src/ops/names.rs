@@ -65,7 +65,7 @@ impl<B: Backend> Ifs<B> {
         } else {
             self.cfg.default_ccsid
         };
-        let generation = Self::next_generation(rest);
+        let generation = self.next_generation(rest);
         let mode = if kind == Kind::Symlink {
             0o777
         } else {

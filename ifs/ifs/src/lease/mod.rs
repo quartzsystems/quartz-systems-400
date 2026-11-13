@@ -75,6 +75,8 @@ struct Inner {
     watches: Watches,
     /// Owners whose poll answers at once, empty: they reset.
     woken: std::collections::HashSet<Owner>,
+    /// Queued byte-range locks granted since the owner's last poll.
+    granted: HashMap<Owner, Vec<u64>>,
 }
 
 /// Every owner's leases on the file system's objects.
@@ -93,13 +95,16 @@ pub struct News {
     pub breaks: Vec<Order>,
     /// Each watch's changes, in order.
     pub changes: Vec<(u64, Vec<DirEvent>)>,
+    /// The tokens of queued byte-range locks now granted
+    /// (`Ifs::lock_wait`), in the order granted.
+    pub locks: Vec<u64>,
 }
 
 impl News {
     /// Nothing to do.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.breaks.is_empty() && self.changes.is_empty()
+        self.breaks.is_empty() && self.changes.is_empty() && self.locks.is_empty()
     }
 }
 
@@ -308,6 +313,7 @@ impl Leases {
         let news = News {
             breaks: g.orders.remove(&owner).unwrap_or_default(),
             changes: g.watches.take(owner),
+            locks: g.granted.remove(&owner).unwrap_or_default(),
         };
         if !news.is_empty() {
             return Ok(news);
@@ -396,6 +402,7 @@ impl Leases {
         });
         g.tags.retain(|(o, _), _| *o != owner);
         g.orders.remove(&owner);
+        g.granted.remove(&owner);
         g.watches.release_owner(owner);
         g.woken.remove(&owner);
         self.watching
@@ -453,6 +460,20 @@ impl Leases {
         }
     }
 
+    /// Queued byte-range locks of each owner were granted
+    /// (`crate::lock::LockTable::drain_granted`): its next poll says so.
+    pub fn locks_granted(&self, granted: &[(Owner, u64)]) {
+        if granted.is_empty() {
+            return;
+        }
+        let mut g = self.lock();
+        for (o, t) in granted {
+            g.granted.entry(*o).or_default().push(*t);
+        }
+        drop(g);
+        self.changed.notify_all();
+    }
+
     /// The leases on `obj`: owner, key and state, for displays and tests.
     #[must_use]
     pub fn on(&self, obj: ObjKey) -> Vec<(Owner, LeaseKey, u8)> {
@@ -477,6 +498,7 @@ fn ready(g: &Inner, d: &Deferral) -> bool {
     match *d {
         Deferral::Orders { owner, .. } => {
             g.orders.get(&owner).is_some_and(|v| !v.is_empty())
+                || g.granted.get(&owner).is_some_and(|v| !v.is_empty())
                 || g.watches.has_news(owner)
                 || g.woken.contains(&owner)
         }

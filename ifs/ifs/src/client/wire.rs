@@ -139,7 +139,8 @@ wire_struct!(RangeLock {
     owner,
     kind,
     start,
-    end
+    end,
+    sub
 });
 wire_struct!(ObjKey { fs, ino });
 wire_enum!(ChangeKind {
@@ -153,7 +154,11 @@ wire_enum!(ChangeKind {
     7 => Deleted,
 });
 wire_struct!(DirEvent { name, kind, dir });
-wire_struct!(News { breaks, changes });
+wire_struct!(News {
+    breaks,
+    changes,
+    locks
+});
 wire_struct!(Access { read, write });
 wire_struct!(LockInfo { path, owner, what });
 wire_struct!(FileId {

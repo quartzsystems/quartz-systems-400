@@ -259,7 +259,7 @@ impl<B: Backend> Ifs<B> {
                         } else {
                             self.cfg.default_ccsid
                         };
-                        let generation = Self::next_generation(rest);
+                        let generation = self.next_generation(rest);
                         let inherit = a.oflag & f::O_INHERITMODE != 0;
                         let mut m = new_meta(
                             cx,
@@ -617,9 +617,11 @@ impl<B: Backend> Ifs<B> {
             RangeLock::new(cx.owner, RangeKind::Unlock, 0, 0),
             false,
         )?;
+        self.leases.locks_granted(&rest.locks.drain_granted());
         if last {
             let o = rest.opens.remove(&e.open).expect("present");
             rest.locks.close(key, e.open, cx.owner, true);
+            self.leases.locks_granted(&rest.locks.drain_granted());
             if o.wrote {
                 self.leases
                     .note(cx.owner, &o.path, &ChangeKind::Modified, false);
@@ -741,49 +743,7 @@ impl<B: Backend> Ifs<B> {
         start: i64,
         len: i64,
     ) -> Result<Option<RangeLock>> {
-        let mut st = self.lock();
-        let rest = &mut st.rest;
-        let open = rest
-            .owners
-            .get(&cx.owner)
-            .and_then(|o| o.fds.get(&fd))
-            .ok_or(Errno::EBADF)?
-            .open;
-        let o = rest.opens.get(&open).ok_or(Errno::EBADF)?;
-        let base: i64 = match whence {
-            f::SEEK_SET => 0,
-            f::SEEK_CUR => i64::try_from(o.pos).map_err(|_| Errno::EOVERFLOW)?,
-            f::SEEK_END => i64::try_from(Self::size_of(o)?).map_err(|_| Errno::EOVERFLOW)?,
-            _ => return Err(Errno::EINVAL),
-        };
-        let mut abs = base.checked_add(start).ok_or(Errno::EINVAL)?;
-        let mut len = len;
-        if len < 0 {
-            abs = abs.checked_add(len).ok_or(Errno::EINVAL)?;
-            len = -len;
-        }
-        let abs = u64::try_from(abs).map_err(|_| Errno::EINVAL)?;
-        let len = u64::try_from(len).map_err(|_| Errno::EINVAL)?;
-        let want = RangeLock::new(cx.owner, kind, abs, len);
-        let (key, path) = (o.key, o.path.clone());
-        let access = o.access;
-        match cmd {
-            f::F_GETLK | f::F_GETLK64 => Ok(rest.locks.get(key, &want)),
-            f::F_SETLK | f::F_SETLK64 | f::F_SETLKW | f::F_SETLKW64 => {
-                match kind {
-                    RangeKind::Read if !access.read => return Err(Errno::EBADF),
-                    RangeKind::Write if !access.write => return Err(Errno::EBADF),
-                    _ => {}
-                }
-                let blocking = matches!(cmd, f::F_SETLKW | f::F_SETLKW64);
-                if kind != RangeKind::Unlock {
-                    self.leases.gate(cx.owner, key, Trigger::Write)?;
-                }
-                rest.locks.set(key, &path, want, blocking)?;
-                Ok(None)
-            }
-            _ => Err(Errno::EINVAL),
-        }
+        self.lock_range_as(cx, fd, 0, cmd, kind, whence, start, len)
     }
 }
 

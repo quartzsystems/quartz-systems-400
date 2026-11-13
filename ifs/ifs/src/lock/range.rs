@@ -49,6 +49,9 @@ impl RangeKind {
 pub struct RangeLock {
     /// Holder.
     pub owner: Owner,
+    /// The holder within the owner's job (0: the job itself). Locks of
+    /// two sub-owners of one owner conflict as two owners' do.
+    pub sub: u64,
     /// Kind.
     pub kind: RangeKind,
     /// First byte.
@@ -63,6 +66,7 @@ impl RangeLock {
     pub fn new(owner: Owner, kind: RangeKind, start: u64, len: u64) -> Self {
         Self {
             owner,
+            sub: 0,
             kind,
             start,
             end: if len == 0 {
@@ -71,6 +75,19 @@ impl RangeLock {
                 start.saturating_add(len)
             },
         }
+    }
+
+    /// The same lock held by `sub` within the owner.
+    #[must_use]
+    pub fn with_sub(mut self, sub: u64) -> Self {
+        self.sub = sub;
+        self
+    }
+
+    /// Whether `o` has the same holder: owner and sub-owner.
+    #[must_use]
+    pub fn same_holder(&self, o: &Self) -> bool {
+        self.owner == o.owner && self.sub == o.sub
     }
 
     /// `l_len` for `F_GETLK` (0 when it runs to the end).
@@ -97,7 +114,7 @@ impl RangeLock {
 /// Whether held lock `l` blocks `want`.
 #[must_use]
 pub fn blocks(l: &RangeLock, want: &RangeLock) -> bool {
-    l.owner != want.owner
+    !l.same_holder(want)
         && l.overlaps(want)
         && (l.kind == RangeKind::Write || want.kind == RangeKind::Write)
 }
@@ -107,7 +124,7 @@ pub fn blocks(l: &RangeLock, want: &RangeLock) -> bool {
 pub fn apply(locks: &mut Vec<RangeLock>, want: RangeLock) {
     let mut out = Vec::with_capacity(locks.len() + 2);
     for l in locks.drain(..) {
-        if l.owner != want.owner || !l.overlaps(&want) {
+        if !l.same_holder(&want) || !l.overlaps(&want) {
             out.push(l);
             continue;
         }
@@ -127,12 +144,12 @@ pub fn apply(locks: &mut Vec<RangeLock>, want: RangeLock) {
     if want.kind != RangeKind::Unlock {
         out.push(want);
     }
-    out.sort_by_key(|l| (l.owner, l.start));
-    // Merge an owner's adjacent locks of the same kind.
+    out.sort_by_key(|l| (l.owner, l.sub, l.start));
+    // Merge a holder's adjacent locks of the same kind.
     let mut merged: Vec<RangeLock> = Vec::with_capacity(out.len());
     for l in out {
         if let Some(last) = merged.last_mut()
-            && last.owner == l.owner
+            && last.same_holder(&l)
             && last.kind == l.kind
             && last.end == l.start
         {
@@ -151,6 +168,7 @@ mod tests {
     fn l(owner: u64, kind: RangeKind, start: u64, end: u64) -> RangeLock {
         RangeLock {
             owner: Owner(owner),
+            sub: 0,
             kind,
             start,
             end,

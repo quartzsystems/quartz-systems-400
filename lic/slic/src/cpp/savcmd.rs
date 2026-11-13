@@ -1638,6 +1638,8 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
         Ok(r) => r,
         Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
     };
+    // Restored profiles and lists: what was built from them is stale.
+    sec::auth::cache::bump_epoch();
     let mut reply = CmdReply::default();
     for o in rep.objects.iter().filter(|o| o.msgid.is_some()) {
         let id = o.msgid.unwrap_or(msg::NOT_RESTORED_DAMAGED);

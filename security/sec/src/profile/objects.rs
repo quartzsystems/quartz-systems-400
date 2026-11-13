@@ -60,8 +60,20 @@ pub fn read(txn: &mut Txn<'_>, qsys: ObjectId, name: &str) -> Result<(ObjectId, 
     Ok((id, read_id(txn, id)?))
 }
 
+static WRITES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// How many profile payloads were written since the service started:
+/// what is built from the profiles (the UID index, principals) is
+/// stale once it moves. Deletions and restores move the security
+/// epoch (`crate::auth::cache::epoch`) instead.
+#[must_use]
+pub fn writes() -> u64 {
+    WRITES.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// Replace a profile's payload.
 pub fn write(txn: &mut Txn<'_>, id: ObjectId, p: &UsrPrf) -> Result<()> {
+    WRITES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let payload = p.encode();
     let mut bytes = u32::try_from(payload.len())
         .map_err(|_| SecError::Corrupt("profile over 4 GiB".into()))?

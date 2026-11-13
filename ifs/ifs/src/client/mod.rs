@@ -11,15 +11,18 @@
 //! Data moves in chunks of at most [`CHUNK`] bytes per call. The wire
 //! codecs of the types are in [`wire`].
 
+pub mod caller;
 pub mod wire;
 
 use std::sync::Arc;
+
+pub use caller::Caller;
 
 use sec::auth::principal::Principal;
 
 use crate::auth::AuthEnv;
 use crate::backend::{Backend, Nanos};
-use crate::errno::Result;
+use crate::errno::{Errno, Result};
 use crate::lease::{LeaseKey, News};
 use crate::lock::range::{RangeKind, RangeLock};
 use crate::lock::{LockInfo, ObjKey, Owner};
@@ -216,6 +219,45 @@ pub trait IfsClient {
     /// The caller's server of leases and watches ended: they go, and its
     /// waiting poll answers at once.
     fn lease_reset(&self) -> Result<()>;
+    /// A client whose calls run as `who` ([`caller`]) with the caller's
+    /// descriptors and locks; the service allows it only to its trusted
+    /// server jobs (`EPERM`), and a `who` no profile is answers
+    /// `ENOTENROLL` on each call.
+    fn as_caller(&self, who: &Caller) -> Result<Box<dyn IfsClient + '_>>;
+    /// The path and attributes of the object a file ID names (`ESTALE`
+    /// when it is gone or of another generation).
+    fn stat_by_id(&self, id: FileId) -> Result<(String, Stat)>;
+    /// `open()` of the object a file ID names: the descriptor and path.
+    fn open_by_id(&self, id: FileId, args: OpenArgs) -> Result<(i32, String)>;
+    /// [`IfsClient::lock_range`] for the caller's sub-owner `sub` (0: the
+    /// job itself), whose locks conflict with every other holder's.
+    fn lock_range_as(
+        &self,
+        fd: i32,
+        sub: u64,
+        cmd: i32,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    ) -> Result<Option<RangeLock>>;
+    /// A lock for sub-owner `sub` that waits in the service: `None` when
+    /// granted now, else a token `lease_orders` names once granted
+    /// (`News::locks`); `EDEADLK` when waiting would never end.
+    fn lock_wait(
+        &self,
+        fd: i32,
+        sub: u64,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    ) -> Result<Option<u64>>;
+    /// Take back a queued lock: whether it was still queued.
+    fn lock_cancel(&self, token: u64) -> Result<bool>;
+    /// Drop every lock and queued request of sub-owner `sub`: how many
+    /// locks went.
+    fn lock_release_sub(&self, sub: u64) -> Result<u32>;
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -501,6 +543,89 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
         self.ifs.lease_reset(self.cx);
         Ok(())
     }
+    fn as_caller(&self, who: &Caller) -> Result<Box<dyn IfsClient + '_>> {
+        let name = caller::resolve(who, self.cx.env, None)?;
+        let principal = self.cx.env.principal_of(&name).ok_or(Errno::ENOTENROLL)?;
+        Ok(Box::new(DirectAs {
+            ifs: self.ifs,
+            owner: self.cx.owner,
+            principal,
+            env: self.cx.env,
+            audit: self.cx.audit,
+            job_ccsid: self.cx.job_ccsid,
+        }))
+    }
+    fn stat_by_id(&self, id: FileId) -> Result<(String, Stat)> {
+        self.ifs.stat_by_id(self.cx, id)
+    }
+    fn open_by_id(&self, id: FileId, args: OpenArgs) -> Result<(i32, String)> {
+        self.ifs.open_by_id(self.cx, id, args)
+    }
+    fn lock_range_as(
+        &self,
+        fd: i32,
+        sub: u64,
+        cmd: i32,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    ) -> Result<Option<RangeLock>> {
+        self.ifs
+            .lock_range_as(self.cx, fd, sub, cmd, kind, whence, start, len)
+    }
+    fn lock_wait(
+        &self,
+        fd: i32,
+        sub: u64,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    ) -> Result<Option<u64>> {
+        self.ifs
+            .lock_wait(self.cx, fd, sub, kind, whence, start, len)
+    }
+    fn lock_cancel(&self, token: u64) -> Result<bool> {
+        Ok(self.ifs.lock_cancel(self.cx, token))
+    }
+    fn lock_release_sub(&self, sub: u64) -> Result<u32> {
+        self.ifs.lock_release_sub(self.cx, sub)
+    }
+}
+
+/// [`Direct`] as another user: the caller's owner and environment with
+/// the principal of the profile a [`Caller`] resolved to.
+pub struct DirectAs<'a, B: Backend> {
+    /// The file system.
+    pub ifs: &'a Ifs<B>,
+    /// Whose descriptors and locks (the job's).
+    pub owner: Owner,
+    /// Who the calls are for.
+    pub principal: Principal,
+    /// Profiles and authorization lists.
+    pub env: &'a dyn AuthEnv,
+    /// Where audit events go.
+    pub audit: &'a dyn Audit,
+    /// The job's CCSID.
+    pub job_ccsid: u16,
+}
+
+impl<B: Backend> DirectAs<'_, B> {
+    /// Run `f` with the context.
+    pub fn with<T>(&self, f: impl FnOnce(&dyn IfsClient) -> T) -> T {
+        let cx = Ctx {
+            owner: self.owner,
+            principal: &self.principal,
+            env: self.env,
+            audit: self.audit,
+            job_ccsid: self.job_ccsid,
+        };
+        f(&Direct {
+            ifs: self.ifs,
+            cx: &cx,
+        })
+    }
 }
 
 /// An [`IfsClient`] in the process: one caller over a shared [`Ifs`],
@@ -643,11 +768,53 @@ macro_rules! every_method {
         fn watch_add(path: &str, tree: bool) -> Result<u64>;
         fn watch_end(id: u64) -> Result<()>;
         fn lease_reset() -> Result<()>;
+        fn stat_by_id(id: FileId) -> Result<(String, Stat)>;
+        fn open_by_id(id: FileId, args: OpenArgs) -> Result<(i32, String)>;
+        fn lock_range_as(fd: i32, sub: u64, cmd: i32, kind: RangeKind, whence: i32, start: i64, len: i64) -> Result<Option<RangeLock>>;
+        fn lock_wait(fd: i32, sub: u64, kind: RangeKind, whence: i32, start: i64, len: i64) -> Result<Option<u64>>;
+        fn lock_cancel(token: u64) -> Result<bool>;
+        fn lock_release_sub(sub: u64) -> Result<u32>;
     } };
 }
 
 impl<B: Backend> IfsClient for LocalIfs<B> {
     every_method!(forward);
+
+    fn as_caller(&self, who: &Caller) -> Result<Box<dyn IfsClient + '_>> {
+        let name = caller::resolve(who, &*self.env, None)?;
+        let principal = self.env.principal_of(&name).ok_or(Errno::ENOTENROLL)?;
+        Ok(Box::new(LocalIfs {
+            ifs: Arc::clone(&self.ifs),
+            env: Arc::clone(&self.env),
+            audit: Arc::clone(&self.audit),
+            principal,
+            owner: self.owner,
+            job_ccsid: self.job_ccsid,
+        }))
+    }
+}
+
+macro_rules! owned {
+    ($( fn $name:ident ( $($a:ident : $t:ty),* ) -> $r:ty; )*) => {
+        $( fn $name(&self, $($a: $t),*) -> $r { self.with(|d| d.$name($($a),*)) } )*
+    };
+}
+
+impl<B: Backend> IfsClient for DirectAs<'_, B> {
+    every_method!(owned);
+
+    fn as_caller(&self, who: &Caller) -> Result<Box<dyn IfsClient + '_>> {
+        let name = caller::resolve(who, self.env, None)?;
+        let principal = self.env.principal_of(&name).ok_or(Errno::ENOTENROLL)?;
+        Ok(Box::new(DirectAs {
+            ifs: self.ifs,
+            owner: self.owner,
+            principal,
+            env: self.env,
+            audit: self.audit,
+            job_ccsid: self.job_ccsid,
+        }))
+    }
 }
 
 /// An [`IfsClient`] with no file system behind it: every call answers
@@ -658,6 +825,10 @@ pub struct Unavailable(pub crate::errno::Errno);
 
 impl IfsClient for Unavailable {
     every_method!(refuse);
+
+    fn as_caller(&self, _: &Caller) -> Result<Box<dyn IfsClient + '_>> {
+        Err(self.0)
+    }
 }
 
 /// Read a whole file through a client, chunk by chunk.

@@ -28,6 +28,11 @@ pub trait StoreAccess {
     fn sysval(&self, name: &str) -> Option<String>;
     /// The time, Unix seconds.
     fn now(&self) -> u64;
+    /// What is kept across requests ([`crate::env::EnvCache`]); none by
+    /// default: each environment reads the profiles itself.
+    fn env_cache(&self) -> Option<&crate::env::EnvCache> {
+        None
+    }
 }
 
 impl<S: StoreAccess> StoreAccess for std::sync::Arc<S> {
@@ -45,6 +50,9 @@ impl<S: StoreAccess> StoreAccess for std::sync::Arc<S> {
     }
     fn now(&self) -> u64 {
         (**self).now()
+    }
+    fn env_cache(&self) -> Option<&crate::env::EnvCache> {
+        (**self).env_cache()
     }
 }
 

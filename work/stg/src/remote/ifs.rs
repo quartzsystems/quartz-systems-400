@@ -10,7 +10,7 @@
 
 use ifs::Result;
 use ifs::backend::Nanos;
-use ifs::client::{CHUNK, IfsClient, WalkEntry};
+use ifs::client::{CHUNK, Caller, IfsClient, WalkEntry};
 use ifs::lease::{LeaseKey, News};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::lock::{LockInfo, ObjKey};
@@ -29,16 +29,34 @@ use crate::proto::Client;
 /// The IFS over a link.
 pub struct RemoteIfs {
     link: Shared,
+    /// Whom every call is for (`IfsOp::As`), when not the job's user.
+    caller: Option<Caller>,
 }
 
 impl RemoteIfs {
     /// Over a link.
     #[must_use]
     pub fn new(link: Shared) -> Self {
-        Self { link }
+        Self { link, caller: None }
+    }
+
+    /// The same link with every call made as `who`, one request each.
+    #[must_use]
+    pub fn as_user(&self, who: Caller) -> Self {
+        Self {
+            link: std::rc::Rc::clone(&self.link),
+            caller: Some(who),
+        }
     }
 
     fn call(&self, op: IfsOp) -> IfsReply {
+        let op = match &self.caller {
+            Some(who) => IfsOp::As {
+                who: who.clone(),
+                op: Box::new(op),
+            },
+            None => op,
+        };
         self.link.borrow_mut().with(|l| l.ifs(op))
     }
 }
@@ -508,5 +526,64 @@ impl IfsClient for RemoteIfs {
     }
     fn lease_reset(&self) -> Result<()> {
         reply_as!(self.call(IfsOp::LeaseReset), Unit)
+    }
+    fn as_caller(&self, who: &Caller) -> Result<Box<dyn IfsClient + '_>> {
+        Ok(Box::new(self.as_user(who.clone())))
+    }
+    fn stat_by_id(&self, id: FileId) -> Result<(String, Stat)> {
+        reply_as!(self.call(IfsOp::StatById { id }), Found)
+    }
+    fn open_by_id(&self, id: FileId, args: OpenArgs) -> Result<(i32, String)> {
+        reply_as!(self.call(IfsOp::OpenById { id, args }), Opened)
+    }
+    fn lock_range_as(
+        &self,
+        fd: i32,
+        sub: u64,
+        cmd: i32,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    ) -> Result<Option<RangeLock>> {
+        reply_as!(
+            self.call(IfsOp::LockRangeAs {
+                fd,
+                sub,
+                cmd,
+                kind,
+                whence,
+                start,
+                len
+            }),
+            Lock
+        )
+    }
+    fn lock_wait(
+        &self,
+        fd: i32,
+        sub: u64,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    ) -> Result<Option<u64>> {
+        reply_as!(
+            self.call(IfsOp::LockWait {
+                fd,
+                sub,
+                kind,
+                whence,
+                start,
+                len
+            }),
+            Queued
+        )
+    }
+    fn lock_cancel(&self, token: u64) -> Result<bool> {
+        reply_as!(self.call(IfsOp::LockCancel { token }), Mask).map(|n| n != 0)
+    }
+    fn lock_release_sub(&self, sub: u64) -> Result<u32> {
+        reply_as!(self.call(IfsOp::LockReleaseSub { sub }), Mask)
     }
 }

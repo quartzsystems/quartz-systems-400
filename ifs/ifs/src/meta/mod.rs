@@ -12,6 +12,7 @@
 
 pub mod change;
 pub mod codec;
+pub mod generation;
 pub mod reclaim;
 
 use sec::auth::bits::Auth;
