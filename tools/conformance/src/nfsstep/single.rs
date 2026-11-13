@@ -24,6 +24,9 @@ use crate::steps::Suite;
 pub(crate) const ANON_UID: u64 = 4_294_770_710;
 /// The scenarios' directory under the export.
 const SCRATCH: &str = "nfstest";
+
+/// Step 176's second export, whose host's writes are `*ASYNC`.
+const ASYNC_EXPORT: &str = "/nfsasync";
 /// Scenarios that fail against the server on main, each a finding in
 /// `tools/nfstest/README.md` (its `tests/loopback.rs` keeps the same
 /// list): reported, not failing the step.
@@ -144,11 +147,16 @@ impl Suite {
 
     /// The arguments that point `nfstest` at the export through the forwards.
     fn nfs_target(&self, scratch: &str) -> Vec<String> {
+        self.nfs_target_at(EXPORT, scratch)
+    }
+
+    /// [`Self::nfs_target`] for the export `export`.
+    fn nfs_target_at(&self, export: &str, scratch: &str) -> Vec<String> {
         let map = self.nfs.borrow().map.clone();
         let pmap = host::host_port(&map, 111).unwrap_or(111);
         let mut a = vec![
             "127.0.0.1".to_string(),
-            EXPORT.into(),
+            export.into(),
             scratch.into(),
             "--pmap-port".into(),
             pmap.to_string(),
@@ -451,6 +459,21 @@ impl Suite {
             }
             runs.push(("3", host::run(&a, Duration::from_mins(60))?));
         }
+        // The same through an `*ASYNC` host, whose unstable writes are
+        // not synced each: what the server costs without the sync.
+        public_dir(s, ASYNC_EXPORT)?;
+        export(
+            s,
+            ASYNC_EXPORT,
+            &format!("RW,ANON={ANON_UID}"),
+            "('10.0.2.2' *BINARY *ASCII *ASYNC)",
+        )?;
+        // The daemons read the table once a second.
+        std::thread::sleep(Duration::from_secs(3));
+        let mut a = vec!["bench".to_string()];
+        a.extend(self.nfs_target_at(ASYNC_EXPORT, "nfsbench"));
+        a.extend(["--mib".into(), mib.to_string()]);
+        runs.push(("3 *ASYNC", host::run(&a, Duration::from_mins(60))?));
         // Version 4.1 needs only the forwarded 2049 (after the grace period).
         self.nfs_after_grace();
         let port = host::host_port(&self.nfs.borrow().map, 2049).ok_or("2049 is not forwarded")?;
@@ -474,10 +497,10 @@ impl Suite {
             .collect();
             runs.push(("4.1", host::run(&a4, Duration::from_mins(60))?));
         }
-        let text: String = runs
-            .iter()
-            .map(|(_, r)| format!("$ {}\n{}{}\n", r.line, r.out, r.err))
-            .collect();
+        let mut text = String::new();
+        for (_, r) in &runs {
+            let _ = writeln!(text, "$ {}\n{}{}", r.line, r.out, r.err);
+        }
         let _ = std::fs::write(self.out_dir.join("nfs-176-bench.txt"), &text);
         let mut lines = Vec::new();
         for (vers, r) in &runs {
