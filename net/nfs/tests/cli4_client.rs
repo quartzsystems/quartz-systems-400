@@ -11,6 +11,8 @@
 //! address: the full-stack runs against NFS-6's server are ignored
 //! until it exists.
 
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+
 mod cli4_common;
 
 use std::net::SocketAddr;
@@ -49,7 +51,7 @@ fn mount(addr: SocketAddr, vers: &str, host: &str) -> Result<Mount, RemoteError>
     ))
     .unwrap();
     client::connect(
-        &format!("127.0.0.1:/home/exp"),
+        "127.0.0.1:/home/exp",
         &o,
         MountCcsid::default(),
         &bob(),

@@ -414,7 +414,7 @@ impl RemoteFs for V4 {
             0,
             OPEN4_SHARE_ACCESS_WRITE,
             0,
-            Some(how),
+            Some(&how),
             true,
         )?;
         self.remember(dir, n, &op.fh);
@@ -772,7 +772,7 @@ impl RemoteFs for V4 {
         for o in &opens {
             let _ = self.close_wire(&owner, o);
         }
-        let r = self.core.destroy();
+        self.core.destroy();
         self.core
             .stopped
             .store(true, std::sync::atomic::Ordering::Relaxed);
@@ -785,6 +785,6 @@ impl RemoteFs for V4 {
         {
             let _ = t.join();
         }
-        r
+        Ok(())
     }
 }

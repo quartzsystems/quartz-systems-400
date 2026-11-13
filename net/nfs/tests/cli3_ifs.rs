@@ -11,6 +11,8 @@
 //! `QSYSOPR` report each way) and a restart whose new write verifier
 //! has the client send its data again.
 
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+
 mod cli_common;
 
 use std::sync::{Arc, Mutex};

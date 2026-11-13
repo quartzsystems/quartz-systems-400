@@ -196,11 +196,11 @@ fn put_time(e: &mut Encoder, ns: i64) {
 /// An attribute this client does not know, a value that does not
 /// decode, or bytes left over.
 pub fn decode(f: &fattr4) -> Result<Attrs, BadAttrs> {
-    let mut a = Attrs::default();
-    let mut d = Decoder::new(&f.attr_vals.0);
     fn b<T>(r: crate::xdr::Result<T>) -> Result<T, BadAttrs> {
         r.map_err(|_| BadAttrs)
     }
+    let mut a = Attrs::default();
+    let mut d = Decoder::new(&f.attr_vals.0);
     for n in numbers(&f.attrmask) {
         match n {
             FATTR4_SUPPORTED_ATTRS => {

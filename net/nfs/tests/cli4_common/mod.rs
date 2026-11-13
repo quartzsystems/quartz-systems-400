@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! A scripted NFSv4 responder for the client's tests until the server
+//! A scripted `NFSv4` responder for the client's tests until the server
 //! (NFS-6) exists: an in-memory tree under a pseudo root (`/home/exp`),
 //! client IDs for 4.0 and 4.1, one session per client with checked
 //! slot sequence IDs, opens, byte-range locks, a grace period after a
@@ -302,7 +302,7 @@ impl Fake4 {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments, clippy::unused_self)]
     fn op(
         &self,
         st: &mut St,
@@ -397,8 +397,8 @@ impl Fake4 {
                 }))
             }
             nfs_argop4::OP_SETCLIENTID_CONFIRM(c) => {
-                let s = if st.clients.contains_key(&c.clientid) {
-                    st.clients.insert(c.clientid, true);
+                let s = if let Some(v) = st.clients.get_mut(&c.clientid) {
+                    *v = true;
                     S::NFS4_OK
                 } else {
                     S::NFS4ERR_STALE_CLIENTID

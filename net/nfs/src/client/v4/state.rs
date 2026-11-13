@@ -145,7 +145,7 @@ fn putfh(h: &RHandle) -> nfs_argop4 {
 }
 
 /// `OPEN` (with `OPEN_CONFIRM` in 4.0 when asked), as `owner`.
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn open_wire(
     core: &Core,
     cred: &crate::rpc::Credential,
@@ -153,7 +153,7 @@ pub(super) fn open_wire(
     owner: u64,
     access: u32,
     deny: u32,
-    create: Option<createhow4>,
+    create: Option<&createhow4>,
     recover: bool,
 ) -> RResult<Opened> {
     let seq = core.state().owner_seq(owner);
@@ -180,7 +180,7 @@ pub(super) fn open_wire(
                 share_access: want,
                 share_deny: deny,
                 owner: open_owner(c, owner),
-                openhow: match &create {
+                openhow: match create {
                     Some(h) => openflag4::OPEN4_CREATE(h.clone()),
                     None => openflag4::default(opentype4::OPEN4_NOCREATE),
                 },
@@ -322,29 +322,25 @@ pub(super) fn lock_wire(
         *oseq = oseq.wrapping_add(1);
     }
     drop(oseq);
-    match list.get(1) {
-        Some(nfs_resop4::OP_LOCK(LOCK4res::NFS4_OK(ok))) => {
-            let mut st = core.state();
-            let l = st.locks.entry((fh.clone(), owner)).or_insert(Locks {
-                stateid: ok.lock_stateid.clone(),
-                seqid: 0,
-                held: Vec::new(),
-            });
-            l.stateid = ok.lock_stateid.clone();
-            l.seqid = if first { 1 } else { l0.wrapping_add(1) };
-            ranges::add(&mut l.held, r);
-            Ok(Ok(()))
-        }
-        _ => {
-            if !first
-                && moves_seqid(s)
-                && let Some(l) = core.state().locks.get_mut(&(fh.clone(), owner))
-            {
-                l.seqid = l0.wrapping_add(1);
-            }
-            Ok(Err(s))
-        }
+    if let Some(nfs_resop4::OP_LOCK(LOCK4res::NFS4_OK(ok))) = list.get(1) {
+        let mut st = core.state();
+        let l = st.locks.entry((fh.clone(), owner)).or_insert(Locks {
+            stateid: ok.lock_stateid.clone(),
+            seqid: 0,
+            held: Vec::new(),
+        });
+        l.stateid = ok.lock_stateid.clone();
+        l.seqid = if first { 1 } else { l0.wrapping_add(1) };
+        ranges::add(&mut l.held, r);
+        return Ok(Ok(()));
     }
+    if !first
+        && moves_seqid(s)
+        && let Some(l) = core.state().locks.get_mut(&(fh.clone(), owner))
+    {
+        l.seqid = l0.wrapping_add(1);
+    }
+    Ok(Err(s))
 }
 
 /// After a new client ID: every open and lock taken again in the
@@ -381,8 +377,7 @@ pub(super) fn reclaim(core: &Core) {
     }
     let locks: Vec<((RHandle, u64), Locks)> = {
         let mut st = core.state();
-        let v = st.locks.drain().collect();
-        v
+        st.locks.drain().collect()
     };
     for ((fh, owner), l) in locks {
         let open = core

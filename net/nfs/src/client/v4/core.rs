@@ -515,7 +515,7 @@ impl Core {
     }
 
     /// The mount ends: 4.1's session and client ID are destroyed.
-    pub fn destroy(&self) -> RResult<()> {
+    pub fn destroy(&self) {
         if self.minor == 1 {
             let c = self.client();
             let _ = self.send(
@@ -537,6 +537,5 @@ impl Core {
             });
             let _ = self.chan.call::<Args, Res>(&self.owner, &args);
         }
-        Ok(())
     }
 }

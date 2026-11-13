@@ -9,6 +9,9 @@
 //! (`SEQUENCE` or `RENEW` at two thirds of it), every call as a
 //! `COMPOUND` ([`fs`]), the opens and locks ([`state`]).
 
+// Target, options, core: the short names are the domain's.
+#![allow(clippy::many_single_char_names)]
+
 pub mod attr;
 mod core;
 mod fs;

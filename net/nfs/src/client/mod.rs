@@ -101,7 +101,7 @@ pub struct Mount {
 }
 
 enum Inner {
-    V3(v3::V3),
+    V3(Box<v3::V3>),
     V4(v4::V4),
 }
 
@@ -174,7 +174,7 @@ fn attempt(t: &Target<'_>, source: &str) -> RResult<Mount> {
     for &v in settings::versions(t.opts.vers) {
         let status = Status::new(t.env.hooks.clone(), t.opts.intr);
         let r = match v {
-            Version::V3 => v3::mount(t, &status).map(|(m, s)| (Inner::V3(m), s)),
+            Version::V3 => v3::mount(t, &status).map(|(m, s)| (Inner::V3(Box::new(m)), s)),
             Version::V40 | Version::V41 => {
                 v4::mount(t, &status, v == Version::V41).map(|(m, s)| (Inner::V4(m), s))
             }

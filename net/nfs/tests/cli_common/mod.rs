@@ -379,7 +379,7 @@ impl BlackHole {
             }
         });
         let b = std::thread::spawn(move || {
-            let mut buf = [0u8; 65_536];
+            let mut buf = vec![0u8; 65_536];
             while !s2.load(Ordering::Relaxed) {
                 let _ = u.recv(&mut buf);
             }

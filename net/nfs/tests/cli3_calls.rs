@@ -8,6 +8,7 @@
 //! mount's refusals and `retry=`.
 
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
 
 mod cli_common;
 

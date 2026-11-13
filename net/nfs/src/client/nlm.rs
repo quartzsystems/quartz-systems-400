@@ -11,6 +11,9 @@
 //! taken again with `reclaim` when the server restarted
 //! ([`super::restart`]).
 
+// Channel, count, cookie: the short names are the protocol's.
+#![allow(clippy::many_single_char_names)]
+
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
@@ -214,14 +217,13 @@ impl Locker {
     fn refused(s: nlm4_stats) -> Option<RemoteError> {
         Some(match s {
             nlm4_stats::NLM4_DENIED_GRACE_PERIOD => return None,
-            nlm4_stats::NLM4_GRANTED => RemoteError::Errno(Errno::EIO),
             nlm4_stats::NLM4_DENIED | nlm4_stats::NLM4_BLOCKED => RemoteError::Errno(Errno::EAGAIN),
             nlm4_stats::NLM4_DENIED_NOLOCKS => nolck(),
             nlm4_stats::NLM4_DEADLCK => RemoteError::Errno(Errno::EDEADLK),
             nlm4_stats::NLM4_ROFS => RemoteError::Errno(Errno::EROFS),
             nlm4_stats::NLM4_STALE_FH => RemoteError::Stale,
             nlm4_stats::NLM4_FBIG => RemoteError::Errno(Errno::EFBIG),
-            nlm4_stats::NLM4_FAILED => RemoteError::Errno(Errno::EIO),
+            nlm4_stats::NLM4_GRANTED | nlm4_stats::NLM4_FAILED => RemoteError::Errno(Errno::EIO),
         })
     }
 

@@ -9,6 +9,8 @@
 //! client mounts, and the locks held are reclaimed in the grace period
 //! while another client's new lock waits it out and is refused.
 
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+
 mod cli_common;
 
 use std::net::{IpAddr, SocketAddr, TcpListener, UdpSocket};
