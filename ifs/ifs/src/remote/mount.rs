@@ -27,9 +27,11 @@ use super::work::{Answer, Mutation, Work};
 use crate::errno::{Errno, Result};
 use crate::lease::defer::Deferral;
 
-/// The most runs of one request (each waits for work that brings it
-/// further; a hard mount's outage is one wait, however long).
-const MAX_RUNS: u32 = 10_000;
+/// The most runs of one request in a row that wait for the same work: a
+/// run woken when its work is done waits for other work, which brings it
+/// further (a hard mount's outage is one wait, however long). Any number
+/// of runs that make progress is fine.
+const MAX_RUNS: u32 = 1_000;
 
 /// What a change does to a name, for [`RemoteMount::replayed`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -346,7 +348,7 @@ impl RemoteMount {
                     if self.core.info.intr && request::interrupted(t) {
                         return Err(Errno::EINTR);
                     }
-                    if request::runs(t) > MAX_RUNS {
+                    if request::waits_for(t, ticket) > MAX_RUNS {
                         // Each run should get further; one that never ends
                         // is a fault, not a wait.
                         tracing::warn!(token = t.id, "remote request makes no progress");

@@ -77,6 +77,10 @@ struct State {
     /// Names the request changed: the slot of the latest change.
     names: HashMap<String, String>,
     runs: u32,
+    /// The work the last run waited for, and how many runs in a row
+    /// waited for it.
+    waited: Option<u64>,
+    again: u32,
 }
 
 static TOKENS: LazyLock<Mutex<HashMap<u64, State>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -129,6 +133,8 @@ pub(crate) fn begin(allow: bool) -> Run {
         steps: HashMap::new(),
         names: HashMap::new(),
         runs: 0,
+        waited: None,
+        again: 0,
     });
     s.seen = now;
     s.runs += 1;
@@ -360,10 +366,52 @@ pub(crate) fn set_cred(c: Cred, o: Owner) {
     OWNER.with(|x| x.set(Some(o)));
 }
 
+/// `t` waits for the work under `ticket`: how many runs in a row before
+/// this one waited for the same work. A run that waits for other work
+/// got further (a `CPY` of a large file takes thousands of runs, each
+/// reading on).
+pub(crate) fn waits_for(t: Token, ticket: u64) -> u32 {
+    let mut g = tokens();
+    let Some(s) = g.get_mut(&t.id) else {
+        return 0;
+    };
+    if s.waited == Some(ticket) {
+        s.again += 1;
+    } else {
+        s.waited = Some(ticket);
+        s.again = 0;
+    }
+    s.again
+}
+
 /// The request in progress waits: note whose it is, so its job's end
 /// or interruption finds it.
 pub(crate) fn note_waiting() {
     if let Some(o) = OWNER.with(Cell::get) {
         note_owner(o);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Runs that wait for other work each time got further and are not
+    /// counted against the request (a `CPY` of 1 GiB from a mount took
+    /// more than 10,000 runs, the old limit on all of them, and ended
+    /// `EIO`); runs that wait for the same work again are.
+    #[test]
+    fn only_runs_waiting_for_the_same_work_count() {
+        let r = begin(true);
+        let t = current().expect("a run");
+        for ticket in 0..20_000 {
+            assert_eq!(waits_for(t, ticket), 0);
+        }
+        assert_eq!(waits_for(t, 7), 0);
+        assert_eq!(waits_for(t, 7), 1);
+        assert_eq!(waits_for(t, 7), 2);
+        assert_eq!(waits_for(t, 8), 0);
+        end(r, false);
+        assert_eq!(waits_for(t, 8), 0, "an ended request is gone");
     }
 }

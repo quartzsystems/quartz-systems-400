@@ -44,7 +44,8 @@ static STATE: LazyLock<Mutex<State>> = LazyLock::new(|| Mutex::new(State::defaul
 
 /// The NFS client's notes (`nfs` at `INFO`: a server not responding, a
 /// mount attempt again, a restart heard and the locks reclaimed or not)
-/// to standard error: the serial console.
+/// and the IFS's remote mounts' warnings (`ifs`) to standard error: the
+/// serial console.
 pub fn log_to_console() {
     use tracing_subscriber::filter::{LevelFilter, Targets};
     use tracing_subscriber::prelude::*;
@@ -52,7 +53,9 @@ pub fn log_to_console() {
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .without_time();
-    let only = Targets::new().with_target("nfs", LevelFilter::INFO);
+    let only = Targets::new()
+        .with_target("nfs", LevelFilter::INFO)
+        .with_target("ifs", LevelFilter::WARN);
     let _ = tracing_subscriber::registry()
         .with(layer)
         .with(only)
