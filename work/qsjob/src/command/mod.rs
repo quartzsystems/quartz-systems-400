@@ -19,6 +19,7 @@ pub mod jobsite;
 pub mod natives;
 pub mod netcmd;
 pub mod nettools;
+pub mod nfs;
 pub mod prompt;
 pub mod rcvjrne;
 pub mod tcp;

@@ -16,3 +16,5 @@ tools/pesign/keys/** -text
 lic/osobjects/shipped/NOTICES.txt text eol=lf
 # The LIC record as written before abrec, byte for byte.
 lic/licpart/tests/golden/*.bin -text
+# The /etc files NFS ships, byte for byte.
+lic/osobjects/shipped/etc/* text eol=lf

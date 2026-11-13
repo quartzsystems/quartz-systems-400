@@ -476,3 +476,10 @@ version = [
 items = [
     "tools/rpg-oracle/src/outcome.rs::struct Outcome",
 ]
+
+[[format]]
+name = "nfs-options"
+frozen_at = "V1R2M0"
+doc = "docs/NFS.md"
+version = ["lic/slic/src/stgsvc/nfs/optfile.rs::FORMAT_VERSION"]
+files = ["lic/slic/src/stgsvc/nfs/optfile.rs"]

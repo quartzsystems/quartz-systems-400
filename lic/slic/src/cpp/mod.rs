@@ -37,6 +37,7 @@ pub(crate) mod medcmd;
 pub(crate) mod meddsp;
 mod medout;
 mod msgfcmd;
+mod nfscmd;
 mod objcmd;
 pub(crate) mod opacmd;
 pub(crate) mod pfrcmd;
@@ -124,6 +125,7 @@ fn run_cpp(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| svccmd::run(system, name, parms))
             .or_else(|| lpcmd::run(system, name, parms))
             .or_else(|| ifscmd::run(system, name, parms))
+            .or_else(|| nfscmd::run(system, name, parms))
             .or_else(|| stmfcmd::run(system, name, parms))
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| cstcmd::run(system, name, parms))

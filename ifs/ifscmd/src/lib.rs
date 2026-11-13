@@ -15,6 +15,7 @@
 
 pub mod cmds;
 pub mod display;
+pub mod mfsinf;
 pub mod msg;
 pub mod stmf;
 pub mod text;

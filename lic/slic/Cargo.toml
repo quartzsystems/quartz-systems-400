@@ -86,6 +86,7 @@ qapd = { path = "../../net/qapd", version = "0.1.0" }
 qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }
 netsvrcfg = { path = "../../net/netsvrcfg", version = "0.1.0" }
+nfs = { path = "../../net/nfs", version = "0.1.0" }
 httpadmin = { path = "../../net/httpadmin", version = "0.1.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]

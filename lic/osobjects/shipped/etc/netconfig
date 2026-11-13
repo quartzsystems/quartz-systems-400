@@ -1,0 +1,7 @@
+# /etc/netconfig: the transports the RPC services of QS/400 use.
+# Each line: the network ID, its semantics, its flags (V visible, N not),
+# the protocol family and the protocol.
+#netid	type          flags    family	protocol
+tcp	TPI_COTS	V	inet	tcp
+tcp_ord TPI_COTS_ORD    V       inet    tcp
+udp     TPI_CLTS        V       inet    udp

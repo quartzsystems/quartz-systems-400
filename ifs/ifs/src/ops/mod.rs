@@ -23,6 +23,7 @@ mod lease;
 mod locks;
 mod names;
 mod open;
+mod release;
 mod stat;
 mod udfs;
 mod walk;

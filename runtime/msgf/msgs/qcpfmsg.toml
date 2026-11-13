@@ -10567,3 +10567,18 @@ sev = 0
 text = "The locks on &1 were released."
 help = "The file system locks held on &1 are released. The messages before this one in the job log say which."
 vars = ["*CHAR *VARY 4"]
+
+# QS/400's own NFS messages (docs/NFS.md sections 4 and 10).
+
+[[msg]]
+id = "CPI9C10"
+sev = 0
+text = "There is no *GSS NFS server daemon on this system."
+help = "Kerberos (RPCSEC_GSS) is not supported, so the *GSS daemon cannot be started or ended. The other daemons use AUTH_SYS."
+
+[[msg]]
+id = "CPI9C11"
+sev = 0
+text = "The &1 NFS server daemon cannot serve requests in this release."
+help = "The daemon job started and ended without serving, so it never reported that it was ready. The daemons' network service comes with a later level of the system."
+vars = ["*CHAR 4"]

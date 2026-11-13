@@ -207,34 +207,72 @@ oracle writes them, `::.p1.p2`; netids `tcp`, `udp`, `tcp6`, `udp6`.
 `getport`, `getaddr` (version 4, else 3; a wildcard answer is made the
 binder's host), `set`, `unset` and `dump`.
 
-## 4. The daemons **(design)**
+## 4. The daemons
 
 As on the oracle (`tools/conformance/oracle/net/primary/dspsbsd-qsyswrk.txt`),
-`QSYSWRK` gets routing entries 2120 to 2127 and `QSYS` the job
-descriptions and classes `QP0LNFSD` and `QP0LRPCD` (and the class
-`QP0LBIOD`):
+`QSYSWRK` has routing entries 2120 to 2127, each naming its program and
+class in `QSYS` (`work/wm/src/obj/sbsd.rs`, added to an older system's
+`QSYSWRK` once through `upgrade::ADDITIONS`, marker `QSYS/QP0LNFSD
+*JOBD`). The job descriptions `QP0LNFSD` and `QP0LRPCD` are the
+primary's (`oracle/nfs/jobd-primary.txt`: `USER(QUSER)`,
+`JOBQ(QSYS/QSYSNOMAX)`, `JOBPTY(5)`, `RTGDTA` the compare value, `LOG(4 0
+*NOLIST)`); the classes are the routing entries' eight, with
+`QSYSCLS20`'s values (the primary's `QSYS` has `QP0LNFSD` and `QP0LRPCD`;
+their attributes are `NEEDS-CODY`):
 
-| Seq | Program | Compare value | Job | `SERVER` | Ports | What it runs |
+| Seq | Program | Compare value, job | Class | `SERVER` | Ports | What it runs |
 |---|---|---|---|---|---|---|
-| 2123 | `QZNFRPCD` | `QNFSRPCD` | `QNFSRPCD` | `*RPC` | 111 tcp, udp | the binder |
-| 2121 | `QZNFBIOD` | `QNFSBIOD` | `QNFSBIOD` (`NBRBIO`) | `*BIO` | none | the client's read-ahead and write-behind (section 7) |
-| 2127 | `QZNFRGYD` | `QNFSRGYD` | `QNFSRGYD` | `*RGY` | none | the v4 identity mapping for the server jobs and the client |
-| 2120 | `QZNFNFSD` | `QNFSNFSD` | `QNFSNFSD` (`NBRSVR`) | `*SVR` | 2049 tcp, udp | NFS 3, 4.0, 4.1 |
-| 2122 | `QZNFMNTD` | `QNFSMNTD` | `QNFSMNTD` | `*MNT` | any, registered | MOUNT |
-| 2125 | `QZNFNSMD` | `QNFSNSMD` | `QNFSNSMD` | `*NSM` | any, registered | the status monitor, `/etc/STATD` |
-| 2124 | `QZNFNLMD` | `QNFSNLMD` | `QNFSNLMD` | `*NLM` | any, registered | the lock manager |
-| 2126 | `QZNFGSSD` | `QNFSGSSD` | none | `*GSS` | | refused (section 10) |
+| 2123 | `QZNFRPCD` | `QNFSRPCD` | `QP0LRPCD` | `*RPC` | 111 tcp, udp | the binder |
+| 2121 | `QZNFBIOD` | `QNFSBIOD` (`NBRBIO`) | `QP0LBIOD` | `*BIO` | none | the client's read-ahead and write-behind (section 7) |
+| 2127 | `QZNFRGYD` | `QNFSRGYD` | `QP0LRGYD` | `*RGY` | none | the v4 identity mapping |
+| 2120 | `QZNFNFSD` | `QNFSNFSD` (`NBRSVR`) | `QP0LNFSD` | `*SVR` | 2049 tcp, udp | NFS 3, 4.0, 4.1 |
+| 2122 | `QZNFMNTD` | `QNFSMNTD` | `QP0LMNTD` | `*MNT` | any, registered | MOUNT |
+| 2125 | `QZNFNSMD` | `QNFSNSMD` | `QP0LSTATD` | `*NSM` | any, registered | the status monitor, `/etc/STATD` |
+| 2124 | `QZNFNLMD` | `QNFSNLMD` | `QP0LLCKD` | `*NLM` | any, registered | the lock manager |
+| 2126 | `QZNFGSSD` | `QNFSGSSD` | `QP0LGSSD` | `*GSS` | | refused (section 10) |
 
-All run as `QSECOFR` (NEEDS-CODY: the user of IBM's daemon jobs;
-section 12) and are submitted by the storage service with the routing
-data of the table, as `QZLSSERVER` is. `STRNFSSVR SERVER(*ALL)` starts
-them in IBM's order: `*RPC`, `*BIO`, `*RGY`, `*SVR`, `*MNT`, `*NSM`,
-`*NLM`; `ENDNFSSVR` ends them in the reverse order. Each start waits
-`STRJOBTIMO` for the daemon to report ready (it registers with the
-binder first) and sends `CPIA1BB`; a daemon already running is
-`CPDA1BA` (`CPDA1BD` for one of several). `*SVR`, `*MNT`, `*NSM` and
-`*NLM` need the binder and start it if it is not running, as IBM's do.
-`RPCBIND` and `ENDRPCBIND` are the binder alone.
+**The registry.** The storage service keeps the daemon jobs
+(`lic/slic/src/stgsvc/nfs/registry.rs`) and answers `stg::nfs` (tag
+1540): `Start { daemon, count, rtvrpcreg }` submits the jobs of a type
+that are not running (`count` for `*SVR` and `*BIO`, one for the others;
+a count of 0 only asks how many run or wait on the queue) to
+`QSYSNOMAX` with the type's job description and routing data, under
+`QSECOFR` (NEEDS-CODY: IBM's user, section 12), as the service's own
+request; `End { daemon }` marks every job of the type ending (one still
+on the queue is told to end when it says hello). A job forgotten by the
+job table (ended, crashed) leaves the registry at the next request.
+Both need `*IOSYSCFG` (`CPFA1B8`).
+
+**A daemon job** (`work/qsjob/src/work/nfs/`, `batch.rs` routes the
+eight programs there) runs `lifecycle`: `Hello { daemon }` (refused to a
+job not named as the type's), its type's `serve` (one module each:
+`rpcd`, `biod`, `rgyd`, `nfsd`, `mntd`, `nsmd`, `nlmd`), `Ready { ports
+}` with what it registered with the binder, then a wait of half a
+second at a time until `ShouldEnd`, `ENDJOB` or its subsystem's end,
+`Gone`, and `CPCA1B2` in its log. Today every `serve` is the one
+`BLOCKED(rel)` hook of its daemon: it answers that it cannot serve, so
+the job logs `CPI9C11` and `CPFA1BC`, leaves the registry and ends with
+code 20 without ever reporting ready. Nothing claims to serve. The
+lifecycle is tested with a serve that serves (`work::nfs::tests`).
+
+**The commands** (`work/qsjob/src/command/nfs.rs`, in the job).
+`STRNFSSVR SERVER(*ALL)` asks for each type in IBM's order: `*RPC`,
+`*BIO`, `*RGY`, `*SVR`, `*MNT`, `*NSM`, `*NLM`; a single `*SVR`,
+`*MNT`, `*NSM` or `*NLM` starts the binder first when it is not ready,
+without a message of its own. For each type the command waits, a
+quarter second at a time, until the registry has as many jobs of it
+ready as asked: `CPIA1BB` when they are; `CPDA1BA` (`CPDA1BD` for each
+of several) when they ran already; `CPFA1B9` when `STRJOBTIMO` passes
+(`*NOMAX` waits for ever); `CPFA1BC` when the jobs are gone without
+reporting ready (none registered or queued a second and a half after
+the start). `CPCA1BB` ends it. `ENDNFSSVR` goes the other way,
+`*NLM` to `*RPC`, ending each type running and waiting `ENDJOBTIMO` for
+its jobs to leave the registry: `CPIA1BC` each, `CPFA1BD` at the
+time-out, `CPCA1BC` at the end. `RPCBIND` is the binder alone
+(`CPCA1B4` started, `CPCA1B6` running already, `CPFA1C9` not started
+within 30 seconds), `ENDRPCBIND` its end (`CPCA1B5`, `CPFA1CA`).
+`SERVER(*GSS)` logs `CPI9C10` and ends with `CPFA1BC` (`CPFA1BE` for
+`ENDNFSSVR`); `*ALL` leaves it out.
 
 **Several `QNFSNFSD` jobs.** The first job owns the listeners. It
 serves UDP itself and gives each TCP connection to the job chosen by
@@ -244,6 +282,7 @@ service: share reservations (the opens' share modes), delegations (the
 lease table NetServer uses: a read delegation is a read lease, and a
 break is `CB_RECALL`) and byte-range locks. Each job is multithreaded:
 one thread per connection, each with its own link to the service.
+**(design)**
 
 **Restart and grace.** The storage service keeps the server's boot
 verifier and, in `/QIBM/UserData/OS400/NFS/`, the stable-storage records
@@ -252,6 +291,7 @@ RFC 7530 section 9.6.3 asks for (client IDs with confirmed state). A
 grace period in which only reclaims are accepted (`NFS4ERR_GRACE`,
 `NLM4_DENIED_GRACE_PERIOD`); NSM's state number in `/etc/STATD` goes up
 by two and `QNFSNSMD` sends `SM_NOTIFY` to the hosts it monitored.
+**(design)**
 
 ## 5. The server over the IFS **(design)**
 
@@ -349,27 +389,137 @@ over `IfsClient` with these additions to the IFS (built first):
   (`EXCHGID4_FLAG_USE_NON_PNFS`, `LAYOUT*` and `GETDEVICE*` answer
   `NFS4ERR_NOTSUPP`).
 
-## 6. `/etc` files **(design)**
+## 6. `/etc` files
 
 | File | CCSID | Who writes it | Format |
 |---|---|---|---|
-| `/etc/exports` | the job's when made | the user (`EDTF`), read by `EXPORTFS -A` and `-I`'s absence | IBM's: one export a line, `path -option,option=value:value,...` then `HOSTOPT` in IBM's form; `#` comments; `\` continues a line. Section 6.1 |
-| `/etc/netgroup` | the same | the user | `name (host,user,domain) ... othergroup ...`; only the host field is used |
-| `/etc/RPCBTAB` | 37 | `QNFSRPCD` | 357-byte records `program version netid uaddr owner`, a new line, zeros. Read back by `RTVRPCREG(*YES)` |
-| `/etc/STATD` | 37 | `QNFSNSMD` | the state number as text and a new line |
-| `/etc/netconfig` | 819 | shipped | the transports `tcp`, `tcp_ord`, `udp` (visible, `inet`). Quartz-written comments |
-| `/etc/vfs` | 1208 | shipped | the file system names and numbers of the oracle's, Quartz-written comments, `%defaultvfs udfs nfs3` |
+| `/etc/exports` | 1208 when `EXPORTFS -F` makes it; read in its own | the user (`EDTF`), `EXPORTFS -I -F` | section 6.1 |
+| `/etc/netgroup` | its own | the user | `name member ...`, a member a triple `(host,user,domain)` or another group; only the host field is used, empty for any host, `-` for none; `#` comments, `\` continues a line; a group that contains itself (directly or not, or more than 16 deep) makes the file unusable (`CPDA1C5` reason 8), a line not of the form reason 17 (`nfs::exports::netgroup`) |
+| `/etc/RPCBTAB` | 37 | `QNFSRPCD` | 357-byte records `program version netid uaddr owner`, a new line, zeros. Read back by `RTVRPCREG(*YES)` **(design)** |
+| `/etc/STATD` | 37 | `QNFSNSMD` | the state number as text and a new line **(design)** |
+| `/etc/netconfig` | 819 | shipped | the transports `tcp`, `tcp_ord`, `udp` (visible, `inet`), the primary's lines, Quartz-written comments |
+| `/etc/vfs` | 1208 | shipped | the file system names and numbers of the primary's, `%defaultvfs udfs nfs3`, Quartz-written comments |
+
+`/etc/netconfig` and `/etc/vfs` are `lic/osobjects/shipped/etc/`
+(`osobjects::nfsetc`); the storage service makes each one that is
+missing when the IFS starts (`stgsvc::nfs::ship_etc`, called from
+`stgsvc/ifs.rs`), owned by `QSYS`, mode 644, tagged with its CCSID. One
+that exists is the customer's and is not rewritten.
 
 The current export table is the storage service's (in memory, as IBM's
-is kernel state); `/etc/exports` is only read by `EXPORTFS`. The
-service's own records are under `/QIBM/UserData/OS400/NFS/` (the v4
-stable storage, the monitored hosts of NSM, the NFS options of
-`QZNFNFSO`): a format of this release, in `tools/fmtcheck`.
+is kernel state, `lic/slic/src/stgsvc/nfs/table.rs`); `/etc/exports` is
+only read by `EXPORTFS` and written by `-F`. Each path exported gets an
+export ID the first time, kept for the path through the IPL (an
+unexport and export again keeps its file handles valid), and every
+change moves the table's generation, which a daemon asks for
+(`NfsOp::Generation`) to know when to read the table again. The
+service's own records are under `/QIBM/UserData/OS400/NFS/`: the NFS
+options (section 6.2); the v4 stable storage and NSM's monitored hosts
+are wave 2's.
 
-### 6.1 `/etc/exports` (fill: the commands' agent)
+### 6.1 `/etc/exports`
 
-The syntax QS/400 reads and the option list of `EXPORTFS -O`, with
-every option's meaning, default and message when wrong.
+One export a logical line (`nfs::exports::file`): `#` outside double
+quotes starts a comment, a `\` that ends a line joins the next one.
+
+```text
+path [-option[,option]...] [HOSTOPT host[:data[:path[:write]]]]...
+```
+
+- `path` is absolute, in double quotes when it holds blanks or `#`;
+  trailing slashes are dropped. Paths compare without case.
+- The option list starts with `-` and runs to the first word `HOSTOPT`
+  (any case); blanks after its commas are allowed, as IBM's examples
+  write them. Its options are those of `EXPORTFS -O` below.
+- Each `HOSTOPT` gives one host's options: the data CCSID (`*BINARY`,
+  `*ASCII`, `*JOBCCSID` or a number), the path name CCSID (`*ASCII`,
+  `*JOBCCSID` or a number), the write mode (`*SYNC`, `*ASYNC`); those
+  left out take their defaults (`*BINARY`, `*ASCII`, `*SYNC`). At most
+  ten.
+- An IPv6 address goes in brackets, everywhere a host does: `[fd00::1]`,
+  `@[fd00::]/64`.
+
+NEEDS-CODY: IBM's own `HOSTOPT` form in `/etc/exports` and what its
+`EXPORTFS -F` writes (the sequence in section 12); QS/400 reads and
+writes the form above.
+
+The export options (`nfs::exports::options`; an option given twice is
+`CPFA1B1`, one not known or not written correctly `CPFA1B0` with its
+position from 1, a value it does not take `CPFA1BB` with the value and
+the option; `root` alone and `root=` are two options):
+
+| Option | Meaning | Default |
+|---|---|---|
+| `ro` | read only, but for the hosts of `rw=` | read-write |
+| `rw` / `rw=host:...` | every host may write / only these may, the rest read | every host |
+| `access=host:...` | only these hosts may mount (a host of `rw=` or `root=` may too) | every host |
+| `root=host:...` | these hosts' UID 0 is `QSECOFR` | none: UID 0 is the anonymous user |
+| `anon=uid` | the UID of an unknown user, -1 to 4294967294; -1 refuses them | `QNFSANON`'s |
+| `nosuid` | set-user-ID and set-group-ID bits are cleared | kept |
+| `sec=sys[:sys]` | the flavors; only `sys` (others: `CPFA1BB`, section 10) | `sys` |
+| `vers=3:4` | the versions offered, 3 and 4 (2 is `CPFA1BB`) | 3 and 4 |
+| `public` | the export holds the NFSv4 public file handle | no |
+| `root` | the export is the root of the NFSv4 pseudo file system | no |
+| `nfsroot=path` | where the pseudo file system starts, absolute | `/` |
+| `exname=path` | the name NFSv4 clients see the export by, absolute; outside `nfsroot` it is `CPDA1C5` reason 21 | the path |
+
+A host is a name or a netgroup of `/etc/netgroup` (a netgroup of that
+name wins), an address, or `@network/length` (`@network/mask` with a
+contiguous mask) (`nfs::exports::hosts`). A name matches a client whose
+reverse lookup gives it (a short name matches the full name it starts)
+or whose address its forward lookup gives, through the caller's
+`Resolver`.
+
+The flags of `EXPORTFS OPTIONS` (`nfs::exports::flags`; a flag not known
+is `CPFA1B0` with its position, one given twice `CPFA1B1`):
+
+| Flags | What | Refused |
+|---|---|---|
+| `*DFT` | export `DIR` with the options of its entry of `/etc/exports` (`CPDA1C4` and the defaults without one) | no `DIR`: `CPFA1C3` |
+| `-O 'list'` | the same, the list's options winning (the list in single or double quotes, or a word) | no `DIR`: `CPFA1C3` |
+| `-I` | export `DIR` with `-O`'s options or the defaults, the file not read | no `DIR`: `CPFA1C3` |
+| `-I -F` | the same, and the entry put in `/etc/exports` (made in CCSID 1208 when missing; the other lines kept) | |
+| `-U` | end the export of `DIR` | no `DIR`: `CPFA1C4`; with `-O`: `CPFA1B2` |
+| `-U -I -F` | the same, and the entry taken out of the file | |
+| `-A` | export every entry of the file: `CPDA1C5` for each that fails, `CPCA1C6` the counts | with `DIR`: `CPFA1B3`; with `-I`, `-O` or `-F`: `CPFA1B2` |
+| `-A -U` | end the export of every entry of the file | as `-A` |
+| `-E` | an entry that fails ends the command (`CPFA1C7`) | |
+| `-V` | `CPCA1C4` for every entry `-A` exports | |
+
+`-F` without `-I` is `CPFA1B2`. An export checks, as the job: the
+directory exists (else its `errno` message and `CPDA1C5` reason 4) and
+is a directory (`CPFA0B2`, reason 5); its file system can be exported
+(not `/QOPT`, `/QDLS`, `/QNTC`, `/QFileSvr.400`, `/dev` or a remote
+mount, reason 5); `HOSTOPT`'s `*ASCII` and `*JOBCCSID` become the CCSIDs
+of the job now (`*ASCII` is 819 or the job's ASCII CCSID); a double-byte
+data CCSID is `CPDA1CA` and reason 6. An entry the file has but cannot
+read is its reason (3, 11, 12, 13), a file that does not exist with
+`-A` reason 1, a directory not exported for `-U` reason 20. A failed
+single export ends with `CPDA1C5` and the escape `CPFA1C7`; success is
+`CPCA1C4`. The command needs `*IOSYSCFG` (`CPFA1B8`).
+
+### 6.2 The NFS options file
+
+`/QIBM/UserData/OS400/NFS/options`, written by `QZNFNFSO`'s set
+operations through the service (`lic/slic/src/stgsvc/nfs/optfile.rs`).
+Frozen at V1R2M0 (`tools/fmtcheck/formats.toml`, format
+`nfs-options`), big-endian:
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 8 | `QSNFSOPT` |
+| 8 | 2 | version, 1 |
+| 10 | 2 | flavors, n |
+| 12 | 4 n | each flavor (1 `AUTH_SYS`) |
+| | 2 | the NFSv4 domain's length, d (0: the TCP/IP domain name) |
+| | d | the domain, UTF-8 |
+| | 4 | the most threads a server job runs, 0 none |
+| | 4 | the client's file handle cache, entries |
+| | 1 | path names from clients checked to be UTF-8, 0 or 1 |
+
+A file that is not this (another magic or version, cut short, longer)
+is reported in the service's log and the defaults are used: `AUTH_SYS`,
+the TCP/IP domain, no thread limit, 1024 handles, the check on.
 
 ## 7. The client: an NFS mount in the IFS **(design)**
 
@@ -422,27 +572,81 @@ blocks the serve loop:
 - Mounts last until the next IPL, as IBM's do. To have them back, put
   `MOUNT` in the startup program (`QSTRUP`).
 
-## 8. Commands, APIs, SQL **(design)**
+## 8. Commands, APIs, SQL
 
-Definitions follow `tools/conformance/oracle/nfs/cmdd71/`; prompts are
-compared with `tools/conformance/golden/nfs/`.
+Definitions follow `tools/conformance/oracle/nfs/cmdd71/` attribute for
+attribute (`command/sys-cpps/tests/nfs_prompts.rs` compares keywords,
+types, lengths, ranges, defaults, special values and their mapped
+values, `PMTCTL`, key parameters, `MAXPOS`, prompts and the
+dependencies' messages); prompts are compared with
+`tools/conformance/golden/nfs/` character for character on rows 1 to 23
+(plain, F10, F10 and Page Down, `MOUNT TYPE(*NFS)`, `UNMOUNT TYPE(*NFS)`,
+`STRNFSSVR SERVER(*SVR)` and `SERVER(*RPC)`; 51 screens). The prompter
+gained IBM's rules for it (docs/CMD.md section 5): rows 21 to 23, the
+display stopping at an undecided `PMTCTL` parameter, wrapping fields,
+`F10` refused where there is nothing more. `MOUNT`'s prompt override
+program `QSYS/QP0LCPOP` is named; `QSPMTOVR` has no values for it, so
+the key parameters' display is followed by the rest, as the primary
+shows.
 
 | Command | Runs in | What |
 |---|---|---|
 | `STRNFSSVR`, `ENDNFSSVR` | job | section 4. `*IOSYSCFG` (`CPFA1B8`) |
 | `RPCBIND`, `ENDRPCBIND` | job | the binder alone |
-| `EXPORTFS`, `CHGNFSEXP` | service | `OPTIONS` holds IBM's flags: `-A` every entry of `/etc/exports`, `-I` ignore `/etc/exports`' options for `DIR`, `-U` unexport, `-F` (the file is not read), `-O` the option list, `-E` escape message on failure, `-V` verbose; the messages of section 1's list |
-| `MOUNT`, `ADDMFS` | service | `TYPE(*NFS)` section 7; `TYPE(*UDFS)` as before. `*NETWORK` is no longer a value (it is not one on V7R1M0) |
-| `UNMOUNT`, `RMVMFS` | service | `TYPE(*NFS *UDFS *ALL)`, `MNTOVRDIR(*ALL)` |
-| `DSPMFSINF`, `STATFS` | job (the display), service (`*PRINT`) | the display of `golden/nfs/dspmfsinf-*`, for every file system type |
-| `RLSIFSLCK` | service | releases the byte-range locks a remote client holds through the server (`RMTLOCNAME`), or those on an object (`OBJ`): the NFS server's, the local ones, or the whole file system's |
+| `EXPORTFS`, `CHGNFSEXP` | service (`cpp/nfscmd.rs`) | section 6.1. `CHGNFSEXP`'s definition is the primary's: data and path CCSIDs 1-65533 and `CPDA1B8` where `EXPORTFS` has 0-65535 and `CPFA1C5` |
+| `MOUNT`, `ADDMFS` | service | `TYPE(*NFS)` section 7 (NFS-4); `TYPE(*UDFS)` as before. `TYPE` is `*INT4`, `*NFS` -1, `*UDFS` -2; `OPTIONS` is 250 long, default `*DFT` (`nfs::exports::mount::DFT`); `CCSID` and `CODEPAGE` are groups, prompted for `*NFS` only, not both (`CPDB416`) |
+| `UNMOUNT`, `RMVMFS` | service | `TYPE(*NFS *UDFS *ALL)` (-1, -2, -4), `MNTOVRDIR(*ALL)` with `TYPE(*ALL)` (`CPDA1C7`), `MFS` for `*UDFS` only; `CPDA1B2`-`CPDA1B5` |
+| `DSPMFSINF`, `STATFS` | job (the panel `QUIDSPMFS`), service (the text for a job without a display, and `OUTPUT(*PRINT)`) | `ifscmd::mfsinf` from `statvfs` and `pathconf` as the job sees them: the type `"root" (/)` (and `/dev`), `/QOpenSys`, `/QSYS.LIB`, `/QOPT`, `/QDLS`, `/QNTC`, `/QFileSvr.400`, a UDFS's path; `No maximum` and `Not defined` where IBM's say them. The listing is spooled file `QP0LCDMN` through `QSYSPRT` in the primary's layout (`oracle/nfs/print/`) |
+| `RLSIFSLCK` | service | section 8.1 |
 | `CVTRPCSRC`, `RPCGEN` | | not shipped: no C compiler takes its output (section 10) |
 
-`QZNFRTVE` (`EXPE0100`, `EXPE0200`) lists the export table; `QZNFNFSO`
-retrieves and sets the security flavors (only `sys`), the NFSv4 domain
-and the options (server threads, client handle cache, UTF-8
-validation). `QSYS2.NFS_EXPORT_INFO` and `QSYS2.MOUNTED_FS_INFO` are
-QS/400's views of the export table and the mount table.
+The menus `CMDNFS` and `CMDRPC` list the ten NFS and RPC commands and
+`CMDMFS` the six mounted file system commands, numbered as the
+primary's (`ui/menus`, `member::CURATED`); `CVTRPCSRC` and `RPCGEN` keep
+their numbers (2 and 8) with blank rows, as every generated menu treats
+a command QS/400 does not ship, and `CMDNFS`'s related menu `CMDJVA`
+(option 11) is not listed, as related menus are not.
+
+### 8.1 `RLSIFSLCK`
+
+`OBJ` with `LCLBRNGLCK(*YES)` releases every byte-range lock local jobs
+hold on the object, `OBJMFS(*YES)` those on every object of its file
+system (`Ifs::release_ranges` over the IFS's lock table; opens stay);
+`CPCA1C9`. Locks NFS clients hold are the `*NLM` daemon's: while it
+does not run no client holds one, so `NFSSVRLCK(*YES)` has nothing to
+release. `RMTLOCNAME` without the daemon is `CPFA1B6` reason 1; with it
+running, and `NFSSVRLCK(*YES)` with it running, the request to it
+(`CPCA1C7`) is wave 2's (`BLOCKED(rel)`, `CPFA1B6` reason 2 meanwhile).
+`*IOSYSCFG` (`CPFA1B8`).
+
+### 8.2 The APIs
+
+`QZNFRTVE` and `QZNFNFSO` (`runtime/sysapi/src/nfs.rs`, the service's
+`stgsvc/nfs/api.rs` over `stg::Client::nfs_api`, tag 1541; docs/SYSAPI.md):
+
+- `QZNFRTVE` lists the export table, every entry or the one of the path
+  given, in `EXPE0100` (every attribute) or `EXPE0200` (the path) as
+  `nfs::exports::api` lays them out, path and host names in the CCSID
+  asked (37 for 0). Whole entries go in the receiver; the feedback has
+  bytes returned and available, the entries returned and the handle of
+  the first that did not fit (0 when all did), which a next call
+  passes. Where the header leaves a value open: the version flag has
+  bit 2 for version 3 and 4 for version 4; the write mode flag is 1 for
+  `*SYNC`, 0 for `*ASYNC`; a host option's `*BINARY` is 65535; the
+  export name follows the path and the flavors start at the next 4-byte
+  boundary; `EXPE0200` is the entry length, the path's displacement,
+  length and CCSID, and the path. NEEDS-CODY: the primary's `EXPE0100`
+  of a real export (section 12).
+- `QZNFNFSO` options 1 to 6 with `NFOP0101`, `NFOP0100`, `NFOP0201`,
+  `NFOP0200`, `NFOP0301`, `NFOP0300`: the security flavors (only 1,
+  `AUTH_SYS`; others `CPFA1BB`), the NFSv4 domain (in CCSID 1208; empty
+  answers the TCP/IP domain name), the options (server threads, handle
+  cache, UTF-8 check). Setting needs `*IOSYSCFG` (`CPFA1B8`); a format
+  that is not the option's is `CPF3C21`, an option not 1 to 6
+  `CPF3C90`.
+
+`QSYS2.NFS_EXPORT_INFO` and `QSYS2.MOUNTED_FS_INFO` are QS/400's views of
+the export table and the mount table **(design, a later wave)**.
 
 ## 9. Security mapping
 
@@ -501,6 +705,11 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | NFSv4.2 | minor version 2: `NFS4ERR_MINOR_VERS_MISMATCH` |
 | Exporting `/QOPT`, `/QDLS`, `/QNTC`, `/QFileSvr.400`, an NFS mount | `CPDA1C5` |
 | `MOUNT OPTIONS('bg')`, an option not in section 7 | `CPFA1B0` |
+| `STRNFSSVR SERVER(*GSS)`, `ENDNFSSVR SERVER(*GSS)` | `CPI9C10` in the job log, then `CPFA1BC` / `CPFA1BE`; `*ALL` leaves `*GSS` out; a job routed to `QZNFGSSD` ends at once with the same two messages |
+| The daemons' network service (this wave) | every daemon job ends without reporting ready (`CPI9C11`, `CPFA1BC`), so `STRNFSSVR` ends with `CPFA1BC` (`BLOCKED(rel)`, `work/qsjob/src/work/nfs/`) |
+| `RLSIFSLCK RMTLOCNAME()`, and `NFSSVRLCK(*YES)` while `*NLM` runs | `CPFA1B6` reason 1 without the daemon, 2 with it (the request to it is wave 2's) |
+| `QZNFNFSO` security flavors other than `AUTH_SYS` | `CPFA1BB` |
+| `HOSTOPT` in `/etc/exports` in another form than section 6.1's | the entry is `CPDA1C5` reason 9 |
 | `CVTRPCSRC`, `RPCGEN` | not shipped: the command is not found, as any command QS/400 lacks |
 | Remote calls through the binder (`PMAPPROC_CALLIT`, `RPCBPROC_CALLIT`, `RPCBPROC_BCAST`, `RPCBPROC_INDIRECT`) | `PROC_UNAVAIL` over TCP; no reply over UDP (RFC 1833: a failed indirect call is not answered) |
 | Double-byte data CCSIDs in `HOSTOPT`/`CCSID` | `CPDA1CA` |
@@ -543,5 +752,9 @@ Each line says what would settle it.
   6.1, and `QZNFRTVE` `EXPE0100` of the result.
 - `DSPMFSINF` of an NFS mount (the fields below "File system type"):
   on the primary, `MOUNT TYPE(*NFS)` of any export, `DSPMFSINF`.
+- The classes of the daemons' routing entries: on the primary,
+  `DSPCLS QSYS/QP0LNFSD` and `DSPCLS QSYS/QP0LRPCD` (displays), and
+  whether the six others (`QP0LBIOD` ...) exist anywhere; QS/400 ships
+  all eight with `QSYSCLS20`'s values.
 - A Linux and a macOS client mounting a QS/400 export (v3, 4.0, 4.1),
   and QS/400 mounting a Linux export; an export to the Dell host.

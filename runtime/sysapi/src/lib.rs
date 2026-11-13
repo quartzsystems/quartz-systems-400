@@ -49,6 +49,7 @@ mod misc;
 mod msg;
 pub mod net;
 mod netsvr;
+mod nfs;
 mod obj;
 pub mod param;
 pub mod picture;
@@ -91,6 +92,7 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(ifs::APIS);
     v.extend(hw::APIS);
     v.extend(netsvr::APIS);
+    v.extend(nfs::APIS);
     v
 }
 

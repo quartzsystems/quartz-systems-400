@@ -141,6 +141,7 @@ pub fn start(system: &mut System) -> String {
         keep_registry(system);
         keep_notices(system);
         keep_downloads(system);
+        super::nfs::ship_etc(system);
         // Members, files and libraries changed through the database break
         // leases and are heard by watches (`qsyslib::notice`).
         if let Some(s) = system.storage.as_mut() {

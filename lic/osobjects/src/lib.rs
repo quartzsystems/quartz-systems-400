@@ -14,6 +14,7 @@
 
 pub mod afwdl;
 pub mod display;
+pub mod nfsetc;
 pub mod nls;
 pub mod notices;
 pub mod products;

@@ -2641,6 +2641,20 @@ impl Service for Served<'_> {
         super::netsvr::request(self.system, &job, &me, op)
     }
 
+    // --- NFS (1540-1559; stgsvc/nfs/)
+    fn nfs(&mut self, op: stg::nfs::NfsOp) -> stg::nfs::NfsReply {
+        let job = self.ctx.job.clone();
+        self.system.current_job = job.number;
+        let me = self.ctx.session.borrow().principal.clone();
+        super::nfs::request(self.system, &job, &me, op)
+    }
+
+    fn nfs_api(&mut self, api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)> {
+        self.system.current_job = self.ctx.job.number;
+        let me = self.ctx.session.borrow().principal.clone();
+        super::nfs::api::call(self.system, &me, &api, &parms)
+    }
+
     fn service_op(&mut self, op: String, args: Vec<String>) -> Result<Vec<String>, String> {
         self.system.current_job = self.ctx.job.number;
         super::svcop::run(self.system, &self.ctx.job, &op, &args)

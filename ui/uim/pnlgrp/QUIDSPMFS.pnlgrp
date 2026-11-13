@@ -1,0 +1,98 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIDSPMFS: DSPMFSINF and STATFS, the attributes of the file system an
+.* object is in, in the primary's layout (golden/nfs/dspmfsinf-*).
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=VALCL BASETYPE='CHAR 44'.
+:ECLASS.
+:VAR NAME=OBJ CLASS=VALCL.
+:VAR NAME=FSTYPE CLASS=VALCL.
+:VAR NAME=BLKSIZE CLASS=VALCL.
+:VAR NAME=TOTBLK CLASS=VALCL.
+:VAR NAME=FREEBLK CLASS=VALCL.
+:VAR NAME=OBJLNK CLASS=VALCL.
+:VAR NAME=DIRLNK CLASS=VALCL.
+:VAR NAME=NAMEMAX CLASS=VALCL.
+:VAR NAME=PATHMAX CLASS=VALCL.
+:VAR NAME=CHOWN CLASS=VALCL.
+:VAR NAME=NOTRUNC CLASS=VALCL.
+:VAR NAME=CASE CLASS=VALCL.
+:KEYL NAME=DSPKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=DSPMFSINF KEYL=DSPKEYS HELP=DSPMFSINF ENTER='RETURN 0'.Display Mounted FS Information
+:DATA DEPTH='*' SCROLL=IND.
+:DATACOL WIDTH=32.
+:DATACOL WIDTH=78.
+:DATAI VAR=OBJ USAGE=OUTPUT HELP='FLD/OBJ'.Object
+:DATAC.
+:DATAI VAR=FSTYPE USAGE=OUTPUT HELP='FLD/FSTYPE'.File system type
+:DATAC.
+:DATAI VAR=BLKSIZE USAGE=OUTPUT HELP='FLD/BLKSIZE'.Block size
+:DATAI VAR=TOTBLK USAGE=OUTPUT HELP='FLD/TOTBLK'.Total blocks
+:DATAI VAR=FREEBLK USAGE=OUTPUT HELP='FLD/FREEBLK'.Blocks free
+:DATAI VAR=OBJLNK USAGE=OUTPUT HELP='FLD/OBJLNK'.Object link maximum
+:DATAI VAR=DIRLNK USAGE=OUTPUT HELP='FLD/DIRLNK'.Directory link maximum
+:DATAI VAR=NAMEMAX USAGE=OUTPUT HELP='FLD/NAMEMAX'.Pathname component maximum
+:DATAI VAR=PATHMAX USAGE=OUTPUT HELP='FLD/PATHMAX'.Path name maximum
+:DATAI VAR=CHOWN USAGE=OUTPUT HELP='FLD/CHOWN'.Change owner restricted
+:DATAI VAR=NOTRUNC USAGE=OUTPUT HELP='FLD/NOTRUNC'.No truncation
+:DATAI VAR=CASE USAGE=OUTPUT HELP='FLD/CASE'.Case Sensitivity
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=DSPMFSINF.Display Mounted FS Information - Help
+:P.The attributes of the file system an object is in: its type, its size
+and free space in blocks, the limits on links and names, and how it treats
+owners, long names and case.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 and F12 leave.
+:EHELP.
+.* Item help.
+:HELP NAME='FLD/OBJ'.Object
+:P.The path name given on the command; the attributes are those of the file system it is in.
+:EHELP.
+:HELP NAME='FLD/FSTYPE'.File system type
+:P.The file system the object is in: "root" (/), /QOpenSys, /QSYS.LIB, /QOPT, a user-defined file system's path, or a remote mount's server and path.
+:EHELP.
+:HELP NAME='FLD/BLKSIZE'.Block size
+:P.The size in bytes of the file system's blocks, the unit of the two counts below.
+:EHELP.
+:HELP NAME='FLD/TOTBLK'.Total blocks
+:P.How many blocks the file system has. A file system with no limit shows No maximum; one that keeps no count, Not defined.
+:EHELP.
+:HELP NAME='FLD/FREEBLK'.Blocks free
+:P.How many of the blocks are free now.
+:EHELP.
+:HELP NAME='FLD/OBJLNK'.Object link maximum
+:P.The most hard links an object other than a directory may have.
+:EHELP.
+:HELP NAME='FLD/DIRLNK'.Directory link maximum
+:P.The most links a directory may have, its entries included.
+:EHELP.
+:HELP NAME='FLD/NAMEMAX'.Pathname component maximum
+:P.The longest name one part of a path may have, in characters.
+:EHELP.
+:HELP NAME='FLD/PATHMAX'.Path name maximum
+:P.The longest path name the file system takes, or No maximum.
+:EHELP.
+:HELP NAME='FLD/CHOWN'.Change owner restricted
+:P.Yes when only a user with *ALLOBJ special authority, or the owner within limits, may change an object's owner.
+:EHELP.
+:HELP NAME='FLD/NOTRUNC'.No truncation
+:P.Yes when a name longer than the component maximum is refused rather than cut.
+:EHELP.
+:HELP NAME='FLD/CASE'.Case Sensitivity
+:P.Yes when names that differ only in case are different objects.
+:EHELP.
+:EPNLGRP.

@@ -24,6 +24,7 @@ pub mod menu;
 pub mod monitor;
 pub mod netsvc;
 pub mod netsvr;
+pub mod nfs;
 pub mod nsadmin;
 pub mod ntp;
 pub mod pwdpgm;

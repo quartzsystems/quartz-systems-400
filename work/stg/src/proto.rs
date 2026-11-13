@@ -1038,6 +1038,13 @@ ipc::rpc! {
     /// The session table and the configuration files for the
     /// `QZLSSERVER` and `QZLSFILE` jobs.
     1511 => fn netsvr / Netsvr (op: crate::netsvr::NsOp) -> crate::netsvr::NsReply;
+    // --- NFS (1540-1559; crate::nfs, stgsvc/nfs/)
+    /// The export table, the daemon registry and the NFS options: one
+    /// request and its answer (docs/NFS.md sections 4 and 6).
+    1540 => fn nfs / Nfs (op: crate::nfs::NfsOp) -> crate::nfs::NfsReply;
+    /// `QZNFRTVE` or `QZNFNFSO` over its parameters' bytes: the answer's
+    /// bytes, or the message ID and its data for the error code.
+    1541 => fn nfs_api / NfsApi (api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

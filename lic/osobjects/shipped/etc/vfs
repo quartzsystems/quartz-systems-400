@@ -1,0 +1,18 @@
+# /etc/vfs: the file system types QS/400 knows, by name and number.
+# %defaultvfs names the type MOUNT gives a local file system and the
+# type it gives a remote one. Each line: the name, its number, two
+# fields kept for compatibility, and remote for a network file system.
+#
+%defaultvfs  udfs   nfs3
+#
+root   1     none   none
+qopensys     2      none   none
+qdls   4     none   none
+qsys   8     none   none
+nfs2   16    none   none   remote
+nfs3   32    none   none   remote
+udfs   64    none   none
+qopt   128   none   none
+rfs    256   none   none   remote
+ntc    1024  none   none   remote
+nfs4   8192  none   none   remote

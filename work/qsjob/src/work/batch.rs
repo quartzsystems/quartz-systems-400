@@ -35,6 +35,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         startup(&mut c, link)
     } else if pgm == super::netsvr::SERVER_PROGRAM {
         super::netsvr::server::run(&mut c, link, start.number, &start.name)
+    } else if let Some(d) = stg::nfs::Daemon::of_program(pgm) {
+        super::nfs::run(&mut c, link, d, start.number)
     } else if pgm == "QSPWTR" {
         super::writer::run(&mut c, link, start.rqsdta.trim())
     } else if pgm == "QCMD" {

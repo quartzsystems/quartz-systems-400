@@ -7,13 +7,15 @@
 //! `WRKMSGD`, `WRKRDBDIRE` and `WRKDDMF` (`lists`), and the eight that
 //! showed the report viewer before: `DSPPTFCVR` (`ptf`), `DSPBCKSTS`
 //! (`bcksts`), `DSPLICKEY` (`keys`), `DSPTAP`, `DSPTAPCTG`, `DSPOPT` and
-//! `WRKOPTVOL` (`media`), and `DSPUDFS` (`udfs`).
+//! `WRKOPTVOL` (`media`), `DSPUDFS` (`udfs`), and `DSPMFSINF` and
+//! `STATFS` (`mfsinf`).
 
 mod bcksts;
 mod fcnusg;
 mod keys;
 mod lists;
 mod media;
+mod mfsinf;
 mod ptf;
 mod udfs;
 
@@ -50,6 +52,9 @@ pub fn run(
         "DSPOPT" => media::dspopt(host, surface, r),
         "WRKOPTVOL" => media::wrkoptvol(job, host, surface, r),
         "DSPUDFS" => udfs::dspudfs(host, surface, r),
+        "DSPMFSINF" | "STATFS" if !matches!(parm(r, "OUTPUT").as_str(), "*PRINT" | "P") => {
+            mfsinf::dspmfsinf(host, surface, r)
+        }
         "DSPSECA" if !printed(r) => fcnusg::dspseca(host, surface),
         "DSPFCNUSG" if !printed(r) => fcnusg::dspfcnusg(host, surface, r),
         "WRKFCNUSG" => fcnusg::wrkfcnusg(job, host, surface, r),

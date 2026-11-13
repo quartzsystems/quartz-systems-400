@@ -124,6 +124,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             }
         }
         // --- host servers (command/hostsvr.rs)
+        // --- NFS daemons (command/nfs.rs)
+        "STRNFSSVR" | "ENDNFSSVR" | "RPCBIND" | "ENDRPCBIND" => {
+            return super::nfs::run(job, host, r);
+        }
         "STRHOSTSVR" => return super::hostsvr::start(host, r),
         "ENDHOSTSVR" => return super::hostsvr::end(job, host, r),
         // --- STRDBG screens (devtools/dbg)

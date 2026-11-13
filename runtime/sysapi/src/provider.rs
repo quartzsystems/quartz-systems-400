@@ -397,6 +397,12 @@ pub trait Provider {
     fn netsvr(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
         Err(ApiFail::id("CPFB680"))
     }
+    /// `QZNFRTVE` or `QZNFNFSO` over its parameters' bytes; the storage
+    /// service answers. Here, by default, NFS cannot be reached.
+    fn nfs(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        let _ = (api, parms);
+        Err(ApiFail::id("CPFA1B4").bin4(0))
+    }
     /// The hardware resource table (`QGYRHRL`, `QGYRHRI`); none here
     /// by default.
     fn hardware(&mut self) -> Result<hwrsrc::Table, ApiFail> {
@@ -646,6 +652,8 @@ pub struct MemProvider {
     pub signed_on: Vec<String>,
     /// Answers the `QZLS*` APIs; `CPFB680` without it.
     pub netsvr: Option<NetsvrAnswers>,
+    /// Answers `QZNFRTVE` and `QZNFNFSO`; `CPFA1B4` without it.
+    pub nfs: Option<NetsvrAnswers>,
     catalog: sysval::Catalog,
 }
 
@@ -699,6 +707,7 @@ impl Default for MemProvider {
             msgqs: HashMap::new(),
             signed_on: Vec::new(),
             netsvr: None,
+            nfs: None,
             catalog: sysval::Catalog::builtin().expect("the catalog parses"),
         }
     }
@@ -1255,6 +1264,13 @@ impl Provider for MemProvider {
         match &mut self.netsvr {
             Some(f) => f(api, &parms),
             None => Err(ApiFail::id("CPFB680")),
+        }
+    }
+
+    fn nfs(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        match &mut self.nfs {
+            Some(f) => f(api, &parms),
+            None => Err(ApiFail::id("CPFA1B4").bin4(0)),
         }
     }
 

@@ -268,6 +268,37 @@ impl LockTable {
     }
 }
 
+/// `RLSIFSLCK` (docs/NFS.md section 8): byte-range locks taken out
+/// whoever holds them; opens stay.
+impl LockTable {
+    /// Drop every byte-range lock on the object; how many went.
+    pub fn release_ranges(&mut self, key: ObjKey) -> usize {
+        self.release_where(|k| k == key)
+    }
+
+    /// Drop every byte-range lock on objects of file system `fs`; how
+    /// many went.
+    pub fn release_ranges_on(&mut self, fs: u32) -> usize {
+        self.release_where(|k| k.fs == fs)
+    }
+
+    fn release_where(&mut self, pick: impl Fn(ObjKey) -> bool) -> usize {
+        let mut n = 0;
+        let mut freed = Vec::new();
+        self.objs.retain(|k, o| {
+            if pick(*k) {
+                n += o.ranges.len();
+                freed.extend(o.ranges.iter().map(|l| l.owner));
+                o.ranges.clear();
+            }
+            !o.opens.is_empty() || !o.ranges.is_empty()
+        });
+        // Owners waiting on a released holder retry and find it gone.
+        self.waits.retain(|_, holder| !freed.contains(holder));
+        n
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,5 +378,19 @@ mod tests {
         t.release_owner(Owner(1));
         t.set(K, "/a", r(2, RangeKind::Write, 0, 1), true).unwrap();
         assert_eq!(t.held_by(Owner(2)).len(), 2);
+    }
+
+    #[test]
+    fn released_ranges_go_and_opens_stay() {
+        let mut t = LockTable::default();
+        let k2 = ObjKey { fs: 2, ino: 7 };
+        t.set(K, "/a", r(1, RangeKind::Write, 0, 1), false).unwrap();
+        t.set(K, "/a", r(2, RangeKind::Read, 5, 1), false).unwrap();
+        t.set(k2, "/c", r(1, RangeKind::Write, 0, 1), false)
+            .unwrap();
+        assert_eq!(t.release_ranges(K), 2);
+        assert!(t.list(K).is_empty());
+        assert_eq!(t.release_ranges_on(2), 1);
+        assert_eq!(t.release_ranges_on(2), 0);
     }
 }
