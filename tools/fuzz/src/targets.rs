@@ -636,6 +636,18 @@ pub const TARGETS: &[Target] = &[
         ],
         max_len: 4096,
     },
+    Target {
+        name: "nfscli",
+        what: "what an NFS server answers the client: replies, v3, MOUNT, NLM, NSM, v4 compounds and attributes",
+        run: nfs::client::fuzz::fuzz,
+        seeds: &[
+            b"\x01\x01\0\0\0\0\0\0\0\x01",
+            b"\x05\0\0\0\0\0\0\0\0\0\0\0\x01\0\0\0\x09\0\0\0\0\0\0\0\x01\0\0\0\x10\0\0\0\x08\0\0\0\0\0\0\0\x05",
+            b"\x06\0\0\0\x02\0\0\0\x12\0\0\0\x02\0\0\0\0",
+        ],
+        dict: &[b"\0\0\0\x09", b"\0\0\0\x1a", b"\0\0\0\x35", b"\0\0\0\x01", b"\0\0\0\x02"],
+        max_len: 16384,
+    },
 ];
 
 /// The target named `name`.

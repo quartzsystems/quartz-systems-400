@@ -14,6 +14,7 @@
 pub mod channel;
 pub mod env;
 pub mod factory;
+pub mod fuzz;
 pub mod nlm;
 pub mod ranges;
 pub mod restart;
