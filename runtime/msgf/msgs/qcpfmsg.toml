@@ -10575,10 +10575,3 @@ id = "CPI9C10"
 sev = 0
 text = "There is no *GSS NFS server daemon on this system."
 help = "Kerberos (RPCSEC_GSS) is not supported, so the *GSS daemon cannot be started or ended. The other daemons use AUTH_SYS."
-
-[[msg]]
-id = "CPI9C11"
-sev = 0
-text = "The &1 NFS server daemon cannot serve requests in this release."
-help = "The daemon job started and ended without serving, so it never reported that it was ready. The daemons' network service comes with a later level of the system."
-vars = ["*CHAR 4"]
