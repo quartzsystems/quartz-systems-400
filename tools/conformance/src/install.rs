@@ -114,6 +114,39 @@ const OLD_PW: &str = "OLDPW26X";
 const NEW_PW: &str = "NEWPW26X";
 
 /// `VxRyMz` after `created by` in `svc.asp`.
+/// From V1R2M0: the install added NFS's routing entries 2120 to 2127
+/// to the system's `QSYSWRK`, and the shipped profiles have IBM's UIDs
+/// (`QNFSANON` 4294770710, `QSYS` 101).
+fn nfs_after_upgrade(s: &mut Session) -> Result<String, String> {
+    let added = s
+        .log
+        .lines()
+        .find(|l| l.contains("QSYS/QSYSWRK: NFS: added"))
+        .and_then(|l| l.split("slic: install: ").nth(1))
+        .map(|l| l.trim().to_string())
+        .ok_or("the install added no QSYSWRK entries for NFS")?;
+    if let Some(n) = (2120..=2127).find(|n| !added.contains(&format!("routing entry {n}"))) {
+        return Err(format!("routing entry {n} not added: {added}"));
+    }
+    if added.contains("not added") {
+        return Err(added);
+    }
+    let mut uids = Vec::new();
+    for (p, uid) in [("QNFSANON", "4294770710"), ("QSYS", "101")] {
+        let out = s.command(&format!("DSPUSRPRF USRPRF({p})"), CMD)?;
+        let shown = out
+            .lines()
+            .find(|l| l.contains("User ID number"))
+            .and_then(|l| l.split_whitespace().last())
+            .unwrap_or_default();
+        if shown != uid {
+            return Err(format!("{p}'s UID is {shown:?}, not {uid}:\n{out}"));
+        }
+        uids.push(format!("{p} {uid}"));
+    }
+    Ok(format!("{added}; UIDs {}", uids.join(", ")))
+}
+
 fn store_release(asp: &str) -> Option<String> {
     let at = asp.find("created by ")? + "created by ".len();
     let r: String = asp[at..]
@@ -704,6 +737,8 @@ impl Suite {
                 detail.push_str(&added);
                 detail.push_str("; ");
                 detail.push_str(&self.netserver_after_upgrade(&mut s, &old)?);
+                detail.push_str("; ");
+                detail.push_str(&nfs_after_upgrade(&mut s)?);
             }
             let sig = signatures_clean(&mut s)?;
             let last = tr
