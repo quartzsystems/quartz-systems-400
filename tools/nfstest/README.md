@@ -97,7 +97,7 @@ nfstest --list
   `write-file-sync`, `read-offsets-eof`, `large-file` (16 MiB in the
   server's preferred sizes, FNV-1a compared), `append`, `truncate`,
   `symlink-readlink`, `mknod-fifo`, `mknod-device` (character device and
-  socket refused, `NF3REG` refused), `hard-link`, `remove`, `udp-core`
+  socket refused, `NF3REG` `BADTYPE`), `hard-link`, `remove`, `udp-core`
   (`MNT` to `RMDIR` over UDP).
 - Directories: `mkdir-rmdir`, `rename-over`, `rename-across`,
   `rename-dir-into-itself`, `readdir-paging` and `readdirplus-paging`

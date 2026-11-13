@@ -433,16 +433,18 @@ fn mknod_device(c: &Ctx) -> Lines {
         where_: dirop(&d, b"reg"),
         what: mknoddata3::NF3FIFO(sattr3::default()),
     })?;
-    // Replace the FIFO discriminant (7) with NF3REG (1).
+    // The FIFO discriminant (7) made NF3REG (1), whose arm is void.
     let at = b.len() - sattr3_packed() - 4;
     b[at..at + 4].copy_from_slice(&1u32.to_be_bytes());
+    b.truncate(at + 4);
     match s.n.call_bytes(P::NFSPROC3_MKNOD as u32, &b)? {
         Ok(res) => {
             let st = u32::from_be_bytes(res[..4].try_into().expect("status"));
-            check(st != 0, || "MKNOD of a regular file was made".into())?;
-            out.push(format!("MKNOD NF3REG: status {st}"));
+            // NFS3ERR_BADTYPE (10007).
+            check(st == 10007, || format!("MKNOD NF3REG: status {st}"))?;
+            out.push(line("MKNOD NF3REG", "NFS3ERR_BADTYPE"));
         }
-        Err(r) => out.push(format!("MKNOD NF3REG: {r}")),
+        Err(r) => return fail(format!("MKNOD NF3REG: {r}")),
     }
     s.close()?;
     Ok(out)
