@@ -114,3 +114,39 @@ pub(crate) fn expire_idle(instance: &Arc<Instance>, me: &Arc<Member>, now: Insta
         .flat_map(|m| m.take_idle(|c| c.expire(now)))
         .collect()
 }
+
+/// What [`take_kept`] found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Taken {
+    /// It was kept and is now the caller's to close.
+    Yes,
+    /// A thread keeps it but is in a call.
+    Busy,
+    /// No thread of the job keeps it.
+    NotKept,
+}
+
+/// Takes kept descriptor `fd` from whichever thread of `instance`'s job
+/// keeps it, unless that thread is in a call (a lease break, from the
+/// job's news poller).
+pub(crate) fn take_kept(instance: &Arc<Instance>, fd: i32) -> Taken {
+    let members: Vec<Arc<Member>> = JOBS
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .iter()
+        .filter(|(i, _)| i.upgrade().is_some_and(|i| Arc::ptr_eq(&i, instance)))
+        .flat_map(|(_, ms)| ms.iter().filter_map(Weak::upgrade))
+        .collect();
+    for m in members {
+        let mut c = m.cache();
+        if !c.holds(fd) {
+            continue;
+        }
+        if m.busy.load(Ordering::SeqCst) != 0 {
+            return Taken::Busy;
+        }
+        c.forget(fd);
+        return Taken::Yes;
+    }
+    Taken::NotKept
+}

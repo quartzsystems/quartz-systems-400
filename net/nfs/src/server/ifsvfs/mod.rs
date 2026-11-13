@@ -14,6 +14,7 @@
 
 pub mod fdcache;
 mod jobfds;
+pub mod kept;
 
 mod attr;
 mod change;
@@ -50,6 +51,10 @@ pub struct Config {
     pub fds: usize,
     /// How long one is kept unused.
     pub idle: Duration,
+    /// Each kept descriptor holds an IFS lease, so an open its share
+    /// mode refuses breaks it and the job's news poller closes it at
+    /// once ([`kept`]).
+    pub leases: bool,
 }
 
 impl Default for Config {
@@ -57,6 +62,7 @@ impl Default for Config {
         Self {
             fds: 64,
             idle: Duration::from_secs(5),
+            leases: true,
         }
     }
 }
@@ -98,6 +104,8 @@ pub struct IfsVfs<C: IfsClient> {
     instance: Arc<Instance>,
     fds: Arc<jobfds::Member>,
     roots: RefCell<HashMap<u32, (FileId, String)>>,
+    /// Kept descriptors hold leases.
+    leases: bool,
 }
 
 impl<C: IfsClient> std::fmt::Debug for IfsVfs<C> {
@@ -120,6 +128,7 @@ impl<C: IfsClient> IfsVfs<C> {
             instance,
             fds,
             roots: RefCell::new(HashMap::new()),
+            leases: cfg.leases,
         }
     }
 
@@ -141,6 +150,7 @@ impl<C: IfsClient> IfsVfs<C> {
 
     fn close_all(&self, fds: &[i32]) {
         for fd in fds {
+            self.end_lease(*fd);
             let _ = self.base.close(*fd);
         }
     }
@@ -248,7 +258,18 @@ impl<C: IfsClient> IfsVfs<C> {
             Mode::Read => ifs::ops::flags::O_RDONLY,
             Mode::Write => ifs::ops::flags::O_WRONLY,
         };
-        let (fd, _) = a.c.open_by_id(fid, ifs::ops::OpenArgs::new(flags))?;
+        let (fd, path) = a.c.open_by_id(fid, ifs::ops::OpenArgs::new(flags))?;
+        if self.leases {
+            // Read and handle caching: an open this descriptor's share
+            // mode refuses breaks it, and the job's poller closes it.
+            let _ = self.base.lease_grant(
+                &path,
+                fid,
+                kept::tag_of(fd),
+                kept::key_of(fd),
+                ifs::lease::state::R | ifs::lease::state::H,
+            );
+        }
         let out = self.fds.cache().put(fid, a.who, mode, fd, now);
         self.close_all(&out);
         Ok(fd)
@@ -257,7 +278,15 @@ impl<C: IfsClient> IfsVfs<C> {
     /// A descriptor failed: it is not kept.
     pub(crate) fn drop_fd(&self, fd: i32) {
         if self.fds.cache().holds(fd) {
+            self.end_lease(fd);
             let _ = self.base.close(fd);
+        }
+    }
+
+    /// Gives back a kept descriptor's lease before it is closed.
+    fn end_lease(&self, fd: i32) {
+        if self.leases {
+            let _ = self.base.lease_report(kept::tag_of(fd), &[]);
         }
     }
 
