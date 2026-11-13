@@ -1086,9 +1086,10 @@ the TCP/IP domain, no thread limit, 1024 handles, the check on.
 ## 7. The client: an NFS mount in the IFS
 
 The IFS half is built (`ifs/ifs/src/remote/`, `ifs/ifs/src/ops/remote/`,
-`ifs/ifscmd/src/cmds/udfs.rs`, `lic/slic/src/stgsvc/ifsremote.rs`); the
-NFS protocol client that implements its trait (`net/nfs/src/client/`)
-is wave 2. The IFS knows no protocol: names in it are generic.
+`ifs/ifscmd/src/cmds/udfs.rs`, `lic/slic/src/stgsvc/ifsremote.rs`), and
+so is the NFS protocol client that implements its trait
+(`net/nfs/src/client/`, 7.7). The IFS knows no protocol: names in it
+are generic.
 
 ### 7.1 The interface
 
@@ -1236,8 +1237,8 @@ current directory or a directory stream in it, or mounted over, is
 (`unmount`, whose refusal does not keep it) and ends its threads.
 `CPCA1B1`.
 
-The service registers no NFS client yet: `ifsremote::set_factory` is
-the hook wave 2 fills.
+The service registers the NFS client (7.7) with
+`ifsremote::set_factory` when the IFS starts.
 
 ### 7.6 Block I/O helpers (`QNFSBIOD`)
 
@@ -1252,29 +1253,254 @@ changed meanwhile is written again. Work not posted within 30 seconds
 goes back to the queue. The mount's own threads take the same work, so
 without helpers nothing changes. Wave 2's `QNFSBIOD` is this loop.
 
-### 7.7 The NFS client (wave 2) **(design)**
+### 7.7 The NFS client
 
-`nfs::client::Mount` implements `RemoteFs`, and a factory registered
-with `ifsremote::set_factory` parses `OPTIONS` into its own settings and
-the `RemoteInfo` above:
+Built in `net/nfs/src/client/` (no job, store or service code) and
+`lic/slic/src/stgsvc/nfs/client.rs` (the service's factory).
 
-- `hard`: a call is retried for ever, `timeo` tenths of a second
-  doubling to 60 seconds (`slow_after` is when the mount reports it);
-  `soft`: after `retrans` retransmissions the call fails `TimedOut`;
-  `intr` sets `RemoteInfo::intr`; `retry` is the number of times the
-  mount itself is tried; `bg` is refused.
-- `vers=3` (the default, as `/etc/vfs` says) or `vers=4` (`4.0`, `4.1`;
-  `stateful_open`, `keeps_open_unlinked`); `proto=tcp` or `udp` (v4 is
-  TCP only); `rsize`, `wsize` up to 1 MiB; `sec=sys`; `rw`/`ro`;
-  `suid`/`nosuid`; `acregmin` ... `acdirmax`, `noac`; `port=`,
-  `mountport=`.
-- The caller's credentials are `AUTH_SYS` with the `Cred` the IFS
-  passes.
-- Locks: NLM for version 3, with `QNFSNSMD` and `QNFSNLMD` running, else
-  `locks` false (`ENOLCK`); `LOCK` for version 4; reclaimed after the
-  server restarts.
-- Mounts last until the next IPL, as IBM's do. To have them back, put
-  `MOUNT` in the startup program (`QSTRUP`).
+| Module | Holds |
+|---|---|
+| `client` (`mod.rs`) | `connect`, `mount`, `Mount` (an `ifs::remote::RemoteFs` over either version), `wire_cred`, `path_bytes`, `double_byte` |
+| `env` | `ClientEnv`, `Resolver` (`SystemResolver`), `Hooks` |
+| `settings` | `Policy` (the retry policy of `timeo`, `retrans`, `soft`, `intr`), `Version`, `Settled`, the options shown, the `RemoteInfo` |
+| `channel` | `Channel`: calls to one program under the policy, a pool of connections; `Status`: responding, the hooks, interrupting |
+| `status` | `nfsstat3`, `mountstat3`, `nfsstat4` as the IFS's errors |
+| `v3` | MOUNT and NFS version 3 (`attr.rs` the attribute conversions, `fs.rs` the calls) |
+| `nlm` | version 3 locks through NLM 4 and this system's status monitor |
+| `restart` | the mounts told that a server restarted |
+| `v4` | 4.0 and 4.1: `core.rs` client ID, session, slots, recovery; `state.rs` opens, locks, reclaim; `attr.rs` the client's `fattr4` subset; `fs.rs` the calls |
+| `ranges` | the byte ranges a lock client holds |
+| `factory` | `Factory`, the IFS's `RemoteFactory` of `*NFS` |
+| `fuzz` | the fuzz entry `nfscli` |
+
+```rust
+pub fn connect(mfs: &str, opts: &MountOptions, ccsid: MountCcsid, cred: &Cred,
+               env: &ClientEnv) -> RResult<Mount>;
+pub fn mount(mfs: &str, opts: &MountOptions, ccsid: MountCcsid, cred: &Cred,
+             env: &ClientEnv) -> RResult<Mounted>;          // what the factory returns
+impl RemoteFs for Mount { .. }
+impl Mount {
+    pub fn info(&self) -> &RemoteInfo;  pub fn responding(&self) -> bool;
+    pub fn interrupt(&self) -> bool;    pub fn version(&self) -> Version;
+    pub fn locks_held(&self) -> usize;
+}
+pub struct ClientEnv { pub resolver: Arc<dyn Resolver>, pub host_name: String,
+    pub binder_port: u16, pub local: Option<Arc<dyn Locator>>, pub reserved_port: bool,
+    pub connections: usize, pub hooks: Hooks }
+pub struct Hooks { pub not_responding: Option<Hook>, pub responding: Option<Hook> }
+pub struct Factory;  // Factory::new(Box<dyn Fn() -> ClientEnv + Send + Sync>), Factory::fixed(env)
+pub fn restart::server_restarted(name: &[u8], state: i32, wait: bool) -> usize;
+pub const nlm::PRIV_TAG: [u8; 16];   // b"QSNFSCLI" and zeros
+```
+
+**The options** (`nfs::exports::mount::parse`; `*DFT` is IBM's list,
+`rw,suid,retry=5,rsize=32768,wsize=32768,timeo=20,retrans=5,acregmin=30,acregmax=60,acdirmin=30,acdirmax=60,hard`;
+an option not below is `CPFA1B0` with its position, one given twice
+`CPFA1B1`, a value out of range `CPFA1BB`):
+
+| Option | Range | Default | What it does |
+|---|---|---|---|
+| `rw` / `ro` | | `rw` | `ro`: every change refused by the IFS before any call (`EROFS`) |
+| `suid` / `nosuid` | | `suid` | `nosuid`: set-ID bits not honoured or set (the IFS) |
+| `hard` / `soft` | | `hard` | below |
+| `intr` / `nointr` | | `nointr` | below |
+| `timeo=` | 1-36000 tenths of a second | 20 | the first attempt's wait; each next waits twice as long, at most 60 seconds |
+| `retrans=` | 0-10000 | 5 | retransmissions in one major timeout |
+| `retry=` | 0-10000 | 5 | times the mount itself is tried (0 and 1: once), `timeo` apart, when the server does not answer or refuses the connection; a refusal by the server (`MNT3ERR_ACCES` ...) is not tried again |
+| `rsize=`, `wsize=` | 512-1048576 | 32768 | the most read and written per call, lowered to the server's `FSINFO` `rtmax`/`wtmax` (v4: `maxread`/`maxwrite`) and over UDP to 32768 |
+| `acregmin=` ... `acdirmax=`, `actimeo=` | 0-3600 s | 30, 60, 30, 60 | the IFS's attribute cache (7.3) |
+| `noac` | | | no attribute cache (`AttrTimes::NONE`) |
+| `vers=` | `3`, `4`, `4.0`, `4.1` | `3` | `4` tries 4.1, then 4.0 when the server refuses minor version 1; `2` is `CPFA1BB` |
+| `proto=` | `tcp`, `udp` | TCP, then UDP (v3) | version 4 only over TCP (`proto=udp` with `vers=4` is `CPFA1BB`) |
+| `port=` | 1-65535 | the binder's (v4: 2049) | the NFS port; with `mountport=` too, a version 3 mount never asks the binder |
+| `mountport=` | 1-65535 | the binder's | MOUNT's port |
+| `sec=` | `sys` | `sys` | `AUTH_SYS` only; others `CPFA1BB` |
+
+The options in effect are what the mount table and `DSPMFSINF` show,
+for example `rw,suid,vers=3,proto=tcp,port=2049,mountport=635,rsize=32768,wsize=32768,timeo=20,retrans=5,retry=5,hard,nointr,acregmin=30,acregmax=60,acdirmin=30,acdirmax=60,sec=sys`.
+`RemoteInfo::name` is `/etc/vfs`'s, `nfs3` or `nfs4`; `stateful_open`
+and `keeps_open_unlinked` are set for version 4 only (version 3 removes
+a file still open by the IFS's hidden rename); `case_sensitive` is
+`PATHCONF`'s (v4: `case_insensitive`); `sync_writes` is off; `locks` is
+whether this system's status monitor and lock manager run (version 3)
+or always (version 4).
+
+**Calls and the retry policy** (`channel`). Every call is `AUTH_SYS`
+with the IFS's `Cred` (16 GIDs at most) and this system's name. A mount
+keeps a pool of connections per server program, as many as its worker
+threads call at once (`ClientEnv::connections`, eight in the service);
+replies are matched by XID per connection. One call keeps its XID
+through every retransmission: attempt n waits `timeo` times 2 to the
+n, at most 60 s (UDP sends the same datagram again; TCP waits on the
+connection, and a refused or lost connection waits out the attempt,
+connects again and sends again). A major timeout is the first attempt
+and `retrans` more (IBM's default: 2+4+8+16+32+60 = 122 s). After one,
+a `soft` call fails `TimedOut` (`ETIMEDOUT`); a `hard` one goes on for
+ever, and the mount is not responding until a call is answered.
+`RemoteInfo::slow_after` is that major timeout, so the IFS's watchdog
+(7.2) reports the server to `QSYSOPR` (`CPDA1B9` reason 5, and 7 when
+it answers again) once per outage; the service gives the client no
+hooks of its own (`Hooks` are for other users of the library, each
+called once per outage). `NFS3ERR_JUKEBOX`, `NFS4ERR_DELAY` and
+`NFS4ERR_GRACE` wait (0.1 s doubling to 5 s) and ask again; a soft
+mount gives up after one major timeout.
+
+**`intr`.** A job waiting on a remote mount is parked by the IFS, not
+in the client: `ENDJOB` and System Request 2 mark its waits interrupted
+and on an `intr` mount it answers `EINTR` at once (7.2). The worker
+thread's call is the mount's, possibly shared by several requests, and
+goes on (a hard mount's write-back must still reach the server), so
+`RemoteFs` has no interrupt call and was not changed. `Mount::interrupt`
+ends every call waiting now with `Interrupted` on an `intr` mount (none
+on a `nointr` one), for direct users and tests; unmounting ends them on
+any mount.
+
+**Version 3.** The server's binder (port 111) gives the MOUNT and NFS
+ports over the transport (TCP, else UDP) unless `mountport=` and
+`port=` give them. `MNT` with the export path in the mount's path name
+CCSID: `MNT3ERR_ACCES` `EACCES`, `NOENT` `ENOENT`, `NOTDIR` `ENOTDIR`,
+`PERM` `EPERM`, `INVAL` `EINVAL`, `NAMETOOLONG` `ENAMETOOLONG`,
+`NOTSUPP` `ENOTSUP`, others `EIO`; flavors that do not include
+`AUTH_SYS` are `EACCES`. `FSINFO` settles the sizes, `PATHCONF` the
+case. The mount's own calls are soft (with the options' `timeo` and
+`retrans`) whatever `hard` says, so a mount that cannot be made ends
+after `retry` attempts. Each `RemoteFs` call is one procedure;
+attributes a reply leaves out are asked for (`GETATTR`, `LOOKUP` after
+a create without a handle); `setattr`'s guard is `SETATTR`'s ctime
+guard (`NOT_SYNC`: `EAGAIN`); `readdir` is `READDIRPLUS`, and `READDIR`
+from the first `NOTSUPP` on (entries then come without attributes and
+the IFS looks them up), `.` and `..` left out (a page of them alone
+goes on to the next); `mknod` makes FIFOs, others `ENOTSUP`; `open`
+and `close` mean nothing to version 3 (empty tokens). `UMNT` at
+unmount (one quick try).
+
+**Version 3 locks** (`nlm`). Non-blocking `NLM4` `LOCK`, `UNLOCK` and
+`TEST` to the server's lock manager, found through its binder (also
+when `port=` and `mountport=` are given: IBM has no option naming the
+lock manager's port, so locks need the server's binder, and without it
+are `ENOLCK`); the caller name is this system's, `oh` the IFS lock
+owner (8 bytes) and `svid` its low 31 bits. `DENIED` is `EAGAIN`,
+`DENIED_NOLOCKS` `ENOLCK`, `DEADLCK` `EDEADLK`, `STALE_FH` `ESTALE`,
+`DENIED_GRACE_PERIOD` waits as `JUKEBOX` does. The first lock asks
+this system's status monitor (`127.0.0.1`, found through this system's
+binder) to watch the server: `SM_MON` with `mon_name` the host as `MFS`
+names it, `my_id` (`127.0.0.1`, 100021, version 2, procedure 1:
+`NLM_SM_NOTIFY`) and the private bytes `nlm::PRIV_TAG`; refused or
+unreachable, the lock is `ENOLCK`. The ranges held are kept per (file,
+owner).
+
+**A server this system mounts restarted** (the interface for
+`QNFSNLMD`, NFS-9). The server's status monitor tells this system's
+(`SM_NOTIFY`), which calls this system's lock manager back with
+`NLM_SM_NOTIFY` and the private bytes it was given. `nlm::LockClient`
+gained `fn restarted(&self, mon_name: &[u8], state: i32, private: [u8;
+16])` (a default that does nothing), which `Nlm` calls after it freed
+the host's server-side locks. `QNFSNLMD` sets a `LockClient` on its
+`NlmState` whose `restarted`, when `private ==
+nfs::client::nlm::PRIV_TAG`, sends `NfsOp::ServerRestarted { name,
+state }` (`stg::nfs`, number 12, taken from `QNFSNLMD` only, else
+`CPFA1B4`). The service then calls
+`nfs::client::restart::server_restarted`: every version 3 mount whose
+server has that name (without case) or address takes each range again
+with `reclaim` set, in the server's grace period, each mount on a
+thread of its own; a range refused is dropped and logged.
+
+**Version 4** (`v4`). TCP to `port=` or 2049; the binder is never
+asked. 4.1: `EXCHANGE_ID` (`EXCHGID4_FLAG_USE_NON_PNFS`, `SP4_NONE`),
+one session (`CREATE_SESSION` without a back channel; 16 slots asked,
+the server's number kept), `RECLAIM_COMPLETE`; every compound starts
+with `SEQUENCE` on a free slot, its sequence ID moving when the server
+took it (`SEQ_MISORDERED` moves on, twice at most). 4.0: `SETCLIENTID`
+with an unroutable callback address (`0.0.0.0.0.0`) and
+`SETCLIENTID_CONFIRM`. No callback path is offered, so no delegation is
+offered; 4.1 opens say `WANT_NO_DELEG`, and one given anyway is
+returned at once (`DELEGRETURN`). Each mount is its own client (its
+owner `QS400`, the host, the process, a counter and the time), so two
+mounts of one server share no state. The export is `PUTROOTFH` and a
+`LOOKUP` per component (in the path name CCSID), crossing the server's
+pseudo file system, then `GETFH` and `GETATTR` (the lease time,
+`maxread`, `maxwrite`, the case). A thread keeps the lease: `SEQUENCE`
+alone (4.1) or `RENEW` (4.0) at two thirds of it. Calls: `PUTFH` and
+the operation, `GETFH`/`GETATTR` where the IFS wants the object;
+regular files are made by `OPEN` with create (`UNCHECKED4`, `GUARDED4`,
+`EXCLUSIVE4`, 4.1 `EXCLUSIVE4_1`) and closed at once; `open` is `OPEN`
+with the share access and deny (`CLAIM_FH` in 4.1; in 4.0 `CLAIM_NULL`
+by the directory and name the handle was found by, `OPEN_CONFIRM` when
+asked) under an open owner per IFS lock owner, its token the open's
+local number; reads and writes carry an open's stateid for the file
+(else the anonymous one); `setattr` with a guard is `VERIFY` of
+`time_metadata` first (`NOT_SAME`: `EAGAIN`); `remove` and `rmdir`
+look the type up first (`EISDIR`, `ENOTDIR`); `rename` and `link` use
+`SAVEFH`; `readdir` asks for the attributes and `filehandle`. Locks:
+`LOCK` (the first from the open, `open_to_lock_owner4`), `LOCKU`,
+`LOCKT`, the lock owner made of the IFS lock owner; `DENIED` is
+`EAGAIN`. Owners and groups are sent as numeric strings; a string that
+is not a number reads as UID/GID 65534 (the client has no
+`user@domain` mapping; NFS-6's registry, section 5.10, is the
+server's). The client's `fattr4` decoder (`v4/attr.rs`) covers only
+what it asks for; NFS-6's `v4/attr` is the server's full table (a
+duplication the lead may fold). **Recovery**: `BADSESSION` or
+`DEADSESSION` makes a new session (the client ID kept); a
+`CREATE_SESSION` refused, `STALE_CLIENTID`, `EXPIRED` or
+`STALE_STATEID` makes a new client ID, then every open is reclaimed
+(`OPEN` `CLAIM_PREVIOUS`) and every range locked again (`LOCK` with
+`reclaim`), then `RECLAIM_COMPLETE`. One thread recovers; the others
+wait and send again with the stateids then in effect. Every open is
+closed at unmount, then (4.1) `DESTROY_SESSION` and
+`DESTROY_CLIENTID`.
+
+**CCSIDs.** The IFS converts every name and symbolic link (7.4) and
+tags the files with the data CCSID; the client converts only the export
+path (`path_bytes`: UTF-8 or a single-byte CCSID; a double-byte or
+mixed one `ENOTSUP`). `MOUNT` refuses a double-byte data CCSID with
+`CPDA1CA`.
+
+**Errors** (`status`):
+
+| Server | IFS |
+|---|---|
+| `NFS3ERR_STALE`, `BADHANDLE`; `NFS4ERR_STALE`, `BADHANDLE`, `FHEXPIRED` | `Stale` (`ESTALE`) |
+| `PERM`, `NOENT`, `NXIO`, `EXIST`, `XDEV`, `NOTDIR`, `ISDIR`, `FBIG`, `ROFS`, `MLINK`, `NAMETOOLONG`, `NOTEMPTY` | the `errno` of that name |
+| `NFS3ERR_ACCES`; `NFS4ERR_ACCESS`, `WRONGSEC`, `WRONG_CRED` | `EACCES` |
+| `NOSPC`, `DQUOT` | `ENOSPC` |
+| `INVAL`, `BAD_COOKIE`, `TOOSMALL`; v4 `BADCHAR`, `BADNAME`, `BADOWNER`, `BAD_RANGE`, `SYMLINK`, `WRONG_TYPE` | `EINVAL` |
+| `NFS3ERR_NOT_SYNC`; `NFS4ERR_NOT_SAME`, `DENIED`, `LOCKED` | `EAGAIN` |
+| `NOTSUPP`, `BADTYPE`, `NFS3ERR_REMOTE`; v4 `ATTRNOTSUPP`, `OP_ILLEGAL`, `MOVED` | `ENOTSUP` |
+| `NFS4ERR_SHARE_DENIED`, `FILE_OPEN` | `EBUSY` |
+| `NFS4ERR_DEADLOCK` | `EDEADLK` |
+| `NFS4ERR_LOCK_RANGE`, `LOCK_NOTSUPP`, `NO_GRACE` | `ENOLCK` |
+| `NFS4ERR_MINOR_VERS_MISMATCH`; RPC `PROG_UNAVAIL`, `PROG_MISMATCH` | `EPROTONOSUPPORT` |
+| `NFS4ERR_OPENMODE` | `EBADF` |
+| `JUKEBOX`, `DELAY`, `GRACE` past a soft mount's patience; no answer on a soft mount | `TimedOut` (`ETIMEDOUT`) |
+| RPC `PROC_UNAVAIL` | `ENOTSUP` |
+| RPC `AUTH_ERROR` | `EACCES` |
+| a refused or reset connection the policy got no further with | `ECONNREFUSED`, `ECONNRESET` |
+| a host with no address | `EHOSTUNREACH` |
+| anything else (`IO`, `SERVERFAULT`, a reply that does not decode) | `EIO` |
+
+**In the service** (`stgsvc/nfs/client.rs`). `register`, at the IFS's
+start, sets `Factory` with `ifsremote::set_factory`. A mount runs on
+its own thread, so what it needs of the system is a snapshot `refresh`
+takes on the service's thread when `MOUNT TYPE(*NFS)` runs: the TCP/IP
+host table and this system's host and domain name (names resolve
+through the host table, then the system's resolver; the name is NLM's
+caller name and the `AUTH_SYS` machine name), and whether `QNFSNSMD`
+and `QNFSNLMD` are ready (`locks`). `MOUNT` checks the options and
+`MFS` itself first (`check`): `CPFA1B0` (with the position), `CPFA1B1`,
+`CPFA1BB` (value, option), `CPFA1C6`, `CPDA1CA`; an `errno` from the
+mount is `MOUNT`'s usual `errno` message. The NFS options of
+`QZNFNFSO` change nothing in the client: its flavor is always
+`AUTH_SYS` and it maps no `user@domain` names.
+
+**Refused by the client**: `bg` and any option not in the table
+(`CPFA1B0`); `sec=` other than `sys`, `vers=2`, `proto=udp` with
+version 4 (`CPFA1BB`); `RPCSEC_GSS`; delegations (never asked,
+returned when given); pNFS (`EXCHGID4_FLAG_USE_NON_PNFS`); NFSv4.2;
+device nodes and sockets by `mknod` (`ENOTSUP`); blocking lock
+requests (the IFS's `F_SETLKW` polls, 7.4).
+
+Mounts last until the next IPL, as IBM's do. To have them back, put
+`MOUNT` in the startup program (`QSTRUP`).
 
 ## 8. Commands, APIs, SQL
 
@@ -1458,6 +1684,9 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | `SM_SIMU_CRASH`, `NLM_SM_NOTIFY` (NLM version 2) from another host; `FREE_ALL` for a host other than the caller | `PROC_UNAVAIL` |
 | NLM `GRANTED` and the `_RES` messages but `GRANTED_RES` while this host has no lock client | `GRANTED`: `NLM4_DENIED`; the others `PROC_UNAVAIL` |
 | NFSv3 `JUKEBOX` | never answered |
+| The client: `RPCSEC_GSS`, delegations, pNFS, NFSv4.2, `mknod` of devices and sockets, blocking lock requests | `AUTH_SYS` only; no callback path (no delegation offered; one given anyway is returned); `EXCHGID4_FLAG_USE_NON_PNFS`; minor versions 0 and 1 only; `ENOTSUP`; the IFS polls (section 7.7) |
+| Version 3 locks on a mount of a server whose binder cannot be reached | `ENOLCK` (IBM has no option naming the lock manager's port) |
+| NFSv4 `user@domain` owners seen by the client | UID/GID 65534 (numeric strings are sent and read) |
 
 ## 11. Tests
 
@@ -1525,6 +1754,30 @@ Nothing is accepted and ignored. What is not done is refused as below.
   compounds. Unit tests: the attribute bitmaps and codec, the stable
   record format, the registry and its cache, pseudo handles and trees,
   ranges and identifiers.
+
+- **Built** (`cargo test -p nfs`, the client): `tests/cli3_calls.rs`
+  every version 3 call and its errors against the server over loopback
+  TCP and UDP, root squashing and the server's authority, the mount's
+  refusals, `port=`/`mountport=` with no binder, `retry=`;
+  `cli3_retry.rs` `soft` timing out after one major timeout (measured),
+  `hard` through a stop and a restart with the not-responding and
+  responding hooks once each and the write verifier changed, `intr`
+  and `nointr`, a closed connection made again, eight threads at once;
+  `cli3_ifs.rs` the whole client through an `Ifs` (data, append,
+  truncate, names, links, 2,000 entries, two jobs on one file,
+  close-to-open, exclusive create, `ro`, `nosuid`, root squashing, a
+  stale handle, `QSYSOPR`'s events once each way, data sent again
+  after a restart); `cli3_locks.rs` locks between two mounts through
+  `nlmd`, the client's `SM_MON` with its tag, the server restarting,
+  the notice through a client-side `nsmd` and `nlmd` to the mounts,
+  reclaim in the grace period, `ENOLCK` without the local monitor;
+  `cli4_client.rs` version 4.1 and 4.0 against a scripted responder
+  (`tests/cli4_common`): the calls, opens, locks between two mounts,
+  `vers=4` falling back, `DELAY`, a lost session, slots under 12
+  threads, the lease, a restart with opens and locks reclaimed; the
+  same scenarios against NFS-6's server are `#[ignore]`d until it
+  exists. The fuzz entry `nfscli` (`client::fuzz`).
+  **Design** (below): v4 server, `nfstest`, QEMU.
 - `cargo test -p xdrgen -p nfs`: the compiler; every generated type's
   round trip; the RFCs' examples; the server over a `Vfs` in memory and
   the client against it over loopback (v3, 4.0, 4.1; UDP and TCP; locks;
