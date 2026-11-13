@@ -1,0 +1,24 @@
+                         Display Mounted FS Information                         
+                                                                                
+ Object . . . . . . . . . . . . :   /                                           
+                                                                                
+ File system type . . . . . . . :   "root" (/)                                  
+                                                                                
+ Block size . . . . . . . . . . :   4096                                        
+ Total blocks . . . . . . . . . :   346398720                                   
+ Blocks free  . . . . . . . . . :   341641776                                   
+ Object link maximum  . . . . . :   1000000                                     
+ Directory link maximum . . . . :   1000000                                     
+ Pathname component maximum . . :   255                                         
+ Path name maximum  . . . . . . :   No maximum                                  
+ Change owner restricted  . . . :   Yes                                         
+ No truncation  . . . . . . . . :   Yes                                         
+ Case Sensitivity . . . . . . . :   No                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ Already at bottom of area.                                                     

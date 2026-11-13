@@ -1,0 +1,147 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5761-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2007, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+/*** START HEADER FILE SPECIFICATIONS *****************************/
+/*                                                                */
+/* Header File Name: H/QZNFNFSO                                   */
+/*                                                                */
+/*                                                                */
+/* Description: The Perform Network File System (NFS)             */
+/*              Options API controls some of the default settings */
+/*              for the NFS client and server.                    */
+/*                                                                */
+/* Header Files Included: None                                    */
+/*                                                                */
+/* Macros List: None.                                             */
+/*                                                                */
+/* Structure List: Qznf_NFOP0100_T                                */
+/*                 Qznf_NFOP0200_T                                */
+/*                 Qznf_NFOP0300_T                                */
+/*                 Qznf_NFOP0101_T                                */
+/*                 Qznf_NFOP0201_T                                */
+/*                 Qznf_NFOP0301_T                                */
+/*                                                                */
+/* Function Prototype List: QZNFNFSO                              */
+/*                                                                */
+/* Change Activity:                                               */
+/*                                                                */
+/* CFD List:                                                      */
+/*                                                                */
+/* FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION    */
+/* ---- ------------ ----- ------ --------- ----------------------*/
+/* $A0= D9333410     V6R10 070117 ROCH:     New Include           */
+/*                                                                */
+/* End CFD List.                                                  */
+/*                                                                */
+/*  Additional notes about the Change Activity                    */
+/* End Change Activity.                                           */
+/*** END HEADER FILE SPECIFICATIONS *******************************/
+
+
+#ifndef _QZNFNFSO_H
+#define _QZNFNFSO_H
+
+#if (__OS400_TGTVRM__>=510)
+#pragma datamodel(P128)
+#endif
+
+ enum QZNFNFSO_OPERATION {
+     QZNFNFSO_RETRIEVE_SEC_FLAVORS = 1,
+     QZNFNFSO_SET_SEC_FLAVORS      = 2,
+     QZNFNFSO_RETRIEVE_NFS_DOMAIN  = 3,
+     QZNFNFSO_SET_NFS_DOMAIN       = 4,
+     QZNFNFSO_RETRIEVE_NFS_OPTIONS = 5,
+     QZNFNFSO_SET_NFS_OPTIONS      = 6
+ };
+
+
+ typedef _Packed struct Qznf_NFOP0100
+ {
+     unsigned int       Number_of_Security_Flavors;
+   /*unsigned int       Security_Flavor[];  */
+ }Qznf_NFOP0100_T;
+
+
+ typedef _Packed struct Qznf_NFOP0200
+ {
+     unsigned int       CCSID_of_Domain_Name;
+     unsigned int       Length_of_Domain_Name;
+   /*char               Domain_Name[];      */    /*variable length */
+ }Qznf_NFOP0200_T;
+
+
+ typedef _Packed struct Qznf_NFOP0300
+ {
+     unsigned int       Max_Server_Threads;
+     unsigned int       Client_Handle_Cache;
+     unsigned int       Utf8_Validation;
+ }Qznf_NFOP0300_T;
+
+
+ typedef _Packed struct Qznf_NFOP0101
+ {
+     unsigned int       Bytes_Returned;
+     unsigned int       Bytes_Available;
+     unsigned int       Number_of_Security_Flavors;
+  /* unsigned int       Security_Flavor[];  */
+ }Qznf_NFOP0101_T;
+
+
+ typedef _Packed struct Qznf_NFOP0201
+ {
+     unsigned int       Bytes_Returned;
+     unsigned int       Bytes_Available;
+     unsigned int       CCSID_of_Domain_Name;
+     unsigned int       Length_of_Domain_Name;
+     /*char             Domain_Name[];      */
+ }Qznf_NFOP0201_T;
+
+
+ typedef _Packed struct Qznf_NFOP0301
+ {
+     unsigned int       Bytes_Returned;
+     unsigned int       Bytes_Available;
+     unsigned int       Max_Server_Threads;
+     unsigned int       Client_Handle_Cache;
+     unsigned int       Utf8_Validation;
+ }Qznf_NFOP0301_T;
+
+ /******************************************************************/
+ /* Prototype for calling API QZNFNFSO                             */
+ /******************************************************************/
+  #ifdef __ILEC400__
+#pragma linkage (QZNFNFSO,OS,nowiden)
+  #else
+       extern "OS"
+  #endif
+ void QZNFNFSO  (unsigned int,   /* NFS Option                    */
+                  char *,         /* Input buffer                  */
+                  unsigned int,   /* Length of input buffer        */
+                  char *,         /* Output buffer                 */
+                  unsigned int,   /* Length of output buffer       */
+                  char *,         /* Format name                   */
+                  void *);        /* Error Code                    */
+
+#if (__OS400_TGTVRM__>=510)
+#pragma datamodel(pop)
+#endif
+
+
+#endif /* _QZNFNFSO_H */

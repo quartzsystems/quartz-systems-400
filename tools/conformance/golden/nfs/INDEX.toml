@@ -1,0 +1,528 @@
+[[golden]]
+name = "prompt-strnfssvr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-endnfssvr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-endnfssvr-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-endnfssvr-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-exportfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-exportfs-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-exportfs-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-chgnfsexp"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-chgnfsexp-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-chgnfsexp-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-mount"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-mount-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-mount-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-addmfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-addmfs-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-addmfs-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-unmount"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-unmount-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-unmount-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rmvmfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rmvmfs-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rmvmfs-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-dspmfsinf"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-dspmfsinf-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-dspmfsinf-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-statfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-statfs-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-statfs-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rlsifslck"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rlsifslck-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rlsifslck-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rpcbind"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rpcbind-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-rpcbind-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-endrpcbind"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-endrpcbind-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-endrpcbind-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-mount-typenfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-mount-typenfs-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-mount-typenfs-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-unmount-typenfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-unmount-typenfs-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-unmount-typenfs-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-serversvr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-serversvr-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-serversvr-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-serverrpc"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-serverrpc-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "prompt-strnfssvr-serverrpc-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "menu-cmdnfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "menu-cmdmfs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "menu-cmdrpc"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-root"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-root-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-root-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-qsyslib"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-qsyslib-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-qsyslib-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-qopensys"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-qopensys-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-qopensys-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-homeqstest"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-homeqstest-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+
+[[golden]]
+name = "dspmfsinf-homeqstest-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-13"
+script = "prompts-nfs"
+width = 80
+

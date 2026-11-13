@@ -1,0 +1,1 @@
+<QcdCLCmd DTDVersion="1.0"><Cmd CmdName="ENDRPCBIND" CmdLib="QSYS" CCSID="37" HlpPnlGrp="QHP0LCMD" HlpPnlGrpLib="__LIBL" HlpID="ENDRPCBIND" MaxPos="0" Prompt="End RPC Binder Daemon" MsgF="QCPFMSG" MsgFLib="__LIBL" ExecBatch="YES" ChgCmdExit="NO" RtvCmdExit="NO"></Cmd></QcdCLCmd>

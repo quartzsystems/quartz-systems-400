@@ -1,0 +1,24 @@
+                           End NFS Server (ENDNFSSVR)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Server daemon  . . . . . . . . .                 *ALL, *RPC, *BIO, *GSS...     
+ Timeout for end of daemon  . . .   30            1-3600 seconds                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Function key not allowed.                                                      

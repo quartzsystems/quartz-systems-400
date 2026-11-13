@@ -1,0 +1,24 @@
+ CMDRPC                           RPC Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Change NFS Export                                           CHGNFSEXP  
+      2. Convert RPC Source                                          CVTRPCSRC  
+      3. Display Mounted FS Information                              DSPMFSINF  
+      4. End NFS Server                                              ENDNFSSVR  
+      5. End RPC Binder Daemon                                       ENDRPCBIND 
+      6. Change NFS Export                                           EXPORTFS   
+      7. Start RPC Binder Daemon                                     RPCBIND    
+      8. Convert RPC Source                                          RPCGEN     
+      9. Display Mounted FS Information                              STATFS     
+     10. Start NFS Server                                            STRNFSSVR  
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

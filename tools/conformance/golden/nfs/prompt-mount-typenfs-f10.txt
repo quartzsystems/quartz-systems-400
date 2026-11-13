@@ -1,0 +1,24 @@
+                             Add Mounted FS (MOUNT)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Type of file system  . . . . . . > *NFS          *NFS, *UDFS                   
+ File system to mount . . . . . .                                               
+                                                                                
+ Directory to mount over  . . . .                                               
+                                                                                
+ Mount options  . . . . . . . . .   *DFT                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Function key not allowed.                                                      

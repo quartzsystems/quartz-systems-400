@@ -1,0 +1,24 @@
+                          Start NFS Server (STRNFSSVR)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Server daemon  . . . . . . . . . > *RPC          *ALL, *RPC, *BIO, *GSS...     
+ Retrieve RPC registration  . . .   *NO           *NO, *YES                     
+ Timeout for start of daemon  . .   30            1-3600 seconds                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                          Change NFS Export (CHGNFSEXP)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Host options:                                                                  
+   Host name  . . . . . . . . . .   *DFT                                        
+                                                                                
+                                                                                
+                                                                                
+   Data file CCSID  . . . . . . .                 1-65533, *BINARY, *ASCII...   
+   Path name CCSID  . . . . . . .                 1-65533, *ASCII, *JOBCCSID    
+   Force synchronous write  . . .                 *SYNC, *ASYNC                 
+                + for more values                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

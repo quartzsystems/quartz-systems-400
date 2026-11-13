@@ -1,0 +1,345 @@
+# NFS handoff: the NFS, mounted file system and RPC command prompts, the
+# CMDNFS, CMDMFS and CMDRPC menus and DSPMFSINF on the primary (V7R1M0).
+# Each command is prompted with F4; the prompt, F10 and a Page Down are
+# captured and the prompt is left with F12. Only DSPMFSINF runs (read-only).
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type strnfssvr
+key f4
+settle 1500
+snap prompt-strnfssvr
+key f10
+settle 1200
+snap prompt-strnfssvr-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-strnfssvr-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type endnfssvr
+key f4
+settle 1500
+snap prompt-endnfssvr
+key f10
+settle 1200
+snap prompt-endnfssvr-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-endnfssvr-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type exportfs
+key f4
+settle 1500
+snap prompt-exportfs
+key f10
+settle 1200
+snap prompt-exportfs-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-exportfs-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type chgnfsexp
+key f4
+settle 1500
+snap prompt-chgnfsexp
+key f10
+settle 1200
+snap prompt-chgnfsexp-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-chgnfsexp-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type mount
+key f4
+settle 1500
+snap prompt-mount
+key f10
+settle 1200
+snap prompt-mount-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-mount-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type addmfs
+key f4
+settle 1500
+snap prompt-addmfs
+key f10
+settle 1200
+snap prompt-addmfs-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-addmfs-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type unmount
+key f4
+settle 1500
+snap prompt-unmount
+key f10
+settle 1200
+snap prompt-unmount-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-unmount-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type rmvmfs
+key f4
+settle 1500
+snap prompt-rmvmfs
+key f10
+settle 1200
+snap prompt-rmvmfs-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-rmvmfs-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type dspmfsinf
+key f4
+settle 1500
+snap prompt-dspmfsinf
+key f10
+settle 1200
+snap prompt-dspmfsinf-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-dspmfsinf-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type statfs
+key f4
+settle 1500
+snap prompt-statfs
+key f10
+settle 1200
+snap prompt-statfs-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-statfs-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type rlsifslck
+key f4
+settle 1500
+snap prompt-rlsifslck
+key f10
+settle 1200
+snap prompt-rlsifslck-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-rlsifslck-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type rpcbind
+key f4
+settle 1500
+snap prompt-rpcbind
+key f10
+settle 1200
+snap prompt-rpcbind-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-rpcbind-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type endrpcbind
+key f4
+settle 1500
+snap prompt-endrpcbind
+key f10
+settle 1200
+snap prompt-endrpcbind-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-endrpcbind-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type mount type(*nfs)
+key f4
+settle 1500
+snap prompt-mount-typenfs
+key f10
+settle 1200
+snap prompt-mount-typenfs-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-mount-typenfs-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type unmount type(*nfs)
+key f4
+settle 1500
+snap prompt-unmount-typenfs
+key f10
+settle 1200
+snap prompt-unmount-typenfs-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-unmount-typenfs-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type strnfssvr server(*svr)
+key f4
+settle 1500
+snap prompt-strnfssvr-serversvr
+key f10
+settle 1200
+snap prompt-strnfssvr-serversvr-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-strnfssvr-serversvr-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type strnfssvr server(*rpc)
+key f4
+settle 1500
+snap prompt-strnfssvr-serverrpc
+key f10
+settle 1200
+snap prompt-strnfssvr-serverrpc-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-strnfssvr-serverrpc-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type go cmdnfs
+key enter
+settle 2000
+snap menu-cmdnfs
+key f12
+wait "Command Entry"
+key eraseinput
+type go cmdmfs
+key enter
+settle 2000
+snap menu-cmdmfs
+key f12
+wait "Command Entry"
+key eraseinput
+type go cmdrpc
+key enter
+settle 2000
+snap menu-cmdrpc
+key f12
+wait "Command Entry"
+key eraseinput
+type DSPMFSINF OBJ('/')
+key enter
+settle 2500
+snap dspmfsinf-root
+key pgdn
+settle 1200
+snap dspmfsinf-root-2
+key pgdn
+settle 1200
+snap dspmfsinf-root-3
+key f12
+wait "Command Entry"
+key eraseinput
+type DSPMFSINF OBJ('/QSYS.LIB')
+key enter
+settle 2500
+snap dspmfsinf-qsyslib
+key pgdn
+settle 1200
+snap dspmfsinf-qsyslib-2
+key pgdn
+settle 1200
+snap dspmfsinf-qsyslib-3
+key f12
+wait "Command Entry"
+key eraseinput
+type DSPMFSINF OBJ('/QOpenSys')
+key enter
+settle 2500
+snap dspmfsinf-qopensys
+key pgdn
+settle 1200
+snap dspmfsinf-qopensys-2
+key pgdn
+settle 1200
+snap dspmfsinf-qopensys-3
+key f12
+wait "Command Entry"
+key eraseinput
+type DSPMFSINF OBJ('/home/QSTEST')
+key enter
+settle 2500
+snap dspmfsinf-homeqstest
+key pgdn
+settle 1200
+snap dspmfsinf-homeqstest-2
+key pgdn
+settle 1200
+snap dspmfsinf-homeqstest-3
+key f12
+wait "Command Entry"
+key eraseinput
+type signoff
+key enter

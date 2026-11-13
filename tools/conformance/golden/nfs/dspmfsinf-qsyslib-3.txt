@@ -1,0 +1,24 @@
+                         Display Mounted FS Information                         
+                                                                                
+ Object . . . . . . . . . . . . :   /QSYS.LIB                                   
+                                                                                
+ File system type . . . . . . . :   /QSYS.LIB                                   
+                                                                                
+ Block size . . . . . . . . . . :   4096                                        
+ Total blocks . . . . . . . . . :   346398720                                   
+ Blocks free  . . . . . . . . . :   341641776                                   
+ Object link maximum  . . . . . :   1                                           
+ Directory link maximum . . . . :   360260                                      
+ Pathname component maximum . . :   17                                          
+ Path name maximum  . . . . . . :   55                                          
+ Change owner restricted  . . . :   No                                          
+ No truncation  . . . . . . . . :   Yes                                         
+ Case Sensitivity . . . . . . . :   No                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ Already at bottom of area.                                                     
