@@ -689,7 +689,7 @@ cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
 cargo run -p build -- kc          # the Knowledge Center (tools/kcbuild) into images/kc
 cargo run -p build -- release     # release build, KC and PTF baseline on the media, target/release/VRM/ with SHA256SUMS(.sig)
-cargo run -p build -- test        # the QEMU disk suite: 134 steps, about an hour on GitHub (83 hardware resources in a guest of its own)
+cargo run -p build -- test        # the QEMU disk suite: 148 steps, about an hour on GitHub (83 hardware resources in a guest of its own)
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
@@ -756,6 +756,8 @@ cargo test --manifest-path tools/nfstest/Cargo.toml   # the independent NFS clie
 cargo test -p sys-cpps --test nfs_prompts  # the NFS command prompts against the primary's screens
 cargo clippy -p slic -p qsjob --all-targets --target x86_64-unknown-linux-musl   # also runs on Windows with the musl target installed (lint only)
 cargo run -p conformance -- --only 51,53,172   # telnet sign-on and recovery, named display sessions (DEVNAME, QMAXSGNACN vary-off, VRYCFG)
+cargo run -p conformance -- --only 173,174,175,176,177,178,185   # NFS on the main guest: STRNFSSVR, nfstest v3/4.0/4.1 and bench (1 GiB) from the host, a Linux export (QS400_NFS_LINUX, else skipped), UNMOUNT *ALL and ENDNFSSVR, a v3 handle across a restart and an IPL
+cargo run -p conformance -- --only 179,180,181,182,183,184   # NFS between two guests on a private link: v3, v4 and /QSYS.LIB, locks both ways, crash and reclaim, soft and intr, 1 GiB copies (QS400_NFS_COPY_MIB)
 QS400_RELEASE=V1R2M0 QS400_OLD_ISO=<V1R1M0 dev ISO> cargo run -p conformance -- --media iso --install --only 10   # the slip install from V1R1M0 (docs/INSTALL.md §4 builds the old media)
 cargo test -p licpgm -p lpstore -p lpbuild -p osobjects   # products, payloads, APIs, keys; the store; build lp
 cargo test -p uim --test licpgm_panels    # GO LICPGM panels; QS400_UPDATE_GOLDEN=1 rewrites tests/golden/licpgm/

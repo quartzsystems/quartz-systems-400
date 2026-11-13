@@ -1980,7 +1980,7 @@ the attribute bitmaps and codecs, the stable record format, the
 registry and its cache, pseudo handles and trees, ranges and
 identifiers), `cargo test -p ifs` (remote mounts over a `RemoteFs` in
 memory, the daemons' identity, lock owners, handles) and the files
-below. Still to come: the QEMU steps (last item).
+below, and the QEMU steps (last item).
 
 - **The server, version 3, MOUNT, NLM, NSM** (`net/nfs/tests/srv3_*`):
   `srv3_procs.rs` every NFSv3 procedure and its errors through RPC
@@ -2137,14 +2137,17 @@ below. Still to come: the QEMU steps (last item).
   daemon jobs' tests add the same through a `QNFSNFSD` job. The
   service's `stgsvc::nfs::ids`: a mount's owners as numbers, then as
   `profile@domain` once `*RGY` runs.
-- QEMU (`build test`), steps 173 to 184 in
-  `tools/conformance/src/nfsstep/`. **Written, not yet run.** On the
-  main guest, after the NetServer steps:
+- QEMU (`build test`), steps 173 to 185 in
+  `tools/conformance/src/nfsstep/`. **Run and passing on 2026-11-13**
+  (`cargo run -p conformance -- --only
+  173,174,175,176,177,178,185,179,180,181,182,183,184`; 177 skips without
+  a Linux export). On the main guest, after the NetServer steps:
   - 173 `STRNFSSVR SERVER(*ALL)` (`CPCA1BB`, a `CPIA1BB` per type), the
     seven `QNFS*` jobs under `QSYSWRK`, `/etc/RPCBTAB` in whole 357-byte
-    records, `EXPORTFS OPTIONS('-I -O ''RW,ANON=4294770710''')
-    DIR('/nfstest')` (`CPCA1C4`) in `NFS_EXPORT_INFO` and in MOUNT's
-    `EXPORT` list, `DSPMFSINF OBJ('/')`; 111 and 2049 forwarded (TCP and
+    records (24, as the primary's), `EXPORTFS OPTIONS('-I -O
+    ''RW,ANON=4294770710''') DIR('/nfstest')` (`CPCA1C4`) in
+    `NFS_EXPORT_INFO` and in MOUNT's `EXPORT` list, `DSPMFSINF
+    OBJ('/')`, 111 and 2049 listening in `NETSTAT_INFO`; 111 and 2049 forwarded (TCP and
     UDP, one host port each) and the binder's other ports learnt with
     `nfstest probe` and forwarded at run time;
   - 174 `nfstest` version 3 from the host: `nlm-grace` with
@@ -2152,17 +2155,23 @@ below. Still to come: the QEMU steps (last item).
     start (else said, not run), every other version 3 scenario, then the
     lock manager's after its 90 s grace period; `nlm-blocked-granted` is
     left out (the server cannot call the host back through one-way
-    forwards); the README's `KNOWN` (`nlm-share`) is reported, not
-    failed;
+    forwards); the README's `KNOWN` (empty) is reported, not failed;
   - 175 `nfstest --vers 4.0` and `4.1` through the forwarded 2049;
-  - 176 `nfstest bench --mib 1024` (version 3; `QS400_NFS_BENCH_MIB`);
+  - 176 `nfstest bench --mib 1024`, version 3 and then 4.1 with the
+    forwarded 2049 alone (`QS400_NFS_BENCH_MIB`);
   - 177 the guest mounting a Linux export, versions 3 and 4, when
     `QS400_NFS_LINUX=host:/path` (as the guest reaches it; the export
     `insecure`) is set, skipped otherwise;
   - 178 a loopback mount, `UNMOUNT TYPE(*ALL) MNTOVRDIR(*ALL)`
     (`CPCA1B1`), `ENDNFSSVR SERVER(*ALL)` (`CPCA1BC`): no NFS row in
     `MOUNTED_FS_INFO`, no daemon job, nothing listening on 111 or 2049,
-    the binder silent from the host.
+    the binder silent from the host;
+  - 185 a version 3 handle the host keeps (`nfstest handle save`) names
+    its file again with no `MOUNT` and no `LOOKUP` (`handle use` on 2049
+    alone) after `ENDNFSSVR`/`STRNFSSVR` and after an IPL (the export
+    made again: `-I` lasts until the IPL); the IPL leaves no `CPFA1B5`
+    or `CPFA1CB` on `QSYSOPR`. The xfs file ID behind the handle
+    resolves on the guest's real volume.
 
   In a pair of guests of their own (A the suite's disk, B a copy), each
   with a second virtio NIC on a private link (`-netdev socket,udp=` over
@@ -2174,8 +2183,10 @@ below. Still to come: the QEMU steps (last item).
   the client's, both ways. A exports `/nfstest` (root squashed),
   `/nfsroot` (`ROOT=192.168.77.2`) and `/QSYS.LIB/NFSLIB.LIB`
   (`ROOT=`, `HOSTOPT` data CCSID 819 for B); B mounts by A's name.
-  - 179 version 3: B writes, reads, renames, lists and removes through
-    QSH; A sees `QNFSANON` (`/nfstest`) and `QSECOFR` (`/nfsroot`) own
+  - 179 version 3: a batch job of `QSECOFR` on B (UID 0 on the wire;
+    the console's job is `QSYS`'s, UID 101, which no export squashes)
+    writes, renames and removes through QSH, B's console reads and
+    lists; A sees `QNFSANON` (`/nfstest`) and `QSECOFR` (`/nfsroot`) own
     B's files; `MOUNTED_FS_INFO` and `DSPMFSINF` of the mount;
   - 180 the same over version 4; B reads member `HELLO` as ASCII and
     writes member `FROMB` in ASCII, A reads it as EBCDIC records;
@@ -2185,7 +2196,9 @@ below. Still to come: the QEMU steps (last item).
   - 182 with B's lock held, `ENDNFSSVR`/`STRNFSSVR SERVER(*ALL)` on A:
     a write B made during the outage lands, B's `QSYSOPR` has
     `CPDA1B9` twice, B's lock is reclaimed (A refused after the grace
-    period), B's descriptor writes after it; `dbgkill JOB(QNFSNFSD)`:
+    period), B's descriptor writes after it (the writer during the outage
+    is on `QSYSNOMAX`: `QBATCH` runs one job, the holder);
+    `dbgkill JOB(QNFSNFSD)`:
     `CPFA1B5` on A's `QSYSOPR`, `STRNFSSVR SERVER(*SVR)`, B reads;
   - 183 a `soft,timeo=5,retrans=1` read fails `ETIMEDOUT` within its
     1.5 s major timeout while `*SVR` is ended; `ENDJOB` of a job waiting
@@ -2197,7 +2210,9 @@ below. Still to come: the QEMU steps (last item).
   steps make on the guest (`nfsstep/prog.rs`, run in memory by its unit
   test). A failed step writes the guests' job logs, `QSYSOPR`, jobs,
   export and mount tables, binder file and the host's probe to
-  `nfs-<step>-<guest>.txt` in the suite's output directory; the
+  `nfs-<step>-<guest>.txt` and its whole serial log (the daemons' and
+  the service's `nfs` notes) to `nfs-<step>-<guest>.serial.txt` in the
+  suite's output directory; the
   `nfstest` runs are kept in `nfs-174-nfstest.txt` and
   `nfs-175-nfstest.txt`, the figures in `nfs-perf.txt`.
 
@@ -2273,11 +2288,8 @@ Each line says what would settle it.
 ## Acceptance
 
 Status on 2026-11-13. "Built" means built and proven by the tests
-named, run on the Windows host. "Built, not run" means the code and
-its tests are written and lint clean for the musl target but the
-tests are Linux-only and have not run: the build host's WSL disk was
-full for the second half of this handoff, so nothing ran under Linux
-or QEMU after the first wave. `NEEDS-CODY` items need a real client or
+named, run on the Windows host; "run" adds the Linux-only tests (in
+WSL) and the QEMU steps named. `NEEDS-CODY` items need a real client or
 an oracle change the rules forbid.
 
 | Item | Proof | Status |
@@ -2289,27 +2301,27 @@ an oracle change the rules forbid.
 | Commands: 13 definitions as the primary's XML, 51 prompt screens, menus `CMDNFS`/`CMDMFS`/`CMDRPC` | `cargo test -p sys-cpps --test nfs_prompts`, `-p menus` | built (rows 1 to 23; row 24 holds IBM's message text) |
 | Messages: 90 IDs with IBM's severities and variables, Quartz text; help at 100%; no new literals | `cargo test -p msgf -p helpaudit`, `cargo run -p textaudit` | built |
 | `/etc/exports`, `/etc/netgroup`, `EXPORTFS` flags, `MOUNT` options, host matching | `cargo test -p nfs --lib exports` | built; IBM's `HOSTOPT` file syntax `NEEDS-CODY` |
-| Export table, daemon registry, NFS options file, `EXPORTFS`/`CHGNFSEXP` | `cargo test -p stg --test nfs_link`; `cargo test -p slic stgsvc::nfs` | link built; service tests built, not run |
+| Export table, daemon registry, NFS options file, `EXPORTFS`/`CHGNFSEXP` | `cargo test -p stg --test nfs_link`; `cargo test -p slic stgsvc::nfs` (WSL); QEMU steps 173, 179 to 182 | built and run |
 | `DSPMFSINF`/`STATFS` display and listing | `cargo test -p uim --test nfs_panels` | built; an NFS mount's fields `NEEDS-CODY` |
 | `QZNFRTVE`, `QZNFNFSO` | `cargo test -p sysapi --test nfs` | built |
 | IFS: calls as another user, file IDs across restarts, sub-owner and waiting locks, share modes across jobs | `cargo test -p ifs --test server_calls --test handles`, `-p stg --test ifs_server` | built |
-| File IDs by xfs handle (`ifs/fhandle`) | `cargo test -p fhandle`; `ifs/ifs/tests/linux-xfs.sh` | fallback built; the xfs path needs root, not run |
+| File IDs by xfs handle (`ifs/fhandle`) | `cargo test -p fhandle`; QEMU step 185 (a v3 handle names its file on the guest's xfs after a daemon restart and after an IPL, with no `LOOKUP`); `ifs/ifs/tests/linux-xfs.sh` | built; run under QEMU; `linux-xfs.sh` needs root, not run |
 | Shipped profiles' UIDs, unique UID and GID, the upgrade | `cargo test -p sec --test usrprf` | built |
-| IFS remote mounts: cache, queue, request tokens, every operation, hard/soft/intr, write-behind, unmount | `cargo test -p ifs --test remote_mount --test remote_ops --test remote_fail --test remote_cache --test remote_data`, `-p stg --test ifs_remote`, `-p ifscmd` | built; the service's park and wake of remote waits (`turns.rs`) not run |
+| IFS remote mounts: cache, queue, request tokens, every operation, hard/soft/intr, write-behind, unmount | `cargo test -p ifs --test remote_mount --test remote_ops --test remote_fail --test remote_cache --test remote_data`, `-p stg --test ifs_remote`, `-p ifscmd`; QEMU steps 178 to 184 (`MOUNT`, QSH, `CPY` of 1 GiB, an outage, `soft`, `intr`) | built; the service's park and wake of remote waits run under QEMU (commands park too: `turns.rs`) |
 | NFSv3 server (22 procedures), MOUNT 1/3, NLM 1/3/4, NSM over the IFS; exports' security; handles; text conversion; `/QSYS.LIB` | `cargo test -p nfs` (`srv3_*`) | built |
 | NFSv4.0 and 4.1 server: compound, attributes, pseudo-file system, state, delegations, sessions and backchannel, grace and reclaim | `cargo test -p nfs` (`srv4_*`) | built |
 | Kept descriptors yield to share-denying opens (other clients at once; local jobs through a lease) | `--test srv3_fdshare --test srv3_kept` | built |
 | NFS client v3, 4.0, 4.1 against the servers on loopback and through an `Ifs`; restart and reclaim; v3 and v4 mounts of one export | `cargo test -p nfs` (`cli3_*`, `cli4_*`, `cli34_mixed`) | built |
-| `MOUNT TYPE(*NFS)` in the service: the factory, option checks, owners through the registry | `cargo test -p slic stgsvc::nfs::client stgsvc::nfs::ids` | built, not run |
-| The daemon jobs serve (binder, server with relay and v4, mount, NLM, NSM, BIOD, RGY), start and end, unexpected end, `RLSIFSLCK` orders, restart notices | `cargo test -p qsjob work::nfs` (17 tests) | built, not run |
+| `MOUNT TYPE(*NFS)` in the service: the factory, option checks, owners through the registry | `cargo test -p slic stgsvc::nfs::client stgsvc::nfs::ids` (WSL); QEMU steps 178 to 184 | built and run |
+| The daemon jobs serve (binder, server with relay and v4, mount, NLM, NSM, BIOD, RGY), start and end, unexpected end, `RLSIFSLCK` orders, restart notices | `cargo test -p qsjob work::nfs` (19 tests, WSL); QEMU steps 173 to 185 | built and run |
 | `tools/nfstest`: independent client, about 90 scenarios, `probe`, `bench` | `cargo test --manifest-path tools/nfstest/Cargo.toml` (v3, NLM, NSM, 4.0, 4.1 against the servers on loopback, no known failure) | built |
-| `QSYS2.NFS_EXPORT_INFO`, `QSYS2.MOUNTED_FS_INFO`; NFS ports in `NETSTAT_*` | `cargo test -p sql --test services` | built in memory; NETSTAT by the kernel's socket table, not run |
+| `QSYS2.NFS_EXPORT_INFO`, `QSYS2.MOUNTED_FS_INFO`; NFS ports in `NETSTAT_*` | `cargo test -p sql --test services`; QEMU steps 173 (111 and 2049 listening in `NETSTAT_INFO`), 178 (gone after `ENDNFSSVR`), 179, 180 | built and run |
 | Navigator Network > NFS | `cargo test -p navigator --test nfs`, the crawler | built; the live side not run |
 | QAP version 11 draft, `Nfs` service | `cargo test -p qap-proto --test version11`, `-p qapd --test nfs` | built, draft |
 | Formats frozen at V1R2M0: `nfs-options`, `nfs-nsm-monitor`, `nfs-v4-stable` | `cargo run -p fmtcheck` | built |
 | Fuzz targets `nfsrpc`, `nfsrpcb`, `nfsmount`, `nfsnlm`, `nfsnsm`, `nfs3`, `nfs4`, `nfsexports`, `nfscli` | `cargo run -p build -- fuzz --target NAME`; the same entry points over random input in `wire_fuzz`, `srv3_fuzz`, `srv4_fuzz` | registered; the instrumented runs not run |
-| QEMU: two guests exporting and mounting (v3, v4), locks across guests, crash and reclaim, `/QSYS.LIB` text conversion, `nfstest` from the host | `build test` steps 173 onward (section 11) | not run |
-| Performance: 1 GB read and written both ways under QEMU | section 11 | not run |
+| QEMU: two guests exporting and mounting (v3, v4), locks across guests, crash and reclaim, `/QSYS.LIB` text conversion, `nfstest` from the host, handles across a restart and an IPL | `build test` steps 173 to 185 (section 11) | run and passing (177 skipped: no Linux export on this host) |
+| Performance: 1 GB read and written both ways under QEMU | section 11 (steps 176, 184) | measured |
 | A slip install from V1R1M0 with the NFS objects | install step 10 | not run since NFS |
 | A Linux and a macOS client; QS/400 mounting a Linux `nfsd`; an export to the Dell host | section 12 | `NEEDS-CODY` |
 | IBM's daemon user and `WRKACTJOB` appearance, `/etc/exports` with `HOSTOPT`, the routing entries' classes, a disabled profile's UID | section 12 | `NEEDS-CODY` |
