@@ -133,14 +133,15 @@ pub fn at_ipl(system: &mut System, db: &mut PtfDb) -> Vec<String> {
             slot::at_ipl(&mut st, db, booted, &mut none, now_unix())
         }
     };
-    if let Some(e) = fw_err {
-        out.push(format!("boot order not changed: {e}"));
-    }
     let _ = store(system, &st);
+    let mut fw_err = fw_err;
     if let Some(fw) = part_fw
         && let Some((part, record)) = system.lic.as_mut()
         && let Err(e) = fw.commit(part, record)
     {
+        fw_err = Some(e);
+    }
+    if let Some(e) = fw_err {
         out.push(format!("boot order not changed: {e}"));
     }
     for ev in events {
