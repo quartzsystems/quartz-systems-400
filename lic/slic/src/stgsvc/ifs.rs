@@ -12,9 +12,9 @@
 //! mounted every request answers `ENOTSUP`. A job's descriptors, streams
 //! and locks are its connection's and go when it ends ([`release`]).
 //! `/QOPT` shows the optical volumes of the loaded image catalogs
-//! (`super::media`). Leases `QZLSFILE` jobs hold are the `Ifs`'s
-//! (`ifs::lease`): a request that has to wait for another job's break,
-//! and a `QZLSFILE` job's poll for break orders, are parked by the loop
+//! (`super::media`). Leases `QZLSFILE` and `QNFSNFSD` jobs hold are the
+//! `Ifs`'s (`ifs::lease`): a request that has to wait for another job's
+//! break, and a server job's poll for news, are parked by the loop
 //! (`super::turns`) and answered again once ready or out of time.
 
 use std::cell::{Cell, RefCell};
@@ -39,9 +39,6 @@ use crate::svc::ile::{self, Shared};
 
 /// Where `slic` mounts the IFS root's xfs.
 pub const ROOT: &str = "/run/qs400/ifs";
-
-/// The jobs that hold leases (`QZLSFILE`, `docs/NETSERVER.md` section 6).
-const LEASE_JOBS: &[&str] = &["QZLSFILE"];
 
 /// The file system, or why there is none.
 static IFS: OnceLock<Result<Ifs<LinuxBackend>, String>> = OnceLock::new();
@@ -102,6 +99,10 @@ impl StoreAccess for Lent {
 
     fn now(&self) -> u64 {
         now_unix()
+    }
+
+    fn env_cache(&self) -> Option<&qsyslib::env::EnvCache> {
+        Some(&super::ifscaller::CACHE)
     }
 }
 
@@ -375,7 +376,11 @@ pub fn parking<T>(allow: bool, f: impl FnOnce() -> T) -> (T, Option<Deferral>) {
 /// holds a lease, or a `QZLSFILE` job's poll for break orders.
 #[must_use]
 pub fn may_park(op: &IfsOp) -> bool {
-    matches!(op, IfsOp::LeaseOrders { .. }) || get().is_some_and(|i| !i.leases().is_empty())
+    match op {
+        IfsOp::LeaseOrders { .. } => true,
+        IfsOp::As { op, .. } => may_park(op),
+        _ => get().is_some_and(|i| !i.leases().is_empty()),
+    }
 }
 
 /// Whether some job holds a lease: a database open for change may then
@@ -401,29 +406,10 @@ pub fn leases() -> Option<&'static ifs::lease::Leases> {
     get().map(Ifs::leases)
 }
 
-/// A lease call from a job that is not a `QZLSFILE` job: `EPERM`, in the
-/// reply its operation has.
-fn refused(op: &IfsOp) -> Option<IfsReply> {
-    match op {
-        IfsOp::LeaseGrant { .. } => Some(IfsReply::Mask {
-            r: Err(Errno::EPERM),
-        }),
-        IfsOp::LeaseReport { .. } | IfsOp::WatchEnd { .. } | IfsOp::LeaseReset => {
-            Some(IfsReply::Unit {
-                r: Err(Errno::EPERM),
-            })
-        }
-        IfsOp::WatchAdd { .. } => Some(IfsReply::Handle {
-            r: Err(Errno::EPERM),
-        }),
-        IfsOp::LeaseOrders { .. } => Some(IfsReply::Orders {
-            r: Err(Errno::EPERM),
-        }),
-        _ => None,
-    }
-}
-
-/// Answer one `ifs` request for a job.
+/// Answer one `ifs` request for a job. Lease, poll and on-behalf calls
+/// are only for the jobs `super::ifscaller` names (`EPERM` otherwise, in
+/// the reply the operation has); an on-behalf call (`IfsOp::As`) runs
+/// with the principal of the profile it names, the job's owner kept.
 pub fn serve(
     system: &mut System,
     handle: u64,
@@ -431,18 +417,31 @@ pub fn serve(
     principal: &Principal,
     op: IfsOp,
 ) -> IfsReply {
-    if !LEASE_JOBS.contains(&system.jobs.get(number).map_or("", |j| j.name.as_str()))
-        && let Some(r) = refused(&op)
-    {
-        return r;
+    let job = system
+        .jobs
+        .get(number)
+        .map_or_else(String::new, |j| j.name.clone());
+    if let Err(e) = super::ifscaller::allowed(&job, &op) {
+        return stg::ifs::refuse(op, e);
     }
     let allow = PARKING.with(Cell::get);
     let ccsid = job_ccsid(system, number);
     let owner = owner_of(handle);
-    let (reply, d) = ifs::lease::defer::deferring(allow, || {
-        with_client(system, handle, owner, principal, ccsid, |c| {
+    let (reply, d) = ifs::lease::defer::deferring(allow, || match op {
+        IfsOp::As { who, op } => {
+            let me = with_lent(system, JobHandle(handle), || {
+                super::ifscaller::principal(&StoreEnv::new(&Lent), &who)
+            });
+            match me {
+                Ok(p) => with_client(system, handle, owner, &p, ccsid, |c| {
+                    stg::ifs::serve(c, *op)
+                }),
+                Err(e) => stg::ifs::refuse(*op, e),
+            }
+        }
+        op => with_client(system, handle, owner, principal, ccsid, |c| {
             stg::ifs::serve(c, op)
-        })
+        }),
     });
     DEFERRED.with(|c| c.set(d));
     reply

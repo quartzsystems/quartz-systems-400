@@ -28,6 +28,7 @@ pub(crate) mod fmt;
 pub(crate) mod hist;
 mod hostsvr;
 pub(crate) mod ifs;
+pub(crate) mod ifscaller;
 pub(crate) mod ifsvol;
 mod isql;
 mod joblog;
