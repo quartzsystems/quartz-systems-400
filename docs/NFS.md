@@ -2216,12 +2216,21 @@ below, and the QEMU steps (last item).
   `nfstest` runs are kept in `nfs-174-nfstest.txt` and
   `nfs-175-nfstest.txt`, the figures in `nfs-perf.txt`.
 
+  Measured on 2026-11-13 (1 GiB each way; QEMU with KVM in WSL 2, two
+  vCPUs and 1 GiB per guest, the host's loopback between the guests;
+  `nfs-perf.txt`, the same run as the PASS lines):
+
   | Measured (`nfs-perf.txt`) | Version 3 | Version 4 |
   |---|---|---|
-  | host to guest, `nfstest bench`, write | (to run) | not measured: `bench` is version 3 only |
-  | host to guest, `nfstest bench`, read | (to run) | not measured |
-  | guest A to guest B, `CPY` through the mount | (to run) | (to run) |
-  | guest B to guest A, `CPY` through the mount | (to run) | (to run) |
+  | host to guest, `nfstest bench`, write (to the `COMMIT`) | 12.4 MiB/s | 7.4 MiB/s (4.1) |
+  | host to guest, `nfstest bench`, read | 69.0 MiB/s | 66.6 MiB/s (4.1) |
+  | guest A to guest B, `CPY` through B's mount (B reads) | 99.8 MiB/s | 63.7 MiB/s |
+  | guest B to guest A, `CPY` through B's mount (B writes) | 6.4 MiB/s | 6.0 MiB/s |
+
+  Writes are the slow direction (64 MiB from B to A went at 16 MiB/s,
+  1 GiB at 6); why is not yet looked into. Earlier runs the same
+  day: `bench` 12.1 to 19.6 MiB/s writing and 66.7 to 70.4 reading;
+  `CPY` 64.6 to 99.8 reading and 5.2 to 6.4 writing.
 
 ### 11.1 Proving a v3 mount under QEMU
 
