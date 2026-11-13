@@ -71,7 +71,10 @@ pub(crate) fn errors(out: &str) -> Vec<&str> {
         .collect()
 }
 
-/// A command whose output must hold one of `ids`.
+/// A command that must send one of `ids`: in its output (escape and
+/// diagnostic messages show their identifier there) or, for a
+/// completion message the console shows by its text alone, in the job
+/// log after the request.
 pub(crate) fn want(
     s: &mut Session,
     line: &str,
@@ -80,9 +83,16 @@ pub(crate) fn want(
 ) -> Result<String, String> {
     let out = s.command(line, limit)?;
     if ids.iter().any(|i| out.contains(i)) {
-        Ok(out)
+        return Ok(out);
+    }
+    let cmd = line.split_whitespace().next().unwrap_or(line);
+    let log = log_after(s, cmd)?;
+    if ids.iter().any(|i| log.contains(i)) {
+        Ok(format!("{out}\n{log}"))
     } else {
-        Err(format!("{line}: none of {ids:?} in:\n{out}"))
+        Err(format!(
+            "{line}: none of {ids:?} in:\n{out}\n(the job log after it:)\n{log}"
+        ))
     }
 }
 
