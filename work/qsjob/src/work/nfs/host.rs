@@ -247,7 +247,10 @@ impl Host for JobHost {
     }
 
     fn locator(&self) -> Arc<dyn Locator> {
-        Arc::new(BinderLocator::default())
+        Arc::new(SystemLocator {
+            names: self.names(),
+            binders: Arc::new(BinderLocator::default()),
+        })
     }
 
     fn host_name(&self) -> String {
@@ -262,6 +265,39 @@ impl Host for JobHost {
 
     fn system_name(&self) -> String {
         self.sysname()
+    }
+}
+
+/// Finds a program on a host named as the system names hosts: a name
+/// through the host table and the name servers of `CFGTCP` (as the
+/// daemon started), then the binder at the address. The C library's
+/// resolver knows neither (`SM_NOTIFY` to a client never left).
+pub struct SystemLocator {
+    /// The system's names.
+    pub names: Box<dyn Resolver + Send + Sync>,
+    /// A program at an address.
+    pub binders: Arc<dyn Locator>,
+}
+
+impl Locator for SystemLocator {
+    fn find(
+        &self,
+        host: &nfs::server::locate::Host,
+        prog: u32,
+        vers: u32,
+        proto: nfs::rpc::Proto,
+    ) -> Option<SocketAddr> {
+        use nfs::server::locate::Host as H;
+        let H::Name(n) = host else {
+            return self.binders.find(host, prog, vers, proto);
+        };
+        let addrs = match n.parse::<IpAddr>() {
+            Ok(ip) => vec![ip],
+            Err(_) => self.names.addresses(n),
+        };
+        addrs
+            .into_iter()
+            .find_map(|ip| self.binders.find(&H::Addr(ip), prog, vers, proto))
     }
 }
 
@@ -286,6 +322,44 @@ impl JobHost {
 
 #[cfg(test)]
 mod tests {
+    use std::net::{IpAddr, SocketAddr};
+    use std::sync::Arc;
+
+    use nfs::rpc::Proto;
+    use nfs::server::locate::{FixedLocator, Host, Locator};
+
+    /// A host named in the host table (`ADDTCPHTE`) is found: the status
+    /// monitor's notices and the lock manager's callbacks reach it.
+    #[test]
+    fn names_from_the_host_table_reach_the_binder() {
+        let b: IpAddr = "192.168.77.2".parse().unwrap();
+        let cfg = tcpcfg::resolver::HostConfig {
+            hosts: vec![(b, vec!["GUESTB.NFS.TEST".into(), "GUESTB".into()])],
+            ..tcpcfg::resolver::HostConfig::default()
+        };
+        let at = SocketAddr::new(b, 4045);
+        let binders = Arc::new(FixedLocator::new());
+        binders.put(Host::Addr(b), 100_024, 1, at);
+        let l = super::SystemLocator {
+            names: Box::new(super::HostNames::new(cfg)),
+            binders,
+        };
+        let name = |n: &str| Host::Name(n.into());
+        assert_eq!(
+            l.find(&name("guestb.nfs.test"), 100_024, 1, Proto::Udp),
+            Some(at)
+        );
+        assert_eq!(
+            l.find(&name("192.168.77.2"), 100_024, 1, Proto::Udp),
+            Some(at)
+        );
+        assert_eq!(l.find(&Host::Addr(b), 100_024, 1, Proto::Udp), Some(at));
+        assert_eq!(
+            l.find(&name("nosuch.nfs.test"), 100_024, 1, Proto::Udp),
+            None
+        );
+    }
+
     #[test]
     fn job_numbers_from_qualified_names() {
         assert_eq!(super::number_of("000123/QSECOFR/QNFSNFSD"), Some(123));
