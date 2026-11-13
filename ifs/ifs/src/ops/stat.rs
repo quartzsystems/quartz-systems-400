@@ -151,6 +151,19 @@ pub(crate) fn stat_of(node: &Node, m: &Meta, ids: &dyn IdMap) -> Stat {
             s.size = entry.size;
             s.change = entry.change;
         }
+        Node::Remote { attr, .. } => {
+            s.mode = node.ntype().mode_bits() | (attr.mode & 0o7777);
+            s.uid = attr.uid;
+            s.gid = attr.gid;
+            s.nlink = attr.nlink;
+            s.size = attr.size;
+            s.atime = attr.atime;
+            s.mtime = attr.mtime;
+            s.ctime = attr.ctime;
+            s.allocsize = attr.used;
+            s.rdev = attr.rdev;
+            s.change = attr.change;
+        }
         // The devices and the virtual directories never change.
         _ => s.change = 1,
     }
@@ -188,6 +201,9 @@ impl<B: Backend> Ifs<B> {
                 .ok_or(Errno::EBADF)?
                 .open;
             let o = rest.opens.get(&id).ok_or(Errno::EBADF)?;
+            if let Some(s) = Self::remote_fstat(cx, o)? {
+                return Ok(s);
+            }
             let (bst, change) = match &o.kind {
                 OpenKind::File(file) => (Some(file.stat()?), crate::meta::change::of_file(file)),
                 _ => (None, 0),
@@ -243,6 +259,9 @@ impl<B: Backend> Ifs<B> {
         if amode & !(f::R_OK | f::W_OK | f::X_OK) != 0 {
             return Err(Errno::EINVAL);
         }
+        if self.remote_access(cx, p, amode)?.is_some() {
+            return Ok(());
+        }
         let (r, m) = self.resolve_meta(cx, p, true)?;
         let have = crate::auth::have(cx.principal, &m, cx.env);
         let mut need = sec::auth::bits::Auth::EXCLUDE;
@@ -265,6 +284,9 @@ impl<B: Backend> Ifs<B> {
 
     /// `statvfs()`.
     pub fn statvfs(&self, cx: &Ctx<'_>, p: &str) -> Result<StatVfs> {
+        if let Some(v) = self.remote_statvfs(cx, p)? {
+            return Ok(v);
+        }
         let (r, _) = self.resolve_meta(cx, p, true)?;
         let fs: FsId = r.node.fs();
         let (name, cs, ro, backed) = {
@@ -304,6 +326,9 @@ impl<B: Backend> Ifs<B> {
 
     /// `pathconf()`: `-1` (as `None`) where there is no limit.
     pub fn pathconf(&self, cx: &Ctx<'_>, p: &str, name: i32) -> Result<Option<i64>> {
+        if let Some(v) = self.remote_pathconf(cx, p, name)? {
+            return Ok(v);
+        }
         let (r, _) = self.resolve_meta(cx, p, true)?;
         let qsys = matches!(r.node, Node::Qsys(..));
         Ok(match name {

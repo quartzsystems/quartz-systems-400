@@ -85,6 +85,15 @@ pub enum Node {
         /// The mount.
         fs: FsId,
     },
+    /// An object of a remote mount.
+    Remote {
+        /// The mount.
+        fs: FsId,
+        /// Its handle.
+        handle: crate::remote::RHandle,
+        /// Its attributes as the cache had them.
+        attr: crate::remote::RAttr,
+    },
 }
 
 /// What a node is, for `st_mode` and the checks.
@@ -189,6 +198,18 @@ impl Node {
                     NodeType::File
                 }
             }
+            Self::Remote { attr, .. } => {
+                use crate::remote::RKind;
+                match attr.kind {
+                    RKind::File => NodeType::File,
+                    RKind::Dir => NodeType::Dir,
+                    RKind::Symlink => NodeType::Symlink,
+                    RKind::Fifo => NodeType::Fifo,
+                    RKind::Socket => NodeType::Socket,
+                    RKind::Chr => NodeType::Chr,
+                    RKind::Blk => NodeType::Blk,
+                }
+            }
         }
     }
 
@@ -205,7 +226,8 @@ impl Node {
             Self::Back { fs, .. }
             | Self::DevDir { fs }
             | Self::Dev { fs, .. }
-            | Self::Unsup { fs } => *fs,
+            | Self::Unsup { fs }
+            | Self::Remote { fs, .. } => *fs,
             Self::AspDir { .. } | Self::UdfsFile { .. } => ids::DEV,
             Self::Qsys(..) => ids::QSYS,
             Self::OptRoot | Self::Opt { .. } => ids::QOPT,
@@ -222,6 +244,7 @@ impl Node {
             Self::Dev { dev, .. } => dev.ino(),
             Self::Qsys(n, _) => qsys_ino(n),
             Self::Opt { vol, path, .. } => hash_ino(&format!("{vol}/{}", path.join("/"))),
+            Self::Remote { attr, .. } => attr.fileid,
         }
     }
 
@@ -386,6 +409,46 @@ impl<B: Backend> Sys<'_, B> {
                     Err(Errno::ENOTSUP)
                 }
             }
+            FsKind::Remote(r) => {
+                let rm = &r.0;
+                let cred = crate::remote::request::cred();
+                let mut h = rm.root().clone();
+                for (i, c) in rest.iter().enumerate() {
+                    let name = rm.encode(c)?;
+                    let more = rest[i + 1..]
+                        .iter()
+                        .map(|x| rm.encode(x))
+                        .collect::<Result<Vec<_>>>()?;
+                    match rm.settle(rm.child(&h, &name, &more, &cred))? {
+                        Some((ch, _)) => h = ch,
+                        None => return Err(Errno::ENOENT),
+                    }
+                }
+                let attr = rm.settle(rm.attr(&h, &cred))?;
+                Ok(Node::Remote {
+                    fs: m.id,
+                    handle: h,
+                    attr,
+                })
+            }
+        }
+    }
+
+    /// The remote mount `fs`.
+    pub(crate) fn remote(&self, fs: FsId) -> Result<std::sync::Arc<crate::remote::RemoteMount>> {
+        self.mounts.remote(fs).cloned().ok_or(Errno::ESTALE)
+    }
+
+    /// A symbolic link's text: the backend's or the server's.
+    pub(crate) fn link_text(&self, node: &Node) -> Result<String> {
+        match node {
+            Node::Back { rel, .. } => self.b.readlink(rel),
+            Node::Remote { fs, handle, .. } => {
+                let rm = self.remote(*fs)?;
+                let t = rm.settle(rm.readlink(handle, &crate::remote::request::cred()))?;
+                Ok(rm.decode(&t))
+            }
+            _ => Err(Errno::EINVAL),
         }
     }
 
@@ -448,6 +511,18 @@ impl<B: Backend> Sys<'_, B> {
                 };
                 meta::read(self.b, &rel, st, ids)
             }
+            Node::Remote { fs, attr, .. } => {
+                let ids: &dyn meta::IdMap = match cx {
+                    Some(c) => c.env,
+                    None => &NoIds,
+                };
+                let mut m = meta::fallback(&crate::remote::bstat_of(attr), ids);
+                let data = self.mounts.remote(*fs).map_or(65535, |r| r.data_ccsid());
+                m.ccsid = data;
+                m.codepage = ccsid::conv::codepage_of(data);
+                m.change = attr.change;
+                stored(m)
+            }
             Node::Dev { .. } => stored(virtual_meta("QSYS", RW)),
             // A writable virtual volume: anyone may change it.
             Node::Opt { vol, .. } if self.opt.writable(vol) => {
@@ -503,6 +578,23 @@ impl<B: Backend> Sys<'_, B> {
         op: crate::auth::need::Op,
     ) -> Result<Meta> {
         let (m, _) = self.meta(node, cx)?;
+        if let Node::Remote { fs, handle, .. } = node {
+            // The server decides; the client asks it, as POSIX clients do.
+            use crate::remote::access as a;
+            let bit = match op {
+                crate::auth::need::Op::Search => a::LOOKUP,
+                crate::auth::need::Op::Readdir => a::READ,
+                _ => return Ok(m),
+            };
+            if cx.is_some() {
+                let rm = self.remote(*fs)?;
+                let have = rm.settle(rm.access(handle, &crate::remote::request::cred()))?;
+                if have & bit == 0 {
+                    return Err(Errno::EACCES);
+                }
+            }
+            return Ok(m);
+        }
         if let Some(c) = cx {
             c.require(&m, node, path, op)?;
         }
@@ -518,6 +610,9 @@ impl<B: Backend> Sys<'_, B> {
         follow: bool,
         cx: Option<&Ctx<'_>>,
     ) -> Result<Res> {
+        if let Some(c) = cx {
+            crate::remote::request::set_cred(crate::remote::cred_of(c), c.owner);
+        }
         let parsed = path::parse(p)?;
         let start = if parsed.absolute {
             Vec::new()
@@ -539,6 +634,9 @@ impl<B: Backend> Sys<'_, B> {
         p: &str,
         cx: Option<&Ctx<'_>>,
     ) -> Result<(Res, String)> {
+        if let Some(c) = cx {
+            crate::remote::request::set_cred(crate::remote::cred_of(c), c.owner);
+        }
         let mut parsed = path::parse(p)?;
         let Some(Comp::Name(last)) = parsed.comps.pop() else {
             // `/`, `..`, `.`: nothing to name.
@@ -563,6 +661,34 @@ impl<B: Backend> Sys<'_, B> {
     /// Look `name` up in the directory `dir` (no checks): a mount point
     /// first, then the file system.
     pub fn child(&mut self, dir: &Res, name: &str) -> Result<Res> {
+        self.child_more(dir, name, &[])
+    }
+
+    /// [`Self::child`], told the names a path walk will look up after
+    /// it (a remote mount fetches them in one go).
+    fn child_more(&mut self, dir: &Res, name: &str, more: &[String]) -> Result<Res> {
+        if let Node::Remote { fs, handle, .. } = &dir.node {
+            let rm = self.remote(*fs)?;
+            let n = rm.encode(name)?;
+            let more = more
+                .iter()
+                .map(|x| rm.encode(x))
+                .collect::<Result<Vec<_>>>()?;
+            let cred = crate::remote::request::cred();
+            let Some((h, attr)) = rm.settle(rm.child(handle, &n, &more, &cred))? else {
+                return Err(Errno::ENOENT);
+            };
+            let mut comps = dir.comps.clone();
+            comps.push(name.to_string());
+            return Ok(Res {
+                comps,
+                node: Node::Remote {
+                    fs: *fs,
+                    handle: h,
+                    attr,
+                },
+            });
+        }
         let m = self.mounts.mount_of(&dir.comps).clone();
         if let Some(sub) = self.mounts.child(&dir.comps, name, !m.case_sensitive) {
             let comps = sub.at.clone();
@@ -633,15 +759,24 @@ impl<B: Backend> Sys<'_, B> {
                         return Err(Errno::ENOTDIR);
                     }
                     self.check(&cur.node, &cur.path(), cx, crate::auth::need::Op::Search)?;
-                    let next = self.child(&cur, &name)?;
+                    let more: Vec<String> = if matches!(cur.node, Node::Remote { .. }) {
+                        todo.iter()
+                            .map_while(|c| match c {
+                                Comp::Name(n) => Some(n.clone()),
+                                Comp::Parent => None,
+                            })
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
+                    let next = self.child_more(&cur, &name, &more)?;
                     let last = todo.is_empty();
                     if next.node.ntype() == NodeType::Symlink && (!last || follow) {
                         links += 1;
                         if links > SYMLOOP_MAX {
                             return Err(Errno::ELOOP);
                         }
-                        let rel = next.node.rel().ok_or(Errno::EINVAL)?;
-                        let target = self.b.readlink(rel)?;
+                        let target = self.link_text(&next.node)?;
                         let parsed = path::parse(&target)?;
                         if parsed.absolute {
                             cur.comps.clear();

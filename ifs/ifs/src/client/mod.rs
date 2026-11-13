@@ -258,6 +258,40 @@ pub trait IfsClient {
     /// Drop every lock and queued request of sub-owner `sub`: how many
     /// locks went.
     fn lock_release_sub(&self, sub: u64) -> Result<u32>;
+    /// `MOUNT TYPE(kind)` of a remote file system `mfs` (`host:/path`)
+    /// over `over`, the `OPTIONS` string as given: the mount's id. The
+    /// request waits in the service while the mount is made.
+    fn mount_remote(
+        &self,
+        kind: &str,
+        mfs: &str,
+        over: &str,
+        options: &str,
+        ccsid: crate::remote::MountCcsid,
+    ) -> Result<u32> {
+        let _ = (kind, mfs, over, options, ccsid);
+        Err(crate::Errno::ENOTSUP)
+    }
+    /// `UNMOUNT TYPE(kind) MNTOVRDIR(over)` (`*NFS`, `*UDFS`, `*ALL`;
+    /// `over` may be `*ALL`): how many were unmounted.
+    fn unmount_kind(&self, kind: &str, over: &str) -> Result<u32> {
+        let _ = (kind, over);
+        Err(crate::Errno::ENOTSUP)
+    }
+    /// Every mounted file system.
+    fn mounts(&self) -> Result<Vec<crate::remote::MountInfo>> {
+        Err(crate::Errno::ENOTSUP)
+    }
+    /// A block I/O helper's next work, none when there is none
+    /// (`crate::remote::helper`).
+    fn remote_take(&self) -> Result<Option<crate::remote::HelperWork>> {
+        Err(crate::Errno::ENOTSUP)
+    }
+    /// A block I/O helper's answer to work `id` of mount `fs`.
+    fn remote_post(&self, fs: u32, id: u64, r: &crate::remote::HelperResult) -> Result<()> {
+        let _ = (fs, id, r);
+        Err(crate::Errno::ENOTSUP)
+    }
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -592,6 +626,29 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
     fn lock_release_sub(&self, sub: u64) -> Result<u32> {
         self.ifs.lock_release_sub(self.cx, sub)
     }
+    fn mount_remote(
+        &self,
+        kind: &str,
+        mfs: &str,
+        over: &str,
+        options: &str,
+        ccsid: crate::remote::MountCcsid,
+    ) -> Result<u32> {
+        self.ifs
+            .mount_remote(self.cx, kind, mfs, over, options, ccsid)
+    }
+    fn unmount_kind(&self, kind: &str, over: &str) -> Result<u32> {
+        self.ifs.unmount_kind(self.cx, kind, over)
+    }
+    fn mounts(&self) -> Result<Vec<crate::remote::MountInfo>> {
+        Ok(self.ifs.mount_infos())
+    }
+    fn remote_take(&self) -> Result<Option<crate::remote::HelperWork>> {
+        self.ifs.remote_take(self.cx)
+    }
+    fn remote_post(&self, fs: u32, id: u64, r: &crate::remote::HelperResult) -> Result<()> {
+        self.ifs.remote_post(self.cx, fs, id, r)
+    }
 }
 
 /// [`Direct`] as another user: the caller's owner and environment with
@@ -662,15 +719,22 @@ impl<B: Backend> LocalIfs<B> {
     }
 
     /// Run `f` as [`Self::with`] does, waiting out other owners' lease
-    /// breaks it defers on and running it again ([`crate::lease::defer`]).
+    /// breaks and remote mounts' work it defers on and running it again
+    /// as the same request ([`crate::lease::defer`],
+    /// [`crate::remote::request`]).
     pub fn waiting<T>(&self, f: impl Fn(&dyn IfsClient) -> T) -> T {
         let mut allow = true;
+        let mut token = None;
         loop {
+            if let Some(t) = token {
+                crate::remote::request::rerun(t);
+            }
             let (r, d) = crate::lease::defer::deferring(allow, || self.with(&f));
             let Some(d) = d else {
                 return r;
             };
-            allow = self.ifs.leases().wait(&d);
+            token = crate::remote::request::last();
+            allow = self.ifs.wait_deferral(&d);
         }
     }
 
@@ -774,6 +838,11 @@ macro_rules! every_method {
         fn lock_wait(fd: i32, sub: u64, kind: RangeKind, whence: i32, start: i64, len: i64) -> Result<Option<u64>>;
         fn lock_cancel(token: u64) -> Result<bool>;
         fn lock_release_sub(sub: u64) -> Result<u32>;
+        fn mount_remote(kind: &str, mfs: &str, over: &str, options: &str, ccsid: crate::remote::MountCcsid) -> Result<u32>;
+        fn unmount_kind(kind: &str, over: &str) -> Result<u32>;
+        fn mounts() -> Result<Vec<crate::remote::MountInfo>>;
+        fn remote_take() -> Result<Option<crate::remote::HelperWork>>;
+        fn remote_post(fs: u32, id: u64, r: &crate::remote::HelperResult) -> Result<()>;
     } };
 }
 

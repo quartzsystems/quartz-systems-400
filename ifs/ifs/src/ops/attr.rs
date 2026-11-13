@@ -170,7 +170,7 @@ fn all_attrs(node: &Node, m: &Meta, st: &super::Stat, have: u32) -> Vec<Attr> {
         Attr::ModifyTime(st.mtime),
         Attr::StgFree(false),
         Attr::CheckedOut(m.checkout.clone()),
-        Attr::LocalRemote(true),
+        Attr::LocalRemote(!matches!(node, Node::Remote { .. })),
         Attr::Auth {
             owner: m.owner.clone(),
             group: m.group.clone(),
@@ -339,6 +339,12 @@ impl<B: Backend> Ifs<B> {
 
     /// `Qp0lSetAttr` for one attribute.
     pub fn set_attr(&self, cx: &Ctx<'_>, p: &str, a: &Attr, follow: bool) -> Result<()> {
+        match a {
+            Attr::Suid(v) if self.remote_setid(cx, p, follow, 0o4000, *v)? => return Ok(()),
+            Attr::Sgid(v) if self.remote_setid(cx, p, follow, 0o2000, *v)? => return Ok(()),
+            _ if self.remote_at(cx, p, follow)?.is_some() => return Err(Errno::ENOTSUP),
+            _ => {}
+        }
         let op = match a {
             Attr::Audit(_) | Attr::Crtobjaud(_) => Op::SetAudit,
             Attr::PcReadOnly(_)
@@ -400,6 +406,9 @@ impl<B: Backend> Ifs<B> {
     /// `chmod()`: the owner, group and `*PUBLIC` data authorities from
     /// the mode bits.
     pub fn chmod(&self, cx: &Ctx<'_>, p: &str, mode: u32) -> Result<()> {
+        if self.remote_chmod(cx, p, mode)? {
+            return Ok(());
+        }
         let m = self.update(cx, p, true, Op::Chmod, |m| {
             crate::auth::data::apply_mode(m, mode);
             Ok(())
@@ -419,6 +428,9 @@ impl<B: Backend> Ifs<B> {
     /// `utime()`: `None` sets both times to now (owner or `*W`); given
     /// times need the owner or `*ALLOBJ`.
     pub fn utime(&self, cx: &Ctx<'_>, p: &str, times: Option<(Nanos, Nanos)>) -> Result<()> {
+        if self.remote_utime(cx, p, times)? {
+            return Ok(());
+        }
         let op = if times.is_some() {
             Op::UtimeSet
         } else {
@@ -447,6 +459,9 @@ impl<B: Backend> Ifs<B> {
 
     /// `CHKOUT`: needs `*W`; checked out by someone else is `EBUSY`.
     pub fn check_out(&self, cx: &Ctx<'_>, p: &str) -> Result<()> {
+        if self.remote_at(cx, p, true)?.is_some() {
+            return Err(Errno::ENOTSUP);
+        }
         let user = cx.principal.user.clone();
         self.update(cx, p, true, Op::CheckOut, move |m| {
             match &m.checkout {
@@ -462,6 +477,9 @@ impl<B: Backend> Ifs<B> {
 
     /// `CHKIN`: by the user who checked it out, the owner or `*ALLOBJ`.
     pub fn check_in(&self, cx: &Ctx<'_>, p: &str) -> Result<()> {
+        if self.remote_at(cx, p, true)?.is_some() {
+            return Err(Errno::ENOTSUP);
+        }
         let mut st = self.lock();
         let cwd = Self::cwd_of(&mut st, cx.owner);
         let (mut sys, _) = self.split(&mut st);
@@ -481,6 +499,9 @@ impl<B: Backend> Ifs<B> {
 
     /// `STRJRN` on a stream file or directory: stored only.
     pub fn start_journal(&self, cx: &Ctx<'_>, p: &str, j: Journal) -> Result<()> {
+        if self.remote_at(cx, p, true)?.is_some() {
+            return Err(Errno::ENOTSUP);
+        }
         self.update(cx, p, true, Op::Journal, move |m| {
             if m.journal.is_some() {
                 return Err(Errno::EJOURNALED);
@@ -493,6 +514,9 @@ impl<B: Backend> Ifs<B> {
 
     /// `ENDJRN`.
     pub fn end_journal(&self, cx: &Ctx<'_>, p: &str) -> Result<()> {
+        if self.remote_at(cx, p, true)?.is_some() {
+            return Err(Errno::ENOTSUP);
+        }
         self.update(cx, p, true, Op::Journal, |m| {
             if m.journal.take().is_none() {
                 return Err(Errno::EJRNINACTIVE);

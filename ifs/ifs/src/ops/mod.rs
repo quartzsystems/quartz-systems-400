@@ -24,6 +24,7 @@ mod locks;
 mod names;
 mod open;
 mod release;
+mod remote;
 mod stat;
 mod udfs;
 mod walk;
@@ -120,7 +121,8 @@ impl Ctx<'_> {
     }
 
     fn need(&self, m: &Meta, node: &Node, path: &str, need: ObjNeed, op: Op) -> Result<()> {
-        if self.meets(m, need) {
+        // A remote object's authority is its server's to decide.
+        if matches!(node, Node::Remote { .. }) || self.meets(m, need) {
             return Ok(());
         }
         self.event(
@@ -250,6 +252,8 @@ pub(crate) enum OpenKind<F> {
     },
     /// A directory opened for reading (for `openat`, `fchdir`, `fsync`).
     Dir,
+    /// A file of a remote mount.
+    Remote(remote::RemoteOpen),
 }
 
 /// An open file description.
@@ -309,6 +313,7 @@ pub struct Ifs<B: Backend> {
     leases: std::sync::Arc<crate::lease::Leases>,
     /// Paths of file IDs seen, for [`Ifs::stat_by_id`].
     ids: Mutex<byid::IdCache>,
+    remote: crate::remote::Registry,
 }
 
 /// The directories every system has, with their `*PUBLIC` data
@@ -357,6 +362,7 @@ impl<B: Backend> Ifs<B> {
             clock: Mutex::new(meta::change::Clock::default()),
             leases: std::sync::Arc::default(),
             ids: Mutex::default(),
+            remote: crate::remote::Registry::default(),
         }
     }
 
@@ -534,9 +540,11 @@ impl<B: Backend> Ifs<B> {
                 o.refs = o.refs.saturating_sub(1);
                 if o.refs == 0
                     && let Some(o) = st.rest.opens.remove(&fd.open)
-                    && let Err(e) = self.finish_noting(owner, o)
                 {
-                    tracing::warn!(error = %e, "IFS write-back failed releasing an owner");
+                    Self::remote_closed(&st.rest, &o);
+                    if let Err(e) = self.finish_noting(owner, o) {
+                        tracing::warn!(error = %e, "IFS write-back failed releasing an owner");
+                    }
                 }
             }
         }

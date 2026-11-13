@@ -41,13 +41,26 @@ impl<B: Backend> Ifs<B> {
         o: WalkOpts,
         visit: &mut dyn FnMut(&str, Result<&Stat>) -> Visit,
     ) -> Result<()> {
+        self.walk_opt(cx, p, o, false, visit)
+    }
+
+    /// [`Self::walk`]; with `local`, remote mounts are passed by (a
+    /// save, which must not see a request run twice).
+    pub(crate) fn walk_opt(
+        &self,
+        cx: &Ctx<'_>,
+        p: &str,
+        o: WalkOpts,
+        local: bool,
+        visit: &mut dyn FnMut(&str, Result<&Stat>) -> Visit,
+    ) -> Result<()> {
         let s = if o.follow {
             self.stat(cx, p)?
         } else {
             self.lstat(cx, p)?
         };
         let mut seen = std::collections::HashSet::new();
-        self.walk_in(cx, p, &s, s.vfs, o, visit, &mut seen)
+        self.walk_in(cx, p, &s, s.vfs, (o, local), visit, &mut seen)
             .map(|_| ())
     }
 
@@ -58,7 +71,7 @@ impl<B: Backend> Ifs<B> {
         p: &str,
         s: &Stat,
         fs: u32,
-        o: WalkOpts,
+        (o, local): (WalkOpts, bool),
         visit: &mut dyn FnMut(&str, Result<&Stat>) -> Visit,
         seen: &mut std::collections::HashSet<(u32, u64)>,
     ) -> Result<bool> {
@@ -81,13 +94,16 @@ impl<B: Backend> Ifs<B> {
             } else {
                 format!("{p}/{}", e.name)
             };
+            if local && self.remote_point(&child) {
+                continue;
+            }
             let cs = if o.follow {
                 self.stat(cx, &child)
             } else {
                 self.lstat(cx, &child)
             };
             let go = match cs {
-                Ok(cs) => self.walk_in(cx, &child, &cs, fs, o, visit, seen)?,
+                Ok(cs) => self.walk_in(cx, &child, &cs, fs, (o, local), visit, seen)?,
                 Err(err) => visit(&child, Err(err)) != Visit::Stop,
             };
             if !go {

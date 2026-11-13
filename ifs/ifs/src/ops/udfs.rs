@@ -146,11 +146,15 @@ impl<B: Backend> Ifs<B> {
         let cwd = Self::cwd_of(&mut st, cx.owner);
         let (mut sys, _) = self.split(&mut st);
         let r = sys.resolve(&cwd, over, true, Some(cx))?;
-        if !matches!(r.node, Node::Back { .. }) || !r.node.is_dir() {
-            return Err(Errno::ENOTDIR);
-        }
         if sys.mounts.all().iter().any(|mt| mt.at == r.comps) {
             return Err(Errno::EBUSY);
+        }
+        if matches!(r.node, Node::Remote { .. }) {
+            // Nothing is mounted inside a remote mount.
+            return Err(Errno::ENOTSUP);
+        }
+        if !matches!(r.node, Node::Back { .. }) || !r.node.is_dir() {
+            return Err(Errno::ENOTDIR);
         }
         let shown = format!("/dev/{asp}/{}", backend::last(&rel));
         let id = st.mounts.add(

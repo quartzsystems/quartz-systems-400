@@ -38,6 +38,7 @@ impl<B: Backend> Ifs<B> {
             OpenKind::Member { data, .. } | OpenKind::Stream { data, .. } => data.len() as u64,
             OpenKind::Opt { data: Some(d), .. } => d.len() as u64,
             OpenKind::Opt { size, .. } => *size,
+            OpenKind::Remote(r) => r.size()?,
         })
     }
 
@@ -63,6 +64,7 @@ impl<B: Backend> Ifs<B> {
             }
             OpenKind::Opt { vol, path, .. } => self.opt.read(vol, path, pos, buf),
             OpenKind::Dir => Err(Errno::EISDIR),
+            OpenKind::Remote(r) => r.read(buf, pos),
         }
     }
 
@@ -71,7 +73,9 @@ impl<B: Backend> Ifs<B> {
         if pos.saturating_add(data.len() as u64) > MAX_OFF {
             return Err(Errno::EFBIG);
         }
+        let sync = o.oflag & (f::O_SYNC | f::O_DSYNC) != 0;
         let n = match &mut o.kind {
+            OpenKind::Remote(r) => r.write(data, pos, sync)?,
             OpenKind::File(file) => {
                 let mut done = 0;
                 while done < data.len() {
@@ -158,7 +162,10 @@ impl<B: Backend> Ifs<B> {
         self.leases.gate(cx.owner, o.key, Trigger::Write)?;
         o.wrote = true;
         if o.oflag & f::O_APPEND != 0 {
-            o.pos = Self::size_of(o)?;
+            o.pos = match &o.kind {
+                OpenKind::Remote(r) => r.size_now()?,
+                _ => Self::size_of(o)?,
+            };
         }
         let raw = match &mut o.text {
             Some(t) => t.convert_write(data),
@@ -249,6 +256,9 @@ impl<B: Backend> Ifs<B> {
         if let OpenKind::File(file) = &o.kind {
             return file.sync(data_only);
         }
+        if let OpenKind::Remote(r) = &o.kind {
+            return r.sync();
+        }
         self.flush(o)
     }
 
@@ -284,6 +294,7 @@ impl<B: Backend> Ifs<B> {
             }
             OpenKind::Dev(_) | OpenKind::Opt { .. } => Err(Errno::EINVAL),
             OpenKind::Dir => Err(Errno::EISDIR),
+            OpenKind::Remote(r) => r.truncate(len),
         }
     }
 }

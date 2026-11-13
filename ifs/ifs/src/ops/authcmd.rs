@@ -192,6 +192,9 @@ impl<B: Backend> Ifs<B> {
         if c.data_autl && c.who.iter().any(|w| *w != Who::Public) {
             return Err(Errno::EINVAL);
         }
+        if self.remote_chgaut(cx, p, c)? {
+            return Ok(());
+        }
         let c = c.clone();
         self.edit(
             cx,
@@ -265,6 +268,9 @@ impl<B: Backend> Ifs<B> {
     /// Remove a private authority (`RVKOBJAUT`-style, `CHGAUT ... *NONE
     /// *NONE` refused by IBM): the owner, `*ALLOBJ` or `*OBJMGT`.
     pub fn rvkaut(&self, cx: &Ctx<'_>, p: &str, user: &str) -> Result<()> {
+        if self.remote_at(cx, p, true)?.is_some() {
+            return Err(Errno::ENOTSUP);
+        }
         let user = user.to_string();
         self.edit(
             cx,
@@ -299,6 +305,9 @@ impl<B: Backend> Ifs<B> {
     ) -> Result<()> {
         if !cx.env.profile_exists(new_owner) {
             return Err(Errno::EINVAL);
+        }
+        if self.remote_chgown(cx, p, follow, new_owner)? {
+            return Ok(());
         }
         let new_owner = new_owner.to_string();
         self.edit_at(
@@ -354,6 +363,9 @@ impl<B: Backend> Ifs<B> {
         {
             return Err(Errno::EINVAL);
         }
+        if self.remote_chgpgp(cx, p, follow, new_group)? {
+            return Ok(());
+        }
         let new_group = new_group.map(str::to_string);
         self.edit_at(
             cx,
@@ -403,6 +415,9 @@ impl<B: Backend> Ifs<B> {
     }
 
     fn chown_at(&self, cx: &Ctx<'_>, p: &str, follow: bool, uid: u32, gid: u32) -> Result<()> {
+        if self.remote_chown(cx, p, follow, uid, gid)? {
+            return Ok(());
+        }
         if uid != u32::MAX {
             let owner = cx.env.profile_of_uid(uid).ok_or(Errno::EINVAL)?;
             self.chgown_at(cx, p, follow, &owner, true)?;

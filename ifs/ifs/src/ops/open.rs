@@ -228,7 +228,24 @@ impl<B: Backend> Ifs<B> {
         let codepage = a.oflag & f::O_CODEPAGE != 0;
         let conv_given = a.oflag & (f::O_CCSID | f::O_CODEPAGE) != 0;
         let mut created: Option<B::File> = None;
-        let (r, m) = match sys.resolve(&cwd, path, follow, Some(cx)) {
+        let mut rcreated = false;
+        // A run after this request's remote create: create again (the
+        // change is found done), as the first run did.
+        let replay = creating
+            && Self::remote_replay_at(
+                cx,
+                &mut sys,
+                &cwd,
+                path,
+                &[crate::remote::mount::Touch::Make],
+            )
+            .is_some();
+        let found = if replay {
+            Err(Errno::ENOENT)
+        } else {
+            sys.resolve(&cwd, path, follow, Some(cx))
+        };
+        let (r, m) = match found {
             Ok(r) => {
                 if creating && a.oflag & f::O_EXCL != 0 {
                     return Err(Errno::EEXIST);
@@ -291,6 +308,10 @@ impl<B: Backend> Ifs<B> {
                         );
                         (r, m)
                     }
+                    Node::Remote { .. } => {
+                        rcreated = true;
+                        self.remote_create(cx, &mut sys, rest, &dir, &name, a.oflag, a.mode)?
+                    }
                     Node::Qsys(QsysNode::Obj(lib, file, t), _) if t == "*FILE" => {
                         let (mbr, mt) = qsys::parse_component(&name)?;
                         if mt != "*MBR" {
@@ -320,7 +341,7 @@ impl<B: Backend> Ifs<B> {
         if (access.write || truncate) && Self::read_only_node(&sys, &r.node) {
             return Err(Errno::EROFS);
         }
-        if created.is_none() {
+        if created.is_none() && !rcreated {
             let need_op = if r.node.is_dir() {
                 Op::Readdir
             } else if truncate && !access.write {
@@ -342,7 +363,7 @@ impl<B: Backend> Ifs<B> {
             }
         }
         // Other owners' leases on it break before anything changes.
-        if created.is_none() && !r.node.is_dir() {
+        if created.is_none() && !rcreated && !r.node.is_dir() {
             let trigger = Trigger::Open {
                 overwrite: truncate,
             };
@@ -377,6 +398,8 @@ impl<B: Backend> Ifs<B> {
         } else {
             None
         };
+        // A remote file's server is asked before anything changes here.
+        let ropen = Self::remote_open_prep(&sys, &r.node, a.oflag, rcreated, cx.owner)?;
         let key = r.node.key();
         let id = rest.next_open;
         let shared = rest.locks.open(
@@ -399,7 +422,7 @@ impl<B: Backend> Ifs<B> {
         }
         let was_created = created.is_some();
         let text_mode = a.oflag & f::O_TEXTDATA != 0;
-        let kind = match self.open_kind(&r, created, writes, truncate, text_mode) {
+        let kind = match self.open_kind(&r, created, ropen, writes, truncate, text_mode) {
             Ok(k) => k,
             Err(e) => {
                 rest.locks.close(key, id, cx.owner, false);
@@ -454,12 +477,16 @@ impl<B: Backend> Ifs<B> {
         &self,
         r: &Res,
         created: Option<B::File>,
+        remote: Option<super::remote::RemoteOpen>,
         write: bool,
         truncate: bool,
         text: bool,
     ) -> Result<OpenKind<B::File>> {
         if r.node.is_dir() {
             return Ok(OpenKind::Dir);
+        }
+        if let Some(ro) = remote {
+            return Ok(OpenKind::Remote(ro));
         }
         Ok(match &r.node {
             Node::Back { rel, .. } => {
@@ -548,6 +575,18 @@ impl<B: Backend> Ifs<B> {
 
     /// Write an open's buffered data back and flush a partial character.
     pub(crate) fn finish(&self, mut o: Open<B::File>) -> Result<()> {
+        if let OpenKind::Remote(r) = &o.kind {
+            if let Some(t) = &mut o.text {
+                let tail = t.finish_write();
+                if !tail.is_empty() {
+                    let pos = o.pos;
+                    // Into the cache; written back with the rest.
+                    let _ = r.write(&tail, pos, false);
+                }
+            }
+            r.finish();
+            return Ok(());
+        }
         if let Some(t) = &mut o.text {
             let tail = t.finish_write();
             if !tail.is_empty() {
@@ -605,6 +644,9 @@ impl<B: Backend> Ifs<B> {
     /// (POSIX), whichever descriptor took them.
     pub fn close(&self, cx: &Ctx<'_>, fd: i32) -> Result<()> {
         let mut st = self.lock();
+        // A remote file's data goes back first: the close answers its
+        // first write-back error, as NFS clients do.
+        let flushed = Self::remote_close_prep(&st.rest, cx, fd)?;
         let rest = &mut st.rest;
         let os = rest.owners.get_mut(&cx.owner).ok_or(Errno::EBADF)?;
         let e = os.fds.remove(&fd).ok_or(Errno::EBADF)?;
@@ -623,13 +665,14 @@ impl<B: Backend> Ifs<B> {
             let o = rest.opens.remove(&e.open).expect("present");
             rest.locks.close(key, e.open, cx.owner, true);
             self.leases.locks_granted(&rest.locks.drain_granted());
+            Self::remote_closed(rest, &o);
             if o.wrote {
                 self.leases
                     .note(cx.owner, &o.path, &ChangeKind::Modified, false);
             }
             self.finish(o)?;
         }
-        Ok(())
+        flushed
     }
 
     /// `dup()`.

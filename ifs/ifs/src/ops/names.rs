@@ -15,6 +15,7 @@ use crate::errno::{Errno, Result};
 use crate::lease::notify::ChangeKind;
 use crate::lease::state::Trigger;
 use crate::meta::{self, Flags, Meta};
+use crate::remote::mount::Touch;
 use crate::resolve::{Node, Res, Sys};
 use crate::vfs::qsys::{self, QsysNode};
 
@@ -52,6 +53,9 @@ impl<B: Backend> Ifs<B> {
         mode: u32,
         target: Option<&str>,
     ) -> Result<Res> {
+        if matches!(dir.node, Node::Remote { .. }) {
+            return self.remote_make(cx, sys, rest, dir, name, kind, mode, target);
+        }
         let Node::Back { rel, .. } = &dir.node else {
             return Err(Errno::ENOTSUP);
         };
@@ -108,9 +112,11 @@ impl<B: Backend> Ifs<B> {
         p: &str,
     ) -> Result<(Res, Meta, String)> {
         let (dir, name) = sys.resolve_parent(cwd, p, Some(cx))?;
+        // A run after its own change is queued: the name is its own.
+        let replay = Self::remote_replayed(sys, &dir, &name, Touch::Make).is_some();
         match sys.child(&dir, &name) {
-            Ok(_) => return Err(Errno::EEXIST),
-            Err(Errno::ENOENT) => {}
+            Ok(_) if !replay => return Err(Errno::EEXIST),
+            Ok(_) | Err(Errno::ENOENT) => {}
             Err(e) => return Err(e),
         }
         if Self::read_only_node(sys, &dir.node) {
@@ -197,6 +203,9 @@ impl<B: Backend> Ifs<B> {
         let r = sys.resolve(&cwd, p, false, Some(cx))?;
         match &r.node {
             Node::Back { rel, st, .. } if st.kind == Kind::Symlink => self.b.readlink(rel),
+            Node::Remote { attr, .. } if attr.kind == crate::remote::RKind::Symlink => {
+                sys.link_text(&r.node)
+            }
             _ => Err(Errno::EINVAL),
         }
     }
@@ -221,7 +230,8 @@ impl<B: Backend> Ifs<B> {
         }
         cx.require_dir(&dm, &dir.node, &dir.path(), op)?;
         cx.require(&m, &r.node, &r.path(), op)?;
-        if !Self::sticky_ok(cx, &dm, &m) {
+        // A remote directory's sticky rule is its server's.
+        if !matches!(r.node, Node::Remote { .. }) && !Self::sticky_ok(cx, &dm, &m) {
             return Err(Errno::EPERM);
         }
         Ok((dir, dm, r, m))
@@ -231,7 +241,12 @@ impl<B: Backend> Ifs<B> {
     pub fn unlink(&self, cx: &Ctx<'_>, p: &str) -> Result<()> {
         let mut st = self.lock();
         let cwd = Self::cwd_of(&mut st, cx.owner);
-        let (mut sys, _) = self.split(&mut st);
+        let (mut sys, rest) = self.split(&mut st);
+        if let Some(r) =
+            Self::remote_replay_at(cx, &mut sys, &cwd, p, &[Touch::Remove, Touch::Rename])
+        {
+            return r;
+        }
         let (dir, _, r, m) = Self::victim(cx, &mut sys, &cwd, p, Op::Unlink)?;
         if r.node.is_dir() {
             return Err(if matches!(r.node, Node::Qsys(..)) {
@@ -246,6 +261,9 @@ impl<B: Backend> Ifs<B> {
             return Err(Errno::EBUSY);
         }
         self.leases.gate(cx.owner, r.node.key(), Trigger::Handle)?;
+        if matches!(r.node, Node::Remote { .. }) {
+            return self.remote_unlink(cx, &sys, rest, &dir, &r);
+        }
         match (&dir.node, &r.node) {
             (Node::Back { rel: drel, .. }, Node::Back { rel, .. }) => {
                 self.b.unlink(rel)?;
@@ -277,12 +295,18 @@ impl<B: Backend> Ifs<B> {
         let mut st = self.lock();
         let cwd = Self::cwd_of(&mut st, cx.owner);
         let (mut sys, rest) = self.split(&mut st);
+        if let Some(r) = Self::remote_replay_at(cx, &mut sys, &cwd, p, &[Touch::Remove]) {
+            return r;
+        }
         let (dir, _, r, m) = Self::victim(cx, &mut sys, &cwd, p, Op::Rmdir)?;
         if !r.node.is_dir() {
             return Err(Errno::ENOTDIR);
         }
         if rest.owners.values().any(|o| o.cwd == r.comps) {
             return Err(Errno::EBUSY);
+        }
+        if matches!(r.node, Node::Remote { .. }) {
+            return self.remote_rmdir(cx, &sys, &dir, &r);
         }
         match (&dir.node, &r.node) {
             (Node::Back { rel: drel, .. }, Node::Back { rel, .. }) => {
@@ -316,6 +340,9 @@ impl<B: Backend> Ifs<B> {
         let mut st = self.lock();
         let cwd = Self::cwd_of(&mut st, cx.owner);
         let (mut sys, _) = self.split(&mut st);
+        if let Some(r) = Self::remote_replay_at(cx, &mut sys, &cwd, new, &[Touch::Link]) {
+            return r;
+        }
         let src = sys.resolve(&cwd, existing, false, Some(cx))?;
         let (dir, dm, name) = {
             let (dir, name) = sys.resolve_parent(&cwd, new, Some(cx))?;
@@ -328,6 +355,9 @@ impl<B: Backend> Ifs<B> {
             (dir, dm, name)
         };
         crate::path::check_name(&name)?;
+        if matches!(src.node, Node::Remote { .. }) || matches!(dir.node, Node::Remote { .. }) {
+            return self.remote_link(cx, &sys, &src, &dir, &name);
+        }
         let (
             Node::Back { fs, rel, st: sst },
             Node::Back {
@@ -370,6 +400,9 @@ impl<B: Backend> Ifs<B> {
         let mut st = self.lock();
         let cwd = Self::cwd_of(&mut st, cx.owner);
         let (mut sys, rest) = self.split(&mut st);
+        if let Some(r) = Self::remote_replay_at(cx, &mut sys, &cwd, old, &[Touch::Rename]) {
+            return r;
+        }
         let (odir, oname) = sys.resolve_parent(&cwd, old, Some(cx))?;
         let src = sys.child(&odir, &oname)?;
         if sys.mounts.all().iter().any(|mt| mt.at == src.comps) {
@@ -377,6 +410,21 @@ impl<B: Backend> Ifs<B> {
         }
         let (ndir, nname) = sys.resolve_parent(&cwd, new, Some(cx))?;
         crate::path::check_name(&nname)?;
+        if [&src.node, &odir.node, &ndir.node]
+            .iter()
+            .any(|n| matches!(n, Node::Remote { .. }))
+        {
+            return self.remote_rename(
+                cx,
+                &mut sys,
+                rest,
+                &odir,
+                &src,
+                &ndir,
+                &nname,
+                mode == RenameMode::Keep,
+            );
+        }
         let (
             Node::Back { fs, rel, st: sst },
             Node::Back {

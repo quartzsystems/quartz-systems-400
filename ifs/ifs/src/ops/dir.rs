@@ -36,6 +36,13 @@ pub(crate) struct DirStream {
     pos: usize,
 }
 
+impl DirStream {
+    /// Where the directory is.
+    pub(crate) fn at(&self) -> &[String] {
+        &self.res.comps
+    }
+}
+
 fn ntype_of(k: Kind) -> NodeType {
     match k {
         Kind::File => NodeType::File,
@@ -191,6 +198,27 @@ impl<B: Backend> Ifs<B> {
                 })
                 .collect(),
             Node::Unsup { .. } => Vec::new(),
+            Node::Remote { fs, handle, .. } => {
+                let m = sys.remote(*fs)?;
+                let l = m.settle(m.listing(handle, &crate::remote::request::cred()))?;
+                l.into_iter()
+                    .map(|e| DirEnt {
+                        name: m.decode(&e.name),
+                        ino: e.fileid,
+                        ntype: e.kind.map_or(NodeType::File, |k| {
+                            Node::Remote {
+                                fs: *fs,
+                                handle: crate::remote::RHandle::default(),
+                                attr: crate::remote::RAttr {
+                                    kind: k,
+                                    ..crate::remote::RAttr::default()
+                                },
+                            }
+                            .ntype()
+                        }),
+                    })
+                    .collect()
+            }
             _ => return Err(Errno::ENOTDIR),
         };
         // Mount points replace whatever the directory itself holds there.

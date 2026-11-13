@@ -44,6 +44,8 @@ pub enum FsKind {
     /// A file system QS/400 does not provide (`/QNTC`, `/QFileSvr.400`,
     /// `/QDLS`): the directory exists, everything else is `ENOTSUP`.
     Unsupported,
+    /// A remote file system (`MOUNT TYPE(*NFS)`, `crate::remote`).
+    Remote(crate::remote::RemoteRef),
 }
 
 /// One mount.
@@ -275,6 +277,43 @@ impl MountTable {
             name,
         });
         id
+    }
+
+    /// Mount a remote file system at `at`.
+    pub fn add_remote(&mut self, at: Vec<String>, r: crate::remote::RemoteRef) -> FsId {
+        let id = self.next;
+        self.next += 1;
+        let info = r.0.info();
+        let (case_sensitive, read_only, name) =
+            (info.case_sensitive, info.read_only, info.name.clone());
+        r.0.set_id(id);
+        self.mounts.push(Mount {
+            id,
+            at,
+            kind: FsKind::Remote(r),
+            base: String::new(),
+            case_sensitive,
+            read_only,
+            name,
+        });
+        id
+    }
+
+    /// The remote mount with this id.
+    #[must_use]
+    pub fn remote(&self, id: FsId) -> Option<&std::sync::Arc<crate::remote::RemoteMount>> {
+        match &self.get(id)?.kind {
+            FsKind::Remote(r) => Some(&r.0),
+            _ => None,
+        }
+    }
+
+    /// Whether any remote file system is mounted.
+    #[must_use]
+    pub fn has_remote(&self) -> bool {
+        self.mounts
+            .iter()
+            .any(|m| matches!(m.kind, FsKind::Remote(_)))
     }
 
     /// Take a mount out (only those [`MountTable::add`] made).

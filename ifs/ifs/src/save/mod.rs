@@ -165,13 +165,21 @@ impl<B: Backend> Ifs<B> {
             std::collections::HashMap::new();
         let mut count = 0u64;
         let mut err: Option<Errno> = None;
-        self.walk(
+        // Remote mounts are another system's objects: not saved here.
+        if matches!(
+            self.resolve_meta(cx, p, false)?.0.node,
+            crate::resolve::Node::Remote { .. }
+        ) {
+            return Err(Errno::ENOTSUP);
+        }
+        self.walk_opt(
             cx,
             p,
             WalkOpts {
                 follow: false,
                 one_fs: false,
             },
+            true,
             &mut |path, s| {
                 let Ok(s) = s else { return Visit::Continue };
                 let r = (|| -> Result<Visit> {

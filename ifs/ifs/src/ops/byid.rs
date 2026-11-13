@@ -156,6 +156,11 @@ impl<B: Backend> Ifs<B> {
     /// (0 only an object without one).
     fn find_id(&self, id: FileId, any_generation: bool) -> std::result::Result<String, Miss> {
         let mount = self.lock().mounts.get(id.fs).cloned().ok_or(Miss::NoFs)?;
+        if matches!(mount.kind, crate::vfs::FsKind::Remote(_)) {
+            // A remote object's number is its server's: nothing here finds
+            // it by that (and a remote mount cannot be exported).
+            return Err(Miss::Unsearchable);
+        }
         let ok = |g: u32| g == id.generation || (any_generation && id.generation == 0);
         let at = crate::path::to_text(&mount.at);
         // The backend's handle first: no walk, no cache.
@@ -288,7 +293,7 @@ impl<B: Backend> Ifs<B> {
     /// `ESTALE` when no object has the ID (gone, another generation, or
     /// its file system no longer mounted); `EBADFID` when two
     /// `/QSYS.LIB` names share its number; `ENOTSUP` for a file system
-    /// that cannot be searched by ID (`/dev`, `/QOPT`); the path's
+    /// that cannot be searched by ID (`/dev`, `/QOPT`, a remote mount); the path's
     /// resolution's (`EACCES` ...).
     pub fn stat_by_id(&self, cx: &Ctx<'_>, id: FileId) -> Result<(String, Stat)> {
         let p = self.find_id(id, false).map_err(stale)?;

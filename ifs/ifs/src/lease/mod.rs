@@ -514,5 +514,7 @@ fn ready(g: &Inner, d: &Deferral) -> bool {
                     && break_to(trigger, h.state).is_some_and(|(_, wait)| wait)
             })
         }),
+        // Remote work is the mounts' (`Ifs::deferral_ready`).
+        Deferral::Remote { ticket, .. } => !crate::remote::tickets::pending(ticket),
     }
 }

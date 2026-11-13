@@ -80,6 +80,22 @@ impl<B: Backend> Ifs<B> {
         let (key, path, want, access) = self.range_of(cx, fd, sub, kind, whence, start, len)?;
         let mut st = self.lock();
         let rest = &mut st.rest;
+        if let Some(o) = Self::remote_open(rest, cx, fd) {
+            // A remote file's locks are its server's, held by the job; a
+            // sub-owner's (a server job's client) are refused.
+            if sub != 0 {
+                return Err(Errno::ENOTSUP);
+            }
+            if cmd != f::F_GETLK && cmd != f::F_GETLK64 {
+                check_access(kind, access)?;
+            }
+            let len = if want.end == u64::MAX {
+                0
+            } else {
+                want.end - want.start
+            };
+            return Self::remote_lock(o, cmd, kind, want.start, len);
+        }
         match cmd {
             f::F_GETLK | f::F_GETLK64 => Ok(rest.locks.get(key, &want)),
             f::F_SETLK | f::F_SETLK64 | f::F_SETLKW | f::F_SETLKW64 => {
@@ -114,6 +130,11 @@ impl<B: Backend> Ifs<B> {
         start: i64,
         len: i64,
     ) -> Result<Option<u64>> {
+        if Self::remote_open(&mut self.lock().rest, cx, fd).is_some() {
+            // The server does not queue for the service: `F_SETLKW` is
+            // retried by the caller there, as `lock_range` answers it.
+            return Err(Errno::ENOTSUP);
+        }
         let (key, path, want, access) = self.range_of(cx, fd, sub, kind, whence, start, len)?;
         check_access(kind, access)?;
         self.leases.gate(cx.owner, key, Trigger::Write)?;
@@ -147,6 +168,20 @@ impl<B: Backend> Ifs<B> {
         let n = st.rest.locks.release_sub(cx.owner, sub);
         self.leases.locks_granted(&st.rest.locks.drain_granted());
         Ok(u32::try_from(n).unwrap_or(u32::MAX))
+    }
+}
+
+impl<B: Backend> Ifs<B> {
+    /// The caller's open `fd` when it is a remote file's.
+    fn remote_open<'r>(
+        rest: &'r mut super::Rest<B::File>,
+        cx: &Ctx<'_>,
+        fd: i32,
+    ) -> Option<&'r mut super::Open<B::File>> {
+        let id = rest.owners.get(&cx.owner)?.fds.get(&fd)?.open;
+        rest.opens
+            .get_mut(&id)
+            .filter(|o| matches!(o.kind, super::OpenKind::Remote(_)))
     }
 }
 

@@ -24,6 +24,7 @@ pub mod lock;
 pub mod meta;
 pub mod ops;
 pub mod path;
+pub mod remote;
 pub mod resolve;
 pub mod save;
 pub mod text;
