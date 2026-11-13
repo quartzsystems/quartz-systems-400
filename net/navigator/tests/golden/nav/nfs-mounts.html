@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Mounted file systems - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/nfsmounts" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/nfs/mounts">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navitem"><a href="/qs400/navigator/nfs" class="navcur">NFS</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/nfs/mounts">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NFS &#62; Mounts</div>
+<h1>Mounted file systems</h1>
+
+<div class="tabs"><a href="/qs400/navigator/nfs">Exports</a> | <a href="/qs400/navigator/nfs/servers">Servers</a> | <b>Mounts</b></div><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th>Mounted over</th>
+<th>Type</th>
+<th>File system</th>
+<th>Options</th>
+<th>Access</th>
+<th>Server</th>
+</tr>
+<tr>
+<td class="act"></td>
+<td class="mono">/</td>
+<td class="mono">root</td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td>Read/write</td>
+<td></td>
+</tr>
+<tr class="alt">
+<td class="act"></td>
+<td class="mono">/QOpenSys</td>
+<td class="mono">qopensys</td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td>Read/write</td>
+<td></td>
+</tr>
+<tr>
+<td class="act"></td>
+<td class="mono">/QSYS.LIB</td>
+<td class="mono">qsys</td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td>Read/write</td>
+<td></td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="/qs400/navigator/nfs/mounts/100/confirm">Unmount</a></td>
+<td class="mono">/home/projects</td>
+<td class="mono">udfs</td>
+<td class="mono">/dev/QASP01/PROJECTS.udfs</td>
+<td class="mono"></td>
+<td>Read/write</td>
+<td></td>
+</tr>
+<tr>
+<td class="act"><a href="/qs400/navigator/nfs/mounts/101/confirm">Unmount</a></td>
+<td class="mono">/mnt/build</td>
+<td class="mono">nfs3</td>
+<td class="mono">build01:/export/artifacts</td>
+<td class="mono">rw,hard,vers=3</td>
+<td>Read/write</td>
+<td><span class="ok">Responding</span></td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="/qs400/navigator/nfs/mounts/102/confirm">Unmount</a></td>
+<td class="mono">/mnt/lab</td>
+<td class="mono">nfs4</td>
+<td class="mono">lab02:/srv</td>
+<td class="mono">ro,soft,vers=4</td>
+<td>Read only</td>
+<td><span class="err">Not responding</span></td>
+</tr>
+</table><form method="post"><input type="hidden" name="csrf" value="CSRF"><div class="buttons"><input type="submit" name="add" value="Mount NFS file system..."><input type="submit" name="refresh" value="Refresh"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

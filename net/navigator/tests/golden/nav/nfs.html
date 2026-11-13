@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>NFS exports - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/nfs" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/nfs">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/nfs">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/nfs">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/nfs">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/nfs">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navitem"><a href="/qs400/navigator/nfs" class="navcur">NFS</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/nfs">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/nfs">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/nfs">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/nfs">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NFS &#62; Exports</div>
+<h1>NFS exports</h1>
+
+<div class="tabs"><b>Exports</b> | <a href="/qs400/navigator/nfs/servers">Servers</a> | <a href="/qs400/navigator/nfs/mounts">Mounts</a></div><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th>Path</th>
+<th>Access</th>
+<th>Read-write hosts</th>
+<th>Root hosts</th>
+<th>Versions</th>
+<th>Anonymous user</th>
+<th>Exported by</th>
+<th>Since</th>
+</tr>
+<tr>
+<td class="act"><a href="/qs400/navigator/nfs/exp/1">Properties</a> | <a href="/qs400/navigator/nfs/exp/1/confirm">Remove</a></td>
+<td class="mono">/home</td>
+<td>Read only</td>
+<td class="mono">admin01</td>
+<td class="mono">-</td>
+<td class="mono">3:4</td>
+<td>4294770710 (QNFSANON)</td>
+<td class="mono">123390/QSECOFR/QPADEV0003</td>
+<td>10/28/26 14:03:40</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="/qs400/navigator/nfs/exp/2">Properties</a> | <a href="/qs400/navigator/nfs/exp/2/confirm">Remove</a></td>
+<td class="mono">/home/shared/docs</td>
+<td>Read/write</td>
+<td class="mono">-</td>
+<td class="mono">admin01</td>
+<td class="mono">3:4</td>
+<td>4294770710 (QNFSANON)</td>
+<td class="mono">123390/QSECOFR/QPADEV0003</td>
+<td>10/28/26 14:03:40</td>
+</tr>
+<tr>
+<td class="act"><a href="/qs400/navigator/nfs/exp/3">Properties</a> | <a href="/qs400/navigator/nfs/exp/3/confirm">Remove</a></td>
+<td class="mono">/QOpenSys/data</td>
+<td>Read/write</td>
+<td class="mono">-</td>
+<td class="mono">-</td>
+<td class="mono">4</td>
+<td>Refused</td>
+<td class="mono">123390/QSECOFR/QPADEV0003</td>
+<td>10/28/26 14:03:40</td>
+</tr>
+</table><form method="post"><input type="hidden" name="csrf" value="CSRF"><div class="buttons"><input type="submit" name="add" value="Add export..."><input type="submit" name="all" value="Export all from /etc/exports..."><input type="submit" name="refresh" value="Refresh"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

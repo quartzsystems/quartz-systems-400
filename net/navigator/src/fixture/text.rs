@@ -1153,6 +1153,63 @@ const MESSAGES: &[Desc] = &[
         "Enabling a user for NetServer needs *OBJMGT and *USE authority to the user profile.",
         "Ask the security officer for the authority, or have someone with it enable the user.",
     ),
+    // NFS.
+    (
+        "CPFA1B8",
+        40,
+        "&1 needs *IOSYSCFG special authority.",
+        "The command changes the system's NFS configuration, which needs *IOSYSCFG.",
+        "Ask the security officer for the authority, or have someone with it run the command.",
+    ),
+    (
+        "CPCA1C4",
+        0,
+        "&1 exported.",
+        "The export table now holds the directory with the options given.",
+        "None.",
+    ),
+    (
+        "CPCA1C6",
+        0,
+        "&1 entries exported, &2 not.",
+        "Every entry of /etc/exports was tried; the job log names those that failed.",
+        "Correct the entries that failed and export them again.",
+    ),
+    (
+        "CPFA1C7",
+        40,
+        "&1 could not be worked on.",
+        "The job log's earlier messages say why.",
+        "Correct what they name and try again.",
+    ),
+    (
+        "CPCA1BB",
+        0,
+        "STRNFSSVR finished: the daemons asked for are running.",
+        "Every NFS daemon asked for reported ready.",
+        "None.",
+    ),
+    (
+        "CPCA1BC",
+        0,
+        "ENDNFSSVR finished: the daemons asked for have ended.",
+        "Every NFS daemon asked to end has ended.",
+        "None.",
+    ),
+    (
+        "CPCA1B0",
+        0,
+        "&1 is mounted over &2.",
+        "The file system can now be reached through the directory.",
+        "None.",
+    ),
+    (
+        "CPCA1B1",
+        0,
+        "&1 is no longer mounted.",
+        "The directory shows its own contents again.",
+        "None.",
+    ),
 ];
 
 /// The second-level text of `id`, `data` substituted.

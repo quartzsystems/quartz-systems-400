@@ -1028,3 +1028,10 @@ sev = 40
 text = "The TELNET client failed. Reason &1."
 help = "The client could not go on with the connection; the reason says why."
 vars = ["*BIN 4"]
+
+[[msg]]
+id = "TCP1A78"
+sev = 40
+text = "The table of mounted file systems cannot be read from this job."
+help = "This release does not give jobs the list of mounted file systems. Use DSPMFSINF to display one file system from a display session."
+vars = []

@@ -76,6 +76,7 @@ pub const NAV: &[NavGroup] = &[
             ("Routes", "/tcp/rte"),
             ("Servers", "/tcp/servers"),
             ("NetServer", "/netsvr"),
+            ("NFS", "/nfs"),
         ],
     },
     NavGroup {

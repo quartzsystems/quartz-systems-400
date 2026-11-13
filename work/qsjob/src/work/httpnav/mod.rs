@@ -18,6 +18,7 @@ mod db;
 mod msgs;
 mod net;
 mod netsvr;
+mod nfs;
 mod parse;
 mod perf;
 mod sec;
@@ -136,6 +137,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         config: Arc::new(config::LiveConfig { link: l.clone() }),
         net: Arc::new(net::LiveNet { link: l.clone() }),
         netsvr: Arc::new(netsvr::LiveNetServer { link: l.clone() }),
+        nfs: Arc::new(nfs::LiveNfs { link: l.clone() }),
         db: Arc::new(db::LiveDb { link: l.clone() }),
         sec: Arc::new(sec::LiveSecurity { link: l.clone() }),
         sw: Arc::new(sw::LiveSoftware::new(l.clone())),
@@ -160,6 +162,7 @@ mod tests {
             ("msgs.rs", include_str!("msgs.rs")),
             ("net.rs", include_str!("net.rs")),
             ("netsvr.rs", include_str!("netsvr.rs")),
+            ("nfs.rs", include_str!("nfs.rs")),
             ("parse.rs", include_str!("parse.rs")),
             ("perf.rs", include_str!("perf.rs")),
             ("sec.rs", include_str!("sec.rs")),

@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Export /home - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/nfs" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/nfs/exp/1">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navitem"><a href="/qs400/navigator/nfs">NFS</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/nfs/exp/1">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NFS &#62; Exports &#62; Export /home</div>
+<h1>Export /home</h1>
+
+<form method="post"><input type="hidden" name="csrf" value="CSRF"><table class="props" cellspacing="0">
+<tr><th>Directory</th><td><span class="mono">/home</span></td></tr>
+<tr><th>Read only</th><td><select name="ro"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Read-write hosts</th><td><input type="text" name="rw" value="admin01" size="50"> <span class="small grey">with read only: the hosts that may still write</span></td></tr>
+<tr><th>Access hosts</th><td><input type="text" name="access" value="" size="50"> <span class="small grey">the only hosts that may mount; blank: every host</span></td></tr>
+<tr><th>Root hosts</th><td><input type="text" name="root" value="" size="50"> <span class="small grey">hosts whose root user is QSECOFR</span></td></tr>
+<tr><th>Anonymous UID</th><td><input type="text" name="anon" value="" size="11"> <span class="small grey">blank: QNFSANON&#39;s; -1 refuses unknown users</span></td></tr>
+<tr><th>No set-user-ID</th><td><select name="nosuid"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>NFS versions</th><td><select name="vers"><option>3:4</option><option>3</option><option>4</option></select></td></tr>
+<tr><th>Public file handle</th><td><select name="public"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>NFSv4 pseudo-root</th><td><select name="pseudo"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>NFS root</th><td><input type="text" name="nfsroot" value="" size="50"> <span class="small grey">blank: /</span></td></tr>
+<tr><th>Export name</th><td><input type="text" name="exname" value="" size="50"> <span class="small grey">the name NFSv4 clients see; blank: the directory</span></td></tr>
+<tr><th>Host option 1</th><td><input type="text" name="h0" value="pc0412" size="30"> <input type="text" name="d0" value="819" size="8"> <input type="text" name="p0" value="819" size="8"> <select name="w0"><option>*SYNC</option><option selected>*ASYNC</option></select> <span class="small grey">host, data CCSID (*BINARY), path CCSID (*ASCII), writes</span></td></tr>
+<tr><th>Host option 2</th><td><input type="text" name="h1" value="" size="30"> <input type="text" name="d1" value="" size="8"> <input type="text" name="p1" value="" size="8"> <select name="w1"><option>*SYNC</option><option>*ASYNC</option></select></td></tr>
+<tr><th>Host option 3</th><td><input type="text" name="h2" value="" size="30"> <input type="text" name="d2" value="" size="8"> <input type="text" name="p2" value="" size="8"> <select name="w2"><option>*SYNC</option><option>*ASYNC</option></select></td></tr>
+<tr><th>Host option 4</th><td><input type="text" name="h3" value="" size="30"> <input type="text" name="d3" value="" size="8"> <input type="text" name="p3" value="" size="8"> <select name="w3"><option>*SYNC</option><option>*ASYNC</option></select></td></tr>
+<tr><th>Update /etc/exports</th><td><select name="file"><option>*NO</option><option>*YES</option></select> <span class="small grey">also keep the entry in /etc/exports, for later IPLs</span></td></tr>
+</table><div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

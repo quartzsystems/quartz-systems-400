@@ -230,6 +230,16 @@ pub fn proto(url: &str) -> Option<String> {
         ["netsvr"] => "netsvr".into(),
         ["netsvr", "shares" | "prtshr"] => "netsvr-shares".into(),
         ["netsvr", "shares" | "prtshr", _] => "netsvr-share".into(),
+        // NFS: approved pages of its own (tests/nfs.rs).
+        ["nfs", ..] if segs.last() == Some(&"confirm") => {
+            return Some("shared/confirm.html".into());
+        }
+        ["nfs"] => "nfs".into(),
+        ["nfs", "add"] => "nfs-add".into(),
+        ["nfs", "exp", _] => "nfs-export".into(),
+        ["nfs", "servers"] => "nfs-servers".into(),
+        ["nfs", "mounts"] => "nfs-mounts".into(),
+        ["nfs", "mounts", "add"] => "nfs-mount".into(),
         ["netsvr", "sessions"] => "netsvr-sessions".into(),
         ["netsvr", "sessions", _] => "netsvr-session".into(),
         ["netsvr", "disabled"] => "netsvr-disabled".into(),
@@ -273,14 +283,15 @@ pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
 /// [`assert_golden`] over golden text `g` already read (and cut) from
 /// `file`.
 pub fn assert_golden_text(served: &str, mut g: String, file: &str, fix: &[(&str, &str)]) {
-    // The Network group's NetServer item, which the prototype predates.
+    // The Network group's NetServer and NFS items, which the prototype
+    // predates.
     for cur in ["", " class=\"navcur\""] {
         let servers =
             format!("<div class=\"navitem\"><a href=\"servers.html\"{cur}>Servers</a></div>");
         g = g.replace(
             &servers,
             &format!(
-                "{servers}\n<div class=\"navitem\"><a href=\"netsvr.html\">NetServer</a></div>"
+                "{servers}\n<div class=\"navitem\"><a href=\"netsvr.html\">NetServer</a></div>\n<div class=\"navitem\"><a href=\"nfs.html\">NFS</a></div>"
             ),
         );
     }

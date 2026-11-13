@@ -252,6 +252,43 @@ the service's table (`netsvr` `List`), the disabled users
   `tests/netsvr.rs` drives every action. The prototype's Network pages
   gain the tree's NetServer item (a fix every golden comparison applies).
 
+## NFS
+
+`env::nfs::Nfs` is the export table, the daemon jobs and the mount
+table as the storage service keeps them (docs/NFS.md), and `run`, the
+command itself as the user: every change is `EXPORTFS`, `STRNFSSVR`,
+`ENDNFSSVR`, `MOUNT TYPE(*NFS)` or `UNMOUNT`, so the command checks the
+authority, validates and words the refusal. Navigator checks
+`*IOSYSCFG` first (each command needs it), with the Not authorized
+page and its `AF` entry.
+
+- Network > NFS, three tabs: `/nfs` (Exports: path, access,
+  read-write and root hosts, versions, the anonymous user, who
+  exported it and when; Add export..., Export all from /etc/exports...),
+  `/nfs/add` and `/nfs/exp/<id>` (the options as fields: read only,
+  read-write, access and root hosts, anonymous UID, no set-user-ID,
+  versions, public file handle, pseudo-root, NFS root, export name,
+  four host option rows, and Update /etc/exports for `-F`; the
+  command is `EXPORTFS OPTIONS('-I [-F] -O list') DIR() HOSTOPT()`),
+  `/nfs/exp/<id>/confirm` (Remove: `EXPORTFS OPTIONS('-U')`, `-U -I
+  -F` to take it out of the file too), `/nfs/confirm` (Export all:
+  `EXPORTFS OPTIONS('-A')`); `/nfs/servers` (each daemon type in
+  `STRNFSSVR SERVER(*ALL)`'s order with its jobs, status and ports;
+  `/nfs/servers/<type|ALL>/confirm?op=start|end`); `/nfs/mounts` (the
+  mount table; `/nfs/mounts/add` Mount NFS file system,
+  `/nfs/mounts/<id>/confirm` Unmount of an NFS mount or a UDFS).
+- A refused change stays on its form with the command's message; a
+  confirmation shows the equivalent command.
+- The fixture (`fixture/nfs.rs`) keeps three exports, an
+  `/etc/exports` with one more, the binder, two server jobs and the
+  mount daemon, and six mounts, and runs the five commands on them
+  (`CPFA1B8` without `*IOSYSCFG`).
+- The pages have no prototype: their approved renderings are
+  `tests/golden/nav/nfs*.html`; `tests/nfs.rs` drives every action.
+- Live (`work/qsjob/src/work/httpnav/nfs.rs`): the mount table answers
+  a refusal until the IFS mount table can be read from the job
+  (`BLOCKED(rel)`); the page shows it above an empty list.
+
 ## The live server
 
 Navigator is licensed program `QS00NAV` `*BASE` (docs/LICPGM.md),
@@ -283,6 +320,7 @@ escape (the diagnostic before `CPF0006`) the message.
 | Config | `sysval_panel_list` + `sysval_panel` (`WRKSYSVAL`, `DSPSYSVAL`) with shipped value, allowed values and IPL flag from the `lic/sysval` catalog, the category from its group (`httpnav/config.rs`); `panel2_data DSKSTS` (with `SIZEB`, `SERIAL`, `PROT`, `STATUS` per unit) and `SYSSTS`'s ASP figures; `hw_table` in `WRKHDWRSC *AHW` order (`hwrsrc::view`) and `hw_cfgds` per resource; `QTIMZON`, `QDATFMT`, `QDATSEP`, `QTIMSEP`, `QTIMADJ`, `sysval::tz::ZONES`, `CHGNTPA`'s `RMTSYS` (`tcp Servers`), `QTOTNTP` active |
 | Net | `tcp Snapshot` (interfaces, routes), `tcp HostConfig` (domain, host table), `tcp Netstat STS` (active since), `tcp Report attr` (forwarding), the server registry with `tcp Servers` and `active_jobs` |
 | NetServer | `netsvr_api` (the `QZLS*` APIs as the user, `work/qsjob/src/work/nsadmin.rs`), `netsvr` `List` (the session table), `netsvr_disabled_users`, `active_jobs` (`QZLSSERVER` in `QSERVER`) |
+| NFS | `nfs` `Exports` (the export table, each entry read with `nfs::exports::file`), `nfs` `Daemons` (the daemon registry); every change the command through the analyzer as the user (`Link::run`); the mount table not yet (`BLOCKED(rel)`, `httpnav/nfs.rs`: the page shows the refusal) |
 | Perf | `panel2_data SYSACT` (`WRKSYSACT`), `SYSSTS RESET(*YES)`'s pools, `DSKSTS RESET(*YES)` |
 | Db | queries over the `QSYS2` catalog views through the interactive SQL session (`isql_start` `*SQL`/`*NONE`, `isql_run`): `SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST` + `SYSKEYCST`, `SYSINDEXES` + `SYSKEYS`, `SYSVIEWDEP`; creation times from `object`. Run SQL: `isql_start` with the naming and isolation, `SET SCHEMA`, `isql_run` (the row cap), `isql_end` commits; messages from `QSQLMSG` as Enter SQL Statements words them. No `SYSTRIGGERS`/`SYSROUTINES` (no triggers, procedures), no `QSQGNDDL` (Generate SQL answers `SQL0084`), no Explain (`SQL0084`) |
 | Security | `DSPAUDJRNE ... OUTPUT(*)` through `exec`, as its 5250 display runs it (whole UTC days, cut to the filter's seconds), `secaud_panel` (`DSPSECAUD`), the receiver's creation (`object *JRNRCV`) as its attach time |
@@ -384,7 +422,7 @@ of the golden page:
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 | `nav/tcpip.html` | `13 started` → `14 started` | the Servers page lists fourteen started |
 | `nav/tcpip-interfaces.html`, `nav/servers.html` | the two buttons get names `add`/`start` and `refresh` | two nameless buttons in one form cannot be told apart |
-| `nav/tcpip.html`, `nav/tcpip-interfaces.html`, `nav/tcpip-routes.html`, `nav/servers.html` | the tree's Network group gains NetServer after Servers (`tests/common` applies it to every page) | NetServer came after the prototype |
+| `nav/tcpip.html`, `nav/tcpip-interfaces.html`, `nav/tcpip-routes.html`, `nav/servers.html` | the tree's Network group gains NetServer and NFS after Servers (`tests/common` applies it to every page) | NetServer and NFS came after the prototype |
 | `nav/run-sql.html` | `SQL0100`'s text → the message file's (`No row was found for FETCH.`); Download as CSV `#` → `?csv=1` | the prototype quoted another vendor's message text; the link went nowhere |
 | `nav/table-columns.html` | Generate SQL (DDL) `#` → `/ddl` | the link went nowhere |
 | `nav/table-data.html` | the list is the table's first 25 rows, all 12 columns; `12 rows returned` → `412 rows returned`; CSV `#` → `?csv=1` | the prototype pasted Run SQL's 8-column, 12-row result under `SELECT *` of a 412-row table paged 25 at a time |
@@ -411,3 +449,4 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 27-29 | Security, software | done (golden-clean; live `Security`, `Software` pending) |
 | 30 | Performance | done (golden-clean; live `Perf` pending) |
 | 31 | NetServer | done (approved pages; live) |
+| 32 | NFS | done (approved pages; live but the mount table, `BLOCKED(rel)`) |

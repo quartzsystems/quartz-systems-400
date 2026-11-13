@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Confirm Start NFS Servers - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/confirm" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navitem"><a href="/qs400/navigator/nfs">NFS</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/nfs/servers/ALL/confirm%3Fop%3Dstart">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; NFS &#62; Servers &#62; Confirm Start NFS Servers</div>
+<h1>Confirm Start NFS Servers</h1>
+
+<p>The daemon jobs are submitted to QSYSWRK and the command waits until they are ready; the RPC binder is started first when a server needs it. Press OK to start the servers listed below, or Cancel to return.</p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Server</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><span class="mono">*RPC</span></td>
+<td>RPC binder</td>
+</tr>
+<tr class="alt">
+<td><span class="mono">*BIO</span></td>
+<td>Block I/O for NFS mounts</td>
+</tr>
+<tr>
+<td><span class="mono">*RGY</span></td>
+<td>NFSv4 identity mapping</td>
+</tr>
+<tr class="alt">
+<td><span class="mono">*SVR</span></td>
+<td>NFS server</td>
+</tr>
+<tr>
+<td><span class="mono">*MNT</span></td>
+<td>Mount</td>
+</tr>
+<tr class="alt">
+<td><span class="mono">*NSM</span></td>
+<td>Network status monitor</td>
+</tr>
+<tr>
+<td><span class="mono">*NLM</span></td>
+<td>Network lock manager</td>
+</tr>
+</table><form method="post"><input type="hidden" name="csrf" value="CSRF"><p class="small grey">Equivalent command: <span class="mono">STRNFSSVR SERVER(*ALL)</span></p><div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

@@ -260,6 +260,27 @@ pub const TOPICS: &[Topic] = &[
         title: "Users disabled for NetServer",
         body: "<p>After as many wrong passwords in a row as system value <span class=\"mono\">QMAXSIGN</span> allows, NetServer disables the user for NetServer only: 5250 and other sign-ons still work. <b>Enable</b> lets the user sign on to NetServer again; it needs <span class=\"mono\">*OBJMGT</span> and <span class=\"mono\">*USE</span> authority to the user profile. Starting NetServer enables every user again.</p>",
     },
+    // NFS.
+    Topic {
+        key: "nfs",
+        title: "NFS exports",
+        body: "<p>The directories NFS clients may mount, with the options each was exported with. An export lasts until it is removed or the system is started again; to have it back after an IPL, keep it in <span class=\"mono\">/etc/exports</span> (<b>Update /etc/exports</b>) and export everything in that file from the startup program, or with <b>Export all from /etc/exports</b>. Every change is the command <span class=\"mono\">EXPORTFS</span>, which needs special authority <span class=\"mono\">*IOSYSCFG</span>; the NFS server reads the new table at once.</p>\n\
+<h2>Options</h2>\n<p><b>Read only</b> lets clients read; the <b>read-write hosts</b> may still write. Only the <b>access hosts</b> may mount the export (blank: any host). The root user of a <b>root host</b> is <span class=\"mono\">QSECOFR</span>; elsewhere root, and any user whose UID no profile has, is the <b>anonymous UID</b> (blank: profile <span class=\"mono\">QNFSANON</span>'s; -1 refuses them). <b>No set-user-ID</b> clears those bits on files clients make. Hosts are names, addresses, <span class=\"mono\">@network/length</span> or netgroups of <span class=\"mono\">/etc/netgroup</span>, separated by colons.</p>\n\
+<h2>NFS version 4</h2>\n<p>Version 4 clients see the exports under one tree. The <b>pseudo-root</b> export is its root, <b>NFS root</b> where it starts, and the <b>export name</b> the name a client sees the directory by. The <b>public file handle</b> is the one clients may use without mounting.</p>\n\
+<h2>Host options</h2>\n<p>For a host, the CCSID file data is converted to (<span class=\"mono\">*BINARY</span>: no conversion), the CCSID of path names (<span class=\"mono\">*ASCII</span>: the job's ASCII CCSID), and whether writes reach the disk before the client is answered (<span class=\"mono\">*SYNC</span>).</p>",
+    },
+    Topic {
+        key: "nfsservers",
+        title: "NFS servers",
+        body: "<p>The jobs that serve NFS, by type, in the order they are started: the RPC binder (port 111) that clients ask for the others' ports, the block I/O jobs of this system's own NFS mounts, the NFSv4 identity mapping, the NFS server (port 2049), the mount daemon, the network status monitor and the lock manager. They run in subsystem <span class=\"mono\">QSYSWRK</span>.</p>\n\
+<h2>Start and End</h2>\n<p><b>Start</b> runs <span class=\"mono\">STRNFSSVR</span> for the type, starting the binder first when the type needs it, and waits until its jobs are ready; <b>End</b> runs <span class=\"mono\">ENDNFSSVR</span>. Both need special authority <span class=\"mono\">*IOSYSCFG</span>. Nothing starts NFS at an IPL unless the startup program does.</p>",
+    },
+    Topic {
+        key: "nfsmounts",
+        title: "Mounted file systems",
+        body: "<p>Every file system mounted in the integrated file system: the system's own, user-defined file systems and NFS exports of other systems. For an NFS mount, <b>Server</b> says whether the server answers.</p>\n\
+<h2>Mount and Unmount</h2>\n<p><b>Mount NFS file system</b> runs <span class=\"mono\">MOUNT TYPE(*NFS)</span>: the server's name or address, the directory it exports, an existing directory here to mount it over, and the options (for example <span class=\"mono\">ro</span>, <span class=\"mono\">soft</span>, <span class=\"mono\">vers=4</span>). <b>Unmount</b> runs <span class=\"mono\">UNMOUNT</span>, refused while anything in the file system is open. Both need special authority <span class=\"mono\">*IOSYSCFG</span>. Mounts last until the next IPL.</p>",
+    },
     // Performance.
     Topic {
         key: "perfsys",
