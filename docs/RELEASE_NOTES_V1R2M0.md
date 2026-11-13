@@ -1,9 +1,9 @@
 # QS/400 V1R2M0 release notes
 
-Draft for the next release. V1R2M0 adds NetServer, SMB file and print
-serving, one of the features V1R1M0 left out
-(`RELEASE_NOTES_V1R1M0.md`, "Deliberately not in V1R1M0"), and the fixes
-made since V1R1M0. `VERSION` is still `1.1.0`: the generated blocks (the
+Draft for the next release. V1R2M0 adds NetServer (SMB file and print
+serving) and NFS (the server and the client), two of the features
+V1R1M0 left out (`RELEASE_NOTES_V1R1M0.md`, "Deliberately not in
+V1R1M0"), and the fixes made since V1R1M0. `VERSION` is still `1.1.0`: the generated blocks (the
 marker inventory and the SQL refusals) stay in the V1R1M0 notes until
 `ci/version.sh prepare 1.2.0` moves the release identity, when
 `tools/kcbuild` is pointed at this file.
@@ -20,10 +20,28 @@ marker inventory and the SQL refusals) stay in the V1R1M0 notes until
     profile reads as one with no NT hash;
   - the audit entry layouts are at version 2: the `VP` entry (network
     password error) is written, under `*AUTFAIL`;
-  - QAP is at version 10, a draft adding the NetServer service (`QAP.md`).
-- One new format, frozen at V1R2M0: NetServer's configuration files
+  - QAP is at version 11: version 10 a draft adding the NetServer
+    service, version 11 a draft adding the `Nfs` service (`QAP.md`).
+- New formats, frozen at V1R2M0: NetServer's configuration files
   `/QIBM/UserData/OS400/NetServer/QAZLSCFG` and `QAZLSSHR`
-  (`NETSERVER.md` §4).
+  (`NETSERVER.md` §4); and under `/QIBM/UserData/OS400/NFS/` the NFS
+  options, the status monitor's monitored hosts and the NFSv4 stable
+  records (`NFS.md` §6).
+- **Shipped user profiles get IBM's UIDs.** Until now they had none, so
+  UID 0 named no one. At the first IPL of this release a shipped
+  profile without a UID takes IBM's number when it is free (`QSECOFR` 0,
+  `QSYS` 101, `QNFSANON` 4294770710, ...); a profile that has one keeps
+  it. IFS objects name their owner by profile, so nothing changes hands.
+  `CRTUSRPRF` and `CHGUSRPRF` now refuse a UID or GID another profile
+  has (`CPF22CE`), and `QSECOFR`'s UID cannot change (`CPF224C`).
+- The upgrade adds the NFS daemons' `QSYSWRK` routing entries 2120 to
+  2127 with their job descriptions and classes, as it adds NetServer's
+  entries.
+- The kernel configuration names `CONFIG_FHANDLE` (the IFS opens an
+  object by its file ID through its xfs handle).
+- **Command prompts are laid out as IBM's**: `More...` or `Bottom` on
+  row 21, the keys on rows 22 and 23, the message on row 24; long
+  fields wrap. A script that reads a prompt by row sees the new rows.
 - **Each user changes the password once before using NetServer.** An NT
   hash can be made only from the password itself, so a profile carried
   over from V1R1M0 has none, and NetServer refuses it (`CPIB68D`) until the
@@ -91,6 +109,51 @@ with IBM i NetServer:
 - A 1 GB copy under QEMU runs at about 150 to 210 MB/s into the system
   and 90 to 115 MB/s out (`NETSERVER.md` §11).
 
+**NFS** (`NFS.md`). `EXPORTFS` publishes IFS directories to NFS clients
+and `MOUNT TYPE(*NFS)` mounts a remote export into the IFS, with IBM's
+commands, daemon jobs and `/etc/exports`:
+
+- The server: NFS versions 3, 4.0 and 4.1 (version 2 is refused), MOUNT
+  1 and 3, the lock manager (NLM 1, 3, 4) and the status monitor, over
+  ONC RPC with the binder on port 111 (`/etc/RPCBTAB` as IBM writes
+  it). Every protocol type is generated from an XDR description in the
+  tree.
+- IBM's exports: `RO`, `RW=`, `ACCESS=`, `ROOT=`, `ANON=`, `NOSUID`,
+  `HOSTOPT` with text conversion by CCSID, `/etc/netgroup`; `/QSYS.LIB`
+  exported with members as files. A caller is the user profile with
+  the wire's UID; root is the anonymous user except for `ROOT=` hosts;
+  authority is the profile's, never the wire's group list.
+- File handles survive an IPL. NFSv4 has the pseudo-file system over
+  the exports, stateful opens with share reservations enforced against
+  local jobs and NetServer, byte-range locks shared with NLM and local
+  jobs, read delegations, 4.1 sessions with the backchannel, and a
+  grace period with reclaim after a restart.
+- The daemons are jobs in `QSYSWRK` (`QNFSRPCD`, `QNFSNFSD`, `QNFSMNTD`,
+  `QNFSNLMD`, `QNFSNSMD`, `QNFSBIOD`, `QNFSRGYD`), started and ended by
+  `STRNFSSVR`, `ENDNFSSVR`, `RPCBIND` and `ENDRPCBIND`. Nothing starts
+  them at IPL unless the startup program does, as on IBM i.
+- The client: versions 3, 4.0 and 4.1 with IBM's mount options (`hard`,
+  `soft`, `intr`, `timeo`, `retrans`, `retry`, `rsize`, `wsize`, the
+  attribute cache times, `vers`, `proto`, `port`, `mountport`). A mount
+  never holds the storage service: its requests wait on a cache that
+  worker threads fill. A server that stops answering is reported to
+  `QSYSOPR` (`CPDA1B9`) once, and again when it answers. Byte-range
+  locks go to the server and are reclaimed after it restarts.
+- `DSPMFSINF`/`STATFS` (display and listing), `RLSIFSLCK`, `UNMOUNT
+  TYPE(*NFS *ALL)`, the APIs `QZNFRTVE` and `QZNFNFSO`, the menus
+  `CMDNFS`, `CMDMFS` and `CMDRPC`. `MOUNT` and `UNMOUNT` are now IBM's
+  V7R1M0 definitions (`TYPE(*NETWORK)` is gone; it was never a value
+  there).
+- QS/400's own, which no release of IBM i has: `QSYS2.NFS_EXPORT_INFO`
+  and `QSYS2.MOUNTED_FS_INFO`; Navigator's Network > NFS pages
+  (exports, servers, mounts); the QAP `Nfs` service.
+- `tools/nfstest`, a test client written apart from the server, with
+  about 90 scenarios, `probe` and `bench`.
+- Refused (`NFS.md` §10): NFS version 2 and 4.2, `RPCSEC_GSS` and
+  Kerberos (`SERVER(*GSS)`), pNFS, referrals, ACLs beyond mode bits,
+  write and directory delegations, named attributes, exporting `/QOPT`,
+  `/QDLS`, `/QNTC`, `/QFileSvr.400` or an NFS mount, `CVTRPCSRC`.
+
 **Install media.** The media UKI is 13 MB, down from 31 MB at the edge
 of the 32 MiB an El Torito boot image can name: its initramfs holds only
 a loader, which takes `slic` and the job program from the media once
@@ -133,7 +196,6 @@ screens and the bytes on its disks are as they were.
 
 Each has its own handoff document for a later release.
 
-- NFS server and client: `*UDFS` mounts only.
 - LDAP server and client: user profiles are the directory.
 - An SNMP agent: the definitions only.
 - DNS, DHCP, BOOTP and TFTP servers: DHCP and DNS clients exist.
@@ -146,7 +208,8 @@ Each has its own handoff document for a later release.
 - Query/400 and Query Manager (`WRKQRY`, `RUNQRY`, QS00QU1): `STRSQL`,
   `RUNSQL` and `OPNQRYF` exist.
 - The RDi/RSE server and the debug server.
-- Virtual optical from HTTP or NFS: image catalogs on the IFS only.
+- Virtual optical from HTTP or an NFS server named in the device
+  description: image catalogs on the IFS only.
 - SNA, APPC and pass-through (`STRPASTHR` is refused): TCP/IP only.
 - BRMS, save while active, parallel saves, optical media libraries.
 - Independent ASPs: the system ASP only.
@@ -161,7 +224,21 @@ datagram service (UDP 138) and browsing are not built (clients connect by
 name or address); renaming a file or library above a leased member breaks
 no lease.
 
+NFS's are in `NFS.md` §10 and §7. The main ones: a file not used
+since the IPL is found from its handle by one walk of its file system;
+a mode an NFS client sets loses its group bits when the owner has no
+primary group (the IFS's authority model); version 3 locks on a mount
+need the server's binder; NFSv4 blocking locks are polled.
+
 ## Before shipping (Cody)
+
+The NFS `NEEDS-CODY` items (`NFS.md` §12): a Linux and a macOS client
+mounting a QS/400 export (versions 3, 4.0, 4.1) and QS/400 mounting a
+Linux export; an export to the Dell host; on the primary with NFS
+started: the daemon jobs' user and `WRKACTJOB` appearance, `/etc/exports`
+as IBM reads and writes it with `HOSTOPT`, `DSPMFSINF` of an NFS mount,
+the classes of the routing entries, how a disabled profile's UID maps.
+`ifs/ifs/tests/linux-xfs.sh` needs root.
 
 The NetServer `NEEDS-CODY` items (`NETSERVER.md`):
 
