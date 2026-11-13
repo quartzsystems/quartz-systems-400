@@ -130,3 +130,28 @@ fn every_4_0_scenario_against_the_server() {
 fn every_4_1_scenario_against_the_server() {
     real("4.1");
 }
+
+#[test]
+fn bench_over_4_0_and_4_1() {
+    let s = common::start(&common::Options {
+        v4: true,
+        ..common::Options::default()
+    });
+    let pmap = s.pmap_port.to_string();
+    for vers in ["4.0", "4.1"] {
+        let mut a = vec!["bench".to_string()];
+        a.extend(args(0, vers, &[]));
+        let at = a.iter().position(|x| x == "--port").unwrap();
+        a.drain(at..at + 2);
+        let p = a.iter().position(|x| x == "--pmap-port").unwrap();
+        a[p + 1].clone_from(&pmap);
+        a.extend(["--mib".into(), "4".into()]);
+        let (code, out) = run(&a);
+        println!("{vers}: {out}");
+        assert_eq!(code, 0, "{vers}: {out}");
+        assert!(
+            out.contains("read MiB/s: ") && out.contains("block: 65536"),
+            "{out}"
+        );
+    }
+}

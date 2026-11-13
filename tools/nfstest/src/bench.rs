@@ -36,10 +36,85 @@ impl std::fmt::Display for Bench {
     }
 }
 
-/// Writes `mib` MiB in blocks of `bs` (0: the server's preferred size),
-/// commits, reads it back and compares the checksums.
-#[allow(clippy::cast_precision_loss)]
+/// Writes `mib` MiB in blocks of `bs` (0: the server's preferred size;
+/// 64 KiB in version 4, which has no `FSINFO`), commits, reads it back
+/// and compares the checksums.
 pub fn run(c: &Ctx, mib: u64, bs: u32) -> Result<Bench, Error> {
+    if c.t.vers == crate::target::Vers::V3 {
+        run3(c, mib, bs)
+    } else {
+        run4(c, mib, if bs == 0 { 64 * 1024 } else { bs })
+    }
+}
+
+/// MiB/s of `total` bytes in `secs`.
+#[allow(clippy::cast_precision_loss)]
+fn rate(total: u64, secs: f64) -> f64 {
+    (total as f64 / f64::from(1 << 20)) / secs.max(1e-9)
+}
+
+/// The version 4 run: `OPEN` create, unstable `WRITE`s, `COMMIT`,
+/// `READ`s, `CLOSE`.
+fn run4(c: &Ctx, mib: u64, bs: u32) -> Result<Bench, Error> {
+    use crate::scenarios::v4::{OpenOwner, Session4, open};
+    use crate::wire::v4::{Body, Op, op};
+    let mut s = Session4::open(c, "bench")?;
+    let mut o = OpenOwner::new("bench");
+    let d = s.dir.clone();
+    let (sid, fh) = open(&mut s.v, &mut o, &d, b"bench", 3, 0, true)?
+        .map_err(|st| Error::Check(format!("OPEN create: {st}")))?;
+    let total = mib << 20;
+    let block = pattern(0, bs as usize);
+    let mut sum = FNV0;
+    let t = Instant::now();
+    let mut off = 0u64;
+    while off < total {
+        let n = (total - off).min(u64::from(bs)) as usize;
+        sum = fnv(sum, &block[..n]);
+        let r = s.v.ok(&[
+            Op::PutFh(fh.clone()),
+            Op::Write(sid, off, 0, block[..n].to_vec()),
+        ])?;
+        let Some(Body::Write(got, _, _)) = r.of(op::WRITE).map(|x| x.body.clone()) else {
+            return Err(Error::Check("no WRITE result".into()));
+        };
+        check(got as usize == n, || {
+            format!("WRITE at {off}: {got} of {n}")
+        })?;
+        off += n as u64;
+    }
+    s.v.ok(&[Op::PutFh(fh.clone()), Op::Commit(0, 0)])?;
+    let w = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    let mut back = FNV0;
+    let mut off = 0u64;
+    loop {
+        let r = s.v.ok(&[Op::PutFh(fh.clone()), Op::Read(sid, off, bs)])?;
+        let Some(Body::Read(eof, b)) = r.of(op::READ).map(|x| x.body.clone()) else {
+            return Err(Error::Check("no READ result".into()));
+        };
+        back = fnv(back, &b);
+        off += b.len() as u64;
+        if eof || b.is_empty() {
+            break;
+        }
+    }
+    let rd = t.elapsed().as_secs_f64();
+    check(off == total, || format!("read {off} of {total}"))?;
+    check(back == sum, || "checksum differs".into())?;
+    let seqid = o.next(s.v.minor);
+    s.v.ok(&[Op::PutFh(fh), Op::Close(seqid, sid)])?;
+    s.close()?;
+    Ok(Bench {
+        bytes: total,
+        bs,
+        write: rate(total, w),
+        read: rate(total, rd),
+    })
+}
+
+/// The version 3 run.
+fn run3(c: &Ctx, mib: u64, bs: u32) -> Result<Bench, Error> {
     let mut s = Session::open(c, "bench")?;
     let (d, root) = (s.dir.clone(), s.root.clone());
     let (rsize, wsize) = io_sizes(c, &mut s.n, &root)?;
@@ -88,11 +163,10 @@ pub fn run(c: &Ctx, mib: u64, bs: u32) -> Result<Bench, Error> {
     check(off == total, || format!("read {off} of {total}"))?;
     check(back == sum, || "checksum differs".into())?;
     s.close()?;
-    let mibs = |secs: f64| (total as f64 / f64::from(1 << 20)) / secs.max(1e-9);
     Ok(Bench {
         bytes: total,
         bs: wsize,
-        write: mibs(w),
-        read: mibs(rd),
+        write: rate(total, w),
+        read: rate(total, rd),
     })
 }

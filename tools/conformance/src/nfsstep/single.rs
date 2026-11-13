@@ -407,7 +407,7 @@ impl Suite {
     }
 
     /// Step 176: `nfstest bench` writes and reads `QS400_NFS_BENCH_MIB`
-    /// (1024) MiB from the host. `nfstest bench` is version 3 only.
+    /// (1024) MiB from the host, version 3 then 4.1.
     pub(crate) fn nfs_bench(&self, s: &mut Session) -> Result<String, String> {
         let r = self.nfs_bench_body(s);
         self.nfs_checked(s, "176", r)
@@ -424,23 +424,47 @@ impl Suite {
         let mut a = vec!["bench".to_string()];
         a.extend(self.nfs_target("nfsbench"));
         a.extend(["--mib".into(), mib.to_string()]);
-        let r = host::run(&a, Duration::from_mins(60))?;
-        let text = format!("$ {}\n{}{}\n", r.line, r.out, r.err);
-        let _ = std::fs::write(self.out_dir.join("nfs-176-bench.txt"), &text);
-        let (Some(w), Some(rd)) = (
-            host::value(&r.out, "write MiB/s: "),
-            host::value(&r.out, "read MiB/s: "),
-        ) else {
-            return Err(format!("no rates:\n{text}"));
-        };
-        let line = format!(
-            "host -> guest, version 3, {mib} MiB: write {w} MiB/s, read {rd} MiB/s (block {})",
-            host::value(&r.out, "block: ").unwrap_or("?")
+        let r3 = host::run(&a, Duration::from_mins(60))?;
+        // Version 4.1 needs only the forwarded 2049 (after the grace period).
+        self.nfs_after_grace();
+        let port = host::host_port(&self.nfs.borrow().map, 2049).ok_or("2049 is not forwarded")?;
+        let a4: Vec<String> = [
+            "bench",
+            "127.0.0.1",
+            EXPORT,
+            "nfsbench",
+            "--vers",
+            "4.1",
+            "--port",
+            &port.to_string(),
+            "--mib",
+            &mib.to_string(),
+        ]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect();
+        let r4 = host::run(&a4, Duration::from_mins(60))?;
+        let text = format!(
+            "$ {}\n{}{}\n$ {}\n{}{}\n",
+            r3.line, r3.out, r3.err, r4.line, r4.out, r4.err
         );
-        super::pairsteps::perf_line(&self.out_dir, &line);
-        Ok(format!(
-            "{line}; version 4.1 not measured: nfstest bench is version 3 only"
-        ))
+        let _ = std::fs::write(self.out_dir.join("nfs-176-bench.txt"), &text);
+        let mut lines = Vec::new();
+        for (vers, r) in [("3", &r3), ("4.1", &r4)] {
+            let (Some(w), Some(rd)) = (
+                host::value(&r.out, "write MiB/s: "),
+                host::value(&r.out, "read MiB/s: "),
+            ) else {
+                return Err(format!("no rates for version {vers}:\n{text}"));
+            };
+            let line = format!(
+                "host -> guest, version {vers}, {mib} MiB: write {w} MiB/s, read {rd} MiB/s (block {})",
+                host::value(&r.out, "block: ").unwrap_or("?")
+            );
+            super::pairsteps::perf_line(&self.out_dir, &line);
+            lines.push(line);
+        }
+        Ok(lines.join("; "))
     }
 
     /// Step 177: the guest mounts a Linux export, versions 3 and 4, and

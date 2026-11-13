@@ -42,6 +42,7 @@ deny` checks its graph (`tools/build/src/product.rs`).
 nfstest HOST EXPORT SCRATCH [options]          run the scenarios
 nfstest probe HOST [--pmap-port N] [--port-map G=H ...] [EXPORT]
 nfstest bench HOST EXPORT SCRATCH [--mib N] [--bs N] [options]
+nfstest handle save|use HOST EXPORT SCRATCH --file F [options]
 nfstest --list
 ```
 
@@ -72,7 +73,16 @@ nfstest --list
   usage error. `probe` prints the binder's table as `rpcinfo -p` does
   (with `(host port N)` after a port the map changed) and the export list
   as `showmount -e` does. `bench` prints `bytes`, `block`, `write MiB/s`
-  (to the `COMMIT`) and `read MiB/s`, after comparing checksums.
+  (to the `COMMIT`) and `read MiB/s`, after comparing checksums; with
+  `--vers 4.0`/`4.1` it does the same through `OPEN`, `WRITE`, `COMMIT`,
+  `READ` and `CLOSE` in blocks of 64 KiB (`--bs`).
+- `handle save` makes `SCRATCH/handle-<pid>/handle-survives.txt`, writes
+  it stably and keeps its version 3 handle (hexadecimal) in the local file
+  `--file`; `handle use` reads that file and sends `GETATTR` and `READ` of
+  the handle on NFS's port with no `MOUNT` and no `LOOKUP` (`--port` alone
+  is enough): the handle must still name the file after the server
+  restarted or its machine had an IPL. Each prints `ok handle-save: ...`
+  or `ok handle-use: ...`, else `fail handle: why` and exit code 1.
 
 ## Scenarios
 
@@ -130,12 +140,14 @@ old session then `BADSESSION`), the same file scenarios as `v41-*` with
   TCP and UDP, `mountd`, `nfsd`, `nlmd`, `nsmd`) over an IFS in memory
   with one export, `/home/exp`, on loopback; every version 3 scenario
   through `cli::run` with `--callbacks`; `probe`; `bench` of 8 MiB;
+  `handle save` then `handle use`;
   `nlm-grace` against a server in its grace period. Scenarios that fail
   against the server on main are listed in `KNOWN` with the finding.
 - `tests/v4_scripted.rs`: the version 4 scenarios that need no file data
   against a scripted responder (`tests/v4fake/`, written from the RFCs
   for the tests); that a version 3 server refuses version 4; and every
-  4.0 and 4.1 scenario against QS/400's server (`nfsd4`).
+  4.0 and 4.1 scenario against QS/400's server (`nfsd4`); `bench` of
+  4 MiB over 4.0 and 4.1.
 
 ## Interop
 
@@ -160,8 +172,10 @@ NSM, adds a forward for each (QMP `hostfwd_add`), then runs
 `nfstest 127.0.0.1 <export> nfstest --pmap-port <host 111> --port-map
 <guest>=<host> ...` (or the explicit `--port`/`--mountport`/`--nlmport`/
 `--nsmport`) and `--vers 4.0`/`4.1` with `--port` alone. `--callbacks`
-is not used through forwards. The 1 GB run is `nfstest bench ... --mib
-1024`. These are steps 173 to 176 (`tools/conformance/src/nfsstep/`,
+is not used through forwards. The 1 GB runs are `nfstest bench ... --mib
+1024`, version 3 and then 4.1 with `--port` alone; step 185 keeps a
+handle with `handle save` and uses it with `handle use` after `ENDNFSSVR`/
+`STRNFSSVR` and after an IPL. These are steps 173 to 176 and 185 (`tools/conformance/src/nfsstep/`,
 `docs/NFS.md` section 11).
 
 ## Findings
