@@ -652,36 +652,57 @@ name.
 ## File IDs
 
 A file ID is the file system, the object's number and its generation
-(`Qp0lFID_t`). Generations come from `meta::generation::GenClock`: it
+(`Qp0lFID_t`). On the xfs, a new object's generation is xfs's own inode
+generation (read from its handle, `Backend::generation`), stored in the
+record's existing generation field (tag 19; the frozen `ifs-meta`
+layout is unchanged): the file ID then is the xfs handle, and xfs gives
+a reused inode number a new generation. Elsewhere (`MemBackend`), and
+on the xfs when its handle is not of the expected form or its
+generation is 0, generations come from `meta::generation::GenClock`: it
 reserves values in blocks of 1024 and keeps the top of its reservation
 in the extended attribute `trusted.qs400.gen` (u32 LE) on the volume's
 top directory, so after an IPL it starts above every generation given
-before and a number xfs reuses never meets its old generation. 0 is an
-object made before generations or outside QS/400; after 4294967295 the
-values start again at 1. `/QSYS.LIB` and the views have generation 0.
+before. 0 is an object made before generations or outside QS/400;
+after 4294967295 the clock's values start again at 1. `/QSYS.LIB` and
+the views have generation 0.
 
 `stat_by_id` (path and attributes) and `open_by_id` (a descriptor and
 the path) find an object from its ID as the caller: the ID's generation
-must equal the object's (0 matches only 0). Every path resolved is
-remembered under its ID (at most 65536, oldest dropped), so an ID seen
-since the service started is one resolution. Any other is searched for:
-a backend file system (root, `/QOpenSys`, a mounted UDFS) by a walk of
-its tree that remembers every path it passes, `/QSYS.LIB` level by
-level (libraries, then every library's objects, then every physical
-file's members) by the numbers their paths hash to; two names with one
-number are refused (`EBADFID`) rather than guessed. What is found is
-resolved again: an object gone, of another generation, or on a file
-system no longer mounted is `ESTALE`; `/dev` and `/QOPT` cannot be
-searched (`ENOTSUP`). The caller's authority is the path's: every
-directory on it needs `*X`, which is stricter than a Unix file server.
-`path_from_file_id` (`Qp0lGetPathFromFileID`) uses the same search,
-generation 0 matching any, with its old answers (`EBADFID`, `ENOENT`).
+must equal the object's (0 matches only 0). In order:
 
-The xfs could open an object by its kernel handle (`open_by_handle_at`),
-but `rustix` has no wrapper for it and `ifs` forbids `unsafe`; after
-an IPL the first lookup of each ID not yet seen walks. A UDFS's file
-system number is the one `MOUNT` gave it, so IDs on a UDFS end with its
-mount.
+1. **The handle** (backend file systems, generation not 0):
+   `Backend::path_of(ino, generation)`. `LinuxBackend` builds the xfs
+   handle from the two (12 bytes of type 0x81, inode number and
+   generation, native-endian, on a volume with 64-bit inode numbers; 8
+   bytes of type 1 with 32-bit ones), opens it `O_PATH` under the top
+   with `open_by_handle_at` (`ifs/fhandle`, `CAP_DAC_READ_SEARCH`, the
+   kernel's `CONFIG_FHANDLE`) and reads its `/proc/self/fd` link, which
+   must lie under the top and the mount's base. The form is read once,
+   from the handle of the top checked against its inode number; any
+   other form turns this step off. xfs refuses a handle of a freed
+   inode or of another generation (`ESTALE`), so no walk is needed for a
+   directory, nor for a file the kernel still has a path for; a file
+   not in the kernel's cache since the mount has no path (its dentry is
+   not connected, and an xfs handle names no parent), and goes on.
+2. **The remembered path**: every path resolved is remembered under its
+   ID (at most 65536, oldest dropped).
+3. **The search**: a backend file system (root, `/QOpenSys`, a mounted
+   UDFS) by a walk of its tree that remembers every path it passes,
+   `/QSYS.LIB` level by level (libraries, then every library's objects,
+   then every physical file's members) by the numbers their paths hash
+   to; two names with one number are refused (`EBADFID`) rather than
+   guessed.
+
+What is found is resolved again and its record's generation compared:
+an object gone, of another generation, or on a file system no longer
+mounted is `ESTALE`; `/dev` and `/QOPT` cannot be searched (`ENOTSUP`).
+Objects made before this release keep their clock generations, which
+are not xfs's: their IDs skip step 1. The caller's authority is the
+path's: every directory on it needs `*X`, which is stricter than a Unix
+file server. `path_from_file_id` (`Qp0lGetPathFromFileID`) uses the
+same search, generation 0 matching any, with its old answers
+(`EBADFID`, `ENOENT`). A UDFS's file system number is the one `MOUNT`
+gave it, so IDs on a UDFS end with its mount.
 
 ## Text conversion
 

@@ -280,18 +280,23 @@ over `IfsClient` with these additions to the IFS (built first):
   `access()` as the user.
 - **File handles** are 32 bytes: a format byte, the export's ID (4), the
   IFS `FileId` (file system 4, object 8, generation 4), the file ID of
-  the export's root (8) and a checksum. The object number is the
-  backend's, and generations are drawn from a counter whose high-water
-  mark is kept on the volume (`trusted.qs400.gen`), so a reused object
-  number never repeats a generation across IPLs. `stat_by_id` (73) and
+  the export's root (8) and a checksum. The object number is xfs's and
+  the generation xfs's inode generation (kept in the record's
+  generation field), so the `FileId` is the xfs handle and a reused
+  inode number never meets its old generation; objects from before
+  this release keep generations from a counter whose high-water mark is
+  on the volume (`trusted.qs400.gen`). `stat_by_id` (73) and
   `open_by_id` (74) take a `FileId` to its path and attributes, or to a
-  descriptor and the path, in one request as the caller. **Not** without
-  walking, as designed: `rustix` has no `open_by_handle_at` and `ifs`
-  forbids `unsafe`, so the service remembers the path of every object
-  resolved (65536 at most) and, after an IPL, the first lookup of an ID
-  not seen walks its file system (remembering everything it passes);
-  `/QSYS.LIB` resolves by the hashes of library, object and member,
-  level by level, a collision refused (`EBADFID`). A handle whose
+  descriptor and the path, in one request as the caller, without a
+  walk: the service opens the xfs handle (`open_by_handle_at`,
+  `ifs/fhandle`) and names it by its `/proc/self/fd` link. That needs
+  no walk for a directory, nor for a file the kernel has a path for; a
+  file not in its cache since the IPL (an xfs handle names no parent),
+  or an object with an old generation, falls back to the paths the
+  service remembers (65536) and then a walk of its file system that
+  remembers what it passes (`docs/IFS.md`, "File IDs"). `/QSYS.LIB`
+  resolves by the hashes of library, object and member, level by level,
+  a collision refused (`EBADFID`). A handle whose
   object is gone, whose generation differs, or whose file system is no
   longer mounted (a UDFS mounted again gets a new number) is `ESTALE`:
   `NFS3ERR_STALE`/`NFS4ERR_STALE`; one outside its export
