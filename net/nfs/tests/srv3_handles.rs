@@ -192,3 +192,49 @@ fn an_exclusive_create_is_made_once() {
         Ok(a)
     );
 }
+
+/// Data is on disk when the reply says so: an `UNSTABLE` write is not
+/// synced (its verifier tells the client what a restart lost), `COMMIT`
+/// and `FILE_SYNC` are; a `*SYNC` host's writes are all answered
+/// `FILE_SYNC`, each synced before the reply. The syncs are made off the
+/// caller's thread, as in the service.
+#[test]
+fn writes_are_synced_as_the_reply_says() {
+    let (w, root) = world();
+    w.backend.set_sync_handles(true);
+    let mut e = w.export(2, "/home/sync");
+    e.default_opts.sync = true;
+    w.put(e);
+    let sroot = w.handle(2, "/home/sync");
+    let p = w.nfs3();
+    let c = Client::new(PEER, 100);
+    let v = V3 { p: &p, c: &c };
+    let f = v.create(&root, "f").unwrap();
+    let synced = || w.backend.syncs();
+    let base = synced();
+    let r = v.write(&f, 0, b"one", t3::stable_how::UNSTABLE).unwrap();
+    assert_eq!(r.committed, t3::stable_how::UNSTABLE);
+    assert_eq!(synced(), base, "an unstable write is not synced");
+    match c.v3(
+        &p,
+        &Args::NFSPROC3_COMMIT(t3::COMMIT3args {
+            file: fh(&f),
+            offset: 0,
+            count: 0,
+        }),
+    ) {
+        Res::NFSPROC3_COMMIT(t3::COMMIT3res::NFS3_OK(ok)) => assert_eq!(ok.verf, r.verf),
+        r => panic!("{r:?}"),
+    }
+    assert_eq!(synced(), base + 1, "COMMIT syncs");
+    let r = v.write(&f, 3, b"two", t3::stable_how::FILE_SYNC).unwrap();
+    assert_eq!(r.committed, t3::stable_how::FILE_SYNC);
+    assert_eq!(synced(), base + 2);
+    // `*SYNC`: unstable asked, stable answered and made.
+    let g = v.create(&sroot, "g").unwrap();
+    let r = v.write(&g, 0, b"three", t3::stable_how::UNSTABLE).unwrap();
+    assert_eq!(r.committed, t3::stable_how::FILE_SYNC);
+    assert_eq!(synced(), base + 3);
+    assert_eq!(v.read(&g, 0, 9).unwrap().0, b"three");
+    assert_eq!(v.read(&f, 0, 9).unwrap().0, b"onetwo");
+}

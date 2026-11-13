@@ -425,3 +425,53 @@ fn share_reservations_hold_between_jobs() {
         }
     }
 }
+
+/// A sync asked by a request that may wait is made on the syncer's
+/// thread: the request defers until it is done, its next run finds it
+/// done and does not write again; outside such a request the sync is
+/// made in place. Either way the backend syncs once per call.
+#[test]
+#[allow(clippy::many_single_char_names)]
+fn syncs_wait_off_the_callers_thread() {
+    let mem = MemBackend::new();
+    mem.set_sync_handles(true);
+    let env = env();
+    let ifs = Arc::new(Ifs::new(
+        mem.clone(),
+        Box::new(MemQsys::new(Auth::USE)),
+        Config::default(),
+    ));
+    ifs.ensure_layout(&env).unwrap();
+    let j = job(&ifs, env, 1);
+    let fd = j
+        .open("/tmp/s", OpenArgs::new(O_RDWR | O_CREAT).mode(0o600))
+        .unwrap();
+    // In place: no request.
+    j.with(|c| c.fsync(fd, false)).unwrap();
+    assert_eq!(mem.syncs(), 1);
+    // A request that may wait defers, and its next run takes the result.
+    let (r, d) = deferring(true, || {
+        j.with(|c| c.pwrite_stat(fd, b"abc", 0, Some(false)))
+    });
+    assert_eq!(r, Err(Errno::EAGAIN));
+    let d = d.expect("the sync defers the request");
+    assert!(ifs.wait_deferral(&d));
+    assert_eq!(mem.syncs(), 2);
+    let t = ifs::remote::request::last().expect("its token");
+    // Written meanwhile by another call: the run does not write again.
+    j.pwrite(fd, b"xyz", 0).unwrap();
+    ifs::remote::request::rerun(t);
+    let (r, d) = deferring(true, || {
+        j.with(|c| c.pwrite_stat(fd, b"abc", 0, Some(false)))
+    });
+    assert!(d.is_none());
+    let (n, st) = r.unwrap();
+    assert_eq!((n, st.map(|s| s.size)), (3, Some(3)));
+    assert_eq!(j.pread(fd, 3, 0).unwrap(), b"xyz");
+    assert_eq!(mem.syncs(), 2, "the run took the sync made");
+    // Through the client that waits: one sync per call.
+    assert_eq!(j.pwrite_stat(fd, b"def", 3, Some(true)).unwrap().0, 3);
+    j.fsync(fd, false).unwrap();
+    assert_eq!(mem.syncs(), 4);
+    j.close(fd).unwrap();
+}

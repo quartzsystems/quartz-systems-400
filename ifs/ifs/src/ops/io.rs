@@ -254,6 +254,10 @@ impl<B: Backend> Ifs<B> {
         let mut st = self.lock();
         let o = Self::open_of(&mut st.rest, cx, fd)?;
         if let OpenKind::File(file) = &o.kind {
+            // A request that may wait leaves the sync to the syncer.
+            if let Some(r) = super::syncer::sync(file, data_only) {
+                return r;
+            }
             return file.sync(data_only);
         }
         if let OpenKind::Remote(r) = &o.kind {

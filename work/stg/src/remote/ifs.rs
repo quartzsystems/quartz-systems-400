@@ -630,4 +630,26 @@ impl IfsClient for RemoteIfs {
             Unit
         )
     }
+    fn stat_by_id_access(&self, id: FileId, amode: i32) -> Result<(String, Stat, Result<()>)> {
+        reply_as!(self.call(IfsOp::StatByIdAccess { id, amode }), Checked)
+    }
+    fn pwrite_stat(
+        &self,
+        fd: i32,
+        data: &[u8],
+        off: u64,
+        sync: Option<bool>,
+    ) -> Result<(usize, Option<Stat>)> {
+        let data = data[..data.len().min(CHUNK)].to_vec();
+        reply_as!(
+            self.call(IfsOp::PWriteStat {
+                fd,
+                data,
+                off,
+                sync
+            }),
+            Wrote
+        )
+        .map(|(n, s)| (usize::try_from(n).unwrap_or(usize::MAX), s))
+    }
 }

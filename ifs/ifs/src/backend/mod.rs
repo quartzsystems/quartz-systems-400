@@ -99,6 +99,24 @@ pub struct StatFs {
     pub fsid: u64,
 }
 
+/// A file's sync, made on another thread: which file it is (two
+/// handles of one file share a key) and the sync itself (`true`: data
+/// only).
+pub struct SyncHandle {
+    /// The file: device and inode.
+    pub key: (u64, u64),
+    /// Force its data (and attributes unless `true`) to disk.
+    pub sync: Box<dyn Fn(bool) -> Result<()> + Send>,
+}
+
+impl std::fmt::Debug for SyncHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SyncHandle")
+            .field("key", &self.key)
+            .finish_non_exhaustive()
+    }
+}
+
 /// An open stream file. Positions are the caller's: every call names
 /// its offset.
 pub trait BFile: Send + Sync {
@@ -112,6 +130,11 @@ pub trait BFile: Send + Sync {
     fn set_len(&self, len: u64) -> Result<()>;
     /// Force data (and with `!data_only` the attributes) to disk.
     fn sync(&self, data_only: bool) -> Result<()>;
+    /// What syncs this file from another thread (`crate::ops::syncer`),
+    /// when the backend can: by default none, and syncs stay here.
+    fn sync_handle(&self) -> Option<SyncHandle> {
+        None
+    }
     /// An extended attribute of the open file, `None` when absent.
     fn xattr_get(&self, name: &str) -> Result<Option<Vec<u8>>>;
     /// Set an extended attribute of the open file.

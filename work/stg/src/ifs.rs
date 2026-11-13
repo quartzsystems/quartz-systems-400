@@ -357,6 +357,16 @@ pub enum IfsOp {
         id: u64,
         r: ifs::remote::HelperResult,
     },
+    StatByIdAccess {
+        id: FileId,
+        amode: i32,
+    },
+    PWriteStat {
+        fd: i32,
+        data: Vec<u8>,
+        off: u64,
+        sync: Option<bool>,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -444,6 +454,8 @@ wire_enum!(IfsOp {
     82 => Mounts,
     83 => RemoteTake,
     84 => RemotePost { fs, id, r },
+    85 => StatByIdAccess { id, amode },
+    86 => PWriteStat { fd, data, off, sync },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -530,6 +542,12 @@ pub enum IfsReply {
     Helper {
         r: Result<Option<ifs::remote::HelperWork>>,
     },
+    Checked {
+        r: Result<(String, Stat, Result<()>)>,
+    },
+    Wrote {
+        r: Result<(u64, Option<Stat>)>,
+    },
 }
 
 wire_enum!(IfsReply {
@@ -559,6 +577,8 @@ wire_enum!(IfsReply {
     23 => Queued { r },
     80 => Mounts { r },
     81 => Helper { r },
+    82 => Checked { r },
+    83 => Wrote { r },
 });
 
 /// The answer `Err(EUNKNOWN)` for a reply of the wrong shape.
@@ -841,6 +861,18 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         IfsOp::RemoteTake => R::Helper { r: c.remote_take() },
         IfsOp::RemotePost { fs, id, r } => R::Unit {
             r: c.remote_post(fs, id, &r),
+        },
+        IfsOp::StatByIdAccess { id, amode } => R::Checked {
+            r: c.stat_by_id_access(id, amode),
+        },
+        IfsOp::PWriteStat {
+            fd,
+            data,
+            off,
+            sync,
+        } => R::Wrote {
+            r: c.pwrite_stat(fd, &data[..data.len().min(CHUNK)], off, sync)
+                .map(|(n, s)| (n as u64, s)),
         },
     }
 }

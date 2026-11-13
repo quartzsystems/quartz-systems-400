@@ -39,6 +39,10 @@ struct Inner {
     capacity: Option<u64>,
     fail_xattr_set: bool,
     clock: Option<Nanos>,
+    /// Syncs made, by inode.
+    syncs: HashMap<u64, u64>,
+    /// Files give a [`super::SyncHandle`] (syncs off the caller's thread).
+    sync_handles: bool,
 }
 
 /// The in-memory tree. Clones share it.
@@ -218,6 +222,18 @@ impl MemBackend {
     pub fn node_count(&self) -> usize {
         self.lock().nodes.len()
     }
+
+    /// Syncs made so far, of every file (whatever thread made them).
+    #[must_use]
+    pub fn syncs(&self) -> u64 {
+        self.lock().syncs.values().sum()
+    }
+
+    /// Let open files sync off the caller's thread, as the Linux
+    /// backend's do.
+    pub fn set_sync_handles(&self, on: bool) {
+        self.lock().sync_handles = on;
+    }
 }
 
 /// An open file of a [`MemBackend`].
@@ -302,7 +318,26 @@ impl BFile for MemFile {
     }
 
     fn sync(&self, _data_only: bool) -> Result<()> {
+        *self.lock().syncs.entry(self.ino).or_insert(0) += 1;
         Ok(())
+    }
+
+    fn sync_handle(&self) -> Option<super::SyncHandle> {
+        if !self.lock().sync_handles {
+            return None;
+        }
+        let inner = Arc::clone(&self.inner);
+        let ino = self.ino;
+        Some(super::SyncHandle {
+            key: (0, ino),
+            sync: Box::new(move |_| {
+                let mut i = inner
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                *i.syncs.entry(ino).or_insert(0) += 1;
+                Ok(())
+            }),
+        })
     }
 
     fn xattr_get(&self, name: &str) -> Result<Option<Vec<u8>>> {

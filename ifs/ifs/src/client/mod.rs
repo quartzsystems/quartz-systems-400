@@ -292,6 +292,43 @@ pub trait IfsClient {
         let _ = (fs, id, r);
         Err(crate::Errno::ENOTSUP)
     }
+    /// [`IfsClient::stat_by_id`] and, with `amode` not 0, `access()` of
+    /// the path found, whose answer comes back beside it (a file server
+    /// checks what it must first): one request.
+    fn stat_by_id_access(&self, id: FileId, amode: i32) -> Result<(String, Stat, Result<()>)> {
+        let (p, s) = self.stat_by_id(id)?;
+        let a = if amode == 0 {
+            Ok(())
+        } else {
+            self.access(&p, amode)
+        };
+        Ok((p, s, a))
+    }
+    /// `pwrite()` of all of `data` (at most [`CHUNK`]) at `off`, then,
+    /// with `sync`, `fsync()` (`Some(true)`: `fdatasync()`), then
+    /// `fstat()`: how much was written and the attributes after (none
+    /// when `fstat()` failed). One request.
+    fn pwrite_stat(
+        &self,
+        fd: i32,
+        data: &[u8],
+        off: u64,
+        sync: Option<bool>,
+    ) -> Result<(usize, Option<Stat>)> {
+        let data = &data[..data.len().min(CHUNK)];
+        let mut done = 0;
+        while done < data.len() {
+            let n = self.pwrite(fd, &data[done..], off + done as u64)?;
+            if n == 0 {
+                break;
+            }
+            done += n;
+        }
+        if let Some(d) = sync {
+            self.fsync(fd, d)?;
+        }
+        Ok((done, self.fstat(fd).ok()))
+    }
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -649,6 +686,35 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
     fn remote_post(&self, fs: u32, id: u64, r: &crate::remote::HelperResult) -> Result<()> {
         self.ifs.remote_post(self.cx, fs, id, r)
     }
+    fn pwrite_stat(
+        &self,
+        fd: i32,
+        data: &[u8],
+        off: u64,
+        sync: Option<bool>,
+    ) -> Result<(usize, Option<Stat>)> {
+        // A run after the sync deferred finds the data written.
+        let key = crate::remote::request::occurrence("pwrite-stat");
+        let done = if let Some(n) = crate::remote::request::step::<usize>(&key) {
+            n
+        } else {
+            let data = &data[..data.len().min(CHUNK)];
+            let mut done = 0;
+            while done < data.len() {
+                let n = self.pwrite(fd, &data[done..], off + done as u64)?;
+                if n == 0 {
+                    break;
+                }
+                done += n;
+            }
+            crate::remote::request::set_step(&key, done);
+            done
+        };
+        if let Some(d) = sync {
+            self.fsync(fd, d)?;
+        }
+        Ok((done, self.fstat(fd).ok()))
+    }
 }
 
 /// [`Direct`] as another user: the caller's owner and environment with
@@ -843,6 +909,8 @@ macro_rules! every_method {
         fn mounts() -> Result<Vec<crate::remote::MountInfo>>;
         fn remote_take() -> Result<Option<crate::remote::HelperWork>>;
         fn remote_post(fs: u32, id: u64, r: &crate::remote::HelperResult) -> Result<()>;
+        fn stat_by_id_access(id: FileId, amode: i32) -> Result<(String, Stat, Result<()>)>;
+        fn pwrite_stat(fd: i32, data: &[u8], off: u64, sync: Option<bool>) -> Result<(usize, Option<Stat>)>;
     } };
 }
 

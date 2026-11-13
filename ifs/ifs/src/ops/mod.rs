@@ -26,6 +26,7 @@ mod open;
 mod release;
 mod remote;
 mod stat;
+pub(crate) mod syncer;
 mod udfs;
 mod walk;
 

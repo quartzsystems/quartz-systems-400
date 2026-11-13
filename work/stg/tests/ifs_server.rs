@@ -18,7 +18,7 @@ use ifs::backend::mem::MemBackend;
 use ifs::client::{Caller, IfsClient};
 use ifs::lock::range::RangeKind;
 use ifs::ops::audit::FileId;
-use ifs::ops::flags::{F_SETLK, O_CREAT, O_RDWR, O_WRONLY, SEEK_SET};
+use ifs::ops::flags::{F_SETLK, O_CREAT, O_RDWR, O_WRONLY, SEEK_SET, W_OK};
 use ifs::ops::{Config, Ctx, Ifs, OpenArgs, Owner};
 use qsyslib::env::EnvCache;
 use qsyslib::{JournalAudit, MemAccess, StoreAccess, StoreEnv, StoreQsys};
@@ -287,6 +287,13 @@ fn handles_and_waiting_locks_over_the_link() {
     far.ifs.forget_ids();
     let (p, s) = anon.stat_by_id(id).unwrap();
     assert_eq!((p.as_str(), s.ino), ("/home/d/f", id.ino));
+    // A file server's write in two requests: the handle with the
+    // caller's access, then the data, its sync and the attributes after.
+    let (p, _, acc) = anon.stat_by_id_access(id, W_OK).unwrap();
+    assert_eq!((p.as_str(), acc), ("/home/d/f", Ok(())));
+    let (n, after) = anon.pwrite_stat(fd, b"hello", 2, Some(false)).unwrap();
+    assert_eq!((n, after.map(|a| a.size)), (5, Some(7)));
+    assert_eq!(anon.pread(fd, 7, 0).unwrap(), b"\0\0hello");
     let (fd2, _) = job.open_by_id(id, OpenArgs::new(O_RDWR)).unwrap();
     // The other job locks it; the server's client waits in the service.
     let ofd = other.open("/home/d/f", OpenArgs::new(O_RDWR)).unwrap();

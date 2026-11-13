@@ -33,6 +33,30 @@ fn now_nanos() -> i64 {
     i64::try_from(d.as_nanos()).unwrap_or(i64::MAX)
 }
 
+/// Writes `buf` at `off` in pieces of at most [`CHUNK`] through `put`
+/// (a `pwrite_stat`), the last carrying `sync`: the bytes written and
+/// the attributes after.
+pub(crate) fn write_all(
+    buf: &[u8],
+    off: u64,
+    sync: Option<bool>,
+    mut put: impl FnMut(&[u8], u64, Option<bool>) -> Fr<(usize, Option<Stat>)>,
+) -> Fr<(usize, Option<Stat>)> {
+    let mut done = 0;
+    loop {
+        let end = (done + CHUNK).min(buf.len());
+        let piece_sync = if end == buf.len() { sync } else { None };
+        let (n, after) = put(&buf[done..end], off.saturating_add(done as u64), piece_sync)?;
+        if n == 0 && end > done {
+            return Err(Fail::V(VfsError::NoSpc));
+        }
+        done += n;
+        if done >= buf.len() {
+            return Ok((done, after));
+        }
+    }
+}
+
 impl<C: IfsClient> IfsVfs<C> {
     pub(crate) fn do_lookup_path(&self, r: &Req, path: &[u8]) -> VResult<Node> {
         let p = text::from_client(r.opts.path_ccsid, path)?;
@@ -150,13 +174,13 @@ impl<C: IfsClient> IfsVfs<C> {
         count: u32,
     ) -> VResult<ReadData> {
         self.run(r, |a| {
-            let (path, st) = self.locate(a, r, fh)?;
+            let (_, st, acc) = self.locate_access(a, r, fh, R_OK)?;
             match ftype_of(st.mode) {
                 FileType::Dir => return Err(Fail::V(VfsError::IsDir)),
                 FileType::Reg => {}
                 _ => return Err(Fail::V(VfsError::Inval)),
             }
-            a.c.access(&path, R_OK)?;
+            acc?;
             let want = usize::try_from(count).unwrap_or(CHUNK).min(CHUNK);
             let mut data = if want == 0 || off >= st.size {
                 Vec::new()
@@ -187,38 +211,29 @@ impl<C: IfsClient> IfsVfs<C> {
         stable: Stable,
     ) -> VResult<Written> {
         self.run(r, |a| {
-            let (path, st) = self.locate(a, r, fh)?;
+            let (_, st, acc) = self.locate_access(a, r, fh, W_OK)?;
             match ftype_of(st.mode) {
                 FileType::Dir => return Err(Fail::V(VfsError::IsDir)),
                 FileType::Reg => {}
                 _ => return Err(Fail::V(VfsError::Inval)),
             }
-            a.c.access(&path, W_OK)?;
+            acc?;
             let mut buf = data.to_vec();
             if let Some(x) = Xlate::between(st.ccsid, r.opts.data_ccsid) {
                 x.to_file(&mut buf);
-            }
-            let mut done = 0usize;
-            while done < buf.len() {
-                let at = off.saturating_add(done as u64);
-                let n = self.io(a, &st, fh, Mode::Write, |fd| {
-                    a.c.pwrite(fd, &buf[done..(done + CHUNK).min(buf.len())], at)
-                })?;
-                if n == 0 {
-                    return Err(Fail::V(VfsError::NoSpc));
-                }
-                done += n;
             }
             let committed = if r.opts.sync {
                 Stable::FileSync
             } else {
                 stable
             };
-            let fd = self.fd(a, fh.fid, Mode::Write)?;
-            if committed != Stable::Unstable {
-                a.c.fsync(fd, committed == Stable::DataSync)?;
-            }
-            let after = a.c.fstat(fd).ok().map(|s| attr_of(r, &s));
+            let sync = (committed != Stable::Unstable).then_some(committed == Stable::DataSync);
+            let (done, after) = write_all(&buf, off, sync, |piece, at, sync| {
+                self.io(a, &st, fh, Mode::Write, |fd| {
+                    a.c.pwrite_stat(fd, piece, at, sync)
+                })
+            })?;
+            let after = after.map(|s| attr_of(r, &s));
             Ok(Written {
                 count: u32::try_from(done).unwrap_or(u32::MAX),
                 committed,

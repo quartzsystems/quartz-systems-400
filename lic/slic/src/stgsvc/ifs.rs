@@ -389,16 +389,22 @@ pub fn parking<T>(allow: bool, f: impl FnOnce() -> T) -> (T, Option<Deferral>) {
 /// some job holds a lease or a remote file system is mounted (or being
 /// mounted), or a `QZLSFILE` job's poll for break orders. A write carries its data
 /// (up to 1 MiB, kept in a copy while it may park): with remote mounts
-/// only, it may park only when its descriptor is a remote file's.
+/// only, it may park only when its descriptor is a remote file's. A sync
+/// always may: it is made on the syncer's thread (`ifs::ops::syncer`).
 #[must_use]
 pub fn may_park_for(op: &IfsOp, handle: Option<u64>) -> bool {
     match op {
-        IfsOp::LeaseOrders { .. } | IfsOp::MountRemote { .. } | IfsOp::UnmountKind { .. } => true,
+        IfsOp::LeaseOrders { .. }
+        | IfsOp::MountRemote { .. }
+        | IfsOp::UnmountKind { .. }
+        | IfsOp::Fsync { .. }
+        | IfsOp::PWriteStat { sync: Some(_), .. } => true,
         IfsOp::As { op, .. } => may_park_for(op, handle),
-        IfsOp::Write { fd, .. } | IfsOp::PWrite { fd, .. } => get().is_some_and(|i| {
-            !i.leases().is_empty()
-                || (i.has_remote() && handle.is_none_or(|h| i.fd_is_remote(owner_of(h), *fd)))
-        }),
+        IfsOp::Write { fd, .. } | IfsOp::PWrite { fd, .. } | IfsOp::PWriteStat { fd, .. } => get()
+            .is_some_and(|i| {
+                !i.leases().is_empty()
+                    || (i.has_remote() && handle.is_none_or(|h| i.fd_is_remote(owner_of(h), *fd)))
+            }),
         _ => get().is_some_and(|i| !i.leases().is_empty() || i.has_remote()),
     }
 }

@@ -83,25 +83,16 @@ impl<C: IfsClient> IfsVfs<C> {
             if let Some(x) = Xlate::between(st.ccsid, r.opts.data_ccsid) {
                 x.to_file(&mut buf);
             }
-            let mut done = 0usize;
-            while done < buf.len() {
-                let at = off.saturating_add(done as u64);
-                let n =
-                    a.c.pwrite(fd, &buf[done..(done + CHUNK).min(buf.len())], at)?;
-                if n == 0 {
-                    return Err(Fail::V(VfsError::NoSpc));
-                }
-                done += n;
-            }
             let committed = if r.opts.sync {
                 Stable::FileSync
             } else {
                 stable
             };
-            if committed != Stable::Unstable {
-                a.c.fsync(fd, committed == Stable::DataSync)?;
-            }
-            let after = a.c.fstat(fd).ok().map(|s| attr_of(r, &s));
+            let sync = (committed != Stable::Unstable).then_some(committed == Stable::DataSync);
+            let (done, after) = super::io::write_all(&buf, off, sync, |piece, at, sync| {
+                Ok(a.c.pwrite_stat(fd, piece, at, sync)?)
+            })?;
+            let after = after.map(|s| attr_of(r, &s));
             Ok(Written {
                 count: u32::try_from(done).unwrap_or(u32::MAX),
                 committed,

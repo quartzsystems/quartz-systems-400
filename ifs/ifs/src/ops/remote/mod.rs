@@ -99,7 +99,8 @@ impl<B: Backend> Ifs<B> {
                 fs, ticket, token, ..
             } => {
                 !tickets::pending(ticket)
-                    || (request::interrupted_id(token)
+                    || (fs != super::syncer::LOCAL_SYNC
+                        && request::interrupted_id(token)
                         && (fs == 0 || self.remote_mount(fs).is_none_or(|m| m.info().intr)))
             }
             _ => self.leases.ready(d),

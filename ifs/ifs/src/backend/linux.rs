@@ -191,6 +191,23 @@ impl BFile for LinuxFile {
         }
     }
 
+    fn sync_handle(&self) -> Option<super::SyncHandle> {
+        let st = rfs::fstat(&self.fd).ok()?;
+        let fd = rustix::io::dup(&self.fd).ok()?;
+        #[allow(clippy::cast_sign_loss, clippy::unnecessary_cast)]
+        let key = (st.st_dev as u64, st.st_ino as u64);
+        Some(super::SyncHandle {
+            key,
+            sync: Box::new(move |data_only| {
+                if data_only {
+                    rfs::fdatasync(&fd).map_err(e)
+                } else {
+                    rfs::fsync(&fd).map_err(e)
+                }
+            }),
+        })
+    }
+
     fn xattr_get(&self, name: &str) -> Result<Option<Vec<u8>>> {
         let mut buf = vec![0u8; 512];
         loop {

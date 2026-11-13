@@ -13,7 +13,7 @@
 
 use super::{R, vs};
 use crate::server::FileHandle;
-use crate::server::vfs::{FileType, Stable};
+use crate::server::vfs::{FileType, Req, Stable};
 use crate::types::nfs4::{
     COMMIT4args, COMMIT4res, COMMIT4resok, OPEN4_SHARE_ACCESS_READ, OPEN4_SHARE_ACCESS_WRITE,
     OPEN4_SHARE_DENY_READ, OPEN4_SHARE_DENY_WRITE, READ4args, READ4res, READ4resok, WRITE4args,
@@ -143,6 +143,23 @@ impl Cx<'_> {
         Ok(Via::Fd(open.fd))
     }
 
+    /// The way a `READ` or `WRITE` goes, the object checked first: a
+    /// regular file (asked of the file system, unless the stateid is an
+    /// open of this very file, which only a regular file has), writable
+    /// for a write. The errors come in that order.
+    fn checked_via(&mut self, r: &Req, h: &FileHandle, s: &stateid4, write: bool) -> R<Via> {
+        let pre = self.io_via(s, h, write);
+        let open = matches!(pre, Ok(Via::Fd(_)));
+        if !open {
+            let at = self.vfs.getattr(r, h).map_err(vs)?;
+            self.regular(at.ftype)?;
+        }
+        if write {
+            Self::writable(r)?;
+        }
+        if open { pre } else { self.io_via(s, h, write) }
+    }
+
     /// Checks the current object is a regular file.
     pub(super) fn regular(&self, t: FileType) -> R<()> {
         match t {
@@ -156,10 +173,9 @@ impl Cx<'_> {
 
     fn read(&mut self, a: &READ4args) -> R<READ4resok> {
         let (r, h) = self.real(nfsstat4::NFS4ERR_ISDIR)?;
-        let at = self.vfs.getattr(&r, &h).map_err(vs)?;
-        self.regular(at.ftype)?;
+        let via = self.checked_via(&r, &h, &a.stateid, false)?;
         let count = a.count.min(self.srv.cfg.max_io);
-        let d = match self.io_via(&a.stateid, &h, false)? {
+        let d = match via {
             Via::Fd(fd) => self.vfs.read_open(&r, &h, fd, a.offset, count),
             Via::Cache => self.vfs.read(&r, &h, a.offset, count),
         }
@@ -179,11 +195,8 @@ impl Cx<'_> {
 
     fn write(&mut self, a: &WRITE4args) -> R<WRITE4resok> {
         let (r, h) = self.real(nfsstat4::NFS4ERR_ISDIR)?;
-        let at = self.vfs.getattr(&r, &h).map_err(vs)?;
-        self.regular(at.ftype)?;
-        Self::writable(&r)?;
+        let via = self.checked_via(&r, &h, &a.stateid, true)?;
         let me = self.client_of_sid(&a.stateid);
-        let via = self.io_via(&a.stateid, &h, true)?;
         self.deleg_conflict(h.fid, me)?;
         let stable = match a.stable {
             stable_how4::UNSTABLE4 => Stable::Unstable,

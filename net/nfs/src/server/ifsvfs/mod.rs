@@ -211,7 +211,20 @@ impl<C: IfsClient> IfsVfs<C> {
     /// The path and attributes of the handle's object, as the caller;
     /// it must lie under the export.
     pub(crate) fn locate(&self, a: &As<'_>, r: &Req, fh: &FileHandle) -> Fr<(String, Stat)> {
-        let (path, st) = match a.c.stat_by_id(fh.fid) {
+        self.locate_access(a, r, fh, 0).map(|(p, s, _)| (p, s))
+    }
+
+    /// [`Self::locate`] with the caller's `access()` for `amode` asked in
+    /// the same request; its answer is the caller's to check after its
+    /// own checks.
+    pub(crate) fn locate_access(
+        &self,
+        a: &As<'_>,
+        r: &Req,
+        fh: &FileHandle,
+        amode: i32,
+    ) -> Fr<(String, Stat, Result<(), Errno>)> {
+        let (path, st, acc) = match a.c.stat_by_id_access(fh.fid, amode) {
             Ok(v) => v,
             Err(Errno::ESTALE | Errno::EBADFID | Errno::ENOENT) => {
                 self.forget_object(fh.fid);
@@ -226,7 +239,7 @@ impl<C: IfsClient> IfsVfs<C> {
                 return Err(Fail::V(VfsError::BadHandle));
             }
         }
-        Ok((path, st))
+        Ok((path, st, acc))
     }
 
     /// Whether `fh` is its export's root.
