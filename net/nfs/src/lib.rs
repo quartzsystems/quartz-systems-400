@@ -16,7 +16,7 @@
 //!   `EXPORTFS` and `MOUNT`, host matching.
 //! - [`server`]: the `Vfs` trait, file handles, credentials, state.
 //! - [`client`]: a mounted export as a remote file system.
-//! - [`registry`]: the NFSv4 identity mapping.
+//! - [`registry`]: the `NFSv4` identity mapping.
 //! - [`fuzzing`]: the entry points of the fuzz targets.
 
 #![deny(missing_docs)]

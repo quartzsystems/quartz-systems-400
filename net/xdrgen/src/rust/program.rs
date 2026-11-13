@@ -134,8 +134,14 @@ fn body(
     }
     w.line("                }");
     w.line("            }");
+    // A version whose procedures all have void here never reads or writes.
+    let (e, d) = if procs.iter().any(|p| pick(p).is_some()) {
+        ("e", "d")
+    } else {
+        ("_e", "_d")
+    };
     w.line(&format!(
-        "            fn encode_body(&self, e: &mut {rt}::Encoder) -> {rt}::Result<()> {{"
+        "            fn encode_body(&self, {e}: &mut {rt}::Encoder) -> {rt}::Result<()> {{"
     ));
     w.line("                match self {");
     for pr in procs {
@@ -153,7 +159,7 @@ fn body(
     w.line("                }");
     w.line("            }");
     w.line(&format!(
-        "            fn decode_body(procedure: u32, d: &mut {rt}::Decoder<'_>) -> {rt}::Result<Option<Self>> {{"
+        "            fn decode_body(procedure: u32, {d}: &mut {rt}::Decoder<'_>) -> {rt}::Result<Option<Self>> {{"
     ));
     w.line("                Ok(Some(match procedure {");
     for pr in procs {

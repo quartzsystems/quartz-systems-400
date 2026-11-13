@@ -419,7 +419,11 @@ fn union(
             t.name
         ));
         w.line("                }");
-        w.line(&format!("                {}", put_disc(&rt, disc, "*dv")));
+        let put = match disc {
+            Disc::Enum(_) => format!("{rt}::Xdr::encode(dv, e)?;"),
+            _ => put_disc(&rt, disc, "*dv"),
+        };
+        w.line(&format!("                {put}"));
         if let Some(s) = d {
             w.line(&format!("                {}", encode(&rt, s, "v")));
         }
@@ -436,7 +440,7 @@ fn union(
         Disc::Int => w.line("        let disc = d.get_i32()?;"),
         Disc::UInt => w.line("        let disc = d.get_u32()?;"),
         Disc::Bool | Disc::Enum(_) => {
-            w.line(&format!("        let disc: {dt} = {rt}::Xdr::decode(d)?;"))
+            w.line(&format!("        let disc: {dt} = {rt}::Xdr::decode(d)?;"));
         }
     }
     w.line("        let v = match disc {");
