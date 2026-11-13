@@ -445,6 +445,12 @@ pub trait LockClient: Send + Sync {
     /// A server's answer to an `_MSG` call: the procedure (11 to 14)
     /// and its results, as version 4's.
     fn result(&self, peer: SocketAddr, procedure: u32, res: &Reply);
+    /// This host's status monitor says `mon_name` restarted with
+    /// `state` (`NLM_SM_NOTIFY`, `private` the bytes given at `SM_MON`;
+    /// `nfs::client::nlm::PRIV_TAG` marks a server this host mounts).
+    fn restarted(&self, mon_name: &[u8], state: i32, private: [u8; 16]) {
+        let _ = (mon_name, state, private);
+    }
 }
 
 /// A server's answer an `_RES` message carries.

@@ -273,6 +273,9 @@ impl<V: Vfs> Nlm<V> {
         }
         let Args::NLM_SM_NOTIFY(s) = decode_args::<Args>(ctx, d)?;
         self.state.release_client(&self.vfs, &s.mon_name);
+        if let Some(c) = self.state.client() {
+            c.restarted(&s.mon_name, s.state, s.r#priv);
+        }
         encode_res(&Res::NLM_SM_NOTIFY)
     }
 }
