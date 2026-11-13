@@ -99,8 +99,12 @@ mod tests {
 
     #[test]
     fn the_flag_is_read_from_the_flags_line() {
-        assert!(hypervisor_flag("model name : x\nflags\t\t: fpu vme hypervisor lm\n"));
-        assert!(!hypervisor_flag("model name : hypervisor\nflags\t\t: fpu vme lm\n"));
+        assert!(hypervisor_flag(
+            "model name : x\nflags\t\t: fpu vme hypervisor lm\n"
+        ));
+        assert!(!hypervisor_flag(
+            "model name : hypervisor\nflags\t\t: fpu vme lm\n"
+        ));
         assert!(!hypervisor_flag(""));
     }
 

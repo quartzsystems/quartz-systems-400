@@ -68,7 +68,14 @@ What it checks, and the limits (QS/400's own):
 The report's head names the machine (DMI vendor and product), the
 hypervisor (by the CPU's `hypervisor` flag and the DMI identity: KVM/QEMU,
 VMware, Hyper-V, VirtualBox), the release, the time in UTC and the
-result with its counts. Lines are at most 78 columns, so the installer's
+result with its counts. QS/VS has no DMI and no firmware: a partition of
+it is known by its ACPI tables (`QUARTZVS` as the FADT's hypervisor
+vendor identity, or OEM ID `QUARTZ` and OEM table ID `QSVSPART` in
+every table; SMBIOS tables naming it would answer too), and there the
+UEFI check passes, since QS/VS loads the UKI of the IPL's side itself
+and reads that side from the LIC record (docs/PHASE1.md, "The side of
+the next IPL in a partition"). Any other system without UEFI fails the
+check as before. Lines are at most 78 columns, so the installer's
 display, the console and a printout show the same text.
 
 ## Guest agent

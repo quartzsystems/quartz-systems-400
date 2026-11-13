@@ -59,7 +59,10 @@ pub fn scan_one_in(root: &Path, sys: &Path) -> Option<PciDevice> {
         let ctl = storage::controller(&vendor, &device, (&subsys.0, &subsys.1), class);
         (ctl.name, Some((ctl.type_code, ctl.model)))
     } else {
-        (describe(&vendor, &device, class), None)
+        (
+            describe(&vendor, &device, class),
+            own_type(&vendor, &device),
+        )
     };
     Some(PciDevice {
         address,
@@ -93,11 +96,25 @@ pub fn is_pci_address(s: &str) -> bool {
             .all(|&i| b[i].is_ascii_hexdigit())
 }
 
+/// The type and model of a device that is no storage controller and has
+/// a type of its own; the others take their kind's.
+fn own_type(vendor: &str, device: &str) -> Option<(&'static str, &'static str)> {
+    match (vendor, device) {
+        // The virtio entropy source, legacy and modern.
+        ("1af4", "1005" | "1044") => Some((RNG_TYPE, "001")),
+        _ => None,
+    }
+}
+
+/// The type of the virtio entropy source.
+pub const RNG_TYPE: &str = "QX01";
+
 /// Names for the devices QS/400 is likely to meet. Falls back to the class.
 fn describe(vendor: &str, device: &str, class: u32) -> &'static str {
     match (vendor, device) {
         ("1af4", "1000" | "1041") => "virtio network",
         ("1af4", "1003" | "1043") => "virtio console",
+        ("1af4", "1005" | "1044") => "virtio entropy source",
         ("1af4", "1050") => "virtio GPU",
         ("1af4", "1052") => "virtio input",
         ("8086", "100e") => "Intel e1000",
@@ -139,5 +156,15 @@ mod tests {
         let p = "/devices/pci0000:00/0000:00:02.0/0000:01:00.0/virtio2/block/vda";
         assert_eq!(address_in(p).as_deref(), Some("0000:01:00.0"));
         assert_eq!(address_in("/devices/platform/serial8250/tty/ttyS0"), None);
+    }
+
+    #[test]
+    fn the_entropy_source_has_a_type_of_its_own() {
+        for device in ["1005", "1044"] {
+            assert_eq!(own_type("1af4", device), Some((RNG_TYPE, "001")));
+            assert_eq!(describe("1af4", device, 0x00_ff00), "virtio entropy source");
+        }
+        assert_eq!(own_type("1af4", "1052"), None);
+        assert_eq!(own_type("8086", "1044"), None);
     }
 }

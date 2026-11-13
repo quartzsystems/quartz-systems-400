@@ -330,3 +330,108 @@ fn bios_boot_and_no_disks_fail() {
     assert_eq!(r.counts().2, 3);
     let _ = fs::remove_dir_all(dir);
 }
+
+/// An ACPI table: signature, OEM ID, OEM table ID, `len` bytes.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn acpi_table(sig: &[u8; 4], oem: &[u8; 6], table: &[u8; 8], len: usize) -> Vec<u8> {
+    let mut t = vec![0u8; len];
+    t[..4].copy_from_slice(sig);
+    t[4..8].copy_from_slice(&u32::try_from(len).unwrap().to_le_bytes());
+    t[10..16].copy_from_slice(oem);
+    t[16..24].copy_from_slice(table);
+    t
+}
+
+fn uefi(r: &Report) -> (Grade, String) {
+    let c = r
+        .checks
+        .iter()
+        .flat_map(|(_, c)| c)
+        .find(|c| c.resource == "UEFI")
+        .unwrap();
+    (c.grade, c.text.clone())
+}
+
+const FLAGGED: &str = "processor\t: 0\nflags\t\t: fpu hypervisor lm\n";
+
+#[test]
+fn a_partition_of_qsvs_is_known_by_its_acpi_tables() {
+    // No DMI, no EFI: the OEM IDs of every table.
+    let (dir, roots) = tree("qsvs-oem");
+    put(&roots.proc.join("cpuinfo"), FLAGGED);
+    let tables = roots.sys.join("firmware/acpi/tables");
+    fs::create_dir_all(&tables).unwrap();
+    for sig in [b"FACP", b"APIC", b"DSDT"] {
+        let name = std::str::from_utf8(sig).unwrap();
+        fs::write(
+            tables.join(name),
+            acpi_table(sig, b"QUARTZ", b"QSVSPART", 64),
+        )
+        .unwrap();
+    }
+    let r = hwqual::checks::all(&qemu_table(1), &roots, 0);
+    assert_eq!(r.hypervisor, "QS/VS");
+    let (grade, text) = uefi(&r);
+    assert_eq!(grade, Grade::Pass);
+    assert!(text.contains("partition of QS/VS"), "{text}");
+    let _ = fs::remove_dir_all(dir);
+
+    // The FADT's hypervisor vendor identity alone.
+    let (dir, roots) = tree("qsvs-fadt");
+    put(&roots.proc.join("cpuinfo"), FLAGGED);
+    let tables = roots.sys.join("firmware/acpi/tables");
+    fs::create_dir_all(&tables).unwrap();
+    let mut fadt = acpi_table(b"FACP", b"OTHER ", b"SOMEBODY", 276);
+    fadt[268..276].copy_from_slice(b"QUARTZVS");
+    fs::write(tables.join("FACP"), fadt).unwrap();
+    fs::write(
+        tables.join("APIC"),
+        acpi_table(b"APIC", b"OTHER ", b"SOMEBODY", 64),
+    )
+    .unwrap();
+    let r = hwqual::checks::all(&qemu_table(1), &roots, 0);
+    assert_eq!(r.hypervisor, "QS/VS");
+    assert_eq!(uefi(&r).0, Grade::Pass);
+    let _ = fs::remove_dir_all(dir);
+}
+
+#[test]
+fn smbios_tables_naming_qsvs_answer_too() {
+    let (dir, roots) = tree("qsvs-dmi");
+    put(&roots.proc.join("cpuinfo"), FLAGGED);
+    put(
+        &roots.sys.join("class/dmi/id/sys_vendor"),
+        "Quartz Systems\n",
+    );
+    put(
+        &roots.sys.join("class/dmi/id/product_name"),
+        "QS/VS partition\n",
+    );
+    let r = hwqual::checks::all(&qemu_table(1), &roots, 0);
+    assert_eq!(r.hypervisor, "QS/VS");
+    assert_eq!(uefi(&r).0, Grade::Pass);
+    let _ = fs::remove_dir_all(dir);
+}
+
+#[test]
+fn another_hypervisor_without_firmware_still_fails() {
+    // Tables of someone else, one of them with QS/VS's IDs by chance.
+    let (dir, roots) = tree("not-qsvs");
+    put(&roots.proc.join("cpuinfo"), FLAGGED);
+    let tables = roots.sys.join("firmware/acpi/tables");
+    fs::create_dir_all(&tables).unwrap();
+    fs::write(
+        tables.join("FACP"),
+        acpi_table(b"FACP", b"BOCHS ", b"BXPC    ", 276),
+    )
+    .unwrap();
+    fs::write(
+        tables.join("APIC"),
+        acpi_table(b"APIC", b"QUARTZ", b"QSVSPART", 64),
+    )
+    .unwrap();
+    let r = hwqual::checks::all(&qemu_table(1), &roots, 0);
+    assert_eq!(r.hypervisor, "unidentified hypervisor");
+    assert_eq!(uefi(&r).0, Grade::Fail);
+    let _ = fs::remove_dir_all(dir);
+}

@@ -19,6 +19,9 @@ disks come up in the same order on every boot.
   the chip, then the PCI class): `QD10` MegaRAID/PERC, `QD11` mpt3sas,
   `QD12` smartpqi, `QD13` hpsa, `QD14` aacraid, `QD15` mpi3mr, `QD01`
   virtio block, `QD02` virtio SCSI, `QD03` AHCI, `QD04` NVMe.
+- A function that is none of the kinds with names of their own is
+  `OTHnn`, type `QX00-000`; the virtio entropy source (`1af4:1005`,
+  `1af4:1044`) has its own type, `QX01-001`.
 - Device parity has no hardware behind it: DST's `Work with device
   parity protection` names one virtual controller, `DCnn` after the real
   controllers, type `QDPY-001` (`lic/hwrsrc/src/table/parity.rs`). It

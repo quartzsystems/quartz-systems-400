@@ -552,10 +552,10 @@ impl Env<'_> {
     /// a partition the LIC record just written says side A instead.
     fn register_boot(&mut self, name: &str, in_partition: bool) {
         if in_partition {
-            self.system
-                .out
-                .serial("slic: install: side A is the IPL source in the LIC record
-");
+            self.system.out.serial(
+                "slic: install: side A is the IPL source in the LIC record
+",
+            );
             return;
         }
         let lic_path = std::path::PathBuf::from(format!("/dev/{}", part_name(name, 2)));

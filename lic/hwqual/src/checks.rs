@@ -77,7 +77,7 @@ pub fn all(t: &Table, roots: &Roots, now: u64) -> Report {
         },
         when: timestamp(now),
         checks: vec![
-            ("Firmware and security".into(), firmware(roots)),
+            ("Firmware and security".into(), firmware(roots, &hypervisor)),
             ("Processors and main storage".into(), processors(t, roots)),
             (
                 "Storage controllers and disk units".into(),
@@ -103,6 +103,9 @@ pub fn hypervisor(dmi: &Dmi, roots: &Roots) -> String {
     if !xen.is_empty() {
         return xen.to_ascii_uppercase();
     }
+    if qsvs(dmi, roots) {
+        return QSVS.to_string();
+    }
     let named = if v.contains("qemu") || p.contains("kvm") || p.contains("standard pc") {
         "KVM/QEMU"
     } else if v.contains("vmware") || p.contains("vmware") {
@@ -119,7 +122,45 @@ pub fn hypervisor(dmi: &Dmi, roots: &Roots) -> String {
     named.to_string()
 }
 
-fn firmware(roots: &Roots) -> Vec<Check> {
+/// QS/VS, as [`hypervisor`] names it.
+pub const QSVS: &str = "QS/VS";
+/// The OEM ID of every ACPI table QS/VS gives a partition.
+const QSVS_OEM_ID: &[u8; 6] = b"QUARTZ";
+/// Their OEM table ID.
+const QSVS_OEM_TABLE_ID: &[u8; 8] = b"QSVSPART";
+/// The FADT's hypervisor vendor identity under QS/VS.
+const QSVS_HV_ID: &[u8; 8] = b"QUARTZVS";
+/// Where the FADT keeps the hypervisor vendor identity (ACPI 6.0).
+const FADT_HV_ID: usize = 268;
+
+/// Whether the system is a partition of QS/VS. Its ACPI tables say so
+/// (the FADT's hypervisor vendor identity, or the OEM IDs of every
+/// table), and so would SMBIOS tables naming it, should it give any.
+#[must_use]
+pub fn qsvs(dmi: &Dmi, roots: &Roots) -> bool {
+    let v = dmi.vendor.to_ascii_lowercase();
+    let p = dmi.product.to_ascii_lowercase();
+    if p.contains("qs/vs") || (v.contains("quartz") && p.contains("qsvs")) {
+        return true;
+    }
+    let dir = roots.sys.join("firmware/acpi/tables");
+    let Ok(entries) = fs::read_dir(&dir) else {
+        return false;
+    };
+    let tables: Vec<Vec<u8>> = entries
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
+        .filter_map(|e| fs::read(e.path()).ok())
+        .filter(|b| b.len() >= 36)
+        .collect();
+    let fadt_says = tables.iter().any(|t| {
+        t.starts_with(b"FACP") && t.get(FADT_HV_ID..FADT_HV_ID + 8) == Some(&QSVS_HV_ID[..])
+    });
+    let oem = |t: &Vec<u8>| t[10..16] == QSVS_OEM_ID[..] && t[16..24] == QSVS_OEM_TABLE_ID[..];
+    fadt_says || (!tables.is_empty() && tables.iter().all(oem))
+}
+
+fn firmware(roots: &Roots, hypervisor: &str) -> Vec<Check> {
     let mut v = Vec::new();
     let efi = roots.sys.join("firmware/efi");
     if efi.is_dir() {
@@ -144,6 +185,13 @@ fn firmware(roots: &Roots) -> Vec<Check> {
                 "The Secure Boot state cannot be read from the firmware.",
             ),
         });
+    } else if hypervisor == QSVS {
+        v.push(Check::new(
+            Grade::Pass,
+            "UEFI",
+            "",
+            "No firmware: a partition of QS/VS, which loads the UKI of the IPL's side itself.",
+        ));
     } else {
         v.push(Check::new(
             Grade::Fail,
