@@ -11,7 +11,7 @@
 //! that would end past it runs to the end of file and beyond.
 
 use ifs::Errno;
-use ifs::client::IfsClient;
+use ifs::client::{Caller, IfsClient};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::ops::OpenArgs;
 use ifs::ops::flags::{
@@ -56,7 +56,21 @@ fn kind_of(k: LockKind) -> (RangeKind, Mode) {
     }
 }
 
+/// Whom the descriptors that hold locks are kept for: the job.
+static JOB: Caller = Caller::Profile { name: String::new() };
+
 impl<C: IfsClient> IfsVfs<C> {
+    /// A descriptor that holds byte-range locks: the job's own. A lock is
+    /// advisory, so the caller needs only to reach the object (checked by
+    /// `locate` as the caller), as a Unix lock manager asks.
+    fn lock_fd(&self, fh: &FileHandle, mode: Mode) -> Result<i32, Fail> {
+        let job = super::As {
+            c: self.client(),
+            who: &JOB,
+        };
+        self.fd(&job, fh.fid, mode)
+    }
+
     pub(crate) fn do_open(&self, r: &Req, fh: &FileHandle, access: ShareAccess, deny: ShareDeny) -> VResult<u64> {
         let acc = match access {
             ShareAccess::Read => O_RDONLY,
@@ -90,7 +104,7 @@ impl<C: IfsClient> IfsVfs<C> {
         let (s, l) = range(start, len);
         self.run(r, |a| {
             let _ = self.locate(a, r, fh)?;
-            let fd = self.fd(a, fh.fid, mode)?;
+            let fd = self.lock_fd(fh, mode)?;
             if wait {
                 return Ok(match a.c.lock_wait(fd, sub, rk, SEEK_SET, s, l)? {
                     None => LockOutcome::Granted,
@@ -120,11 +134,7 @@ impl<C: IfsClient> IfsVfs<C> {
         let (s, l) = range(start, len);
         self.run(r, |a| {
             let _ = self.locate(a, r, fh)?;
-            let fd = match self.fd(a, fh.fid, mode) {
-                Ok(fd) => fd,
-                // Testing needs no write access.
-                Err(_) => self.fd(a, fh.fid, Mode::Read)?,
-            };
+            let fd = self.lock_fd(fh, mode)?;
             Ok(a.c.lock_range_as(fd, sub, F_GETLK, rk, SEEK_SET, s, l)?.as_ref().map(conflict))
         })
     }
@@ -133,10 +143,7 @@ impl<C: IfsClient> IfsVfs<C> {
         let (s, l) = range(start, len);
         self.run(r, |a| {
             let _ = self.locate(a, r, fh)?;
-            let fd = match self.fd(a, fh.fid, Mode::Read) {
-                Ok(fd) => fd,
-                Err(_) => self.fd(a, fh.fid, Mode::Write)?,
-            };
+            let fd = self.lock_fd(fh, Mode::Read)?;
             a.c.lock_range_as(fd, sub, F_SETLK, RangeKind::Unlock, SEEK_SET, s, l)?;
             Ok(())
         })
