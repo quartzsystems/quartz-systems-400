@@ -379,6 +379,29 @@ const CASES: &[Case] = &[
         misplaced: &[],
         exact_prefix: 2,
     },
+    // --- NFS (golden/nfs, the primary V7R1M0). CVTRPCSRC and RPCGEN are
+    // not shipped: their rows are blank and keep their numbers.
+    Case {
+        menu: "CMDNFS",
+        files: &["nfs/menu-cmdnfs.txt"],
+        ibm_only: &["CMDJVA"],
+        misplaced: &[],
+        exact_prefix: 10,
+    },
+    Case {
+        menu: "CMDRPC",
+        files: &["nfs/menu-cmdrpc.txt"],
+        ibm_only: &[],
+        misplaced: &[],
+        exact_prefix: 10,
+    },
+    Case {
+        menu: "CMDMFS",
+        files: &["nfs/menu-cmdmfs.txt"],
+        ibm_only: &[],
+        misplaced: &[],
+        exact_prefix: 6,
+    },
 ];
 
 #[test]

@@ -31,17 +31,20 @@ an object.
 :P.Also accepted&colon. *SYMBOLIC, *HARD.
 :EHELP.
 :HELP NAME=ADDMFS.Add Mounted FS (ADDMFS)
-:P.Use the Add Mounted FS (ADDMFS) command to mount a file system over a
-directory (MOUNT's twin).
+:P.Use the Add Mounted File System (ADDMFS) command to mount a file
+system over a directory&colon. a remote NFS export, or a user-defined
+file system. It is MOUNT under another name. You need *IOSYSCFG special
+authority.
 :EHELP.
 :HELP NAME='ADDMFS/TYPE'.Type of file system (TYPE)
-:P.The type of file system for this command.
+:P.The kind of file system&colon. *NFS an export of another system,
+*UDFS a user-defined file system of this one.
 :P.A value is required.
-:P.Also accepted&colon. *NFS, *UDFS, *NETWORK.
+:P.Also accepted&colon. *NFS, *UDFS.
 :EHELP.
 :HELP NAME='ADDMFS/MFS'.File system to mount (MFS)
-:P.The file system to mount&colon. a user-defined file system path or a
-network file system export.
+:P.The file system to mount&colon. for *NFS host&colon.path, for *UDFS
+the path of the user-defined file system.
 :P.A value is required.
 :PARML.
 :PT.:PV.path-name:EPV.
@@ -57,33 +60,62 @@ network file system export.
 :EPARML.
 :EHELP.
 :HELP NAME='ADDMFS/OPTIONS'.Mount options (OPTIONS)
-:P.The mount options for this command.
+:P.Mount options, separated by commas, as MOUNT's help lists them.
 :PARML.
 :PT.:PV.character-value:EPV.
-:PD.Type up to 2048 characters.
+:PD.Type up to 250 characters.
 :EPARML.
-:P.When no value is given,
-'rw,suid,retry=5,rsize=32768,wsize=32768,timeo=20,retrans=5,acregmin=30,acregmax=60,acdirmin=30,acdirmax=60,hard'
-is used.
+:P.When no value is given, *DFT is used.
 :EHELP.
 :HELP NAME='ADDMFS/CCSID'.Coded character set ID (CCSID)
-:P.The coded character set identifier&colon. the code page and character
-set the data is in, or is to be converted to.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.For *NFS&colon. the CCSIDs the remote files' data and path names are
+in. Not with CODEPAGE.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Data file CCSID
 :PARML.
-:PT.:PV.character-value:EPV.
-:PD.Type up to 16 characters.
+:PT.:PK.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PK DEF.*BINARY:EPK.
+:PD.Binary&colon. no conversion.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
 :EPARML.
-:P.When no value is given, *BINARY is used.
+:H4.Part 2&colon. Path name CCSID
+:PARML.
+:PT.:PK DEF.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
+:EPARML.
 :EHELP.
 :HELP NAME='ADDMFS/CODEPAGE'.Code page (CODEPAGE)
-:P.The code page for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.For *NFS&colon. the code pages of the remote files' data and path
+names. Not with CCSID.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Data file code page
 :PARML.
-:PT.:PV.character-value:EPV.
-:PD.Type up to 16 characters.
+:PT.:PK.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PK DEF.*BINARY:EPK.
+:PD.Binary&colon. no conversion.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32767.
 :EPARML.
-:P.When no value is given, *BINARY is used.
+:H4.Part 2&colon. Path name code page
+:PARML.
+:PT.:PK DEF.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32767.
+:EPARML.
 :EHELP.
 :HELP NAME=CD.Change Current Directory (CD)
 :P.Use the Change Current Directory (CD) command to change the job's
@@ -190,6 +222,69 @@ job's current directory.
 :PT.:PV.path-name:EPV.
 :PD.Type a path name of up to 5000 characters.
 :EPARML.
+:EHELP.
+:HELP NAME=CHGNFSEXP.Change NFS Export (CHGNFSEXP)
+:P.Use the Change NFS Export (CHGNFSEXP) command to make directories
+available to NFS clients, to change how they are exported, or to end
+their export. It is EXPORTFS under another name. You need *IOSYSCFG
+special authority.
+:EHELP.
+:HELP NAME='CHGNFSEXP/OPTIONS'.NFS export options (OPTIONS)
+:P.The flags and export options, as EXPORTFS's help lists them. *DFT
+exports DIR with the options /etc/exports gives it, or the defaults when
+it has no entry.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 200 characters.
+:EPARML.
+:P.When no value is given, *DFT is used.
+:EHELP.
+:HELP NAME='CHGNFSEXP/DIR'.Directory (DIR)
+:P.The directory to export or whose export ends.
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 5000 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGNFSEXP/HOSTOPT'.Host options (HOSTOPT)
+:P.Options for some clients of the export&colon. the host, the CCSID
+file data is converted to for it, the CCSID of its path names, and
+whether its writes are written to disk before the answer.
+:P.Up to 10 values can be given.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.No host options&colon. file data is not converted, path names are
+ASCII and writes are synchronous.
+:EPARML.
+:P.The value has 4 parts, given in order&colon.
+:H4.Part 1&colon. Host name
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 256 characters.
+:EPARML.
+:H4.Part 2&colon. Data file CCSID
+:PARML.
+:PT.:PK DEF.*BINARY:EPK.
+:PD.Binary&colon. no conversion.
+:PT.:PK.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
+:EPARML.
+:H4.Part 3&colon. Path name CCSID
+:PARML.
+:PT.:PK DEF.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
+:EPARML.
+:H4.Part 4&colon. Force synchronous write
+:P.Also accepted&colon. *SYNC, *ASYNC.
 :EHELP.
 :HELP NAME=CHKIN.Check In Object (CHKIN)
 :P.Use the Check In Object (CHKIN) command to check an IFS object back
@@ -1070,6 +1165,29 @@ files.
 :PD.All of them.
 :EPARML.
 :EHELP.
+:HELP NAME=DSPMFSINF.Display Mounted FS Information (DSPMFSINF)
+:P.Use the Display Mounted File System Information (DSPMFSINF) command
+to show the attributes of the file system an object is in&colon. its
+type, its size and free space, its limits, and how it is mounted.
+:EHELP.
+:HELP NAME='DSPMFSINF/OBJ'.Object (OBJ)
+:P.A path name of any object in the file system.
+:P.A value is required.
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 5000 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='DSPMFSINF/OUTPUT'.Output (OUTPUT)
+:P.Whether the information is shown or printed to a spooled file of
+QPRINT.
+:PARML.
+:PT.:PK DEF.*:EPK.
+:PD.The information is shown at a display; a batch job prints it.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
 :HELP NAME=DSPUDFS.Display User-Defined FS (DSPUDFS)
 :P.The Display User-Defined FS (DSPUDFS) command works with a
 user-defined file system's attributes and mounts.
@@ -1093,6 +1211,116 @@ printed for a batch job.
 :PT.:PK.*PRINT:EPK.
 :PD.The output is printed with the job's spooled output.
 :EPARML.
+:EHELP.
+:HELP NAME=ENDNFSSVR.End NFS Server (ENDNFSSVR)
+:P.Use the End NFS Server (ENDNFSSVR) command to end the Network File
+System server daemons&colon. one type, or every type in the reverse of
+the order they start in. You need *IOSYSCFG special authority.
+:EHELP.
+:HELP NAME='ENDNFSSVR/SERVER'.Server daemon (SERVER)
+:P.The type of daemon to end, or *ALL for every type running. *GSS is
+refused&colon. Kerberos is not supported.
+:P.A value is required.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.Every daemon type running, ended in the order *NLM, *NSM, *MNT,
+*SVR, *RGY, *BIO, *RPC.
+:PT.:PK.*GSS:EPK.
+:PD.The Kerberos daemon, which this system does not have&colon. the
+command fails.
+:EPARML.
+:P.Also accepted&colon. *RPC, *BIO, *RGY, *SVR, *MNT, *NSM, *NLM.
+:EHELP.
+:HELP NAME='ENDNFSSVR/ENDJOBTIMO'.Timeout for end of daemon (ENDJOBTIMO)
+:P.How many seconds to wait for each daemon to end, from 1 to 3600. When
+the time passes the command stops with a message saying the daemon may
+still be running.
+:PARML.
+:PT.:PK.*NOMAX:EPK.
+:PD.Wait as long as it takes.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 3600.
+:EPARML.
+:P.When no value is given, 30 is used.
+:EHELP.
+:HELP NAME=ENDRPCBIND.End RPC Binder Daemon (ENDRPCBIND)
+:P.Use the End RPC Binder Daemon (ENDRPCBIND) command to end the binder.
+Its registrations are saved in /etc/RPCBTAB for the next start. You need
+*IOSYSCFG special authority.
+:P.The command has no parameters.
+:EHELP.
+:HELP NAME=EXPORTFS.Change NFS Export (EXPORTFS)
+:P.Use the Change NFS Export (EXPORTFS) command to make directories
+available to NFS clients, to change how they are exported, or to end
+their export. The export table lasts until the next IPL; entries kept in
+/etc/exports are exported again with OPTIONS('-A'). You need *IOSYSCFG
+special authority.
+:P.The flags of OPTIONS&colon. -A every entry of /etc/exports; -I DIR
+without reading /etc/exports; -U end the export of DIR, or with -A of
+every entry; -F with -U, end it whatever the clients hold; -O followed
+by the export options; -E an escape message when an entry fails; -V a
+message for each entry. Export options&colon. RO, RW=host&colon.host,
+ACCESS=host&colon.host, ROOT=host&colon.host, ANON=uid, NOSUID, SEC=sys,
+VERS=3&colon.4, PUBLIC, NFSROOT=path, EXNAME=path. A host is a name, an
+address, @network/length or a netgroup of /etc/netgroup.
+:EHELP.
+:HELP NAME='EXPORTFS/OPTIONS'.NFS export options (OPTIONS)
+:P.The flags and export options, as the command's help lists them. *DFT
+exports DIR with the options /etc/exports gives it, or the defaults when
+it has no entry.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 200 characters.
+:EPARML.
+:P.When no value is given, *DFT is used.
+:EHELP.
+:HELP NAME='EXPORTFS/DIR'.Directory (DIR)
+:P.The directory to export or whose export ends. Directories in /QOPT,
+/QDLS, /QNTC, /QFileSvr.400 and in an NFS mount cannot be exported.
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 5000 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='EXPORTFS/HOSTOPT'.Host options (HOSTOPT)
+:P.Options for some clients of the export&colon. the host, the CCSID
+file data is converted to for it, the CCSID of its path names, and
+whether its writes are written to disk before the answer.
+:P.Up to 10 values can be given.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.No host options&colon. file data is not converted, path names are
+ASCII and writes are synchronous.
+:EPARML.
+:P.The value has 4 parts, given in order&colon.
+:H4.Part 1&colon. Host name
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 256 characters.
+:EPARML.
+:H4.Part 2&colon. Data file CCSID
+:PARML.
+:PT.:PK DEF.*BINARY:EPK.
+:PD.Binary&colon. no conversion.
+:PT.:PK.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 65535.
+:EPARML.
+:H4.Part 3&colon. Path name CCSID
+:PARML.
+:PT.:PK DEF.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 65535.
+:EPARML.
+:H4.Part 4&colon. Force synchronous write
+:P.Also accepted&colon. *SYNC, *ASYNC.
 :EHELP.
 :HELP NAME=MD.Create Directory (MD)
 :P.Use the Create Directory (MD) command to make a directory (CRTDIR's
@@ -1267,17 +1495,26 @@ to their owners.
 :EPARML.
 :EHELP.
 :HELP NAME=MOUNT.Add Mounted FS (MOUNT)
-:P.Use the Add Mounted FS (MOUNT) command to mount a file system over a
-directory (ADDMFS is the same).
+:P.Use the Add Mounted File System (MOUNT) command to mount a file
+system over a directory&colon. a remote NFS export, or a user-defined
+file system. The directory shows the file system's contents until it is
+unmounted or the next IPL. You need *IOSYSCFG special authority.
 :EHELP.
 :HELP NAME='MOUNT/TYPE'.Type of file system (TYPE)
-:P.The type of file system for this command.
+:P.The kind of file system&colon. *NFS an export of another system,
+*UDFS a user-defined file system of this one.
 :P.A value is required.
-:P.Also accepted&colon. *NFS, *UDFS, *NETWORK.
+:PARML.
+:PT.:PK.*NFS:EPK.
+:PD.An export of an NFS server, named host&colon.path in MFS.
+:PT.:PK.*UDFS:EPK.
+:PD.A user-defined file system, named /dev/QASPnn/name.udfs in MFS.
+:EPARML.
 :EHELP.
 :HELP NAME='MOUNT/MFS'.File system to mount (MFS)
-:P.The file system to mount&colon. a user-defined file system path or a
-network file system export.
+:P.The file system to mount&colon. for *NFS the server's name or
+address, a colon and the path of the export; for *UDFS the path of the
+user-defined file system.
 :P.A value is required.
 :PARML.
 :PT.:PV.path-name:EPV.
@@ -1285,7 +1522,8 @@ network file system export.
 :EPARML.
 :EHELP.
 :HELP NAME='MOUNT/MNTOVRDIR'.Directory to mount over (MNTOVRDIR)
-:P.The directory the file system is mounted over.
+:P.The directory the file system is mounted over. It must exist; what it
+holds is hidden while the mount lasts.
 :P.A value is required.
 :PARML.
 :PT.:PV.path-name:EPV.
@@ -1293,33 +1531,65 @@ network file system export.
 :EPARML.
 :EHELP.
 :HELP NAME='MOUNT/OPTIONS'.Mount options (OPTIONS)
-:P.The mount options for this command.
+:P.Mount options, separated by commas&colon. rw or ro, suid or nosuid,
+soft or hard, intr or nointr, retry=, rsize=, wsize=, timeo=, retrans=,
+acregmin=, acregmax=, acdirmin=, acdirmax=, actimeo=, noac, vers=,
+proto=, port=, mountport=, sec=sys. For *UDFS only rw and ro apply.
 :PARML.
 :PT.:PV.character-value:EPV.
-:PD.Type up to 2048 characters.
+:PD.Type up to 250 characters.
 :EPARML.
-:P.When no value is given,
-'rw,suid,retry=5,rsize=32768,wsize=32768,timeo=20,retrans=5,acregmin=30,acregmax=60,acdirmin=30,acdirmax=60,hard'
-is used.
+:P.When no value is given, *DFT is used.
 :EHELP.
 :HELP NAME='MOUNT/CCSID'.Coded character set ID (CCSID)
-:P.The coded character set identifier&colon. the code page and character
-set the data is in, or is to be converted to.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.For *NFS&colon. the CCSIDs the remote files' data and path names are
+in, so that they are converted. Not with CODEPAGE.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Data file CCSID
 :PARML.
-:PT.:PV.character-value:EPV.
-:PD.Type up to 16 characters.
+:PT.:PK.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PK DEF.*BINARY:EPK.
+:PD.Binary&colon. no conversion.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
 :EPARML.
-:P.When no value is given, *BINARY is used.
+:H4.Part 2&colon. Path name CCSID
+:PARML.
+:PT.:PK DEF.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
+:EPARML.
 :EHELP.
 :HELP NAME='MOUNT/CODEPAGE'.Code page (CODEPAGE)
-:P.The code page for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.For *NFS&colon. the code pages the remote files' data and path names
+are in, given as code pages instead of CCSIDs. Not with CCSID.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Data file code page
 :PARML.
-:PT.:PV.character-value:EPV.
-:PD.Type up to 16 characters.
+:PT.:PK.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PK DEF.*BINARY:EPK.
+:PD.Binary&colon. no conversion.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32767.
 :EPARML.
-:P.When no value is given, *BINARY is used.
+:H4.Part 2&colon. Path name code page
+:PARML.
+:PT.:PK DEF.*ASCII:EPK.
+:PD.ASCII.
+:PT.:PK.*JOBCCSID:EPK.
+:PD.The CCSID of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32767.
+:EPARML.
 :EHELP.
 :HELP NAME=MOV.Move Object (MOV)
 :P.Use the Move Object (MOV) command to move objects to another
@@ -1503,6 +1773,57 @@ alias).
 :PD.Type up to 1024 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=RLSIFSLCK.Release File System Locks (RLSIFSLCK)
+:P.Use the Release File System Locks (RLSIFSLCK) command to release
+byte-range locks that are no longer wanted&colon. those an NFS client
+holds through this system's server, or those held on an object or on its
+whole file system.
+:EHELP.
+:HELP NAME='RLSIFSLCK/RMTLOCNAME'.Remote location (RMTLOCNAME)
+:P.The host name or address of an NFS client whose locks the *NLM daemon
+releases. Not with OBJ.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 256 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RLSIFSLCK/OBJ'.Object (OBJ)
+:P.The object whose byte-range locks are released. Not with RMTLOCNAME.
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 5000 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RLSIFSLCK/NFSSVRLCK'.NFS Server locks (NFSSVRLCK)
+:P.Whether the locks NFS clients hold on the object through the *NLM
+daemon are released.
+:PARML.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:PT.:PK DEF.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME='RLSIFSLCK/LCLBRNGLCK'.Local byte-range locks (LCLBRNGLCK)
+:P.Whether the byte-range locks local jobs hold on the object are
+released. Not *YES with OBJMFS(*YES).
+:PARML.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:PT.:PK DEF.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME='RLSIFSLCK/OBJMFS'.Object's file system (OBJMFS)
+:P.Whether the byte-range locks local jobs hold on every object of the
+object's file system are released. Not *YES with LCLBRNGLCK(*YES).
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
 :HELP NAME=RMDIR.Remove Directory (RMDIR)
 :P.Use the Remove Directory (RMDIR) command to remove a directory (RD is
 the same command).
@@ -1546,29 +1867,33 @@ the last name removes each match.
 :EPARML.
 :EHELP.
 :HELP NAME=RMVMFS.Remove Mounted FS (RMVMFS)
-:P.Use the Remove Mounted FS (RMVMFS) command to unmount a file system
-(UNMOUNT's twin).
+:P.Use the Remove Mounted File System (RMVMFS) command to unmount a file
+system from the directory it is mounted over. It is UNMOUNT under
+another name. You need *IOSYSCFG special authority.
 :EHELP.
 :HELP NAME='RMVMFS/TYPE'.Type of file system (TYPE)
-:P.The type of file system for this command.
+:P.The kind of file system to unmount&colon. *NFS, *UDFS, or *ALL for
+whatever is mounted there.
 :P.A value is required.
 :PARML.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.
 :EPARML.
-:P.Also accepted&colon. *NFS, *UDFS, *NETWORK.
+:P.Also accepted&colon. *NFS, *UDFS.
 :EHELP.
 :HELP NAME='RMVMFS/MNTOVRDIR'.Directory mounted over (MNTOVRDIR)
-:P.The directory the file system is mounted over.
+:P.The directory the file system is mounted over. *ALL unmounts every
+mounted file system and needs TYPE(*ALL).
 :PARML.
+:PT.:PK.*ALL:EPK.
+:PD.Every mounted file system.
 :PT.:PV.path-name:EPV.
 :PD.Type a path name of up to 5000 characters.
 :EPARML.
-:P.Also accepted&colon. *MFS.
 :EHELP.
 :HELP NAME='RMVMFS/MFS'.Mounted file system (MFS)
-:P.The file system to mount&colon. a user-defined file system path or a
-network file system export.
+:P.For *UDFS&colon. the user-defined file system to unmount, instead of
+the directory.
 :PARML.
 :PT.:PV.path-name:EPV.
 :PD.Type a path name of up to 5000 characters.
@@ -1594,6 +1919,22 @@ in its directory.
 :PD.Type up to 1024 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=RPCBIND.Start RPC Binder Daemon (RPCBIND)
+:P.Use the Start RPC Binder Daemon (RPCBIND) command to start the binder
+alone&colon. the daemon that tells RPC clients on which ports this
+system's RPC programs listen (port 111). You need *IOSYSCFG special
+authority.
+:EHELP.
+:HELP NAME='RPCBIND/RTVRPCREG'.Retrieve RPC registration (RTVRPCREG)
+:P.Whether the binder starts with the registrations it saved in
+/etc/RPCBTAB when it last ended.
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.The binder starts with no registrations.
+:PT.:PK.*YES:EPK.
+:PD.The saved registrations are read back.
+:EPARML.
+:EHELP.
 :HELP NAME=RTVCURDIR.Retrieve Current Directory (RTVCURDIR)
 :P.The Retrieve Current Directory (RTVCURDIR) command works with the
 job's current directory into CL variables.
@@ -1616,30 +1957,127 @@ decimal variable of 7 digits, 0 after the point.
 :PD.Type a number of up to 7 digits.
 :EPARML.
 :EHELP.
-:HELP NAME=UNMOUNT.Remove Mounted FS (UNMOUNT)
-:P.Use the Remove Mounted FS (UNMOUNT) command to unmount a file system
-(RMVMFS is the same command).
+:HELP NAME=STATFS.Display Mounted FS Information (STATFS)
+:P.Use the Display Mounted File System Information (STATFS) command to
+show the attributes of the file system an object is in. It is DSPMFSINF
+under another name.
 :EHELP.
-:HELP NAME='UNMOUNT/TYPE'.Type of file system (TYPE)
-:P.The type of file system for this command.
+:HELP NAME='STATFS/OBJ'.Object (OBJ)
+:P.A path name of any object in the file system.
 :P.A value is required.
-:PARML.
-:PT.:PK.*ALL:EPK.
-:PD.All of them.
-:EPARML.
-:P.Also accepted&colon. *NFS, *UDFS, *NETWORK.
-:EHELP.
-:HELP NAME='UNMOUNT/MNTOVRDIR'.Directory mounted over (MNTOVRDIR)
-:P.The directory the file system is mounted over.
 :PARML.
 :PT.:PV.path-name:EPV.
 :PD.Type a path name of up to 5000 characters.
 :EPARML.
-:P.Also accepted&colon. *MFS.
+:EHELP.
+:HELP NAME='STATFS/OUTPUT'.Output (OUTPUT)
+:P.Whether the information is shown or printed to a spooled file of
+QPRINT.
+:PARML.
+:PT.:PK DEF.*:EPK.
+:PD.The information is shown at a display; a batch job prints it.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
+:HELP NAME=STRNFSSVR.Start NFS Server (STRNFSSVR)
+:P.Use the Start NFS Server (STRNFSSVR) command to start the Network
+File System server daemons&colon. one type, or every type in the order
+NFS needs them. Each daemon is a job in subsystem QSYSWRK; the command
+waits for it to report that it is ready. You need *IOSYSCFG special
+authority.
+:P.The RPC binder is started first when a daemon that registers with it
+is asked for and the binder is not running. A daemon already running is
+left as it is and reported with a diagnostic message.
+:EHELP.
+:HELP NAME='STRNFSSVR/SERVER'.Server daemon (SERVER)
+:P.The type of daemon to start, or *ALL for every type&colon. *RPC the
+binder (port 111), *BIO the block I/O daemons of the client, *RGY the
+NFSv4 identity mapping, *SVR the server (port 2049), *MNT the mount
+daemon, *NSM the status monitor and *NLM the lock manager. *GSS is
+refused&colon. Kerberos is not supported.
+:P.A value is required.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.Every daemon type, started in the order *RPC, *BIO, *RGY, *SVR,
+*MNT, *NSM, *NLM.
+:PT.:PK.*GSS:EPK.
+:PD.The Kerberos daemon, which this system does not have&colon. the
+command fails.
+:EPARML.
+:P.Also accepted&colon. *RPC, *BIO, *RGY, *SVR, *MNT, *NSM, *NLM.
+:EHELP.
+:HELP NAME='STRNFSSVR/NBRSVR'.Number of server daemons (NBRSVR)
+:P.How many server daemon jobs (*SVR) to start, from 1 to 20. Several
+jobs share the connections of the clients. Only with SERVER(*SVR) or
+SERVER(*ALL).
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 20.
+:EPARML.
+:P.When no value is given, 1 is used.
+:EHELP.
+:HELP NAME='STRNFSSVR/NBRBIO'.Number of block I/O daemons (NBRBIO)
+:P.How many block I/O daemon jobs (*BIO) to start, from 1 to 20&colon.
+they read ahead and write behind for this system's NFS mounts. Only with
+SERVER(*BIO) or SERVER(*ALL).
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 20.
+:EPARML.
+:P.When no value is given, 1 is used.
+:EHELP.
+:HELP NAME='STRNFSSVR/RTVRPCREG'.Retrieve RPC registration (RTVRPCREG)
+:P.Whether the binder starts with the registrations it saved in
+/etc/RPCBTAB when it last ended. Only with SERVER(*RPC) or SERVER(*ALL).
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.The binder starts with no registrations.
+:PT.:PK.*YES:EPK.
+:PD.The saved registrations are read back.
+:EPARML.
+:EHELP.
+:HELP NAME='STRNFSSVR/STRJOBTIMO'.Timeout for start of daemon (STRJOBTIMO)
+:P.How many seconds to wait for each daemon to report that it is ready,
+from 1 to 3600. When the time passes the command stops with a message
+saying the daemon may not have started.
+:PARML.
+:PT.:PK.*NOMAX:EPK.
+:PD.Wait as long as it takes.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 3600.
+:EPARML.
+:P.When no value is given, 30 is used.
+:EHELP.
+:HELP NAME=UNMOUNT.Remove Mounted FS (UNMOUNT)
+:P.Use the Remove Mounted File System (UNMOUNT) command to unmount a
+file system from the directory it is mounted over, or every mounted file
+system at once. You need *IOSYSCFG special authority.
+:EHELP.
+:HELP NAME='UNMOUNT/TYPE'.Type of file system (TYPE)
+:P.The kind of file system to unmount&colon. *NFS, *UDFS, or *ALL for
+whatever is mounted there.
+:P.A value is required.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.Every file system mounted over the directory, or with
+MNTOVRDIR(*ALL) every mounted file system.
+:EPARML.
+:P.Also accepted&colon. *NFS, *UDFS.
+:EHELP.
+:HELP NAME='UNMOUNT/MNTOVRDIR'.Directory mounted over (MNTOVRDIR)
+:P.The directory the file system is mounted over. *ALL unmounts every
+mounted file system and needs TYPE(*ALL).
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.Every mounted file system.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 5000 characters.
+:EPARML.
 :EHELP.
 :HELP NAME='UNMOUNT/MFS'.Mounted file system (MFS)
-:P.The file system to mount&colon. a user-defined file system path or a
-network file system export.
+:P.For *UDFS&colon. the user-defined file system to unmount, instead of
+the directory.
 :PARML.
 :PT.:PV.path-name:EPV.
 :PD.Type a path name of up to 5000 characters.

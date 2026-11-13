@@ -96,6 +96,32 @@ pub const CURATED: &[(&str, &[&str])] = &[
         ],
     ),
     ("CMDRTN", &["RETURN"]),
+    // IBM's NFS, RPC and mounted file system menus share their
+    // commands (tools/conformance/golden/nfs/menu-cmd*.txt).
+    (
+        "CMDNFS",
+        &[
+            "CVTRPCSRC",
+            "DSPMFSINF",
+            "ENDRPCBIND",
+            "EXPORTFS",
+            "RPCBIND",
+            "RPCGEN",
+            "STATFS",
+        ],
+    ),
+    (
+        "CMDRPC",
+        &[
+            "CHGNFSEXP",
+            "DSPMFSINF",
+            "ENDNFSSVR",
+            "EXPORTFS",
+            "STATFS",
+            "STRNFSSVR",
+        ],
+    ),
+    ("CMDMFS", &["MOUNT", "STATFS", "UNMOUNT"]),
 ];
 
 /// Knows the tokens command names are made of.

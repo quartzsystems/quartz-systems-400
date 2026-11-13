@@ -131,3 +131,110 @@ TIMZON = "The time zone description to delete, or a generic name for every descr
 [WRKTIMZON]
 about = "Use the Work with Time Zone Descriptions (WRKTIMZON) command to show the time zone descriptions in QSYS and change, delete, display or print them, or make one the system's time zone. The description the QTIMZON system value names is marked with a greater-than sign."
 TIMZON = "The time zone descriptions to show: a name, a generic name, or *ALL."
+
+# --- NFS, the RPC binder and mounted file systems (docs/NFS.md)
+
+[STRNFSSVR]
+about = "Use the Start NFS Server (STRNFSSVR) command to start the Network File System server daemons: one type, or every type in the order NFS needs them. Each daemon is a job in subsystem QSYSWRK; the command waits for it to report that it is ready. You need *IOSYSCFG special authority."
+notes = "The RPC binder is started first when a daemon that registers with it is asked for and the binder is not running. A daemon already running is left as it is and reported with a diagnostic message."
+SERVER = "The type of daemon to start, or *ALL for every type: *RPC the binder (port 111), *BIO the block I/O daemons of the client, *RGY the NFSv4 identity mapping, *SVR the server (port 2049), *MNT the mount daemon, *NSM the status monitor and *NLM the lock manager. *GSS is refused: Kerberos is not supported."
+"SERVER.*ALL" = "Every daemon type, started in the order *RPC, *BIO, *RGY, *SVR, *MNT, *NSM, *NLM."
+"SERVER.*GSS" = "The Kerberos daemon, which this system does not have: the command fails."
+NBRSVR = "How many server daemon jobs (*SVR) to start, from 1 to 20. Several jobs share the connections of the clients. Only with SERVER(*SVR) or SERVER(*ALL)."
+NBRBIO = "How many block I/O daemon jobs (*BIO) to start, from 1 to 20: they read ahead and write behind for this system's NFS mounts. Only with SERVER(*BIO) or SERVER(*ALL)."
+RTVRPCREG = "Whether the binder starts with the registrations it saved in /etc/RPCBTAB when it last ended. Only with SERVER(*RPC) or SERVER(*ALL)."
+"RTVRPCREG.*YES" = "The saved registrations are read back."
+"RTVRPCREG.*NO" = "The binder starts with no registrations."
+STRJOBTIMO = "How many seconds to wait for each daemon to report that it is ready, from 1 to 3600. When the time passes the command stops with a message saying the daemon may not have started."
+"STRJOBTIMO.*NOMAX" = "Wait as long as it takes."
+
+[ENDNFSSVR]
+about = "Use the End NFS Server (ENDNFSSVR) command to end the Network File System server daemons: one type, or every type in the reverse of the order they start in. You need *IOSYSCFG special authority."
+SERVER = "The type of daemon to end, or *ALL for every type running. *GSS is refused: Kerberos is not supported."
+"SERVER.*ALL" = "Every daemon type running, ended in the order *NLM, *NSM, *MNT, *SVR, *RGY, *BIO, *RPC."
+"SERVER.*GSS" = "The Kerberos daemon, which this system does not have: the command fails."
+ENDJOBTIMO = "How many seconds to wait for each daemon to end, from 1 to 3600. When the time passes the command stops with a message saying the daemon may still be running."
+"ENDJOBTIMO.*NOMAX" = "Wait as long as it takes."
+
+[EXPORTFS]
+about = "Use the Change NFS Export (EXPORTFS) command to make directories available to NFS clients, to change how they are exported, or to end their export. The export table lasts until the next IPL; entries kept in /etc/exports are exported again with OPTIONS('-A'). You need *IOSYSCFG special authority."
+notes = "The flags of OPTIONS: -A every entry of /etc/exports; -I DIR without reading /etc/exports; -U end the export of DIR, or with -A of every entry; -F with -U, end it whatever the clients hold; -O followed by the export options; -E an escape message when an entry fails; -V a message for each entry. Export options: RO, RW=host:host, ACCESS=host:host, ROOT=host:host, ANON=uid, NOSUID, SEC=sys, VERS=3:4, PUBLIC, NFSROOT=path, EXNAME=path. A host is a name, an address, @network/length or a netgroup of /etc/netgroup."
+OPTIONS = "The flags and export options, as the command's help lists them. *DFT exports DIR with the options /etc/exports gives it, or the defaults when it has no entry."
+"OPTIONS.*DFT" = "Export DIR with its options from /etc/exports, or the defaults."
+DIR = "The directory to export or whose export ends. Directories in /QOPT, /QDLS, /QNTC, /QFileSvr.400 and in an NFS mount cannot be exported."
+HOSTOPT = "Options for some clients of the export: the host, the CCSID file data is converted to for it, the CCSID of its path names, and whether its writes are written to disk before the answer."
+"HOSTOPT.*DFT" = "No host options: file data is not converted, path names are ASCII and writes are synchronous."
+
+[CHGNFSEXP]
+about = "Use the Change NFS Export (CHGNFSEXP) command to make directories available to NFS clients, to change how they are exported, or to end their export. It is EXPORTFS under another name. You need *IOSYSCFG special authority."
+OPTIONS = "The flags and export options, as EXPORTFS's help lists them. *DFT exports DIR with the options /etc/exports gives it, or the defaults when it has no entry."
+"OPTIONS.*DFT" = "Export DIR with its options from /etc/exports, or the defaults."
+DIR = "The directory to export or whose export ends."
+HOSTOPT = "Options for some clients of the export: the host, the CCSID file data is converted to for it, the CCSID of its path names, and whether its writes are written to disk before the answer."
+"HOSTOPT.*DFT" = "No host options: file data is not converted, path names are ASCII and writes are synchronous."
+
+[MOUNT]
+about = "Use the Add Mounted File System (MOUNT) command to mount a file system over a directory: a remote NFS export, or a user-defined file system. The directory shows the file system's contents until it is unmounted or the next IPL. You need *IOSYSCFG special authority."
+TYPE = "The kind of file system: *NFS an export of another system, *UDFS a user-defined file system of this one."
+"TYPE.*NFS" = "An export of an NFS server, named host:path in MFS."
+"TYPE.*UDFS" = "A user-defined file system, named /dev/QASPnn/name.udfs in MFS."
+MFS = "The file system to mount: for *NFS the server's name or address, a colon and the path of the export; for *UDFS the path of the user-defined file system."
+MNTOVRDIR = "The directory the file system is mounted over. It must exist; what it holds is hidden while the mount lasts."
+OPTIONS = "Mount options, separated by commas: rw or ro, suid or nosuid, soft or hard, intr or nointr, retry=, rsize=, wsize=, timeo=, retrans=, acregmin=, acregmax=, acdirmin=, acdirmax=, actimeo=, noac, vers=, proto=, port=, mountport=, sec=sys. For *UDFS only rw and ro apply."
+"OPTIONS.*DFT" = "rw,suid,retry=5,rsize=32768,wsize=32768,timeo=20,retrans=5,acregmin=30,acregmax=60,acdirmin=30,acdirmax=60,hard."
+CCSID = "For *NFS: the CCSIDs the remote files' data and path names are in, so that they are converted. Not with CODEPAGE."
+CODEPAGE = "For *NFS: the code pages the remote files' data and path names are in, given as code pages instead of CCSIDs. Not with CCSID."
+
+[ADDMFS]
+about = "Use the Add Mounted File System (ADDMFS) command to mount a file system over a directory: a remote NFS export, or a user-defined file system. It is MOUNT under another name. You need *IOSYSCFG special authority."
+TYPE = "The kind of file system: *NFS an export of another system, *UDFS a user-defined file system of this one."
+MFS = "The file system to mount: for *NFS host:path, for *UDFS the path of the user-defined file system."
+MNTOVRDIR = "The directory the file system is mounted over."
+OPTIONS = "Mount options, separated by commas, as MOUNT's help lists them."
+"OPTIONS.*DFT" = "rw,suid,retry=5,rsize=32768,wsize=32768,timeo=20,retrans=5,acregmin=30,acregmax=60,acdirmin=30,acdirmax=60,hard."
+CCSID = "For *NFS: the CCSIDs the remote files' data and path names are in. Not with CODEPAGE."
+CODEPAGE = "For *NFS: the code pages of the remote files' data and path names. Not with CCSID."
+
+[UNMOUNT]
+about = "Use the Remove Mounted File System (UNMOUNT) command to unmount a file system from the directory it is mounted over, or every mounted file system at once. You need *IOSYSCFG special authority."
+TYPE = "The kind of file system to unmount: *NFS, *UDFS, or *ALL for whatever is mounted there."
+"TYPE.*ALL" = "Every file system mounted over the directory, or with MNTOVRDIR(*ALL) every mounted file system."
+MNTOVRDIR = "The directory the file system is mounted over. *ALL unmounts every mounted file system and needs TYPE(*ALL)."
+"MNTOVRDIR.*ALL" = "Every mounted file system."
+MFS = "For *UDFS: the user-defined file system to unmount, instead of the directory."
+
+[RMVMFS]
+about = "Use the Remove Mounted File System (RMVMFS) command to unmount a file system from the directory it is mounted over. It is UNMOUNT under another name. You need *IOSYSCFG special authority."
+TYPE = "The kind of file system to unmount: *NFS, *UDFS, or *ALL for whatever is mounted there."
+MNTOVRDIR = "The directory the file system is mounted over. *ALL unmounts every mounted file system and needs TYPE(*ALL)."
+"MNTOVRDIR.*ALL" = "Every mounted file system."
+MFS = "For *UDFS: the user-defined file system to unmount, instead of the directory."
+
+[DSPMFSINF]
+about = "Use the Display Mounted File System Information (DSPMFSINF) command to show the attributes of the file system an object is in: its type, its size and free space, its limits, and how it is mounted."
+OBJ = "A path name of any object in the file system."
+OUTPUT = "Whether the information is shown or printed to a spooled file of QPRINT."
+"OUTPUT.*" = "The information is shown at a display; a batch job prints it."
+
+[STATFS]
+about = "Use the Display Mounted File System Information (STATFS) command to show the attributes of the file system an object is in. It is DSPMFSINF under another name."
+OBJ = "A path name of any object in the file system."
+OUTPUT = "Whether the information is shown or printed to a spooled file of QPRINT."
+"OUTPUT.*" = "The information is shown at a display; a batch job prints it."
+
+[RLSIFSLCK]
+about = "Use the Release File System Locks (RLSIFSLCK) command to release byte-range locks that are no longer wanted: those an NFS client holds through this system's server, or those held on an object or on its whole file system."
+RMTLOCNAME = "The host name or address of an NFS client whose locks the *NLM daemon releases. Not with OBJ."
+OBJ = "The object whose byte-range locks are released. Not with RMTLOCNAME."
+NFSSVRLCK = "Whether the locks NFS clients hold on the object through the *NLM daemon are released."
+LCLBRNGLCK = "Whether the byte-range locks local jobs hold on the object are released. Not *YES with OBJMFS(*YES)."
+OBJMFS = "Whether the byte-range locks local jobs hold on every object of the object's file system are released. Not *YES with LCLBRNGLCK(*YES)."
+
+[RPCBIND]
+about = "Use the Start RPC Binder Daemon (RPCBIND) command to start the binder alone: the daemon that tells RPC clients on which ports this system's RPC programs listen (port 111). You need *IOSYSCFG special authority."
+RTVRPCREG = "Whether the binder starts with the registrations it saved in /etc/RPCBTAB when it last ended."
+"RTVRPCREG.*YES" = "The saved registrations are read back."
+"RTVRPCREG.*NO" = "The binder starts with no registrations."
+
+[ENDRPCBIND]
+about = "Use the End RPC Binder Daemon (ENDRPCBIND) command to end the binder. Its registrations are saved in /etc/RPCBTAB for the next start. You need *IOSYSCFG special authority."
