@@ -125,6 +125,8 @@ pub struct Suite {
     /// The telnet port forwarded to the address TCP/IP configuration
     /// set up (step 61); the TN5250 steps use it once it is there.
     pub(crate) tn_port: std::cell::Cell<Option<u16>>,
+    /// What the NFS steps on the main guest set up (`nfsstep`).
+    pub(crate) nfs: std::cell::RefCell<crate::nfsstep::State>,
 }
 
 // The steps share one signature so `step` can take them as fn pointers.
@@ -190,6 +192,7 @@ impl Suite {
                 sata_disks: Vec::new(),
                 nic_slot: None,
                 nics: Vec::new(),
+                links: Vec::new(),
             },
             media,
             install: false,
@@ -200,6 +203,7 @@ impl Suite {
             boot_timeout,
             only: None,
             tn_port: std::cell::Cell::new(None),
+            nfs: std::cell::RefCell::default(),
         })
     }
 
@@ -693,6 +697,12 @@ impl Suite {
             "171 NetServer Samba and kernel clients",
             Self::netsvr_interop,
         )?);
+        reports.push(self.step(&mut s, "173 NFS servers start", Self::nfs_start)?);
+        reports.push(self.step(&mut s, "174 NFS nfstest version 3", Self::nfs_test_v3)?);
+        reports.push(self.step(&mut s, "175 NFS nfstest version 4", Self::nfs_test_v4)?);
+        reports.push(self.step(&mut s, "176 NFS bench from the host", Self::nfs_bench)?);
+        reports.push(self.step(&mut s, "177 NFS Linux export", Self::nfs_linux)?);
+        reports.push(self.step(&mut s, "178 NFS end", Self::nfs_end)?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
@@ -774,6 +784,7 @@ impl Suite {
         reports.extend(self.guest_steps()?);
         #[cfg(unix)]
         reports.extend(self.two_guest_steps()?);
+        reports.extend(self.nfs_pair_steps()?);
         #[cfg(unix)]
         reports.extend(self.lic_ptf_steps()?);
         if self.only.is_some() {

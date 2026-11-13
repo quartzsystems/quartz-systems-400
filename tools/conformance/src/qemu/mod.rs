@@ -83,6 +83,45 @@ pub struct Launch {
     pub nic_slot: Option<u8>,
     /// More virtio NICs, each on a user network of its own (step 159).
     pub nics: Vec<Nic>,
+    /// Virtio NICs on a private link to another guest (the NFS pair).
+    pub links: Vec<Link>,
+}
+
+/// A virtio NIC whose frames go to another guest's NIC over UDP on the
+/// host's loopback: an Ethernet link between two guests and nothing else.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Link {
+    /// Its QEMU netdev and device id.
+    pub id: String,
+    /// Its PCI slot on the root bus.
+    pub slot: u8,
+    /// Its MAC address.
+    pub mac: String,
+    /// The UDP port this end listens on (127.0.0.1).
+    pub local: u16,
+    /// The UDP port the other end listens on.
+    pub remote: u16,
+    /// `-netdev dgram` (QEMU 7.2 and later) instead of the older
+    /// `-netdev socket,udp=`.
+    pub dgram: bool,
+}
+
+impl Link {
+    /// Its `-netdev` value.
+    #[must_use]
+    pub fn netdev(&self) -> String {
+        if self.dgram {
+            format!(
+                "dgram,id={},local.type=inet,local.host=127.0.0.1,local.port={},remote.type=inet,remote.host=127.0.0.1,remote.port={}",
+                self.id, self.local, self.remote
+            )
+        } else {
+            format!(
+                "socket,id={},udp=127.0.0.1:{},localaddr=127.0.0.1:{}",
+                self.id, self.remote, self.local
+            )
+        }
+    }
 }
 
 /// A further virtio NIC.
@@ -254,6 +293,15 @@ pub fn args(l: &Launch) -> Vec<OsString> {
         a.push(OsString::from(format!(
             "virtio-net-pci,netdev={},mac={},bus=pcie.0,addr=0x{:02x}",
             n.id, n.mac, n.slot
+        )));
+    }
+    for k in &l.links {
+        a.push(OsString::from("-netdev"));
+        a.push(OsString::from(k.netdev()));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from(format!(
+            "virtio-net-pci,netdev={},mac={},bus=pcie.0,addr=0x{:02x}",
+            k.id, k.mac, k.slot
         )));
     }
     a

@@ -61,6 +61,7 @@ mod netsvrinterop;
 mod netsvrprobe;
 mod netsvrstep;
 mod nettools;
+mod nfsstep;
 mod nlsstep;
 pub mod ossnet;
 mod perfstep;

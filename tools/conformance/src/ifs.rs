@@ -133,7 +133,7 @@ impl Suite {
 }
 
 /// `svc.ifs`'s capacity and free space, MiB.
-fn capacity(out: &str) -> Result<(u64, u64), String> {
+pub(crate) fn capacity(out: &str) -> Result<(u64, u64), String> {
     let mib = |key: &str| -> Option<u64> {
         let at = out.find(key)? + key.len();
         out[at..]

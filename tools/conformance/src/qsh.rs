@@ -27,7 +27,7 @@ const LINE: usize = 2000;
 const PROBE: &str = "/QOpenSys/tmp/paseprobe";
 
 /// The `number/user/name` in `SBMJOB`'s message.
-fn submitted(out: &str) -> Result<String, String> {
+pub(crate) fn submitted(out: &str) -> Result<String, String> {
     out.split_whitespace()
         .find(|w| w.split('/').count() == 3 && w.split('/').next().is_some_and(|n| n.len() == 6))
         .map(str::to_string)
