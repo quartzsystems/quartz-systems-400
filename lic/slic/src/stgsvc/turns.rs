@@ -388,12 +388,26 @@ fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
             Some(req.clone())
         }
         Request::Open { .. } if park && super::ifs::leased() => Some(req.clone()),
+        Request::RunCmd { name, .. } | Request::RunCmdCalling { name, .. }
+            if park && super::ifs::may_park_cmd(name) =>
+        {
+            Some(req.clone())
+        }
         _ => None,
     };
+    let cmd = matches!(
+        keep,
+        Some(Request::RunCmd { .. } | Request::RunCmdCalling { .. })
+    );
     super::stall::begin(&req);
-    let (reply, deferral) = super::ifs::parking(keep.is_some(), || {
-        served::handle(&mut svc.system, &mut svc.conns, i, req)
-    });
+    let run = || served::handle(&mut svc.system, &mut svc.conns, i, req);
+    let (reply, deferral) = if cmd {
+        // A command (MOUNT, an IFS command over a remote mount) runs
+        // again from its start, its IFS work kept under one token.
+        super::ifs::command_parking(true, run)
+    } else {
+        super::ifs::parking(keep.is_some(), run)
+    };
     super::stall::end();
     if let (Some(d), Some(req)) = (deferral, keep) {
         let id = svc.conns[i].id;

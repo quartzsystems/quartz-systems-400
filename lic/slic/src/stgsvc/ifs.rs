@@ -403,6 +403,67 @@ pub fn may_park_for(op: &IfsOp, handle: Option<u64>) -> bool {
     }
 }
 
+/// Whether a command request may be parked: `MOUNT` (its mount is made
+/// on a thread of its own), or an IFS command while a remote file system
+/// is mounted (its work may wait for the mount's threads).
+#[must_use]
+pub fn may_park_cmd(name: &str) -> bool {
+    matches!(name, "MOUNT" | "ADDMFS")
+        || (PARKED_CMDS.contains(&name) && get().is_some_and(Ifs::has_remote))
+}
+
+/// The commands that work on the IFS in the service (`cpp::ifscmd`,
+/// `cpp::stmfcmd`, `cpp::nfscmd`): run where a remote mount may make
+/// them wait.
+const PARKED_CMDS: &[&str] = &[
+    "CD",
+    "CHGCURDIR",
+    "MD",
+    "MKDIR",
+    "CRTDIR",
+    "RD",
+    "RMDIR",
+    "DEL",
+    "RMVLNK",
+    "REN",
+    "RNM",
+    "MOV",
+    "CPY",
+    "ADDLNK",
+    "CHGAUT",
+    "CHGOWN",
+    "CHGPGP",
+    "CHGATR",
+    "CHKOUT",
+    "CHKIN",
+    "STRJRN",
+    "ENDJRN",
+    "UNMOUNT",
+    "RMVMFS",
+    "WRKLNK",
+    "DSPLNK",
+    "DSPAUT",
+    "WRKAUT",
+    "DSPF",
+    "CPYTOSTMF",
+    "CPYFRMSTMF",
+    "DSPMFSINF",
+    "STATFS",
+    "RLSIFSLCK",
+];
+
+/// Run `f`, a command's processing program, as one run of an IFS request
+/// that may defer when `allow` (`deferring`: one token for the whole
+/// command, kept across its runs); the deferral, when it did. Database
+/// opens in it do not defer.
+pub fn command_parking<T>(allow: bool, f: impl FnOnce() -> T) -> (T, Option<Deferral>) {
+    let before = PARKING.with(|p| p.replace(false));
+    DEFERRED.with(|d| d.set(None));
+    let (r, d) = ifs::lease::defer::deferring(allow, f);
+    PARKING.with(|p| p.set(before));
+    (r, d.or(DEFERRED.with(Cell::take)))
+}
+
 /// Whether a parked request may run again: its breaks or orders came,
 /// or the remote work it waits for is done (`ifs::remote`).
 #[must_use]
@@ -547,5 +608,28 @@ mod tests {
         });
         assert_eq!((r, d), (Ok(()), None));
         assert_eq!(l.on(KEY)[0].2 & W, W, "still breaking, not waited for");
+    }
+
+    /// `MOUNT TYPE(*NFS)` ran outside a request run, so its mount could
+    /// not wait for its thread (`EAGAIN`, shown as `CPFA0D4`): a parked
+    /// command is one run, with one token across its reruns, and its
+    /// database opens still do not defer.
+    #[test]
+    fn a_command_is_one_request_run() {
+        use ifs::remote::request;
+        assert!(super::may_park_cmd("MOUNT") && super::may_park_cmd("ADDMFS"));
+        assert!(!super::may_park_cmd("CRTLIB"));
+        let ((cur, may), d) =
+            super::command_parking(true, || (request::current(), request::allowed()));
+        assert!(cur.is_some() && may && d.is_none());
+        let first = cur.expect("a run");
+        request::rerun(first);
+        let (again, _) = super::command_parking(true, request::current);
+        assert_eq!(again.map(|t| t.id), Some(first.id));
+        let l = leased();
+        let (r, d) = super::command_parking(true, || {
+            db_deferring(|| l.gate(Owner(2), KEY, Trigger::Open { overwrite: false }))
+        });
+        assert_eq!((r, d), (Ok(()), None));
     }
 }
