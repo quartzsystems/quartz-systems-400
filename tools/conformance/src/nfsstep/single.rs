@@ -580,8 +580,11 @@ mod tests {
     }
 
     #[test]
-    fn known_failures_do_not_count() {
+    fn every_failure_counts_with_none_known() {
         let o = Outcome::of("fail nlm-share: denied\nfail mount-cycle: x\nok null-nfs\n");
-        assert_eq!(new_failures(&o), ["fail mount-cycle: x"]);
+        assert_eq!(
+            new_failures(&o),
+            ["fail nlm-share: denied", "fail mount-cycle: x"]
+        );
     }
 }
