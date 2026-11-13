@@ -649,7 +649,7 @@ pub(crate) fn service(
         Some(e) => {
             let mut text = reply.text;
             if text.is_empty() {
-                text = shown(job, &Fail::new(&e.msgid, ""));
+                text = shown(job, &bare_escape(&e));
             }
             Err(Fail {
                 msgid: e.msgid,
@@ -672,6 +672,16 @@ pub(crate) fn service(
             Ok(text)
         }
         None => Ok(reply.text),
+    }
+}
+
+/// A service command's escape with no text of its own: shown from the
+/// message file with its values (`&1` and the rest filled in).
+fn bare_escape(e: &stg::proto::CmdMsg) -> Fail {
+    Fail {
+        msgid: e.msgid.clone(),
+        data: e.data.clone(),
+        text: String::new(),
     }
 }
 
@@ -917,4 +927,26 @@ pub fn install_hook(job: &mut Job, host: &Host) {
             None => Ok(o.changed),
         }
     }));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A service escape shown without text keeps its values (`CPFA0D4`
+    /// showed errno 0 when they were dropped).
+    #[test]
+    fn a_bare_escape_keeps_its_values() {
+        let e = stg::proto::CmdMsg {
+            msgid: "CPFA0D4".into(),
+            kind: 7,
+            data: 3406i32.to_be_bytes().to_vec(),
+        };
+        let f = bare_escape(&e);
+        assert_eq!(
+            (f.msgid.as_str(), f.data.as_slice()),
+            ("CPFA0D4", &e.data[..])
+        );
+        assert!(f.text.is_empty());
+    }
 }
