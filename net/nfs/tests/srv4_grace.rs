@@ -8,7 +8,12 @@
 //! `NFS4ERR_NO_GRACE`; the period ends when every client named is done
 //! (`RECLAIM_COMPLETE`) or its time is up.
 
-#![allow(clippy::too_many_lines)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
 
 mod srv3_common;
 mod srv4_common;
@@ -87,7 +92,13 @@ fn reclaims_in_the_grace_period() {
     let r = a.raw(
         &e,
         0,
-        vec![rootfh(), lookup("home"), lookup("x"), a.open("o", "f", false, 3, 0), getfh()],
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            a.open("o", "f", false, 3, 0),
+            getfh(),
+        ],
     );
     let f = fh_of(&r);
     let sa = confirm(&e, &a, &f, &opened(&r).stateid);
@@ -97,7 +108,13 @@ fn reclaims_in_the_grace_period() {
     b.session(&e, "grace-b", 0);
     let r = b.run(
         &e,
-        vec![rootfh(), lookup("home"), lookup("x"), b.open("o", "g", false, 3, 0), getfh()],
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            b.open("o", "g", false, 3, 0),
+            getfh(),
+        ],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let g = fh_of(&r);
@@ -113,9 +130,22 @@ fn reclaims_in_the_grace_period() {
     let a = V4c::new("10.0.0.1:900", 100, 0);
     a.setclientid(&e2, "grace-a", "127.0.0.1.0.1");
     // New state is refused; a reclaim is taken.
-    let r = a.raw(&e2, 0, vec![rootfh(), lookup("home"), lookup("x"), a.open("o", "g", false, 1, 0)]);
+    let r = a.raw(
+        &e2,
+        0,
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            a.open("o", "g", false, 1, 0),
+        ],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_GRACE);
-    let r = a.raw(&e2, 0, vec![putfh(&f), previous(a.next_oseq(), a.owner("o"))]);
+    let r = a.raw(
+        &e2,
+        0,
+        vec![putfh(&f), previous(a.next_oseq(), a.owner("o"))],
+    );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let sa = confirm(&e2, &a, &f, &opened(&r).stateid);
     let r = a.raw(&e2, 0, vec![putfh(&f), lock(&a, &sa, true, 0)]);
@@ -123,7 +153,11 @@ fn reclaims_in_the_grace_period() {
     // A client the records do not name has nothing to reclaim.
     let c = V4c::new("10.0.0.3:900", 100, 0);
     c.setclientid(&e2, "grace-c", "127.0.0.1.0.1");
-    let r = c.raw(&e2, 0, vec![putfh(&g), previous(c.next_oseq(), c.owner("o"))]);
+    let r = c.raw(
+        &e2,
+        0,
+        vec![putfh(&g), previous(c.next_oseq(), c.owner("o"))],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_NO_GRACE);
     // A's first request for new state says it is done.
     let r = a.raw(&e2, 0, vec![putfh(&f), lock(&a, &sa, false, 50)]);
@@ -136,13 +170,24 @@ fn reclaims_in_the_grace_period() {
     assert!(e2.srv.in_grace());
     let r = b.run(
         &e2,
-        vec![nfs_argop4::OP_RECLAIM_COMPLETE(t::RECLAIM_COMPLETE4args { rca_one_fs: false })],
+        vec![nfs_argop4::OP_RECLAIM_COMPLETE(t::RECLAIM_COMPLETE4args {
+            rca_one_fs: false,
+        })],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK);
     assert!(!e2.srv.in_grace());
     let r = b.run(&e2, vec![putfh(&g), previous(0, b.owner("o9"))]);
     assert_eq!(r.status, nfsstat4::NFS4ERR_NO_GRACE);
-    let r = c.raw(&e2, 0, vec![rootfh(), lookup("home"), lookup("x"), c.open("o", "f", false, 1, 0)]);
+    let r = c.raw(
+        &e2,
+        0,
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            c.open("o", "f", false, 1, 0),
+        ],
+    );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
 }
 
@@ -154,7 +199,13 @@ fn the_grace_period_runs_out() {
     let r = a.raw(
         &e,
         0,
-        vec![rootfh(), lookup("home"), lookup("x"), a.open("o", "f", false, 3, 0), getfh()],
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            a.open("o", "f", false, 3, 0),
+            getfh(),
+        ],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK);
     let f = fh_of(&r);
@@ -168,7 +219,11 @@ fn the_grace_period_runs_out() {
     assert!(!e3.srv.in_grace());
     let a = V4c::new("10.0.0.1:900", 100, 0);
     a.setclientid(&e3, "late", "127.0.0.1.0.1");
-    let r = a.raw(&e3, 0, vec![putfh(&f), previous(a.next_oseq(), a.owner("o"))]);
+    let r = a.raw(
+        &e3,
+        0,
+        vec![putfh(&f), previous(a.next_oseq(), a.owner("o"))],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_NO_GRACE);
     let img = stable::decode(&e3.stable.bytes().unwrap()).unwrap();
     assert!(img.grace_done);

@@ -76,6 +76,7 @@ fn principal(name: &str) -> Principal {
     p
 }
 
+#[allow(clippy::too_many_lines)]
 fn build() -> Option<Sys> {
     let env = MemEnv::default()
         .user("QSECOFR", 0)

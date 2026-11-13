@@ -12,14 +12,14 @@
 use super::{R, vs};
 use crate::server::text;
 use crate::server::vfs::FileType;
-use crate::v4::Fh;
-use crate::v4::compound::{Cx, Res};
-use crate::v4::pseudo::{self, Root};
 use crate::types::nfs4::{
     GETFH4res, GETFH4resok, LOOKUP4args, LOOKUP4res, LOOKUPP4res, PUTFH4args, PUTFH4res,
     PUTPUBFH4res, PUTROOTFH4res, RESTOREFH4res, SAVEFH4res, SECINFO4args, SECINFO4res,
     SECINFO4resok, nfs_fh4, nfs_resop4, nfsstat4, secinfo_style4, secinfo4,
 };
+use crate::v4::Fh;
+use crate::v4::compound::{Cx, Res};
+use crate::v4::pseudo::{self, Root};
 
 fn auth_sys() -> SECINFO4resok {
     SECINFO4resok(vec![secinfo4::default(crate::types::nfs4::AUTH_SYS)])
@@ -220,10 +220,7 @@ impl Cx<'_> {
                     .filter(|e| crate::server::export::within(e.path(), up).is_some())
                     .max_by_key(|e| e.path().len())
                     .ok_or(nfsstat4::NFS4ERR_NOENT)?;
-                let ro = self
-                    .gate()
-                    .req(self.ctx, outer, 4)
-                    .map_err(vs)?;
+                let ro = self.gate().req(self.ctx, outer, 4).map_err(vs)?;
                 let bytes = text::to_client(ro.opts.path_ccsid, up).map_err(vs)?;
                 let n = self.vfs.lookup_path(&ro, &bytes).map_err(vs)?;
                 Ok(Fh::Real(ro, n.fh))

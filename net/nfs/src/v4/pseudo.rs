@@ -204,7 +204,9 @@ impl Tree {
                         parent: Some(at),
                         children: Vec::new(),
                     });
-                    t.nodes[at].children.push(((*c).to_string(), Child::Node(k)));
+                    t.nodes[at]
+                        .children
+                        .push(((*c).to_string(), Child::Node(k)));
                     k
                 };
             }

@@ -213,16 +213,11 @@ pub(crate) fn compound(
     for i in 0..nops {
         cx.index = i;
         let Ok(op) = d.clone().get_u32() else {
-            // Fewer operations than the count says.
+            // Fewer operations than the count says: the slot is free again.
+            cx.finish(None);
             return Err(AcceptError::GarbageArgs);
         };
-        let (st, bytes) = if !known(op, minor) {
-            let ill = num(nfs_opnum4::OP_ILLEGAL);
-            (
-                nfsstat4::NFS4ERR_OP_ILLEGAL,
-                error_bytes(ill, nfsstat4::NFS4ERR_OP_ILLEGAL),
-            )
-        } else {
+        let (st, bytes) = if known(op, minor) {
             match nfs_argop4::decode(d) {
                 Err(_) => (
                     nfsstat4::NFS4ERR_BADXDR,
@@ -244,6 +239,12 @@ pub(crate) fn compound(
                     }
                 }
             }
+        } else {
+            let ill = num(nfs_opnum4::OP_ILLEGAL);
+            (
+                nfsstat4::NFS4ERR_OP_ILLEGAL,
+                error_bytes(ill, nfsstat4::NFS4ERR_OP_ILLEGAL),
+            )
         };
         let limit = cx.reply_limit();
         let (st, bytes) = if size + bytes.len() > limit.0 {
@@ -272,10 +273,9 @@ pub(crate) fn compound(
 
 /// The op number at the head of an encoded result.
 fn op_of(b: &[u8]) -> u32 {
-    b.get(..4)
-        .map_or(num(nfs_opnum4::OP_ILLEGAL), |x| {
-            u32::from_be_bytes([x[0], x[1], x[2], x[3]])
-        })
+    b.get(..4).map_or(num(nfs_opnum4::OP_ILLEGAL), |x| {
+        u32::from_be_bytes([x[0], x[1], x[2], x[3]])
+    })
 }
 
 /// The 4.1 rules of where an operation may be.

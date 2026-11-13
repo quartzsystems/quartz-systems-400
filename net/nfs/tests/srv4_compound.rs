@@ -6,7 +6,12 @@
 //! the 4.1 position rules, refusals; the pseudo file system with two
 //! exports and a host allowed one; attributes.
 
-#![allow(clippy::too_many_lines)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
 
 mod srv3_common;
 mod srv4_common;
@@ -44,12 +49,7 @@ fn raw_compound(minor: u32, ops: &[(u32, Vec<u8>)]) -> Vec<u8> {
 }
 
 fn send_raw(e: &Env, c: &V4c, body: &[u8]) -> t::COMPOUND4res {
-    let call = nfs::rpc::msg::encode_call(
-        c.c.next_xid(),
-        &t_call_body(&c.c),
-        body,
-    )
-    .unwrap();
+    let call = nfs::rpc::msg::encode_call(c.c.next_xid(), &t_call_body(&c.c), body).unwrap();
     let reply = c.c.send(&e.prog, &call).unwrap();
     let res = nfs::rpc::client::results(&reply).unwrap();
     nfs::xdr::from_bytes(&res).unwrap()
@@ -83,9 +83,16 @@ fn illegal_and_undecodable_operations() {
     let e = two_exports();
     let c = V4c::new("10.0.0.1:900", 100, 0);
     // An operation number the protocol lacks, after one that works.
-    let r = send_raw(&e, &c, &raw_compound(0, &[(24, vec![]), (99, vec![1, 2, 3, 4])]));
+    let r = send_raw(
+        &e,
+        &c,
+        &raw_compound(0, &[(24, vec![]), (99, vec![1, 2, 3, 4])]),
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_OP_ILLEGAL);
-    assert_eq!(statuses(&r), vec![nfsstat4::NFS4_OK, nfsstat4::NFS4ERR_OP_ILLEGAL]);
+    assert_eq!(
+        statuses(&r),
+        vec![nfsstat4::NFS4_OK, nfsstat4::NFS4ERR_OP_ILLEGAL]
+    );
     assert!(matches!(r.resarray[1], nfs_resop4::OP_ILLEGAL(_)));
     // A 4.1 operation in a 4.0 compound is not 4.0's.
     let r = send_raw(&e, &c, &raw_compound(0, &[(53, vec![0; 32])]));
@@ -94,8 +101,15 @@ fn illegal_and_undecodable_operations() {
     let r = send_raw(&e, &c, &raw_compound(0, &[(10_044, vec![])]));
     assert_eq!(r.status, nfsstat4::NFS4ERR_OP_ILLEGAL);
     // Arguments that do not decode: BADXDR for that operation.
-    let r = send_raw(&e, &c, &raw_compound(0, &[(24, vec![]), (15, vec![0, 0, 0, 9])]));
-    assert_eq!(statuses(&r), vec![nfsstat4::NFS4_OK, nfsstat4::NFS4ERR_BADXDR]);
+    let r = send_raw(
+        &e,
+        &c,
+        &raw_compound(0, &[(24, vec![]), (15, vec![0, 0, 0, 9])]),
+    );
+    assert_eq!(
+        statuses(&r),
+        vec![nfsstat4::NFS4_OK, nfsstat4::NFS4ERR_BADXDR]
+    );
 }
 
 #[test]
@@ -137,9 +151,11 @@ fn minor_version_one_position_rules() {
     assert_eq!(r.status, nfsstat4::NFS4ERR_NOTSUPP);
     let r = c.run(
         &e,
-        vec![nfs_argop4::OP_RELEASE_LOCKOWNER(t::RELEASE_LOCKOWNER4args {
-            lock_owner: c.owner("x"),
-        })],
+        vec![nfs_argop4::OP_RELEASE_LOCKOWNER(
+            t::RELEASE_LOCKOWNER4args {
+                lock_owner: c.owner("x"),
+            },
+        )],
     );
     assert_eq!(r.status, nfsstat4::NFS4ERR_NOTSUPP);
 }
@@ -206,7 +222,12 @@ fn refusals_of_what_is_not_done() {
 fn the_pseudo_file_system() {
     let e = two_exports();
     let c = V4c::new("10.0.0.1:900", 100, 0);
-    let fsid = [t::FATTR4_FSID, t::FATTR4_TYPE, t::FATTR4_MOUNTED_ON_FILEID, t::FATTR4_FILEID];
+    let fsid = [
+        t::FATTR4_FSID,
+        t::FATTR4_TYPE,
+        t::FATTR4_MOUNTED_ON_FILEID,
+        t::FATTR4_FILEID,
+    ];
     let r = c.raw(&e, 0, vec![rootfh(), getfh(), getattr(&fsid)]);
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let root = srv4_common::fh_of(&r);
@@ -230,7 +251,13 @@ fn the_pseudo_file_system() {
     let r = c.raw(
         &e,
         0,
-        vec![putfh(&root), lookup("home"), lookup("ann"), getfh(), getattr(&fsid)],
+        vec![
+            putfh(&root),
+            lookup("home"),
+            lookup("ann"),
+            getfh(),
+            getattr(&fsid),
+        ],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let ann = srv4_common::fh_of(&r);
@@ -303,7 +330,17 @@ fn attributes_and_verify() {
         t::FATTR4_LEASE_TIME,
         t::FATTR4_SUPPATTR_EXCLCREAT,
     ];
-    let r = c.raw(&e, 0, vec![rootfh(), lookup("home"), lookup("ann"), lookup("f"), getattr(&want)]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("ann"),
+            lookup("f"),
+            getattr(&want),
+        ],
+    );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let a = srv4_common::attrs_of(&r);
     let got = Bits::from(&a.attrmask);
@@ -313,7 +350,10 @@ fn attributes_and_verify() {
     let mut d = Decoder::new(&a.attr_vals.0);
     let sup = t::bitmap4::decode(&mut d).unwrap();
     assert!(!Bits::from(&sup).has(t::FATTR4_ACL));
-    assert_eq!(t::nfs_ftype4::decode(&mut d).unwrap(), t::nfs_ftype4::NF4REG);
+    assert_eq!(
+        t::nfs_ftype4::decode(&mut d).unwrap(),
+        t::nfs_ftype4::NF4REG
+    );
     assert_eq!(d.get_u64().unwrap(), 5);
     assert_eq!(d.get_u32().unwrap(), 90);
     let owner = d.get_opaque(u32::MAX).unwrap();
@@ -349,7 +389,11 @@ fn attributes_and_verify() {
     assert_eq!(c.raw(&e, 0, ops).status, nfsstat4::NFS4ERR_ATTRNOTSUPP);
     // SETATTR of an attribute not supported, and of one read-only.
     for (bits, val, want) in [
-        (t::FATTR4_ACL, vec![0, 0, 0, 0], nfsstat4::NFS4ERR_ATTRNOTSUPP),
+        (
+            t::FATTR4_ACL,
+            vec![0, 0, 0, 0],
+            nfsstat4::NFS4ERR_ATTRNOTSUPP,
+        ),
         (t::FATTR4_TYPE, vec![0, 0, 0, 1], nfsstat4::NFS4ERR_INVAL),
     ] {
         let mut ops = path();

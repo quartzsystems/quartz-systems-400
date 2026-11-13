@@ -7,6 +7,13 @@
 //! without a session, opens, locks, reads, writes, directory changes),
 //! mutated; nothing panics and every reply's results decode.
 
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
+
 use std::time::Instant;
 
 use nfs::fuzzing;
@@ -98,22 +105,20 @@ fn seeds() -> Vec<Vec<u8>> {
         compound(0, vec![nfs_argop4::OP_PUTROOTFH, nfs_argop4::OP_LOOKUPP]),
         compound(
             0,
-            vec![
-                nfs_argop4::OP_SETCLIENTID(t::SETCLIENTID4args {
-                    client: t::nfs_client_id4 {
-                        verifier: [1; 8],
-                        id: b"fz".to_vec(),
+            vec![nfs_argop4::OP_SETCLIENTID(t::SETCLIENTID4args {
+                client: t::nfs_client_id4 {
+                    verifier: [1; 8],
+                    id: b"fz".to_vec(),
+                },
+                callback: t::cb_client4 {
+                    cb_program: 1,
+                    cb_location: t::netaddr4 {
+                        na_r_netid: b"tcp".to_vec(),
+                        na_r_addr: b"127.0.0.1.0.1".to_vec(),
                     },
-                    callback: t::cb_client4 {
-                        cb_program: 1,
-                        cb_location: t::netaddr4 {
-                            na_r_netid: b"tcp".to_vec(),
-                            na_r_addr: b"127.0.0.1.0.1".to_vec(),
-                        },
-                    },
-                    callback_ident: 1,
-                }),
-            ],
+                },
+                callback_ident: 1,
+            })],
         ),
         compound(0, vec![root(), open, nfs_argop4::OP_GETFH, lock]),
         compound(

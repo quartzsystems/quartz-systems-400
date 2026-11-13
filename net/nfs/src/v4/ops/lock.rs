@@ -20,7 +20,7 @@ use crate::types::nfs4::{
 };
 use crate::v4::compound::{Cx, Res, encode};
 use crate::v4::state::{
-    Kind, LockOwner, LockSt, OpenSt, OwnerKey, Sid, SUB_BASE, add_range, is_special, sub_range,
+    Kind, LockOwner, LockSt, OpenSt, OwnerKey, SUB_BASE, Sid, add_range, is_special, sub_range,
 };
 
 /// A range: the file system's length (0 to the end) and the end.
@@ -213,6 +213,7 @@ impl Cx<'_> {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn lock(&mut self, a: &LOCK4args) -> Result<stateid4, Denied> {
         let (r, h) = self.lock_file()?;
         let (vlen, end) = range(a.offset, a.length)?;
@@ -281,32 +282,31 @@ impl Cx<'_> {
             }
         }
         let mut t = self.srv.t();
-        let id = match lsid {
-            Some(id) => id,
-            None => {
-                let id = t.next_id();
-                t.sids.insert(
+        let id = if let Some(id) = lsid {
+            id
+        } else {
+            let id = t.next_id();
+            t.sids.insert(
+                id,
+                Sid {
                     id,
-                    Sid {
-                        id,
-                        seq: 0,
-                        client: key.0,
-                        fh: h,
-                        kind: Kind::Lock(LockSt {
-                            owner: key.clone(),
-                            open: oid,
-                            ranges: Vec::new(),
-                        }),
-                    },
-                );
-                if let Some(Kind::Open(o)) = t.sids.get_mut(&oid).map(|s| &mut s.kind) {
-                    o.locks.push(id);
-                }
-                if let Some(lo) = t.lock_owners.get_mut(&key) {
-                    lo.sids.push(id);
-                }
-                id
+                    seq: 0,
+                    client: key.0,
+                    fh: h,
+                    kind: Kind::Lock(LockSt {
+                        owner: key.clone(),
+                        open: oid,
+                        ranges: Vec::new(),
+                    }),
+                },
+            );
+            if let Some(Kind::Open(o)) = t.sids.get_mut(&oid).map(|s| &mut s.kind) {
+                o.locks.push(id);
             }
+            if let Some(lo) = t.lock_owners.get_mut(&key) {
+                lo.sids.push(id);
+            }
+            id
         };
         let x = t.sids.get_mut(&id).ok_or(nfsstat4::NFS4ERR_SERVERFAULT)?;
         if let Kind::Lock(l) = &mut x.kind {

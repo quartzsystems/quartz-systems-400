@@ -9,7 +9,12 @@
 //! a local job writes it (the IFS lease's break order), returned
 //! (`DELEGRETURN`), and revoked when not returned in time.
 
-#![allow(clippy::too_many_lines)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
 
 mod srv3_common;
 mod srv4_common;
@@ -101,7 +106,13 @@ fn open_read(e: &Env, c: &V4c, name: &str) -> (Vec<u8>, t::OPEN4resok) {
     let r = c.raw(
         e,
         0,
-        vec![rootfh(), lookup("home"), lookup("x"), c.open("o", name, false, 1, 0), getfh()],
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            c.open("o", name, false, 1, 0),
+            getfh(),
+        ],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let o = opened(&r);
@@ -185,12 +196,21 @@ fn read_delegations_recalled_returned_and_revoked() {
                 b.raw(
                     &e,
                     0,
-                    vec![rootfh(), lookup("home"), lookup("x"), b.open("o", "f", false, 2, 0)],
+                    vec![
+                        rootfh(),
+                        lookup("home"),
+                        lookup("x"),
+                        b.open("o", "f", false, 2, 0),
+                    ],
                 )
                 .status
             };
             assert_eq!(w(&b), nfsstat4::NFS4ERR_DELAY);
-            until("CB_RECALL", || !cbs.recalls.lock().unwrap().is_empty(), || e.tick());
+            until(
+                "CB_RECALL",
+                || !cbs.recalls.lock().unwrap().is_empty(),
+                || e.tick(),
+            );
             let (ident, rs, rfh) = cbs.recalls.lock().unwrap()[0].clone();
             assert_eq!(ident, 7);
             assert_eq!(rs, ds);

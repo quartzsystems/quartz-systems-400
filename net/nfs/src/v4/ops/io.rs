@@ -48,7 +48,11 @@ impl Cx<'_> {
     /// Recalls the read delegations clients other than `me` hold on the
     /// file of `fid`: `NFS4ERR_DELAY` while any is out. A lapsed
     /// client's goes at once.
-    pub(super) fn deleg_conflict(&mut self, fid: ifs::ops::audit::FileId, me: Option<u64>) -> R<()> {
+    pub(super) fn deleg_conflict(
+        &mut self,
+        fid: ifs::ops::audit::FileId,
+        me: Option<u64>,
+    ) -> R<()> {
         let lapsed = {
             let t = self.srv.t();
             let lease = self.srv.cfg.lease;
@@ -56,7 +60,9 @@ impl Cx<'_> {
                 s.fh.fid == fid
                     && matches!(s.kind, Kind::Deleg(_))
                     && Some(s.client) != me
-                    && t.clients.get(&s.client).is_some_and(|c| c.lapsed(self.now, lease))
+                    && t.clients
+                        .get(&s.client)
+                        .is_some_and(|c| c.lapsed(self.now, lease))
             })
         };
         if lapsed {
@@ -106,7 +112,11 @@ impl Cx<'_> {
             return Err(nfsstat4::NFS4ERR_BAD_STATEID);
         }
         let id = self.find_sid(&mut t, &s)?;
-        let sid = t.sids.get(&id).cloned().ok_or(nfsstat4::NFS4ERR_BAD_STATEID)?;
+        let sid = t
+            .sids
+            .get(&id)
+            .cloned()
+            .ok_or(nfsstat4::NFS4ERR_BAD_STATEID)?;
         if sid.fh.fid != fh.fid {
             return Err(nfsstat4::NFS4ERR_BAD_STATEID);
         }
@@ -124,12 +134,7 @@ impl Cx<'_> {
             Kind::Deleg(_) if write => return Err(nfsstat4::NFS4ERR_OPENMODE),
             Kind::Deleg(_) => return Ok(Via::Cache),
         };
-        if self.minor == 0
-            && !t
-                .open_owners
-                .get(&open.owner)
-                .is_some_and(|o| o.confirmed)
-        {
+        if self.minor == 0 && !t.open_owners.get(&open.owner).is_some_and(|o| o.confirmed) {
             return Err(nfsstat4::NFS4ERR_BAD_STATEID);
         }
         if open.access & need == 0 {

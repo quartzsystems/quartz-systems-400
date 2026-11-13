@@ -13,8 +13,8 @@
 use super::R;
 use crate::rpc::Credential;
 use crate::types::nfs4::{
-    BACKCHANNEL_CTL4args, BACKCHANNEL_CTL4res, BIND_CONN_TO_SESSION4args,
-    BIND_CONN_TO_SESSION4res, BIND_CONN_TO_SESSION4resok, CREATE_SESSION4_FLAG_CONN_BACK_CHAN,
+    BACKCHANNEL_CTL4args, BACKCHANNEL_CTL4res, BIND_CONN_TO_SESSION4args, BIND_CONN_TO_SESSION4res,
+    BIND_CONN_TO_SESSION4resok, CREATE_SESSION4_FLAG_CONN_BACK_CHAN,
     CREATE_SESSION4_FLAG_CONN_RDMA, CREATE_SESSION4_FLAG_PERSIST, CREATE_SESSION4args,
     CREATE_SESSION4res, CREATE_SESSION4resok, DESTROY_CLIENTID4args, DESTROY_CLIENTID4res,
     DESTROY_SESSION4args, DESTROY_SESSION4res, EXCHANGE_ID4args, EXCHANGE_ID4res,
@@ -23,10 +23,9 @@ use crate::types::nfs4::{
     EXCHGID4_FLAG_UPD_CONFIRMED_REC_A, EXCHGID4_FLAG_USE_NON_PNFS, FREE_STATEID4args,
     FREE_STATEID4res, RECLAIM_COMPLETE4args, RECLAIM_COMPLETE4res, SEQ4_STATUS_CB_PATH_DOWN,
     SEQ4_STATUS_CB_PATH_DOWN_SESSION, SEQUENCE4args, SEQUENCE4res, SEQUENCE4resok, SET_SSV4args,
-    TEST_STATEID4args, TEST_STATEID4res, TEST_STATEID4resok, callback_sec_parms4,
-    channel_attrs4, channel_dir_from_client4, channel_dir_from_server4, nfs_impl_id4,
-    nfs_resop4, nfsstat4, nfstime4, server_owner4, state_protect4_a, state_protect4_r,
-    utf8string,
+    TEST_STATEID4args, TEST_STATEID4res, TEST_STATEID4resok, callback_sec_parms4, channel_attrs4,
+    channel_dir_from_client4, channel_dir_from_server4, nfs_impl_id4, nfs_resop4, nfsstat4,
+    nfstime4, server_owner4, state_protect4_a, state_protect4_r, utf8string,
 };
 use crate::v4::compound::{Cx, Res, encode};
 use crate::v4::server::Cleanup;
@@ -53,12 +52,9 @@ const CLIENT_FLAGS: u32 = EXCHGID4_FLAG_SUPP_MOVED_REFER
 fn usable(p: &[callback_sec_parms4]) -> Option<Credential> {
     p.iter().find_map(|s| match s {
         callback_sec_parms4::AUTH_NONE => Some(Credential::None),
-        callback_sec_parms4::AUTH_SYS(a) => Some(Credential::sys(
-            &a.machinename,
-            a.uid,
-            a.gid,
-            &a.gids,
-        )),
+        callback_sec_parms4::AUTH_SYS(a) => {
+            Some(Credential::sys(&a.machinename, a.uid, a.gid, &a.gids))
+        }
         callback_sec_parms4::RPCSEC_GSS(_) => None,
     })
 }
@@ -138,7 +134,10 @@ impl Cx<'_> {
             );
             id
         };
-        let c = t.clients.get_mut(&id).ok_or(nfsstat4::NFS4ERR_SERVERFAULT)?;
+        let c = t
+            .clients
+            .get_mut(&id)
+            .ok_or(nfsstat4::NFS4ERR_SERVERFAULT)?;
         c.renewed = self.now;
         let mut flags = EXCHGID4_FLAG_USE_NON_PNFS;
         if c.confirmed {
@@ -185,6 +184,7 @@ impl Cx<'_> {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn create_session(&mut self, a: &CREATE_SESSION4args) -> R<Res> {
         if client_boot(a.csa_clientid) != self.srv.boot {
             return Err(nfsstat4::NFS4ERR_STALE_CLIENTID);
@@ -220,8 +220,7 @@ impl Cx<'_> {
         if a.csa_sequence != c.cs_seq.wrapping_add(1) {
             return Err(nfsstat4::NFS4ERR_SEQ_MISORDERED);
         }
-        if a.csa_fore_chan_attrs.ca_maxrequests == 0
-            || a.csa_fore_chan_attrs.ca_maxoperations == 0
+        if a.csa_fore_chan_attrs.ca_maxrequests == 0 || a.csa_fore_chan_attrs.ca_maxoperations == 0
         {
             return Err(nfsstat4::NFS4ERR_TOOSMALL);
         }
@@ -441,12 +440,12 @@ impl Cx<'_> {
     }
 
     pub(super) fn op_bind_conn(&mut self, a: &BIND_CONN_TO_SESSION4args) -> Res {
+        use channel_dir_from_client4 as C;
         let back = self.back.cloned();
         let mut t = self.srv.t();
         let Some(s) = t.sessions.get_mut(&a.bctsa_sessid) else {
             return Res::Err(nfsstat4::NFS4ERR_BADSESSION);
         };
-        use channel_dir_from_client4 as C;
         let dir = match (a.bctsa_dir, back) {
             (C::CDFC4_FORE, _) | (C::CDFC4_FORE_OR_BOTH, None) => {
                 s.conns.insert(self.ctx.peer);
@@ -607,7 +606,7 @@ impl Cx<'_> {
         }))
     }
 
-    pub(super) fn op_set_ssv(&mut self, a: &SET_SSV4args) -> Res {
+    pub(super) fn op_set_ssv(a: &SET_SSV4args) -> Res {
         let _ = a;
         Res::Err(nfsstat4::NFS4ERR_INVAL)
     }

@@ -309,7 +309,11 @@ impl Server {
             && cl.recorded
         {
             // Another record of the same owner may carry it on.
-            if !t.clients.values().any(|o| o.owner == cl.owner && o.recorded) {
+            if !t
+                .clients
+                .values()
+                .any(|o| o.owner == cl.owner && o.recorded)
+            {
                 if let Some(s) = t.stable.clients.iter_mut().find(|s| s.owner == cl.owner) {
                     s.holds = false;
                 }
@@ -361,6 +365,53 @@ impl Server {
         drop(t);
         all.run(vfs);
         true
+    }
+
+    /// Takes away the state of the clients whose owner `which` names
+    /// (`RLSIFSLCK`): their stateids answer `NFS4ERR_ADMIN_REVOKED`, a
+    /// 4.1 client is told by `SEQ4_STATUS_ADMIN_STATE_REVOKED`; the
+    /// clients themselves stay. How many lost state.
+    pub fn revoke(&self, vfs: &dyn Vfs, which: impl Fn(&[u8]) -> bool) -> usize {
+        let mut t = self.t();
+        let ids: Vec<u64> = t
+            .clients
+            .values()
+            .filter(|c| which(&c.owner))
+            .map(|c| c.id)
+            .filter(|id| t.holds_state(*id))
+            .collect();
+        let mut all = Cleanup::default();
+        for id in &ids {
+            let sids: Vec<u64> = t
+                .sids
+                .values()
+                .filter(|s| s.client == *id)
+                .map(|s| s.id)
+                .collect();
+            for s in sids {
+                if let Some(sid) = t.sids.remove(&s) {
+                    match sid.kind {
+                        Kind::Open(o) => all.closes.push(o.fd),
+                        Kind::Deleg(d) => all.leases.push(d.tag),
+                        Kind::Lock(_) => {}
+                    }
+                    t.gone.insert(s, (Gone::AdminRevoked, *id));
+                }
+            }
+            for (_, lo) in t.lock_owners.iter().filter(|(k, _)| k.0 == *id) {
+                all.subs.push(lo.sub);
+            }
+            t.lock_owners.retain(|k, _| k.0 != *id);
+            for (_, oo) in t.open_owners.iter_mut().filter(|(k, _)| k.0 == *id) {
+                oo.opens.clear();
+            }
+            if let Some(c) = t.clients.get_mut(id) {
+                c.revoked |= crate::types::nfs4::SEQ4_STATUS_ADMIN_STATE_REVOKED;
+            }
+        }
+        drop(t);
+        all.run(vfs);
+        ids.len()
     }
 
     /// Recalls the delegation whose IFS lease is `tag` (a break order
@@ -434,7 +485,9 @@ impl Server {
         }
         // 4.0 open owners with nothing open and idle for a lease.
         t.open_owners.retain(|_, o| {
-            !o.opens.is_empty() || o.used.is_none_or(|u| now.saturating_duration_since(u) <= lease)
+            !o.opens.is_empty()
+                || o.used
+                    .is_none_or(|u| now.saturating_duration_since(u) <= lease)
         });
         let recalls = std::mem::take(&mut t.to_recall);
         let probes = std::mem::take(&mut t.to_probe);
@@ -491,7 +544,13 @@ impl Server {
     fn send_recall(&self, id: u64) {
         enum Via {
             V40(super::state::Cb40),
-            V41(Arc<crate::rpc::back::BackChannel>, [u8; 16], u32, u32, Credential),
+            V41(
+                Arc<crate::rpc::back::BackChannel>,
+                [u8; 16],
+                u32,
+                u32,
+                Credential,
+            ),
         }
         let (via, sid, fh, client) = {
             let mut t = self.t();

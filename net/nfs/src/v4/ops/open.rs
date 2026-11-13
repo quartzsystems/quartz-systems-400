@@ -158,7 +158,10 @@ impl Cx<'_> {
         let creating = matches!(a.openhow, openflag4::OPEN4_CREATE(_));
         let (grace, may_reclaim, owner_bytes) = {
             let t = self.srv.t();
-            let c = t.clients.get(&client).ok_or(nfsstat4::NFS4ERR_STALE_CLIENTID)?;
+            let c = t
+                .clients
+                .get(&client)
+                .ok_or(nfsstat4::NFS4ERR_STALE_CLIENTID)?;
             (
                 t.in_grace(self.now),
                 // A 4.0 client's completion is only a guess: it may still reclaim.
@@ -213,7 +216,16 @@ impl Cx<'_> {
             Claim::Fh => {
                 let (r, h) = self.real(nfsstat4::NFS4ERR_ISDIR)?;
                 let c = self.change_of(&r, &h);
-                (r, h, change_info4 { atomic: false, before: c, after: c }, Bits::default())
+                (
+                    r,
+                    h,
+                    change_info4 {
+                        atomic: false,
+                        before: c,
+                        after: c,
+                    },
+                    Bits::default(),
+                )
             }
             Claim::Name(name) => self.open_name(a, &name)?,
         };
@@ -282,7 +294,16 @@ impl Cx<'_> {
                 return Err(nfsstat4::NFS4ERR_ISDIR);
             };
             let c = self.change_of(&r, &h);
-            return Ok((r, h, change_info4 { atomic: false, before: c, after: c }, Bits::default()));
+            return Ok((
+                r,
+                h,
+                change_info4 {
+                    atomic: false,
+                    before: c,
+                    after: c,
+                },
+                Bits::default(),
+            ));
         };
         let Fh::Real(r, dh) = dir else {
             return Err(nfsstat4::NFS4ERR_ROFS);
@@ -397,10 +418,13 @@ impl Cx<'_> {
         let mut t = self.srv.t();
         let id = t.next_id();
         let v41 = self.minor >= 1;
-        let ow = t.open_owners.entry(key.clone()).or_insert_with(|| OpenOwner {
-            confirmed: v41,
-            ..OpenOwner::default()
-        });
+        let ow = t
+            .open_owners
+            .entry(key.clone())
+            .or_insert_with(|| OpenOwner {
+                confirmed: v41,
+                ..OpenOwner::default()
+            });
         ow.opens.push(id);
         ow.used = Some(self.now);
         let confirm = !ow.confirmed;
@@ -457,7 +481,9 @@ impl Cx<'_> {
                     why_no_delegation4::WND4_CONTENTION => {
                         open_none_delegation4::WND4_CONTENTION(false)
                     }
-                    why_no_delegation4::WND4_RESOURCE => open_none_delegation4::WND4_RESOURCE(false),
+                    why_no_delegation4::WND4_RESOURCE => {
+                        open_none_delegation4::WND4_RESOURCE(false)
+                    }
                     w => open_none_delegation4::default(w),
                 })
             }
@@ -571,7 +597,11 @@ impl Cx<'_> {
                 if let Some(r) = self.replay_of(s, seqid) {
                     return self.replay(r);
                 }
-                return Res::Err(self.open_sid(s).err().unwrap_or(nfsstat4::NFS4ERR_BAD_STATEID));
+                return Res::Err(
+                    self.open_sid(s)
+                        .err()
+                        .unwrap_or(nfsstat4::NFS4ERR_BAD_STATEID),
+                );
             }
             Err(e) => return Res::Err(e),
         };
@@ -638,7 +668,7 @@ impl Cx<'_> {
 
     pub(super) fn op_open_downgrade(&mut self, a: &OPEN_DOWNGRADE4args) -> Res {
         let (acc, deny) = (a.share_access, a.share_deny);
-        let r = self.seq_op(21, &a.open_stateid, a.seqid, |cx, id, h| {
+        self.seq_op(21, &a.open_stateid, a.seqid, |cx, id, h| {
             match cx.downgrade(id, &h, acc, deny) {
                 Ok(st) => {
                     cx.cur_sid = Some(st.clone());
@@ -648,15 +678,13 @@ impl Cx<'_> {
                 }
                 Err(s) => Res::Err(s),
             }
-        });
-        r
+        })
     }
 
     fn downgrade(&mut self, id: u64, h: &FileHandle, acc: u32, deny: u32) -> R<stateid4> {
         let (r, _) = self.real(nfsstat4::NFS4ERR_BAD_STATEID)?;
-        let o = match self.srv.t().sids.get(&id).map(|s| s.kind.clone()) {
-            Some(Kind::Open(o)) => o,
-            _ => return Err(nfsstat4::NFS4ERR_BAD_STATEID),
+        let Some(Kind::Open(o)) = self.srv.t().sids.get(&id).map(|s| s.kind.clone()) else {
+            return Err(nfsstat4::NFS4ERR_BAD_STATEID);
         };
         if acc == 0
             || acc > 3
@@ -699,9 +727,11 @@ impl Cx<'_> {
     }
 
     pub(super) fn op_close(&mut self, a: &CLOSE4args) -> Res {
-        self.seq_op(4, &a.open_stateid, a.seqid, |cx, id, h| match cx.close(id, &h) {
-            Ok(st) => Res::Ok(nfs_resop4::OP_CLOSE(CLOSE4res::NFS4_OK(st))),
-            Err(s) => Res::Err(s),
+        self.seq_op(4, &a.open_stateid, a.seqid, |cx, id, h| {
+            match cx.close(id, &h) {
+                Ok(st) => Res::Ok(nfs_resop4::OP_CLOSE(CLOSE4res::NFS4_OK(st))),
+                Err(s) => Res::Err(s),
+            }
         })
     }
 

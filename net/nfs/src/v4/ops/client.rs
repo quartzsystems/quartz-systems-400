@@ -10,13 +10,15 @@
 
 use crate::rpc::Credential;
 use crate::types::nfs4::{
-    DELEGPURGE4args, DELEGRETURN4args, DELEGRETURN4res, RENEW4args, RENEW4res, SETCLIENTID4args,
-    SETCLIENTID4res, SETCLIENTID4resok, SETCLIENTID_CONFIRM4args, SETCLIENTID_CONFIRM4res,
-    netaddr4, nfs_resop4, nfsstat4,
+    DELEGPURGE4args, DELEGRETURN4args, DELEGRETURN4res, RENEW4args, RENEW4res,
+    SETCLIENTID_CONFIRM4args, SETCLIENTID_CONFIRM4res, SETCLIENTID4args, SETCLIENTID4res,
+    SETCLIENTID4resok, netaddr4, nfs_resop4, nfsstat4,
 };
 use crate::v4::compound::{Cx, Res};
 use crate::v4::server::Cleanup;
-use crate::v4::state::{Cb40, CbPath, Client, Gone, Kind, Principal, client_boot, client_id, is_special};
+use crate::v4::state::{
+    Cb40, CbPath, Client, Gone, Kind, Principal, client_boot, client_id, is_special,
+};
 
 impl Cx<'_> {
     /// Who sent the request.
@@ -30,7 +32,9 @@ impl Cx<'_> {
     /// A verifier no other confirmation has.
     pub(super) fn new_verf(&self, n: u64) -> [u8; 8] {
         let t = self.now.duration_since(self.srv.started).as_nanos();
-        let x = (u64::from(self.srv.boot) << 32) ^ n.rotate_left(17) ^ (t as u64);
+        let x = (u64::from(self.srv.boot) << 32)
+            ^ n.rotate_left(17)
+            ^ u64::try_from(t).unwrap_or(u64::MAX);
         x.to_be_bytes()
     }
 
@@ -49,7 +53,15 @@ impl Cx<'_> {
             .clients
             .values()
             .find(|c| c.minor == 0 && c.confirmed && c.owner == owner)
-            .map(|c| (c.id, c.principal, c.verf, c.cb.clone(), c.lapsed(self.now, lease)));
+            .map(|c| {
+                (
+                    c.id,
+                    c.principal,
+                    c.verf,
+                    c.cb.clone(),
+                    c.lapsed(self.now, lease),
+                )
+            });
         if let Some((id, p, _, ccb, lapsed)) = &confirmed
             && *p != who
             && !lapsed
@@ -186,9 +198,11 @@ impl Cx<'_> {
         }
         drop(t);
         cleanup.run(self.vfs);
-        Res::Ok(nfs_resop4::OP_SETCLIENTID_CONFIRM(SETCLIENTID_CONFIRM4res {
-            status: nfsstat4::NFS4_OK,
-        }))
+        Res::Ok(nfs_resop4::OP_SETCLIENTID_CONFIRM(
+            SETCLIENTID_CONFIRM4res {
+                status: nfsstat4::NFS4_OK,
+            },
+        ))
     }
 
     pub(super) fn op_renew(&mut self, a: &RENEW4args) -> Res {
@@ -244,7 +258,7 @@ impl Cx<'_> {
         }
     }
 
-    pub(super) fn op_delegpurge(&mut self, a: &DELEGPURGE4args) -> Res {
+    pub(super) fn op_delegpurge(a: &DELEGPURGE4args) -> Res {
         let _ = a;
         Res::Err(nfsstat4::NFS4ERR_NOTSUPP)
     }

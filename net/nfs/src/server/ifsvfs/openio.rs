@@ -86,7 +86,8 @@ impl<C: IfsClient> IfsVfs<C> {
             let mut done = 0usize;
             while done < buf.len() {
                 let at = off.saturating_add(done as u64);
-                let n = a.c.pwrite(fd, &buf[done..(done + CHUNK).min(buf.len())], at)?;
+                let n =
+                    a.c.pwrite(fd, &buf[done..(done + CHUNK).min(buf.len())], at)?;
                 if n == 0 {
                     return Err(Fail::V(VfsError::NoSpc));
                 }

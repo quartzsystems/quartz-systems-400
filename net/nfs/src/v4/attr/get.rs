@@ -11,8 +11,7 @@ use super::{Bits, WRITE_ONLY, supported};
 use crate::registry::Registry;
 use crate::server::vfs::{Attr, FileType, FsStat, PathConf, Time};
 use crate::types::nfs4::{
-    self as t, FH4_PERSISTENT, attrlist4, fattr4, fsid4, nfs_ftype4, nfsstat4, nfstime4,
-    specdata4,
+    self as t, FH4_PERSISTENT, attrlist4, fattr4, fsid4, nfs_ftype4, nfsstat4, nfstime4, specdata4,
 };
 use crate::xdr::{Encoder, Xdr};
 
@@ -102,6 +101,7 @@ fn put<T: Xdr>(e: &mut Encoder, v: &T) -> Result<(), nfsstat4> {
 /// # Errors
 ///
 /// `NFS4ERR_INVAL` for a write-only attribute, and what [`Extra`] answers.
+#[allow(clippy::too_many_lines)]
 pub fn encode(
     want: &Bits,
     v: &View<'_>,

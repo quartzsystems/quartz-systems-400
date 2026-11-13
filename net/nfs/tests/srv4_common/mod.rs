@@ -6,7 +6,11 @@
 //! world, a clock moved by hand, stable records in memory, and clients
 //! sending real `COMPOUND` messages through a dispatcher in memory.
 
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    clippy::doc_markdown,
+    clippy::match_wildcard_for_single_variants
+)]
 
 use std::cell::Cell;
 use std::sync::Arc;
@@ -274,7 +278,14 @@ impl V4c {
 
     /// `OPEN` of `name` in the current directory; `create` unchecked
     /// with mode 0644.
-    pub fn open(&self, owner: &str, name: &str, create: bool, access: u32, deny: u32) -> nfs_argop4 {
+    pub fn open(
+        &self,
+        owner: &str,
+        name: &str,
+        create: bool,
+        access: u32,
+        deny: u32,
+    ) -> nfs_argop4 {
         open_args(
             self.next_oseq(),
             self.owner(owner),

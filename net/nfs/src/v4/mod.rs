@@ -13,7 +13,7 @@
 //! - [`attr`]: the attribute table and `fattr4`'s codec.
 //! - [`pseudo`]: the pseudo file system.
 //! - [`state`]: clients, sessions, owners, stateids, the stable records.
-//! - [`cb`]: callbacks.
+//! - [`cb`]: the callbacks to clients.
 //!
 //! What is not done is refused as docs/NFS.md section 10 says: pNFS,
 //! directory delegations, write delegations, named attributes, ACLs,

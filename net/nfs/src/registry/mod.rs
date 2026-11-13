@@ -79,12 +79,7 @@ impl std::fmt::Debug for Registry {
     }
 }
 
-fn get<K, V>(
-    m: &mut HashMap<K, (V, Instant)>,
-    k: &K,
-    now: Instant,
-    ttl: Duration,
-) -> Option<V>
+fn get<K, V>(m: &mut HashMap<K, (V, Instant)>, k: &K, now: Instant, ttl: Duration) -> Option<V>
 where
     K: std::hash::Hash + Eq,
     V: Clone,

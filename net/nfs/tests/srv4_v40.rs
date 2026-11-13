@@ -7,7 +7,12 @@
 //! reservations between clients and with a local job, root squash and
 //! read-only exports.
 
-#![allow(clippy::too_many_lines)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
 
 mod srv3_common;
 mod srv4_common;
@@ -57,7 +62,11 @@ fn open_confirm(
     let r = c.raw(
         e,
         0,
-        vec![putfh(dir), c.open(owner, name, create, access, deny), getfh()],
+        vec![
+            putfh(dir),
+            c.open(owner, name, create, access, deny),
+            getfh(),
+        ],
     );
     if r.status != nfsstat4::NFS4_OK {
         return Err(r.status);
@@ -98,7 +107,13 @@ fn a_client_life() {
         0,
         vec![
             putfh(&dir),
-            c.open("o1", "f", true, OPEN4_SHARE_ACCESS_BOTH, OPEN4_SHARE_DENY_NONE),
+            c.open(
+                "o1",
+                "f",
+                true,
+                OPEN4_SHARE_ACCESS_BOTH,
+                OPEN4_SHARE_DENY_NONE,
+            ),
             getfh(),
         ],
     );
@@ -143,7 +158,11 @@ fn a_client_life() {
     assert!(rd.eof);
     assert_eq!(e.w.read_file("/home/x/f"), b"hello, world");
     // The file is BOB's.
-    let r = c.raw(&e, 0, vec![putfh(&f), getattr(&[t::FATTR4_OWNER, t::FATTR4_MODE])]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![putfh(&f), getattr(&[t::FATTR4_OWNER, t::FATTR4_MODE])],
+    );
     let a = srv4_common::attrs_of(&r);
     let mut d = Decoder::new(&a.attr_vals.0);
     // No primary group: its bits are 0.
@@ -169,7 +188,11 @@ fn a_client_life() {
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     assert_eq!(e.w.read_file("/home/x/f"), b"hello");
     // RENEW, CLOSE.
-    let r = c.raw(&e, 0, vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id })]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id })],
+    );
     assert_eq!(r.status, nfsstat4::NFS4_OK);
     let cs = c.next_oseq();
     let r = c.raw(&e, 0, vec![putfh(&f), close(cs, &sid)]);
@@ -178,12 +201,27 @@ fn a_client_life() {
     let again = c.raw(&e, 0, vec![putfh(&f), close(cs, &sid)]);
     assert_eq!(again.resarray, r.resarray);
     // A seqid out of order.
-    let r = c.raw(&e, 0, vec![putfh(&dir), srv4_common::open_args(99, c.owner("o1"), "f", false, 1, 0)]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![
+            putfh(&dir),
+            srv4_common::open_args(99, c.owner("o1"), "f", false, 1, 0),
+        ],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_BAD_SEQID);
     // An unknown client ID of this start, and one of another start.
-    let r = c.raw(&e, 0, vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id + 1 })]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id + 1 })],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_STALE_CLIENTID);
-    let r = c.raw(&e, 0, vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: 7 })]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: 7 })],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_STALE_CLIENTID);
 }
 
@@ -193,7 +231,13 @@ fn open_retransmission_gets_its_reply() {
     let c = V4c::new("10.0.0.1:900", 100, 0);
     c.setclientid(&e, "linux-b", "127.0.0.1.0.1");
     let dir = root(&e, &c);
-    let op = c.open("o", "g", true, OPEN4_SHARE_ACCESS_READ, OPEN4_SHARE_DENY_NONE);
+    let op = c.open(
+        "o",
+        "g",
+        true,
+        OPEN4_SHARE_ACCESS_READ,
+        OPEN4_SHARE_DENY_NONE,
+    );
     let r1 = c.raw(&e, 0, vec![putfh(&dir), op.clone(), getfh()]);
     let r2 = c.raw(&e, 0, vec![putfh(&dir), op, getfh()]);
     assert_eq!(r1, r2, "the same stateid, and the file's handle");
@@ -259,22 +303,30 @@ fn setclientid_rules() {
     let bad = a2.raw(
         &e,
         0,
-        vec![nfs_argop4::OP_SETCLIENTID_CONFIRM(t::SETCLIENTID_CONFIRM4args {
-            clientid: ok.clientid,
-            setclientid_confirm: [0; 8],
-        })],
+        vec![nfs_argop4::OP_SETCLIENTID_CONFIRM(
+            t::SETCLIENTID_CONFIRM4args {
+                clientid: ok.clientid,
+                setclientid_confirm: [0; 8],
+            },
+        )],
     );
     assert_eq!(bad.status, nfsstat4::NFS4ERR_STALE_CLIENTID);
     let r = a2.raw(
         &e,
         0,
-        vec![nfs_argop4::OP_SETCLIENTID_CONFIRM(t::SETCLIENTID_CONFIRM4args {
-            clientid: ok.clientid,
-            setclientid_confirm: ok.setclientid_confirm,
-        })],
+        vec![nfs_argop4::OP_SETCLIENTID_CONFIRM(
+            t::SETCLIENTID_CONFIRM4args {
+                clientid: ok.clientid,
+                setclientid_confirm: ok.setclientid_confirm,
+            },
+        )],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK);
-    let r = a.raw(&e, 0, vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id })]);
+    let r = a.raw(
+        &e,
+        0,
+        vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id })],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_STALE_CLIENTID);
     // Its file is no longer open: a local job may deny everyone.
     let j = e.w.job(5);
@@ -301,7 +353,11 @@ fn the_lease_runs_out() {
     e.tick();
     let r = c.raw(&e, 0, vec![putfh(&f), read(&sid, 0, 10)]);
     assert_eq!(r.status, nfsstat4::NFS4ERR_EXPIRED);
-    let r = c.raw(&e, 0, vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id })]);
+    let r = c.raw(
+        &e,
+        0,
+        vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: id })],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_STALE_CLIENTID);
 }
 
@@ -320,7 +376,13 @@ fn a_lapsed_client_gives_way_to_a_conflict() {
     );
     e.advance(100);
     // b renews; a does not.
-    b.raw(&e, 0, vec![nfs_argop4::OP_RENEW(t::RENEW4args { clientid: b.clientid.get() })]);
+    b.raw(
+        &e,
+        0,
+        vec![nfs_argop4::OP_RENEW(t::RENEW4args {
+            clientid: b.clientid.get(),
+        })],
+    );
     assert!(open_confirm(&e, &b, &dir, "o", "c", false, OPEN4_SHARE_ACCESS_WRITE, 0).is_ok());
 }
 
@@ -332,10 +394,19 @@ fn share_reservations() {
     let b = V4c::new("10.0.0.2:900", 100, 0);
     b.setclientid(&e, "share-b", "127.0.0.1.0.1");
     let dir = root(&e, &a);
-    let (f, sa) = open_confirm(&e, &a, &dir, "o", "s", true, OPEN4_SHARE_ACCESS_READ, OPEN4_SHARE_DENY_WRITE).unwrap();
+    let (f, sa) = open_confirm(
+        &e,
+        &a,
+        &dir,
+        "o",
+        "s",
+        true,
+        OPEN4_SHARE_ACCESS_READ,
+        OPEN4_SHARE_DENY_WRITE,
+    )
+    .unwrap();
     // b may read but not write.
-    let (_, sb) =
-        open_confirm(&e, &b, &dir, "o", "s", false, OPEN4_SHARE_ACCESS_READ, 0).unwrap();
+    let (_, sb) = open_confirm(&e, &b, &dir, "o", "s", false, OPEN4_SHARE_ACCESS_READ, 0).unwrap();
     assert_eq!(
         open_confirm(&e, &b, &dir, "o2", "s", false, OPEN4_SHARE_ACCESS_WRITE, 0).err(),
         Some(nfsstat4::NFS4ERR_SHARE_DENIED)
@@ -350,7 +421,20 @@ fn share_reservations() {
     let j = e.w.job(5);
     assert!(j.open("/home/x/s", OpenArgs::new(O_WRONLY)).is_err());
     // An upgrade of a's open to read and write, then a downgrade back.
-    let r = a.raw(&e, 0, vec![putfh(&dir), a.open("o", "s", false, OPEN4_SHARE_ACCESS_BOTH, OPEN4_SHARE_DENY_WRITE)]);
+    let r = a.raw(
+        &e,
+        0,
+        vec![
+            putfh(&dir),
+            a.open(
+                "o",
+                "s",
+                false,
+                OPEN4_SHARE_ACCESS_BOTH,
+                OPEN4_SHARE_DENY_WRITE,
+            ),
+        ],
+    );
     let up = opened(&r);
     assert_eq!(up.stateid.other, sa.other);
     assert_eq!(up.stateid.seqid, sa.seqid + 1);
@@ -441,10 +525,22 @@ fn directory_operations() {
     // LOOKUP through a link is SYMLINK.
     let r = c.raw(&e, 0, vec![putfh(&ln), lookup("x")]);
     assert_eq!(r.status, nfsstat4::NFS4ERR_SYMLINK);
-    assert_eq!(mk("r", t::createtype4::default(t::nfs_ftype4::NF4REG)).status, nfsstat4::NFS4ERR_BADTYPE);
-    assert_eq!(mk("d", t::createtype4::NF4DIR).status, nfsstat4::NFS4ERR_EXIST);
-    assert_eq!(mk("..", t::createtype4::NF4DIR).status, nfsstat4::NFS4ERR_BADNAME);
-    assert_eq!(mk("", t::createtype4::NF4DIR).status, nfsstat4::NFS4ERR_INVAL);
+    assert_eq!(
+        mk("r", t::createtype4::default(t::nfs_ftype4::NF4REG)).status,
+        nfsstat4::NFS4ERR_BADTYPE
+    );
+    assert_eq!(
+        mk("d", t::createtype4::NF4DIR).status,
+        nfsstat4::NFS4ERR_EXIST
+    );
+    assert_eq!(
+        mk("..", t::createtype4::NF4DIR).status,
+        nfsstat4::NFS4ERR_BADNAME
+    );
+    assert_eq!(
+        mk("", t::createtype4::NF4DIR).status,
+        nfsstat4::NFS4ERR_INVAL
+    );
     e.w.write_file("/home/x/a", b"1");
     j9(&e).chown("/home/x/a", 100, 0).unwrap();
     // RENAME and LINK between the saved and the current directory.
@@ -628,7 +724,17 @@ fn root_squash_anonymous_and_read_only() {
     assert_eq!(r.status, nfsstat4::NFS4ERR_ROFS);
     root_user.setclientid(&e, "ro", "127.0.0.1.0.1");
     assert_eq!(
-        open_confirm(&e, &root_user, &dir, "o", "r", false, OPEN4_SHARE_ACCESS_WRITE, 0).err(),
+        open_confirm(
+            &e,
+            &root_user,
+            &dir,
+            "o",
+            "r",
+            false,
+            OPEN4_SHARE_ACCESS_WRITE,
+            0
+        )
+        .err(),
         Some(nfsstat4::NFS4ERR_ROFS)
     );
     // ANON=-1 refuses an unknown user.

@@ -8,10 +8,17 @@
 //! `TEST_STATEID`, `FREE_STATEID`, `DESTROY_SESSION`,
 //! `DESTROY_CLIENTID`, `RECLAIM_COMPLETE`.
 
-#![allow(clippy::too_many_lines)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
 
 mod srv3_common;
 mod srv4_common;
+
+use ifs::client::IfsClient;
 
 use nfs::types::nfs4::{
     self as t, EXCHGID4_FLAG_CONFIRMED_R, EXCHGID4_FLAG_UPD_CONFIRMED_REC_A,
@@ -44,7 +51,10 @@ fn exchange_id_cases() {
     // Case 1: new; unconfirmed, sequence 1, never pNFS.
     let a = exid(&c.raw(&e, 1, vec![exchange_id("ex", [1; 8], 0)]));
     assert_eq!(a.eir_sequenceid, 1);
-    assert_eq!(a.eir_flags & EXCHGID4_FLAG_USE_NON_PNFS, EXCHGID4_FLAG_USE_NON_PNFS);
+    assert_eq!(
+        a.eir_flags & EXCHGID4_FLAG_USE_NON_PNFS,
+        EXCHGID4_FLAG_USE_NON_PNFS
+    );
     assert_eq!(a.eir_flags & EXCHGID4_FLAG_CONFIRMED_R, 0);
     // Case 4: the unconfirmed record is replaced.
     let b = exid(&c.raw(&e, 1, vec![exchange_id("ex", [1; 8], 0)]));
@@ -75,14 +85,22 @@ fn exchange_id_cases() {
     let r = c.raw(
         &e,
         1,
-        vec![exchange_id("nobody", [1; 8], EXCHGID4_FLAG_UPD_CONFIRMED_REC_A)],
+        vec![exchange_id(
+            "nobody",
+            [1; 8],
+            EXCHGID4_FLAG_UPD_CONFIRMED_REC_A,
+        )],
     );
     assert_eq!(r.status, nfsstat4::NFS4ERR_NOENT);
     // Case 5: a restart (new verifier) is a new ID.
     let d = exid(&c.raw(&e, 1, vec![exchange_id("ex", [7; 8], 0)]));
     assert_ne!(d.eir_clientid, b.eir_clientid);
     // Flags a client may not send.
-    let r = c.raw(&e, 1, vec![exchange_id("ex", [7; 8], EXCHGID4_FLAG_CONFIRMED_R)]);
+    let r = c.raw(
+        &e,
+        1,
+        vec![exchange_id("ex", [7; 8], EXCHGID4_FLAG_CONFIRMED_R)],
+    );
     assert_eq!(r.status, nfsstat4::NFS4ERR_INVAL);
 }
 
@@ -129,7 +147,15 @@ fn slots_give_exactly_once_replies() {
         objname: t::utf8string(b"once".to_vec()),
         createattrs: srv4_common::no_attrs(),
     });
-    let ops = || vec![seq(1, 0, true), rootfh(), lookup("home"), lookup("x"), mk.clone()];
+    let ops = || {
+        vec![
+            seq(1, 0, true),
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            mk.clone(),
+        ]
+    };
     let r1 = c.raw(&e, 1, ops());
     assert_eq!(r1.status, nfsstat4::NFS4_OK, "{r1:?}");
     // A retransmission: the same reply, nothing done twice.
@@ -139,8 +165,14 @@ fn slots_give_exactly_once_replies() {
     let r = c.raw(&e, 1, vec![seq(1, 0, true), rootfh()]);
     assert_eq!(r.status, nfsstat4::NFS4ERR_SEQ_FALSE_RETRY);
     // Out of order, and a slot beyond the table.
-    assert_eq!(c.raw(&e, 1, vec![seq(5, 0, false)]).status, nfsstat4::NFS4ERR_SEQ_MISORDERED);
-    assert_eq!(c.raw(&e, 1, vec![seq(1, 9, false)]).status, nfsstat4::NFS4ERR_BADSLOT);
+    assert_eq!(
+        c.raw(&e, 1, vec![seq(5, 0, false)]).status,
+        nfsstat4::NFS4ERR_SEQ_MISORDERED
+    );
+    assert_eq!(
+        c.raw(&e, 1, vec![seq(1, 9, false)]).status,
+        nfsstat4::NFS4ERR_BADSLOT
+    );
     // Not kept: the retransmission cannot be answered.
     let r = c.raw(&e, 1, vec![seq(1, 1, false), rootfh()]);
     assert_eq!(r.status, nfsstat4::NFS4_OK);
@@ -148,7 +180,11 @@ fn slots_give_exactly_once_replies() {
         panic!()
     };
     assert_eq!(s.sr_highest_slotid, 3);
-    assert_ne!(s.sr_status_flags & t::SEQ4_STATUS_CB_PATH_DOWN, 0, "no backchannel");
+    assert_ne!(
+        s.sr_status_flags & t::SEQ4_STATUS_CB_PATH_DOWN,
+        0,
+        "no backchannel"
+    );
     assert_eq!(
         c.raw(&e, 1, vec![seq(1, 1, false), rootfh()]).status,
         nfsstat4::NFS4ERR_RETRY_UNCACHED_REP
@@ -195,7 +231,11 @@ fn opens_with_the_current_stateid() {
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
     let o = opened(&r);
-    assert_eq!(o.rflags & t::OPEN4_RESULT_CONFIRM, 0, "4.1 does not confirm");
+    assert_eq!(
+        o.rflags & t::OPEN4_RESULT_CONFIRM,
+        0,
+        "4.1 does not confirm"
+    );
     let fh = fh_of(&r);
     // The current stateid is gone after a new filehandle.
     let r = c.run(&e, vec![putfh(&fh), read(&cur, 0, 1)]);
@@ -249,7 +289,9 @@ fn opens_with_the_current_stateid() {
     now.seqid = 0;
     let r = c.run(
         &e,
-        vec![nfs_argop4::OP_FREE_STATEID(t::FREE_STATEID4args { fsa_stateid: now })],
+        vec![nfs_argop4::OP_FREE_STATEID(t::FREE_STATEID4args {
+            fsa_stateid: now,
+        })],
     );
     assert_eq!(r.status, nfsstat4::NFS4ERR_LOCKS_HELD);
     // Another client's stateid is not this client's.
@@ -268,7 +310,9 @@ fn destroying_sessions_and_clients() {
     let r = c.raw(
         &e,
         1,
-        vec![nfs_argop4::OP_DESTROY_CLIENTID(t::DESTROY_CLIENTID4args { dca_clientid: id })],
+        vec![nfs_argop4::OP_DESTROY_CLIENTID(t::DESTROY_CLIENTID4args {
+            dca_clientid: id,
+        })],
     );
     assert_eq!(r.status, nfsstat4::NFS4ERR_CLIENTID_BUSY);
     // Not as the last operation of its own session.
@@ -290,13 +334,17 @@ fn destroying_sessions_and_clients() {
     let r = far.raw(
         &e,
         1,
-        vec![nfs_argop4::OP_DESTROY_SESSION(t::DESTROY_SESSION4args { dsa_sessionid: sid })],
+        vec![nfs_argop4::OP_DESTROY_SESSION(t::DESTROY_SESSION4args {
+            dsa_sessionid: sid,
+        })],
     );
     assert_eq!(r.status, nfsstat4::NFS4ERR_CONN_NOT_BOUND_TO_SESSION);
     let r = c.raw(
         &e,
         1,
-        vec![nfs_argop4::OP_DESTROY_SESSION(t::DESTROY_SESSION4args { dsa_sessionid: sid })],
+        vec![nfs_argop4::OP_DESTROY_SESSION(t::DESTROY_SESSION4args {
+            dsa_sessionid: sid,
+        })],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK);
     let r = c.raw(&e, 1, vec![c.sequence(false)]);
@@ -304,7 +352,9 @@ fn destroying_sessions_and_clients() {
     let r = c.raw(
         &e,
         1,
-        vec![nfs_argop4::OP_DESTROY_CLIENTID(t::DESTROY_CLIENTID4args { dca_clientid: id })],
+        vec![nfs_argop4::OP_DESTROY_CLIENTID(t::DESTROY_CLIENTID4args {
+            dca_clientid: id,
+        })],
     );
     assert_eq!(r.status, nfsstat4::NFS4_OK);
     let r = c.raw(&e, 1, vec![create_session(id, 2, 0)]);
@@ -316,12 +366,17 @@ fn reclaim_complete_and_binding() {
     let e = env();
     let c = V4c::new("10.0.0.1:900", 100, 1);
     let sid = c.session(&e, "rc", 0);
-    let rc = |one: bool| {
-        nfs_argop4::OP_RECLAIM_COMPLETE(t::RECLAIM_COMPLETE4args { rca_one_fs: one })
-    };
-    assert_eq!(c.run(&e, vec![rc(true)]).status, nfsstat4::NFS4ERR_NOFILEHANDLE);
+    let rc =
+        |one: bool| nfs_argop4::OP_RECLAIM_COMPLETE(t::RECLAIM_COMPLETE4args { rca_one_fs: one });
+    assert_eq!(
+        c.run(&e, vec![rc(true)]).status,
+        nfsstat4::NFS4ERR_NOFILEHANDLE
+    );
     assert_eq!(c.run(&e, vec![rc(false)]).status, nfsstat4::NFS4_OK);
-    assert_eq!(c.run(&e, vec![rc(false)]).status, nfsstat4::NFS4ERR_COMPLETE_ALREADY);
+    assert_eq!(
+        c.run(&e, vec![rc(false)]).status,
+        nfsstat4::NFS4ERR_COMPLETE_ALREADY
+    );
     // BIND_CONN_TO_SESSION: the fore channel here; a backchannel needs a
     // connection that can carry one.
     let other = V4c::new("10.0.0.1:950", 100, 1);
@@ -332,7 +387,11 @@ fn reclaim_complete_and_binding() {
             bctsa_use_conn_in_rdma_mode: true,
         })
     };
-    let r = other.raw(&e, 1, vec![bind(t::channel_dir_from_client4::CDFC4_FORE_OR_BOTH)]);
+    let r = other.raw(
+        &e,
+        1,
+        vec![bind(t::channel_dir_from_client4::CDFC4_FORE_OR_BOTH)],
+    );
     let nfs_resop4::OP_BIND_CONN_TO_SESSION(t::BIND_CONN_TO_SESSION4res::NFS4_OK(b)) =
         &r.resarray[0]
     else {
@@ -346,7 +405,61 @@ fn reclaim_complete_and_binding() {
     let r = c.raw(
         &e,
         1,
-        vec![c.sequence(false), bind(t::channel_dir_from_client4::CDFC4_FORE)],
+        vec![
+            c.sequence(false),
+            bind(t::channel_dir_from_client4::CDFC4_FORE),
+        ],
     );
     assert_eq!(r.status, nfsstat4::NFS4ERR_NOT_ONLY_OP);
+}
+
+#[test]
+fn the_administrator_revokes_state() {
+    let e = env();
+    let c = V4c::new("10.0.0.1:900", 100, 1);
+    c.session(&e, "admin", 0);
+    let r = c.run(
+        &e,
+        vec![
+            rootfh(),
+            lookup("home"),
+            lookup("x"),
+            c.open("o", "a", true, 3, 0),
+            getfh(),
+        ],
+    );
+    let o = opened(&r);
+    let fh = fh_of(&r);
+    assert_eq!(e.srv.revoke(e.prog.vfs(), |o| o == b"admin"), 1);
+    let r = c.raw(
+        &e,
+        1,
+        vec![c.sequence(false), putfh(&fh), read(&o.stateid, 0, 1)],
+    );
+    let nfs_resop4::OP_SEQUENCE(t::SEQUENCE4res::NFS4_OK(s)) = &r.resarray[0] else {
+        panic!("{r:?}")
+    };
+    assert_ne!(s.sr_status_flags & t::SEQ4_STATUS_ADMIN_STATE_REVOKED, 0);
+    assert_eq!(r.status, nfsstat4::NFS4ERR_ADMIN_REVOKED);
+    let r = c.run(
+        &e,
+        vec![nfs_argop4::OP_FREE_STATEID(t::FREE_STATEID4args {
+            fsa_stateid: o.stateid.clone(),
+        })],
+    );
+    assert_eq!(r.status, nfsstat4::NFS4_OK);
+    let r = c.raw(&e, 1, vec![c.sequence(false)]);
+    let nfs_resop4::OP_SEQUENCE(t::SEQUENCE4res::NFS4_OK(s)) = &r.resarray[0] else {
+        panic!("{r:?}")
+    };
+    assert_eq!(s.sr_status_flags & t::SEQ4_STATUS_ADMIN_STATE_REVOKED, 0);
+    // The file is no longer open: a local job may deny everyone.
+    let j = e.w.job(5);
+    let fd = j
+        .open(
+            "/home/x/a",
+            ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDWR | ifs::ops::flags::O_SHARE_NONE),
+        )
+        .unwrap();
+    j.close(fd).unwrap();
 }

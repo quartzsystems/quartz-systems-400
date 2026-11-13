@@ -13,6 +13,7 @@
 use super::{R, vs};
 use crate::server::vfs::{FileType, Special};
 use crate::server::{FileHandle, Req, VfsError};
+use crate::types::nfs4::FATTR4_RDATTR_ERROR;
 use crate::types::nfs4::{
     CREATE4args, CREATE4res, CREATE4resok, LINK4args, LINK4res, LINK4resok, READDIR4args,
     READDIR4res, READDIR4resok, READLINK4res, READLINK4resok, REMOVE4args, REMOVE4res,
@@ -25,7 +26,9 @@ use crate::v4::attr::get::{asks_write_only, rdattr_error};
 use crate::v4::attr::set::decode_set;
 use crate::v4::compound::{Cx, Res};
 use crate::v4::pseudo::Child;
-use crate::types::nfs4::FATTR4_RDATTR_ERROR;
+
+/// Entries: cookie, name, filehandle.
+type Listing = Vec<(u64, Vec<u8>, Fh)>;
 
 /// Bytes of the status, verifier, list end and `eof`.
 const HEAD: usize = 4 + 8 + 4 + 4;
@@ -91,7 +94,7 @@ impl Cx<'_> {
         } else {
             a.dircount as usize
         };
-        let (verf, list, eof): (_, Vec<(u64, Vec<u8>, Fh)>, bool) = match &dir {
+        let (verf, list, eof): ([u8; 8], Listing, bool) = match &dir {
             Fh::Pseudo(id) => {
                 if a.cookie != 0 && a.cookieverf != [0; 8] {
                     return Err(nfsstat4::NFS4ERR_NOT_SAME);
@@ -139,7 +142,12 @@ impl Cx<'_> {
                 Fh::None => return Err(nfsstat4::NFS4ERR_STALE),
                 ref f => self.entry_attrs(f, &want)?,
             };
-            let cost = 4 + 8 + padded(name.len()) + 4 + 4 * attrs.attrmask.0.len() + padded(attrs.attr_vals.0.len());
+            let cost = 4
+                + 8
+                + padded(name.len())
+                + 4
+                + 4 * attrs.attrmask.0.len()
+                + padded(attrs.attr_vals.0.len());
             let dcost = 8 + padded(name.len());
             if size + cost > max || info + dcost > dirmax {
                 break;

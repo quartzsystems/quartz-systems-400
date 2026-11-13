@@ -85,11 +85,21 @@ impl Cx<'_> {
         use nfs_argop4 as A;
         let v41 = self.minor >= 1;
         match a {
+            // 4.0's client ID and seqid operations are not 4.1's.
+            A::OP_OPEN_CONFIRM(_)
+            | A::OP_RENEW(_)
+            | A::OP_SETCLIENTID(_)
+            | A::OP_SETCLIENTID_CONFIRM(_)
+            | A::OP_RELEASE_LOCKOWNER(_)
+                if v41 =>
+            {
+                Res::Err(nfsstat4::NFS4ERR_NOTSUPP)
+            }
             A::OP_ACCESS(x) => self.op_access(&x),
             A::OP_CLOSE(x) => self.op_close(&x),
             A::OP_COMMIT(x) => self.op_commit(&x),
             A::OP_CREATE(x) => self.op_create(&x),
-            A::OP_DELEGPURGE(x) => self.op_delegpurge(&x),
+            A::OP_DELEGPURGE(x) => Self::op_delegpurge(&x),
             A::OP_DELEGRETURN(x) => self.op_delegreturn(&x),
             A::OP_GETATTR(x) => self.op_getattr(&x),
             A::OP_GETFH => self.op_getfh(),
@@ -102,7 +112,6 @@ impl Cx<'_> {
             A::OP_NVERIFY(x) => self.op_verify(&x.obj_attributes, false),
             A::OP_OPEN(x) => self.op_open(&x),
             A::OP_OPENATTR(x) => self.op_openattr(&x),
-            A::OP_OPEN_CONFIRM(_) if v41 => Res::Err(nfsstat4::NFS4ERR_NOTSUPP),
             A::OP_OPEN_CONFIRM(x) => self.op_open_confirm(&x),
             A::OP_OPEN_DOWNGRADE(x) => self.op_open_downgrade(&x),
             A::OP_PUTFH(x) => self.op_putfh(&x),
@@ -113,20 +122,15 @@ impl Cx<'_> {
             A::OP_READLINK => self.op_readlink(),
             A::OP_REMOVE(x) => self.op_remove(&x),
             A::OP_RENAME(x) => self.op_rename(&x),
-            A::OP_RENEW(_) if v41 => Res::Err(nfsstat4::NFS4ERR_NOTSUPP),
             A::OP_RENEW(x) => self.op_renew(&x),
             A::OP_RESTOREFH => self.op_restorefh(),
             A::OP_SAVEFH => self.op_savefh(),
             A::OP_SECINFO(x) => self.op_secinfo(&x),
             A::OP_SETATTR(x) => self.op_setattr(&x),
-            A::OP_SETCLIENTID(_) | A::OP_SETCLIENTID_CONFIRM(_) if v41 => {
-                Res::Err(nfsstat4::NFS4ERR_NOTSUPP)
-            }
             A::OP_SETCLIENTID(x) => self.op_setclientid(&x),
             A::OP_SETCLIENTID_CONFIRM(x) => self.op_setclientid_confirm(&x),
             A::OP_VERIFY(x) => self.op_verify(&x.obj_attributes, true),
             A::OP_WRITE(x) => self.op_write(&x),
-            A::OP_RELEASE_LOCKOWNER(_) if v41 => Res::Err(nfsstat4::NFS4ERR_NOTSUPP),
             A::OP_RELEASE_LOCKOWNER(x) => self.op_release_lockowner(&x),
             A::OP_BACKCHANNEL_CTL(x) => self.op_backchannel_ctl(&x),
             A::OP_BIND_CONN_TO_SESSION(x) => self.op_bind_conn(&x),
@@ -136,7 +140,7 @@ impl Cx<'_> {
             A::OP_FREE_STATEID(x) => self.op_free_stateid(&x),
             A::OP_SECINFO_NO_NAME(x) => self.op_secinfo_no_name(x),
             A::OP_SEQUENCE(x) => self.op_sequence(&x),
-            A::OP_SET_SSV(x) => self.op_set_ssv(&x),
+            A::OP_SET_SSV(x) => Self::op_set_ssv(&x),
             A::OP_TEST_STATEID(x) => self.op_test_stateid(&x),
             A::OP_DESTROY_CLIENTID(x) => self.op_destroy_clientid(&x),
             A::OP_RECLAIM_COMPLETE(x) => self.op_reclaim_complete(&x),
@@ -156,7 +160,7 @@ impl Cx<'_> {
         if self.tree.is_none() {
             self.tree = Some(Tree::build(&*self.srv.exports, self.ctx.peer.ip()));
         }
-        self.tree.get_or_insert_with(|| unreachable_tree())
+        self.tree.get_or_insert_with(unreachable_tree)
     }
 
     /// Sets the current filehandle (the current stateid goes).
@@ -295,7 +299,7 @@ impl Cx<'_> {
 
     /// The directory's change value.
     pub(super) fn change_of(&self, r: &Req, h: &FileHandle) -> u64 {
-        self.vfs.getattr(r, h).map(|a| a.change).unwrap_or(0)
+        self.vfs.getattr(r, h).map_or(0, |a| a.change)
     }
 
     /// 4.1's current stateid in place of the special one.
@@ -324,9 +328,8 @@ impl Cx<'_> {
                 return Err(nfsstat4::NFS4ERR_BAD_STATEID);
             }
             return Err(match why {
-                Gone::Expired => nfsstat4::NFS4ERR_EXPIRED,
                 Gone::DelegRevoked if self.minor >= 1 => nfsstat4::NFS4ERR_DELEG_REVOKED,
-                Gone::DelegRevoked => nfsstat4::NFS4ERR_EXPIRED,
+                Gone::Expired | Gone::DelegRevoked => nfsstat4::NFS4ERR_EXPIRED,
                 Gone::AdminRevoked => nfsstat4::NFS4ERR_ADMIN_REVOKED,
             });
         }
@@ -422,9 +425,7 @@ impl Cx<'_> {
         let st = r
             .bytes
             .get(4..8)
-            .and_then(|b| {
-                nfsstat4::from_value(i32::from_be_bytes([b[0], b[1], b[2], b[3]]))
-            })
+            .and_then(|b| nfsstat4::from_value(i32::from_be_bytes([b[0], b[1], b[2], b[3]])))
             .unwrap_or(nfsstat4::NFS4_OK);
         Res::Raw(st, r.bytes)
     }

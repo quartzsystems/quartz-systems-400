@@ -9,7 +9,12 @@
 //! on the connection the client opened, answered there, and the
 //! delegation returned.
 
-#![allow(clippy::too_many_lines)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
 
 mod srv3_common;
 mod srv4_common;
@@ -60,7 +65,10 @@ impl Conn {
     /// Answers one call from the server.
     fn answer(&mut self, m: &[u8]) {
         let call = nfs::rpc::msg::parse_call(m).unwrap();
-        assert_eq!(call.body.prog, 0x4000_0002, "the session's callback program");
+        assert_eq!(
+            call.body.prog, 0x4000_0002,
+            "the session's callback program"
+        );
         let mut d = call.args;
         let a: CB_COMPOUND4args = xdr::from_bytes(d.rest()).unwrap();
         assert_eq!(a.minorversion, 1);
@@ -95,7 +103,9 @@ impl Conn {
             resarray: res,
         })
         .unwrap();
-        self.s.write_all(&frame(&reply_success(call.xid, &body))).unwrap();
+        self.s
+            .write_all(&frame(&reply_success(call.xid, &body)))
+            .unwrap();
     }
 
     /// Reads until the reply to `xid`, answering calls on the way.

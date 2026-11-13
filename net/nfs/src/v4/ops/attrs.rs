@@ -57,8 +57,16 @@ impl Cx<'_> {
     pub(super) fn to_setattr(&self, v: &SetVals) -> R<SetAttr> {
         Ok(SetAttr {
             mode: v.mode.map(|m| m & 0o7777),
-            uid: v.owner.as_deref().map(|o| self.id_of(o, false)).transpose()?,
-            gid: v.group.as_deref().map(|g| self.id_of(g, true)).transpose()?,
+            uid: v
+                .owner
+                .as_deref()
+                .map(|o| self.id_of(o, false))
+                .transpose()?,
+            gid: v
+                .group
+                .as_deref()
+                .map(|g| self.id_of(g, true))
+                .transpose()?,
             size: v.size,
             atime: v.atime,
             mtime: v.mtime,
@@ -111,8 +119,10 @@ impl Cx<'_> {
         let bits = decode_verify(f, self.minor)?;
         let at = self.attr_of(&cur)?;
         let ours = self.fattr(&cur, &at, &bits)?;
-        Ok(Bits::from(&ours.attrmask).to_bitmap() == Bits::from(&f.attrmask).to_bitmap()
-            && ours.attr_vals.0 == f.attr_vals.0)
+        Ok(
+            Bits::from(&ours.attrmask).to_bitmap() == Bits::from(&f.attrmask).to_bitmap()
+                && ours.attr_vals.0 == f.attr_vals.0,
+        )
     }
 
     pub(super) fn op_verify(&mut self, f: &fattr4, verify: bool) -> Res {
@@ -168,4 +178,3 @@ impl Cx<'_> {
         })))
     }
 }
-

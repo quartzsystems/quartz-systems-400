@@ -7,6 +7,13 @@
 //! in the host's CCSID; a `/QSYS.LIB` export through the pseudo file
 //! system.
 
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::doc_markdown
+)]
+
 mod srv3_common;
 mod srv4_common;
 
@@ -39,7 +46,9 @@ fn tagged_text_through_an_open() {
     let fd = j
         .open(
             "/home/exp/e.txt",
-            OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID).mode(0o666).conv(37),
+            OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID)
+                .mode(0o666)
+                .conv(37),
         )
         .unwrap();
     ifs::client::write_all(&j, fd, &ccsid::to_ebcdic("Hello, world").unwrap()).unwrap();
