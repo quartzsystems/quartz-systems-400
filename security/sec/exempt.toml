@@ -115,6 +115,10 @@ fns = ["create", "describe"]
 reason = "creation is checked by the store's create; descriptions for a space the caller checked"
 fns = ["create", "describe"]
 
+[file."storage/store/src/obj/watch.rs"]
+reason = "telling the storage service's watcher of a change the caller was checked for; nothing is read or changed here"
+fns = ["active", "changed"]
+
 [file."work/wm/src/obj/mod.rs"]
 reason = "payload plumbing for work management objects; the storage service checks wmobj.* first"
 fns = ["create", "create_attr", "write", "read", "find", "library"]
@@ -214,3 +218,7 @@ fns = ["cpytoimpf", "render"]
 [file."database/db/src/util/rgzpfm.rs"]
 reason = "rgzpfm only calls rgzpfm_paused, which checks"
 fns = ["rgzpfm"]
+
+[file."work/wm/src/obj/upgrade.rs"]
+reason = "the shipped objects across a release change, as the system: add_missing from the IPL's install of the shipped objects, keep and put_back from the installer around the operating system's load"
+fns = ["add_missing", "keep", "put_back"]

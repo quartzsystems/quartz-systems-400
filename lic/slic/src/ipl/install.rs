@@ -1051,8 +1051,11 @@ fn kept_objects(
     store: &mut store::Store,
     qsys: store::obj::ObjectId,
 ) -> Result<wm::obj::upgrade::Kept, String> {
-    let mut t = store.begin().map_err(|e| e.to_string())?;
-    let k = wm::obj::upgrade::keep(&mut t, qsys).map_err(|e| e.to_string());
+    let mut t = store
+        .begin()
+        .map_err(fail("Keeping the work management objects"))?;
+    let k =
+        wm::obj::upgrade::keep(&mut t, qsys).map_err(fail("Keeping the work management objects"));
     t.abort();
     k
 }
@@ -1070,10 +1073,13 @@ fn put_back(
         system: "QS400".into(),
         now,
     };
-    let mut t = store.begin().map_err(|e| e.to_string())?;
-    let lines =
-        wm::obj::upgrade::put_back(&mut t, qsys, kept, &stamp).map_err(|e| e.to_string())?;
-    t.commit().map_err(|e| e.to_string())?;
+    let mut t = store
+        .begin()
+        .map_err(fail("Restoring the work management objects"))?;
+    let lines = wm::obj::upgrade::put_back(&mut t, qsys, kept, &stamp)
+        .map_err(fail("Restoring the work management objects"))?;
+    t.commit()
+        .map_err(fail("Restoring the work management objects"))?;
     Ok(lines)
 }
 
