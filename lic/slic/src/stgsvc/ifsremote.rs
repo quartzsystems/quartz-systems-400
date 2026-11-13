@@ -10,7 +10,8 @@
 //! end it polls ([`wake_fd`]). A server that stops answering, and
 //! answers again, is reported to `QSYSOPR` (`CPDA1B9`, reason 5 and 7)
 //! from the loop ([`tick`]). The NFS client registers itself with
-//! [`set_factory`]; until it does, `MOUNT TYPE(*NFS)` is `CPFA0AD`.
+//! [`set_factory`] (`super::nfs::client`); without it `MOUNT TYPE(*NFS)` is
+//! `CPFA0AD`.
 
 use std::io::{Read as _, Write as _};
 use std::os::fd::{AsFd, BorrowedFd};
@@ -30,7 +31,7 @@ const NOT_RESPONDING: u32 = 5;
 const RESPONDED: u32 = 7;
 
 /// Worker threads per mount.
-const THREADS: usize = 4;
+pub(crate) const THREADS: usize = 4;
 
 static WAKE: OnceLock<(UnixStream, UnixStream)> = OnceLock::new();
 static EVENTS: Mutex<Vec<RemoteEvent>> = Mutex::new(Vec::new());
@@ -65,7 +66,6 @@ pub fn start() {
 }
 
 /// The hook the NFS client fills: what mounts `TYPE(*NFS)`.
-#[allow(dead_code)] // the NFS client (`net/nfs`) registers itself here
 pub fn set_factory(f: Option<Arc<dyn RemoteFactory>>) {
     if let Some(ifs) = super::ifs::get() {
         ifs.set_remote_factory(

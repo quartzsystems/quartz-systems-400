@@ -188,9 +188,20 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "MOUNT" | "ADDMFS" => {
             let (ty, mfs, over, opts) = (fs_type(parms), p("MFS"), p("MNTOVRDIR"), p("OPTIONS"));
             let (cc, cp) = (ccsid_pair(parms, "CCSID"), ccsid_pair(parms, "CODEPAGE"));
-            // OPTIONS goes to the mount as typed (`*DFT` too).
+            let nfs = ty.eq_ignore_ascii_case("*NFS");
+            if nfs {
+                crate::stgsvc::nfs::client::refresh(system);
+            }
+            // OPTIONS goes to the mount as typed (`*DFT` too), checked
+            // first for NFS with the option list's own messages.
             Box::new(
                 move |c| match udfs::mount_ccsid([&cc[0], &cc[1]], [&cp[0], &cp[1]]) {
+                    Ok(ccsid) if nfs => {
+                        match crate::stgsvc::nfs::client::check(&opts, &mfs, ccsid) {
+                            Ok(()) => udfs::mount_with(c, &ty, &mfs, &over, &opts, ccsid),
+                            Err(m) => Reply::fail(m),
+                        }
+                    }
                     Ok(ccsid) => udfs::mount_with(c, &ty, &mfs, &over, &opts, ccsid),
                     Err(v) => Reply::errno(ifs::Errno::EINVAL, &v),
                 },

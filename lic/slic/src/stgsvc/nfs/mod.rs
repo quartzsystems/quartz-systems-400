@@ -11,6 +11,7 @@
 //! commands reach it through `stg::nfs`.
 
 pub mod api;
+pub mod client;
 pub mod export;
 pub mod locks;
 pub mod optfile;
@@ -154,6 +155,14 @@ pub fn request(system: &mut System, job: &JobInfo, me: &Principal, op: NfsOp) ->
                     refused(system, "CPFA1B4", 0i32.to_be_bytes().to_vec(), &["0"])
                 }
             }
+        }
+        NfsOp::ServerRestarted { name, state } => {
+            // Only the lock manager hears it from the status monitor.
+            if Daemon::of_job(&job.name) != Some(Daemon::Nlm) {
+                return refused(system, "CPFA1B4", 0i32.to_be_bytes().to_vec(), &["0"]);
+            }
+            client::restarted(&name, state);
+            NfsReply::Done
         }
     }
 }

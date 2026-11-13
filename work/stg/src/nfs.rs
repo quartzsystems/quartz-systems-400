@@ -305,6 +305,10 @@ pub enum NfsOp {
     Options,
     /// Change the NFS options (`QZNFNFSO`): `*IOSYSCFG`.
     SetOptions { options: NfsOptions },
+    /// From `QNFSNLMD` only: this system's status monitor says the
+    /// server `name` (its `mon_name`) restarted with `state`; the NFS
+    /// client's mounts of it reclaim their locks (docs/NFS.md 7.7).
+    ServerRestarted { name: String, state: i32 },
 }
 
 wire_enum!(NfsOp {
@@ -320,6 +324,7 @@ wire_enum!(NfsOp {
     9 => End { daemon },
     10 => Options,
     11 => SetOptions { options },
+    12 => ServerRestarted { name, state },
 });
 
 /// The answer to an [`NfsOp`].
@@ -428,6 +433,10 @@ mod tests {
             },
             NfsOp::SetOptions {
                 options: NfsOptions::default(),
+            },
+            NfsOp::ServerRestarted {
+                name: "nfssrv".into(),
+                state: 7,
             },
         ] {
             let back: NfsOp = ipc::decode(&ipc::encode(&op)).expect("decodes");

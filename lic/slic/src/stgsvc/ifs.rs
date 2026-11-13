@@ -139,6 +139,7 @@ pub fn start(system: &mut System) -> String {
     let _ = IFS.set(r);
     if let Some(ifs) = get() {
         super::ifsremote::start();
+        super::nfs::client::register();
         keep_registry(system);
         keep_notices(system);
         keep_downloads(system);
