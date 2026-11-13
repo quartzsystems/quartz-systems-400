@@ -232,7 +232,7 @@ impl Cx<'_> {
                 .get_mut(&key.0)
                 .ok_or(nfsstat4::NFS4ERR_STALE_CLIENTID)?;
             if a.reclaim {
-                let may = reclaimer && !c.reclaim_done;
+                let may = reclaimer && !(c.minor >= 1 && c.reclaim_done);
                 if !grace || !may {
                     return Err(nfsstat4::NFS4ERR_NO_GRACE.into());
                 }

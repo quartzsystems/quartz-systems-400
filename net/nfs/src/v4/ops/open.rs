@@ -161,7 +161,8 @@ impl Cx<'_> {
             let c = t.clients.get(&client).ok_or(nfsstat4::NFS4ERR_STALE_CLIENTID)?;
             (
                 t.in_grace(self.now),
-                t.may_reclaim(&c.owner) && !c.reclaim_done,
+                // A 4.0 client's completion is only a guess: it may still reclaim.
+                t.may_reclaim(&c.owner) && !(c.minor >= 1 && c.reclaim_done),
                 c.owner.clone(),
             )
         };
