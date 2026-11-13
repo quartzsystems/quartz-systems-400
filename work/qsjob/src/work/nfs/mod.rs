@@ -15,6 +15,7 @@
 
 pub mod biod;
 pub mod host;
+pub mod ids;
 pub mod mntd;
 pub mod names;
 pub mod nfsd;
@@ -24,6 +25,7 @@ pub mod rgyd;
 pub mod rpcd;
 pub mod running;
 pub mod statd;
+pub mod v4stable;
 pub mod view;
 
 #[cfg(test)]

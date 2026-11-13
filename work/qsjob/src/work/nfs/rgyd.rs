@@ -17,9 +17,10 @@ use super::host::Host;
 use super::running::Running;
 use super::{DaemonEnv, Serve, Started};
 
-/// What the daemon serves beside turning the mapping on.
+/// The daemon's loop: it serves nothing itself; while it runs the
+/// server jobs' `ids::JobIdMap` maps names (`NfsOp::Mapping`), each
+/// asking the service through its own registry cache.
 pub fn registry_service<H: Host>(_host: &Arc<H>, stop: &AtomicBool) {
-    // BLOCKED(rel): NFSv4 in the server job (NFS-6): the registry's lookups (nfs::registry) for the server jobs and the client, if they are to go through this job.
     while !stop.load(Ordering::Relaxed) {
         std::thread::sleep(Duration::from_millis(100));
     }

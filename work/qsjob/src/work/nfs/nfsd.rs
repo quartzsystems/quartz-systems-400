@@ -2,37 +2,47 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `QNFSNFSD` (`NBRSVR` jobs): program 100003. The first job binds TCP
-//! and UDP 2049 and registers with the binder; it answers UDP itself
-//! and hands each TCP connection to the job its client's address hashes
-//! to among the ready server jobs (the descriptor relay, as
-//! `QZLSSERVER` hands them to `QZLSFILE`), so one client's state stays
-//! in one job. A connection whose job cannot take it, and those left
-//! queued for a job that ends, are served by the first job. Each job
-//! serves each connection on a thread with a link of its own (all the
-//! job's links are one IFS owner) and its own file system; the job's
-//! threads share the export table, the duplicate request cache and the
-//! start's write verifier. `QZNFNFSO`'s thread limit caps a job's
-//! connection threads.
+//! `QNFSNFSD` (`NBRSVR` jobs): program 100003, versions 3 and 4 (4.0 and
+//! 4.1), one `v4::Server` a job. The first job binds TCP and UDP 2049
+//! and registers with the binder; it answers UDP itself and hands each
+//! TCP connection to the job its client's address hashes to among the
+//! ready server jobs (the descriptor relay, as `QZLSSERVER` hands them
+//! to `QZLSFILE`), so one client's v4 state stays in one job. A
+//! connection whose job cannot take it, and those left queued for a job
+//! that ends, are served by the first job. Each job serves each
+//! connection on a thread with a link of its own (all the job's links
+//! are one IFS owner) and its own file system, through
+//! `server::run::connection` (the 4.1 backchannel is the connection
+//! itself); the job's threads share the export table, the duplicate
+//! request cache, the write verifier, the v4 state and the identity
+//! mapping. A thread of its own runs the v4 server's background work
+//! (leases, grace, recalls) and its lease-break news. `QZNFNFSO`'s
+//! thread limit caps a job's connection threads. `RLSIFSLCK
+//! RMTLOCNAME` orders take the host's v4 clients' state away.
 
-use std::io::{self, Read, Write};
-use std::net::{IpAddr, TcpStream, UdpSocket};
+use std::cell::OnceCell;
+use std::io;
+use std::net::{IpAddr, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
-use nfs::rpc::record::{MAX_RECORD, RecordBuf, frame};
-use nfs::rpc::{Dispatcher, LocalProgram, Transport};
-use nfs::server::run::Listeners;
-use nfs::server::{ExportTable, Gate, Instance, Vfs};
+use ifscmd::Msg;
+use nfs::rpc::Dispatcher;
+use nfs::server::news::{ClientNews, NewsSource};
+use nfs::server::run::{self, Listeners};
+use nfs::server::{ExportTable, IfsVfs, Instance, SystemClock};
 use nfs::types::nfs3::NFS_PROGRAM;
-use nfs::v3::Nfs3;
+use nfs::v4::cb::TcpConnector;
+use nfs::v4::{Config, Server};
+use qir::MsgType;
 use stg::nfs::{Daemon, NfsDaemonJob, NfsOp, NfsReply};
 
 use super::host::{Host, thread_vfs};
 use super::running::{self, Fail, Prog, Running};
+use super::v4stable::IfsStable;
 use super::view::{self, JobExports};
-use super::{DaemonEnv, Serve, Started};
+use super::{DaemonEnv, Serve, Started, ids};
 
 /// How often a waiting thread looks at the stop flag.
 const TICK: Duration = Duration::from_millis(100);
@@ -40,15 +50,7 @@ const TICK: Duration = Duration::from_millis(100);
 const PEERS_EVERY: Duration = Duration::from_secs(1);
 
 /// The versions of program 100003 the server registers.
-// BLOCKED(rel): NFSv4 in the server job (NFS-6): versions 3 and 4 once `program` builds the combined program.
-pub const VERSIONS: &[u32] = &[3];
-
-/// The program one thread serves, over its own file system: the seam
-/// where NFS version 4 joins (a program of versions 3 and 4 that calls
-/// `v3::call` for 3; docs/NFS.md section 5.9).
-pub fn program<V: Vfs>(vfs: V, gate: Gate) -> impl LocalProgram {
-    Nfs3::new(vfs, gate)
-}
+pub const VERSIONS: &[u32] = &[3, 4];
 
 /// The server job a client address goes to: FNV-1a of the address over
 /// the ready jobs, in their order.
@@ -80,11 +82,29 @@ fn peers<H: Host>(host: &H) -> Vec<NfsDaemonJob> {
     }
 }
 
+/// Whether a v4 client owner (`nfs_client_id4.id`, `co_ownerid`) is of
+/// `host`: the host name (or its first label) as a word of it, case
+/// ignored. Clients put their own name there (Linux: `Linux NFSv4.1
+/// name`; 4.0 adds the server's address); the protocol has no other way
+/// to tell a client's host.
+#[must_use]
+pub fn owner_of_host(owner: &[u8], host: &str) -> bool {
+    let o = String::from_utf8_lossy(owner).to_ascii_lowercase();
+    let h = host.trim().to_ascii_lowercase();
+    if h.is_empty() {
+        return false;
+    }
+    let short = h.split('.').next().unwrap_or(&h).to_string();
+    o.split(|c: char| c.is_whitespace() || c == '/' || c == ',' || c == ';')
+        .any(|w| w == h || w.split('.').next() == Some(short.as_str()))
+}
+
 /// What a job's serving threads share.
 struct Shared<H: Host> {
     host: Arc<H>,
     dispatcher: Dispatcher,
     exports: Arc<JobExports>,
+    server: Arc<Server>,
     instance: Arc<Instance>,
     /// Connection threads at most (0: no limit), and those running.
     max: usize,
@@ -92,77 +112,40 @@ struct Shared<H: Host> {
 }
 
 impl<H: Host> Shared<H> {
-    fn program(&self) -> impl LocalProgram {
-        let table: Arc<dyn ExportTable> = Arc::clone(&self.exports) as Arc<dyn ExportTable>;
-        program(thread_vfs(&*self.host, &self.instance), Gate::new(table))
+    fn vfs(&self) -> IfsVfs<H::Fs> {
+        thread_vfs(&*self.host, &self.instance)
     }
 }
 
-/// One TCP connection until it closes or `stop`.
-#[allow(clippy::many_single_char_names)] // as nfs::server::run's
-fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &AtomicBool) {
-    let Ok(peer) = s.peer_addr() else { return };
-    let _ = s.set_read_timeout(Some(TICK));
-    let _ = s.set_nodelay(true);
-    let mut rb = RecordBuf::new(MAX_RECORD);
-    let mut buf = vec![0u8; 64 * 1024];
-    let mut w = s;
-    while !stop.load(Ordering::Relaxed) {
-        match (&mut &*s).read(&mut buf) {
-            Ok(0) => return,
-            Ok(n) => rb.push(&buf[..n]),
-            Err(e)
-                if matches!(
-                    e.kind(),
-                    io::ErrorKind::WouldBlock
-                        | io::ErrorKind::TimedOut
-                        | io::ErrorKind::Interrupted
-                ) =>
-            {
-                continue;
-            }
-            Err(_) => return,
-        }
-        loop {
-            match rb.next_record() {
-                Ok(Some(m)) => {
-                    if let Some(reply) = d.handle_with(&m, peer, Transport::Tcp, &[p])
-                        && w.write_all(&frame(&reply)).is_err()
-                    {
-                        return;
-                    }
-                }
-                Ok(None) => break,
-                Err(_) => return,
-            }
-        }
-        let _ = w.flush();
-    }
+/// The IFS's news for the v4 server (lease breaks), on a link of its own.
+fn news<H: Host>(host: &H) -> Box<dyn NewsSource> {
+    let fs = host.fs().unwrap_or_else(|e| {
+        panic!("the NFSv4 server's news thread has no link to the storage service: {e}")
+    });
+    Box::new(ClientNews(fs))
 }
 
-/// UDP until `stop`.
-fn datagrams<P: LocalProgram>(u: &UdpSocket, d: &Dispatcher, p: &P, stop: &AtomicBool) {
-    let _ = u.set_read_timeout(Some(TICK));
-    let mut buf = vec![0u8; 65_536];
-    while !stop.load(Ordering::Relaxed) {
-        match u.recv_from(&mut buf) {
-            Ok((n, peer)) => {
-                if let Some(reply) = d.handle_with(&buf[..n], peer, Transport::Udp, &[p]) {
-                    let _ = u.send_to(&reply, peer);
-                }
-            }
-            Err(e)
-                if matches!(
-                    e.kind(),
-                    io::ErrorKind::WouldBlock
-                        | io::ErrorKind::TimedOut
-                        | io::ErrorKind::Interrupted
-                ) => {}
-            Err(e) => {
-                eprintln!("qsjob: QNFSNFSD: UDP: {e}");
-                std::thread::sleep(TICK);
-            }
-        }
+/// Carry out the release orders queued for this job: the host's v4
+/// clients lose their state (`NFS4ERR_ADMIN_REVOKED`).
+fn orders<H: Host>(
+    env: &mut dyn DaemonEnv,
+    server: &Server,
+    vfs: &OnceCell<IfsVfs<H::Fs>>,
+    host: &H,
+    instance: &Arc<Instance>,
+) {
+    let NfsReply::Orders { orders } = env.op(NfsOp::Orders) else {
+        return;
+    };
+    for o in orders {
+        let v = vfs.get_or_init(|| thread_vfs(host, instance));
+        let n = server.revoke(v, |owner| owner_of_host(owner, &o.host));
+        env.log(&Msg::path("CPCA1C9", &o.host), MsgType::Comp);
+        env.op(NfsOp::OrderDone {
+            id: o.id,
+            count: u32::try_from(n).unwrap_or(u32::MAX),
+            errno: 0,
+        });
     }
 }
 
@@ -181,8 +164,8 @@ fn serve_here<'s, H: Host>(
     }
     sh.active.fetch_add(1, Ordering::AcqRel);
     sc.spawn(move || {
-        let p = sh.program();
-        connection(&s, &sh.dispatcher, &p, stop);
+        let p = sh.server.program(sh.vfs());
+        run::connection(&s, &sh.dispatcher, &p, stop);
         sh.active.fetch_sub(1, Ordering::AcqRel);
     });
 }
@@ -266,6 +249,7 @@ fn thread_limit<H: Host>(host: &H) -> usize {
 }
 
 /// Serve: the first job binds and registers; every job serves.
+#[allow(clippy::too_many_lines)] // one start: sockets, server, loop
 pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, started: Started, host: &Arc<H>) -> Serve {
     let net = host.net();
     let first = started.index == 1;
@@ -295,12 +279,27 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, started: Started, host: &Arc<H>)
         return Serve::Unavailable(f);
     }
     let mut dispatcher = Dispatcher::new();
-    dispatcher.set_cache(nfs::server::run::nfs3_cache());
+    dispatcher.set_cache(run::nfs3_cache());
+    let instance = Arc::new(Instance::new());
+    let table: Arc<dyn ExportTable> = Arc::clone(&exports) as Arc<dyn ExportTable>;
+    let server = Server::new(
+        Config {
+            system: host.system_name().into_bytes(),
+            ..Config::default()
+        },
+        table,
+        Arc::clone(&instance),
+        Arc::new(SystemClock),
+        ids::registry(host),
+        Arc::new(IfsStable::new(Arc::clone(host), started.index)),
+        Arc::new(TcpConnector::default()),
+    );
     let sh = Shared {
         host: Arc::clone(host),
         dispatcher,
         exports,
-        instance: Arc::new(Instance::new()),
+        server: Arc::clone(&server),
+        instance: Arc::clone(&instance),
         max: thread_limit(&**host),
         active: AtomicUsize::new(0),
     };
@@ -310,8 +309,17 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, started: Started, host: &Arc<H>)
         let l = &listeners;
         std::thread::scope(|sc| {
             sc.spawn(|| view::keep_current(&*sh.host, &sh.exports, stop));
+            // Leases, grace, recalls; the IFS's lease breaks.
+            sc.spawn(|| {
+                let v = sh.vfs();
+                let mut n = news(&*sh.host);
+                sh.server.background(&v, &mut *n, stop);
+            });
             if let Some(u) = &l.udp {
-                sc.spawn(move || datagrams(u, &sh.dispatcher, &sh.program(), stop));
+                sc.spawn(move || {
+                    let p = sh.server.program(sh.vfs());
+                    run::datagrams(u, &sh.dispatcher, &p, stop);
+                });
             }
             ready();
             let r = if first {
@@ -329,7 +337,11 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, started: Started, host: &Arc<H>)
     let ports = running::ports(&regs);
     match r {
         Ok(r) => {
-            let r = r.with_ports(ports);
+            let vfs = OnceCell::new();
+            let h = Arc::clone(host);
+            let r = r
+                .with_ports(ports)
+                .with_tick(move |env| orders(env, &server, &vfs, &*h, &instance));
             if first {
                 Serve::Ready(r.on_end(move || running::unregister(net, &regs)))
             } else {
@@ -357,5 +369,18 @@ mod tests {
             .map(|i| super::pick(std::net::IpAddr::from([10, 0, 0, i]), 4))
             .collect();
         assert_eq!(spread.len(), 4);
+    }
+
+    #[test]
+    fn a_client_owner_names_its_host() {
+        let o = b"Linux NFSv4.1 client1.lab.example";
+        assert!(super::owner_of_host(o, "client1"));
+        assert!(super::owner_of_host(o, "CLIENT1.lab.example"));
+        assert!(super::owner_of_host(
+            b"Linux NFSv4.0 client1/10.0.0.5 tcp",
+            "client1"
+        ));
+        assert!(!super::owner_of_host(o, "client"));
+        assert!(!super::owner_of_host(o, ""));
     }
 }

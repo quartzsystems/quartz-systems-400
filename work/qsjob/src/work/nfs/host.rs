@@ -80,6 +80,8 @@ pub trait Host: Send + Sync + 'static {
     fn locator(&self) -> Arc<dyn Locator>;
     /// This host's name, as the status monitor tells others.
     fn host_name(&self) -> String;
+    /// The system name (`QSYSNAME`): the `NFSv4` server owner and scope.
+    fn system_name(&self) -> String;
 }
 
 /// A daemon thread's file system: its own client under `IfsVfs`. A
@@ -257,9 +259,19 @@ impl Host for JobHost {
         };
         name.to_ascii_lowercase()
     }
+
+    fn system_name(&self) -> String {
+        self.sysname()
+    }
 }
 
 impl JobHost {
+    /// `QSYSNAME`.
+    fn sysname(&self) -> String {
+        self.call(crate::work::ddm::system_name)
+            .unwrap_or_else(|| "QS400".into())
+    }
+
     /// The resolver's configuration (`CFGTCP`).
     fn host_config(&self) -> tcpcfg::resolver::HostConfig {
         self.call(
