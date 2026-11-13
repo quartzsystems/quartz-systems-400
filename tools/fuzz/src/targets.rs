@@ -604,6 +604,7 @@ pub const TARGETS: &[Target] = &[
         dict: &[b"\0\0\0\x18", b"\0\0\0\x35", b"\0\0\0\x2a", b"\0\0\0\x2b", b"\0\0\x27\x3c", b"\0\0\0\x01"],
         max_len: 16384,
     },
+    Target {
         name: "nfsexports",
         what: "/etc/exports, /etc/netgroup, EXPORTFS flags, export and MOUNT option lists",
         run: nfs::exports::fuzz,

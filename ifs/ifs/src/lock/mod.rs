@@ -288,7 +288,7 @@ impl LockTable {
         self.objs.retain(|k, o| {
             if pick(*k) {
                 n += o.ranges.len();
-                freed.extend(o.ranges.iter().map(|l| l.owner));
+                freed.extend(o.ranges.iter().map(|l| (l.owner, l.sub)));
                 o.ranges.clear();
             }
             !o.opens.is_empty() || !o.ranges.is_empty()
