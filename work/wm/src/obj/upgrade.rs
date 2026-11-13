@@ -44,15 +44,26 @@ pub struct Addition {
 }
 
 /// Every release's additions.
-pub const ADDITIONS: &[Addition] = &[Addition {
-    // V1R2M0 (docs/NETSERVER.md section 3).
-    what: "NetServer",
-    sbsd: "QSERVER",
-    marker: ("QSYS", "QZLSSERVER", types::JOBD),
-    rtges: &[800],
-    jobqes: &[("QPWFSERVER", "QSYS")],
-    pjes: &[("QZLSFILE", "QSYS"), ("QZLSFILET", "QSYS")],
-}];
+pub const ADDITIONS: &[Addition] = &[
+    Addition {
+        // V1R2M0 (docs/NETSERVER.md section 3).
+        what: "NetServer",
+        sbsd: "QSERVER",
+        marker: ("QSYS", "QZLSSERVER", types::JOBD),
+        rtges: &[800],
+        jobqes: &[("QPWFSERVER", "QSYS")],
+        pjes: &[("QZLSFILE", "QSYS"), ("QZLSFILET", "QSYS")],
+    },
+    Addition {
+        // V1R2M0 (docs/NFS.md section 4).
+        what: "NFS",
+        sbsd: "QSYSWRK",
+        marker: ("QSYS", "QP0LNFSD", types::JOBD),
+        rtges: &[2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127],
+        jobqes: &[],
+        pjes: &[],
+    },
+];
 
 fn find(
     txn: &mut Txn<'_>,

@@ -149,6 +149,31 @@ fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
                 ..d()
             },
         ),
+        // The NFS daemons' (the primary's, oracle/nfs/jobd-primary.txt).
+        (
+            "QSYS",
+            "QP0LNFSD",
+            JobD {
+                user: "QUSER".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                rtgdta: "QNFSNFSD".into(),
+                inqmsgrpy: "*DFT".into(),
+                text: "QP0LNFSD job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
+            "QP0LRPCD",
+            JobD {
+                user: "QUSER".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                rtgdta: "QNFSRPCD".into(),
+                inqmsgrpy: "*DFT".into(),
+                text: "QP0LRPCD job description".into(),
+                ..d()
+            },
+        ),
         (
             "QSYS",
             "QSYSSCD",
@@ -206,6 +231,21 @@ fn classes() -> Vec<(&'static str, &'static str, Cls)> {
             "QSYSCLS50",
             c(50, 500, 30, "System class, priority 50"),
         ),
+        // The NFS daemons' routing entries name these (QSYSWRK 2120 to
+        // 2127); the primary's QSYS has QP0LNFSD and QP0LRPCD. Their
+        // values are QSYSCLS20's (NEEDS-CODY: DSPCLS of the primary's).
+        ("QSYS", "QP0LNFSD", c(20, 500, 30, "Class for QP0LNFSD job")),
+        ("QSYS", "QP0LRPCD", c(20, 500, 30, "Class for QP0LRPCD job")),
+        ("QSYS", "QP0LBIOD", c(20, 500, 30, "Class for QP0LBIOD job")),
+        ("QSYS", "QP0LMNTD", c(20, 500, 30, "Class for QP0LMNTD job")),
+        ("QSYS", "QP0LLCKD", c(20, 500, 30, "Class for QP0LLCKD job")),
+        (
+            "QSYS",
+            "QP0LSTATD",
+            c(20, 500, 30, "Class for QP0LSTATD job"),
+        ),
+        ("QSYS", "QP0LGSSD", c(20, 500, 30, "Class for QP0LGSSD job")),
+        ("QSYS", "QP0LRGYD", c(20, 500, 30, "Class for QP0LRGYD job")),
     ]
 }
 

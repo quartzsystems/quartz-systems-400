@@ -1,0 +1,15 @@
+1                                              Display Mount Statistics                                                  Page     1
+ 5770SS1 V7R1M0  100423                                                                            {system}  11/12/26  10:21:50 EST
+0 Object . . . . . . . . . . . . :   /QNTC
+  File system type . . . . . . . :   /QNTC
+  Block size . . . . . . . . . . :   0
+  Total blocks . . . . . . . . . :   Not defined
+  Blocks free  . . . . . . . . . :   Not defined
+  Object link maximum  . . . . . :   1
+  Directory link maximum . . . . :   2
+  Path name component maximum  . :   256
+  Path name maximum  . . . . . . :   300
+  Change owner restricted  . . . :   No
+  No truncation  . . . . . . . . :   No
+  Case Sensitivity . . . . . . . :   No
+-                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

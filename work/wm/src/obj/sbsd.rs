@@ -831,6 +831,10 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
         maxact: 0,
         pool,
     };
+    let nfs = |seq, cmp: &str, pgm: &str, cls: &str| Rtge {
+        pgm: q(pgm, "QSYS"),
+        ..rt(seq, cmp, q(cls, "QSYS"), 1)
+    };
     let jq = |name: &str, lib: &str, seq, maxact| Jobqe {
         jobq: q(name, lib),
         seq,
@@ -945,6 +949,16 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                         pgm: q("QEJSCHED", "QSYS"),
                         ..rt(10, "QSYSSCD", q("QSYSCLS25", "QSYS"), 1)
                     },
+                    // The NFS daemons (the primary's DSPSBSD, docs/NFS.md
+                    // section 4): routing data, program and class.
+                    nfs(2120, "QNFSNFSD", "QZNFNFSD", "QP0LNFSD"),
+                    nfs(2121, "QNFSBIOD", "QZNFBIOD", "QP0LBIOD"),
+                    nfs(2122, "QNFSMNTD", "QZNFMNTD", "QP0LMNTD"),
+                    nfs(2123, "QNFSRPCD", "QZNFRPCD", "QP0LRPCD"),
+                    nfs(2124, "QNFSNLMD", "QZNFNLMD", "QP0LLCKD"),
+                    nfs(2125, "QNFSNSMD", "QZNFNSMD", "QP0LSTATD"),
+                    nfs(2126, "QNFSGSSD", "QZNFGSSD", "QP0LGSSD"),
+                    nfs(2127, "QNFSRGYD", "QZNFRGYD", "QP0LRGYD"),
                     rt(9999, "*ANY", q("QSYSCLS25", "QSYS"), 1),
                 ],
                 ajes: vec![Aje {
