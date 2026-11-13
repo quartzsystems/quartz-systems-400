@@ -145,34 +145,61 @@ by two and `QNFSNSMD` sends `SM_NOTIFY` to the hosts it monitored.
 `nfs::server::Vfs` is what the protocols need; the job implements it
 over `IfsClient` with these additions to the IFS (built first):
 
-- **Identity per request.** A daemon's request names the caller:
-  `IfsClient::as_user(uid, gid, &gids)` returns a client whose calls run
-  under that identity. The service honours it only for jobs named
-  `QNFSNFSD`, `QNFSMNTD` and `QNFSNLMD`. The UID maps to the user profile
-  with that UID (`CHGUSRPRF UID()`); authority is that profile's, with
-  its group profiles (the wire's GID list is not trusted for authority,
-  as on IBM i). UID 0 is `QSECOFR` only for a host in the export's
-  `ROOT=` list; otherwise, and for a UID no profile has, the caller is
-  the export's anonymous user (`ANON=`, default `QNFSANON`); `ANON=-1`
-  refuses instead (`NFS3ERR_ACCES`, `NFS4ERR_ACCESS`). The service keeps
-  principals by UID and drops them when a profile changes.
+- **Identity per request** (built, `docs/IFS.md` "Calls as another
+  user"). A daemon thread's calls name the caller:
+  `IfsClient::as_caller(&Caller)` (over the link
+  `RemoteIfs::as_user(Caller)`) answers a client whose every call is
+  one request, `IfsOp::As` (72). `Caller` is `Uid { uid }`, `Profile {
+  name }` or `Anonymous` (`QNFSANON`). The service honours it only for
+  `QNFSNFSD`, `QNFSMNTD` and `QNFSNLMD` (`EPERM` for any other job). The
+  UID maps to the user profile with that UID whatever its status;
+  authority is that profile's, with its group profiles (the wire's GID
+  list is never used). A UID no profile has answers `ENOTENROLL` on the
+  call: the daemon then retries as the export's `ANON=` user
+  (`Caller::Uid` of it, or `Caller::Anonymous` for the default) or, with
+  `ANON=-1`, refuses (`NFS3ERR_ACCES`, `NFS4ERR_ACCESS`). Root squashing
+  is the daemon's: UID 0 is `QSECOFR`, so the daemon sends `Uid { 0 }`
+  only for a host in `ROOT=`. The service keeps the profiles by UID and
+  the principals built until any profile, group or list changes.
+  Descriptors opened as a user are the job's (the daemon's handle
+  cache); authority is checked at open, so per-call checks (`ACCESS`, an
+  NFSv3 `READ` or `WRITE` on a handle) are the daemon's, through
+  `access()` as the user.
 - **File handles** are 32 bytes: a format byte, the export's ID (4), the
   IFS `FileId` (file system 4, object 8, generation 4), the file ID of
-  the export's root (8) and a checksum. Nothing in a handle depends on
-  the IPL: the object number is the backend's, generations are stored
-  with the object and are drawn from a counter seeded so that a reused
-  object number never repeats a generation, and the service resolves a
-  `FileId` to an object without walking the tree (`open_by_handle_at` on
-  the xfs; `/QSYS.LIB` by the hashes of library, object and member). A
-  handle whose object is gone, or whose generation differs, is
+  the export's root (8) and a checksum. The object number is the
+  backend's, and generations are drawn from a counter whose high-water
+  mark is kept on the volume (`trusted.qs400.gen`), so a reused object
+  number never repeats a generation across IPLs. `stat_by_id` (73) and
+  `open_by_id` (74) take a `FileId` to its path and attributes, or to a
+  descriptor and the path, in one request as the caller. **Not** without
+  walking, as designed: `rustix` has no `open_by_handle_at` and `ifs`
+  forbids `unsafe`, so the service remembers the path of every object
+  resolved (65536 at most) and, after an IPL, the first lookup of an ID
+  not seen walks its file system (remembering everything it passes);
+  `/QSYS.LIB` resolves by the hashes of library, object and member,
+  level by level, a collision refused (`EBADFID`). A handle whose
+  object is gone, whose generation differs, or whose file system is no
+  longer mounted (a UDFS mounted again gets a new number) is `ESTALE`:
   `NFS3ERR_STALE`/`NFS4ERR_STALE`; one outside its export
   `NFS3ERR_BADHANDLE`. A handle is checked against the export table on
-  every call, so `EXPORTFS -U` takes effect at once.
-- **Lock owners.** `IfsClient::lock_range` gains an owner within the
-  job, so NLM's (host, pid/owner handle) and NFSv4's lock owners hold
-  POSIX locks that conflict with each other and with local jobs.
-  Blocking locks wait in the service (`NLM_BLOCKED` then `NLM_GRANTED`
-  callbacks; NFSv4 answers `NFS4ERR_DENIED` and the client polls).
+  every call, so `EXPORTFS -U` takes effect at once. Objects with
+  generation 0 (made before generations, `/QSYS.LIB`) are matched by 0.
+- **Lock owners** (built). `lock_range_as(fd, sub, ...)` (75) holds a
+  lock for a sub-owner within the job (a `u64` the daemon chooses per
+  NLM (host, owner handle) or NFSv4 lock owner; 0 is the job itself), so
+  they conflict with each other and with local jobs. A sub-owner's locks
+  outlive the daemon's descriptors; `lock_release_sub(sub)` (78) drops
+  them (NLM `FREE_ALL`, `SM_NOTIFY`, an NFSv4 lease expiry) and
+  `owner_locks` lists them with their sub-owner (for `RLSIFSLCK` and
+  `IFS_OBJECT_LOCK_INFO`). Blocking locks wait in the service:
+  `lock_wait` (76) grants at once or answers a token, the daemon's
+  `lease_orders` poll names each token once granted (`News::locks`;
+  NLM answers `NLM_BLOCKED`, then sends `NLM_GRANTED`), `lock_cancel`
+  (77) takes one back (`NLM_CANCEL`); a cycle of waits is `EDEADLK`
+  (`NLM4_DEADLCK`). NFSv4 answers `NFS4ERR_DENIED` and the client
+  polls. Share reservations are the opens' share modes, enforced
+  between jobs; `QNFSNFSD` holds leases and watches as `QZLSFILE` does.
 - **Attributes.** Mode bits, owner and group from the object's
   authorities as `stat` shows them; `SETATTR` of mode maps to the data
   authorities the way `chmod` does. ACLs beyond mode bits are refused
@@ -299,11 +326,14 @@ and the options (server threads, client handle cache, UTF-8
 validation). `QSYS2.NFS_EXPORT_INFO` and `QSYS2.MOUNTED_FS_INFO` are
 QS/400's views of the export table and the mount table.
 
-## 9. Security mapping **(design)**
+## 9. Security mapping
+
+The IFS side is built (`docs/IFS.md`, "Calls as another user"); the
+daemons' use of it is design.
 
 | On the wire | On QS/400 |
 |---|---|
-| `AUTH_SYS` UID | the user profile with that UID; none: the anonymous user |
+| `AUTH_SYS` UID | the user profile with that UID, enabled or `*DISABLED` (IBM maps by UID; only sign-on checks the status: NEEDS-CODY, settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
 | UID 0 | `QSECOFR` for `ROOT=` hosts; else the anonymous user (root squash is the default, as IBM's) |
 | GID list | not used for authority; the profile's group profiles are |
 | `AUTH_NONE` | the anonymous user |
@@ -313,7 +343,29 @@ QS/400's views of the export table and the mount table.
 | ports | calls from ports of 1024 and up are accepted (IBM's default); the client sends from a reserved port when it can |
 
 Auditing follows the caller's profile: the `QAUDJRN` entries are those
-the same change makes locally.
+the same change makes locally, charged to the mapped profile, with the
+daemon job's name and number.
+
+**UIDs.** QS/400's shipped profiles have IBM's UIDs (the primary's,
+`tools/conformance/oracle/nfs/uids-primary.txt`): `QSECOFR` 0, `QSYS`
+101, `QDFTOWN` 102, `QTMPLPD` 103, the others fixed numbers from
+4294770688 up (`QPGMR` 4294770688, `QSYSOPR` 4294770689, `QUSER`
+4294770692, `QNFSANON` 4294770710 ...); `QSOC` and `QUMB` have none.
+No shipped profile has a GID. Generated UIDs and GIDs (`*GEN`) start at
+100 (or `CHGSECA`'s start), stay below 4294770688 and skip numbers in
+use. A UID or GID another profile has is refused (`CPF22CE`, `&1` the
+keyword, `&2` the number), and `QSECOFR`'s UID cannot change
+(`CPF224C`); both messages are IBM's IDs, found on the primary.
+
+On a system installed before this, every shipped profile has UID 0 (no
+number yet): the first IPL of this release gives each one IBM's UID
+where no other profile already has that number. A profile that has a
+UID keeps it (objects and clients may know it by it); `QSECOFR` is set
+to 0 (only a `CHGUSRPRF QSECOFR` could have given it another, wrongly).
+IFS objects record their owner by name, so no object changes owner;
+the xfs mirrors of owner UIDs follow at the next `RCLLNK` or change. A
+shipped profile whose number a user profile already holds stays
+without a UID: NFS then maps nobody to it.
 
 ## 10. Refused
 

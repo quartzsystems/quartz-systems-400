@@ -576,6 +576,113 @@ user who checked out, the owner or `*ALLOBJ`.
 `Ifs::object_locks` and `Ifs::owner_locks` list opens and ranges for
 `WRKOBJLCK`.
 
+**Sub-owners.** A server job holding locks for its own clients (the
+NFS lock manager, NFSv4 lock owners) names each client by a sub-owner
+(`RangeLock::sub`, a `u64`; 0 is the job itself, as every lock was
+before). Holders are (owner, sub-owner) pairs: two sub-owners of one
+job conflict as two jobs do, and with the job's own locks
+(`lock_range_as`). Closing a descriptor drops only the job's own locks
+(sub-owner 0); a sub-owner's stay until unlocked, until
+`lock_release_sub` drops all of that sub-owner's locks and queued
+requests (a client host restarted, a lease expired), or until the job
+ends. `owner_locks`, `object_locks` and `job_locks` show the sub-owner
+in each range.
+
+**Waiting locks.** `lock_wait` sets a read or write lock for a
+sub-owner at once (`None`) or queues it and answers a token: the
+service still never waits. Whenever a range on the object is released
+(unlock, close, a sub-owner's or a job's end, a cancel) the object's
+queue is tried oldest first; a request is granted when no held lock
+blocks it and no older queued request it conflicts with is still
+waiting, so the queue is fair. Each grant is told to the requester in
+its next `lease_orders` answer (`News::locks`, the tokens in grant
+order), which the service parks like a poll for break orders.
+`lock_cancel` takes a queued request back (false once granted: the
+lock is held and must be unlocked). A request that would close a cycle
+of waits among queued requests and `F_SETLKW` retries is `EDEADLK`
+(`lock::wait`); the search visits at most 4096 holders.
+
+**Share reservations** are enforced between every two opens, of one
+job or of two (the table above); NFSv4 `OPEN` maps its access (read,
+write, both) to `O_RDONLY`, `O_WRONLY`, `O_RDWR` and its deny (none,
+read, write, both) to `O_SHARE_RDWR`, `O_SHARE_WRONLY`,
+`O_SHARE_RDONLY`, `O_SHARE_NONE`: all twelve combinations exist
+(`tests/server_calls.rs` checks the 144 pairs across two jobs).
+
+## Calls as another user
+
+A server job's thread runs IFS calls as the user a request names,
+without changing its job's identity: `IfsClient::as_caller(&Caller)`
+answers a client whose every call is one request, `IfsOp::As { who,
+op }` (`stg::remote::RemoteIfs::as_user`). `Caller` is `Uid { uid }`,
+`Profile { name }` or `Anonymous`. `ifs::client::caller::resolve` has
+the rules: the profile with that UID (whatever its status: only
+sign-on checks `*DISABLED`), the profile with that name, or the
+service's anonymous profile (`QNFSANON`); anything else is
+`ENOTENROLL`, which the server maps to its own anonymous user or a
+refusal. The principal is the profile's, with its group profiles'
+authority and special authorities (`Principal::load`), never anything
+the client sent. Descriptors, directory streams, the current directory
+and locks stay the job's `Owner`: authority is checked when a path is
+resolved and a descriptor opened (as POSIX checks at open); later
+calls on the descriptor are not checked again, so a server that must
+check per call (`ACCESS`, an NFSv3 `READ` on a handle) calls `access()`
+as the user. Audit entries are charged to the profile called as (the
+event's user), with the job's name and number.
+
+The storage service honours `As` only for the jobs
+`stgsvc::ifscaller::AS_JOBS` names (`QNFSNFSD`, `QNFSMNTD`, `QNFSNLMD`);
+any other job's is `EPERM` in the reply its operation has, and an `As`
+inside an `As` is `EINVAL`. Leases and watches are for `QZLSFILE` and
+`QNFSNFSD` (`LEASE_JOBS`), the poll and waiting locks for those and
+`QNFSNLMD` (`POLL_JOBS`).
+
+**Profiles by number.** The environment (`qsyslib::StoreEnv`) answers
+UIDs, GIDs and names from an index of every profile
+(`qsyslib::ids::IdIndex`), which the service keeps across requests
+(`qsyslib::env::EnvCache`) until its stamp moves: the security epoch
+(`sec::auth::cache::epoch`, moved by every profile deletion, authority
+change and `RSTUSRPRF`) and the count of profile writes
+(`sec::profile::objects::writes`). Principals built for `As` are kept
+the same way (`caller::PrincipalCache`). UID 0 is `QSECOFR`'s alone (a
+profile with 0 elsewhere has none yet); two profiles with one number
+(only on a system from before numbers were checked) map to the first by
+name.
+
+## File IDs
+
+A file ID is the file system, the object's number and its generation
+(`Qp0lFID_t`). Generations come from `meta::generation::GenClock`: it
+reserves values in blocks of 1024 and keeps the top of its reservation
+in the extended attribute `trusted.qs400.gen` (u32 LE) on the volume's
+top directory, so after an IPL it starts above every generation given
+before and a number xfs reuses never meets its old generation. 0 is an
+object made before generations or outside QS/400; after 4294967295 the
+values start again at 1. `/QSYS.LIB` and the views have generation 0.
+
+`stat_by_id` (path and attributes) and `open_by_id` (a descriptor and
+the path) find an object from its ID as the caller: the ID's generation
+must equal the object's (0 matches only 0). Every path resolved is
+remembered under its ID (at most 65536, oldest dropped), so an ID seen
+since the service started is one resolution. Any other is searched for:
+a backend file system (root, `/QOpenSys`, a mounted UDFS) by a walk of
+its tree that remembers every path it passes, `/QSYS.LIB` level by
+level (libraries, then every library's objects, then every physical
+file's members) by the numbers their paths hash to; two names with one
+number are refused (`EBADFID`) rather than guessed. What is found is
+resolved again: an object gone, of another generation, or on a file
+system no longer mounted is `ESTALE`; `/dev` and `/QOPT` cannot be
+searched (`ENOTSUP`). The caller's authority is the path's: every
+directory on it needs `*X`, which is stricter than a Unix file server.
+`path_from_file_id` (`Qp0lGetPathFromFileID`) uses the same search,
+generation 0 matching any, with its old answers (`EBADFID`, `ENOENT`).
+
+The xfs could open an object by its kernel handle (`open_by_handle_at`),
+but `rustix` has no wrapper for it and `ifs` forbids `unsafe`; after
+an IPL the first lookup of each ID not yet seen walks. A UDFS's file
+system number is the one `MOUNT` gave it, so IDs on a UDFS end with its
+mount.
+
 ## Text conversion
 
 `O_TEXTDATA` converts data between the file's CCSID and the open's;
@@ -691,7 +798,7 @@ rename within a file system, else a copy of the subtree and its
 removal. `Ifs::walk` visits a subtree parents first in name order
 (`Qp0lProcessSubtree`); following links never enters a directory twice.
 A file ID is the file system, the inode number and the record's
-generation; `path_from_file_id` searches that file system.
+generation; `path_from_file_id` finds it as "File IDs" below says.
 
 ## `RCLLNK`
 
@@ -739,7 +846,7 @@ service's start line says why. The store side is the crate
 | Part | Does |
 |---|---|
 | `StoreQsys` | `QsysView` over the store: libraries, objects, members, `*USRSPC`, `*SAVF`, authority by the Phase 6 search (adopted authority included), library and member creation, deletion |
-| `StoreEnv` | `AuthEnv`: profile names and `UID`/`GID` (read once per request), groups, authorization lists, `QCRTOBJAUD` |
+| `StoreEnv` | `AuthEnv`: profile names and `UID`/`GID` (an index kept until a profile changes, "Calls as another user"), groups, authorization lists, `QCRTOBJAUD`, the principal of a profile a call is made as |
 | `JournalAudit` | `Audit`: each event as a `sec::audit::Event` with the IFS fields (`docs/SECURITY.md` §7), recorded for the request |
 | `StoreAccess`, `MemAccess` | one transaction per call; the service's `Lent` reaches the store lent for the request, tests use a store in memory |
 
@@ -764,7 +871,12 @@ get attributes 40, set an attribute 41, DSPAUT 42, CHGAUT 43, revoke
 44, CHGOWN 45, CHGPGP 46, CHKOUT 47, CHKIN 48, STRJRN 49, ENDJRN 50,
 CPY 51, MOV 52, remove a tree 53, walk 54, path from file ID 55,
 CRTUDFS 56, DLTUDFS 57, MOUNT 58, UNMOUNT 59, DSPUDFS 60, RCLLNK 61,
-an object's locks 62, the job's locks 63). The answer is an
+an object's locks 62, the job's locks 63, lchown 64, another job's
+locks 65, lease grant 66, lease report 67, lease orders 68, watch add
+69, watch end 70, lease reset 71, a call as another user 72, stat by
+file ID 73, open by file ID 74, a sub-owner's byte-range lock 75, a
+waiting lock 76, cancel a waiting lock 77, release a sub-owner's
+locks 78; 79 is free). The answer is an
 `IfsReply` whose variant is the method's return type, each a `Result`
 whose error is the IBM `errno` number; `Errno::message_id` gives the
 `CPExxxx` and `command_message` the `CPFA0xx` a command sends. A reply
