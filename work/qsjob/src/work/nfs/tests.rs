@@ -270,6 +270,8 @@ impl World {
             .unwrap();
         ifs::client::write_all(&c, fd, data).unwrap();
         c.close(fd).unwrap();
+        // Every user may write it (the umask narrowed the mode).
+        c.chmod(path, 0o666).unwrap();
     }
 
     fn get(&self, path: &str) -> Option<Vec<u8>> {
@@ -1051,4 +1053,56 @@ fn a_restart_notice_for_the_client_reaches_the_service() {
     assert!(w.svc().restarted.is_empty(), "not the client's");
     c.restarted(b"server9", 7, nfs::client::nlm::PRIV_TAG);
     assert_eq!(w.svc().restarted, [("server9".to_string(), 7)]);
+}
+
+#[test]
+fn a_local_deny_open_after_a_v3_write_is_not_held_back() {
+    let w = World::new();
+    w.export(1, "/home/exp");
+    w.put("/home/exp/shared", b"");
+    let _rpc = Job::start(&w, Daemon::Rpc);
+    let _nfs = Job::start(&w, Daemon::Svr);
+    let port = binder_of(&w).getport(100_003, 3, 6).unwrap().unwrap();
+    let fh = FileHandle {
+        export: 1,
+        fid: w.fid("/home/exp/shared"),
+        root_ino: w.fid("/home/exp").ino,
+    }
+    .to_bytes()
+    .to_vec();
+    let mut n = RpcClient::new(at(port), Proto::Tcp, cfg());
+    let cred = Credential::sys(b"client1", 100, 100, &[]);
+    let r = n
+        .call_proc::<NFS_V3::Args, NFS_V3::Res>(
+            &cred,
+            &NFS_V3::Args::NFSPROC3_WRITE(t3::WRITE3args {
+                file: t3::nfs_fh3 { data: fh },
+                offset: 0,
+                count: 2,
+                stable: t3::stable_how::FILE_SYNC,
+                data: b"hi".to_vec(),
+            }),
+        )
+        .unwrap();
+    assert!(matches!(
+        r,
+        NFS_V3::Res::NFSPROC3_WRITE(t3::WRITE3res::NFS3_OK(_))
+    ));
+    // A local job's open that denies everyone else, with no further NFS
+    // call: the server job's kept descriptor yields at once.
+    let start = Instant::now();
+    let fd = loop {
+        match w.client(55).open(
+            "/home/exp/shared",
+            OpenArgs::new(ifs::ops::flags::O_RDWR | ifs::ops::flags::O_SHARE_NONE),
+        ) {
+            Ok(fd) => break fd,
+            Err(ifs::Errno::EBUSY) if start.elapsed() < Duration::from_secs(3) => {
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            Err(e) => panic!("still refused after {:?}: {e:?}", start.elapsed()),
+        }
+    };
+    assert!(start.elapsed() < Duration::from_secs(3));
+    w.client(55).close(fd).unwrap();
 }

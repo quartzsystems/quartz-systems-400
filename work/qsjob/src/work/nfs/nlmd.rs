@@ -19,7 +19,8 @@ use ifscmd::Msg;
 use nfs::client::nlm::PRIV_TAG;
 use nfs::nlm::state::{GRACE, Lock, LockClient, NlmConfig, NlmState, Reply};
 use nfs::rpc::ClientConfig;
-use nfs::server::news::{ClientNews, NewsSource};
+use nfs::server::ifsvfs::kept::JobNews;
+use nfs::server::news::NewsSource;
 use nfs::server::run::{self, Common};
 use nfs::server::{ExportTable, IfsVfs, Instance, SystemClock};
 use nfs::types::nlm::NLM_PROG;
@@ -149,7 +150,7 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, _started: Started, host: &Arc<H>
                 let fs = h.fs().unwrap_or_else(|e| {
                     panic!("the lock manager's news thread has no link to the storage service: {e}")
                 });
-                Box::new(ClientNews(fs))
+                Box::new(JobNews::new(fs, Arc::clone(&inst)))
             };
             run::nlmd(c, &table, &st, || thread_vfs(&*h, &inst), news)
                 .map_err(|e| Fail::io("NLM", &e))

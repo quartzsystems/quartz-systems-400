@@ -29,7 +29,8 @@ use std::time::{Duration, Instant};
 
 use ifscmd::Msg;
 use nfs::rpc::Dispatcher;
-use nfs::server::news::{ClientNews, NewsSource};
+use nfs::server::ifsvfs::kept::JobNews;
+use nfs::server::news::NewsSource;
 use nfs::server::run::{self, Listeners};
 use nfs::server::{ExportTable, IfsVfs, Instance, SystemClock};
 use nfs::types::nfs3::NFS_PROGRAM;
@@ -117,12 +118,14 @@ impl<H: Host> Shared<H> {
     }
 }
 
-/// The IFS's news for the v4 server (lease breaks), on a link of its own.
-fn news<H: Host>(host: &H) -> Box<dyn NewsSource> {
+/// The IFS's news for the job, on a link of its own: lease breaks of
+/// its kept descriptors carried out at once (they yield to a local
+/// open they would refuse), the v4 delegations' passed on.
+fn news<H: Host>(host: &H, instance: &Arc<Instance>) -> Box<dyn NewsSource> {
     let fs = host.fs().unwrap_or_else(|e| {
         panic!("the NFSv4 server's news thread has no link to the storage service: {e}")
     });
-    Box::new(ClientNews(fs))
+    Box::new(JobNews::new(fs, Arc::clone(instance)))
 }
 
 /// Carry out the release orders queued for this job: the host's v4
@@ -312,7 +315,7 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, started: Started, host: &Arc<H>)
             // Leases, grace, recalls; the IFS's lease breaks.
             sc.spawn(|| {
                 let v = sh.vfs();
-                let mut n = news(&*sh.host);
+                let mut n = news(&*sh.host, &sh.instance);
                 sh.server.background(&v, &mut *n, stop);
             });
             if let Some(u) = &l.udp {
