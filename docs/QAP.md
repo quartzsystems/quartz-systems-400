@@ -392,7 +392,7 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 **Exit point.** Every `Manage` request passes the exit point `QS400_QAP_MGMT`, format `QAPX0100`, before it runs, as the host servers' requests pass theirs:
 
 - registered at the first IPL with the shipped points (`WRKREGINF`); no deregistration, change allowed, at most one program, as the host servers' points;
-- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT` (`*QAPNETSVR` for the `NetServer` service, version 10), format CHAR(8) `QAPX0100`, operation BINARY(4) (the op code within its service), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
+- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT` (`*QAPNETSVR` for the `NetServer` service, version 10; `*QAPNFS` for `Nfs`, version 11), format CHAR(8) `QAPX0100`, operation BINARY(4) (the op code within its service), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
 - a refusal is `NotAuthorized` with `TCP1A5E` naming the program, audited `GR` (`F`, the function refused), and the operation does nothing; a program that cannot be called or ends in an exception refuses, as for the host servers. A point with no program allows everything.
 
 **Audit journal.** Beside the `AF` and `GR` entries above, the entries are the commands' own: `SV` for a system value changed (old and new value, as `CHGSYSVAL` writes it), and the job entries the subsystem and power commands write with `*JOBDTA` and `*SYSMGT` auditing. QAP adds no entry type and no entry of its own.
@@ -626,6 +626,58 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 - The exit request's target is the share's name (`*ALL`, `*FILE` or `*PRINT` for `ListShares`), the session's identifier, the user, or blank; its detail the path or `LIB/OUTQ` of an added or changed share, `RESET(0)` or `RESET(1)` for `StartServer`.
 - No event: a client that follows sessions asks again.
 
+### Service 13 `Nfs`: NFS administration (version 11, draft)
+
+**Draft until QS/400 ships it.** Version 11 is what a client needs to administer NFS (docs/NFS.md): the export table, the daemon jobs, the mount table and the NFS options. Nothing in versions 1 to 10 changes; a peer that negotiates 10 or less never sees `Nfs`.
+
+Every operation runs as the signed-on profile, concurrently on the connection's secondary threads (never in the lane). Reads are the storage service's tables (the export table, the daemon registry, the mount table, the NFS options); every change is the command a program would run (`EXPORTFS`, `STRNFSSVR`, `ENDNFSSVR`, `MOUNT TYPE(*NFS)`, `UNMOUNT`) or `QZNFNFSO`'s set, so it checks the authority (`*IOSYSCFG`), validates and words the refusal exactly as for a program. Every request passes the exit point `QS400_QAP_MGMT` first, with server `*QAPNFS` and the operation's code below.
+
+- `HostOption` = { `host` String, `data_ccsid` u32 (65535: `*BINARY`), `path_ccsid` u32 (0 in a request: `*ASCII`), `sync` flag }.
+- `ExportOptions` = { `read_only` flag, `rw_hosts` list of String, `access_hosts` Option of list of String (none: every host), `root_hosts` list of String, `anon` Option of i64 (none: `QNFSANON`'s UID; -1 refuses unknown users), `nosuid` flag, `v3` flag, `v4` flag, `public` flag, `pseudo_root` flag, `nfsroot` Option of String, `exname` Option of String }.
+- `Export` = { `id` u32, `path` String, `options` ExportOptions, `hosts` list of HostOption (at most 10), `anon_uid` Option of u32, `anon_user` Option of String, `exported_by` Option of JobId, `since` i64 } (`id`, `anon_uid`, `anon_user`, `exported_by` and `since` are ignored in requests).
+- `DaemonType` enum: `Rpc` 0, `Bio` 1, `Rgy` 2, `Svr` 3, `Mnt` 4, `Nsm` 5, `Nlm` 6 (`*GSS` is refused by the commands and has no value). `Registration` = { `program` u32, `version` u32, `proto` String, `port` u16 }. `DaemonJob` = { `daemon` DaemonType, `job` JobId, `ready` flag, `ending` flag, `registrations` list of Registration, `since` i64 }.
+- `MountedFs` = { `id` u32, `kind` String (`/etc/vfs`'s names: `root`, `qopensys`, `qsys`, `udfs`, `nfs3`, `nfs4` ...), `over` String, `source` String, `options` String, `read_only` flag, `responding` Option of flag (none for a local file system) }. `UnmountKind` enum: `Nfs` 0, `Udfs` 1.
+- `NfsOptions` = { `flavors` list of u32, `domain` String (empty: the TCP/IP domain name), `max_threads` u32 (0: no limit), `handle_cache` u32, `utf8_validation` flag }.
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| Nfs | 1 `ListExports` | `start` u32, `max` u32 | `total` u32, `exports` list of `Export` (in the order exported) | no |
+| Nfs | 2 `GetExport` | `path` String | `Export` | no |
+| Nfs | 3 `PutExport` | `export` Export (as it is to be), `update_file` flag | — | no |
+| Nfs | 4 `RemoveExport` | `path` String, `update_file` flag | — | no |
+| Nfs | 5 `ExportAll` | — | — | no |
+| Nfs | 6 `ListDaemons` | — | `jobs` list of `DaemonJob` (by type, then job) | no |
+| Nfs | 7 `StartDaemons` | `daemon` Option of DaemonType (none: `*ALL`), `servers` u16, `block_io` u16 (0: the default), `retrieve_registrations` flag, `timeout` Option of u32 (none: `*NOMAX`) | — | no |
+| Nfs | 8 `EndDaemons` | `daemon` Option of DaemonType, `timeout` Option of u32 | — | no |
+| Nfs | 9 `ListMounts` | — | `mounts` list of `MountedFs` | no |
+| Nfs | 10 `MountNfs` | `host` String, `path` String, `over` String, `options` Option of String (none: `*DFT`) | — | no |
+| Nfs | 11 `Unmount` | `kind` UnmountKind, `over` String | — | no |
+| Nfs | 12 `GetNfsOptions` | — | `NfsOptions` | no |
+| Nfs | 13 `SetNfsOptions` | `NfsOptions` | `NfsOptions` (as they now are) | no |
+
+| Op | Stands for | Statuses |
+| --- | --- | --- |
+| `ListExports`, `GetExport` | the export table (`NfsOp::Exports`) | `Ok`; `NotFound` (`GetExport`: `CPDA1C5` reason 20, not exported) |
+| `PutExport` | `EXPORTFS OPTIONS('-I [-F] -O list') DIR() HOSTOPT()` | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (the command's escape: `CPFA1C7` after `CPDA1C5`, `CPFA1B0`, `CPFA1B1`, `CPFA1BB`, `CPDA1CA`) |
+| `RemoveExport` | `EXPORTFS OPTIONS('-U' or '-U -I -F') DIR()` | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1C7`: not exported) |
+| `ExportAll` | `EXPORTFS OPTIONS('-A')` | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1C7` with `-E`, no `/etc/exports`) |
+| `ListDaemons` | the daemon registry (`NfsOp::Daemons`) | `Ok` |
+| `StartDaemons` | `STRNFSSVR SERVER() NBRSVR() NBRBIO() RTVRPCREG() STRJOBTIMO()` as the job runs it, waiting on the thread | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1BC`, `CPFA1B9`) |
+| `EndDaemons` | `ENDNFSSVR SERVER() ENDJOBTIMO()` | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1BD`, `CPFA1BE`) |
+| `ListMounts` | the IFS mount table | `Ok`; `Error` (`TCP1A78` while the mount table cannot be read from the job: `BLOCKED(rel)`) |
+| `MountNfs` | `MOUNT TYPE(*NFS) MFS('host:path') MNTOVRDIR() OPTIONS()` | `Ok`; `NotAuthorized`; `Error` (the command's escape) |
+| `Unmount` | `UNMOUNT TYPE(*NFS or *UDFS) MNTOVRDIR()` | `Ok`; `NotAuthorized`; `Error` (the command's escape) |
+| `GetNfsOptions` | `QZNFNFSO` options 1, 3, 5 (`NfsOp::Options`) | `Ok` |
+| `SetNfsOptions` | `QZNFNFSO` options 2, 4, 6 (`NfsOp::SetOptions`) | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1BB`: a flavor other than 1) |
+
+**Rules.**
+
+- Messages are the commands' from `QCPFMSG`, their data laid out as the command lays it out.
+- `PutExport` takes the export whole, as `EXPORTFS -I` does: the options not given take their defaults. With `update_file` the entry is also written to `/etc/exports` (`-F`), as `RemoveExport` takes it out.
+- Exports and mounts last until the next IPL, as the commands' do.
+- The exit request's target is the path (`*ALL` for `ListExports`, `/etc/exports` for `ExportAll`), the daemon type (`*ALL` when none), the mounted-over directory, or blank; its detail the options list of a `PutExport`, or `host:path` of a `MountNfs`.
+- No event: a client that follows the daemons asks again.
+
 ### `SignOn` additions (version 2)
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
@@ -726,6 +778,10 @@ Version 9 is `Debug` (service 11) operations 1 `Start` to 10 `RemoveServiceEntry
 ### Version 10 (draft)
 
 Version 10 is `NetServer` (service 12) operations 1 `ListShares` to 13 `EndServer`, with the types and rules above. It introduces no status and no event: every status these operations answer exists in an earlier version (`Exists` is version 5's). A version 1 to 9 peer never receives the `NetServer` service or any of its bodies, and its requests for them get `InvalidRequest`; `Hello` lists service 12 only at version 10 and above. The server accepts versions 1 to 10 and picks the highest both sides support. Until QS/400 ships version 10 its operations and bodies may still change.
+
+### Version 11 (draft)
+
+Version 11 is `Nfs` (service 13) operations 1 `ListExports` to 13 `SetNfsOptions`, with the types and rules above. It introduces no status and no event. A version 1 to 10 peer never receives the `Nfs` service or any of its bodies, and its requests for them get `InvalidRequest`; `Hello` lists service 13 only at version 11 and above. The server accepts versions 1 to 11 and picks the highest both sides support. Until QS/400 ships version 11 its operations and bodies may still change.
 
 ## Open questions
 
@@ -1544,6 +1600,31 @@ Version 10, as built on 2026-11-09 (draft; decisions made in the build, for Cody
   `netsvrcfg::api::MemHost`, called as the signed-on profile;
   `net/qapd/tests/netserver.rs` runs each operation, the authority
   refusals, the exit point and version 9 without the service.
+
+Version 11, as built on 2026-11-13 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 11 (`VERSION` 11, the `qap` lock bumped with
+  it, `ops/nfs.rs` the draft format `qap-nfs`). `Nfs` is a version of
+  its own rather than an addition to version 10 for the reason
+  `NetServer` was one: the frozen `kinds.rs` and `ops/mod.rs` change
+  with every new service, and the format check takes that only with a
+  version bump.
+- `net/qapd/src/nfs.rs` holds the service over the host's `NfsHost`
+  (the export table as `/etc/exports` lines, the registry, the mount
+  table, the options, one CL command, a message): the conversions, the
+  commands each change is (`export_command`, `start_command` ...) and
+  the statuses of their messages (`status_of`). The job's host
+  (`work/qsjob/src/work/qap/nfs.rs`) reads through the storage
+  service's `nfs` request, runs `EXPORTFS`, `MOUNT` and `UNMOUNT`
+  through the analyzer to the service, and `STRNFSSVR`/`ENDNFSSVR` as
+  `command::nfs` runs them, waiting on the thread's own link.
+  `ListMounts` answers `Error` (`TCP1A78`) until the IFS mount table
+  can be read there (`BLOCKED(rel)`).
+- The test system (`qapd::testing::nfs`) keeps the tables in memory and
+  runs the five commands on them as `SECOFR` (`*IOSYSCFG`) or refuses
+  with `CPFA1B8`; `net/qapd/tests/nfs.rs` runs each operation, the
+  authority refusals, the exit point and version 10 without the
+  service.
 
 ## Frozen at V1R1M0
 

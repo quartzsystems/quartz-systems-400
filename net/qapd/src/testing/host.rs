@@ -1100,6 +1100,63 @@ impl ThreadHost for MemThread {
     fn netserver(&mut self) -> Option<&mut dyn crate::netserver::NetServerHost> {
         Some(self)
     }
+
+    fn nfs(&mut self) -> Option<&mut dyn crate::nfs::NfsHost> {
+        Some(self)
+    }
+}
+
+impl MemThread {
+    /// `CPFA1B8` for `what` without `*IOSYSCFG`.
+    fn iosyscfg(&mut self, what: &str) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        if self.sys.get(&me).special.iter().any(|s| s == "*IOSYSCFG") {
+            return Ok(());
+        }
+        Err(self.refuse(Status::NotAuthorized, "CPFA1B8", &[what]))
+    }
+}
+
+impl crate::nfs::NfsHost for MemThread {
+    fn exports(&mut self) -> Result<Vec<crate::nfs::ExportEntry>, Refusal> {
+        Ok(lock(&self.sys.nfs).exports.clone())
+    }
+
+    fn daemons(&mut self) -> Result<Vec<crate::nfs::DaemonEntry>, Refusal> {
+        Ok(lock(&self.sys.nfs).daemons.clone())
+    }
+
+    fn mounts(&mut self) -> Result<Vec<qap_proto::ops::nfs::MountedFs>, Refusal> {
+        Ok(lock(&self.sys.nfs).mounts.clone())
+    }
+
+    fn command(&mut self, line: &str) -> Result<(), Refusal> {
+        let name = line.split_whitespace().next().unwrap_or("").to_string();
+        self.iosyscfg(&name)?;
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.nfs).run(line, &me);
+        r.map_err(|(id, data)| {
+            let data: Vec<&str> = data.iter().map(String::as_str).collect();
+            self.refuse(crate::nfs::status_of(&id), &id, &data)
+        })
+    }
+
+    fn options(&mut self) -> Result<qap_proto::ops::nfs::NfsOptions, Refusal> {
+        Ok(lock(&self.sys.nfs).options.clone())
+    }
+
+    fn set_options(&mut self, o: &qap_proto::ops::nfs::NfsOptions) -> Result<(), Refusal> {
+        self.iosyscfg("QZNFNFSO")?;
+        if o.flavors.iter().any(|f| *f != 1) {
+            return Err(self.refuse(Status::Error, "CPFA1BB", &[]));
+        }
+        lock(&self.sys.nfs).options = o.clone();
+        Ok(())
+    }
+
+    fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {
+        crate::host::ThreadHost::message(self, id, data)
+    }
 }
 
 impl crate::netserver::NetServerHost for MemThread {

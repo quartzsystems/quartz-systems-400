@@ -57,6 +57,8 @@ pub enum Service {
     Debug,
     /// `NetServer`: shares, sessions, attributes (version 10, draft).
     NetServer,
+    /// NFS: exports, daemons, mounts, options (version 11, draft).
+    Nfs,
 }
 
 wire_enum!(Service {
@@ -73,11 +75,12 @@ wire_enum!(Service {
     10 => Jobs,
     11 => Debug,
     12 => NetServer,
+    13 => Nfs,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 13] = [
+    pub const ALL: [Service; 14] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
@@ -91,6 +94,7 @@ impl Service {
         Service::Jobs,
         Service::Debug,
         Service::NetServer,
+        Service::Nfs,
     ];
 
     /// The protocol version that defines it.
@@ -107,6 +111,7 @@ impl Service {
             Service::Develop | Service::Jobs => 8,
             Service::Debug => 9,
             Service::NetServer => 10,
+            Service::Nfs => 11,
         }
     }
 

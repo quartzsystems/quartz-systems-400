@@ -55,6 +55,8 @@
 //!   [`System::call_in`]);
 //! - `NetServer` ([`netserver`], version 10, draft): the `QZLS*` APIs over
 //!   shares, two sessions and a disabled user, as the signed-on profile;
+//! - NFS ([`nfs`], version 11, draft): the export table, daemons, mounts
+//!   and options, changed by the NFS commands as the signed-on profile;
 //! - the ends a client must meet: the server ending ([`System::end`]:
 //!   every connection gets `ServerEnding` and the [`Listener`] refuses
 //!   connects until [`System::restart`]), an operator ending one job, a
@@ -73,6 +75,7 @@ mod listen;
 pub mod manage;
 pub mod messages;
 pub mod netserver;
+pub mod nfs;
 pub mod spool;
 pub mod sql;
 
@@ -207,6 +210,8 @@ pub struct System {
     /// `NetServer`'s configuration, sessions and disabled users
     /// ([`netserver`]).
     pub netsvr: Mutex<netserver::NetServer>,
+    /// NFS's tables and commands ([`nfs`]).
+    pub nfs: Mutex<nfs::Nfs>,
     /// The commands running, by job, while they run.
     running: Mutex<HashMap<u32, String>>,
     started: Condvar,
@@ -275,6 +280,7 @@ impl System {
             jobs: Mutex::new(jobs::Jobs::shipped()),
             debug: debug::Debugs::default(),
             netsvr: Mutex::new(netserver::shipped()),
+            nfs: Mutex::new(nfs::shipped()),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
             sockets: Mutex::new(HashMap::new()),

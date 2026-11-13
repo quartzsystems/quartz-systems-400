@@ -14,6 +14,7 @@ pub mod jobs;
 pub mod manage;
 pub mod messages;
 pub mod netserver;
+pub mod nfs;
 pub mod signon;
 pub mod spool;
 pub mod sql;
@@ -233,11 +234,38 @@ pub enum Op {
     StartServer,
     /// `NetServer` 13: end `NetServer` (version 10).
     EndServer,
+    /// `Nfs` 1: the export table (version 11).
+    ListExports,
+    /// `Nfs` 2: one export (version 11).
+    GetExport,
+    /// `Nfs` 3: export a directory, or again with other options
+    /// (version 11).
+    PutExport,
+    /// `Nfs` 4: end an export (version 11).
+    RemoveExport,
+    /// `Nfs` 5: export every entry of `/etc/exports` (version 11).
+    ExportAll,
+    /// `Nfs` 6: the daemon jobs (version 11).
+    ListDaemons,
+    /// `Nfs` 7: start daemons (version 11).
+    StartDaemons,
+    /// `Nfs` 8: end daemons (version 11).
+    EndDaemons,
+    /// `Nfs` 9: the mount table (version 11).
+    ListMounts,
+    /// `Nfs` 10: mount an NFS export (version 11).
+    MountNfs,
+    /// `Nfs` 11: unmount (version 11).
+    Unmount,
+    /// `Nfs` 12: the NFS options (version 11).
+    GetNfsOptions,
+    /// `Nfs` 13: change the NFS options (version 11).
+    SetNfsOptions,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 104] = [
+    pub const ALL: [Op; 117] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -342,6 +370,19 @@ impl Op {
         Op::EnableUser,
         Op::StartServer,
         Op::EndServer,
+        Op::ListExports,
+        Op::GetExport,
+        Op::PutExport,
+        Op::RemoveExport,
+        Op::ExportAll,
+        Op::ListDaemons,
+        Op::StartDaemons,
+        Op::EndDaemons,
+        Op::ListMounts,
+        Op::MountNfs,
+        Op::Unmount,
+        Op::GetNfsOptions,
+        Op::SetNfsOptions,
     ];
 
     /// Its service and code.
@@ -453,6 +494,19 @@ impl Op {
             Op::EnableUser => (Service::NetServer, 11),
             Op::StartServer => (Service::NetServer, 12),
             Op::EndServer => (Service::NetServer, 13),
+            Op::ListExports => (Service::Nfs, 1),
+            Op::GetExport => (Service::Nfs, 2),
+            Op::PutExport => (Service::Nfs, 3),
+            Op::RemoveExport => (Service::Nfs, 4),
+            Op::ExportAll => (Service::Nfs, 5),
+            Op::ListDaemons => (Service::Nfs, 6),
+            Op::StartDaemons => (Service::Nfs, 7),
+            Op::EndDaemons => (Service::Nfs, 8),
+            Op::ListMounts => (Service::Nfs, 9),
+            Op::MountNfs => (Service::Nfs, 10),
+            Op::Unmount => (Service::Nfs, 11),
+            Op::GetNfsOptions => (Service::Nfs, 12),
+            Op::SetNfsOptions => (Service::Nfs, 13),
         }
     }
 
@@ -565,6 +619,19 @@ impl Op {
             | Op::EnableUser
             | Op::StartServer
             | Op::EndServer => 10,
+            Op::ListExports
+            | Op::GetExport
+            | Op::PutExport
+            | Op::RemoveExport
+            | Op::ExportAll
+            | Op::ListDaemons
+            | Op::StartDaemons
+            | Op::EndDaemons
+            | Op::ListMounts
+            | Op::MountNfs
+            | Op::Unmount
+            | Op::GetNfsOptions
+            | Op::SetNfsOptions => 11,
         }
     }
 

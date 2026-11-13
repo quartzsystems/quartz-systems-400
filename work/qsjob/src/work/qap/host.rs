@@ -397,7 +397,7 @@ impl JobThread {
     }
 
     /// What the `Manage` operations reach.
-    fn cx(&self) -> manage::Ctx<'_> {
+    pub(super) fn cx(&self) -> manage::Ctx<'_> {
         manage::Ctx {
             shared: &self.shared,
         }
@@ -734,6 +734,10 @@ impl ThreadHost for JobThread {
     }
 
     fn netserver(&mut self) -> Option<&mut dyn qapd::netserver::NetServerHost> {
+        Some(self)
+    }
+
+    fn nfs(&mut self) -> Option<&mut dyn qapd::nfs::NfsHost> {
         Some(self)
     }
 

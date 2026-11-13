@@ -29,6 +29,8 @@
 //! - [`debug`]: the `Debug` service (version 9, draft) and its events.
 //! - [`netserver`]: the `NetServer` service (version 10, draft) over the
 //!   `QZLS*` APIs.
+//! - [`nfs`]: the `Nfs` service (version 11, draft) over the NFS
+//!   commands and the storage service's tables.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
@@ -43,6 +45,7 @@ pub mod host;
 pub mod jobs;
 pub mod manage;
 pub mod netserver;
+pub mod nfs;
 pub mod sessions;
 pub mod spool;
 pub mod sql;

@@ -36,11 +36,12 @@ pub struct ExitRequest {
     /// The signed-on profile.
     pub user: String,
     /// The server field: [`SERVER_MANAGE`], or
-    /// `crate::netserver::SERVER` for the `NetServer` service; empty is
+    /// `crate::netserver::SERVER` for the `NetServer` service,
+    /// `crate::nfs::SERVER` for `Nfs`; empty is
     /// [`SERVER_MANAGE`].
     pub server: String,
     /// The operation's code within its service (`Manage` 1 to 10,
-    /// `NetServer` 1 to 13).
+    /// `NetServer` and `Nfs` 1 to 13).
     pub op: u16,
     /// The operation's name (`EndSubsystem`).
     pub name: String,

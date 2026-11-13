@@ -509,6 +509,13 @@ pub trait ThreadHost {
     fn netserver(&mut self) -> Option<&mut dyn crate::netserver::NetServerHost> {
         None
     }
+
+    /// NFS's tables and commands (version 11); `None` for a host without
+    /// them, whose `Nfs` operations answer `Error` with
+    /// [`crate::manage::NO_MANAGE`].
+    fn nfs(&mut self) -> Option<&mut dyn crate::nfs::NfsHost> {
+        None
+    }
 }
 
 /// The message of a `Messages` operation a host without message queues
