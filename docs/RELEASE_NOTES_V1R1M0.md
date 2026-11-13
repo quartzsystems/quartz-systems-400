@@ -482,11 +482,11 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `database/sql/src/pl/compile.rs:693` | a CALL passes values, and an array |
 | `BLOCKED(rel)` | `database/sql/tests/trigger.rs:266` | in exec::reads); every row its scan keeps here. |
 | `BLOCKED(rel)` | `docs/DB_OPEN_QUESTIONS.md:283` | the database |
-| `NEEDS-CODY` | `docs/NFS.md:240` | IBM's user, section 12), as the service's own |
-| `NEEDS-CODY` | `docs/NFS.md:442` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
-| `NEEDS-CODY` | `docs/NFS.md:638` | the primary's `EXPE0100` |
-| `NEEDS-CODY` | `docs/NFS.md:658` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
-| `NEEDS-CODY` | `docs/NFS.md:739` | 12. |
+| `NEEDS-CODY` | `docs/NFS.md:243` | IBM's user, section 12), as the service's own |
+| `NEEDS-CODY` | `docs/NFS.md:743` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
+| `NEEDS-CODY` | `docs/NFS.md:939` | the primary's `EXPE0100` |
+| `NEEDS-CODY` | `docs/NFS.md:959` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
+| `NEEDS-CODY` | `docs/NFS.md:1069` | 12. |
 | `BLOCKED(rel)` | `docs/PHASE12.md:99` | SAVLICPGM writes no IFS records, RSTLICPGM restores none |
 | `BLOCKED(rel)` | `docs/PHASE12.md:104` | at jobcmd.rs:153 |
 | `BLOCKED(rel)` | `docs/PHASE12.md:138` | (b855a775) |
