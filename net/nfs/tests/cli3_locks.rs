@@ -202,8 +202,11 @@ fn locks_between_mounts_and_reclaimed_after_a_restart() {
                     .any(|r| r.mon_name == b"127.0.0.1" && r.private == PRIV_TAG),
                 "{mon:?}"
             );
-            // The server restarts: its locks are gone, a grace period begins.
-            s.restart();
+            // The server restarts: its locks are gone, a grace period
+            // begins. Its monitor tells ours before its lock manager is
+            // up again (`STRNFSSVR` starts `*NSM` before `*NLM`): the
+            // reclaim looks for it until it is.
+            s.stop();
             // Its monitor tells ours.
             let mut n = RpcClient::new(mon_addr, Proto::Udp, rpc());
             let r = n
@@ -222,6 +225,10 @@ fn locks_between_mounts_and_reclaimed_after_a_restart() {
                 std::thread::sleep(Duration::from_millis(10));
             }
             assert_eq!(relay.told.lock().unwrap()[0], (b"127.0.0.1".to_vec(), 7));
+            std::thread::sleep(Duration::from_millis(600));
+            s.restart();
+            // A reclaim's next look finds the lock manager.
+            std::thread::sleep(Duration::from_millis(600));
             // client2's new lock waits out the grace period and is
             // refused: client1 took its own back meanwhile.
             let t0 = Instant::now();

@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use ifs::Errno;
 use ifs::remote::{LockConflict, LockKind, LockOwner, RResult, RemoteError};
@@ -73,6 +73,9 @@ impl std::fmt::Debug for Locker {
             .finish_non_exhaustive()
     }
 }
+
+/// How often a reclaim looks for a restarted server's lock manager.
+const RECLAIM_AGAIN: Duration = Duration::from_millis(250);
 
 fn nolck() -> RemoteError {
     RemoteError::Errno(Errno::ENOLCK)
@@ -400,9 +403,23 @@ impl Locker {
             .unwrap_or_else(PoisonError::into_inner)
             .clone();
         let mut got = 0;
+        // The server's status monitor starts before its lock manager
+        // (`STRNFSSVR` starts `*NSM` first) and tells this host at once:
+        // its lock manager is looked for again until the grace period
+        // the reclaim must land in is over.
+        let until = Instant::now() + crate::nlm::state::GRACE;
+        let send = |fh: &[u8], owner: u64, r: &Range| loop {
+            match self.send_lock(fh, LockOwner(owner), r.exclusive, r.off, r.len, true) {
+                Err(e) if e == nolck() && Instant::now() < until => {
+                    *self.nlm.lock().unwrap_or_else(PoisonError::into_inner) = None;
+                    std::thread::sleep(RECLAIM_AGAIN);
+                }
+                other => break other,
+            }
+        };
         for ((fh, owner), rs) in &held {
             for r in rs {
-                match self.send_lock(fh, LockOwner(*owner), r.exclusive, r.off, r.len, true) {
+                match send(fh, *owner, r) {
                     Ok(()) => got += 1,
                     Err(e) => {
                         tracing::warn!(?e, server = %self.name, "a lock was not reclaimed");
