@@ -61,6 +61,9 @@ pub(crate) fn dump(dir: &Path, step: &str, guest: &str, s: &mut Session, extra: 
         "=== the serial log, last 200 lines\n{}\n",
         lines[lines.len().saturating_sub(200)..].join("\n")
     );
+    // The whole serial log beside it: the daemons' and the service's
+    // notes come long before the commands above.
+    let _ = std::fs::write(dir.join(format!("nfs-{step}-{guest}.serial.txt")), &s.log);
     let path = dir.join(format!("nfs-{step}-{guest}.txt"));
     match std::fs::write(&path, text) {
         Ok(()) => path.display().to_string(),
