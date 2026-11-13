@@ -320,6 +320,12 @@ impl Suite {
             let t = Instant::now();
             match f(self, &mut p) {
                 Ok(detail) => {
+                    if std::env::var_os("QS400_NFS_KEEP_SERIAL").is_some() {
+                        // Kept on success too: both guests' notes.
+                        let num = name.split_whitespace().next().unwrap_or("pair");
+                        let _ = super::diag::dump(&self.out_dir, num, "a", &mut p.a, "");
+                        let _ = super::diag::dump(&self.out_dir, num, "b", &mut p.b, "");
+                    }
                     println!(
                         "  PASS {name:<24} {:6.1}s  {detail}",
                         t.elapsed().as_secs_f64()

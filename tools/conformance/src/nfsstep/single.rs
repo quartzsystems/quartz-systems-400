@@ -172,6 +172,10 @@ impl Suite {
         step: &str,
         r: Result<String, String>,
     ) -> Result<String, String> {
+        if r.is_ok() && std::env::var_os("QS400_NFS_KEEP_SERIAL").is_some() {
+            // Kept on success too: the daemons' and the service's notes.
+            let _ = super::diag::dump(&self.out_dir, step, "main", s, "");
+        }
         r.map_err(|e| {
             let probe = self.nfs_probe().unwrap_or_else(|p| p);
             let path = super::diag::dump(&self.out_dir, step, "main", s, &probe);
