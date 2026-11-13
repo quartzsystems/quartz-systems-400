@@ -10,12 +10,18 @@
 //! each time it finds none (50 ms doubling to a second). The mounts'
 //! own threads take the same work, so a helper only adds speed.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
+use ifs::Errno;
 use ifs::client::IfsClient;
-use ifs::remote::{HelperResult, HelperWork};
+use ifs::remote::{
+    Cred, HelperOp, HelperResult, HelperWork, MountCcsid, RHandle, RemoteError, RemoteFs, Stable,
+};
+use nfs::client::{ClientEnv, Mount};
+use nfs::exports::MountOptions;
 
 use super::host::Host;
 use super::running::{Fail, Running};
@@ -28,12 +34,125 @@ const LONGEST_WAIT: Duration = Duration::from_secs(1);
 /// What carries out one block: the NFS call to the work's server.
 pub type Io = Box<dyn FnMut(&HelperWork) -> HelperResult>;
 
-/// The block I/O this job can do, or `None` when it can do none: then
-/// it takes no work, so the mounts' own threads do it all.
+/// Host names for the client: the system's (`names::HostNames`).
+struct Names(Box<dyn nfs::exports::Resolver + Send + Sync>);
+
+impl nfs::client::Resolver for Names {
+    fn resolve(&self, host: &str) -> Vec<std::net::IpAddr> {
+        self.0.addresses(host)
+    }
+}
+
+/// A helper's connections, one per mount it served, kept and reused.
+pub struct Helper {
+    /// A mount's options as the IFS reports them (`IfsClient::mounts`).
+    options: Options,
+    env: ClientEnv,
+    mounts: HashMap<(u32, String), Mount>,
+}
+
+/// A mount's options by its ID.
+pub type Options = Box<dyn Fn(u32) -> Result<String, Errno>>;
+
+impl Helper {
+    /// A helper finding a mount's options with `options`, connecting
+    /// with `env`.
+    #[must_use]
+    pub fn new(options: Options, env: ClientEnv) -> Self {
+        Self {
+            options,
+            env,
+            mounts: HashMap::new(),
+        }
+    }
+
+    /// The options of mount `id`, soft: a helper that cannot reach the
+    /// server gives the block back failed rather than holding it.
+    fn options(&self, id: u32) -> Result<MountOptions, Errno> {
+        let text = (self.options)(id)?;
+        let mut o = nfs::exports::mount::parse(&text).map_err(|_| Errno::EINVAL)?;
+        o.hard = false;
+        o.retry = 1;
+        Ok(o)
+    }
+
+    /// The connection to `w`'s server, made when there is none.
+    fn mount(&mut self, w: &HelperWork, cred: &Cred) -> Result<&Mount, Errno> {
+        let key = (w.fs, w.source.clone());
+        if !self.mounts.contains_key(&key) {
+            let o = self.options(w.fs)?;
+            let m = nfs::client::connect(&w.source, &o, MountCcsid::default(), cred, &self.env)
+                .map_err(RemoteError::errno)?;
+            self.mounts.insert(key.clone(), m);
+        }
+        self.mounts.get(&key).ok_or(Errno::EIO)
+    }
+
+    /// Carry out one block.
+    pub fn run(&mut self, w: &HelperWork) -> HelperResult {
+        let cred = Cred {
+            uid: w.uid,
+            gid: w.gid,
+            gids: w.gids.clone(),
+        };
+        let h = RHandle(w.handle.clone());
+        let r = self.mount(w, &cred).and_then(|m| match w.op {
+            HelperOp::Read => m
+                .read(&cred, &h, w.off, w.len)
+                .map(|(data, eof)| HelperResult {
+                    data,
+                    eof,
+                    ..HelperResult::default()
+                })
+                .map_err(RemoteError::errno),
+            HelperOp::Write => {
+                let how = if w.sync {
+                    Stable::FileSync
+                } else {
+                    Stable::Unstable
+                };
+                m.write(&cred, &h, w.off, &w.data, how)
+                    .map(|r| HelperResult {
+                        count: r.count,
+                        stable: !matches!(r.committed, Stable::Unstable),
+                        verifier: r.verifier,
+                        ..HelperResult::default()
+                    })
+                    .map_err(RemoteError::errno)
+            }
+        });
+        r.unwrap_or_else(|e| {
+            // A connection that failed is made again for the next block.
+            self.mounts.remove(&(w.fs, w.source.clone()));
+            HelperResult {
+                err: Some(e),
+                ..HelperResult::default()
+            }
+        })
+    }
+}
+
+/// The block I/O of a helper job: the NFS client over `fs` and `host`'s
+/// names.
 #[must_use]
-pub fn block_io() -> Option<Io> {
-    // BLOCKED(rel): the NFS client in the block I/O daemon (NFS-7): an Io making each READ and WRITE over nfs::client to HelperWork::source.
-    None
+pub fn block_io<H: Host>(host: &H) -> Option<Io> {
+    let fs = host.fs().ok()?;
+    let env = ClientEnv {
+        resolver: Arc::new(Names(host.names())),
+        host_name: host.host_name(),
+        local: None,
+        connections: 2,
+        ..ClientEnv::default()
+    };
+    let options = move |id: u32| {
+        fs.mounts()?
+            .into_iter()
+            .find(|m| m.id == id)
+            .map(|m| m.options)
+            .ok_or(Errno::ESTALE)
+    };
+    let mut h = Helper::new(Box::new(options), env);
+    Some(Box::new(move |w: &HelperWork| h.run(w)))
 }
 
 /// Take and carry out work until `stop`.
@@ -76,7 +195,7 @@ pub fn serve<H: Host>(_env: &mut dyn DaemonEnv, _started: Started, host: &Arc<H>
     let r = Running::spawn("nfs-biod", move |stop, ready| {
         let fs = h.fs().map_err(Fail::new)?;
         ready();
-        helper_loop(&fs, block_io(), stop);
+        helper_loop(&fs, block_io(&*h), stop);
         Ok(())
     });
     match r {
