@@ -27,7 +27,7 @@ const SCRATCH: &str = "nfstest";
 /// Scenarios that fail against the server on main, each a finding in
 /// `tools/nfstest/README.md` (its `tests/loopback.rs` keeps the same
 /// list): reported, not failing the step.
-const KNOWN: &[&str] = &["nlm-share"];
+const KNOWN: &[&str] = &[];
 /// Scenarios left out: the server would have to call the host back,
 /// which one-way forwards cannot carry (README, `--callbacks`).
 const CALLBACKS: &[&str] = &["nlm-blocked-granted"];
