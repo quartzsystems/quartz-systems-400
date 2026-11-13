@@ -204,7 +204,7 @@ impl SystemHost for SqlHost {
     }
 
     fn mounted_file_systems(&self) -> Option<Result<Vec<host::MountedFs>, String>> {
-        with_system(super::nfs::sql::mounts).flatten()
+        with_system(super::nfs::sql::mounts)
     }
 
     fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {

@@ -299,7 +299,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `NETSTAT_INFO`, `NETSTAT_JOB_INFO`, `NETSTAT_INTERFACE_INFO`, `NETSTAT_ROUTE_INFO` | partial: socket options and sequence counters null | pub400 | `sql::services` |
 | `SOFTWARE_PRODUCT_INFO`, `PTF_INFO`, `JOB_DESCRIPTION_INFO` | supported (no registration columns, no job switches) | pub400 | `sql::services` |
 | `SERVER_SHARE_INFO` | supported: NetServer's file and print shares from `QAZLSSHR`, current connections from the session table (`docs/NETSERVER.md` 4); the value spellings (`RW`, `USERASCII`) are `NEEDS-CODY`, pub400 showing no rows | pub400 | `sql::services` |
-| `NFS_EXPORT_INFO`, `MOUNTED_FS_INFO` | QS/400's own (a documented difference, below): the NFS export table, one row per export and host option; every mounted file system with its type as `/etc/vfs` names it (`MOUNTED_FS_INFO` answers SQL0443 until the IFS mount table is reachable from the service: `BLOCKED(rel)`) | none | `sql::services` |
+| `NFS_EXPORT_INFO`, `MOUNTED_FS_INFO` | QS/400's own (a documented difference, below): the NFS export table, one row per export and host option; every mounted file system with its type as `/etc/vfs` names it | none | `sql::services` |
 | `IFS_OBJECT_STATISTICS`, `IFS_READ`, `IFS_READ_UTF8`, `IFS_READ_BINARY` | supported | pub400 | `sql::services` |
 | `CALL QSYS2.QCMDEXC` (both forms), `IFS_WRITE`, `IFS_WRITE_UTF8`, `IFS_WRITE_BINARY` | supported: qualified, or unqualified when no other procedure has the name; named arguments | pub400 | `sql::services` |
 | `JOB_QUEUE_INFO`, `SUBSYSTEM_INFO`, `SUBSYSTEM_POOL_INFO` | partial: `CONTROLLING_SUBSYSTEM` always NO | pub400 | `sql::services` |

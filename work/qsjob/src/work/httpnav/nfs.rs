@@ -5,15 +5,19 @@
 //! `navigator::env::nfs::Nfs` as the user: the export table and the
 //! daemon registry through the storage service's `nfs` request (the
 //! same `EXPORTFS` and `STRNFSSVR` use), each entry read with
-//! `nfs::exports::file`; every change the command itself through the
+//! `nfs::exports::file`; the mount table through the job's IFS client;
+//! every change the command itself through the
 //! analyzer ([`Link::run`]).
 
+use ifs::client::IfsClient as _;
+use ifs::remote::MountInfo;
 use navigator::env::nfs::{Daemon, Export, HostOption, Mount, Nfs};
 use nfs::exports::options::print_hosts;
 use nfs::exports::{DataCcsid, PathCcsid};
 use qsweb::msg::{Kind, Message};
 use stg::Client as _;
 use stg::nfs::{NfsDaemonJob, NfsExport, NfsOp, NfsReply};
+use stg::remote::RemoteIfs;
 
 use super::Link;
 use crate::work::web::bridge::Main;
@@ -100,21 +104,27 @@ pub fn daemon(j: &NfsDaemonJob) -> Daemon {
     }
 }
 
-/// Message `id` of `file`, its text from the message file.
-fn described(m: &Main, id: &str, file: &str) -> Message {
-    let (i, f) = (id.to_string(), file.to_string());
-    let text = m
-        .ask(|l| l.describe(i, f, "*LIBL".into()))
-        .map_or_else(|| id.to_string(), |d| d.text);
-    Message::new(Kind::Error, id, &text)
+/// A mount as the pages show it.
+#[must_use]
+pub fn mount(m: &MountInfo) -> Mount {
+    Mount {
+        id: m.id,
+        kind: stg::nfs::vfs_name(&m.kind, &m.options),
+        at: m.at.clone(),
+        source: m.source.clone(),
+        options: m.options.clone(),
+        read_only: m.read_only,
+        responding: m.responding,
+    }
 }
 
-/// The mount table, as the signed-on user.
-// BLOCKED(rel): the IFS mount table (NFS-4): `IfsClient::mounts()` over
-// the job's IFS client, each `MountInfo` as a `Mount`; until then
-// `TCP1A78`.
+/// The mount table, through the job's IFS client as the signed-on user.
 fn mounts(m: &Main) -> Result<Vec<Mount>, Message> {
-    Err(described(m, "TCP1A78", "QTCPMSG"))
+    let c = RemoteIfs::new(m.link.clone());
+    match c.mounts() {
+        Ok(list) => Ok(list.iter().map(mount).collect()),
+        Err(e) => Err(Message::new(Kind::Error, e.command_message(), e.text())),
+    }
 }
 
 fn exports(m: &Main) -> Result<Vec<Export>, Message> {

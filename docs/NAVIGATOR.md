@@ -285,9 +285,9 @@ page and its `AF` entry.
   (`CPFA1B8` without `*IOSYSCFG`).
 - The pages have no prototype: their approved renderings are
   `tests/golden/nav/nfs*.html`; `tests/nfs.rs` drives every action.
-- Live (`work/qsjob/src/work/httpnav/nfs.rs`): the mount table answers
-  a refusal until the IFS mount table can be read from the job
-  (`BLOCKED(rel)`); the page shows it above an empty list.
+- Live (`work/qsjob/src/work/httpnav/nfs.rs`): the mount table is the
+  job's IFS client's (`IfsClient::mounts`), as the user; a refusal is
+  shown above an empty list.
 
 ## The live server
 
@@ -320,7 +320,7 @@ escape (the diagnostic before `CPF0006`) the message.
 | Config | `sysval_panel_list` + `sysval_panel` (`WRKSYSVAL`, `DSPSYSVAL`) with shipped value, allowed values and IPL flag from the `lic/sysval` catalog, the category from its group (`httpnav/config.rs`); `panel2_data DSKSTS` (with `SIZEB`, `SERIAL`, `PROT`, `STATUS` per unit) and `SYSSTS`'s ASP figures; `hw_table` in `WRKHDWRSC *AHW` order (`hwrsrc::view`) and `hw_cfgds` per resource; `QTIMZON`, `QDATFMT`, `QDATSEP`, `QTIMSEP`, `QTIMADJ`, `sysval::tz::ZONES`, `CHGNTPA`'s `RMTSYS` (`tcp Servers`), `QTOTNTP` active |
 | Net | `tcp Snapshot` (interfaces, routes), `tcp HostConfig` (domain, host table), `tcp Netstat STS` (active since), `tcp Report attr` (forwarding), the server registry with `tcp Servers` and `active_jobs` |
 | NetServer | `netsvr_api` (the `QZLS*` APIs as the user, `work/qsjob/src/work/nsadmin.rs`), `netsvr` `List` (the session table), `netsvr_disabled_users`, `active_jobs` (`QZLSSERVER` in `QSERVER`) |
-| NFS | `nfs` `Exports` (the export table, each entry read with `nfs::exports::file`), `nfs` `Daemons` (the daemon registry); every change the command through the analyzer as the user (`Link::run`); the mount table not yet (`BLOCKED(rel)`, `httpnav/nfs.rs`: the page shows the refusal) |
+| NFS | `nfs` `Exports` (the export table, each entry read with `nfs::exports::file`), `nfs` `Daemons` (the daemon registry), `IfsClient::mounts` (the mount table); every change the command through the analyzer as the user (`Link::run`) |
 | Perf | `panel2_data SYSACT` (`WRKSYSACT`), `SYSSTS RESET(*YES)`'s pools, `DSKSTS RESET(*YES)` |
 | Db | queries over the `QSYS2` catalog views through the interactive SQL session (`isql_start` `*SQL`/`*NONE`, `isql_run`): `SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST` + `SYSKEYCST`, `SYSINDEXES` + `SYSKEYS`, `SYSVIEWDEP`; creation times from `object`. Run SQL: `isql_start` with the naming and isolation, `SET SCHEMA`, `isql_run` (the row cap), `isql_end` commits; messages from `QSQLMSG` as Enter SQL Statements words them. No `SYSTRIGGERS`/`SYSROUTINES` (no triggers, procedures), no `QSQGNDDL` (Generate SQL answers `SQL0084`), no Explain (`SQL0084`) |
 | Security | `DSPAUDJRNE ... OUTPUT(*)` through `exec`, as its 5250 display runs it (whole UTC days, cut to the filter's seconds), `secaud_panel` (`DSPSECAUD`), the receiver's creation (`object *JRNRCV`) as its attach time |
@@ -449,4 +449,4 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 27-29 | Security, software | done (golden-clean; live `Security`, `Software` pending) |
 | 30 | Performance | done (golden-clean; live `Perf` pending) |
 | 31 | NetServer | done (approved pages; live) |
-| 32 | NFS | done (approved pages; live but the mount table, `BLOCKED(rel)`) |
+| 32 | NFS | done (approved pages; live) |

@@ -5,9 +5,10 @@
 //! The export table and the mount table as the `QSYS2` views show them
 //! (`NFS_EXPORT_INFO`, `MOUNTED_FS_INFO`; docs/NFS.md section 8).
 
+use ifs::remote::MountInfo;
 use nfs::exports::options::print_hosts;
 use nfs::exports::{DataCcsid, HostSpec, PathCcsid};
-use sql::exec::catalog::services::host::{MountedFs, NfsExport, NfsHostOpt};
+use sql::exec::catalog::services::host::{FsFigures, MountedFs, NfsExport, NfsHostOpt};
 
 use super::table::Entry;
 use crate::ipl::system::System;
@@ -79,13 +80,52 @@ pub fn exports(_system: &mut System) -> Vec<NfsExport> {
     super::state().table.entries().iter().map(row).collect()
 }
 
-/// `MOUNTED_FS_INFO`'s rows: `None`, the mount table cannot be read
-/// from here yet.
-// BLOCKED(rel): the IFS mount table (NFS-4): `IfsClient::mounts()` with
-// each mount's kind, source, options and CCSIDs, and `statvfs` of the
-// local ones.
-pub fn mounts(_system: &mut System) -> Option<Result<Vec<MountedFs>, String>> {
-    None
+/// One mount as the view shows it; `figures` its `statvfs`, read only
+/// for a local file system.
+#[must_use]
+pub fn mount_row(m: &MountInfo, figures: Option<FsFigures>) -> MountedFs {
+    let remote = m.responding.is_some();
+    MountedFs {
+        id: m.id,
+        kind: stg::nfs::vfs_name(&m.kind, &m.options),
+        at: m.at.clone(),
+        source: m.source.clone(),
+        options: m.options.clone(),
+        read_only: m.read_only,
+        case_sensitive: m.case_sensitive,
+        responding: m.responding,
+        data_ccsid: remote.then_some(u32::from(m.data_ccsid)),
+        path_ccsid: remote.then_some(u32::from(m.path_ccsid)),
+        figures,
+    }
+}
+
+/// `MOUNTED_FS_INFO`'s rows: the IFS mount table, `statvfs` of the local
+/// file systems (a remote one's would wait for its server).
+pub fn mounts(system: &mut System) -> Result<Vec<MountedFs>, String> {
+    super::super::certs::as_system(system, |c| {
+        let list = c.mounts().map_err(|e| e.text().to_string())?;
+        Ok(list
+            .iter()
+            .map(|m| {
+                let figures = m
+                    .responding
+                    .is_none()
+                    .then(|| c.statvfs(&m.at).ok())
+                    .flatten()
+                    .map(|s| FsFigures {
+                        block_size: s.bsize,
+                        blocks: s.blocks,
+                        free: s.bfree,
+                        available: s.bavail,
+                        files: s.files,
+                        files_free: s.ffree,
+                        name_max: u32::try_from(s.namemax).unwrap_or(u32::MAX),
+                    });
+                mount_row(m, figures)
+            })
+            .collect())
+    })
 }
 
 #[cfg(test)]
@@ -125,5 +165,32 @@ mod tests {
             (Some(819), Some(1208), false)
         );
         assert_eq!(r.hosts[1].data_ccsid, Some(65535));
+    }
+
+    #[test]
+    fn mounts_as_the_view_shows_them() {
+        let nfs = MountInfo {
+            id: 101,
+            kind: "*NFS".into(),
+            at: "/mnt/a".into(),
+            source: "srv:/x".into(),
+            options: "rw,vers=4,hard".into(),
+            responding: Some(false),
+            data_ccsid: 819,
+            path_ccsid: 819,
+            ..MountInfo::default()
+        };
+        let r = mount_row(&nfs, None);
+        assert_eq!((r.kind.as_str(), r.data_ccsid), ("nfs4", Some(819)));
+        let root = MountInfo {
+            id: 1,
+            kind: "root".into(),
+            at: "/".into(),
+            data_ccsid: 1208,
+            ..MountInfo::default()
+        };
+        let r = mount_row(&root, Some(FsFigures::default()));
+        assert_eq!((r.kind.as_str(), r.data_ccsid), ("root", None));
+        assert!(r.figures.is_some() && r.responding.is_none());
     }
 }

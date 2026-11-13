@@ -367,9 +367,41 @@ wire_enum!(NfsReply {
     8 => Refused { msgid, data, text },
 });
 
+/// A mounted file system's type as `/etc/vfs` names it, from the mount
+/// table's kind (`*NFS`, `*UDFS`, or the file system's own name) and
+/// its options (`vers=4` makes an NFS mount `nfs4`).
+#[must_use]
+pub fn vfs_name(kind: &str, options: &str) -> String {
+    let v4 = options
+        .split(',')
+        .any(|o| o.trim().to_ascii_lowercase().starts_with("vers=4"));
+    match kind {
+        "*NFS" if v4 => "nfs4",
+        "*NFS" => "nfs3",
+        "*UDFS" => "udfs",
+        "dev" => "root",
+        "QSYS.LIB" => "qsys",
+        "QNTC" => "ntc",
+        "QFileSvr.400" => "rfs",
+        other => return other.trim_start_matches('*').to_ascii_lowercase(),
+    }
+    .to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vfs_names() {
+        assert_eq!(vfs_name("*NFS", "rw,vers=4.1,hard"), "nfs4");
+        assert_eq!(vfs_name("*NFS", "rw,hard"), "nfs3");
+        assert_eq!(vfs_name("*UDFS", "rw"), "udfs");
+        assert_eq!(vfs_name("QOpenSys", "rw"), "qopensys");
+        assert_eq!(vfs_name("QSYS.LIB", "rw"), "qsys");
+        assert_eq!(vfs_name("dev", "rw"), "root");
+        assert_eq!(vfs_name("QOPT", "ro"), "qopt");
+    }
 
     #[test]
     fn requests_and_replies_cross_the_wire_whole() {

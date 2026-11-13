@@ -664,7 +664,7 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 | `ListDaemons` | the daemon registry (`NfsOp::Daemons`) | `Ok` |
 | `StartDaemons` | `STRNFSSVR SERVER() NBRSVR() NBRBIO() RTVRPCREG() STRJOBTIMO()` as the job runs it, waiting on the thread | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1BC`, `CPFA1B9`) |
 | `EndDaemons` | `ENDNFSSVR SERVER() ENDJOBTIMO()` | `Ok`; `NotAuthorized` (`CPFA1B8`); `Error` (`CPFA1BD`, `CPFA1BE`) |
-| `ListMounts` | the IFS mount table | `Ok`; `Error` (`TCP1A78` while the mount table cannot be read from the job: `BLOCKED(rel)`) |
+| `ListMounts` | the IFS mount table | `Ok`; `Error` (the `errno` message of a mount table that cannot be read) |
 | `MountNfs` | `MOUNT TYPE(*NFS) MFS('host:path') MNTOVRDIR() OPTIONS()` | `Ok`; `NotAuthorized`; `Error` (the command's escape) |
 | `Unmount` | `UNMOUNT TYPE(*NFS or *UDFS) MNTOVRDIR()` | `Ok`; `NotAuthorized`; `Error` (the command's escape) |
 | `GetNfsOptions` | `QZNFNFSO` options 1, 3, 5 (`NfsOp::Options`) | `Ok` |
@@ -1618,8 +1618,9 @@ Version 11, as built on 2026-11-13 (draft; decisions made in the build, for Cody
   service's `nfs` request, runs `EXPORTFS`, `MOUNT` and `UNMOUNT`
   through the analyzer to the service, and `STRNFSSVR`/`ENDNFSSVR` as
   `command::nfs` runs them, waiting on the thread's own link.
-  `ListMounts` answers `Error` (`TCP1A78`) until the IFS mount table
-  can be read there (`BLOCKED(rel)`).
+  `ListMounts` is the thread's IFS client's mount table
+  (`IfsClient::mounts`), each kind named as `/etc/vfs` names it
+  (`stg::nfs::vfs_name`).
 - The test system (`qapd::testing::nfs`) keeps the tables in memory and
   runs the five commands on them as `SECOFR` (`*IOSYSCFG`) or refuses
   with `CPFA1B8`; `net/qapd/tests/nfs.rs` runs each operation, the

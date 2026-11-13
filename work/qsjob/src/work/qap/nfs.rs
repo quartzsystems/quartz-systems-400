@@ -150,14 +150,27 @@ impl NfsHost for JobThread {
         })
     }
 
-    // BLOCKED(rel): the IFS mount table (NFS-4): `IfsClient::mounts()`
-    // over this thread's IFS client, each `MountInfo` as a `MountedFs`;
-    // until then `TCP1A78`.
     fn mounts(&mut self) -> Result<Vec<MountedFs>, Refusal> {
-        Err(Refusal {
-            status: Status::Error,
-            message: message(&mut self.link(), "TCP1A78", &[]),
-        })
+        let mut got = Err(ifs::Errno::ENOTSUP);
+        qapd::host::ThreadHost::with_ifs(self, &mut |c| got = c.mounts())?;
+        match got {
+            Ok(list) => Ok(list
+                .into_iter()
+                .map(|m| MountedFs {
+                    id: m.id,
+                    kind: stg::nfs::vfs_name(&m.kind, &m.options),
+                    over: m.at,
+                    source: m.source,
+                    options: m.options,
+                    read_only: m.read_only,
+                    responding: m.responding,
+                })
+                .collect()),
+            Err(e) => Err(Refusal {
+                status: Status::Error,
+                message: message(&mut self.link(), e.command_message(), &[]),
+            }),
+        }
     }
 
     fn command(&mut self, line: &str) -> Result<(), Refusal> {
