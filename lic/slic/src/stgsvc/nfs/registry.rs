@@ -66,21 +66,44 @@ impl Registry {
             .map(|j| (j.number, j.info.job.clone()))
     }
 
-    /// Queue a release of `host`'s locks for the ready `*NLM` job: its
-    /// qualified name, or `None` when none is ready.
+    /// The job numbers of the ready, not ending `daemon` jobs.
+    #[must_use]
+    pub fn ready_numbers(&self, daemon: Daemon) -> Vec<u32> {
+        self.jobs
+            .iter()
+            .filter(|j| j.info.daemon == daemon && j.info.ready && !j.info.ending)
+            .map(|j| j.number)
+            .collect()
+    }
+
+    /// Queue a release of `host`'s locks and state for the ready `*NLM`
+    /// job (NLM clients) and every ready `*SVR` job (`NFSv4` clients):
+    /// the order's number and the job named in `CPCA1C7` (the lock
+    /// manager's, else the first server job's), or `None` when none of
+    /// them is ready.
     pub fn order(&mut self, host: &str, by: &str) -> Option<(u32, String)> {
-        let (number, job) = self.first_ready(Daemon::Nlm)?;
+        let mut to: Vec<(u32, String)> = self.first_ready(Daemon::Nlm).into_iter().collect();
+        let mut svr: Vec<&Job> = self
+            .jobs
+            .iter()
+            .filter(|j| j.info.daemon == Daemon::Svr && j.info.ready && !j.info.ending)
+            .collect();
+        svr.sort_by_key(|j| j.info.index);
+        to.extend(svr.into_iter().map(|j| (j.number, j.info.job.clone())));
+        let named = to.first()?.1.clone();
         self.last_order = self.last_order.wrapping_add(1).max(1);
         let id = self.last_order;
-        self.orders.push((
-            number,
-            NfsOrder {
-                id,
-                host: host.to_string(),
-                by: by.to_string(),
-            },
-        ));
-        Some((id, job))
+        for (number, _) in to {
+            self.orders.push((
+                number,
+                NfsOrder {
+                    id,
+                    host: host.to_string(),
+                    by: by.to_string(),
+                },
+            ));
+        }
+        Some((id, named))
     }
 
     /// The orders for job `number`, taken.
@@ -284,5 +307,15 @@ mod tests {
         r.gone(7);
         assert!(r.take_orders(7).is_empty());
         assert_eq!(r.job(7), None);
+        // The server jobs take the order too (their v4 clients); without
+        // a lock manager the first of them is named.
+        r.hello(Daemon::Svr, 9, "000009/QSECOFR/QNFSNFSD", 0);
+        r.hello(Daemon::Svr, 8, "000008/QSECOFR/QNFSNFSD", 0);
+        r.set_ready(9, Vec::new());
+        r.set_ready(8, Vec::new());
+        let (id, job) = r.order("client3", "me").unwrap();
+        assert_eq!(job, "000009/QSECOFR/QNFSNFSD");
+        assert_eq!(r.take_orders(8)[0].id, id);
+        assert_eq!(r.take_orders(9)[0].id, id);
     }
 }

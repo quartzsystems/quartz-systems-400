@@ -5,9 +5,11 @@
 //! `RLSIFSLCK` (docs/NFS.md section 8.1): the byte-range locks local
 //! jobs hold on an object (`LCLBRNGLCK(*YES)`) or on every object of its
 //! file system (`OBJMFS(*YES)`), through the IFS's lock table; those
-//! NFS clients hold there (`NFSSVRLCK(*YES)`: the `*NLM` daemon's
-//! sub-owners); a remote host's (`RMTLOCNAME`), ordered from the `*NLM`
-//! daemon, which carries the order out and says so in its job log.
+//! NFS clients hold there (`NFSSVRLCK(*YES)`: the `*NLM` and `*SVR`
+//! daemons' NLM and `NFSv4` sub-owners); a remote host's (`RMTLOCNAME`),
+//! ordered from the `*NLM` daemon and each `*SVR` daemon (its `NFSv4`
+//! clients' state), which carry the order out and say so in their job
+//! logs.
 
 use ifs::client::IfsClient;
 use ifs::lock::range::RangeKind;
@@ -33,8 +35,11 @@ pub struct Args {
     pub whole_fs: bool,
 }
 
-/// The first sub-owner of an NLM lock owner (`nfs::nlm::state::SUB_BASE`).
-const NLM_SUBS: u64 = nfs::nlm::state::SUB_BASE;
+/// Whether a sub-owner is an NFS client's: NLM's from
+/// `nfs::nlm::state::SUB_BASE` (`0x4E4C...`), `NFSv4`'s `0x4E34...`.
+fn client_sub(sub: u64) -> bool {
+    matches!(sub >> 48, 0x4E4C | 0x4E34)
+}
 
 /// `CPFA1B6`: reason 1 the `*NLM` daemon does not run, 2 a file system
 /// error.
@@ -44,7 +49,13 @@ fn not_released(reason: i64, errno: i64, obj: &str) -> Reply {
 
 /// Run `RLSIFSLCK`.
 pub fn run(system: &mut System, a: &Args) -> Reply {
-    let nlm = super::state().registry.first_ready(Daemon::Nlm);
+    // The daemons whose jobs hold NFS clients' locks.
+    let holders: Vec<u32> = {
+        let s = super::state();
+        let mut v = s.registry.ready_numbers(Daemon::Nlm);
+        v.extend(s.registry.ready_numbers(Daemon::Svr));
+        v
+    };
     let remote = a.remote.trim();
     if !remote.is_empty() {
         // A remote host's locks are the lock manager's to release: the
@@ -60,8 +71,8 @@ pub fn run(system: &mut System, a: &Args) -> Reply {
     }
     let obj = a.obj.trim();
     if a.nfs
-        && let Some((number, _)) = nlm
-        && let Err(e) = release_nlm(system, number, obj, a.whole_fs)
+        && !holders.is_empty()
+        && let Err(e) = release_nfs(system, &holders, obj, a.whole_fs)
     {
         return Reply::fail(
             Msg::new("CPFA1B6")
@@ -91,11 +102,12 @@ pub fn run(system: &mut System, a: &Args) -> Reply {
     }
 }
 
-/// The locks the `*NLM` daemon (job `number`) holds for its clients on
-/// `obj`, or on every object of its file system, unlocked: how many.
-fn release_nlm(
+/// The locks the `*NLM` and `*SVR` daemons (jobs `numbers`) hold for
+/// their clients on `obj`, or on every object of its file system,
+/// unlocked: how many.
+fn release_nfs(
     system: &mut System,
-    number: u32,
+    numbers: &[u32],
     obj: &str,
     whole_fs: bool,
 ) -> Result<usize, ifs::Errno> {
@@ -107,24 +119,28 @@ fn release_nlm(
         })
     })
     .unwrap_or(Err(ifs::Errno::EIO))?;
-    let Some(handle) = system.jobs.get(number).map(|j| j.handle) else {
-        return Ok(0);
-    };
-    let owner = crate::stgsvc::ifs::owner_of(handle);
     let p = crate::stgsvc::certs::system_principal();
-    crate::stgsvc::ifs::with_client(system, handle, owner, &p, 37, |c| {
-        unlock_subs(c, key, whole_fs)
-    })
+    let mut n = 0;
+    for number in numbers {
+        let Some(handle) = system.jobs.get(*number).map(|j| j.handle) else {
+            continue;
+        };
+        let owner = crate::stgsvc::ifs::owner_of(handle);
+        n += crate::stgsvc::ifs::with_client(system, handle, owner, &p, 37, |c| {
+            unlock_subs(c, key, whole_fs)
+        })?;
+    }
+    Ok(n)
 }
 
-/// Unlock, as the daemon's owner (`c`), each range its NLM sub-owners
-/// hold on `key` (or its file system).
+/// Unlock, as a daemon's owner (`c`), each range its NLM or `NFSv4` lock
+/// owners hold on `key` (or its file system).
 fn unlock_subs(c: &dyn IfsClient, key: ObjKey, whole_fs: bool) -> Result<usize, ifs::Errno> {
     let mut n = 0;
     for (k, info) in c.owner_locks()? {
         let Held::Range(l) = info.what else { continue };
         let here = if whole_fs { k.fs == key.fs } else { k == key };
-        if !here || l.sub < NLM_SUBS {
+        if !here || !client_sub(l.sub) {
             continue;
         }
         let fd = c.open(&info.path, OpenArgs::new(O_RDONLY))?;
