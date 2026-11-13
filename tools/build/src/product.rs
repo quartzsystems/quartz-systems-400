@@ -74,15 +74,22 @@ pub fn qs400() -> Result<Product> {
         esp_volume_id: diskimg::fat::VOLUME_ID,
         media: Some(crate::image::media::media),
         doctor,
-        deny: &[Standalone {
-            manifest: "tools/smbtest/Cargo.toml",
-            // `rsa` comes only through the `smb` client's sspi/picky, which pin a
-            // release candidate; the host test client signs on with NTLM only.
-            ignore: &[(
-                "RUSTSEC-2023-0071",
-                "rsa only via sspi/picky in the host test client tools/smbtest (NTLM, no RSA use)",
-            )],
-        }],
+        deny: &[
+            Standalone {
+                manifest: "tools/smbtest/Cargo.toml",
+                // `rsa` comes only through the `smb` client's sspi/picky, which pin a
+                // release candidate; the host test client signs on with NTLM only.
+                ignore: &[(
+                    "RUSTSEC-2023-0071",
+                    "rsa only via sspi/picky in the host test client tools/smbtest (NTLM, no RSA use)",
+                )],
+            },
+            Standalone {
+                // The NFS test client: its own lockfile, the server only in its tests.
+                manifest: "tools/nfstest/Cargo.toml",
+                ignore: &[],
+            },
+        ],
         notices: Some(Notices {
             file: NOTICES_FILE,
             intro: notices_intro,

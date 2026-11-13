@@ -1,0 +1,49 @@
+# Outside the workspace (the root Cargo.toml's `exclude`), with its own
+# Cargo.lock: the client's wire code comes from crates by other authors than
+# the server, and nothing of `net/nfs` reaches the binary (only the loopback
+# tests bring the server up). `cargo run -p build -- deny` checks this graph.
+[package]
+name = "nfstest"
+description = "An NFS test client for QS/400's NFS server, written apart from the server, and its scenarios"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.98"
+publish = false
+
+[[bin]]
+name = "nfstest"
+path = "src/main.rs"
+
+[dependencies]
+# The NFSWolf protocol crates (Apache-2.0), other authors than the server:
+# XDR, the RPC message, portmap, MOUNT and NFS version 3 wire types.
+onc-xdr = "=1.3.1"
+onc-rpc-client = "=1.3.1"
+onc-rpcbind = "=1.3.1"
+nfs-mount = "=1.3.1"
+nfs-v3 = "=1.3.1"
+thiserror = "=2.0.21"
+
+[dev-dependencies]
+# The server, its file system and profiles, for the loopback tests only.
+nfs = { path = "../../net/nfs", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
+
+# The workspace's lints, repeated (an excluded crate cannot inherit them).
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+# Test code: short names (c the context, s the session, f a file, d its directory)
+# and sizes that fit the wire.
+many_single_char_names = "allow"
+similar_names = "allow"
+cast_possible_truncation = "allow"
