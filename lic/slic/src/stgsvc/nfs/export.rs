@@ -80,27 +80,20 @@ pub fn run(h: &mut dyn Host, a: &Args) -> Reply {
             update_file,
         } => {
             let mut out = Reply::default();
-            let base = if ignore_file {
+            // The file's entry for the directory; without the file or
+            // the entry, the defaults after CPDA1C4.
+            let entries = if ignore_file {
                 None
             } else {
-                match read_file(h) {
-                    Ok(text) => {
-                        let entries = file::parse(&text);
-                        match file::find(&entries, &dir) {
-                            Some(Ok(e)) => Some(e.clone()),
-                            Some(Err(e)) => {
-                                return fail_entry(out, &dir, e.reason);
-                            }
-                            None => {
-                                out = out.diag(Msg::paths("CPDA1C4", &[&dir, EXPORTS]));
-                                None
-                            }
-                        }
-                    }
-                    Err(_) => {
-                        out = out.diag(Msg::paths("CPDA1C4", &[&dir, EXPORTS]));
-                        None
-                    }
+                Some(read_file(h).map(|t| file::parse(&t)).unwrap_or_default())
+            };
+            let base = match entries.as_deref().map(|v| file::find(v, &dir)) {
+                None => None,
+                Some(Some(Ok(e))) => Some(e.clone()),
+                Some(Some(Err(e))) => return fail_entry(out, &dir, e.reason),
+                Some(None) => {
+                    out = out.diag(Msg::paths("CPDA1C4", &[&dir, EXPORTS]));
+                    None
                 }
             };
             let mut e = base.unwrap_or_else(|| Export::new(&file::normal(&dir)));
@@ -147,9 +140,8 @@ pub fn run(h: &mut dyn Host, a: &Args) -> Reply {
 /// `-A` and `-A -U`: every entry of the file.
 fn all(h: &mut dyn Host, req: &Request, escape: bool, verbose: bool) -> Reply {
     let mut out = Reply::default();
-    let text = match read_file(h) {
-        Ok(t) => t,
-        Err(_) => return fail_entry(out, EXPORTS, 1),
+    let Some(text) = read_file(h) else {
+        return fail_entry(out, EXPORTS, 1);
     };
     let (mut done, mut failed) = (0i64, 0i64);
     for entry in file::parse(&text) {
@@ -252,7 +244,7 @@ fn export_one(h: &mut dyn Host, mut e: Export) -> Result<Export, (u32, Option<Ms
         o.path = match o.path {
             PathCcsid::Ascii => PathCcsid::Ccsid(ascii_of(job)),
             PathCcsid::Job => PathCcsid::Ccsid(job),
-            other => other,
+            other @ PathCcsid::Ccsid(_) => other,
         };
         if let DataCcsid::Ccsid(n) = o.data
             && double_byte(n)
@@ -303,13 +295,13 @@ pub fn opt_msg(e: &nfs::exports::OptError) -> Msg {
     }
 }
 
-fn read_file(h: &mut dyn Host) -> Result<String, ()> {
+fn read_file(h: &mut dyn Host) -> Option<String> {
     let mut text = None;
     h.ifs(&mut |c| {
         text = crate::cpp::stmf::read_text(c, EXPORTS).ok();
         Reply::default()
     });
-    text.ok_or(())
+    text
 }
 
 fn write_file(h: &mut dyn Host, edit: impl Fn(&str) -> String) -> Result<(), Msg> {

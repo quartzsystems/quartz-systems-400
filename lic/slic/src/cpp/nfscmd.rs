@@ -82,9 +82,10 @@ fn dspmfsinf(system: &mut System, parms: &Parms) -> Reply {
 /// control.
 fn listing(system: &mut System, v: &ifscmd::mfsinf::View) -> Vec<String> {
     let (date, time) = wm::joblog::stamp_of(now_unix().saturating_mul(1_000_000));
-    let title = "Display Mount Statistics";
+    let title = crate::stgsvc::msgs::text(system, "TXT0E31", &[]);
+    let page = crate::stgsvc::msgs::text(system, "TXT0E32", &[]);
     let mut l1 = format!("1{:46}{title}", "");
-    l1 = format!("{l1:<121}Page     1");
+    l1 = format!("{l1:<121}{page} {:>5}", 1);
     let product = format!(" {} {}", release::PRODUCT_ID, release::RELEASE);
     let l2 = format!("{product:<99}{:<8}  {date}  {time}", system.system_name());
     let mut out = vec![l1, l2];

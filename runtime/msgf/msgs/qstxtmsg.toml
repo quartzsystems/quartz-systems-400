@@ -1681,3 +1681,13 @@ id = "TXT0E30"
 text = "Share &1 has its maximum users connected."
 help = "Text of a NetServer tree connection refused because the share's maximum users (QZLSADFS, QZLSCHFS) are connected, counted across every QZLSFILE job; the client sees STATUS_REQUEST_NOT_ACCEPTED."
 vars = ["*CHAR 12"]
+
+[[msg]]
+id = "TXT0E31"
+text = "Display Mount Statistics"
+help = "Text of DSPMFSINF OUTPUT(*PRINT) (and STATFS): the title of the printed listing."
+
+[[msg]]
+id = "TXT0E32"
+text = "Page"
+help = "Text of DSPMFSINF OUTPUT(*PRINT): the page label in the heading of the printed listing."

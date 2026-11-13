@@ -40,6 +40,7 @@ pub struct Started {
 
 /// What a daemon's `serve` did.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(not(test), allow(dead_code))] // Ready: the serving daemons of NFS wave 2
 pub enum Serve {
     /// Serving, with what it registered with the binder: the job is
     /// ready.

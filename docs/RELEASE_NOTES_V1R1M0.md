@@ -557,6 +557,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `docs/SYSAPI.md:568` | the DRDA requester), and a CLI call made by a procedure |
 | `BLOCKED(rel)` | `docs/TCPIP.md:1168` | VT and 3270 sessions and |
 | `BLOCKED(rel)` | `docs/WORKMGMT.md:1250` | a program running |
+| `NEEDS-CODY` | `ifs/ifscmd/src/mfsinf.rs:61` | IBM's wording for an NFS mount (section 12). |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/compdiags.rs:11` | `OPTION(*EVENTF)` is accepted by every compiler command |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/dbmoncmd.rs:85` | a monitor watches one job or every job. |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/dbmoncmd.rs:307` | the planner makes no time or storage estimate a |
@@ -567,6 +568,9 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1450` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:87` | the plan cache (`sql::exec::plan::cache`) keeps |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:98` | a package's statements are kept (`db::sqlpkg`) |
+| `BLOCKED(rel)` | `lic/slic/src/stgsvc/nfs/locks.rs:43` | the release request to the *NLM daemon, which answers CPCA1C7 (NFS wave 2). |
+| `BLOCKED(rel)` | `lic/slic/src/stgsvc/nfs/locks.rs:48` | the locks NFS clients hold on the object, released by the *NLM daemon (NFS wave 2). |
+| `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:46` | IBM's, |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:119` | the request holds the service until it answers |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:297` | commands whose processing program runs in the |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:462` | the job's own variables live in the job; the |
@@ -616,5 +620,13 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:734` | the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/system.rs:186` | the password approval program (QPWDVLDPGM) is not called from a web job; refused with CPF22D3 while one is set. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpsvr.rs:67` | validation lists (*VLDL) do not exist; a PasswdFile |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/biod.rs:12` | the RPC service of this daemon (NFS wave 2): the block I/O protocol over net/nfs's RPC layer. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/mntd.rs:12` | the RPC service of this daemon (NFS wave 2): the MOUNT protocol over net/nfs's RPC layer. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/nfsd.rs:12` | the RPC service of this daemon (NFS wave 2): the NFS protocol over net/nfs's RPC layer. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/nlmd.rs:12` | the RPC service of this daemon (NFS wave 2): the lock manager protocol over net/nfs's RPC layer. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/nsmd.rs:12` | the RPC service of this daemon (NFS wave 2): the status monitor protocol over net/nfs's RPC layer. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/rgyd.rs:12` | the RPC service of this daemon (NFS wave 2): the identity mapping protocol over net/nfs's RPC layer. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/nfs/rpcd.rs:12` | the RPC service of this daemon (NFS wave 2): the binder (portmap and rpcbind) protocol over net/nfs's RPC layer. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/qap/debug/own.rs:79` | stops are breakpoints, steps and entry points only; the |
+| `NEEDS-CODY` | `work/wm/src/obj/shipped.rs:236` | DSPCLS of the primary's). |
 <!-- inventory:end -->

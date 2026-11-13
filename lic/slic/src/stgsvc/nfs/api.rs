@@ -172,7 +172,7 @@ fn nfso(
         4 => "NFOP0200",
         5 => "NFOP0301",
         6 => "NFOP0300",
-        _ => return Err(err(Msg::new("CPF3C90").chars("NFS option", 10))),
+        n => return Err(err(Msg::new("CPF3C3C").chars(&n.to_string(), 10))),
     };
     if format != want {
         return Err(err(Msg::new("CPF3C21").chars(format, 8)));
@@ -248,7 +248,7 @@ fn save(system: &mut System, o: &NfsOptions) -> ApiResult {
         })
 }
 
-/// The TCP/IP domain name, the NFSv4 domain's default.
+/// The TCP/IP domain name, the `NFSv4` domain's default.
 fn system_domain(system: &mut System) -> String {
     crate::stgsvc::tcp::config(system)
         .map(|c| c.domain.domain_name.trim().to_string())

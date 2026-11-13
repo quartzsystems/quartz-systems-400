@@ -567,3 +567,20 @@ more than one row, a procedure's result sets past the first (the first
 is the statement's cursor), connections to other databases
 (BLOCKED(rel): the DRDA requester), and a CLI call made by a procedure
 the CLI called (it fails).
+
+## 14. NFS (`QZNF`)
+
+`QZNFRTVE` (Retrieve NFS Export Information) and `QZNFNFSO` (Perform
+NFS Options), `runtime/sysapi/src/nfs.rs`, as `QSYSINC/H(QZNFRTVE)` and
+`QSYSINC/H(QZNFNFSO)` declare them
+(`tools/conformance/oracle/qsysinc/H/`). The job gathers the parameters
+the answer depends on and the provider asks the storage service
+(`nfs_api`, request 1541, `lic/slic/src/stgsvc/nfs/api.rs`); the
+receiver, the feedback, the output buffer and the error code are filled
+in the job. `QZNFRTVE` lists the export table in `EXPE0100` or
+`EXPE0200` (`nfs::exports::api` lays the entries out) in whole entries,
+with the handle of the first that did not fit; `QZNFNFSO` retrieves and
+sets the security flavors (`AUTH_SYS` only), the NFSv4 domain and the
+options, a set needing `*IOSYSCFG` (`CPFA1B8`). Docs/NFS.md section 8.2
+has the details and what QS/400 fills where the header leaves a value
+open. `cargo test -p sysapi --test nfs`.

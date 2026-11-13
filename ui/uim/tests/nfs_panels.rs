@@ -46,6 +46,7 @@ fn values(rows: &[String]) -> Vec<(&'static str, String)> {
 }
 
 #[test]
+#[allow(clippy::many_single_char_names)] // rows, columns, values
 fn dspmfsinf_matches_the_primary() {
     let text = uim::shipped::source("QUIDSPMFS").expect("shipped");
     let c = compile(text, &NoImbeds, &NoImports, &CompileOpts::default());

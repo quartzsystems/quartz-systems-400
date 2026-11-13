@@ -28,6 +28,9 @@ command sequence that settles it.
 | `objects-primary.txt` | `DSPOBJD OBJ(QSYS/*ALL)` filtered | the commands, menus, daemon programs (`QZNF*`), job descriptions and classes, `QNFSANON` |
 | `../qsysinc/H/QZNFRTVE.txt`, `QZNFNFSO.txt` | `QSYSINC/H` on pub400 | the two NFS APIs: Retrieve NFS Export Information (`EXPE0100`, `EXPE0200`) and Perform NFS Options (`NFOP0100`-`NFOP0301`) |
 | `uids-primary.txt` | `probes/UidProbe.java` (JTOpen `User.getUserID`, `getGroupID`, `getStatus`) on the primary | the UID, GID and status of every shipped profile: `QSECOFR` 0, `QSYS` 101, `QDFTOWN` 102, `QTMPLPD` 103, the others fixed numbers from 4294770688 up (`QNFSANON` 4294770710); no shipped profile has a GID. Also found there: a UID in use is `CPF22CE` (`&1` is `UID` or `GID`, `&2` the number), `QSECOFR`'s UID cannot change (`CPF224C`) |
+| `messages.txt` (formats) | `probes/MsgFmt.java`: `QMHRTVM` format `RTVM0400` per ID on the primary | each ID's severity and substitution variable formats, `type:length` (`*VARYn` a varying field) |
+| `print/dspmfsinf-*-print.txt` | `probes/MfsPrint.java`: `DSPMFSINF OBJ() OUTPUT(*PRINT)` on the primary, the spooled file `QP0LCDMN` (`QSYSPRT`, 132 by 66) copied with `CPYSPLF CTLCHAR(*FCFC)` to `QSTEST/NFSPRT`, read back and deleted with the file | the listing of `/`, `/QSYS.LIB`, `/QOpenSys`, `/QOPT`, `/QDLS`, `/QNTC`, `/QFileSvr.400`, `/dev`, `/dev/QASP01` (the system name masked as `{system}`): the file system types IBM words, `No maximum` and `Not defined` |
+| `jobd-primary.txt` | `probes/Jobd.java`: JTOpen `JobDescription` | `QSYS/QP0LNFSD` and `QSYS/QP0LRPCD` |
 | `../../golden/nfs/` | `tn5250-driver run --target oracle` | every prompt (plain, F10, a Page Down; `MOUNT` and `UNMOUNT` with `TYPE(*NFS)`, `STRNFSSVR` with `SERVER(*SVR)` and `SERVER(*RPC)`), the menus `CMDNFS`, `CMDMFS`, `CMDRPC`, and `DSPMFSINF` of `/`, `/QSYS.LIB`, `/QOpenSys`, `/home/QSTEST` |
 
 ## Findings

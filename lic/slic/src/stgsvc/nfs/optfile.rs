@@ -5,7 +5,7 @@
 //! The NFS options of `QZNFNFSO`, kept in
 //! `/QIBM/UserData/OS400/NFS/options` (docs/NFS.md section 6.2): the
 //! magic `QSNFSOPT`, a big-endian `u16` version, then the flavors (`u16`
-//! count, each `u32`), the NFSv4 domain (`u16` length, UTF-8), the most
+//! count, each `u32`), the `NFSv4` domain (`u16` length, UTF-8), the most
 //! server threads (`u32`), the client handle cache (`u32`) and the
 //! UTF-8 check (`u8`, 0 or 1).
 

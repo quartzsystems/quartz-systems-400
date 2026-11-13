@@ -643,7 +643,7 @@ running, and `NFSSVRLCK(*YES)` with it running, the request to it
   answers the TCP/IP domain name), the options (server threads, handle
   cache, UTF-8 check). Setting needs `*IOSYSCFG` (`CPFA1B8`); a format
   that is not the option's is `CPF3C21`, an option not 1 to 6
-  `CPF3C90`.
+  `CPF3C3C`.
 
 `QSYS2.NFS_EXPORT_INFO` and `QSYS2.MOUNTED_FS_INFO` are QS/400's views of
 the export table and the mount table **(design, a later wave)**.
