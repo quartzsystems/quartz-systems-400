@@ -171,8 +171,11 @@ fn unregister(reg: &Registration, list: &[rpcb]) {
     }
 }
 
-/// One TCP connection until it closes or `stop` is set.
-fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &AtomicBool) {
+/// One TCP connection until it closes or `stop` is set: its program told
+/// of the connection (the 4.1 backchannel), replies to the server's own
+/// calls handed to them. Public for a job that accepts connections
+/// itself (`QNFSNFSD` hands them between its jobs).
+pub fn connection<P: LocalProgram>(s: &TcpStream, d: &Dispatcher, p: &P, stop: &AtomicBool) {
     let Ok(peer) = s.peer_addr() else { return };
     let _ = s.set_read_timeout(Some(TICK));
     let _ = s.set_nodelay(true);
@@ -228,7 +231,8 @@ impl Drop for Closer<'_> {
     }
 }
 
-fn datagrams<P: LocalProgram>(u: &UdpSocket, d: &Dispatcher, p: &P, stop: &AtomicBool) {
+/// UDP on `u` until `stop`, each datagram answered with `p` first.
+pub fn datagrams<P: LocalProgram>(u: &UdpSocket, d: &Dispatcher, p: &P, stop: &AtomicBool) {
     let _ = u.set_read_timeout(Some(TICK));
     let mut buf = vec![0u8; 65_536];
     while !stop.load(Ordering::Relaxed) {

@@ -35,6 +35,12 @@ pub trait IdMap: Send + Sync {
     fn group_name(&self, gid: u32) -> Option<String>;
     /// The GID of the group profile `name` (upper case).
     fn group_id(&self, name: &str) -> Option<u32>;
+    /// Whether names are mapped at all (on QS/400: the `*RGY` daemon
+    /// runs); when not, owners are sent as numbers and only numbers are
+    /// taken.
+    fn mapping(&self) -> bool {
+        true
+    }
 }
 
 /// Why a string is not an ID.
@@ -187,6 +193,9 @@ impl Registry {
     /// The `owner` string of UID `uid` (`name`: the profile, when the
     /// caller already knows it).
     pub fn owner(&self, uid: u32, name: Option<&str>) -> String {
+        if !self.map.mapping() {
+            return uid.to_string();
+        }
         match name.filter(|n| !n.is_empty()) {
             Some(n) => self.with_domain(n),
             None => self
@@ -197,6 +206,9 @@ impl Registry {
 
     /// The `owner_group` string of GID `gid`.
     pub fn group(&self, gid: u32, name: Option<&str>) -> String {
+        if !self.map.mapping() {
+            return gid.to_string();
+        }
         match name.filter(|n| !n.is_empty()) {
             Some(n) => self.with_domain(n),
             None => self
@@ -209,6 +221,9 @@ impl Registry {
         let s = std::str::from_utf8(who).map_err(|_| IdError::BadChar)?;
         if let Some(n) = numeric(s) {
             return Ok(Ok(n));
+        }
+        if !self.map.mapping() {
+            return Err(IdError::BadOwner);
         }
         let Some((name, dom)) = s.rsplit_once('@') else {
             return Err(IdError::BadOwner);
@@ -284,6 +299,44 @@ mod tests {
     use super::*;
     use crate::server::instance::ManualClock;
     use std::sync::atomic::{AtomicU32, Ordering};
+
+    /// A map whose names are off.
+    struct Off(MemIdMap);
+
+    impl IdMap for Off {
+        fn domain(&self) -> String {
+            self.0.domain()
+        }
+        fn user_name(&self, uid: u32) -> Option<String> {
+            self.0.user_name(uid)
+        }
+        fn user_id(&self, name: &str) -> Option<u32> {
+            self.0.user_id(name)
+        }
+        fn group_name(&self, gid: u32) -> Option<String> {
+            self.0.group_name(gid)
+        }
+        fn group_id(&self, name: &str) -> Option<u32> {
+            self.0.group_id(name)
+        }
+        fn mapping(&self) -> bool {
+            false
+        }
+    }
+
+    #[test]
+    fn without_mapping_owners_are_numbers() {
+        let m = MemIdMap {
+            domain: "lab".into(),
+            users: vec![("BOB".into(), 100)],
+            groups: vec![("DEV".into(), 500)],
+        };
+        let r = Registry::new(Arc::new(Off(m)), TTL, Arc::new(ManualClock::default()));
+        assert_eq!(r.owner(100, Some("BOB")), "100");
+        assert_eq!(r.group(500, None), "500");
+        assert_eq!(r.uid(b"100"), Ok(100));
+        assert_eq!(r.uid(b"BOB@lab"), Err(IdError::BadOwner));
+    }
 
     struct Counting(MemIdMap, AtomicU32);
 
