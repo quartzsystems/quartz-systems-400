@@ -25,8 +25,12 @@ use crate::xdr::Decoder;
 /// The largest `READ` and `WRITE` (`FSINFO` `rtmax`, `wtmax`).
 pub const MAX_IO: u32 = 1 << 20;
 
-/// The preferred size (`rtpref`, `wtpref`).
-pub const PREF_IO: u32 = 64 * 1024;
+/// The preferred size (`rtpref`, `wtpref`): the largest, as each call
+/// costs the service requests (and with `*SYNC` a sync) whatever its size.
+pub const PREF_IO: u32 = MAX_IO;
+
+/// The preferred `READDIR` size (`dtpref`).
+pub const PREF_DIR: u32 = 64 * 1024;
 
 /// One NFS version 3 call against `vfs`.
 pub fn call<V: Vfs + ?Sized>(

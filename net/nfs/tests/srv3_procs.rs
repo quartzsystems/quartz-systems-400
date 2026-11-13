@@ -336,7 +336,7 @@ fn fsstat_fsinfo_pathconf() {
         Res::NFSPROC3_FSINFO(t3::FSINFO3res::NFS3_OK(ok)) => {
             assert_eq!(
                 (ok.rtmax, ok.wtmax, ok.rtpref, ok.wtpref),
-                (1 << 20, 1 << 20, 65536, 65536)
+                (1 << 20, 1 << 20, 1 << 20, 1 << 20)
             );
             assert_eq!(
                 ok.properties,

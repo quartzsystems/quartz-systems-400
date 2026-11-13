@@ -5,7 +5,7 @@
 //! The procedures but the directory reads ([`super::dir`]).
 
 use super::conv::{fattr, fh3, no_wcc, node, post, sattr, status, time_of, wcc};
-use super::{MAX_IO, PREF_IO};
+use super::{MAX_IO, PREF_DIR, PREF_IO};
 use crate::rpc::CallContext;
 use crate::server::gate::writable;
 use crate::server::vfs::{CreateHow, Special, Stable};
@@ -439,7 +439,7 @@ impl<V: Vfs + ?Sized> Procs<'_, V> {
                 wtmax: MAX_IO,
                 wtpref: PREF_IO,
                 wtmult: 4096,
-                dtpref: PREF_IO,
+                dtpref: PREF_DIR,
                 maxfilesize: i64::MAX.unsigned_abs(),
                 time_delta: nfstime3 {
                     seconds: 0,
