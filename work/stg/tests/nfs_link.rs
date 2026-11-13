@@ -9,7 +9,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use stg::nfs::{Daemon, NfsDaemonJob, NfsExport, NfsOp, NfsPort, NfsReply};
+use stg::nfs::{Daemon, NfsDaemonJob, NfsExport, NfsOp, NfsOrder, NfsPort, NfsReply};
 use stg::{Client, Link, Request};
 
 #[test]
@@ -145,4 +145,87 @@ fn nfs_entry(line: &str) -> (bool, Option<i64>) {
         .find_map(|o| o.strip_prefix("anon="))
         .and_then(|v| v.parse().ok());
     (ro, anon)
+}
+
+/// The lock manager's orders, a daemon's failure and the identity
+/// mapping's lookups, both ways through the wire codec.
+#[test]
+fn orders_failures_and_lookups_over_the_link() {
+    let mut link = Link::answering(move |req| match req {
+        Request::Nfs { op } => {
+            let reply = match op {
+                NfsOp::Orders => NfsReply::Orders {
+                    orders: vec![NfsOrder {
+                        id: 4,
+                        host: "client1.lab".into(),
+                        by: "000009/QSECOFR/QPADEV0002".into(),
+                    }],
+                },
+                NfsOp::OrderDone { id, count, errno } => NfsReply::Id {
+                    id: Some(id * 100 + count + u32::try_from(errno).unwrap_or(9)),
+                },
+                NfsOp::Failed { errno } => NfsReply::Flag { yes: errno == 98 },
+                NfsOp::NameOfUid { uid } => NfsReply::Name {
+                    name: (uid == 0).then(|| "QSECOFR".to_string()),
+                },
+                NfsOp::NameOfGid { .. } => NfsReply::Name { name: None },
+                NfsOp::UidOfName { name } => NfsReply::Id {
+                    id: (name == "QSYS").then_some(101),
+                },
+                NfsOp::GidOfName { .. } => NfsReply::Id { id: None },
+                NfsOp::Mapping => NfsReply::Mapping {
+                    enabled: true,
+                    domain: "lab.example".into(),
+                },
+                _ => NfsReply::Done,
+            };
+            ipc::encode(&reply)
+        }
+        other => panic!("not an NFS request: {}", other.name()),
+    });
+    let NfsReply::Orders { orders } = link.nfs(NfsOp::Orders).unwrap() else {
+        panic!("orders")
+    };
+    assert_eq!((orders[0].id, orders[0].host.as_str()), (4, "client1.lab"));
+    assert_eq!(
+        link.nfs(NfsOp::OrderDone {
+            id: 4,
+            count: 2,
+            errno: 0
+        })
+        .unwrap(),
+        NfsReply::Id { id: Some(402) }
+    );
+    assert_eq!(
+        link.nfs(NfsOp::Failed { errno: 98 }).unwrap(),
+        NfsReply::Flag { yes: true }
+    );
+    assert_eq!(
+        link.nfs(NfsOp::NameOfUid { uid: 0 }).unwrap(),
+        NfsReply::Name {
+            name: Some("QSECOFR".into())
+        }
+    );
+    assert_eq!(
+        link.nfs(NfsOp::NameOfGid { gid: 7 }).unwrap(),
+        NfsReply::Name { name: None }
+    );
+    assert_eq!(
+        link.nfs(NfsOp::UidOfName {
+            name: "QSYS".into()
+        })
+        .unwrap(),
+        NfsReply::Id { id: Some(101) }
+    );
+    assert_eq!(
+        link.nfs(NfsOp::GidOfName { name: "X".into() }).unwrap(),
+        NfsReply::Id { id: None }
+    );
+    assert_eq!(
+        link.nfs(NfsOp::Mapping).unwrap(),
+        NfsReply::Mapping {
+            enabled: true,
+            domain: "lab.example".into()
+        }
+    );
 }

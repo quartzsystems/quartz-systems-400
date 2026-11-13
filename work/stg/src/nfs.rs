@@ -309,6 +309,27 @@ pub enum NfsOp {
     /// server `name` (its `mon_name`) restarted with `state`; the NFS
     /// client's mounts of it reclaim their locks (docs/NFS.md 7.7).
     ServerRestarted { name: String, state: i32 },
+    /// The `*NLM` daemon takes the release orders `RLSIFSLCK` queued
+    /// for it (each is handed over once).
+    Orders,
+    /// The `*NLM` daemon carried out order `id`: `count` locks went;
+    /// `errno` 0, or why it failed.
+    OrderDone { id: u32, count: u32, errno: i32 },
+    /// The calling daemon job failed while serving (it was not asked to
+    /// end): `QSYSOPR` is told (`CPFA1B5`, `CPFA1CB` for the binder with
+    /// `errno`) and the job leaves the registry.
+    Failed { errno: i32 },
+    /// The profile with UID `uid` (the v4 identity mapping).
+    NameOfUid { uid: u32 },
+    /// The profile with GID `gid`.
+    NameOfGid { gid: u32 },
+    /// The UID of profile `name`.
+    UidOfName { name: String },
+    /// The GID of profile `name` (none when it has none).
+    GidOfName { name: String },
+    /// Whether names are mapped (the `*RGY` daemon is ready) and the
+    /// `NFSv4` domain (the options', else the TCP/IP domain name).
+    Mapping,
 }
 
 wire_enum!(NfsOp {
@@ -325,7 +346,29 @@ wire_enum!(NfsOp {
     10 => Options,
     11 => SetOptions { options },
     12 => ServerRestarted { name, state },
+    13 => Orders,
+    14 => OrderDone { id, count, errno },
+    15 => Failed { errno },
+    16 => NameOfUid { uid },
+    17 => NameOfGid { gid },
+    18 => UidOfName { name },
+    19 => GidOfName { name },
+    20 => Mapping,
 });
+
+/// A release of locks `RLSIFSLCK RMTLOCNAME` queued for the `*NLM`
+/// daemon.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct NfsOrder {
+    /// Its number.
+    pub id: u32,
+    /// The remote host whose locks go.
+    pub host: String,
+    /// The job that asked, qualified.
+    pub by: String,
+}
+
+wire_struct!(NfsOrder { id, host, by });
 
 /// The answer to an [`NfsOp`].
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -358,6 +401,14 @@ pub enum NfsReply {
         data: Vec<u8>,
         text: String,
     },
+    /// The release orders for the calling `*NLM` daemon.
+    Orders { orders: Vec<NfsOrder> },
+    /// A profile's name, or none.
+    Name { name: Option<String> },
+    /// A UID or GID, or none.
+    Id { id: Option<u32> },
+    /// Whether names are mapped, and the `NFSv4` domain.
+    Mapping { enabled: bool, domain: String },
 }
 
 wire_enum!(NfsReply {
@@ -370,6 +421,10 @@ wire_enum!(NfsReply {
     6 => Started { submitted, running },
     7 => Options { options },
     8 => Refused { msgid, data, text },
+    9 => Orders { orders },
+    10 => Name { name },
+    11 => Id { id },
+    12 => Mapping { enabled, domain },
 });
 
 /// A mounted file system's type as `/etc/vfs` names it, from the mount
