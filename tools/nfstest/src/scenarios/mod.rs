@@ -12,6 +12,7 @@ mod names;
 mod nlm;
 pub mod probe;
 mod rpc;
+pub mod v4;
 mod v40;
 mod v41;
 

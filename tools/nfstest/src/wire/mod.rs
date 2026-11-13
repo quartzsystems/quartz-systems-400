@@ -6,4 +6,6 @@
 //! from the RFCs: XDR primitives, NLM and NSM, NFS version 4.
 
 pub mod nlm;
+pub mod v4;
+pub mod v4attr;
 pub mod xdr;

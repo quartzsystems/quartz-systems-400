@@ -92,12 +92,19 @@ pub struct Server {
     pub pmap_port: u16,
     stop: Arc<AtomicBool>,
     threads: Vec<JoinHandle<()>>,
+    binder_stop: Arc<AtomicBool>,
+    binder: Vec<JoinHandle<()>>,
 }
 
 impl Drop for Server {
     fn drop(&mut self) {
+        // The daemons first: they unregister with the binder as they end.
         self.stop.store(true, Ordering::SeqCst);
         for t in self.threads.drain(..) {
+            let _ = t.join();
+        }
+        self.binder_stop.store(true, Ordering::SeqCst);
+        for t in self.binder.drain(..) {
             let _ = t.join();
         }
     }
@@ -192,6 +199,8 @@ pub fn start(o: &Options) -> Server {
     let stop = Arc::new(AtomicBool::new(false));
     let started = Arc::new(AtomicUsize::new(0));
     let mut threads = Vec::new();
+    let binder_stop = Arc::new(AtomicBool::new(false));
+    let mut binder = Vec::new();
 
     // The binder, TCP and UDP.
     let bu = UdpSocket::bind("127.0.0.1:0").unwrap();
@@ -206,16 +215,16 @@ pub fn start(o: &Options) -> Server {
         d
     });
     {
-        let (stop, bd) = (Arc::clone(&stop), Arc::clone(&bd));
-        threads.push(std::thread::spawn(move || {
+        let (stop, bd) = (Arc::clone(&binder_stop), Arc::clone(&bd));
+        binder.push(std::thread::spawn(move || {
             while !stop.load(Ordering::Relaxed) {
                 let _ = serve_datagram(&bu, &bd);
             }
         }));
     }
     {
-        let (stop, bd) = (Arc::clone(&stop), Arc::clone(&bd));
-        threads.push(std::thread::spawn(move || {
+        let (stop, bd) = (Arc::clone(&binder_stop), Arc::clone(&bd));
+        binder.push(std::thread::spawn(move || {
             while !stop.load(Ordering::Relaxed) {
                 match bt.accept() {
                     Ok((s, _)) => {
@@ -354,5 +363,7 @@ pub fn start(o: &Options) -> Server {
         pmap_port: baddr.port(),
         stop,
         threads,
+        binder_stop,
+        binder,
     }
 }

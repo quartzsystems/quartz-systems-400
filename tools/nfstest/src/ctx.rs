@@ -63,10 +63,9 @@ impl Ctx {
             nlm: t.nlm_port.map(|p| SocketAddr::new(ip, p)),
             nsm: t.nsm_port.map(|p| SocketAddr::new(ip, p)),
         };
+        let v3 = t.vers == crate::target::Vers::V3;
         let need = t.port.is_none()
-            || t.mount_port.is_none()
-            || t.nlm_port.is_none()
-            || t.nsm_port.is_none();
+            || (v3 && (t.mount_port.is_none() || t.nlm_port.is_none() || t.nsm_port.is_none()));
         if need && let Ok(list) = dump(&c) {
             let find = |prog: u32, vers: u32| {
                 list.iter()
@@ -126,6 +125,7 @@ pub fn dump(c: &Ctx) -> Result<Vec<mapping>, Error> {
     let mut last = None;
     for proto in [Proto::Tcp, Proto::Udp] {
         let mut cl = c.client_as(c.pmap, proto, Cred::None);
+        cl.tries = 1;
         match cl.call::<onc_xdr::Void, pmaplist>(prog::PMAP, 2, 4, &onc_xdr::Void) {
             Ok(l) => return Ok(l.0),
             Err(e) => last = Some(e),
