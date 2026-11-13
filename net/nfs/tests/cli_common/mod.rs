@@ -96,7 +96,7 @@ pub struct ServerSys {
     pub nlm: Mutex<Option<Arc<NlmState>>>,
     grace: Duration,
     running: Mutex<Option<Running>>,
-    /// The NFSv4 server (`nfsd4`, versions 3 and 4 on one port), if run.
+    /// The `NFSv4` server (`nfsd4`, versions 3 and 4 on one port), if run.
     pub v4: Mutex<Option<Arc<Server>>>,
     /// The v4 server's clock and stable records (kept across restarts).
     pub clock: Mutex<Arc<ManualClock>>,
@@ -172,7 +172,7 @@ impl ServerSys {
         s
     }
 
-    /// A server with NFSv4 too (`nfsd4` serves versions 3 and 4); its
+    /// A server with `NFSv4` too (`nfsd4` serves versions 3 and 4); its
     /// grace period after a restart is `grace`, on a clock moved by
     /// [`Self::advance`].
     pub fn start_v4(with_binder: bool, with_nlm: bool, grace: Duration) -> Arc<Self> {
@@ -248,6 +248,7 @@ impl ServerSys {
     }
 
     /// Start the daemons on the system's ports.
+    #[allow(clippy::too_many_lines)]
     pub fn run(&self) {
         let stop = Arc::new(AtomicBool::new(false));
         let ready = Arc::new(AtomicUsize::new(0));

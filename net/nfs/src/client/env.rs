@@ -85,7 +85,7 @@ pub struct ClientEnv {
     pub connections: usize,
     /// The server's reports.
     pub hooks: Hooks,
-    /// NFSv4 owners as `profile@domain` (`QNFSRGYD`'s mapping); without
+    /// `NFSv4` owners as `profile@domain` (`QNFSRGYD`'s mapping); without
     /// one they are sent and read as numbers.
     pub registry: Option<Arc<crate::registry::Registry>>,
 }
