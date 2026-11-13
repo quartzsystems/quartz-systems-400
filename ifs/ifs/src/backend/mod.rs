@@ -163,6 +163,19 @@ pub trait Backend: Send + Sync + 'static {
     fn xattr_remove(&self, p: &str, name: &str) -> Result<()>;
     /// Capacity.
     fn statfs(&self) -> Result<StatFs>;
+    /// The backend's own generation of the node at `p` (xfs's inode
+    /// generation), when it has one: a new object's record takes it, so
+    /// its file ID names the backend's handle. `None` by default.
+    fn generation(&self, _p: &str) -> Result<Option<u32>> {
+        Ok(None)
+    }
+    /// The backend path of the node with number `ino` and backend
+    /// generation `generation`, found without walking (xfs: opened by
+    /// its handle). `None` when the backend cannot, the node is gone or
+    /// its path is not known (an unconnected file): the caller walks.
+    fn path_of(&self, _ino: u64, _generation: u32) -> Result<Option<String>> {
+        Ok(None)
+    }
 }
 
 /// `a/b` joined, either side possibly empty.

@@ -80,6 +80,7 @@ impl<B: Backend> Ifs<B> {
             Kind::File => drop(self.b.create(&crel, bits)?),
             k => self.b.mknod(&crel, k, bits)?,
         }
+        self.adopt_generation(&crel, &mut m);
         m.change = self.next_change()?;
         meta::write(&self.b, &crel, kind, &m, cx.env)?;
         sys.index.added(sys.b, rel, name);

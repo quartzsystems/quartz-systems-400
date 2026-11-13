@@ -247,8 +247,11 @@ fn ids_over<B: Backend + Clone>(b: B) {
     let kept = id_of(&again, "/home/ids/f0");
     again.mkdir(&cx, "/home/ids/later", 0o755).unwrap();
     let later = id_of(&again, "/home/ids/later");
-    assert!(later.generation > kept.generation);
-    assert!(later.generation > ifs::meta::generation::BLOCK);
+    // The clock's generations rise; a backend with its own (xfs) has random ones.
+    if again.backend().generation("").ok().flatten().is_none() {
+        assert!(later.generation > kept.generation);
+        assert!(later.generation > ifs::meta::generation::BLOCK);
+    }
     again.forget_ids();
     assert_eq!(again.stat_by_id(&cx, kept).unwrap().0, "/home/ids/f0");
     again.remove_tree(&cx, "/home/ids").unwrap();
@@ -341,4 +344,79 @@ impl Backend for Shared {
     fn statfs(&self) -> ifs::Result<ifs::backend::StatFs> {
         self.0.statfs()
     }
+    fn generation(&self, p: &str) -> ifs::Result<Option<u32>> {
+        self.0.generation(p)
+    }
+    fn path_of(&self, ino: u64, generation: u32) -> ifs::Result<Option<String>> {
+        self.0.path_of(ino, generation)
+    }
+}
+
+/// File IDs open by xfs handle: a new object's generation is xfs's, and
+/// a directory and a file are found after the remembered paths are gone
+/// without a walk; one removed is stale.
+#[cfg(target_os = "linux")]
+#[test]
+#[ignore = "needs root and a file system with trusted xattrs (tests/linux-xfs.sh)"]
+fn handles_over_linux() {
+    use ifs::ops::audit::FileId;
+    use ifs::ops::{Config, Ifs};
+    let b = ifs::backend::linux::LinuxBackend::open(&linux_dir()).unwrap();
+    assert!(b.handles(), "xfs gives handles of the expected form");
+    let env = common::env();
+    let ifs = Ifs::new(
+        b,
+        Box::new(ifs::vfs::qsys::MemQsys::new(sec::auth::bits::Auth::EXCLUDE)),
+        Config::default(),
+    );
+    ifs.ensure_layout(&env).unwrap();
+    let sec = common::user("QSECOFR");
+    let audit = ifs::ops::audit::NoAudit;
+    let cx = ifs::Ctx {
+        owner: ifs::Owner(1),
+        principal: &sec,
+        env: &env,
+        audit: &audit,
+        job_ccsid: 37,
+    };
+    ifs.mkdir(&cx, "/home/fh", 0o755).unwrap();
+    ifs.mkdir(&cx, "/home/fh/d", 0o755).unwrap();
+    let fd = ifs.creat(&cx, "/home/fh/d/f", 0o644).unwrap();
+    ifs.close(&cx, fd).unwrap();
+    for (p, rel) in [
+        ("/home/fh/d", "root/home/fh/d"),
+        ("/home/fh/d/f", "root/home/fh/d/f"),
+    ] {
+        let s = ifs.stat(&cx, p).unwrap();
+        assert_eq!(
+            Some(s.ino_gen),
+            ifs.backend().generation(rel).unwrap(),
+            "{p}: the record holds xfs's generation"
+        );
+        let id = FileId {
+            fs: s.vfs,
+            ino: s.ino,
+            generation: s.ino_gen,
+        };
+        assert_eq!(
+            ifs.backend()
+                .path_of(id.ino, id.generation)
+                .unwrap()
+                .as_deref(),
+            Some(rel)
+        );
+        ifs.forget_ids();
+        assert_eq!(ifs.stat_by_id(&cx, id).unwrap().0, p);
+        assert_eq!(ifs.id_cache_len(), 1, "{p}: found without a walk");
+    }
+    let s = ifs.stat(&cx, "/home/fh/d/f").unwrap();
+    let id = FileId {
+        fs: s.vfs,
+        ino: s.ino,
+        generation: s.ino_gen,
+    };
+    ifs.unlink(&cx, "/home/fh/d/f").unwrap();
+    assert_eq!(ifs.backend().path_of(id.ino, id.generation).unwrap(), None);
+    assert_eq!(ifs.stat_by_id(&cx, id).err(), Some(ifs::Errno::ESTALE));
+    ifs.remove_tree(&cx, "/home/fh").unwrap();
 }

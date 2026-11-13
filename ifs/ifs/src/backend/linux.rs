@@ -17,6 +17,8 @@ use rustix::fs::{
     XattrFlags,
 };
 
+mod fh;
+
 use super::{BFile, BStat, Backend, DirEntry, Kind, Nanos, StatFs};
 use crate::errno::linux::from_linux;
 use crate::errno::{Errno, Result};
@@ -72,6 +74,10 @@ fn bstat(s: &rfs::Stat) -> Result<BStat> {
 pub struct LinuxBackend {
     /// `None` once [`close`](LinuxBackend::close)d.
     top: RwLock<Option<OwnedFd>>,
+    /// The top's absolute path, as `/proc/self/fd` names it.
+    base: String,
+    /// The volume's handle form, when nodes open by handle ([`fh`]).
+    fh: Option<fh::Form>,
 }
 
 impl LinuxBackend {
@@ -83,9 +89,27 @@ impl LinuxBackend {
             Mode::empty(),
         )
         .map_err(e)?;
+        let base = std::fs::read_link(Self::proc_path(&top))
+            .ok()
+            .and_then(|p| p.to_str().map(str::to_string))
+            .unwrap_or_default();
+        let ino = rfs::fstat(&top).map_err(e)?.st_ino;
+        #[allow(clippy::unnecessary_cast)]
+        let fh = fh::form_of(top.as_fd(), ino as u64).filter(|_| base.starts_with('/'));
+        if fh.is_none() {
+            tracing::info!(path, "IFS: no file handles; file IDs are found by walking");
+        }
         Ok(Self {
             top: RwLock::new(Some(top)),
+            base,
+            fh,
         })
+    }
+
+    /// Whether nodes open by handle here (for tests and the start line).
+    #[must_use]
+    pub fn handles(&self) -> bool {
+        self.fh.is_some()
     }
 
     /// Let go of the top, so the filesystem can be unmounted; every call
@@ -438,5 +462,23 @@ impl Backend for LinuxBackend {
             name_max: s.f_namemax as u64,
             fsid: s.f_fsid as u64,
         })
+    }
+
+    fn generation(&self, p: &str) -> Result<Option<u32>> {
+        let Some(form) = self.fh else {
+            return Ok(None);
+        };
+        if p.is_empty() {
+            return self.with_top(|top| Ok(form.generation(top.as_fd(), "")));
+        }
+        let (dir, name) = self.at(p)?;
+        Ok(form.generation(dir.as_fd(), name))
+    }
+
+    fn path_of(&self, ino: u64, generation: u32) -> Result<Option<String>> {
+        let Some(form) = self.fh else {
+            return Ok(None);
+        };
+        self.with_top(|top| Ok(form.path(top.as_fd(), &self.base, ino, generation)))
     }
 }

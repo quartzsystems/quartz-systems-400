@@ -4,19 +4,16 @@
 
 //! From a file ID to the object, for callers that keep file IDs across
 //! calls and restarts (a file server's handles). A file ID names its
-//! file system, the object's number and its generation
-//! ([`crate::meta::generation`]). The path of every object resolved is
-//! remembered ([`IdCache`]), so an ID seen since the service started is
-//! found by one resolution; any other is searched for: a backend file
-//! system by a walk of its tree (which remembers every path it passes),
-//! `/QSYS.LIB` level by level (libraries, objects, members) comparing the
-//! numbers its names hash to, a collision being refused. What is found
-//! is checked again by resolving its path: an object gone, or one whose
-//! generation differs, is `ESTALE`.
-//!
-//! The xfs could open an object by its kernel handle
-//! (`open_by_handle_at`), but `rustix` has no wrapper for it and this
-//! crate forbids `unsafe`, so the walk is the slow path after an IPL.
+//! file system, the object's number and its generation (the backend's
+//! own where it has one, else [`crate::meta::generation`]'s). First the
+//! backend is asked (`Backend::path_of`: on the xfs, the node opened by
+//! its handle); then the path remembered for it ([`IdCache`]: every
+//! object resolved); then a search: a backend file system by a walk of
+//! its tree (which remembers every path it passes), `/QSYS.LIB` level by
+//! level (libraries, objects, members) comparing the numbers its names
+//! hash to, a collision being refused. What is found is checked again by
+//! resolving its path: an object gone, or one whose generation differs,
+//! is `ESTALE`.
 
 use std::collections::{HashMap, VecDeque};
 
@@ -96,6 +93,35 @@ impl<B: Backend> Ifs<B> {
         }
     }
 
+    /// A new backend node's record takes the backend's own generation
+    /// when it has one (not 0), so its file ID opens by the backend's
+    /// handle ([`Backend::path_of`]); otherwise it keeps the clock's.
+    pub(crate) fn adopt_generation(&self, rel: &str, m: &mut crate::meta::Meta) {
+        if let Ok(Some(g)) = self.b.generation(rel)
+            && g != 0
+        {
+            m.generation = g;
+        }
+    }
+
+    /// The canonical path of the object `id` names on `mount`, through
+    /// the backend's handle, when it can: no walk.
+    fn by_handle(&self, mount: &crate::vfs::Mount, id: FileId) -> Option<String> {
+        let rel = self.b.path_of(id.ino, id.generation).ok()??;
+        let rest = if rel == mount.base {
+            ""
+        } else {
+            rel.strip_prefix(&mount.base)?.strip_prefix('/')?
+        };
+        let mut comps = mount.at.clone();
+        comps.extend(
+            rest.split('/')
+                .filter(|c| !c.is_empty())
+                .map(str::to_string),
+        );
+        Some(crate::path::to_text(&comps))
+    }
+
     /// The paths remembered by file ID (for tests and displays).
     pub fn id_cache_len(&self) -> usize {
         self.ids
@@ -132,6 +158,15 @@ impl<B: Backend> Ifs<B> {
         let mount = self.lock().mounts.get(id.fs).cloned().ok_or(Miss::NoFs)?;
         let ok = |g: u32| g == id.generation || (any_generation && id.generation == 0);
         let at = crate::path::to_text(&mount.at);
+        // The backend's handle first: no walk, no cache.
+        if mount.is_backend()
+            && id.generation != 0
+            && let Some(p) = self.by_handle(&mount, id)
+            && let Some(g) = self.verify(&p, id.fs, id.ino)
+            && ok(g)
+        {
+            return Ok(p);
+        }
         let cached = self
             .ids
             .lock()

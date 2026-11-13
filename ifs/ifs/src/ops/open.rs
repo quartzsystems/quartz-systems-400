@@ -272,6 +272,7 @@ impl<B: Backend> Ifs<B> {
                         );
                         let crel = backend::join(rel, &name);
                         let file = self.b.create(&crel, crate::auth::data::mode_of(&m))?;
+                        self.adopt_generation(&crel, &mut m);
                         m.change = self.next_change()?;
                         crate::meta::write(&self.b, &crel, Kind::File, &m, cx.env)?;
                         sys.index.added(sys.b, rel, &name);
