@@ -11,6 +11,7 @@
 
 use ifs::remote::{RAttr, RKind, SetAttr, SetTime};
 
+use crate::registry::Registry;
 use crate::types::nfs4::{
     FATTR4_CASE_INSENSITIVE, FATTR4_CASE_PRESERVING, FATTR4_CHANGE, FATTR4_CHOWN_RESTRICTED,
     FATTR4_FILEHANDLE, FATTR4_FILEID, FATTR4_FILES_AVAIL, FATTR4_FILES_FREE, FATTR4_FILES_TOTAL,
@@ -309,9 +310,8 @@ pub fn encode(a: &Attrs) -> fattr4 {
     }
 }
 
-/// An owner or group string: a number as text; anything else is the
-/// user without an identity (no `user@domain` mapping on the client;
-/// docs/NFS.md 7.7).
+/// An owner or group string without a registry: a number as text;
+/// anything else is the user without an identity (docs/NFS.md 7.7).
 #[must_use]
 pub fn id_of(s: &[u8]) -> u32 {
     std::str::from_utf8(s)
@@ -320,10 +320,11 @@ pub fn id_of(s: &[u8]) -> u32 {
         .unwrap_or(ifs::remote::Cred::NOBODY)
 }
 
-/// What `setattr` (and a create) sets, as `fattr4`: owners as numeric
+/// What `setattr` (and a create) sets, as `fattr4`: owners through
+/// `reg` (`profile@domain`) or as numeric
 /// strings, times as `settime4`.
 #[must_use]
-pub fn settable(s: &SetAttr) -> fattr4 {
+pub fn settable(s: &SetAttr, reg: Option<&Registry>) -> fattr4 {
     let mut bits = Vec::new();
     let mut e = Encoder::new();
     if let Some(v) = s.size {
@@ -336,11 +337,13 @@ pub fn settable(s: &SetAttr) -> fattr4 {
     }
     if let Some(v) = s.uid {
         bits.push(FATTR4_OWNER);
-        let _ = e.put_opaque(v.to_string().as_bytes(), NFS4_OPAQUE_LIMIT);
+        let who = reg.map_or_else(|| v.to_string(), |r| r.owner(v, None));
+        let _ = e.put_opaque(who.as_bytes(), NFS4_OPAQUE_LIMIT);
     }
     if let Some(v) = s.gid {
         bits.push(FATTR4_OWNER_GROUP);
-        let _ = e.put_opaque(v.to_string().as_bytes(), NFS4_OPAQUE_LIMIT);
+        let who = reg.map_or_else(|| v.to_string(), |r| r.group(v, None));
+        let _ = e.put_opaque(who.as_bytes(), NFS4_OPAQUE_LIMIT);
     }
     for (n, t) in [
         (FATTR4_TIME_ACCESS_SET, s.atime),
@@ -390,15 +393,19 @@ pub fn kind(t: u32) -> RKind {
     }
 }
 
-/// The object's attributes as the IFS's.
+/// The object's attributes as the IFS's; with `reg`, owners and
+/// groups read as `profile@domain` (numeric strings either way).
 #[must_use]
-pub fn rattr(a: &Attrs) -> RAttr {
+pub fn rattr(a: &Attrs, reg: Option<&Registry>) -> RAttr {
+    let nobody = ifs::remote::Cred::NOBODY;
+    let uid = |s: &[u8]| reg.map_or_else(|| id_of(s), |r| r.uid(s).unwrap_or(nobody));
+    let gid = |s: &[u8]| reg.map_or_else(|| id_of(s), |r| r.gid(s).unwrap_or(nobody));
     RAttr {
         kind: kind(a.ftype.unwrap_or(1)),
         mode: a.mode.unwrap_or(0) & 0o7777,
         nlink: a.numlinks.unwrap_or(1),
-        uid: a.owner.as_deref().map_or(ifs::remote::Cred::NOBODY, id_of),
-        gid: a.group.as_deref().map_or(ifs::remote::Cred::NOBODY, id_of),
+        uid: a.owner.as_deref().map_or(nobody, uid),
+        gid: a.group.as_deref().map_or(nobody, gid),
         size: a.size.unwrap_or(0),
         used: a.space_used.unwrap_or(0),
         fileid: a.fileid.unwrap_or(0),
@@ -437,7 +444,7 @@ mod tests {
         };
         let f = encode(&a);
         assert_eq!(decode(&f).unwrap(), a);
-        let r = rattr(&a);
+        let r = rattr(&a, None);
         assert_eq!(
             (r.uid, r.gid, r.size),
             (100, ifs::remote::Cred::NOBODY, 100)

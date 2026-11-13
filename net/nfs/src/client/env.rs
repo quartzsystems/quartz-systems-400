@@ -85,6 +85,9 @@ pub struct ClientEnv {
     pub connections: usize,
     /// The server's reports.
     pub hooks: Hooks,
+    /// NFSv4 owners as `profile@domain` (`QNFSRGYD`'s mapping); without
+    /// one they are sent and read as numbers.
+    pub registry: Option<Arc<crate::registry::Registry>>,
 }
 
 impl std::fmt::Debug for ClientEnv {
@@ -94,6 +97,7 @@ impl std::fmt::Debug for ClientEnv {
             .field("binder_port", &self.binder_port)
             .field("local", &self.local.is_some())
             .field("connections", &self.connections)
+            .field("registry", &self.registry.is_some())
             .finish_non_exhaustive()
     }
 }
@@ -108,6 +112,7 @@ impl Default for ClientEnv {
             reserved_port: true,
             connections: 8,
             hooks: Hooks::default(),
+            registry: None,
         }
     }
 }

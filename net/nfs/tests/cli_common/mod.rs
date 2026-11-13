@@ -24,13 +24,17 @@ use ifs::remote::Cred;
 use nfs::client::ClientEnv;
 use nfs::mount::list::MountList;
 use nfs::nlm::state::{NlmConfig, NlmState};
+use nfs::registry::{MemIdMap, Registry};
 use nfs::rpc::{ClientConfig, Dispatcher, serve_datagram};
 use nfs::rpcb::Binder;
 use nfs::server::SystemClock;
 use nfs::server::locate::FixedLocator;
 use nfs::server::news::{ClientNews, NewsSource};
 use nfs::server::run::{self, Common, Listeners, Registration};
-use nfs::server::{ExportTable, MemExport};
+use nfs::server::{Clock, ExportTable, ManualClock, MemExport};
+use nfs::v4::cb::NoCallbacks;
+use nfs::v4::state::stable::MemStable;
+use nfs::v4::{Config as V4Config, Server};
 pub use srv3_common::World;
 
 /// A binder on a UDP port of its own.
@@ -92,6 +96,11 @@ pub struct ServerSys {
     pub nlm: Mutex<Option<Arc<NlmState>>>,
     grace: Duration,
     running: Mutex<Option<Running>>,
+    /// The NFSv4 server (`nfsd4`, versions 3 and 4 on one port), if run.
+    pub v4: Mutex<Option<Arc<Server>>>,
+    /// The v4 server's clock and stable records (kept across restarts).
+    pub clock: Mutex<Arc<ManualClock>>,
+    stable: Arc<MemStable>,
 }
 
 fn tcp(port: u16) -> TcpListener {
@@ -155,9 +164,55 @@ impl ServerSys {
             nlm: Mutex::new(with_nlm.then(|| Self::nlm_state(Duration::ZERO))),
             grace,
             running: Mutex::new(None),
+            v4: Mutex::new(None),
+            clock: Mutex::new(Arc::new(ManualClock::default())),
+            stable: Arc::new(MemStable::new()),
         });
         s.run();
         s
+    }
+
+    /// A server with NFSv4 too (`nfsd4` serves versions 3 and 4); its
+    /// grace period after a restart is `grace`, on a clock moved by
+    /// [`Self::advance`].
+    pub fn start_v4(with_binder: bool, with_nlm: bool, grace: Duration) -> Arc<Self> {
+        let s = Self::start_with(with_binder, with_nlm, grace);
+        s.stop();
+        let srv = s.v4_server();
+        *s.v4.lock().unwrap_or_else(PoisonError::into_inner) = Some(srv);
+        s.run();
+        s
+    }
+
+    fn v4_server(&self) -> Arc<Server> {
+        let w = self.world();
+        let clock = Arc::clone(&self.clock.lock().unwrap_or_else(PoisonError::into_inner));
+        let reg = Arc::new(Registry::new(
+            Arc::new(ids()),
+            nfs::registry::TTL,
+            clock.clone() as Arc<dyn Clock>,
+        ));
+        Server::new(
+            V4Config {
+                grace: self.grace,
+                lease: Duration::from_secs(30),
+                ..V4Config::default()
+            },
+            Arc::clone(&w.exports) as Arc<dyn ExportTable>,
+            Arc::clone(&w.instance),
+            clock as Arc<dyn Clock>,
+            reg,
+            self.stable.clone(),
+            Arc::new(NoCallbacks),
+        )
+    }
+
+    /// Moves the v4 server's clock on (ends its grace period).
+    pub fn advance(&self, d: Duration) {
+        self.clock
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .advance(d);
     }
 
     fn nlm_state(grace: Duration) -> Arc<NlmState> {
@@ -224,6 +279,11 @@ impl ServerSys {
         {
             let (w, stop, ready) = (Arc::clone(&w), Arc::clone(&stop), Arc::clone(&ready));
             let reg = self.reg("QNFSNFSD");
+            let v4 = self
+                .v4
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .clone();
             let (t, u) = (tcp(self.ports.nfs), udp(self.ports.nfs));
             threads.push(std::thread::spawn(move || {
                 let on = || {
@@ -238,7 +298,19 @@ impl ServerSys {
                     stop: &stop,
                     ready: Some(&on),
                 };
-                run::nfsd(c, || w.nfs3()).unwrap();
+                match v4 {
+                    Some(srv) => {
+                        let w2 = Arc::clone(&w);
+                        run::nfsd4(
+                            c,
+                            &srv,
+                            || w.vfs(),
+                            move || Box::new(ClientNews(w2.job(1))) as Box<dyn NewsSource>,
+                        )
+                        .unwrap();
+                    }
+                    None => run::nfsd(c, || w.nfs3()).unwrap(),
+                }
             }));
         }
         let nlm = self
@@ -318,6 +390,17 @@ impl ServerSys {
             *n = Some(Self::nlm_state(self.grace));
         }
         drop(n);
+        let had = self
+            .v4
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .is_some();
+        if had {
+            *self.clock.lock().unwrap_or_else(PoisonError::into_inner) =
+                Arc::new(ManualClock::default());
+            let srv = self.v4_server();
+            *self.v4.lock().unwrap_or_else(PoisonError::into_inner) = Some(srv);
+        }
         self.run();
     }
 
@@ -415,5 +498,20 @@ pub fn root() -> Cred {
         uid: 0,
         gid: 0,
         gids: vec![],
+    }
+}
+
+/// The identity map of the server world's profiles.
+pub fn ids() -> MemIdMap {
+    MemIdMap {
+        domain: "example.com".into(),
+        users: vec![
+            ("QSECOFR".into(), 0),
+            ("BOB".into(), 100),
+            ("ZED".into(), 102),
+            ("ANN".into(), 103),
+            ("QNFSANON".into(), srv3_common::ANON_UID),
+        ],
+        groups: vec![("DEV".into(), 500)],
     }
 }

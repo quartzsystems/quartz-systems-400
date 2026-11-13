@@ -22,7 +22,7 @@ use crate::xdr::{Decoder, Xdr};
 
 fn v4_attrs(f: &fattr4) {
     if let Ok(a) = attr::decode(f) {
-        let _ = attr::rattr(&a);
+        let _ = attr::rattr(&a, None);
     }
 }
 

@@ -12,7 +12,7 @@
 //! channel), so the server offers no delegations.
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
 use ifs::Errno;
@@ -21,6 +21,7 @@ use ifs::remote::{RResult, RemoteError};
 use super::state::State;
 use crate::client::channel::Channel;
 use crate::client::settings::Policy;
+use crate::registry::Registry;
 use crate::rpc::Credential;
 use crate::types::nfs4::NFS4_PROGRAM::NFS_V4::{Args, Res};
 use crate::types::nfs4::{
@@ -77,6 +78,8 @@ pub(super) struct Core {
     pub state: Mutex<State>,
     pub stopped: AtomicBool,
     pub lease: Mutex<Duration>,
+    /// Owners as `profile@domain`.
+    pub registry: Option<Arc<Registry>>,
 }
 
 impl std::fmt::Debug for Core {
@@ -103,7 +106,14 @@ static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
 impl Core {
     /// A connection over `chan` (nothing sent yet).
-    pub fn new(chan: Channel, minor: u32, policy: Policy, host: &[u8], owner: Credential) -> Self {
+    pub fn new(
+        chan: Channel,
+        minor: u32,
+        policy: Policy,
+        host: &[u8],
+        owner: Credential,
+        registry: Option<Arc<Registry>>,
+    ) -> Self {
         let n = NEXT_ID.fetch_add(1, Ordering::Relaxed);
         let t = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -128,7 +138,12 @@ impl Core {
             state: Mutex::new(State::default()),
             stopped: AtomicBool::new(false),
             lease: Mutex::new(Duration::from_secs(90)),
+            registry,
         }
+    }
+
+    pub fn reg(&self) -> Option<&Registry> {
+        self.registry.as_deref()
     }
 
     pub fn client(&self) -> Client {

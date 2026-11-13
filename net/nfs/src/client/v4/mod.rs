@@ -118,7 +118,14 @@ pub(super) fn mount(t: &Target<'_>, status: &Arc<Status>, minor1: bool) -> RResu
     );
     let host = t.env.host_name.as_bytes().to_vec();
     let owner = super::wire_cred(&host, t.cred);
-    let mut core = Core::new(chan, u32::from(minor1), policy, &host, owner.clone());
+    let mut core = Core::new(
+        chan,
+        u32::from(minor1),
+        policy,
+        &host,
+        owner.clone(),
+        t.env.registry.clone(),
+    );
     core.establish()?;
     core.reclaim_complete()?;
     // The export from the server's root, a component at a time.

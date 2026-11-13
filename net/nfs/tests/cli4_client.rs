@@ -14,10 +14,13 @@
 #![allow(clippy::many_single_char_names, clippy::similar_names)]
 
 mod cli4_common;
+mod cli_common;
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use cli_common::ServerSys;
 use cli4_common::Fake4;
 use ifs::Errno;
 use ifs::remote::{
@@ -26,6 +29,7 @@ use ifs::remote::{
 };
 use nfs::client::{self, ClientEnv, Mount, Version};
 use nfs::exports::mount::parse;
+use nfs::registry::Registry;
 use nfs::types::nfs4::nfsstat4;
 
 fn bob() -> Cred {
@@ -44,7 +48,12 @@ fn env(host: &str) -> ClientEnv {
     }
 }
 
-fn mount(addr: SocketAddr, vers: &str, host: &str) -> Result<Mount, RemoteError> {
+fn mount(
+    addr: SocketAddr,
+    vers: &str,
+    host: &str,
+    reg: Option<&Arc<Registry>>,
+) -> Result<Mount, RemoteError> {
     let o = parse(&format!(
         "vers={vers},soft,timeo=10,retrans=3,retry=1,port={}",
         addr.port()
@@ -55,13 +64,16 @@ fn mount(addr: SocketAddr, vers: &str, host: &str) -> Result<Mount, RemoteError>
         &o,
         MountCcsid::default(),
         &bob(),
-        &env(host),
+        &ClientEnv {
+            registry: reg.cloned(),
+            ..env(host)
+        },
     )
 }
 
 /// Files, names and data through a v4 mount of `addr`.
-fn files(addr: SocketAddr, vers: &str) {
-    let m = mount(addr, vers, "c1").unwrap();
+fn files(addr: SocketAddr, vers: &str, reg: Option<&Arc<Registry>>) {
+    let m = mount(addr, vers, "c1", reg).unwrap();
     let i = m.info();
     assert_eq!(i.name, "nfs4");
     assert!(i.stateful_open && i.keeps_open_unlinked && i.locks);
@@ -150,9 +162,9 @@ fn files(addr: SocketAddr, vers: &str) {
 }
 
 /// Locks between two mounts of `addr`.
-fn locks(addr: SocketAddr, vers: &str) {
-    let m1 = mount(addr, vers, "c1").unwrap();
-    let m2 = mount(addr, vers, "c2").unwrap();
+fn locks(addr: SocketAddr, vers: &str, reg: Option<&Arc<Registry>>) {
+    let m1 = mount(addr, vers, "c1", reg).unwrap();
+    let m2 = mount(addr, vers, "c2", reg).unwrap();
     let c = bob();
     let (root, _) = m1.root().unwrap();
     let (f, _) = m1
@@ -196,10 +208,10 @@ fn locks(addr: SocketAddr, vers: &str) {
 fn files_over_4_1_and_4_0() {
     let fake = Fake4::new(&[0, 1]);
     let (addr, _stop) = fake.serve();
-    files(addr, "4.1");
+    files(addr, "4.1", None);
     let fake = Fake4::new(&[0, 1]);
     let (addr, _stop) = fake.serve();
-    files(addr, "4.0");
+    files(addr, "4.0", None);
     assert!(fake.seen().setclientid >= 1);
 }
 
@@ -208,7 +220,7 @@ fn locks_over_4_1_and_4_0() {
     for v in ["4.1", "4.0"] {
         let fake = Fake4::new(&[0, 1]);
         let (addr, _stop) = fake.serve();
-        locks(addr, v);
+        locks(addr, v, None);
     }
 }
 
@@ -216,12 +228,12 @@ fn locks_over_4_1_and_4_0() {
 fn vers_4_takes_4_1_then_4_0() {
     let both = Fake4::new(&[0, 1]);
     let (a, _s1) = both.serve();
-    assert_eq!(mount(a, "4", "c").unwrap().version(), Version::V41);
+    assert_eq!(mount(a, "4", "c", None).unwrap().version(), Version::V41);
     let old = Fake4::new(&[0]);
     let (b, _s2) = old.serve();
-    assert_eq!(mount(b, "4", "c").unwrap().version(), Version::V40);
+    assert_eq!(mount(b, "4", "c", None).unwrap().version(), Version::V40);
     assert_eq!(
-        mount(b, "4.1", "c").unwrap_err(),
+        mount(b, "4.1", "c", None).unwrap_err(),
         RemoteError::Errno(Errno::EPROTONOSUPPORT)
     );
 }
@@ -230,7 +242,7 @@ fn vers_4_takes_4_1_then_4_0() {
 fn delay_is_waited_out_and_a_lost_session_made_again() {
     let fake = Fake4::new(&[1]);
     let (addr, _stop) = fake.serve();
-    let m = mount(addr, "4.1", "c").unwrap();
+    let m = mount(addr, "4.1", "c", None).unwrap();
     let (root, _) = m.root().unwrap();
     fake.fail_op(nfsstat4::NFS4ERR_DELAY);
     m.getattr(&bob(), &root).unwrap();
@@ -264,7 +276,7 @@ fn the_lease_is_kept() {
     for (v, minors) in [("4.1", &[1][..]), ("4.0", &[0][..])] {
         let fake = Fake4::new(minors);
         let (addr, _stop) = fake.serve();
-        let _m = mount(addr, v, "c").unwrap();
+        let _m = mount(addr, v, "c", None).unwrap();
         // The responder's lease is 2 s: renewed at 1.33 s.
         std::thread::sleep(Duration::from_millis(1800));
         let s = fake.seen();
@@ -275,7 +287,7 @@ fn the_lease_is_kept() {
 /// A restart of the server behind `addr` (by `restart`) with an open and
 /// a lock held: both are reclaimed in the grace period.
 fn restart_reclaims(fake: &Fake4, addr: SocketAddr, vers: &str) {
-    let m = mount(addr, vers, "c1").unwrap();
+    let m = mount(addr, vers, "c1", None).unwrap();
     let c = bob();
     let (root, _) = m.root().unwrap();
     let (f, _) = m
@@ -327,23 +339,48 @@ fn a_restart_is_reclaimed_over_4_1_and_4_0() {
     }
 }
 
-/// Where NFS-6's server listens over loopback, once it exists.
-fn v4_server() -> Option<SocketAddr> {
-    None
+/// NFS-6's server (`nfsd4` over `IfsVfs`) on loopback, exporting
+/// `/home/exp`; its registry maps `BOB` and the others of its world.
+fn v4_server() -> (Arc<ServerSys>, SocketAddr, Arc<Registry>) {
+    let s = ServerSys::start_v4(false, false, Duration::from_secs(30));
+    let addr = SocketAddr::from(([127, 0, 0, 1], s.ports.nfs));
+    let reg = Arc::new(Registry::new(
+        Arc::new(cli_common::ids()),
+        nfs::registry::TTL,
+        Arc::new(nfs::server::SystemClock),
+    ));
+    (s, addr, reg)
 }
 
 #[test]
-#[ignore = "needs the v4 server (NFS-6)"]
 fn files_against_the_v4_server() {
-    let addr = v4_server().expect("needs the v4 server (NFS-6)");
-    files(addr, "4.1");
-    files(addr, "4.0");
+    for v in ["4.1", "4.0"] {
+        let (_s, addr, reg) = v4_server();
+        files(addr, v, Some(&reg));
+    }
 }
 
 #[test]
-#[ignore = "needs the v4 server (NFS-6)"]
 fn locks_against_the_v4_server() {
-    let addr = v4_server().expect("needs the v4 server (NFS-6)");
-    locks(addr, "4.1");
-    locks(addr, "4.0");
+    for v in ["4.1", "4.0"] {
+        let (_s, addr, reg) = v4_server();
+        locks(addr, v, Some(&reg));
+    }
+}
+
+#[test]
+fn owners_are_numbers_without_a_registry() {
+    let (_s, addr, _) = v4_server();
+    let m = mount(addr, "4.1", "c1", None).unwrap();
+    let (root, _) = m.root().unwrap();
+    let (_, a) = m
+        .create(
+            &bob(),
+            &root,
+            b"num",
+            CreateMode::Unchecked(SetAttr::default()),
+        )
+        .unwrap();
+    // The server writes BOB@example.com: unknown without a registry.
+    assert_eq!(a.uid, Cred::NOBODY);
 }

@@ -122,7 +122,7 @@ impl V4 {
                 nfs_argop4::OP_CREATE(CREATE4args {
                     objtype: t.clone(),
                     objname: name(n),
-                    createattrs: attr::settable(set),
+                    createattrs: attr::settable(set, self.core.reg()),
                 }),
                 nfs_argop4::OP_GETFH,
                 getattr(attr::OBJECT),
@@ -130,7 +130,7 @@ impl V4 {
         })?;
         let h = fh_at(&list, 2)?;
         self.remember(dir, n, &h);
-        Ok((h, rattr(&attrs_at(&list, 3)?)))
+        Ok((h, rattr(&attrs_at(&list, 3)?, self.core.reg())))
     }
 
     /// The kind of `n` in `dir`.
@@ -212,7 +212,7 @@ impl V4 {
                 name: e.name.0.clone(),
                 cookie: e.cookie,
                 fileid: a.fileid.unwrap_or(0),
-                attr: (good && a.ftype.is_some()).then(|| rattr(&a)),
+                attr: (good && a.ftype.is_some()).then(|| rattr(&a, self.core.reg())),
                 handle,
             });
         }
@@ -230,12 +230,15 @@ impl RemoteFs for V4 {
         let list = self
             .core
             .run(&owner, &|_| vec![putfh(&self.root), getattr(attr::OBJECT)])?;
-        Ok((self.root.clone(), rattr(&attrs_at(&list, 1)?)))
+        Ok((
+            self.root.clone(),
+            rattr(&attrs_at(&list, 1)?, self.core.reg()),
+        ))
     }
 
     fn getattr(&self, cred: &Cred, h: &RHandle) -> RResult<RAttr> {
         let list = self.run(cred, &|_| vec![putfh(h), getattr(attr::OBJECT)])?;
-        Ok(rattr(&attrs_at(&list, 1)?))
+        Ok(rattr(&attrs_at(&list, 1)?, self.core.reg()))
     }
 
     fn setattr(
@@ -259,12 +262,12 @@ impl RemoteFs for V4 {
             };
             v.push(nfs_argop4::OP_SETATTR(SETATTR4args {
                 stateid,
-                obj_attributes: attr::settable(set),
+                obj_attributes: attr::settable(set, self.core.reg()),
             }));
             v.push(getattr(attr::OBJECT));
             v
         })?;
-        Ok(rattr(&attrs_at(&list, list.len() - 1)?))
+        Ok(rattr(&attrs_at(&list, list.len() - 1)?, self.core.reg()))
     }
 
     fn lookup(&self, cred: &Cred, dir: &RHandle, n: &[u8]) -> RResult<(RHandle, RAttr)> {
@@ -278,7 +281,7 @@ impl RemoteFs for V4 {
         })?;
         let h = fh_at(&list, 2)?;
         self.remember(dir, n, &h);
-        Ok((h, rattr(&attrs_at(&list, 3)?)))
+        Ok((h, rattr(&attrs_at(&list, 3)?, self.core.reg())))
     }
 
     fn access(&self, cred: &Cred, h: &RHandle, mask: u32) -> RResult<u32> {
@@ -393,8 +396,8 @@ impl RemoteFs for V4 {
     ) -> RResult<(RHandle, RAttr)> {
         let c = self.cred(cred);
         let how = match how {
-            CreateMode::Unchecked(s) => createhow4::UNCHECKED4(attr::settable(&s)),
-            CreateMode::Guarded(s) => createhow4::GUARDED4(attr::settable(&s)),
+            CreateMode::Unchecked(s) => createhow4::UNCHECKED4(attr::settable(&s, self.core.reg())),
+            CreateMode::Guarded(s) => createhow4::GUARDED4(attr::settable(&s, self.core.reg())),
             CreateMode::Exclusive(v) if self.core.minor == 1 => {
                 createhow4::EXCLUSIVE4_1(creatverfattr {
                     cva_verf: v.to_be_bytes(),
@@ -426,7 +429,7 @@ impl RemoteFs for V4 {
             stateid: op.stateid,
         };
         self.close_wire(&c, &o)?;
-        Ok((op.fh, rattr(&op.attrs)))
+        Ok((op.fh, rattr(&op.attrs, self.core.reg())))
     }
 
     fn mkdir(
