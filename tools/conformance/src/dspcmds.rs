@@ -48,6 +48,7 @@ const PARMS: &[(&str, &str)] = &[
     ("DSPJRNRCVA", "JRNRCV(Q82LIB/Q82RCV)"),
     ("DSPLIB", "LIB(QGPL)"),
     ("DSPLIND", "LIND(Q82ETH)"),
+    ("DSPMFSINF", "OBJ('/')"),
     ("DSPMOD", "MODULE(Q82LIB/Q82MOD)"),
     ("DSPOBJAUT", "OBJ(QGPL) OBJTYPE(*LIB)"),
     ("DSPOBJD", "OBJ(QGPL) OBJTYPE(*LIB)"),
