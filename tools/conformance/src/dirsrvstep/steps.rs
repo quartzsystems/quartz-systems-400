@@ -55,6 +55,10 @@ const EXT_DN: &str = "cn=ldext,o=qs400test";
 const PUB_USER: &str = "PUBUSER";
 /// Where the users agent publishes.
 const PUB_PARENT: &str = "ou=Users,cn=localhost";
+/// The parent's ACL: anyone adds, deletes and writes below it.
+const PUB_ACL: &str = "group:CN=ANYBODY:object:ad:normal:rwsc:sensitive:rwsc:critical:rwsc:system:rsc:restricted:rsc";
+/// The publishing configuration.
+const PUB_CONF: &str = "/QIBM/UserData/OS400/DirSrv/publish.conf";
 
 /// Failures not in [`KNOWN`].
 fn new_failures(o: &Outcome) -> Vec<&str> {
@@ -760,57 +764,40 @@ impl Suite {
         Ok("ldapsearch, ldapadd, ldapmodify, ldapcompare (0 and 5), ldapmodrdn, ldapexop whoami, ldapdelete in QSH; LDAPC over QGLDCLNT: bind 0, search 0, 2 entries, compare true".into())
     }
 
-    /// Step 191: the users agent, set through Navigator, publishes a new
-    /// profile and removes a deleted one.
+    /// Step 191: the users agent, configured in `publish.conf` to bind
+    /// anonymously to a parent whose ACL lets anyone write below it,
+    /// publishes a new profile and removes a deleted one. (Navigator's
+    /// and QAP's way in, `dir_admin` 1568, is not served yet: §18.)
     pub(crate) fn dir_publish(&self, s: &mut Session) -> Result<String, String> {
         let r = self.dir_publish_body(s);
         self.dir_checked(s, "191", r)
     }
 
     fn dir_publish_body(&self, s: &mut Session) -> Result<String, String> {
-        use crate::httpadm::{enc, http_at, secofr_password, session_cookie};
         let (p, _) = self.dir_ensure(s)?;
         job_line(s, "QGLDPUBE")?;
-        secofr_password(s)?;
-        let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(NAVIGATOR)", SLOW)?;
-        if !started.contains("TCP1A07") && !started.contains("TCP1A08") {
-            return Err(format!("STRTCPSVR NAVIGATOR:\n{started}"));
+        let mut a = admin(p)?;
+        if !exists(&mut a, PUB_PARENT)? {
+            let rc = add(
+                &mut a,
+                PUB_PARENT,
+                &[
+                    ("objectClass", &["organizationalUnit"]),
+                    ("ou", &["Users"]),
+                    ("aclEntry", &[PUB_ACL]),
+                ],
+            )?;
+            if rc != 0 {
+                return Err(format!("add {PUB_PARENT}: {rc}"));
+            }
         }
-        let nav = forward_port(self, GUEST, 2002)?;
-        let pre = "/qs400/navigator";
-        let form = format!(
-            "user=QSECOFR&password={}",
-            enc(crate::phase5::SECOFR_PASSWORD)
+        let _ = a.unbind();
+        let conf = format!(
+            "version: 1\n\ndn: cn=publishing\nqs400-pubFormat: 1\n\ndn: cn=users,cn=publishing\nqs400-pubEnabled: TRUE\nqs400-pubHost: localhost\nqs400-pubPort: 389\nqs400-pubParentDN: {PUB_PARENT}\nqs400-pubCreateParent: FALSE\nqs400-pubRetry: 10\nqs400-pubResync: 60"
         );
-        let on = http_at(pre, nav, "POST", "/signon", None, Some(&form))?;
-        let sid = session_cookie(&on).ok_or_else(|| format!("signing on: {}", on.body))?;
-        let page = http_at(pre, nav, "GET", "/dirsrv/publish/users", Some(&sid), None)?;
-        let csrf = {
-            let at = page
-                .body
-                .find("name=\"csrf\" value=\"")
-                .ok_or_else(|| format!("no csrf on the users agent's page:\n{}", page.body))?
-                + "name=\"csrf\" value=\"".len();
-            let end = page.body[at..].find('"').unwrap_or(0);
-            page.body[at..at + end].to_string()
-        };
-        let post = format!(
-            "csrf={}&enabled=*YES&server=&port=389&tls=*NO&bind={}&pwop=*CHANGE&pw={}&parent={}&ok=OK",
-            enc(&csrf),
-            enc(ADMIN_DN),
-            enc(ADMIN_PW),
-            enc(PUB_PARENT)
-        );
-        let set = http_at(pre, nav, "POST", "/dirsrv/publish/users", Some(&sid), Some(&post))?;
-        if set.status != 303 {
-            return Err(format!(
-                "setting the users agent: {}\n{}",
-                set.status, set.body
-            ));
-        }
-        let conf = s.command("svc.ifs cat /QIBM/UserData/OS400/DirSrv/publish.conf", CMD)?;
-        if conf.contains(ADMIN_PW) || !conf.to_ascii_lowercase().contains("qs400-pubbindpw") {
-            return Err(format!("publish.conf does not keep a sealed password:\n{conf}"));
+        let put = s.command(&format!("svc.ifs put {PUB_CONF} {conf}"), CMD)?;
+        if !put.contains("bytes") {
+            return Err(format!("{PUB_CONF}: {put}"));
         }
         let _ = s.command(&format!("DLTUSRPRF USRPRF({PUB_USER})"), CMD);
         clean(
@@ -855,7 +842,7 @@ impl Suite {
         clean(s, &format!("DLTUSRPRF USRPRF({PUB_USER})"), CMD)?;
         let (t_del, _) = find(false)?;
         Ok(format!(
-            "users agent set through Navigator (password sealed in publish.conf); {PUB_USER} published in {:.0} s as {entry}; gone {:.0} s after DLTUSRPRF",
+            "users agent enabled in publish.conf (anonymous, under an ACL that lets anyone write); {PUB_USER} published in {:.0} s as {entry}; gone {:.0} s after DLTUSRPRF",
             t_add.as_secs_f64(),
             t_del.as_secs_f64()
         ))

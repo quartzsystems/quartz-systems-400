@@ -14,7 +14,7 @@
 //! | 188 | the projected backend: profile binds (`ldaptest` projected), `QMAXSIGN` and `QMAXSGNACN`, a `PW` entry, `QIBM_DIRSRV_ADMIN` |
 //! | 189 | TLS: a certificate assigned to `QS400_DIRECTORY_SERVER`, `ibm-slapdSecurity: SSLTLS`, LDAPS on 636 and `StartTLS` on 389, SASL `EXTERNAL` with a client certificate |
 //! | 190 | in the guest: the QSH `ldap*` tools and an ILE program over `QGLDCLNT` |
-//! | 191 | publishing: the users agent set through Navigator, a `CRTUSRPRF` appears and a `DLTUSRPRF` disappears |
+//! | 191 | publishing: the users agent enabled in `publish.conf`, a `CRTUSRPRF` appears and a `DLTUSRPRF` disappears |
 //! | 192 | persistence across `ENDTCPSVR`/`STRTCPSVR` and an IPL, `SAVLIB`/`RSTLIB` of `QUSRDIRDB`, `RCLSTG` |
 //! | 194 | `ldaptest bench`: binds a minute and a paged search (numbers to `DIRSRV.md` §16) |
 //!
