@@ -20,12 +20,13 @@ kernel is the only inherited component; every process above it is ours.
 | 9 | ILE RPG: front end, compiler, runtime (`qrpgrt`), the SQL precompiler, listings and debug views, the corpus against pub400, HLINV | `PHASE9.md`, `RPG.md` |
 | 10 | the IFS on xfs with `/QSYS.LIB`, TCP/IP and communications objects, sockets, TLS and certificates, telnet, FTP, SSH, NTP, LPD, DDM/DRDA, the host servers, network printers, QSH and PASE | `PHASE10.md` |
 | 11 | save and restore, tape and optical (virtual, physical code ready), image catalogs, licensed programs and `GO LICPGM`, PTFs and the update service, the problem log and service tools, install media and recovery, cleanup and backup | `PHASE11.md` |
-| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6 (7 to 9, `Manage`, `Develop`/`Jobs` and `Debug`, drafts in V1R1M0; 10, `NetServer`, a draft for V1R2M0); the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
+| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6 (7 to 9, `Manage`, `Develop`/`Jobs` and `Debug`, drafts in V1R1M0; 10 `NetServer`, 11 `Nfs` and 12 `Dirsrv`, drafts for V1R2M0); the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
 | 12 | release engineering for V1R1M0: the carried gaps, the format freeze, Collection Services, help everywhere, the text audit and NLS, hardware qualification, the guest agent, RPG III, hardening, the Knowledge Center (complete) | `PHASE12.md` |
 | SQL | the SQL engine to the Db2 for i SQL dialect, 7.5 level: DDL, queries, SQL PL and triggers, types, dynamic and embedded SQL, `QSQCLI`, DRDA, the `QSYS2` services, the plan cache, `STRSQL` | `SQL.md` |
 | pre-release | V1R1M0 made releasable: QS00 product IDs, every accepted-and-ignored clause implemented or refused, hot spares and the DST options, storage thresholds, power and system values, time zones, CCSIDs, function usage, the `QIBM_QSY_*` exit points, CI and releases from a tag, Secure Boot signing, `NOTICES.txt`, the kernel source offer, reproducible media; QS/400 Access for Web (`net/accessweb`, QS00AFW) | `PHASE12.md` Release gate, `RELEASE_NOTES_V1R1M0.md`, `releasing.md`, `ACCESSWEB.md` |
 | V1R2M0 | NetServer: SMB 2.0.2 to 3.1.1 file and print serving over the IFS (the vendored `net/smb-server` with QS/400's patches, `net/netserver`, `net/netsvrcfg`, `security/ntlm`), `QZLSSERVER`/`QZLSFILE`, the `QZLS*` APIs, Navigator and QAP, system-wide leases and change notify, point and print; `tools/smbtest` | `NETSERVER.md`, `RELEASE_NOTES_V1R2M0.md` |
 | V1R2M0 | NFS: the server (versions 3, 4.0, 4.1, MOUNT, NLM, NSM, the binder) and the client (`MOUNT TYPE(*NFS)`) over ONC RPC with XDR generated from descriptions (`net/xdrgen`, `net/nfs`), the daemon jobs in `QSYSWRK`, `EXPORTFS` and `/etc/exports`, remote mounts in the IFS (`ifs::remote`), file IDs by xfs handle (`ifs/fhandle`), `QZNFRTVE`/`QZNFNFSO`, `QSYS2.NFS_EXPORT_INFO` and `MOUNTED_FS_INFO`, Navigator and QAP; `tools/nfstest` | `NFS.md`, `RELEASE_NOTES_V1R2M0.md` |
+| V1R2M0 | Directory Server: an LDAPv3 server in the base OS (`net/ldap` the protocol and client, `net/dirsrv` the server's logic), entries in a `*DIRDB` store in `QUSRDIRDB`, the instance job `QUSRDIR` in `QSYSWRK` (`STRTCPSVR SERVER(*DIRSRV)`), `CHGDIRSVRA`, IBM's ACLs, password policy, the projected user profiles (`os400-sys=`), TLS and SASL EXTERNAL, publishing (`QGLDPUBE`/`QGLDPUBA`), `QGLDCLNT` with QS/400's `QSYSINC` members, the QSH `ldap*` tools, `QSSECCHK` and `DI` audit entries, Navigator and QAP; `tools/ldaptest` | `DIRSRV.md`, `DIRSRV_GUIDE.md`, `RELEASE_NOTES_V1R2M0.md` |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -179,6 +180,11 @@ tools/        host-side tools
                 dependency on net/nfs: the NFSWolf crates for portmap, MOUNT and NFSv3, NLM,
                 NSM and NFSv4 by hand (src/wire/); scenarios, `probe`, `bench`; loopback tests
                 against the server; `build deny` checks its graph
+  ldaptest/     the LDAP test client, outside the workspace with its own Cargo.lock and no
+                dependency on net/ldap or net/dirsrv: ldap3 with rustls-graviola, the controls,
+                LDIF and schema by hand; read, controls, ext, write, acl, projected and ldif
+                suites, `oracle` (anonymous, read-only, against the primary) and `bench`; QEMU
+                steps 187-189 and 194 run it; `build deny` checks its graph
   smbprobe/     a second NetServer client from the server library's own test helpers, for what
                 smbtest's crate cannot ask: leases, locks, durable reconnect, print shares,
                 spoolss, share enumeration; QEMU step 170 runs it (it shares authors with the
@@ -396,6 +402,9 @@ runtime/      ILE: IR, code generator, runtime, objects, APIs, messages
                 CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
   sqlcli/       the SQL call level interface: QSQCLI's exports over a Host, the C-linkage face,
                 server mode in QSQSRVR prestart jobs (docs/SYSAPI.md §13)
+  ldapclnt/     QGLDCLNT: IBM's LDAP C API as bound procedures over net/ldap's client (215 names,
+                the refused ones LDAP_NOT_SUPPORTED); src/header/protos.txt drives QS/400's own
+                QSYSINC/H(LDAP, LBER, LDAPSSL) and QRPGLESRC(LDAP) (lic/osobjects/shipped/qsysinc/)
   sysapi/       system APIs as natives of QSYS and QLEAWI procedures: src/param.rs parameter
                 and receiver conventions, ERRC0100/ERRC0200; src/provider.rs the Provider trait
                 (objects, data queues and areas, user indexes, files, system values, commands,
@@ -643,9 +652,22 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 formats, the 13 QZLS* APIs over bytes, the session table, an API client for
                 Navigator and QAP; the service side is lic/slic/src/stgsvc/netsvr.rs and
                 nslogon.rs (sign-on), the APIs runtime/sysapi/src/netsvr.rs
+  ldap/         LDAPv3 (docs/DIRSRV.md §3): ber, msg (every operation), dn, filter, control,
+                ext, ldif, url, schema descriptions, code (result codes), client/ (blocking; LDAPS,
+                StartTLS, paging, sorting, referrals), fuzzing
+  dirsrv/       the directory server (docs/DIRSRV.md): store/ the *DIRDB entry store (format
+                frozen at V1R2M0), schema/ and schema/ files (qs.*), config/ (ibmslapd.conf,
+                idsinstances.ldif, settings), ops/ the operations engine, acl/, pwd/ (schemes,
+                policy), backend/ (btree, projected, config, schema, monitor, changelog),
+                server/ the connection loop, publish/ (publish.conf, the publisher), admin/
+                (DirAdmin for Navigator and QAP); the service side is lic/slic/src/stgsvc/dirsrv/
+                (serve, instance, profiles, hooks, admin, publish) and cpp/dircmd.rs (CHGDIRSVRA),
+                the jobs work/qsjob/src/work/dirsrv/ (instance, publish), the QSH tools
+                qsh/qsh-utils/src/net/ldap/
 docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKUP.md,
               BUILDKIT.md, CERTS.md, CL.md, CMD.md, CMD_OPEN_QUESTIONS.md, CONSOLE.md,
-              CPP_AUDIT.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md,
+              CPP_AUDIT.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md, DIRSRV.md,
+              DIRSRV_GUIDE.md,
               DSPF.md, DST.md, FTP.md, HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md,
               HTTPADMIN_HANDOFF.md, IFS.md, ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md,
               LICPGM.md, MEDIA.md, MENUS.md, MSGF.md, NAVIGATOR.md,
@@ -753,6 +775,8 @@ cargo run -p conformance -- --only 166,167,168,169,170,171   # NetServer under Q
 cargo test -p xdrgen -p nfs -p fhandle     # NFS: the XDR compiler, RPC, the binder, the servers over an IFS in memory, the client against them on loopback
 cargo test -p ifs --test remote_mount --test remote_ops --test remote_fail --test remote_cache --test remote_data   # remote mounts over a remote in memory
 cargo test --manifest-path tools/nfstest/Cargo.toml   # the independent NFS client against the server on loopback; --test interop -- --ignored for a Linux nfsd and the kernel client
+cargo test -p ldap -p dirsrv -p ldapclnt   # LDAP: the protocol and client, the directory server over a store in memory (store, schema, ops, ACLs, policy, publishing, the connection loop), QGLDCLNT (IR and RPG programs)
+cargo test --manifest-path tools/ldaptest/Cargo.toml   # the independent LDAP test client; `cargo run --manifest-path tools/ldaptest/Cargo.toml -- oracle` records the primary's anonymous answers
 cargo test -p sys-cpps --test nfs_prompts  # the NFS command prompts against the primary's screens
 cargo clippy -p slic -p qsjob --all-targets --target x86_64-unknown-linux-musl   # also runs on Windows with the musl target installed (lint only)
 cargo run -p conformance -- --only 51,53,172   # telnet sign-on and recovery, named display sessions (DEVNAME, QMAXSGNACN vary-off, VRYCFG)

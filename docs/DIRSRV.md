@@ -845,6 +845,10 @@ Loading applies the deletions, then the definitions (each replacing its
 OID's or added), then resolves; a file that does not load stops the
 instance's start.
 
+This text is format version 1 (`schema::modify::MODIFIED_FORMAT_VERSION`),
+frozen at V1R2M0 as `dirsrv-modified-schema` in `tools/fmtcheck`: a
+change to it needs a new version and a reader of the old one.
+
 ## 7. Operations, controls, extended operations
 
 The engine is `net/dirsrv/src/ops/` (`ops::Directory`), a library the
@@ -1879,7 +1883,7 @@ own:
 | The QSH tools (§13) | proven | step 190 (seven of the nine in the guest); `cargo test -p qsh-utils --test ldap` (all nine) |
 | Publishing: `QGLDPUBE` users (§10.1) | proven | step 191 |
 | Publishing: `QGLDPUBA` printers (§10.1) | built | `cargo test -p dirsrv --test publish` |
-| Publishing's configuration through Navigator, QAP and `dir_admin`, the sealed password (§10.1) | built, not served | `BLOCKED(rel)`: the service does not answer request 1568 yet, so Navigator's and QAP's Directory server pages are refused live; `cargo test -p navigator --test dirsrv`, `-p qapd --test dirsrv` over `MemAdmin` |
+| Navigator's and QAP's Directory server pages over `dir_admin`, publishing's configuration and the sealed password (§4, §10.1) | built, not run under QEMU | the storage service answers request 1568 (`lic/slic/src/stgsvc/dirsrv/admin.rs`, all 24 operations); `cargo test -p navigator --test dirsrv`, `-p qapd --test dirsrv`, `-p dirsrv --lib admin`, `-p stg --lib diradmin`; no QEMU step drives the pages yet |
 | `tools/ldaptest`, independent of the server, and its oracle record (§13) | proven | steps 187-189; `cargo test --manifest-path tools/ldaptest/Cargo.toml` |
 | The differences from the primary (§15) | proven | step 187's diff (`dirsrv-187-oracle.diff`) |
 | Performance: 10 000 binds a minute, a paged search of 1 000 000 entries (§16) | measured, partly met | step 194: binds on one connection far past it, a connection each 2 186 a minute; paged search measured at 100 000 (§16) |

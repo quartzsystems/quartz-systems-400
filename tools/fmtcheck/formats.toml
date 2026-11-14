@@ -504,6 +504,14 @@ doc = "docs/DIRSRV.md"
 version = ["net/dirsrv/src/publish/config.rs::FORMAT_VERSION"]
 files = ["net/dirsrv/src/publish/config.rs"]
 
+# The instance's schema changes, etc/V3.modifiedschema (docs/DIRSRV.md §6.4).
+[[format]]
+name = "dirsrv-modified-schema"
+frozen_at = "V1R2M0"
+doc = "docs/DIRSRV.md"
+version = ["net/dirsrv/src/schema/modify.rs::MODIFIED_FORMAT_VERSION"]
+files = ["net/dirsrv/src/schema/modify.rs"]
+
 # --- Oracle fixtures (no credentials; the account is `{user}`) ---
 
 [[format]]

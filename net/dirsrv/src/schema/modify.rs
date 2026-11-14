@@ -15,6 +15,11 @@ use ldap::schema::SchemaValue;
 use super::registry::{Schema, SchemaError};
 use super::shipped::{lines, parse_line};
 
+/// The version of the `V3.modifiedschema` text [`Schema::modified_text`]
+/// writes and [`Schema::load_modified`] reads (docs/DIRSRV.md §6.4);
+/// frozen at V1R2M0 (`tools/fmtcheck`).
+pub const MODIFIED_FORMAT_VERSION: u32 = 1;
+
 /// The file's attribute for a deleted shipped attribute type (a QS/400
 /// keyword: the value is the OID).
 pub const DELETED_ATTRIBUTE_TYPES: &str = "deletedAttributeTypes";

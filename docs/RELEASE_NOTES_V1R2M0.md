@@ -1,7 +1,8 @@
 # QS/400 V1R2M0 release notes
 
 Draft for the next release. V1R2M0 adds NetServer (SMB file and print
-serving) and NFS (the server and the client), two of the features
+serving), NFS (the server and the client) and the Directory Server
+(LDAP, the server and the client), three of the features
 V1R1M0 left out (`RELEASE_NOTES_V1R1M0.md`, "Deliberately not in
 V1R1M0"), and the fixes made since V1R1M0. `VERSION` is still `1.1.0`: the generated blocks (the
 marker inventory and the SQL refusals) stay in the V1R1M0 notes until
@@ -20,13 +21,26 @@ marker inventory and the SQL refusals) stay in the V1R1M0 notes until
     profile reads as one with no NT hash;
   - the audit entry layouts are at version 2: the `VP` entry (network
     password error) is written, under `*AUTFAIL`;
-  - QAP is at version 11: version 10 a draft adding the NetServer
-    service, version 11 a draft adding the `Nfs` service (`QAP.md`).
+  - the audit entry layouts' version 2 also holds the directory
+    server's `DI` entry (`SECURITY.md` §7), written under `*SECDIRSRV`,
+    `*AUTFAIL`, `*CREATE`, `*DELETE`, `*OBJMGT` and object auditing as
+    IBM selects it;
+  - the object store's type registry is at version 2: it adds the
+    internal type `*DIRDB` (0x00FC), the directory server's entry store
+    (`STORE_FORMAT.md` §9). A V1R1M0 system never opens a V1R2M0 ASP, so
+    no older code meets the type;
+  - QAP is at version 12: version 10 a draft adding the NetServer
+    service, version 11 a draft adding the `Nfs` service, version 12 a
+    draft adding the `Dirsrv` service (`QAP.md`).
 - New formats, frozen at V1R2M0: NetServer's configuration files
   `/QIBM/UserData/OS400/NetServer/QAZLSCFG` and `QAZLSSHR`
   (`NETSERVER.md` §4); and under `/QIBM/UserData/OS400/NFS/` the NFS
   options, the status monitor's monitored hosts and the NFSv4 stable
-  records (`NFS.md` §6).
+  records (`NFS.md` §6); the directory server's `*DIRDB` entry store
+  (`dirdb`, `DIRSRV.md` §5), its publishing configuration
+  `/QIBM/UserData/OS400/DirSrv/publish.conf` (`dirsrv-publish`, §10.1)
+  and an instance's schema changes `etc/V3.modifiedschema`
+  (`dirsrv-modified-schema`, §6.4).
 - **Shipped user profiles get IBM's UIDs.** Until now they had none, so
   UID 0 named no one. At the first IPL of this release a shipped
   profile without a UID takes IBM's number when it is free (`QSECOFR` 0,
@@ -54,6 +68,22 @@ marker inventory and the SQL refusals) stay in the V1R1M0 notes until
   named in the install log. A system that gets the code by PTF gets them
   at its next IPL, with the shipped message descriptions its message
   files lack.
+- The upgrade adds the directory server's objects: the library
+  `QUSRDIRDB`, the job descriptions `QSYS/QDIRSRV`, `QGLDPUBE`,
+  `QGLDPUBA` and `QDIRJOBD`, `QSYSWRK`'s autostart entries for the
+  publishing jobs `QGLDPUBE` and `QGLDPUBA` (routing entries 2140 and
+  2141), the message file `QSYS/QGLDMSG`, the `QSYSINC` library with
+  QS/400's LDAP members, and at the first IPL the shipped instance list
+  and `QUSRDIR`'s `ibmslapd.conf` under `/QIBM/UserData/OS400/DirSrv/`.
+  The directory server does not start until `STRTCPSVR SERVER(*DIRSRV)`
+  (its autostart is off, as IBM ships it).
+- **More prompts are laid out as IBM's V7R1M0 draws them**: `+ for more
+  values` sits at column 17 with a field where the next value is typed;
+  a group whose default is a single value shows only that value, its
+  other elements blank; a choice text with no whole item that fits is
+  left out. `STRTCPSVR` and `ENDTCPSVR` prompt `RESTART`, `HTTPSVR` and
+  ENDTCPSVR's `OPTION` and `DELAY` only for `SERVER(*HTTP)`, and take
+  IBM's `INSTANCE` element for `*DIRSRV`.
 - A slip install now keeps the system's work management objects as they
   are: subsystem entries, the messages on `QSYSOPR`, the jobs on job
   queues, what output queues hold, the job schedule and the reply list.
@@ -164,6 +194,73 @@ commands, daemon jobs and `/etc/exports`:
   write and directory delegations, named attributes, exporting `/QOPT`,
   `/QDLS`, `/QNTC`, `/QFileSvr.400` or an NFS mount, `CVTRPCSRC`.
 
+**Directory Server** (`DIRSRV.md`, `DIRSRV_GUIDE.md`). An LDAPv3
+server in the base operating system, as IBM i's (option 3 of IBM's
+5770SS1), started with `STRTCPSVR SERVER(*DIRSRV)` and changed with
+`CHGDIRSVRA`, the LDAP client API for ILE programs, and the QSH tools.
+Written from the RFCs; the primary's running IBM Directory Server 6.1
+settled the wire answers, read anonymously
+(`tools/conformance/oracle/dirsrv/`):
+
+- The instance `QUSRDIR` runs as the job `QUSRDIR`, user `QDIRSRV`, in
+  `QSYSWRK`, on 389, and with a certificate assigned to the directory
+  server's application and `ibm-slapdSecurity` `SSL` or `SSLTLS` on 636
+  as well; StartTLS on 389. Its configuration is IBM's `ibmslapd.conf`
+  in IBM's path; an attribute QS/400 does not honour stops the start
+  with a `GLD` message naming it. The administrator is
+  `cn=Administrator`, with no password until `CHGDIRSVRA` sets one.
+- Entries live in the object store (`*DIRDB` in `QUSRDIRDB`): indexed,
+  changed in the store's transactions, saved with `SAVLIB QUSRDIRDB`,
+  checked by `RCLSTG`. A subtree moves in one change.
+- Every LDAPv3 operation; paged results, server-side sort, manageDsaIT
+  and referrals, persistent search, proxied authorization, tree delete,
+  assertion, pre- and post-read, the password policy control; StartTLS,
+  whoami and password modify; the change log (`cn=changelog`) when it
+  is configured. Assertion, pre- and post-read, whoami, password modify
+  and the change log are QS/400's additions: IBM's 6.1 server lacks
+  them.
+- The schema of RFC 4512, 4519, 4524, 2798, 2307 and 4530 with IBM's
+  operational and directory attributes and every name and OID the
+  primary lists, so an LDIF exported from IBM's server loads; changes
+  through `cn=schema` are kept in `V3.modifiedschema`.
+- IBM's access control (`aclEntry`, `entryOwner`, their propagation,
+  access classes, pseudo DNs) and password policy (global, group and
+  individual); passwords stored `{SSHA512}` by default.
+- The user profiles appear read-only under `os400-sys=` and the system's
+  name, as IBM projects them. A bind as a profile checks its password
+  as sign-on does: a disabled profile is refused, `QMAXSIGN` and
+  `QMAXSGNACN` act, a failure writes a `PW` audit entry. A profile with
+  function usage `QIBM_DIRSRV_ADMIN` binds as an administrator. SASL
+  `EXTERNAL` takes a TLS client certificate.
+- `DI` audit entries in `QAUDJRN`; `QSSECCHK` reports anonymous binds,
+  binds without TLS and an administrator password unset or easily
+  guessed (the shipped instance gives the three warnings).
+- Publishing: the agents `QGLDPUBE` and `QGLDPUBA` publish the user
+  profiles and the printers to this system's directory or another,
+  and keep them in step as profiles change (`DIRSRV.md` §10.1).
+- `QGLDCLNT`: IBM's LDAP C API, 159 functions built and 56 refused with
+  `LDAP_NOT_SUPPORTED` (`DIRSRV.md` §14), with QS/400's own
+  `QSYSINC/H` members `LDAP`, `LBER` and `LDAPSSL` and an RPG copy
+  member `QSYSINC/QRPGLESRC(LDAP)`, which IBM does not ship. A program
+  is compiled against QS/400's members.
+- The QSH tools `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`,
+  `ldapmodrdn`, `ldapchangepwd`, `ldapexop`, `ldapcompare` and
+  `ldapdiff`, with IBM's option letters.
+- Navigator's Network > Directory server pages (instances, properties,
+  suffixes, indexes, schema, access, publishing, counters) and the QAP
+  `Dirsrv` service.
+- `tools/ldaptest`, a test client written apart from the server, with
+  67 scenarios, an `oracle` mode that recorded the primary's anonymous
+  answers, and `bench`. Under QEMU: about 480 000 binds a minute on one
+  connection, 2 200 a minute with a new connection each; a paged search
+  of 100 000 entries in 6 seconds (`DIRSRV.md` §16).
+- Refused (`DIRSRV.md` §14): replication, SASL `DIGEST-MD5`,
+  `CRAM-MD5`, `GSSAPI` and `OS400-PRFTKN`, filter-based ACLs,
+  pass-through authentication, the `aes` and `md5` password
+  encryptions, and IBM's own controls and extended operations
+  (`1.3.18.0.2.10.*`, `1.3.18.0.2.12.*`), whose encodings IBM does not
+  publish.
+
 **Install media.** The media UKI is 13 MB, down from 31 MB at the edge
 of the 32 MiB an El Torito boot image can name: its initramfs holds only
 a loader, which takes `slic` and the job program from the media once
@@ -208,7 +305,6 @@ screens and the bytes on its disks are as they were.
 
 Each has its own handoff document for a later release.
 
-- LDAP server and client: user profiles are the directory.
 - An SNMP agent: the definitions only.
 - DNS, DHCP, BOOTP and TFTP servers: DHCP and DNS clients exist.
 - POP3 and SMTP servers: the SMTP client sends mail (`SNDSMTPEMM`).
@@ -226,7 +322,9 @@ Each has its own handoff document for a later release.
 - BRMS, save while active, parallel saves, optical media libraries.
 - Independent ASPs: the system ASP only.
 - Kerberos and EIM: password and RFC 4777 sign-on, SSH keys; NetServer
-  signs on with NTLMv2 only.
+  signs on with NTLMv2 only; the directory server takes simple binds
+  and SASL `EXTERNAL`.
+- Directory server replication (suppliers, consumers, gateways).
 - PASE for AIX programs and Java: QSH and Linux-native PASE programs.
 
 ## Known limits
@@ -243,6 +341,14 @@ primary group (the IFS's authority model); version 3 locks on a mount
 need the server's binder; NFSv4 blocking locks are polled. A QS/400
 client copying a large file to a QS/400 server with `CPY` writes at
 only 4 to 11 MiB/s under QEMU (`NFS.md` §11).
+
+The directory server's are in `DIRSRV.md` §14 and §16. The main ones:
+a bind on a new connection costs about 27 ms under QEMU (2 200 a
+minute, short of the 10 000 the handoff asked; one connection binds
+far faster); entries are added at about 80 a second, so a million take
+over three hours to load; LDAP clients resolve `localhost` but not other
+host-table names; Navigator's and QAP's directory pages have not been
+driven under QEMU yet.
 
 ## Before shipping (Cody)
 
@@ -268,6 +374,19 @@ The NetServer `NEEDS-CODY` items (`NETSERVER.md`):
   table, the `ZLSL0300` logon types and the `SERVER_SHARE_INFO` value
   spellings that need a change API or a live session; `CPFB68A` reason 6
   for a missing output queue; whether a share CCSID of 0 means 819.
+
+The directory server `NEEDS-CODY` items (`DIRSRV.md` §17): a profile
+bind on the primary to settle the projected DN form; the primary's
+administrator view (`cn=configuration`, an ACL on a test subtree), only
+if Cody agrees to set the administrator's password there; Apache
+Directory Studio against QS/400 (browse, edit, a 50 000-entry LDIF, a
+profile bind); publishing between the primary and QS/400; the `DI`
+audit entry's code values. Also: the slip install from V1R1M0 media
+(install step 10 checks the directory server's objects after the
+upgrade but has not run: it needs the V1R1M0 development ISO built
+first); and whether `dirsrv-publish` may stay re-locked without a
+version bump (only a default that is never written changed; the file's
+syntax did not).
 
 Then `ci/version.sh prepare 1.2.0`, `tools/kcbuild` pointed at this file,
 and the `v1.2.0` tag.
