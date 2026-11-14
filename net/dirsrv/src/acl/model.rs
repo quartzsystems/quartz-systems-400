@@ -146,7 +146,9 @@ fn pseudo_of(dn: &Dn) -> Option<Pseudo> {
 fn split_kind(s: &str) -> (Kind, &str) {
     for k in [Kind::AccessId, Kind::Group, Kind::Role] {
         let p = k.prefix();
-        if s.len() > p.len() && s[..p.len()].eq_ignore_ascii_case(p) && s.as_bytes()[p.len()] == b':'
+        if s.len() > p.len()
+            && s[..p.len()].eq_ignore_ascii_case(p)
+            && s.as_bytes()[p.len()] == b':'
         {
             return (k, &s[p.len() + 1..]);
         }
@@ -214,8 +216,8 @@ pub fn parse_acl(schema: &Schema, s: &str) -> Result<AclEntry, AclError> {
     let mut i = at;
     while i < parts.len() {
         let word = parts[i].trim();
-        let target = target_of(schema, word)
-            .ok_or_else(|| err(format!("{word:?} is not an ACL target")))?;
+        let target =
+            target_of(schema, word).ok_or_else(|| err(format!("{word:?} is not an ACL target")))?;
         i += 1;
         let mut deny = false;
         if let Some(p) = parts.get(i).map(|p| p.trim()) {
@@ -270,7 +272,10 @@ fn perm_text(t: &Target, bits: u8) -> String {
     } else {
         &[(R, 'r'), (W, 'w'), (S, 's'), (C, 'c')]
     };
-    set.iter().filter(|(b, _)| bits & b != 0).map(|(_, c)| *c).collect()
+    set.iter()
+        .filter(|(b, _)| bits & b != 0)
+        .map(|(_, c)| *c)
+        .collect()
 }
 
 fn target_text(t: &Target) -> String {

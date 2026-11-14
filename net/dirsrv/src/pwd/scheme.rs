@@ -79,10 +79,11 @@ impl Scheme {
             Self::Ssha256 => tagged("SSHA256", &salted::<Sha256>(pw, salt)),
             Self::Ssha => tagged("SSHA", &salted::<Sha1>(pw, salt)),
             Self::Sha => tagged("SHA", &Sha1::digest(pw)),
-            Self::Crypt => {
-                format!("{{CRYPT}}{}", crypt::sha_crypt(6, pw, &crypt::salt_chars(salt), None))
-                    .into_bytes()
-            }
+            Self::Crypt => format!(
+                "{{CRYPT}}{}",
+                crypt::sha_crypt(6, pw, &crypt::salt_chars(salt), None)
+            )
+            .into_bytes(),
             Self::Clear => pw.to_vec(),
         }
     }
@@ -193,6 +194,10 @@ mod tests {
             b"{crypt}$1$saltstri$YMyguxXMBpd2TEZ.vS/3q1",
             b"Hello world!"
         ));
-        assert!(Scheme::Ssha512.hash(b"x", &[0; 8]).starts_with(b"{SSHA512}"));
+        assert!(
+            Scheme::Ssha512
+                .hash(b"x", &[0; 8])
+                .starts_with(b"{SSHA512}")
+        );
     }
 }

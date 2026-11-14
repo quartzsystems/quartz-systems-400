@@ -71,7 +71,9 @@ fn values<'a>(schema: &Schema, attrs: &'a [Attribute], at: &AttributeType) -> Ve
 }
 
 /// Evaluate `f` against `t`.
+// `fold`, not `try_fold`: Undefined (None) must not stop the scan.
 #[must_use]
+#[allow(clippy::manual_try_fold)]
 pub fn eval(schema: &Schema, f: &Filter, t: &Target<'_>) -> Option<bool> {
     match f {
         Filter::And(fs) => {
@@ -95,21 +97,46 @@ pub fn eval(schema: &Schema, f: &Filter, t: &Target<'_>) -> Option<bool> {
             }
             Some(!values(schema, t.attrs, at).is_empty())
         }
-        Filter::Equality(a, v) => with_rule(schema, a, t, Kind::Equality, |at| at.equality, |r, x| {
-            r.equals(schema, x, v)
-        }),
-        Filter::Approx(a, v) => with_rule(schema, a, t, Kind::Equality, |at| at.equality, |r, x| {
-            approx(schema, r, x, v)
-        }),
-        Filter::GreaterOrEqual(a, v) => with_rule(schema, a, t, Kind::Ordering, |at| at.ordering, |r, x| {
-            r.compare(schema, x, v).map(|o| o != Ordering::Less)
-        }),
-        Filter::LessOrEqual(a, v) => with_rule(schema, a, t, Kind::Ordering, |at| at.ordering, |r, x| {
-            r.compare(schema, x, v).map(|o| o != Ordering::Greater)
-        }),
-        Filter::Substrings(a, s) => with_rule(schema, a, t, Kind::Substring, |at| at.substr, |r, x| {
-            r.substrings(x, s)
-        }),
+        Filter::Equality(a, v) => with_rule(
+            schema,
+            a,
+            t,
+            Kind::Equality,
+            |at| at.equality,
+            |r, x| r.equals(schema, x, v),
+        ),
+        Filter::Approx(a, v) => with_rule(
+            schema,
+            a,
+            t,
+            Kind::Equality,
+            |at| at.equality,
+            |r, x| approx(schema, r, x, v),
+        ),
+        Filter::GreaterOrEqual(a, v) => with_rule(
+            schema,
+            a,
+            t,
+            Kind::Ordering,
+            |at| at.ordering,
+            |r, x| r.compare(schema, x, v).map(|o| o != Ordering::Less),
+        ),
+        Filter::LessOrEqual(a, v) => with_rule(
+            schema,
+            a,
+            t,
+            Kind::Ordering,
+            |at| at.ordering,
+            |r, x| r.compare(schema, x, v).map(|o| o != Ordering::Greater),
+        ),
+        Filter::Substrings(a, s) => with_rule(
+            schema,
+            a,
+            t,
+            Kind::Substring,
+            |at| at.substr,
+            |r, x| r.substrings(x, s),
+        ),
         Filter::Extensible(e) => extensible(schema, e, t),
     }
 }
@@ -118,10 +145,13 @@ pub fn eval(schema: &Schema, f: &Filter, t: &Target<'_>) -> Option<bool> {
 /// defined without one (IBM's `createTimestamp` has none, yet orders).
 pub(crate) fn by_syntax(at: &AttributeType, kind: Kind) -> Option<&'static Rule> {
     let syn = at.syntax.as_deref()?;
-    rule::RULES.iter().find(|r| r.kind == kind && r.syntax == syn)
+    rule::RULES
+        .iter()
+        .find(|r| r.kind == kind && r.syntax == syn)
 }
 
 /// Any value of attribute `a` matching under the rule `pick` gives.
+#[allow(clippy::manual_try_fold)]
 fn with_rule(
     schema: &Schema,
     a: &str,
@@ -198,7 +228,9 @@ fn split_stars(v: &[u8]) -> Substrings {
 fn apply(schema: &Schema, r: &Rule, value: &[u8], assertion: &[u8]) -> Option<bool> {
     match r.kind {
         Kind::Equality => r.equals(schema, value, assertion),
-        Kind::Ordering => r.compare(schema, value, assertion).map(|o| o == Ordering::Less),
+        Kind::Ordering => r
+            .compare(schema, value, assertion)
+            .map(|o| o == Ordering::Less),
         Kind::Substring => r.substrings(value, &split_stars(assertion)),
     }
 }
@@ -209,34 +241,31 @@ fn extensible(schema: &Schema, e: &Extensible, t: &Target<'_>) -> Option<bool> {
         None => None,
     };
     let mut acc = Some(false);
-    match &e.attr {
-        Some(a) => {
-            let at = schema.attribute(split_description(a).0)?;
-            if !(t.can_search)(at) {
-                return None;
-            }
-            let r = named.or(at.equality)?;
-            for v in values(schema, t.attrs, at) {
-                acc = or3(acc, apply(schema, r, v, &e.value));
-            }
+    if let Some(a) = &e.attr {
+        let at = schema.attribute(split_description(a).0)?;
+        if !(t.can_search)(at) {
+            return None;
         }
-        None => {
-            let r = named?;
-            for a in t.attrs {
-                let Some(at) = schema.attribute(split_description(&a.ty).0) else {
-                    continue;
-                };
-                let fits = at.syntax.as_deref() == Some(r.syntax)
-                    || [at.equality, at.ordering, at.substr]
-                        .iter()
-                        .flatten()
-                        .any(|x| x.oid == r.oid);
-                if !fits || !(t.can_search)(at) {
-                    continue;
-                }
-                for v in &a.vals {
-                    acc = or3(acc, apply(schema, r, v, &e.value));
-                }
+        let r = named.or(at.equality)?;
+        for v in values(schema, t.attrs, at) {
+            acc = or3(acc, apply(schema, r, v, &e.value));
+        }
+    } else {
+        let r = named?;
+        for a in t.attrs {
+            let Some(at) = schema.attribute(split_description(&a.ty).0) else {
+                continue;
+            };
+            let fits = at.syntax.as_deref() == Some(r.syntax)
+                || [at.equality, at.ordering, at.substr]
+                    .iter()
+                    .flatten()
+                    .any(|x| x.oid == r.oid);
+            if !fits || !(t.can_search)(at) {
+                continue;
+            }
+            for v in &a.vals {
+                acc = or3(acc, apply(schema, r, v, &e.value));
             }
         }
     }
@@ -247,7 +276,9 @@ fn extensible(schema: &Schema, e: &Extensible, t: &Target<'_>) -> Option<bool> {
                     continue;
                 };
                 if let Some(a) = &e.attr
-                    && !schema.attribute(a).is_some_and(|f| schema.is_subtype_of(at, f.oid()))
+                    && !schema
+                        .attribute(a)
+                        .is_some_and(|f| schema.is_subtype_of(at, f.oid()))
                 {
                     continue;
                 }
@@ -324,7 +355,10 @@ mod tests {
         assert_eq!(run("(cn:caseExactMatch:=ibmpolicies)", e), Some(false));
         assert_eq!(run("(:dn:2.5.13.2:=acme)", e), Some(true));
         assert_eq!(run("(o:dn:=acme)", e), Some(true));
-        assert_eq!(run("(cn:caseIgnoreSubstringsMatch:=ibm\\2as)", e), Some(true));
+        assert_eq!(
+            run("(cn:caseIgnoreSubstringsMatch:=ibm\\2as)", e),
+            Some(true)
+        );
         assert_eq!(run("(objectClass=*)", e), Some(true));
         assert_eq!(run("(description=*)", e), Some(false));
     }

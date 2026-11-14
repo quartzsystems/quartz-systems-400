@@ -29,17 +29,35 @@ impl Directory {
         value: &[u8],
     ) -> OpResult<ResultCode> {
         let d = Self::parse_dn(dn)?;
-        let no_attr = || OpError::new(ResultCode::NoSuchAttribute, format!("the entry has no {attr}"));
-        let at = self.schema.attribute(split_description(attr).0).ok_or_else(no_attr)?;
+        let no_attr = || {
+            OpError::new(
+                ResultCode::NoSuchAttribute,
+                format!("the entry has no {attr}"),
+            )
+        };
+        let at = self
+            .schema
+            .attribute(split_description(attr).0)
+            .ok_or_else(no_attr)?;
         let rule = at
             .equality
             .or_else(|| super::filter::by_syntax(at, crate::schema::rule::Kind::Equality))
-            .ok_or_else(|| OpError::new(ResultCode::InappropriateMatching, format!("{} has no equality rule", at.name())))?;
+            .ok_or_else(|| {
+                OpError::new(
+                    ResultCode::InappropriateMatching,
+                    format!("{} has no equality rule", at.name()),
+                )
+            })?;
         let (attrs, allowed) = match self.place(&d) {
             Place::RootDse => (self.root_dse(), true),
             Place::Schema => (crate::backend::schema::entry(&self.schema), true),
-            Place::Monitor => (self.counters.entry(self.now(), &self.settings.release), true),
-            Place::UnderMonitor => return Err(OpError::unwilling("cn=monitor has no entries below it")),
+            Place::Monitor => (
+                self.counters.entry(self.now(), &self.settings.release),
+                true,
+            ),
+            Place::UnderMonitor => {
+                return Err(OpError::unwilling("cn=monitor has no entries below it"));
+            }
             Place::Backend(_) | Place::Outside => {
                 let f = self.find_visible(txn, s, &d, ctl.manage)?;
                 if let Some(a) = &ctl.assertion {
@@ -52,7 +70,9 @@ impl Directory {
                 let name = at.name().to_string();
                 let mut attrs = f.entry.attrs.clone();
                 let e: &DirEntry = &f.entry;
-                attrs.extend(self.computed(txn, f.backend, e, &eff, &|n| n.eq_ignore_ascii_case(&name))?);
+                attrs.extend(
+                    self.computed(txn, f.backend, e, &eff, &|n| n.eq_ignore_ascii_case(&name))?,
+                );
                 (attrs, allowed)
             }
         };
@@ -71,7 +91,9 @@ impl Directory {
         if vals.is_empty() {
             return Err(no_attr());
         }
-        let hit = vals.iter().any(|v| rule.equals(&self.schema, v, value) == Some(true));
+        let hit = vals
+            .iter()
+            .any(|v| rule.equals(&self.schema, v, value) == Some(true));
         Ok(if hit {
             ResultCode::CompareTrue
         } else {

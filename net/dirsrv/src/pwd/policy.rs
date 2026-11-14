@@ -170,7 +170,11 @@ impl Partial {
             check_syntax: hi(self.check_syntax, o.check_syntax),
             min_length: hi(self.min_length, o.min_length),
             expire_warning: hi(self.expire_warning, o.expire_warning),
-            grace_limit: self.grace_limit.min(o.grace_limit).or(self.grace_limit).or(o.grace_limit),
+            grace_limit: self
+                .grace_limit
+                .min(o.grace_limit)
+                .or(self.grace_limit)
+                .or(o.grace_limit),
             lockout: yes(self.lockout, o.lockout),
             lockout_duration: hi(self.lockout_duration, o.lockout_duration),
             max_failure: lo(self.max_failure, o.max_failure),
@@ -273,7 +277,10 @@ impl State {
 fn replace(ty: &str, vals: Vec<Vec<u8>>) -> Modification {
     Modification {
         op: ModOp::Replace,
-        attr: Attribute { ty: ty.into(), vals },
+        attr: Attribute {
+            ty: ty.into(),
+            vals,
+        },
     }
 }
 
@@ -329,15 +336,19 @@ pub fn on_bind(pol: &Policy, st: &State, now: u64, password_ok: bool) -> BindVer
         let at = fails.iter().max().map_or(now, |l| now.max(l + 1));
         fails.push(at);
         let max = Policy::n(p.max_failure);
-        v.mods.retain(|m| !m.attr.ty.eq_ignore_ascii_case("pwdFailureTime"));
+        v.mods
+            .retain(|m| !m.attr.ty.eq_ignore_ascii_case("pwdFailureTime"));
         v.mods.push(replace(
             "pwdFailureTime",
             fails.iter().map(|&f| gentime(f).into_bytes()).collect(),
         ));
         if p.lockout == Some(true) && max > 0 && fails.len() as u64 >= max {
-            v.mods.retain(|m| !m.attr.ty.eq_ignore_ascii_case("pwdAccountLockedTime"));
             v.mods
-                .push(replace("pwdAccountLockedTime", vec![gentime(now).into_bytes()]));
+                .retain(|m| !m.attr.ty.eq_ignore_ascii_case("pwdAccountLockedTime"));
+            v.mods.push(replace(
+                "pwdAccountLockedTime",
+                vec![gentime(now).into_bytes()],
+            ));
         }
         return v;
     }
@@ -353,7 +364,8 @@ pub fn on_bind(pol: &Policy, st: &State, now: u64, password_ok: bool) -> BindVer
             let limit = Policy::n(p.grace_limit);
             let used = st.grace.len() as u64;
             if used < limit {
-                let mut g: Vec<Vec<u8>> = st.grace.iter().map(|&t| gentime(t).into_bytes()).collect();
+                let mut g: Vec<Vec<u8>> =
+                    st.grace.iter().map(|&t| gentime(t).into_bytes()).collect();
                 g.push(gentime(now).into_bytes());
                 v.mods.push(replace("pwdGraceUseTime", g));
                 v.warning = Some(PolicyWarning::GraceAuthNsRemaining(
@@ -480,7 +492,12 @@ pub fn on_change(
     let keep = Policy::n(p.in_history);
     if keep > 0 && !scheme::is_hashed(c.new) {
         let old_values = st.history.iter().filter_map(|h| history_value(h));
-        if c.current.iter().map(Vec::as_slice).chain(old_values).any(|h| scheme::verify(h, c.new)) {
+        if c.current
+            .iter()
+            .map(Vec::as_slice)
+            .chain(old_values)
+            .any(|h| scheme::verify(h, c.new))
+        {
             return Err(PolicyError::PasswordInHistory);
         }
     }
@@ -493,7 +510,9 @@ pub fn on_change(
         for v in c.current {
             hist.push(history_entry(now, v));
         }
-        let skip = hist.len().saturating_sub(usize::try_from(keep).unwrap_or(usize::MAX));
+        let skip = hist
+            .len()
+            .saturating_sub(usize::try_from(keep).unwrap_or(usize::MAX));
         mods.push(replace("pwdHistory", hist.split_off(skip)));
     }
     if c.by == Changer::Self_ || p.must_change != Some(true) {
@@ -611,7 +630,10 @@ mod tests {
             Err(PolicyError::PasswordInHistory)
         );
         let mods = on_change(&p, &st, 0, &ch(b"newpass1", Changer::Other, None)).unwrap();
-        assert!(mods.iter().any(|m| m.attr.ty == "pwdReset" && !m.attr.vals.is_empty()));
+        assert!(
+            mods.iter()
+                .any(|m| m.attr.ty == "pwdReset" && !m.attr.vals.is_empty())
+        );
         let h = mods.iter().find(|m| m.attr.ty == "pwdHistory").unwrap();
         assert_eq!(history_value(&h.attr.vals[0]), Some(cur[0].as_slice()));
     }

@@ -26,7 +26,12 @@ use crate::backend::{DirEntry, Scan};
 use crate::pwd::{self, Partial, Policy, State};
 
 /// The static group classes and their member attributes.
-const GROUP_CLASSES: [&str; 4] = ["groupOfNames", "groupOfUniqueNames", "accessGroup", "accessRole"];
+const GROUP_CLASSES: [&str; 4] = [
+    "groupOfNames",
+    "groupOfUniqueNames",
+    "accessGroup",
+    "accessRole",
+];
 
 fn first_text(e: &DirEntry, name: &str) -> Option<String> {
     e.get(name)
@@ -52,8 +57,16 @@ impl Directory {
             };
             let mut scan = Scan::Start;
             loop {
-                let ids =
-                    b.scan(txn, &self.schema, &self.sys, root, Scope::Sub, &filter, &mut scan, 256)?;
+                let ids = b.scan(
+                    txn,
+                    &self.schema,
+                    &self.sys,
+                    root,
+                    Scope::Sub,
+                    &filter,
+                    &mut scan,
+                    256,
+                )?;
                 for id in ids {
                     let Some(e) = b.entry(txn, &self.schema, &self.sys, id)? else {
                         continue;
@@ -86,7 +99,9 @@ impl Directory {
 
     /// An entry of the btree backend by DN, as the service sees it.
     pub(crate) fn sys_entry(&self, txn: &mut Txn<'_>, dn: &str) -> OpResult<Option<DirEntry>> {
-        let Ok(d) = Dn::parse(dn) else { return Ok(None) };
+        let Ok(d) = Dn::parse(dn) else {
+            return Ok(None);
+        };
         let b = &self.backends[0];
         let Some(id) = b.resolve(txn, &self.schema, &self.sys, &d)?.entry else {
             return Ok(None);
@@ -180,7 +195,12 @@ impl Directory {
     pub fn bind(&mut self, txn: &mut Txn<'_>, msg: &LdapMessage, conn: &Conn) -> Outcome {
         self.counters.ops_initiated += 1;
         self.counters.binds_requested += 1;
-        let ProtocolOp::BindRequest { version, name, auth } = &msg.op else {
+        let ProtocolOp::BindRequest {
+            version,
+            name,
+            auth,
+        } = &msg.op
+        else {
             return Outcome::one(
                 ProtocolOp::BindResponse {
                     result: Self::result(ResultCode::ProtocolError, "not a bind request"),
@@ -189,7 +209,10 @@ impl Directory {
                 Vec::new(),
             );
         };
-        let want_policy = msg.controls.iter().any(|c| c.oid == ldap::control::PASSWORD_POLICY);
+        let want_policy = msg
+            .controls
+            .iter()
+            .any(|c| c.oid == ldap::control::PASSWORD_POLICY);
         let r = controls::parse(msg, Op::Bind, &self.settings, false)
             .and_then(|_| self.do_bind(txn, *version, name, auth, conn));
         let (result, session, warning, perr) = match r {
@@ -234,9 +257,17 @@ impl Directory {
         conn: &Conn,
     ) -> OpResult<(Session, Option<PolicyWarning>, Option<PolicyError>)> {
         if version != 2 && version != 3 {
-            return Err(OpError::new(ResultCode::ProtocolError, "LDAP versions 2 and 3 only"));
+            return Err(OpError::new(
+                ResultCode::ProtocolError,
+                "LDAP versions 2 and 3 only",
+            ));
         }
-        let invalid = || OpError::new(ResultCode::InvalidCredentials, "the credentials are not valid");
+        let invalid = || {
+            OpError::new(
+                ResultCode::InvalidCredentials,
+                "the credentials are not valid",
+            )
+        };
         match auth {
             BindAuth::Simple(pw) => {
                 if name.is_empty() {
@@ -257,7 +288,10 @@ impl Directory {
                 let dn = Self::parse_dn(name)?;
                 self.simple(txn, &dn, pw)
             }
-            BindAuth::Sasl { mechanism, credentials } => {
+            BindAuth::Sasl {
+                mechanism,
+                credentials,
+            } => {
                 if version == 2 || !mechanism.eq_ignore_ascii_case("EXTERNAL") {
                     return Err(OpError::new(
                         ResultCode::AuthMethodNotSupported,
@@ -297,7 +331,9 @@ impl Directory {
                     s.admin = g.admin;
                     return Ok((s, None, None));
                 }
-                let found = self.find_visible(txn, &self.sys.clone(), &dn, true).map_err(|_| invalid())?;
+                let found = self
+                    .find_visible(txn, &self.sys.clone(), &dn, true)
+                    .map_err(|_| invalid())?;
                 let dn = Self::parse_dn(&found.entry.dn)?;
                 let (s, _) = self.session_for(txn, &dn, Method::External, &[])?;
                 Ok((s, None, None))
@@ -312,9 +348,18 @@ impl Directory {
         dn: &Dn,
         pw: &[u8],
     ) -> OpResult<(Session, Option<PolicyWarning>, Option<PolicyError>)> {
-        let invalid = || OpError::new(ResultCode::InvalidCredentials, "the credentials are not valid");
+        let invalid = || {
+            OpError::new(
+                ResultCode::InvalidCredentials,
+                "the credentials are not valid",
+            )
+        };
         if self.is_admin_dn(dn) {
-            let ok = self.settings.admin_pw.as_deref().is_some_and(|h| pwd::verify(h, pw));
+            let ok = self
+                .settings
+                .admin_pw
+                .as_deref()
+                .is_some_and(|h| pwd::verify(h, pw));
             if !ok {
                 return Err(invalid());
             }
@@ -336,12 +381,14 @@ impl Directory {
             };
         }
         let sys = self.sys.clone();
-        let found = match self.find(txn, &sys, dn, true) {
-            Ok(Some(f)) => f,
-            _ => return Err(invalid()),
+        let Ok(Some(found)) = self.find(txn, &sys, dn, true) else {
+            return Err(invalid());
         };
         let e = &found.entry;
-        let stored: Vec<Vec<u8>> = e.get("userPassword").map(|a| a.vals.clone()).unwrap_or_default();
+        let stored: Vec<Vec<u8>> = e
+            .get("userPassword")
+            .map(|a| a.vals.clone())
+            .unwrap_or_default();
         let ok = stored.iter().any(|h| pwd::verify(h, pw));
         let edn = Self::parse_dn(&e.dn)?;
         let (mut session, groups) = self.session_for(txn, &edn, Method::Simple, &[])?;

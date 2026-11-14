@@ -13,6 +13,7 @@ use crate::schema::Level;
 
 /// The settings the operations obey.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     /// `ibm-slapdServerInstanceName`.
     pub instance: String,

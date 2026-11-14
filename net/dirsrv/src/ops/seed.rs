@@ -23,16 +23,25 @@ pub fn entries() -> Vec<(&'static str, Vec<Attribute>)> {
     vec![
         (
             "cn=localhost",
-            vec![a("objectClass", &["container", "top"]), a("cn", &["localhost"])],
+            vec![
+                a("objectClass", &["container", "top"]),
+                a("cn", &["localhost"]),
+            ],
         ),
         (
             "CN=REPLICATION,CN=LOCALHOST",
-            vec![a("objectClass", &["container", "top"]), a("cn", &["REPLICATION"])],
+            vec![
+                a("objectClass", &["container", "top"]),
+                a("cn", &["REPLICATION"]),
+            ],
         ),
         (
             "CN=IBMPOLICIES",
             vec![
-                a("objectClass", &["container", "top", "ibm-replicationContext"]),
+                a(
+                    "objectClass",
+                    &["container", "top", "ibm-replicationContext"],
+                ),
                 a("cn", &["IBMpolicies"]),
             ],
         ),
@@ -61,7 +70,10 @@ pub fn entries() -> Vec<(&'static str, Vec<Attribute>)> {
         ),
         (
             "CN=REPLICATION,CN=IBMPOLICIES",
-            vec![a("objectClass", &["container", "top"]), a("cn", &["REPLICATION"])],
+            vec![
+                a("objectClass", &["container", "top"]),
+                a("cn", &["REPLICATION"]),
+            ],
         ),
     ]
 }

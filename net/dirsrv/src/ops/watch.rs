@@ -124,7 +124,8 @@ impl Directory {
                     continue;
                 }
                 let mut cache = AclCache::default();
-                let Ok(eff) = self.effective(txn, &mut cache, ch.backend, &e.dn, &e.attrs, ch.parent)
+                let Ok(eff) =
+                    self.effective(txn, &mut cache, ch.backend, &e.dn, &e.attrs, ch.parent)
                 else {
                     continue;
                 };

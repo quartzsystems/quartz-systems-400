@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Extended operations (docs/DIRSRV.md §7): StartTLS (the job's
+//! Extended operations (docs/DIRSRV.md §7): `StartTLS` (the job's
 //! handshake: [`Outcome::start_tls`](super::Outcome::start_tls)), whoami
 //! (RFC 4532) and password modify (RFC 3062), QS/400 additions. Every
 //! other request, IBM's `1.3.18.0.2.12.*` included, is protocolError (2)
@@ -28,34 +28,60 @@ fn ext_reply(result: LdapResult, name: Option<&str>, value: Option<Vec<u8>>) -> 
 }
 
 impl Directory {
-    pub(crate) fn extended(&mut self, txn: &mut Txn<'_>, s: &Session, msg: &LdapMessage) -> Outcome {
+    pub(crate) fn extended(
+        &mut self,
+        txn: &mut Txn<'_>,
+        s: &Session,
+        msg: &LdapMessage,
+    ) -> Outcome {
         let ProtocolOp::ExtendedRequest { name, value } = &msg.op else {
             return Outcome::default();
         };
-        if let Err(e) = super::controls::parse(msg, super::controls::Op::Extended, &self.settings, s.admin) {
+        if let Err(e) =
+            super::controls::parse(msg, super::controls::Op::Extended, &self.settings, s.admin)
+        {
             return Outcome::one(ext_reply(e.result(), None, None), Vec::new());
         }
-        let want_policy = msg.controls.iter().any(|c| c.oid == ldap::control::PASSWORD_POLICY);
+        let want_policy = msg
+            .controls
+            .iter()
+            .any(|c| c.oid == ldap::control::PASSWORD_POLICY);
         match name.as_str() {
             ext::START_TLS => {
                 if value.is_some() {
                     return Outcome::one(
-                        ext_reply(Self::result(ResultCode::ProtocolError, "StartTLS takes no value"), None, None),
+                        ext_reply(
+                            Self::result(ResultCode::ProtocolError, "StartTLS takes no value"),
+                            None,
+                            None,
+                        ),
                         Vec::new(),
                     );
                 }
-                let mut o = Outcome::one(ext_reply(LdapResult::success(), Some(ext::START_TLS), None), Vec::new());
+                let mut o = Outcome::one(
+                    ext_reply(LdapResult::success(), Some(ext::START_TLS), None),
+                    Vec::new(),
+                );
                 o.start_tls = true;
                 o
             }
             ext::WHO_AM_I => {
-                let id = s.dn.as_ref().map_or_else(String::new, |d| format!("dn:{d}"));
-                Outcome::one(ext::who_am_i_response(LdapResult::success(), &id), Vec::new())
+                let id =
+                    s.dn.as_ref()
+                        .map_or_else(String::new, |d| format!("dn:{d}"));
+                Outcome::one(
+                    ext::who_am_i_response(LdapResult::success(), &id),
+                    Vec::new(),
+                )
             }
             ext::PASSWORD_MODIFY => match self.password_modify(txn, s, value.as_deref()) {
                 Ok((generated, changes)) => {
                     let mut o = Outcome::one(
-                        ext_reply(LdapResult::success(), None, PasswordModifyResponse { generated }.encode_value()),
+                        ext_reply(
+                            LdapResult::success(),
+                            None,
+                            PasswordModifyResponse { generated }.encode_value(),
+                        ),
                         Vec::new(),
                     );
                     o.changes = changes;
@@ -77,7 +103,10 @@ impl Directory {
             },
             _ => Outcome::one(
                 ext_reply(
-                    Self::result(ResultCode::ProtocolError, "the extended operation is not supported"),
+                    Self::result(
+                        ResultCode::ProtocolError,
+                        "the extended operation is not supported",
+                    ),
                     None,
                     None,
                 ),
@@ -95,14 +124,15 @@ impl Directory {
         s: &Session,
         value: Option<&[u8]>,
     ) -> OpResult<(Option<Vec<u8>>, Vec<super::Change>)> {
-        let req = PasswordModifyRequest::decode_value(value)
-            .map_err(|_| OpError::new(ResultCode::ProtocolError, "the request value is malformed"))?;
+        let req = PasswordModifyRequest::decode_value(value).map_err(|_| {
+            OpError::new(ResultCode::ProtocolError, "the request value is malformed")
+        })?;
         let user = match req.user.as_deref() {
             Some(u) if !u.is_empty() => u.strip_prefix("dn:").unwrap_or(u).to_string(),
-            _ => s
-                .dn
-                .clone()
-                .ok_or_else(|| OpError::unwilling("an anonymous session has no password"))?,
+            _ => {
+                s.dn.clone()
+                    .ok_or_else(|| OpError::unwilling("an anonymous session has no password"))?
+            }
         };
         let d = Self::parse_dn(&user)?;
         let f = self.find_visible(txn, &self.sys.clone(), &d, false)?;
@@ -112,17 +142,19 @@ impl Directory {
                 .get("userPassword")
                 .is_some_and(|a| a.vals.iter().any(|v| crate::pwd::verify(v, old)));
             if !ok {
-                return Err(OpError::new(ResultCode::InvalidCredentials, "the old password is not right"));
+                return Err(OpError::new(
+                    ResultCode::InvalidCredentials,
+                    "the old password is not right",
+                ));
             }
         }
-        let (new, generated) = match req.new {
-            Some(n) => (n, None),
-            None => {
-                let mut b = [0u8; 12];
-                self.env.random(&mut b);
-                let g = crate::pwd::crypt::salt_chars(&b).into_bytes();
-                (g.clone(), Some(g))
-            }
+        let (new, generated) = if let Some(n) = req.new {
+            (n, None)
+        } else {
+            let mut b = [0u8; 12];
+            self.env.random(&mut b);
+            let g = crate::pwd::crypt::salt_chars(&b).into_bytes();
+            (g.clone(), Some(g))
         };
         let mut changes = Vec::new();
         if let Some(old) = &req.old {

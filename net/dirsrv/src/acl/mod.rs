@@ -5,6 +5,9 @@
 //! Access control (docs/DIRSRV.md §12): owners and `aclEntry` values
 //! ([`model`]) and their evaluation ([`eval`]).
 
+// Short names follow the specifications' notation (RFCs, crypt).
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+
 pub mod eval;
 pub mod model;
 

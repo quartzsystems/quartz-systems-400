@@ -5,6 +5,9 @@
 //! Passwords (docs/DIRSRV.md §11): storage schemes ([`scheme`], with
 //! `crypt(3)` in [`crypt`]) and password policy ([`policy`]).
 
+// Short names follow the specifications' notation (RFCs, crypt).
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+
 pub mod crypt;
 pub mod policy;
 pub mod scheme;

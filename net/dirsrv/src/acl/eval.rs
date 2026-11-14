@@ -52,7 +52,7 @@ fn matches(s: &Subject, p: &Principal<'_>, entry: &[u8]) -> Option<u8> {
         (_, Some(Pseudo::Authenticated)) => p.dn.is_some().then_some(2),
         (_, Some(Pseudo::This)) => (p.dn == Some(entry)).then_some(1),
         (Kind::AccessId, None) => (p.dn == Some(s.key.as_slice())).then_some(1),
-        (Kind::Group | Kind::Role, None) => p.groups.iter().any(|g| *g == s.key).then_some(2),
+        (Kind::Group | Kind::Role, None) => p.groups.contains(&s.key).then_some(2),
     }
 }
 
@@ -95,11 +95,20 @@ impl Effective {
     /// The rights (`model::R | W | S | C`) on one attribute of the entry
     /// (`oid` and its access class).
     #[must_use]
-    pub fn attr_rights(&self, p: &Principal<'_>, entry: &[u8], oid: &str, class: AccessClass) -> u8 {
+    pub fn attr_rights(
+        &self,
+        p: &Principal<'_>,
+        entry: &[u8],
+        oid: &str,
+        class: AccessClass,
+    ) -> u8 {
         if self.is_owner(p, entry) {
             return 0x0f;
         }
-        let targets = [Target::Attr(oid.to_string(), String::new()), Target::Class(class)];
+        let targets = [
+            Target::Attr(oid.to_string(), String::new()),
+            Target::Class(class),
+        ];
         let mut out = 0;
         for bit in [super::R, super::W, super::S, super::C] {
             if self.decide(p, entry, &targets, bit) {
@@ -143,7 +152,10 @@ mod tests {
         }
         fn eff(&self, acl: &[&str], owners: &[&str]) -> Effective {
             Effective {
-                acl: acl.iter().map(|a| parse_acl(&self.schema, a).unwrap()).collect(),
+                acl: acl
+                    .iter()
+                    .map(|a| parse_acl(&self.schema, a).unwrap())
+                    .collect(),
                 acl_source: None,
                 acl_propagate: true,
                 owners: owners
@@ -167,17 +179,36 @@ mod tests {
         let ann = w.key("cn=Ann,o=Acme");
         let staff = vec![w.key("cn=Staff,o=Acme")];
         let none: Vec<Vec<u8>> = Vec::new();
-        let anon = Principal { dn: None, groups: &none, admin: false };
-        let p_joe = Principal { dn: Some(&joe), groups: &none, admin: false };
-        let p_ann = Principal { dn: Some(&ann), groups: &staff, admin: false };
-        let p_adm = Principal { dn: Some(&ann), groups: &none, admin: true };
+        let anon = Principal {
+            dn: None,
+            groups: &none,
+            admin: false,
+        };
+        let p_joe = Principal {
+            dn: Some(&joe),
+            groups: &none,
+            admin: false,
+        };
+        let p_ann = Principal {
+            dn: Some(&ann),
+            groups: &staff,
+            admin: false,
+        };
+        let p_adm = Principal {
+            dn: Some(&ann),
+            groups: &none,
+            admin: true,
+        };
         let n = AccessClass::Normal;
         let cr = AccessClass::Critical;
         let cn = "2.5.4.3";
         let pw = "2.5.4.35";
 
         // The default ACL: anybody reads, searches, compares normal.
-        let d = w.eff(&["group:CN=ANYBODY:normal:rsc:system:rsc:restricted:rsc"], &["access-id:cn=Administrator"]);
+        let d = w.eff(
+            &["group:CN=ANYBODY:normal:rsc:system:rsc:restricted:rsc"],
+            &["access-id:cn=Administrator"],
+        );
         for p in [&anon, &p_joe, &p_ann] {
             assert_eq!(d.attr_rights(p, &entry, cn, n), R | S | C);
             assert_eq!(d.attr_rights(p, &entry, pw, cr), 0);

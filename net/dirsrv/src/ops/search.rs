@@ -31,7 +31,9 @@ use ldap::ResultCode;
 use ldap::control::{Control, ControlValue, PagedResults, PersistentSearch, SortResponse};
 use ldap::dn::Dn;
 use ldap::filter::Filter;
-use ldap::msg::{Attribute, DerefAliases, LdapMessage, LdapResult, ProtocolOp, Scope, SearchRequest};
+use ldap::msg::{
+    Attribute, DerefAliases, LdapMessage, LdapResult, ProtocolOp, Scope, SearchRequest,
+};
 use store::txn::Txn;
 
 use super::attrs::{COMPUTED, Wanted};
@@ -40,9 +42,9 @@ use super::filter::{self, Target};
 use super::{AclCache, AuditOp, Directory, OpError, OpResult, Place, Reply, Session};
 use crate::acl;
 use crate::backend::{DirEntry, Scan};
+use crate::schema::AttributeType;
 use crate::schema::check::split_description;
 use crate::schema::rule::{self, Rule};
-use crate::schema::AttributeType;
 
 /// How much one [`Directory::next`] may answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,6 +106,7 @@ struct SortKey {
 }
 
 /// A search in progress.
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Cursor {
     session: Session,
     filter: Filter,
@@ -226,7 +229,10 @@ impl Directory {
             ));
         };
         let dn = Dn::parse(d).map_err(|_| {
-            OpError::new(super::error::AUTHORIZATION_DENIED, "the identity is not a DN")
+            OpError::new(
+                super::error::AUTHORIZATION_DENIED,
+                "the identity is not a DN",
+            )
         })?;
         if self.is_admin_dn(&dn) {
             return Ok(Session::admin(&self.schema, &dn));
@@ -245,7 +251,10 @@ impl Directory {
         self.counters.ops_initiated += 1;
         self.counters.searches_requested += 1;
         let ProtocolOp::SearchRequest(req) = &msg.op else {
-            return fail(&OpError::new(ResultCode::ProtocolError, "not a search request"));
+            return fail(&OpError::new(
+                ResultCode::ProtocolError,
+                "not a search request",
+            ));
         };
         let r = self.start(txn, session, msg, req, cursors);
         let code = match &r {
@@ -281,7 +290,10 @@ impl Directory {
             && !p.cookie.is_empty()
         {
             let id = <[u8; 8]>::try_from(p.cookie.as_slice()).map(u64::from_be_bytes);
-            let Some(c) = id.ok().and_then(|i| cursors.map.get_mut(&i).map(|c| (i, c))) else {
+            let Some(c) = id
+                .ok()
+                .and_then(|i| cursors.map.get_mut(&i).map(|c| (i, c)))
+            else {
                 return fail(&OpError::unwilling("the paged results cookie is not valid"));
             };
             let (id, c) = c;
@@ -323,11 +335,9 @@ impl Directory {
             filter::names(&req.filter, &mut names);
             let acl_named = names.iter().any(|n| {
                 let ty = split_description(n).0;
-                ACL_ATTRS.iter().any(|a| {
-                    self.schema
-                        .attribute(ty)
-                        .is_some_and(|at| at.is_named(a))
-                })
+                ACL_ATTRS
+                    .iter()
+                    .any(|a| self.schema.attribute(ty).is_some_and(|at| at.is_named(a)))
             });
             if acl_named {
                 return fail(&OpError::unwilling(
@@ -378,7 +388,10 @@ impl Directory {
             sort: None,
             sorted: None,
             sort_ctl: None,
-            page_size: ctl.paged.as_ref().map(|p| usize::try_from(p.size).unwrap_or(usize::MAX)),
+            page_size: ctl
+                .paged
+                .as_ref()
+                .map(|p| usize::try_from(p.size).unwrap_or(usize::MAX)),
             page_sent: 0,
             paused: false,
             psearch: None,
@@ -396,15 +409,14 @@ impl Directory {
                     problem.get_or_insert(ResultCode::NoSuchAttribute);
                     continue;
                 };
-                let rule = match &k.rule {
-                    Some(r) => match rule::find(r) {
-                        Some(x) => Some(x),
-                        None => {
-                            problem.get_or_insert(ResultCode::InappropriateMatching);
-                            continue;
-                        }
-                    },
-                    None => at.ordering,
+                let rule = if let Some(r) = &k.rule {
+                    let Some(x) = rule::find(r) else {
+                        problem.get_or_insert(ResultCode::InappropriateMatching);
+                        continue;
+                    };
+                    Some(x)
+                } else {
+                    at.ordering
                 };
                 out.push(SortKey {
                     oid: at.oid().to_string(),
@@ -515,7 +527,8 @@ impl Directory {
                         Err(e) => return fail(&e),
                     }
                 }
-                c.regions.push_back((found.backend, found.entry.id, req.scope));
+                c.regions
+                    .push_back((found.backend, found.entry.id, req.scope));
             }
         }
         if let Some(p) = ctl.psearch {
@@ -571,7 +584,10 @@ impl Directory {
                 .and_then(|a| a.vals.first())
                 .and_then(|v| Dn::parse(&String::from_utf8_lossy(v)).ok())
             else {
-                return Err(OpError::new(ResultCode::AliasProblem, "the alias names nothing"));
+                return Err(OpError::new(
+                    ResultCode::AliasProblem,
+                    "the alias names nothing",
+                ));
             };
             f = match self.find(txn, session, &target, false) {
                 Ok(Some(x)) => x,
@@ -626,11 +642,17 @@ impl Directory {
         let need: Vec<&str> = COMPUTED
             .iter()
             .copied()
-            .filter(|c| names.iter().any(|n| split_description(n).0.eq_ignore_ascii_case(c)))
+            .filter(|c| {
+                names
+                    .iter()
+                    .any(|n| split_description(n).0.eq_ignore_ascii_case(c))
+            })
             .collect();
         let mut attrs = e.attrs.clone();
         if !need.is_empty() {
-            attrs.extend(self.computed(txn, b, e, &eff, &|n| need.iter().any(|x| x.eq_ignore_ascii_case(n)))?);
+            attrs.extend(self.computed(txn, b, e, &eff, &|n| {
+                need.iter().any(|x| x.eq_ignore_ascii_case(n))
+            })?);
         }
         let dn = Dn::parse(&e.dn).unwrap_or_else(|_| Dn::root());
         let can = |at: &AttributeType| self.attr_rights(&eff, session, &key, at) & acl::S != 0;
@@ -643,7 +665,11 @@ impl Directory {
     }
 
     /// The next match of a cursor, `None` when there are no more.
-    fn produce(&self, txn: &mut Txn<'_>, c: &mut Cursor) -> OpResult<Option<(Reply, Vec<Vec<u8>>)>> {
+    fn produce(
+        &self,
+        txn: &mut Txn<'_>,
+        c: &mut Cursor,
+    ) -> OpResult<Option<(Reply, Vec<Vec<u8>>)>> {
         loop {
             if let Some(r) = c.fixed.pop_front() {
                 return Ok(Some((r, Vec::new())));
@@ -706,11 +732,17 @@ impl Directory {
         };
         if id != base && !c.manage && self.is_referral(&e) {
             let dn = Dn::parse(&e.dn).unwrap_or_else(|_| Dn::root());
-            let urls = self.referral_urls(&e, &dn);
-            return Ok(Some((Reply::new(ProtocolOp::SearchResultReference(urls)), Vec::new())));
+            let urls = Self::referral_urls(&e, &dn);
+            return Ok(Some((
+                Reply::new(ProtocolOp::SearchResultReference(urls)),
+                Vec::new(),
+            )));
         }
         if id != base && c.deref_search && self.has_class(&e, "alias") {
-            let f = super::Found { backend: b, entry: e };
+            let f = super::Found {
+                backend: b,
+                entry: e,
+            };
             let Ok(t) = self.deref(txn, &c.session, f) else {
                 return Ok(None);
             };
@@ -760,17 +792,31 @@ impl Directory {
                 vals.sort();
                 // The least value ascending, the greatest descending;
                 // none sorts after every value ([0xFF] marks it).
-                let pick = if k.reverse { vals.pop() } else { vals.into_iter().next() };
-                pick.map_or_else(|| vec![0xFF, 0xFF], |mut v| {
-                    v.insert(0, 0);
-                    v
-                })
+                let pick = if k.reverse {
+                    vals.pop()
+                } else {
+                    vals.into_iter().next()
+                };
+                pick.map_or_else(
+                    || vec![0xFF, 0xFF],
+                    |mut v| {
+                        v.insert(0, 0);
+                        v
+                    },
+                )
             })
             .collect()
     }
 
     /// `dir_next`: the next entries of cursor `id`.
-    pub fn next(&mut self, txn: &mut Txn<'_>, cursors: &mut Cursors, id: u64, budget: Budget) -> Page {
+    #[allow(clippy::too_many_lines)]
+    pub fn next(
+        &mut self,
+        txn: &mut Txn<'_>,
+        cursors: &mut Cursors,
+        id: u64,
+        budget: Budget,
+    ) -> Page {
         let Some(mut c) = cursors.map.remove(&id) else {
             return Page {
                 replies: Vec::new(),
@@ -780,7 +826,9 @@ impl Directory {
         let mut replies = Vec::new();
         let mut bytes = 0;
         let end = loop {
-            if replies.len() >= budget.entries.max(1) || (bytes >= budget.bytes && !replies.is_empty()) {
+            if replies.len() >= budget.entries.max(1)
+                || (bytes >= budget.bytes && !replies.is_empty())
+            {
                 cursors.map.insert(id, c);
                 return Page {
                     replies,
@@ -818,7 +866,10 @@ impl Directory {
                         Err(e) => break Err(e),
                     }
                 }
-                Ok(c.sorted.as_mut().and_then(VecDeque::pop_front).map(|r| (r, Vec::new())))
+                Ok(c.sorted
+                    .as_mut()
+                    .and_then(VecDeque::pop_front)
+                    .map(|r| (r, Vec::new())))
             } else {
                 self.produce(txn, &mut c)
             };
@@ -894,7 +945,10 @@ impl Directory {
         while let Some((r, k)) = self.produce(txn, c)? {
             all.push((k, r));
         }
-        let keys = c.sort.as_ref().map(|v| v.iter().map(|k| k.reverse).collect::<Vec<_>>());
+        let keys = c
+            .sort
+            .as_ref()
+            .map(|v| v.iter().map(|k| k.reverse).collect::<Vec<_>>());
         let rev = keys.unwrap_or_default();
         all.sort_by(|(a, _), (b, _)| {
             for (i, r) in rev.iter().enumerate() {
@@ -902,7 +956,10 @@ impl Directory {
                 let o = x.cmp(&y);
                 let o = if *r {
                     // Absent values stay last when reversed too.
-                    match (x.is_some_and(|v| v[0] == 0xFF), y.is_some_and(|v| v[0] == 0xFF)) {
+                    match (
+                        x.is_some_and(|v| v[0] == 0xFF),
+                        y.is_some_and(|v| v[0] == 0xFF),
+                    ) {
                         (true, false) => Ordering::Greater,
                         (false, true) => Ordering::Less,
                         _ => o.reverse(),

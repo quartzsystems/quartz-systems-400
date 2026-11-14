@@ -23,6 +23,9 @@
 //! - [`Directory::changes`] (`dir_changes`): what a persistent search
 //!   has seen since the last call.
 
+// Short names follow the specifications' notation (RFCs, crypt).
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+
 use std::collections::HashMap;
 
 use ldap::ResultCode;
@@ -36,7 +39,7 @@ use crate::backend::btree::BtreeBackend;
 use crate::backend::changelog::ChangelogBackend;
 use crate::backend::monitor::Counters;
 use crate::backend::{Backend, DirEntry};
-use crate::schema::{AccessClass, AttributeType, Schema};
+use crate::schema::{AttributeType, Schema};
 use crate::store::{ChangeKind, DirDb};
 
 mod access;
@@ -113,7 +116,7 @@ pub struct Outcome {
     pub changes: Vec<Change>,
     /// A bind's new session (absent: the session stays as it was).
     pub session: Option<Session>,
-    /// StartTLS succeeded: the job starts the TLS handshake after
+    /// `StartTLS` succeeded: the job starts the TLS handshake after
     /// sending the reply (or answers 2 itself without a certificate).
     pub start_tls: bool,
     /// `cn=schema` changed: the service writes `Schema::modified_text`
@@ -206,10 +209,16 @@ impl Directory {
         env: Box<dyn Env>,
     ) -> OpResult<Self> {
         let mut suffixes = Vec::new();
-        for s in settings.suffixes.iter().map(String::as_str).chain(LOCAL_SUFFIXES) {
+        for s in settings
+            .suffixes
+            .iter()
+            .map(String::as_str)
+            .chain(LOCAL_SUFFIXES)
+        {
             suffixes.push(
-                Dn::parse(s)
-                    .map_err(|_| OpError::new(ResultCode::InvalidDnSyntax, format!("suffix {s}")))?,
+                Dn::parse(s).map_err(|_| {
+                    OpError::new(ResultCode::InvalidDnSyntax, format!("suffix {s}"))
+                })?,
             );
         }
         let mut btree = BtreeBackend::new(db, suffixes);
@@ -218,7 +227,10 @@ impl Directory {
             btree.log_changes = true;
         }
         let admin_dn = Dn::parse(&settings.admin_dn).map_err(|_| {
-            OpError::new(ResultCode::InvalidDnSyntax, "the administrator DN is not a DN")
+            OpError::new(
+                ResultCode::InvalidDnSyntax,
+                "the administrator DN is not a DN",
+            )
         })?;
         let sys = Session::admin(&schema, &admin_dn);
         let mut backends: Vec<Box<dyn Backend>> = vec![Box::new(btree)];
@@ -337,7 +349,7 @@ impl Directory {
 
     /// The `ref` URLs of referral entry `e` for target `dn`, the DN in
     /// each URL extended by the RDNs below `e` (RFC 3296 §5).
-    fn referral_urls(&self, e: &DirEntry, dn: &Dn) -> Vec<String> {
+    fn referral_urls(e: &DirEntry, dn: &Dn) -> Vec<String> {
         let edn = Dn::parse(&e.dn).unwrap_or_default();
         let extra = dn.len().saturating_sub(edn.len());
         let below: Vec<String> = dn.0[..extra].iter().map(ToString::to_string).collect();
@@ -371,9 +383,10 @@ impl Directory {
             .unwrap_or_default()
     }
 
+    #[allow(clippy::unused_self)]
     fn referral_error(&self, e: &DirEntry, dn: &Dn) -> OpError {
         OpError {
-            referral: self.referral_urls(e, dn),
+            referral: Self::referral_urls(e, dn),
             ..OpError::new(ResultCode::Referral, "the entry is held elsewhere")
         }
     }
@@ -407,11 +420,10 @@ impl Directory {
                 }
                 matched = me.dn.to_ascii_uppercase();
             }
-            return Err(OpError::new(
-                ResultCode::NoSuchObject,
-                format!("{dn} does not exist"),
-            )
-            .matched(matched));
+            return Err(
+                OpError::new(ResultCode::NoSuchObject, format!("{dn} does not exist"))
+                    .matched(matched),
+            );
         };
         let Some(entry) = b.entry(txn, &self.schema, session, id)? else {
             return Ok(None);
@@ -430,35 +442,41 @@ impl Directory {
         dn: &Dn,
         manage: bool,
     ) -> OpResult<Found> {
-        self.find(txn, session, dn, manage)?.ok_or_else(|| {
-            OpError::new(ResultCode::NoSuchObject, format!("{dn} does not exist"))
-        })
+        self.find(txn, session, dn, manage)?
+            .ok_or_else(|| OpError::new(ResultCode::NoSuchObject, format!("{dn} does not exist")))
     }
 
     fn parse_dn(s: &str) -> OpResult<Dn> {
-        Dn::parse(s).map_err(|_| {
-            OpError::new(ResultCode::InvalidDnSyntax, format!("{s:?} is not a DN"))
-        })
+        Dn::parse(s)
+            .map_err(|_| OpError::new(ResultCode::InvalidDnSyntax, format!("{s:?} is not a DN")))
     }
 
     fn entry_key(&self, dn: &str) -> Vec<u8> {
-        Dn::parse(dn).map_or_else(|_| dn.as_bytes().to_vec(), |d| self.schema.normalize_parsed_dn(&d))
-    }
-
-    fn access_class(&self, at: &AttributeType) -> AccessClass {
-        at.access
+        Dn::parse(dn).map_or_else(
+            |_| dn.as_bytes().to_vec(),
+            |d| self.schema.normalize_parsed_dn(&d),
+        )
     }
 
     /// The rights `session` has on attribute `at` of an entry.
-    fn attr_rights(&self, eff: &Effective, session: &Session, key: &[u8], at: &AttributeType) -> u8 {
-        eff.attr_rights(&session.principal(), key, at.oid(), self.access_class(at))
+    #[allow(clippy::unused_self)]
+    fn attr_rights(
+        &self,
+        eff: &Effective,
+        session: &Session,
+        key: &[u8],
+        at: &AttributeType,
+    ) -> u8 {
+        eff.attr_rights(&session.principal(), key, at.oid(), at.access)
     }
 
     fn parse_acls(&self, a: Option<&Attribute>) -> Vec<AclEntry> {
         a.map(|a| {
             a.vals
                 .iter()
-                .filter_map(|v| acl::model::parse_acl(&self.schema, &String::from_utf8_lossy(v)).ok())
+                .filter_map(|v| {
+                    acl::model::parse_acl(&self.schema, &String::from_utf8_lossy(v)).ok()
+                })
                 .collect()
         })
         .unwrap_or_default()

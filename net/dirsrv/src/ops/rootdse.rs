@@ -29,7 +29,10 @@ impl Directory {
             }
         }
         // IBM lists the local suffixes before the user ones.
-        let local: Vec<String> = super::LOCAL_SUFFIXES.iter().map(|x| x.to_ascii_uppercase()).collect();
+        let local: Vec<String> = super::LOCAL_SUFFIXES
+            .iter()
+            .map(|x| x.to_ascii_uppercase())
+            .collect();
         ncs.sort_by_key(|n| {
             if n == "CN=SCHEMA" {
                 0
@@ -51,7 +54,11 @@ impl Directory {
         let classes: Vec<String> = ["+", "++"]
             .into_iter()
             .map(String::from)
-            .chain(super::attrs::OP_CLASSES.iter().flat_map(|(n, _)| [format!("+{n}"), format!("++{n}")]))
+            .chain(
+                super::attrs::OP_CLASSES
+                    .iter()
+                    .flat_map(|(n, _)| [format!("+{n}"), format!("++{n}")]),
+            )
             .collect();
         let classes_ref: Vec<&str> = classes.iter().map(String::as_str).collect();
         let context = format!("OS400-SYS={}", s.system);

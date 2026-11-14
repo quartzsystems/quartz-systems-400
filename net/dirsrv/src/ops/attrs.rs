@@ -61,7 +61,10 @@ pub(crate) const OP_CLASSES: &[(&str, &[&str])] = &[
     ),
     (
         "ibmrepl",
-        &["ibm-replicationThisServerIsMaster", "ibm-replicationIsQuiesced"],
+        &[
+            "ibm-replicationThisServerIsMaster",
+            "ibm-replicationIsQuiesced",
+        ],
     ),
 ];
 
@@ -174,7 +177,10 @@ impl Directory {
             }
         }
         if want("subschemaSubentry") {
-            out.push(Attribute::new("subschemaSubentry", &[crate::backend::schema::DN]));
+            out.push(Attribute::new(
+                "subschemaSubentry",
+                &[crate::backend::schema::DN],
+            ));
         }
         if want("aclEntry") && !stored("aclEntry") {
             let vals: Vec<String> = if eff.acl_source.is_none() {
@@ -199,7 +205,11 @@ impl Directory {
         if want("entryOwner") && !stored("entryOwner") {
             out.push(Attribute {
                 ty: "entryOwner".into(),
-                vals: eff.owners.iter().map(|o| o.to_string().into_bytes()).collect(),
+                vals: eff
+                    .owners
+                    .iter()
+                    .map(|o| o.to_string().into_bytes())
+                    .collect(),
             });
         }
         if want("ownerPropagate") && !stored("ownerPropagate") {
@@ -266,6 +276,7 @@ impl Directory {
     }
 
     /// An entry as a search or a read control returns it to `session`.
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn view(
         &self,
         txn: &mut Txn<'_>,
@@ -278,9 +289,7 @@ impl Directory {
     ) -> OpResult<Vec<Attribute>> {
         let eff = self.effective_of(txn, cache, b, e)?;
         let key = self.entry_key(&e.dn);
-        let comp = self.computed(txn, b, e, &eff, &|n| {
-            want.wants(&self.schema, n, true)
-        })?;
+        let comp = self.computed(txn, b, e, &eff, &|n| want.wants(&self.schema, n, true))?;
         let mut all = e.attrs.clone();
         all.extend(comp);
         let readable = |at: &AttributeType| self.attr_rights(&eff, session, &key, at) & acl::R != 0;

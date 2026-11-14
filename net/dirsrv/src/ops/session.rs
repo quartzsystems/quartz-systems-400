@@ -92,7 +92,7 @@ impl Session {
 /// What the job knows of the connection a request came on.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Conn {
-    /// The connection is protected by TLS (LDAPS, or after StartTLS).
+    /// The connection is protected by TLS (LDAPS, or after `StartTLS`).
     pub tls: bool,
     /// The TLS client certificate's subject DN, if one was presented.
     pub client_subject: Option<String>,

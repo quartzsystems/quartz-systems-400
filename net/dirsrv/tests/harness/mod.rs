@@ -10,12 +10,16 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use dirsrv::ops::{Budget, Conn, Cursors, Directory, Env, Outcome, PageState, Reply, Session, Settings};
+use dirsrv::ops::{
+    Budget, Conn, Cursors, Directory, Env, Outcome, PageState, Reply, Session, Settings,
+};
 use dirsrv::pwd::Scheme;
 use dirsrv::schema::Schema;
 use ldap::control::Control;
 use ldap::filter::Filter;
-use ldap::msg::{Attribute, BindAuth, DerefAliases, LdapMessage, LdapResult, ProtocolOp, Scope, SearchRequest};
+use ldap::msg::{
+    Attribute, BindAuth, DerefAliases, LdapMessage, LdapResult, ProtocolOp, Scope, SearchRequest,
+};
 use ldap::{Dn, ResultCode};
 
 #[path = "../common/mod.rs"]
@@ -74,7 +78,14 @@ impl T {
         let admin_dn = Dn::parse(&s.admin_dn).unwrap();
         let admin = Session::admin(&schema, &admin_dn);
         let mut t = sys.store.begin().unwrap();
-        let mut dir = Directory::new(&mut t, sys.db, schema, s, Box::new(Clock(clock.clone(), AtomicU64::new(7)))).unwrap();
+        let mut dir = Directory::new(
+            &mut t,
+            sys.db,
+            schema,
+            s,
+            Box::new(Clock(clock.clone(), AtomicU64::new(7))),
+        )
+        .unwrap();
         dir.seed(&mut t).unwrap();
         t.commit().unwrap();
         let mut me = Self {
@@ -86,7 +97,11 @@ impl T {
         };
         let a = me.admin.clone();
         let ro = std::mem::replace(&mut me.dir.settings.read_only, false);
-        me.add_ok(&a, "o=Acme", &[text("objectClass", &["organization"]), text("o", &["Acme"])]);
+        me.add_ok(
+            &a,
+            "o=Acme",
+            &[text("objectClass", &["organization"]), text("o", &["Acme"])],
+        );
         me.dir.settings.read_only = ro;
         me
     }
@@ -137,7 +152,12 @@ impl T {
 
     pub fn add_ok(&mut self, s: &Session, dn: &str, attrs: &[Attribute]) {
         let o = self.add(s, dn, attrs);
-        assert_eq!(Self::code(&o), ResultCode::Success, "add {dn}: {:?}", o.replies[0].op);
+        assert_eq!(
+            Self::code(&o),
+            ResultCode::Success,
+            "add {dn}: {:?}",
+            o.replies[0].op
+        );
     }
 
     /// A person under `o=Acme` with a password.
@@ -191,7 +211,12 @@ impl T {
     }
 
     /// A whole search (every page of a cursor until done or paused).
-    pub fn search_req(&mut self, s: &Session, req: SearchRequest, controls: Vec<Control>) -> Vec<Reply> {
+    pub fn search_req(
+        &mut self,
+        s: &Session,
+        req: SearchRequest,
+        controls: Vec<Control>,
+    ) -> Vec<Reply> {
         let msg = Self::msg(ProtocolOp::SearchRequest(req), controls);
         let mut t = self.sys.store.begin().unwrap();
         let started = self.dir.search(&mut t, s, &msg, &mut self.cursors);
@@ -199,7 +224,15 @@ impl T {
         match started {
             dirsrv::ops::Started::Done(v) => out = v,
             dirsrv::ops::Started::Cursor(id) => loop {
-                let p = self.dir.next(&mut t, &mut self.cursors, id, Budget { entries: 2, bytes: 1 << 20 });
+                let p = self.dir.next(
+                    &mut t,
+                    &mut self.cursors,
+                    id,
+                    Budget {
+                        entries: 2,
+                        bytes: 1 << 20,
+                    },
+                );
                 out.extend(p.replies);
                 if p.state != PageState::More {
                     break;
@@ -210,7 +243,14 @@ impl T {
         out
     }
 
-    pub fn search(&mut self, s: &Session, base: &str, scope: Scope, filter: &str, attrs: &[&str]) -> Vec<Reply> {
+    pub fn search(
+        &mut self,
+        s: &Session,
+        base: &str,
+        scope: Scope,
+        filter: &str,
+        attrs: &[&str],
+    ) -> Vec<Reply> {
         self.search_req(s, Self::req(base, scope, filter, attrs), Vec::new())
     }
 }
@@ -252,7 +292,11 @@ pub fn vals(r: &[Reply], ty: &str) -> Vec<String> {
             return attrs
                 .iter()
                 .filter(|a| a.ty.eq_ignore_ascii_case(ty))
-                .flat_map(|a| a.vals.iter().map(|v| String::from_utf8_lossy(v).to_string()))
+                .flat_map(|a| {
+                    a.vals
+                        .iter()
+                        .map(|v| String::from_utf8_lossy(v).to_string())
+                })
                 .collect();
         }
     }

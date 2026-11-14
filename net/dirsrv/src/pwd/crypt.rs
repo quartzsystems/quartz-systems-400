@@ -5,6 +5,8 @@
 //! `crypt(3)` hashes as `{CRYPT}` holds them: SHA-512 (`$6$`), SHA-256
 //! (`$5$`) after Drepper's specification, MD5 (`$1$`, verify only).
 
+use std::fmt::Write as _;
+
 use sha2::{Digest, Sha256, Sha512};
 
 const ALPHABET: &[u8; 64] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -138,7 +140,7 @@ pub fn sha_crypt(variant: u8, pw: &[u8], salt: &str, rounds: Option<u32>) -> Str
     let r = rounds.map_or(ROUNDS_DEFAULT, |r| r.clamp(ROUNDS_MIN, ROUNDS_MAX));
     let mut out = format!("${variant}$");
     if rounds.is_some() {
-        out.push_str(&format!("rounds={r}$"));
+        let _ = write!(out, "rounds={r}$");
     }
     out.push_str(&String::from_utf8_lossy(salt));
     out.push('$');
@@ -256,8 +258,14 @@ mod tests {
             md5_crypt(b"Hello world!", "saltstri"),
             "$1$saltstri$YMyguxXMBpd2TEZ.vS/3q1"
         );
-        assert!(verify("$1$saltstri$YMyguxXMBpd2TEZ.vS/3q1", b"Hello world!"));
-        assert!(!verify("$1$saltstri$YMyguxXMBpd2TEZ.vS/3q1", b"Hello world"));
+        assert!(verify(
+            "$1$saltstri$YMyguxXMBpd2TEZ.vS/3q1",
+            b"Hello world!"
+        ));
+        assert!(!verify(
+            "$1$saltstri$YMyguxXMBpd2TEZ.vS/3q1",
+            b"Hello world"
+        ));
         let r = sha_crypt(5, b"pw", "abc", Some(1000));
         assert!(r.starts_with("$5$rounds=1000$abc$"));
         assert!(verify(&r, b"pw"));

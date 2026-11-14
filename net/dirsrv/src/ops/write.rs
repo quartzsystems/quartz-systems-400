@@ -17,10 +17,11 @@
 //! FALSE`. Writing `aclEntry` or `entryOwner` takes `w` on the
 //! restricted class (owners have it); filter-based ACLs are refused (53).
 
+use std::fmt::Write as _;
+
 use ldap::ResultCode;
 use ldap::control::{
-    ControlValue, PasswordPolicyResponse, PolicyError, PostReadResponse, PreReadResponse,
-    ReadEntry,
+    ControlValue, PasswordPolicyResponse, PolicyError, PostReadResponse, PreReadResponse, ReadEntry,
 };
 use ldap::dn::{Dn, Rdn};
 use ldap::ldif::{self, AttrValue, Body, ModSpec, Record, Value};
@@ -29,7 +30,9 @@ use store::txn::Txn;
 
 use super::attrs::Wanted;
 use super::controls::{self, Ctl, Op};
-use super::{AclCache, AuditOp, Change, Directory, Found, OpError, OpResult, Outcome, Place, Session};
+use super::{
+    AclCache, AuditOp, Change, Directory, Found, OpError, OpResult, Outcome, Place, Session,
+};
 use crate::acl;
 use crate::backend::DirEntry;
 use crate::pwd::policy::{self, Changer};
@@ -70,7 +73,10 @@ fn response(kind: Op, result: LdapResult) -> ProtocolOp {
 fn set(attrs: &mut Vec<Attribute>, ty: &str, vals: Vec<Vec<u8>>) {
     attrs.retain(|a| !a.ty.eq_ignore_ascii_case(ty));
     if !vals.is_empty() {
-        attrs.push(Attribute { ty: ty.into(), vals });
+        attrs.push(Attribute {
+            ty: ty.into(),
+            vals,
+        });
     }
 }
 
@@ -129,14 +135,19 @@ impl Directory {
                 );
             }
         };
-        let want_policy = msg.controls.iter().any(|c| c.oid == ldap::control::PASSWORD_POLICY);
+        let want_policy = msg
+            .controls
+            .iter()
+            .any(|c| c.oid == ldap::control::PASSWORD_POLICY);
         let r = controls::parse(msg, kind, &self.settings, session.admin).and_then(|ctl| {
             let acting = self.acting(txn, session, ctl.proxy.as_deref())?;
             match &msg.op {
-                ProtocolOp::CompareRequest { dn, attr, value } => {
-                    self.compare(txn, &acting, &ctl, dn, attr, value).map(|code| (code, None))
-                }
-                _ => self.write(txn, &acting, &ctl, &msg.op).map(|d| (ResultCode::Success, Some(d))),
+                ProtocolOp::CompareRequest { dn, attr, value } => self
+                    .compare(txn, &acting, &ctl, dn, attr, value)
+                    .map(|code| (code, None)),
+                _ => self
+                    .write(txn, &acting, &ctl, &msg.op)
+                    .map(|d| (ResultCode::Success, Some(d))),
             }
         });
         let mut out = match r {
@@ -182,7 +193,13 @@ impl Directory {
         out
     }
 
-    fn write(&mut self, txn: &mut Txn<'_>, s: &Session, ctl: &Ctl, op: &ProtocolOp) -> OpResult<Done> {
+    fn write(
+        &mut self,
+        txn: &mut Txn<'_>,
+        s: &Session,
+        ctl: &Ctl,
+        op: &ProtocolOp,
+    ) -> OpResult<Done> {
         if s.must_change {
             let own_password = match op {
                 ProtocolOp::ModifyRequest { dn, changes } => {
@@ -211,14 +228,24 @@ impl Directory {
                 new_rdn,
                 delete_old_rdn,
                 new_superior,
-            } => self.moddn(txn, s, ctl, dn, new_rdn, *delete_old_rdn, new_superior.as_deref()),
+            } => self.moddn(
+                txn,
+                s,
+                ctl,
+                dn,
+                new_rdn,
+                *delete_old_rdn,
+                new_superior.as_deref(),
+            ),
             _ => Err(OpError::new(ResultCode::ProtocolError, "not a write")),
         }
     }
 
     fn writable(&self, b: usize) -> OpResult<()> {
         if self.settings.read_only || self.backends[b].read_only() {
-            return Err(OpError::unwilling("this part of the directory is read-only"));
+            return Err(OpError::unwilling(
+                "this part of the directory is read-only",
+            ));
         }
         Ok(())
     }
@@ -228,8 +255,18 @@ impl Directory {
         self.env.random(&mut b);
         b[6] = (b[6] & 0x0f) | 0x40;
         b[8] = (b[8] & 0x3f) | 0x80;
-        let h: String = b.iter().map(|x| format!("{x:02x}")).collect();
-        format!("{}-{}-{}-{}-{}", &h[..8], &h[8..12], &h[12..16], &h[16..20], &h[20..])
+        let h: String = b.iter().fold(String::new(), |mut s, x| {
+            let _ = write!(s, "{x:02x}");
+            s
+        });
+        format!(
+            "{}-{}-{}-{}-{}",
+            &h[..8],
+            &h[8..12],
+            &h[12..16],
+            &h[16..20],
+            &h[20..]
+        )
     }
 
     fn hash_password(&self, v: &[u8]) -> Vec<u8> {
@@ -249,11 +286,7 @@ impl Directory {
             return Err(OpError::unwilling("filter-based ACLs are not supported"));
         }
         self.schema.check_user_modification(at)?;
-        if at.is_named("aclEntry") || at.is_named("entryOwner") {
-            Ok(at)
-        } else {
-            Ok(at)
-        }
+        Ok(at)
     }
 
     fn check_acl_values(&self, at: &AttributeType, vals: &[Vec<u8>]) -> OpResult<()> {
@@ -286,6 +319,7 @@ impl Directory {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn log(
         &self,
         txn: &mut Txn<'_>,
@@ -327,15 +361,24 @@ impl Directory {
 
     /// Check an entry's attributes and store its classes as the check
     /// resolved them.
-    fn checked(&self, dn: &Dn, attrs: &mut Vec<Attribute>, old_structural: Option<&str>) -> OpResult<()> {
+    fn checked(
+        &self,
+        dn: &Dn,
+        attrs: &mut Vec<Attribute>,
+        old_structural: Option<&str>,
+    ) -> OpResult<()> {
         let user: Vec<Attribute> = attrs
             .iter()
             .filter(|a| !KEPT.iter().any(|k| a.ty.eq_ignore_ascii_case(k)))
             .cloned()
             .collect();
-        let c = self.schema.check_entry(dn, &user, self.settings.schema_check)?;
+        let c = self
+            .schema
+            .check_entry(dn, &user, self.settings.schema_check)?;
         if let (Some(old), Level::V3) = (old_structural, self.settings.schema_check)
-            && c.structural.as_deref().is_some_and(|n| !n.eq_ignore_ascii_case(old))
+            && c.structural
+                .as_deref()
+                .is_some_and(|n| !n.eq_ignore_ascii_case(old))
         {
             return Err(OpError::new(
                 ResultCode::ObjectClassModsProhibited,
@@ -344,9 +387,20 @@ impl Directory {
         }
         let oc = attrs
             .iter()
-            .position(|a| self.schema.attribute(split_description(&a.ty).0).is_some_and(|t| t.oid() == "2.5.4.0"))
+            .position(|a| {
+                self.schema
+                    .attribute(split_description(&a.ty).0)
+                    .is_some_and(|t| t.oid() == "2.5.4.0")
+            })
             .map_or_else(|| "objectClass".to_string(), |i| attrs[i].ty.clone());
-        set(attrs, &oc, c.object_classes.iter().map(|n| n.clone().into_bytes()).collect());
+        set(
+            attrs,
+            &oc,
+            c.object_classes
+                .iter()
+                .map(|n| n.clone().into_bytes())
+                .collect(),
+        );
         set(
             attrs,
             "structuralObjectClass",
@@ -356,25 +410,41 @@ impl Directory {
     }
 
     /// The parent of a new entry: `None` for a suffix's root.
-    fn parent_for(&self, txn: &mut Txn<'_>, s: &Session, b: usize, dn: &Dn, manage: bool) -> OpResult<Option<Found>> {
-        let is_suffix = self.backends[b].suffixes().iter().any(|x| self.schema.dn_eq(x, dn));
+    fn parent_for(
+        &self,
+        txn: &mut Txn<'_>,
+        s: &Session,
+        b: usize,
+        dn: &Dn,
+        manage: bool,
+    ) -> OpResult<Option<Found>> {
+        let is_suffix = self.backends[b]
+            .suffixes()
+            .iter()
+            .any(|x| self.schema.dn_eq(x, dn));
         if is_suffix {
             return Ok(None);
         }
         let parent = dn.parent().unwrap_or_else(Dn::root);
         match self.find(txn, s, &parent, manage) {
             Ok(Some(f)) => Ok(Some(f)),
-            Ok(None) => Err(OpError::new(ResultCode::NoSuchObject, "the parent does not exist")),
+            Ok(None) => Err(OpError::new(
+                ResultCode::NoSuchObject,
+                "the parent does not exist",
+            )),
             Err(e) => Err(e),
         }
     }
 
-    fn need(&self, ok: bool) -> OpResult<()> {
-        if ok { Ok(()) } else { Err(OpError::access()) }
-    }
-
     #[allow(clippy::too_many_lines)]
-    fn add(&mut self, txn: &mut Txn<'_>, s: &Session, ctl: &Ctl, dn: &str, attrs: &[Attribute]) -> OpResult<Done> {
+    fn add(
+        &mut self,
+        txn: &mut Txn<'_>,
+        s: &Session,
+        ctl: &Ctl,
+        dn: &str,
+        attrs: &[Attribute],
+    ) -> OpResult<Done> {
         let d = Self::parse_dn(dn)?;
         let b = match self.place(&d) {
             Place::Backend(b) => b,
@@ -385,20 +455,30 @@ impl Directory {
         if self.backends[b].admin_only() && !s.admin {
             return Err(OpError::access());
         }
-        if self.backends[b].resolve(txn, &self.schema, &self.sys, &d)?.entry.is_some() {
-            return Err(OpError::new(ResultCode::EntryAlreadyExists, format!("{dn} exists")));
+        if self.backends[b]
+            .resolve(txn, &self.schema, &self.sys, &d)?
+            .entry
+            .is_some()
+        {
+            return Err(OpError::new(
+                ResultCode::EntryAlreadyExists,
+                format!("{dn} exists"),
+            ));
         }
         let parent = self.parent_for(txn, s, b, &d, ctl.manage)?;
         let mut cache = AclCache::default();
         if let Some(p) = &parent {
             if p.backend != b {
-                return Err(OpError::new(ResultCode::AffectsMultipleDsas, "the parent is held elsewhere"));
+                return Err(OpError::new(
+                    ResultCode::AffectsMultipleDsas,
+                    "the parent is held elsewhere",
+                ));
             }
             let eff = self.effective_of(txn, &mut cache, b, &p.entry)?;
             let key = self.entry_key(&p.entry.dn);
-            self.need(eff.object_rights(&s.principal(), &key) & acl::A != 0)?;
+            need(eff.object_rights(&s.principal(), &key) & acl::A != 0)?;
         } else {
-            self.need(s.admin)?;
+            need(s.admin)?;
         }
         let mut stored: Vec<Attribute> = Vec::new();
         let mut password: Vec<Vec<u8>> = Vec::new();
@@ -413,7 +493,10 @@ impl Directory {
             };
             match stored.iter_mut().find(|x| x.ty.eq_ignore_ascii_case(&a.ty)) {
                 Some(x) => x.vals.extend(vals),
-                None => stored.push(Attribute { ty: a.ty.clone(), vals }),
+                None => stored.push(Attribute {
+                    ty: a.ty.clone(),
+                    vals,
+                }),
             }
         }
         self.checked(&d, &mut stored, None)?;
@@ -428,13 +511,20 @@ impl Directory {
             let eff = self.effective(txn, &mut cache, b, dn, &new.attrs, parent_id)?;
             let _ = eff;
             if !self.matches_new(txn, s, b, &new, parent_id, f)? {
-                return Err(OpError::new(super::error::ASSERTION_FAILED, "the assertion is false for the entry"));
+                return Err(OpError::new(
+                    super::error::ASSERTION_FAILED,
+                    "the assertion is false for the entry",
+                ));
             }
         }
         if !password.is_empty()
             && let Some(pol) = self.policy_for(txn, &new, &[])?
         {
-            let by = if s.admin { Changer::Admin } else { Changer::Other };
+            let by = if s.admin {
+                Changer::Admin
+            } else {
+                Changer::Other
+            };
             for p in &password {
                 let mods = policy::on_change(
                     &pol,
@@ -451,14 +541,21 @@ impl Directory {
                 apply_server(&mut stored, &mods);
             }
         }
-        let id = self.backends[b].add(txn, &self.schema, parent.as_ref().map(|p| p.entry.id), &d, &stored)?;
+        let id = self.backends[b].add(
+            txn,
+            &self.schema,
+            parent.as_ref().map(|p| p.entry.id),
+            &d,
+            &stored,
+        )?;
         let changes = ldif_text(&Body::Content(attr_lines(&stored)));
         let number = self.log(txn, b, ChangeKind::Add, id, dn, &s.who(), changes, None)?;
         let mut controls = Vec::new();
         if let Some(list) = &ctl.post_read
             && let Some(e) = self.backends[b].entry(txn, &self.schema, &self.sys, id)?
         {
-            controls.push(PostReadResponse(self.read_entry(txn, s, b, &e, list)?).to_control(false));
+            controls
+                .push(PostReadResponse(self.read_entry(txn, s, b, &e, list)?).to_control(false));
         }
         Ok(Done {
             changes: vec![Change {
@@ -525,11 +622,19 @@ impl Directory {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn modify(&mut self, txn: &mut Txn<'_>, s: &Session, ctl: &Ctl, dn: &str, mods: &[Modification]) -> OpResult<Done> {
+    fn modify(
+        &mut self,
+        txn: &mut Txn<'_>,
+        s: &Session,
+        ctl: &Ctl,
+        dn: &str,
+        mods: &[Modification],
+    ) -> OpResult<Done> {
         let d = Self::parse_dn(dn)?;
         if self.place(&d) == Place::Schema {
-            self.need(s.admin)?;
-            crate::backend::schema::modify(&mut self.schema, mods).map_err(|(c, m)| OpError::new(c, m))?;
+            need(s.admin)?;
+            crate::backend::schema::modify(&mut self.schema, mods)
+                .map_err(|(c, m)| OpError::new(c, m))?;
             return Ok(Done {
                 changes: Vec::new(),
                 controls: Vec::new(),
@@ -538,7 +643,7 @@ impl Directory {
         let f = self.target(txn, s, ctl, &d)?;
         let b = f.backend;
         if self.backends[b].admin_only() {
-            self.need(s.admin)?;
+            need(s.admin)?;
             for m in mods {
                 self.schema.attribute_for(&m.attr.ty)?;
             }
@@ -563,7 +668,11 @@ impl Directory {
         let rdn = d.rdn().cloned().unwrap_or_else(|| Rdn(Vec::new()));
         let mut new_pw: Vec<Vec<u8>> = Vec::new();
         let mut old_clear: Option<Vec<u8>> = None;
-        let current_pw: Vec<Vec<u8>> = f.entry.get("userPassword").map(|a| a.vals.clone()).unwrap_or_default();
+        let current_pw: Vec<Vec<u8>> = f
+            .entry
+            .get("userPassword")
+            .map(|a| a.vals.clone())
+            .unwrap_or_default();
         let mut pw_touched = false;
         for m in mods {
             let at = self.writable_type(&m.attr.ty)?;
@@ -576,9 +685,12 @@ impl Directory {
             let (_, opts) = split_description(&m.attr.ty);
             let slot = attrs.iter().position(|a| {
                 let (t, o) = split_description(&a.ty);
-                self.schema.attribute(t).is_some_and(|x| x.oid() == at.oid())
+                self.schema
+                    .attribute(t)
+                    .is_some_and(|x| x.oid() == at.oid())
                     && o.len() == opts.len()
-                    && o.iter().all(|x| opts.iter().any(|y| y.eq_ignore_ascii_case(x)))
+                    && o.iter()
+                        .all(|x| opts.iter().any(|y| y.eq_ignore_ascii_case(x)))
             });
             let ek = |v: &[u8]| self.schema.equality_key(at, v);
             if is_pw {
@@ -587,7 +699,10 @@ impl Directory {
             match m.op {
                 ModOp::Add => {
                     if m.attr.vals.is_empty() {
-                        return Err(OpError::new(ResultCode::ProtocolError, "an add needs values"));
+                        return Err(OpError::new(
+                            ResultCode::ProtocolError,
+                            "an add needs values",
+                        ));
                     }
                     let vals: Vec<Vec<u8>> = if is_pw {
                         new_pw.extend(m.attr.vals.iter().cloned());
@@ -626,7 +741,10 @@ impl Directory {
                     } else {
                         for v in &m.attr.vals {
                             let pos = if is_pw {
-                                attrs[i].vals.iter().position(|x| scheme::verify(x, v) || x == v)
+                                attrs[i]
+                                    .vals
+                                    .iter()
+                                    .position(|x| scheme::verify(x, v) || x == v)
                             } else {
                                 let k = ek(v);
                                 attrs[i].vals.iter().position(|x| ek(x) == k)
@@ -678,14 +796,24 @@ impl Directory {
                         ));
                     }
                     let [delta] = m.attr.vals.as_slice() else {
-                        return Err(OpError::new(ResultCode::ProtocolError, "an increment takes one value"));
+                        return Err(OpError::new(
+                            ResultCode::ProtocolError,
+                            "an increment takes one value",
+                        ));
                     };
-                    let delta: i128 = String::from_utf8_lossy(delta).trim().parse().map_err(|_| {
-                        OpError::new(ResultCode::InvalidAttributeSyntax, "the increment is not an integer")
-                    })?;
+                    let delta: i128 =
+                        String::from_utf8_lossy(delta).trim().parse().map_err(|_| {
+                            OpError::new(
+                                ResultCode::InvalidAttributeSyntax,
+                                "the increment is not an integer",
+                            )
+                        })?;
                     for v in &mut attrs[i].vals {
                         let n: i128 = String::from_utf8_lossy(v).trim().parse().map_err(|_| {
-                            OpError::new(ResultCode::ConstraintViolation, "a value is not an integer")
+                            OpError::new(
+                                ResultCode::ConstraintViolation,
+                                "a value is not an integer",
+                            )
                         })?;
                         *v = (n + delta).to_string().into_bytes();
                     }
@@ -694,14 +822,21 @@ impl Directory {
         }
         // The RDN's values stay.
         for ava in &rdn.0 {
-            let Some(at) = self.schema.attribute(&ava.ty) else { continue };
+            let Some(at) = self.schema.attribute(&ava.ty) else {
+                continue;
+            };
             let k = self.schema.equality_key(at, &ava.value);
             let kept = attrs.iter().any(|a| {
-                self.schema.attribute(split_description(&a.ty).0).is_some_and(|t| t.oid() == at.oid())
+                self.schema
+                    .attribute(split_description(&a.ty).0)
+                    .is_some_and(|t| t.oid() == at.oid())
                     && a.vals.iter().any(|v| self.schema.equality_key(at, v) == k)
             });
             if !kept {
-                return Err(OpError::new(ResultCode::NotAllowedOnRdn, "the RDN's values cannot be removed"));
+                return Err(OpError::new(
+                    ResultCode::NotAllowedOnRdn,
+                    "the RDN's values cannot be removed",
+                ));
             }
         }
         if pw_touched && !new_pw.is_empty() {
@@ -736,7 +871,9 @@ impl Directory {
         self.stamp(&mut attrs, s, false);
         let mut controls = Vec::new();
         if let Some(list) = &ctl.pre_read {
-            controls.push(PreReadResponse(self.read_entry(txn, s, b, &f.entry, list)?).to_control(false));
+            controls.push(
+                PreReadResponse(self.read_entry(txn, s, b, &f.entry, list)?).to_control(false),
+            );
         }
         self.backends[b].replace(txn, &self.schema, f.entry.id, &attrs)?;
         let text = ldif_text(&Body::Modify(
@@ -744,7 +881,11 @@ impl Directory {
                 .map(|m| ModSpec {
                     op: m.op,
                     ty: m.attr.ty.clone(),
-                    values: if self.schema.attribute(split_description(&m.attr.ty).0).is_some_and(|a| a.is_named("userPassword")) {
+                    values: if self
+                        .schema
+                        .attribute(split_description(&m.attr.ty).0)
+                        .is_some_and(|a| a.is_named("userPassword"))
+                    {
                         Vec::new()
                     } else {
                         m.attr.vals.iter().cloned().map(Value::Data).collect()
@@ -752,13 +893,24 @@ impl Directory {
                 })
                 .collect(),
         ));
-        let number = self.log(txn, b, ChangeKind::Modify, f.entry.id, &f.entry.dn, &s.who(), text, None)?;
+        let number = self.log(
+            txn,
+            b,
+            ChangeKind::Modify,
+            f.entry.id,
+            &f.entry.dn,
+            &s.who(),
+            text,
+            None,
+        )?;
         if let Some(list) = &ctl.post_read {
             let after = DirEntry {
                 attrs: attrs.clone(),
                 ..f.entry.clone()
             };
-            controls.push(PostReadResponse(self.read_entry(txn, s, b, &after, list)?).to_control(false));
+            controls.push(
+                PostReadResponse(self.read_entry(txn, s, b, &after, list)?).to_control(false),
+            );
         }
         let parent = self.backends[b].parent(txn, f.entry.id)?;
         Ok(Done {
@@ -782,11 +934,16 @@ impl Directory {
         let b = f.backend;
         let mut controls = Vec::new();
         if let Some(list) = &ctl.pre_read {
-            controls.push(PreReadResponse(self.read_entry(txn, s, b, &f.entry, list)?).to_control(false));
+            controls.push(
+                PreReadResponse(self.read_entry(txn, s, b, &f.entry, list)?).to_control(false),
+            );
         }
         let backend = &self.backends[b];
         if backend.children(txn, f.entry.id, 1)? > 0 && !ctl.tree_delete {
-            return Err(OpError::new(ResultCode::NotAllowedOnNonLeaf, "the entry has entries below it"));
+            return Err(OpError::new(
+                ResultCode::NotAllowedOnNonLeaf,
+                "the entry has entries below it",
+            ));
         }
         // Every entry of the subtree, leaves last in the list.
         let mut order = vec![f.entry.id];
@@ -819,10 +976,19 @@ impl Directory {
             };
             let eff = self.effective_of(txn, &mut cache, b, &e)?;
             let key = self.entry_key(&e.dn);
-            self.need(eff.object_rights(&s.principal(), &key) & acl::D != 0)?;
+            need(eff.object_rights(&s.principal(), &key) & acl::D != 0)?;
             let parent = backend.parent(txn, id)?;
             backend.delete(txn, &self.schema, id)?;
-            let number = self.log(txn, b, ChangeKind::Delete, id, &e.dn, &s.who(), Vec::new(), None)?;
+            let number = self.log(
+                txn,
+                b,
+                ChangeKind::Delete,
+                id,
+                &e.dn,
+                &s.who(),
+                Vec::new(),
+                None,
+            )?;
             changes.push(Change {
                 kind: ChangeKind::Delete,
                 dn: e.dn.clone(),
@@ -849,11 +1015,18 @@ impl Directory {
         new_superior: Option<&str>,
     ) -> OpResult<Done> {
         let d = Self::parse_dn(dn)?;
-        let rdn = Rdn::parse(new_rdn)
-            .map_err(|_| OpError::new(ResultCode::InvalidDnSyntax, format!("{new_rdn:?} is not an RDN")))?;
+        let rdn = Rdn::parse(new_rdn).map_err(|_| {
+            OpError::new(
+                ResultCode::InvalidDnSyntax,
+                format!("{new_rdn:?} is not an RDN"),
+            )
+        })?;
         let f = self.target(txn, s, ctl, &d)?;
         let b = f.backend;
-        let backend_suffix = self.backends[b].suffixes().iter().any(|x| self.schema.dn_eq(x, &d));
+        let backend_suffix = self.backends[b]
+            .suffixes()
+            .iter()
+            .any(|x| self.schema.dn_eq(x, &d));
         if backend_suffix {
             return Err(OpError::unwilling("a suffix's root is not renamed"));
         }
@@ -863,9 +1036,12 @@ impl Directory {
         let old_rdn = d.rdn().cloned().unwrap_or_else(|| Rdn(Vec::new()));
         for ava in old_rdn.0.iter().chain(&rdn.0) {
             let at = self.schema.attribute(&ava.ty).ok_or_else(|| {
-                OpError::new(ResultCode::InvalidDnSyntax, format!("RDN type {} is not defined", ava.ty))
+                OpError::new(
+                    ResultCode::InvalidDnSyntax,
+                    format!("RDN type {} is not defined", ava.ty),
+                )
             })?;
-            self.need(self.attr_rights(&eff, s, &key, at) & acl::W != 0)?;
+            need(self.attr_rights(&eff, s, &key, at) & acl::W != 0)?;
         }
         let mut new_parent = None;
         let parent_dn = match new_superior {
@@ -873,12 +1049,15 @@ impl Directory {
                 let sd = Self::parse_dn(sup)?;
                 let p = self.find_visible(txn, s, &sd, ctl.manage)?;
                 if p.backend != b {
-                    return Err(OpError::new(ResultCode::AffectsMultipleDsas, "the new superior is held elsewhere"));
+                    return Err(OpError::new(
+                        ResultCode::AffectsMultipleDsas,
+                        "the new superior is held elsewhere",
+                    ));
                 }
                 let peff = self.effective_of(txn, &mut cache, b, &p.entry)?;
                 let pkey = self.entry_key(&p.entry.dn);
-                self.need(peff.object_rights(&s.principal(), &pkey) & acl::A != 0)?;
-                self.need(eff.object_rights(&s.principal(), &key) & acl::D != 0)?;
+                need(peff.object_rights(&s.principal(), &pkey) & acl::A != 0)?;
+                need(eff.object_rights(&s.principal(), &key) & acl::D != 0)?;
                 new_parent = Some(p.entry.id);
                 sd
             }
@@ -891,10 +1070,16 @@ impl Directory {
                 if rdn.0.iter().any(|n| n.raw_eq(ava)) {
                     continue;
                 }
-                let Some(at) = self.schema.attribute(&ava.ty) else { continue };
+                let Some(at) = self.schema.attribute(&ava.ty) else {
+                    continue;
+                };
                 let k = self.schema.equality_key(at, &ava.value);
                 for a in &mut attrs {
-                    if self.schema.attribute(split_description(&a.ty).0).is_some_and(|t| t.oid() == at.oid()) {
+                    if self
+                        .schema
+                        .attribute(split_description(&a.ty).0)
+                        .is_some_and(|t| t.oid() == at.oid())
+                    {
                         a.vals.retain(|v| self.schema.equality_key(at, v) != k);
                     }
                 }
@@ -904,12 +1089,18 @@ impl Directory {
         for ava in &rdn.0 {
             let at = self.schema.attribute(&ava.ty).expect("checked above");
             let k = self.schema.equality_key(at, &ava.value);
-            let slot = attrs
-                .iter()
-                .position(|a| self.schema.attribute(split_description(&a.ty).0).is_some_and(|t| t.oid() == at.oid()));
+            let slot = attrs.iter().position(|a| {
+                self.schema
+                    .attribute(split_description(&a.ty).0)
+                    .is_some_and(|t| t.oid() == at.oid())
+            });
             match slot {
                 Some(i) => {
-                    if !attrs[i].vals.iter().any(|v| self.schema.equality_key(at, v) == k) {
+                    if !attrs[i]
+                        .vals
+                        .iter()
+                        .any(|v| self.schema.equality_key(at, v) == k)
+                    {
                         attrs[i].vals.push(ava.value.clone());
                     }
                 }
@@ -928,14 +1119,18 @@ impl Directory {
         self.stamp(&mut attrs, s, false);
         let mut controls = Vec::new();
         if let Some(list) = &ctl.pre_read {
-            controls.push(PreReadResponse(self.read_entry(txn, s, b, &f.entry, list)?).to_control(false));
+            controls.push(
+                PreReadResponse(self.read_entry(txn, s, b, &f.entry, list)?).to_control(false),
+            );
         }
         let backend = &self.backends[b];
         backend.rename(txn, &self.schema, f.entry.id, &rdn, new_parent)?;
         backend.replace(txn, &self.schema, f.entry.id, &attrs)?;
         let after = backend
             .entry(txn, &self.schema, &self.sys, f.entry.id)?
-            .ok_or_else(|| OpError::new(ResultCode::OperationsError, "the renamed entry is gone"))?;
+            .ok_or_else(|| {
+                OpError::new(ResultCode::OperationsError, "the renamed entry is gone")
+            })?;
         let number = self.log(
             txn,
             b,
@@ -947,7 +1142,9 @@ impl Directory {
             Some((new_rdn, delete_old, new_superior)),
         )?;
         if let Some(list) = &ctl.post_read {
-            controls.push(PostReadResponse(self.read_entry(txn, s, b, &after, list)?).to_control(false));
+            controls.push(
+                PostReadResponse(self.read_entry(txn, s, b, &after, list)?).to_control(false),
+            );
         }
         let parent = backend.parent(txn, f.entry.id)?;
         Ok(Done {
@@ -969,7 +1166,15 @@ impl Directory {
 /// Apply the policy's server-side changes to a working attribute list.
 fn apply_server(attrs: &mut Vec<Attribute>, mods: &[Modification]) {
     for m in mods {
-        set(attrs, &m.attr.ty, if m.op == ModOp::Delete { Vec::new() } else { m.attr.vals.clone() });
+        set(
+            attrs,
+            &m.attr.ty,
+            if m.op == ModOp::Delete {
+                Vec::new()
+            } else {
+                m.attr.vals.clone()
+            },
+        );
     }
 }
 
@@ -997,8 +1202,11 @@ fn ldif_text(body: &Body) -> Vec<u8> {
     });
     text.lines()
         .filter(|l| !l.starts_with("dn:") && !l.starts_with("changetype:") && !l.is_empty())
-        .map(|l| format!("{l}\n"))
-        .collect::<String>()
+        .fold(String::new(), |mut s, l| {
+            s.push_str(l);
+            s.push('\n');
+            s
+        })
         .into_bytes()
 }
 
@@ -1013,4 +1221,9 @@ impl Directory {
     ) -> OpResult<Vec<Change>> {
         self.write(txn, s, ctl, &msg.op).map(|d| d.changes)
     }
+}
+
+/// insufficientAccessRights unless `ok`.
+fn need(ok: bool) -> OpResult<()> {
+    if ok { Ok(()) } else { Err(OpError::access()) }
 }

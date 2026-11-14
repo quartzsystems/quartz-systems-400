@@ -10,8 +10,8 @@
 
 use ldap::ResultCode;
 use ldap::control::{
-    self, Assertion, ControlValue, PagedResults, PersistentSearch, PostReadRequest,
-    PreReadRequest, ProxiedAuthz, SortRequest,
+    self, Assertion, ControlValue, PagedResults, PersistentSearch, PostReadRequest, PreReadRequest,
+    ProxiedAuthz, SortRequest,
 };
 use ldap::filter::Filter;
 use ldap::msg::LdapMessage;
@@ -81,7 +81,10 @@ fn allowed(op: Op, oid: &str) -> bool {
 }
 
 fn bad(what: &str) -> OpError {
-    OpError::new(ResultCode::ProtocolError, format!("the {what} control is malformed"))
+    OpError::new(
+        ResultCode::ProtocolError,
+        format!("the {what} control is malformed"),
+    )
 }
 
 /// The controls of `msg` for `op`, as `admin` (or not) may use them.
@@ -129,17 +132,28 @@ pub(crate) fn parse(msg: &LdapMessage, op: Op, s: &Settings, admin: bool) -> OpR
                 if !k.critical {
                     return Err(bad("proxied authorization (it must be critical)"));
                 }
-                c.proxy = Some(ProxiedAuthz::from_control(k).map_err(|_| bad("proxied authorization"))?.0);
+                c.proxy = Some(
+                    ProxiedAuthz::from_control(k)
+                        .map_err(|_| bad("proxied authorization"))?
+                        .0,
+                );
             }
             control::ASSERTION => {
                 c.assertion = Some(Assertion::from_control(k).map_err(|_| bad("assertion"))?.0);
             }
             control::PRE_READ => {
-                c.pre_read = Some(PreReadRequest::from_control(k).map_err(|_| bad("pre-read"))?.0);
+                c.pre_read = Some(
+                    PreReadRequest::from_control(k)
+                        .map_err(|_| bad("pre-read"))?
+                        .0,
+                );
             }
             control::POST_READ => {
-                c.post_read =
-                    Some(PostReadRequest::from_control(k).map_err(|_| bad("post-read"))?.0);
+                c.post_read = Some(
+                    PostReadRequest::from_control(k)
+                        .map_err(|_| bad("post-read"))?
+                        .0,
+                );
             }
             _ => {}
         }

@@ -135,7 +135,9 @@ impl<C: ConfigSource> Backend for ConfigBackend<C> {
         let Some((dn, _, _)) = all.get(i) else {
             return Ok(None);
         };
-        let Some(p) = dn.parent() else { return Ok(None) };
+        let Some(p) = dn.parent() else {
+            return Ok(None);
+        };
         Ok(all
             .iter()
             .position(|(x, _, _)| x.raw_eq(&p))
@@ -146,7 +148,7 @@ impl<C: ConfigSource> Backend for ConfigBackend<C> {
         let n = self.parsed().len() as u64;
         let mut c = 0;
         for k in 1..=n {
-            if c as usize >= cap {
+            if usize::try_from(c).unwrap_or(usize::MAX) >= cap {
                 break;
             }
             if self.parent(txn, k)? == Some(id) {
@@ -156,12 +158,7 @@ impl<C: ConfigSource> Backend for ConfigBackend<C> {
         Ok(c)
     }
 
-    fn apply(
-        &self,
-        _txn: &mut Txn<'_>,
-        id: u64,
-        mods: &[Modification],
-    ) -> Option<OpResult<()>> {
+    fn apply(&self, _txn: &mut Txn<'_>, id: u64, mods: &[Modification]) -> Option<OpResult<()>> {
         Some(self.modify(id, mods))
     }
 

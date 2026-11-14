@@ -88,7 +88,9 @@ pub fn parse_gentime(v: &[u8]) -> Option<u64> {
     let s = std::str::from_utf8(v).ok()?.trim();
     let num = |a: usize, n: usize| -> Option<i64> {
         let t = s.get(a..a + n)?;
-        t.bytes().all(|b| b.is_ascii_digit()).then(|| t.parse().ok())?
+        t.bytes()
+            .all(|b| b.is_ascii_digit())
+            .then(|| t.parse().ok())?
     };
     let y = num(0, 4)?;
     let mo = num(4, 2)?;
@@ -116,14 +118,13 @@ pub fn parse_gentime(v: &[u8]) -> Option<u64> {
         frac = f;
     }
     let off = match s.as_bytes().get(at) {
-        Some(b'Z') => 0,
+        Some(b'Z') | None => 0,
         Some(c @ (b'+' | b'-')) => {
             let oh = num(at + 1, 2)?;
             let om = num(at + 3, 2).unwrap_or(0);
             let o = oh * 3600 + om * 60;
             if *c == b'+' { -o } else { o }
         }
-        None => 0,
         _ => return None,
     };
     if !(1..=12).contains(&mo) || !(1..=31).contains(&d) || h > 23 || mi > 59 || se > 60 {

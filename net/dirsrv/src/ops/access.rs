@@ -92,7 +92,11 @@ impl Directory {
             Inherit::default()
         };
         let (acl, acl_source, acl_propagate) = match own_acl {
-            Some(a) => (self.parse_acls(Some(a)), Some(dn.to_string()), flag(attrs, "aclPropagate")),
+            Some(a) => (
+                self.parse_acls(Some(a)),
+                Some(dn.to_string()),
+                flag(attrs, "aclPropagate"),
+            ),
             None => match up.acl {
                 Some((v, src)) => (v, Some(src), true),
                 None => (self.default_acl(), None, true),
@@ -136,8 +140,11 @@ impl Directory {
     }
 
     pub(crate) fn default_owners(&self) -> Vec<Subject> {
-        acl::model::parse_owner(&self.schema, &format!("access-id:{}", self.settings.admin_dn))
-            .into_iter()
-            .collect()
+        acl::model::parse_owner(
+            &self.schema,
+            &format!("access-id:{}", self.settings.admin_dn),
+        )
+        .into_iter()
+        .collect()
     }
 }

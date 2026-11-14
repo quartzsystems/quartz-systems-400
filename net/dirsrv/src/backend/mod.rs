@@ -218,12 +218,7 @@ pub trait Backend: Send {
     /// A modify the backend applies itself (the configuration file), or
     /// `None` for the operations to apply it and [`replace`](Self::replace)
     /// the result.
-    fn apply(
-        &self,
-        _txn: &mut Txn<'_>,
-        _id: u64,
-        _mods: &[Modification],
-    ) -> Option<OpResult<()>> {
+    fn apply(&self, _txn: &mut Txn<'_>, _id: u64, _mods: &[Modification]) -> Option<OpResult<()>> {
         None
     }
 
