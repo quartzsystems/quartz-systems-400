@@ -152,10 +152,10 @@ four tree roots are:
 
 | Slot | Tree | Key | Value |
 |---|---|---|---|
-| 0 | entries | entry ID (u64) | the entry: its attributes and values, operational attributes included, encoded as `EntryRec` (§5.1); overflow pages past 3 KiB |
+| 0 | entries | entry ID (u64), chunk (u16) | the entry: its attributes and values, operational attributes included, encoded as `EntryRec` (§5.2), in chunks of 1024 bytes |
 | 1 | names | parent ID (u64), normalized RDN | the child's entry ID |
-| 2 | index | index number (u16), normalized key (equality value, or a substring gram), entry ID | empty |
-| 3 | change log | change number (u64) | the change record (`cn=changelog`, §8) |
+| 2 | index | index number (u16), kind, normalized key (equality value, or a substring gram), entry ID | empty |
+| 3 | change log | change number (u64), chunk (u16) | the change record (`cn=changelog`, §8), in chunks of 1024 bytes |
 
 A DN is found by walking `names` from the suffix's root entry, one RDN
 at a time; a subtree's move is one `names` re-key, so modify DN with a
@@ -173,8 +173,22 @@ through `names`.
 
 `DirdbAttr` holds the format version, the suffix roots (up to 16
 suffixes, each its own root entry), the next entry ID and change
-number, entry and index counts, the indexes' definitions and the
-change log's first number and its size limit.
+number, entry and index counts, and the change log's first number, its
+count and its size limit. The indexes' definitions are entry 0 of the
+entries tree (entry IDs start at 1).
+
+A long entry or change record is several tree values (chunks under one
+ID) rather than overflow pages: every page of a `*DIRDB` is then a node
+of one of its four trees, so `RCLSTG`, delete and `SAVLIB`/`RSTLIB`
+handle it through the header's tree roots with no code of their own
+(the save writes the trees' entries and the attribute area, which holds
+no page numbers; the restore bulk-loads them).
+
+Listings leave `*DIRDB` out (`store::obj::types::hidden`, applied in
+`ops::list`), though it has a library directory entry in `QUSRDIRDB`:
+`DSPLIB`, `WRKOBJ`, `QUSLOBJ`, `/QSYS.LIB` and the SQL catalogs never
+show it, while the save and `RCLSTG`, which read the library directory
+itself, do. `CLRLIB QUSRDIRDB` therefore leaves the stores in place.
 
 ### 5.1 The format and the freeze
 
@@ -196,7 +210,193 @@ them as `storage/store/tests/spec.rs` does.
 
 ### 5.2 Layouts
 
-(Written with the store.)
+Conventions are `STORE_FORMAT.md` §0's: integers in the attribute area
+and in records are little-endian, integers in tree keys big-endian so
+that byte order is key order. Text (RDNs, DNs, attribute descriptions)
+is UTF-8. `DIRDB_VERSION` (`net/dirsrv/src/store/format.rs`) is 1.
+
+**Limits.** A tree key is fixed size per tree (`STORE_FORMAT.md` §3);
+the names and index trees use 128 bytes, so a long normalized RDN or
+value keeps its first bytes and ends in a SHA-256 of the whole (the
+*hashed tail*). The other limits: an `EntryRec` or `ChangeRec` at most
+16 MiB (16 384 chunks); an RDN's text and its normalized key at most
+65 535 bytes each; an attribute description at most 1024 bytes; at most
+65 535 attributes per entry; 16 suffixes; index numbers 1 to 65 535,
+an index's attribute name at most 255 bytes. A record past a limit is
+refused (`adminLimitExceeded` at the service).
+
+#### `DirdbAttr` (256 bytes)
+
+At offset 0 of the header's attribute area (body offset 1024); the rest
+of the area is zero. No field is a page number: tree roots are the
+header's `tree_roots` (slot 0 entries, 1 names, 2 index, 3 change log).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | version | `DIRDB_VERSION` |
+| 2 | 2 | suffix_count | entries used in `suffixes` |
+| 4 | 2 | index_count | definitions in entry 0 |
+| 6 | 2 | next_index | number the next configured index gets (7 at creation) |
+| 8 | 8 | next_id | the next entry ID; 1 at creation, never reused |
+| 16 | 8 | next_change | the next change number; 1 at creation |
+| 24 | 8 | entry_count | entries, entry 0 not counted |
+| 32 | 8 | index_keys | keys in the index tree |
+| 40 | 8 | log_first | the oldest change number held, 0 for an empty log |
+| 48 | 8 | log_count | change records held |
+| 56 | 8 | log_max | records kept, 0 for no limit; an append past it drops the oldest |
+| 64 | 64 | reserved | 0 |
+| 128 | 128 | suffixes | 16 × entry ID (u64) of a suffix's root entry, 0 for unused |
+
+**The entries tree (slot 0).**
+
+#### `EntryKey` (10 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | entry | entry ID; 0 is the index definitions |
+| 8 | 2 | chunk | 0, 1, ...: the record's bytes `chunk * 1024 ..` |
+
+The value of chunk *n* is bytes `n * 1024` to `n * 1024 + 1023` of the
+record (the last chunk shorter). A record is read by a range over its
+ID; a rewrite that needs fewer chunks deletes the rest.
+
+#### `EntryRecHeader` (24 bytes)
+
+An `EntryRec` is this header, then `rdn_len` bytes of the RDN's text as
+the client wrote it (for a suffix root, the whole suffix DN), then
+`rdn_key_len` bytes of its normalized key (the names tree's RDN bytes
+before any hashing; for a suffix root, the suffix key), then
+`attr_count` attributes. An attribute is an `AttrHeader`, `name_len`
+bytes of its description (type and options as stored, operational
+attributes included: `createTimestamp`, `creatorsName`, `entryUUID`,
+`ibm-entryuuid` and the rest are attributes like any other), then
+`value_count` values, each a `ValueHeader` and `len` bytes.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | version | 1 |
+| 1 | 1 | flags | bit 0: a suffix root |
+| 2 | 2 | attr_count | |
+| 4 | 2 | rdn_len | |
+| 6 | 2 | rdn_key_len | |
+| 8 | 8 | parent | the parent's entry ID; 0 for a suffix root |
+| 16 | 4 | total_len | bytes of the whole record, header included |
+| 20 | 4 | reserved | 0 |
+
+#### `AttrHeader` (8 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | name_len | 1..1024 |
+| 2 | 2 | reserved | 0 |
+| 4 | 4 | value_count | |
+
+#### `ValueHeader` (4 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | len | bytes of the value |
+
+**Entry 0** holds the index definitions: an `IndexDefsHeader`, then
+`count` definitions, each an `IndexDef` and `name_len` bytes of the
+attribute's name as the normalizer identifies it (`Normalizer::attr_id`:
+`objectclass`, `cn`, ...), in index number order.
+
+#### `IndexDefsHeader` (4 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | version | 1 |
+| 1 | 1 | reserved | 0 |
+| 2 | 2 | count | |
+
+#### `IndexDef` (4 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | number | the index number in index keys |
+| 2 | 1 | kinds | bit 0 presence, bit 1 equality, bit 2 substring, bit 7 always on (shipped, never removed) |
+| 3 | 1 | name_len | 1..255 |
+
+The six always-on indexes are created with the store: 1 `objectclass`
+(presence, equality), 2 `cn`, 3 `uid`, 4 `sn`, 5 `mail` (presence,
+equality, substring), 6 `entryuuid` (presence, equality).
+
+**The names tree (slot 1).**
+
+#### `NameKey` (128 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | parent | the parent's entry ID; 0 for a suffix |
+| 8 | 118 | rdn | the RDN bytes, zero padded; or, when longer than 118, their first 86 bytes and the SHA-256 of all of them |
+| 126 | 2 | form | the RDN bytes' length (0..118), or 0xFFFF for the hashed form |
+
+The RDN bytes of a child are `Normalizer::rdn_key` of its RDN. Those of
+a suffix (parent 0) are its *suffix key*: each of the suffix's RDNs,
+most specific first, as a two-byte big-endian length and its
+`rdn_key`. The value is the entry's ID, 8 bytes, little-endian
+(`NameValue`). Children of one parent are adjacent and in key order,
+which is the order of a one-level search and of a subtree walk.
+
+#### `NameValue` (8 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | entry | the child's entry ID |
+
+**The index tree (slot 2).**
+
+#### `IndexKey` (128 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | index | the index number |
+| 2 | 1 | kind | 0 presence, 1 equality, 2 substring |
+| 3 | 115 | key | the key bytes, zero padded; or, when longer than 115, their first 83 bytes and the SHA-256 of all of them |
+| 118 | 2 | form | the key bytes' length (0..115), or 0xFFFF for the hashed form |
+| 120 | 8 | entry | the entry's ID |
+
+The value is empty. Presence has empty key bytes. Equality's are the
+attribute's normalized value under its equality rule
+(`Normalizer::value_key` with `Rule::Equality`). Substring's are the
+grams of the value normalized under its substring rule: every run of
+three bytes of `0x02`, the value, `0x03` (so an initial piece's grams
+start with `0x02` and a final piece's end with `0x03`); a lookup of a
+substring filter intersects the grams' entry lists and the service
+filters the candidates. A hashed key matches only its exact value; the
+candidates of a hashed key are checked by the service as all
+candidates are. An attribute value yields one presence key per
+attribute (not per value), one equality key per distinct normalized
+value, one substring key per distinct gram.
+
+**The change log (slot 3).**
+
+#### `ChangeKey` (10 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | number | the change number |
+| 8 | 2 | chunk | as `EntryKey`'s |
+
+#### `ChangeRecHeader` (32 bytes)
+
+A `ChangeRec` is this header and five fields, each a four-byte length
+and its bytes, in order: the target DN, the new RDN, the new superior
+(both empty unless a modify DN), the modifier's DN, and the changes
+(draft-good-ldap-changelog's `changes`: LDIF of the added entry or the
+modifications, empty for a delete or a modify DN).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | version | 1 |
+| 1 | 1 | kind | 1 add, 2 delete, 3 modify, 4 modify DN |
+| 2 | 1 | flags | bit 0 `deleteOldRDN`, bit 1 a new RDN, bit 2 a new superior |
+| 3 | 1 | reserved | 0 |
+| 4 | 4 | total_len | bytes of the whole record |
+| 8 | 8 | time | Unix milliseconds |
+| 16 | 8 | entry | the entry's ID |
+| 24 | 8 | reserved2 | 0 |
 
 ## 6. Schema
 
