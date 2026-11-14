@@ -139,6 +139,16 @@ commands, daemon jobs and `/etc/exports`:
   worker threads fill. A server that stops answering is reported to
   `QSYSOPR` (`CPDA1B9`) once, and again when it answers. Byte-range
   locks go to the server and are reclaimed after it restarts.
+- NLM version 2 is registered with the binder, as IBM i registers it,
+  for clients that ask for it before version 4. Daemons that cannot
+  start say why in the job log and on the serial console.
+- Writes: a `*SYNC` export (the default) syncs each write before it
+  answers, as IBM documents, but the sync runs off the storage
+  service's thread and one sync covers every write queued behind it.
+  The server prefers 1 MiB reads and writes; a client writes back on
+  eight workers. Under QEMU a 1 GiB version 3 write in 1 MiB blocks
+  ran at 62 to 80 MiB/s (`*ASYNC`: 136), reads at 95 to 103 (`NFS.md`
+  §11).
 - `DSPMFSINF`/`STATFS` (display and listing), `RLSIFSLCK`, `UNMOUNT
   TYPE(*NFS *ALL)`, the APIs `QZNFRTVE` and `QZNFNFSO`, the menus
   `CMDNFS`, `CMDMFS` and `CMDRPC`. `MOUNT` and `UNMOUNT` are now IBM's
@@ -188,6 +198,8 @@ screens and the bytes on its disks are as they were.
   earlier release works again once this release is installed.
 - `VRYCFG STATUS(*OFF)` of a display changed its `ONLINE` attribute, so
   it stayed off after the next IPL whatever its description said.
+- Navigator's Time management page has Sync now, which has the NTP
+  client poll at once; Power down / IPL keeps its delay on one line.
 - The web products' listeners took up to 50 ms to accept each new
   connection; every response now carries a `Server-Timing` header
   (`SERVERS.md`).
@@ -228,7 +240,9 @@ NFS's are in `NFS.md` §10 and §7. The main ones: a file not used
 since the IPL is found from its handle by one walk of its file system;
 a mode an NFS client sets loses its group bits when the owner has no
 primary group (the IFS's authority model); version 3 locks on a mount
-need the server's binder; NFSv4 blocking locks are polled.
+need the server's binder; NFSv4 blocking locks are polled. A QS/400
+client copying a large file to a QS/400 server with `CPY` writes at
+only 4 to 11 MiB/s under QEMU (`NFS.md` §11).
 
 ## Before shipping (Cody)
 
