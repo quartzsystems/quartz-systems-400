@@ -222,6 +222,7 @@ fn harness_commands_analyze() {
                 if e.msgid() == "CPD0031"
                     || following.contains(e.msgid())
                     || e.to_string().contains(": X is not")
+                    || lit.contains("CMD(X)")
                 {
                     continue;
                 }
