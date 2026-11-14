@@ -12,7 +12,7 @@ use std::fmt::Write as _;
 use qsweb::html::esc;
 use qsweb::http::{Form, Response};
 use qsweb::pages::confirm_body;
-use qsweb::partials::{Button, Prop, PropGroup, input_cmd, props, radio, select};
+use qsweb::partials::{Button, Prop, PropGroup, input, props, radio, select};
 
 use super::GROUP;
 use crate::env::{Need, Target};
@@ -147,7 +147,7 @@ pub fn page(rq: &Rq<'_>) -> Response {
                     format!(
                         "{} Controlled, within {} seconds &nbsp; {} Immediately",
                         radio("o", "*CNTRLD", true),
-                        input_cmd("d", "60", 6),
+                        input("d", "60", 5),
                         radio("o", "*IMMED", false)
                     ),
                 ),
