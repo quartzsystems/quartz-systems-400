@@ -1,0 +1,76 @@
+# Directory server handoff: CHGDIRSVRA, STRTCPSVR and ENDTCPSVR with
+# SERVER(*DIRSRV) on the primary (V7R1M0). Each is prompted with F4; the
+# prompt, F10 and a Page Down are captured and left with F12. Nothing runs.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type chgdirsvra
+key f4
+settle 1500
+snap prompt-chgdirsvra
+key f10
+settle 1200
+snap prompt-chgdirsvra-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-chgdirsvra-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type strtcpsvr server(*dirsrv)
+key f4
+settle 1500
+snap prompt-strtcpsvr-dirsrv
+key f10
+settle 1200
+snap prompt-strtcpsvr-dirsrv-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-strtcpsvr-dirsrv-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type endtcpsvr server(*dirsrv)
+key f4
+settle 1500
+snap prompt-endtcpsvr-dirsrv
+key f10
+settle 1200
+snap prompt-endtcpsvr-dirsrv-f10
+key reset
+key pgdn
+settle 1000
+snap prompt-endtcpsvr-dirsrv-f10-2
+key reset
+key f12
+wait "Command Entry"
+key eraseinput
+type chgdirsvra
+key f4
+settle 1500
+key f1
+settle 1500
+snap help-chgdirsvra
+key f12
+settle 800
+key f12
+wait "Command Entry"
+key eraseinput
+type go cmdtcp
+key enter
+settle 1500
+snap menu-cmdtcp
+key f12
+wait "Command Entry"

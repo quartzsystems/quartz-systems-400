@@ -1,0 +1,88 @@
+[[golden]]
+name = "prompt-chgdirsvra"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-chgdirsvra-f10"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-chgdirsvra-f10-2"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-strtcpsvr-dirsrv"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-strtcpsvr-dirsrv-f10"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-strtcpsvr-dirsrv-f10-2"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-endtcpsvr-dirsrv"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-endtcpsvr-dirsrv-f10"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "prompt-endtcpsvr-dirsrv-f10-2"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "help-chgdirsvra"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+
+[[golden]]
+name = "menu-cmdtcp"
+source = "oracle"
+release = ""
+date = "2026-11-14"
+script = "prompts-dirsrv"
+width = 80
+

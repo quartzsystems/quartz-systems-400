@@ -1,0 +1,295 @@
+# The primary's instance configuration (/QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/ibmslapd.conf)
+# reduced to entries, attribute names and their non-secret values; comments dropped, secrets masked.
+charset: ISO-8859-1
+
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdAdminGroupEnabled: false
+ibm-slapdAdminPW: {masked}
+ibm-slapdAuthIntegration: 0
+ibm-slapdCryptoSync: none
+ibm-slapdDerefAliases: always
+ibm-slapdLogMessages: TRUE
+ibm-slapdPort: 389
+ibm-slapdPtaEnabled: false
+ibm-slapdPwEncryption: {masked}
+ibm-slapdServerId: {server-id}
+ibm-slapdSizeLimit: 500
+ibm-slapdSupportedWebAdmVersion: 3.0
+ibm-slapdTimeLimit: 900
+ibm-slapdVersion: 6.1
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdTop
+objectclass: ibm-slapdOs400Top
+
+dn: cn=AdminGroup, cn=Configuration
+cn: AdminGroup
+objectclass: top
+objectclass: container
+
+dn: cn=Front End, cn=Configuration
+cn: Front End
+ibm-slapdACLCache: TRUE
+ibm-slapdACLCacheSize: 25000
+ibm-slapdEntryCacheSize: 25000
+ibm-slapdFilterCacheBypassLimit: 100
+ibm-slapdFilterCacheSize: 25000
+ibm-slapdIdleTimeOut: 300
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdFrontEnd
+
+dn: cn=Connection Management, cn=Front End, cn=Configuration
+cn: Connection Management
+ibm-slapdAllowAnon: TRUE
+ibm-slapdAllReapingThreshold: 1200
+ibm-slapdAnonReapingThreshold: 0
+ibm-slapdBoundReapingThreshold: 1100
+ibm-slapdIdleTimeOut: 300
+ibm-slapdWriteTimeout: 120
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdConnectionManagement
+
+dn: cn=Digest, cn=Configuration
+cn: Digest
+ibm-slapdDigestEnabled: true
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdDigest
+
+dn: cn=Event Notification, cn=Configuration
+cn: Event Notification
+ibm-slapdEnableEventNotification: FALSE
+ibm-slapdMaxEventsPerConnection: 0
+ibm-slapdMaxEventsTotal: 0
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdEventNotification
+
+dn: cn=Log Management, cn=Configuration
+cn: Log Management
+objectclass: top
+objectclass: container
+
+dn: CN=AUDIT, CN=LOG MANAGEMENT, CN=CONFIGURATION
+cn: audit
+ibm-audit: false
+ibm-auditAdd: false
+ibm-auditAttributesOnGroupEvalOp: false
+ibm-auditBind: true
+ibm-auditCompare: false
+ibm-auditDelete: false
+ibm-auditExtOp: false
+ibm-auditExtOPEvent: false
+ibm-auditFailedOPonly: true
+ibm-auditGroupsOnGroupControl: false
+ibm-auditModify: false
+ibm-auditModifyDN: false
+ibm-auditPerformance: false
+ibm-auditPTABindInfo: true
+ibm-auditSearch: false
+ibm-auditUnbind: true
+ibm-auditVersion: 3
+ibm-slapdLog: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/logs/audit.log
+ibm-slapdLogArchivePath: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/logs
+ibm-slapdLogMaxArchives: 3
+ibm-slapdLogSizeThreshold: 10
+objectclass: ibm-auditConfig
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdLogConfig
+objectclass: top
+
+dn: cn=Default, cn=Log Management, cn=Configuration
+cn: Default
+objectclass: ibm-slapdLogConfig
+objectclass: ibm-slapdConfigEntry
+objectclass: top
+objectclass: container
+
+dn: cn=ibmslapd, cn=Log Management, cn=Configuration
+cn: ibmslapd
+ibm-slapdLogOptions: m
+objectclass: ibm-slapdLogConfig
+objectclass: ibm-slapdConfigEntry
+objectclass: top
+objectclass: container
+
+dn: cn=Replication, cn=Log Management, cn=Configuration
+cn: Replication
+ibm-slapdLog: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/logs/lostandfound.log
+ibm-slapdLogArchivePath: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/logs
+ibm-slapdLogMaxArchives: 3
+ibm-slapdLogSizeThreshold: 10
+objectclass: ibm-slapdLogConfig
+objectclass: ibm-slapdConfigEntry
+objectclass: top
+objectclass: container
+
+dn: cn=pwdPolicy Admin, cn=configuration
+cn: pwdPolicy Admin
+ibm-slapdConfigPwdPolicyOn: {masked}
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdPwdPolicyAdmin
+passwordMaxRepeatedChars: {masked}
+passwordMinAlphaChars: {masked}
+passwordMinDiffChars: {masked}
+passwordMinOtherChars: {masked}
+pwdFailureCountInterval: {masked}
+pwdLockout: {masked}
+pwdLockoutDuration: {masked}
+pwdMaxFailure: {masked}
+pwdMinLength: {masked}
+
+dn: cn=Replication, cn=configuration
+cn: Replication
+ibm-slapdMaxPendingChangesDisplayed: 200
+ibm-slapdReplContextCacheSize: 100000
+ibm-slapdReplMaxErrors: 0
+ibm-slapdReplRestrictedAccess: false
+objectclass: ibm-slapdReplicationConfiguration
+objectclass: ibm-slapdConfigEntry
+objectclass: top
+
+dn: cn=Schemas, cn=Configuration
+cn: Schemas
+objectclass: top
+objectclass: container
+
+dn: cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: IBM Directory
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.config.at
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.config.oc
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.ibm.at
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.ibm.oc
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.system.at
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.system.oc
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.user.at
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.user.oc
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.ldapsyntaxes
+ibm-slapdIncludeSchema: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.matchingrules
+ibm-slapdSchemaAdditions: /QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/V3.modifiedschema
+ibm-slapdSchemaCheck: V3_lenient
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdSchema
+
+dn: cn=Config Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: Config Backends
+objectclass: top
+objectclass: container
+
+dn: cn=ConfigDB, cn=Config Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: ConfigDB
+ibm-slapdPlugin: database /QSYS.LIB/QGLDBCFG.SRVPGM config_backend_init
+ibm-slapdSuffix: cn=configuration
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdConfigBackend
+
+dn: cn=LDCF Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: LDCF Backends
+objectclass: top
+objectclass: container
+
+dn: cn=SchemaDB, cn=LDCF Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: SchemaDB
+ibm-slapdPlugin: audit /QSYS.LIB/QGLDAUDIT.SRVPGM audit_init
+ibm-slapdReadOnly: FALSE
+ibm-slapdSuffix: cn=schema
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdLdcfBackend
+
+dn: cn=RDBM Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: RDBM Backends
+objectclass: top
+objectclass: container
+
+dn: cn=Directory, cn=RDBM Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: Directory
+ibm-slapdCachedAttributeAutoAdjust: FALSE
+ibm-slapdCachedAttributeAutoAdjustTime: T000000
+ibm-slapdCachedAttributeAutoAdjustTimeInterval: 2
+ibm-slapdCachedAttributeSize: 16384
+ibm-slapdDbConnections: 4
+ibm-slapdDbInstance: /QSYS.LIB/QUSRDIRDB.LIB
+ibm-slapdDbName: *SYSTEM
+ibm-slapdDbUserID: none
+ibm-slapdDbUserPW: {masked}
+ibm-slapdEnableRemotePWPExOps: {masked}
+ibm-slapdGroupMembersCacheBypassLimit: 25000
+ibm-slapdGroupMembersCacheSize: 25
+ibm-slapdLanguageTagsEnabled: FALSE
+ibm-slapdNumRetry: 5
+ibm-slapdPagedResAllowNonAdmin: TRUE
+ibm-slapdPagedResLmt: 2
+ibm-slapdPlugin: database /QSYS.LIB/QGLDRDBM.SRVPGM rdbm_backend_init
+ibm-slapdPlugin: replication /QSYS.LIB/QGLDREPL.SRVPGM replInit
+ibm-slapdReadOnly: FALSE
+ibm-slapdrepldbconns: 4
+ibm-slapdSortKeyLimit: 3
+ibm-slapdSortSrchAllowNonAdmin: TRUE
+ibm-slapdSuffix: cn=localhost
+ibm-slapdSuffix: cn=ibmpolicies
+ibm-slapdSuffix: dc={host},dc={domain}
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdRdbmBackend
+
+dn: cn=System Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: System Backends
+objectclass: top
+objectclass: container
+
+dn: cn=System, cn=System Backends, cn=IBM Directory, cn=Schemas, cn=Configuration
+cn: System
+ibm-slapdOs400UsrprjRead: TRUE
+ibm-slapdPlugin: database /QSYS.LIB/QGLDPSYS.SRVPGM sysprj_backend_init
+ibm-slapdReadOnly: FALSE
+ibm-slapdSuffix: os400-sys={system}
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdOs400SystemBackend
+
+dn: cn=SSL, cn=Configuration
+cn: SSL
+ibm-slapdSecurePort: 636
+ibm-slapdSecurity: none
+ibm-slapdSslAuth: serverauth
+ibm-slapdSslCertificate: none
+ibm-slapdSslCipherSpecs: 0
+ibm-slapdSslKeyDatabase: none
+ibm-slapdSslKeyDatabasePW: {masked}
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdSSL
+
+dn: cn=Transaction, cn=Configuration
+cn: Transaction
+ibm-slapdMaxNumOfTransactions: 20
+ibm-slapdMaxOpPerTransaction: 5
+ibm-slapdmaxtimebetweenprepareandcommit: 2
+ibm-slapdMaxTimeLimitOfTransactions: 300
+ibm-slapdTransactionEnable: TRUE
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdTransaction
+
+dn: cn=Persistent Search, cn=Configuration
+cn: Persistent Search
+ibm-slapdEnablePersistentSearch: TRUE
+ibm-slapdMaxPersistentSearches: 100
+objectclass: top
+objectclass: ibm-slapdConfigEntry
+objectclass: ibm-slapdPersistentSearch
+
+dn: cn=Passthrough Authentication, cn=Configuration
+cn: Passthrough Authentication
+objectclass: top
+objectclass: container

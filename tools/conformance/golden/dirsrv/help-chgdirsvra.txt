@@ -1,0 +1,24 @@
+                    Change Directory Server Attr (CHGDIRSVRA)                   
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Instance . . . . . . . . . . . .   QUSRDIR       Name                          
+ Distinguished ................................................................ 
+   Distinguish :                 Change Directory Server Attr                 : 
+               :                                                              : 
+   Password .  :                                                      Bottom  : 
+               :  F2=Extended help   F3=Exit help          F10=Move to top    : 
+               :  F12=Cancel   F13=Information Assistant   F14=Print help     : 
+               :  Help information is not available.                          : 
+               :..............................................................: 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

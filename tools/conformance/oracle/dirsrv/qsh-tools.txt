@@ -1,0 +1,29 @@
+# The QSH LDAP tools on the primary (`TOOL -?`): each tool's options as letter and argument word.
+# IBM's usage text is not kept.
+
+ldapsearch: ldapsearch [-b basedn] [options] filter [attributes...]
+  -a deref, -A, -b base_dn, -B, -c pattern, -C charset, -d level, -D dn, -e, -f file, -F sep, -G realm, -h host, -i file, -j limit, -J limit, -k, -K keyfile, -l time, -L, -m mechanism, -M, -n, -N key_name, -o attr_type, -O maxhops, -p port, -P key_pw, -q pagesize, -R, -s scope, -t, -T seconds, -U username, -v, -V version, -w password, -x, -y proxydn, -Y, -z size, -Z
+
+ldapadd: ldapadd [options] [-i file]
+  -a, -b, -B, -c, -C charset, -d level, -D dn, -e errorfile, -f file, -g, -G realm, -h host, -i file, -j, -k, -K keyfile, -l, -m mechanism, -n, -M, -N key_name, -O maxhops, -p port, -P key_pw, -r, -R, -t, -U username, -v, -V version, -w password, -x, -y proxydn, -Y, -Z
+
+ldapmodify: ldapmodify [options] [-i file]
+  -a, -b, -B, -c, -C charset, -d level, -D dn, -e errorfile, -f file, -g, -G realm, -h host, -i file, -j, -k, -K keyfile, -l, -m mechanism, -n, -M, -N key_name, -O maxhops, -p port, -P key_pw, -r, -R, -t, -U username, -v, -V version, -w password, -x, -y proxydn, -Y, -Z
+
+ldapdelete: ldapdelete [options] [DNs]; ldapdelete [options] [-i file]
+  -c, -C charset, -d level, -D dn, -f file, -G realm, -h host, -i file, -k, -K keyfile, -l, -m mechanism, -M, -n, -N key_name, -O maxhops, -p port, -P key_pw, -R, -s, -U username, -v, -V version, -w password, -x, -y proxydn, -Y, -Z
+
+ldapmodrdn: ldapmodrdn [options] dn newrdn; ldapmodrdn [options] [-i file]
+  -c, -C charset, -d level, -D dn, -f file, -G realm, -h host, -i file, -k, -K keyfile, -l, -m mechanism, -M, -n, -N key_name, -O maxhops, -p port, -P key_pw, -r, -R, -U username, -v, -V version, -w password, -x, -y proxydn, -Y, -Z
+
+ldapchangepwd: 
+  -C charset, -d level, -D binddn, -G realm, -h host, -K keyfile, -m mechanism, -M, -n newpassword, -N key_name, -O maxhops, -p port, -P key_pw, -R, -U username, -v, -V version, -w password, -x, -y proxydn, -Y, -Z
+
+ldapexop: ldapexop tool is used to perform extended operations.; ldapexop [general options] -op extendedOperation [operation specific options]
+  
+
+ldapcompare: ldapcompare [options] [dn attr=value]
+  -c, -d level, -D dn, -G realm, -n, -f file, -h host, -p port, -R, -U username, -v, -V version, -w password, -y proxydn
+
+ldapdiff: ldapdiff -b baseDN -sh -ch -sD -sw -cD -cw [options]; ldapdiff -S -sh -ch [options]
+  -b, -S, -a, -C, -F, -j, -L filename, -x, -O

@@ -1,0 +1,24 @@
+                          End TCP/IP Server (ENDTCPSVR)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Server application . . . . . . . > *DIRSRV       *ALL...                       
+                + for more values                                               
+ Instance . . . . . . . . . . . .   *DFT                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Function key not allowed.                                                      

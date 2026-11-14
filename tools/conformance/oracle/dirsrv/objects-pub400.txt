@@ -1,0 +1,161 @@
+# Objects and services on pub400 (V7R5M0).
+== QSYS objects about the directory (7.5 service)
+   |OBJNAME|OBJTYPE|OBJATTRIBUTE|OBJTEXT|
+   |QGLDADD|*PGM|-|-|
+   |QGLDCHGPWD|*PGM|-|-|
+   |QGLDCMP|*PGM|-|-|
+   |QGLDCPYVL|*PGM|-|-|
+   |QGLDDELETE|*PGM|-|-|
+   |QGLDEXOP|*PGM|-|-|
+   |QGLDGENLST|*PGM|-|-|
+   |QGLDMODIFY|*PGM|-|-|
+   |QGLDMODRDN|*PGM|-|-|
+   |QGLDPUEXIT|*PGM|-|-|
+   |QGLDRSDX|*PGM|-|-|
+   |QGLDRSDX1|*PGM|-|-|
+   |QGLDSEARCH|*PGM|-|-|
+   |QGLDUSTB|*PGM|-|-|
+   |QGLD00EX|*PGM|-|-|
+   |QGLDADVPP|*SRVPGM|-|-|
+   |QGLDAUDIT|*SRVPGM|-|-|
+   |QGLDAVL|*SRVPGM|-|-|
+   |QGLDBCFG|*SRVPGM|-|-|
+   |QGLDBRDR|*SRVPGM|-|-|
+   |QGLDBRDR64|*SRVPGM|-|-|
+   |QGLDCFGADM|*SRVPGM|-|-|
+   |QGLDCFGUTL|*SRVPGM|-|-|
+   |QGLDCFG32|*SRVPGM|-|-|
+   |QGLDCL|*SRVPGM|-|-|
+   |QGLDCLNT|*SRVPGM|-|-|
+   |QGLDCLNT64|*SRVPGM|-|-|
+   |QGLDCMDUTL|*SRVPGM|-|-|
+   |QGLDCMD5|*SRVPGM|-|-|
+   |QGLDCPTKN|*SRVPGM|-|-|
+   |QGLDDIGEST|*SRVPGM|-|-|
+   |QGLDDMD5|*SRVPGM|-|-|
+   |QGLDEVENT|*SRVPGM|-|-|
+   |QGLDFENT|*SRVPGM|-|-|
+   |QGLDGETF|*SRVPGM|-|-|
+   |QGLDGKRB|*SRVPGM|-|-|
+   |QGLDHEAP|*SRVPGM|-|-|
+   |QGLDINSTUT|*SRVPGM|-|-|
+   |QGLDKRB|*SRVPGM|-|-|
+   |QGLDLBRDR|*SRVPGM|-|-|
+   |QGLDLDCF|*SRVPGM|-|-|
+   |QGLDLIBA|*SRVPGM|-|-|
+   |QGLDLIBMSG|*SRVPGM|-|-|
+   |QGLDLOGA|*SRVPGM|-|-|
+   |QGLDMIGRAT|*SRVPGM|-|-|
+   |QGLDOSUTLS|*SRVPGM|-|-|
+   |QGLDPAPI|*SRVPGM|-|-|
+   |QGLDPOPSLP|*SRVPGM|-|-|
+   |QGLDPSPI|*SRVPGM|-|-|
+   |QGLDPSRCH|*SRVPGM|-|-|
+   |QGLDPSYS|*SRVPGM|-|-|
+   |QGLDPTA|*SRVPGM|-|-|
+   |QGLDPUBQ|*SRVPGM|-|-|
+   |QGLDPWUTLS|*SRVPGM|-|-|
+   |QGLDRDBM|*SRVPGM|-|-|
+   |QGLDREPL|*SRVPGM|-|-|
+   |QGLDSASL|*SRVPGM|-|-|
+   |QGLDSLAPI|*SRVPGM|-|-|
+   |QGLDTRAN|*SRVPGM|-|-|
+   |QGLDTRANEX|*SRVPGM|-|-|
+   |QGLDTRC|*SRVPGM|-|-|
+   |QGLDUAPI|*SRVPGM|-|-|
+   |QGLDUSPI|*SRVPGM|-|-|
+   |QGLDUTIL|*SRVPGM|-|-|
+   |QGLDUTLSA|*SRVPGM|-|-|
+   |QGLDXUTL|*SRVPGM|-|-|
+   |QGLDZRU|*SRVPGM|-|-|
+   |QGLDMSG|*MSGF|-|-|
+   |QDIRJOBD|*JOBD|-|-|
+   rows=69
+== software products (Directory)
+   |PRODUCT_ID|PRODUCT_OPTION|RELEASE_LEVEL|TEXT_DESCRIPTION|
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   |5770SS1|3|V7R5M0|Extended Base Directory Support| (one row per installed part)
+   rows=50
+== QSYSINC members
+   |TABLE_NAME|SYSTEM_TABLE_MEMBER|
+   |H|DIRENT|
+   |H|LBER|
+   |H|LDAP|
+   |H|LDAPSSL|
+   |H|NETDIR|
+   |H|QGLDCPYVL|
+   |H|QGLDPAPI|
+   |H|QGLDSSDD|
+   |H|QGLDUAPI|
+   |QCBLLESRC|QGLDPAPI|
+   |QCBLLESRC|QGLDUAPI|
+   |QRPGLESRC|QGLDPAPI|
+   |QRPGLESRC|QGLDUAPI|
+   rows=13
+== QSYS2 routines
+   |ROUTINE_SCHEMA|ROUTINE_NAME|ROUTINE_TYPE|
+   |CARVC1|LISTDIRECTORYCONTENTS|PROCEDURE|
+   |QSYS2|BINDING_DIRECTORY_INFO|FUNCTION|
+   |SAUBSEDR1|DELETE_IFS_DIRECTORY|FUNCTION|
+   |SQLTOOLS|LDAP_FILETIME|FUNCTION|
+   |SQLTOOLS|LDAP_TIMESTAMP|FUNCTION|
+   rows=5
+== QSYS2 views
+   |TABLE_SCHEMA|TABLE_NAME|TABLE_TYPE|
+   |QSYS2|BINDING_DIRECTORY_INFO|V|
+   rows=1
+== exit points
+   |EXIT_POINT_NAME|EXIT_POINT_FORMAT|
+   rows=0
+== function usage
+   |FUNCTION_ID|FUNCTION_NAME|
+   |QIBM_DIRSRV_ADMIN|-|
+   rows=1

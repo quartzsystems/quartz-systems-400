@@ -1,0 +1,417 @@
+# Functions QSYSINC/H declares (LDAP, LBER, LDAPSSL) on the primary; names only.
+
+[H/LDAP] 185
+ldap_abandon
+ldap_abandon_ext
+ldap_add
+ldap_add_control
+ldap_add_ext
+ldap_add_ext_s
+ldap_add_s
+ldap_app_ssl_client_init_np
+ldap_app_ssl_init_np
+ldap_app_ssl_start_np
+ldap_ber_free
+ldap_bind
+ldap_bind_s
+ldap_char_size
+ldap_compare
+ldap_compare_ext
+ldap_compare_ext_s
+ldap_compare_s
+ldap_control_free
+ldap_controls_free
+ldap_copy_controls
+ldap_count_attributes
+ldap_count_entries
+ldap_count_messages
+ldap_count_references
+ldap_count_values
+ldap_count_values_len
+ldap_create_abort_transaction_request
+ldap_create_account_status_request
+ldap_create_chaining_audit_control
+ldap_create_commit_transaction_request
+ldap_create_control
+ldap_create_effective_pwdpolicy_request
+ldap_create_get_file_request
+ldap_create_group_control
+ldap_create_group_control_from_list
+ldap_create_group_eval_request
+ldap_create_limit_num_values_control
+ldap_create_locate_entry_request
+ldap_create_modify_groups_only_control
+ldap_create_omit_group_referential_integrity_control
+ldap_create_online_backup_request
+ldap_create_page_control
+ldap_create_password_policy_bind_finalize_request
+ldap_create_password_policy_bind_init_request
+ldap_create_persistentsearch_control
+ldap_create_prepare_transaction_request
+ldap_create_proxyauth_control
+ldap_create_resume_role_request
+ldap_create_sort_control
+ldap_create_sort_keylist
+ldap_create_transaction_control
+ldap_create_user_type_request
+ldap_default_dn_get
+ldap_default_dn_set
+ldap_delete
+ldap_delete_ext
+ldap_delete_ext_s
+ldap_delete_s
+ldap_dn2ufn
+ldap_end_transaction
+ldap_end_transaction_s
+ldap_enetwork_domain_get
+ldap_enetwork_domain_set
+ldap_err2string
+ldap_explode_dn
+ldap_explode_dn_utf8
+ldap_explode_dns
+ldap_explode_rdn
+ldap_explode_rdn_utf8
+ldap_extended_operation
+ldap_extended_operation_s
+ldap_first_attribute
+ldap_first_entry
+ldap_first_message
+ldap_first_reference
+ldap_free_friendlymap
+ldap_free_limit_num_values_response
+ldap_free_sort_keylist
+ldap_free_urldesc
+ldap_friendly_name
+ldap_get_bind_controls
+ldap_get_dn
+ldap_get_entry_controls
+ldap_get_entry_controls_np
+ldap_get_errno
+ldap_get_exterror
+ldap_get_iconv_local_codepage
+ldap_get_lderrno
+ldap_get_locale
+ldap_get_option
+ldap_get_tran_id
+ldap_get_values
+ldap_get_values_len
+ldap_init
+ldap_insert_control
+ldap_is_ldap_url
+ldap_is_ldap_url_utf8
+ldap_memfree
+ldap_merge_control_lists
+ldap_modify
+ldap_modify_ext
+ldap_modify_ext_s
+ldap_modify_s
+ldap_modrdn
+ldap_modrdn_s
+ldap_mods_free
+ldap_msgfree
+ldap_msgid
+ldap_msgtype
+ldap_next_attribute
+ldap_next_entry
+ldap_next_message
+ldap_next_reference
+ldap_open
+ldap_parse_effective_pwdpolicy_response
+ldap_parse_entrychange_control
+ldap_parse_extended_result
+ldap_parse_extended_result_w_controls
+ldap_parse_limit_num_values_response
+ldap_parse_page_control
+ldap_parse_pwdpolicy_response
+ldap_parse_reference
+ldap_parse_reference_np
+ldap_parse_result
+ldap_parse_sasl_bind_result
+ldap_parse_sort_control
+ldap_password_get
+ldap_password_set
+ldap_perror
+ldap_prepare_transaction
+ldap_prepare_transaction_s
+ldap_proxy_dn_prefix
+ldap_proxy_dn_prefix_utf8
+ldap_pwdpolicy_err2string
+ldap_remove_control
+ldap_rename
+ldap_rename_s
+ldap_result
+ldap_result2error
+ldap_sasl_bind
+ldap_sasl_bind_s
+ldap_search
+ldap_search_ext
+ldap_search_ext_s
+ldap_search_s
+ldap_search_st
+ldap_server_conf_save
+ldap_server_free_list
+ldap_server_locate
+ldap_set_cipher
+ldap_set_iconv_local_charset
+ldap_set_iconv_local_codepage
+ldap_set_lderrno
+ldap_set_locale
+ldap_set_option
+ldap_set_rebind_proc
+ldap_simple_bind
+ldap_simple_bind_s
+ldap_ssl_client_init
+ldap_ssl_environment_init
+ldap_ssl_init
+ldap_ssl_pkcs11_client_init
+ldap_ssl_set_fips_mode_np
+ldap_ssl_start
+ldap_start_tls_app_np
+ldap_start_tls_s_np
+ldap_start_transaction
+ldap_start_transaction_s
+ldap_stop_tls_s_np
+ldap_unbind
+ldap_unbind_ext
+ldap_unbind_s
+ldap_url_parse
+ldap_url_parse_utf8
+ldap_url_search
+ldap_url_search_s
+ldap_url_search_st
+ldap_value_free
+ldap_value_free_len
+ldap_version
+ldap_xlate_local_to_unicode
+ldap_xlate_local_to_utf8
+ldap_xlate_unicode_to_local
+ldap_xlate_utf8_to_local
+
+[H/LBER] 16
+ber_alloc_t
+ber_bvdup
+ber_bvecfree
+ber_bvfree
+ber_first_element
+ber_flatten
+ber_free
+ber_get_tag
+ber_init
+ber_init2
+ber_next_element
+ber_peek_tag
+ber_printf
+ber_scanf
+ber_skip_element
+ber_skip_tag
+
+[H/LDAPSSL] 2
+ldap_app_ssl_start_np
+ldap_ssl_start
+
+[QSYS/QGLDCLNT exports on pub400 (V7R5M0, QSYS2.PROGRAM_EXPORT_IMPORT_INFO)] 205
+GetInstalledSSLCiphers__Fv *PROCEXP
+any_are_critical *PROCEXP
+count_controls *PROCEXP
+decode_int *PROCEXP
+decode_len *PROCEXP
+encode_int *PROCEXP
+encode_len *PROCEXP
+getLength_int *PROCEXP
+getLength_len *PROCEXP
+getLoadPtrs *PROCEXP
+get_ctrls_from_ber *PROCEXP
+get_remote_canonical_hostname *PROCEXP
+ids_gethostbyaddr *PROCEXP
+ids_gethostbyname *PROCEXP
+ldap_abandon *PROCEXP
+ldap_abandon_ext *PROCEXP
+ldap_add *PROCEXP
+ldap_add_control *PROCEXP
+ldap_add_ext *PROCEXP
+ldap_add_ext_s *PROCEXP
+ldap_add_s *PROCEXP
+ldap_app_ssl_client_init_np *PROCEXP
+ldap_app_ssl_init_np *PROCEXP
+ldap_app_ssl_start_np *PROCEXP
+ldap_ber_free *PROCEXP
+ldap_bind *PROCEXP
+ldap_bind_s *PROCEXP
+ldap_char_size *PROCEXP
+ldap_client_table *PROCEXP
+ldap_compare *PROCEXP
+ldap_compare_ext *PROCEXP
+ldap_compare_ext_s *PROCEXP
+ldap_compare_s *PROCEXP
+ldap_control_free *PROCEXP
+ldap_controls_free *PROCEXP
+ldap_copy_controls *PROCEXP
+ldap_count_attributes *PROCEXP
+ldap_count_entries *PROCEXP
+ldap_count_messages *PROCEXP
+ldap_count_references *PROCEXP
+ldap_count_values *PROCEXP
+ldap_count_values_len *PROCEXP
+ldap_create_account_status_request *PROCEXP
+ldap_create_assertion_control *PROCEXP
+ldap_create_chaining_audit_control *PROCEXP
+ldap_create_control *PROCEXP
+ldap_create_effective_pwdpolicy_request *PROCEXP
+ldap_create_group_control *PROCEXP
+ldap_create_group_control_from_list *PROCEXP
+ldap_create_group_eval_request *PROCEXP
+ldap_create_limit_num_values_control *PROCEXP
+ldap_create_locate_entry_request *PROCEXP
+ldap_create_modify_groups_only_control *PROCEXP
+ldap_create_omit_group_referential_integrity_control *PROCEXP
+ldap_create_online_backup_request *PROCEXP
+ldap_create_page_control *PROCEXP
+ldap_create_persistentsearch_control *PROCEXP
+ldap_create_proxyauth_control *PROCEXP
+ldap_create_resume_role_request *PROCEXP
+ldap_create_return_deleted_objects_control *PROCEXP
+ldap_create_sort_control *PROCEXP
+ldap_create_sort_keylist *PROCEXP
+ldap_create_transaction_control *PROCEXP
+ldap_create_user_type_request *PROCEXP
+ldap_create_vlv_control *PROCEXP
+ldap_default_dn_get *PROCEXP
+ldap_default_dn_set *PROCEXP
+ldap_delete *PROCEXP
+ldap_delete_ext *PROCEXP
+ldap_delete_ext_s *PROCEXP
+ldap_delete_s *PROCEXP
+ldap_dn2ufn *PROCEXP
+ldap_end_transaction *PROCEXP
+ldap_end_transaction_s *PROCEXP
+ldap_enetwork_domain_get *PROCEXP
+ldap_enetwork_domain_set *PROCEXP
+ldap_err2string *PROCEXP
+ldap_explode_dn *PROCEXP
+ldap_explode_dn_utf8 *PROCEXP
+ldap_explode_dns *PROCEXP
+ldap_explode_rdn *PROCEXP
+ldap_explode_rdn_utf8 *PROCEXP
+ldap_extended_operation *PROCEXP
+ldap_extended_operation_s *PROCEXP
+ldap_first_attribute *PROCEXP
+ldap_first_entry *PROCEXP
+ldap_first_message *PROCEXP
+ldap_first_reference *PROCEXP
+ldap_free_limit_num_values_response *PROCEXP
+ldap_free_sort_keylist *PROCEXP
+ldap_free_urldesc *PROCEXP
+ldap_get_bind_controls *PROCEXP
+ldap_get_dn *PROCEXP
+ldap_get_entry_controls *PROCEXP
+ldap_get_entry_controls_np *PROCEXP
+ldap_get_errno *PROCEXP
+ldap_get_exterror *PROCEXP
+ldap_get_iconv_local_codepage *PROCEXP
+ldap_get_lderrno *PROCEXP
+ldap_get_locale *PROCEXP
+ldap_get_option *PROCEXP
+ldap_get_tran_id *PROCEXP
+ldap_get_values *PROCEXP
+ldap_get_values_len *PROCEXP
+ldap_init *PROCEXP
+ldap_insert_control *PROCEXP
+ldap_is_ldap_url *PROCEXP
+ldap_is_ldap_url_utf8 *PROCEXP
+ldap_krb_cc_destroy *PROCEXP
+ldap_krb_ctx_destroy *PROCEXP
+ldap_krb_init_tkt *PROCEXP
+ldap_memfree *PROCEXP
+ldap_modify *PROCEXP
+ldap_modify_ext *PROCEXP
+ldap_modify_ext_s *PROCEXP
+ldap_modify_s *PROCEXP
+ldap_modrdn *PROCEXP
+ldap_modrdn_s *PROCEXP
+ldap_mods_free *PROCEXP
+ldap_msgfree *PROCEXP
+ldap_msgid *PROCEXP
+ldap_msgtype *PROCEXP
+ldap_next_attribute *PROCEXP
+ldap_next_entry *PROCEXP
+ldap_next_message *PROCEXP
+ldap_next_reference *PROCEXP
+ldap_open *PROCEXP
+ldap_parse_effective_pwdpolicy_response *PROCEXP
+ldap_parse_entrychange_control *PROCEXP
+ldap_parse_extended_result *PROCEXP
+ldap_parse_limit_num_values_response *PROCEXP
+ldap_parse_page_control *PROCEXP
+ldap_parse_pwdpolicy_response *PROCEXP
+ldap_parse_reference *PROCEXP
+ldap_parse_reference_np *PROCEXP
+ldap_parse_result *PROCEXP
+ldap_parse_sasl_bind_result *PROCEXP
+ldap_parse_sort_control *PROCEXP
+ldap_parse_vlv_control *PROCEXP
+ldap_perror *PROCEXP
+ldap_plugin_pblock_free *PROCEXP
+ldap_plugin_pblock_get *PROCEXP
+ldap_plugin_pblock_set *PROCEXP
+ldap_plugin_sasl_bind_s *PROCEXP
+ldap_prepare_transaction *PROCEXP
+ldap_prepare_transaction_s *PROCEXP
+ldap_proxy_dn_prefix *PROCEXP
+ldap_proxy_dn_prefix_utf8 *PROCEXP
+ldap_pwdpolicy_err2string *PROCEXP
+ldap_remove_control *PROCEXP
+ldap_rename *PROCEXP
+ldap_rename_s *PROCEXP
+ldap_result *PROCEXP
+ldap_result2error *PROCEXP
+ldap_sasl_bind *PROCEXP
+ldap_sasl_bind_s *PROCEXP
+ldap_search *PROCEXP
+ldap_search_ext *PROCEXP
+ldap_search_ext_s *PROCEXP
+ldap_search_s *PROCEXP
+ldap_search_st *PROCEXP
+ldap_server_conf_save *PROCEXP
+ldap_server_free_list *PROCEXP
+ldap_server_locate *PROCEXP
+ldap_set_cipher *PROCEXP
+ldap_set_iconv_local_charset *PROCEXP
+ldap_set_iconv_local_codepage *PROCEXP
+ldap_set_lderrno *PROCEXP
+ldap_set_locale *PROCEXP
+ldap_set_option *PROCEXP
+ldap_set_rebind_proc *PROCEXP
+ldap_simple_bind *PROCEXP
+ldap_simple_bind_s *PROCEXP
+ldap_ssl_client_init *PROCEXP
+ldap_ssl_environment_init *PROCEXP
+ldap_ssl_init *PROCEXP
+ldap_ssl_pkcs11_client_init *PROCEXP
+ldap_ssl_pkcs11_environment_init *PROCEXP
+ldap_ssl_start *PROCEXP
+ldap_start_tls_app_np *PROCEXP
+ldap_start_tls_s_np *PROCEXP
+ldap_start_transaction *PROCEXP
+ldap_start_transaction_s *PROCEXP
+ldap_stop_tls_s_np *PROCEXP
+ldap_unbind *PROCEXP
+ldap_unbind_ext *PROCEXP
+ldap_unbind_s *PROCEXP
+ldap_url_parse *PROCEXP
+ldap_url_parse_internal *PROCEXP
+ldap_url_parse_utf8 *PROCEXP
+ldap_url_search *PROCEXP
+ldap_url_search_s *PROCEXP
+ldap_url_search_st *PROCEXP
+ldap_value_free *PROCEXP
+ldap_value_free_len *PROCEXP
+ldap_version *PROCEXP
+ldap_xlate_local_to_unicode *PROCEXP
+ldap_xlate_local_to_utf8 *PROCEXP
+ldap_xlate_local_to_utf8_wrp *PROCEXP
+ldap_xlate_unicode_to_local *PROCEXP
+ldap_xlate_utf8_to_local *PROCEXP
+loadSkitShared *PROCEXP
+put_ctrls_into_ber *PROCEXP
+test_AttributeDescription *PROCEXP
+timed_out *PROCEXP
