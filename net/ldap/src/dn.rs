@@ -90,8 +90,7 @@ impl Rdn {
     /// The same AVAs in any order, compared as [`Ava::raw_eq`].
     #[must_use]
     pub fn raw_eq(&self, other: &Self) -> bool {
-        self.0.len() == other.0.len()
-            && self.0.iter().all(|a| other.0.iter().any(|b| a.raw_eq(b)))
+        self.0.len() == other.0.len() && self.0.iter().all(|a| other.0.iter().any(|b| a.raw_eq(b)))
     }
 }
 
@@ -114,7 +113,11 @@ impl Dn {
     ///
     /// A [`DnError`] with the offset of the first problem.
     pub fn parse(s: &str) -> Result<Self, DnError> {
-        Parser { s: s.as_bytes(), i: 0 }.dn()
+        Parser {
+            s: s.as_bytes(),
+            i: 0,
+        }
+        .dn()
     }
 
     /// The most specific RDN.
@@ -175,10 +178,7 @@ impl Dn {
 
     fn ends_with(&self, base: &Self) -> bool {
         let skip = self.0.len() - base.0.len();
-        self.0[skip..]
-            .iter()
-            .zip(&base.0)
-            .all(|(a, b)| a.raw_eq(b))
+        self.0[skip..].iter().zip(&base.0).all(|(a, b)| a.raw_eq(b))
     }
 }
 
@@ -384,7 +384,9 @@ impl Parser<'_> {
 
     fn ty(&mut self) -> Result<String, DnError> {
         let start = self.i;
-        let first = self.peek().ok_or_else(|| self.err("expected an attribute type"))?;
+        let first = self
+            .peek()
+            .ok_or_else(|| self.err("expected an attribute type"))?;
         if first.is_ascii_digit() {
             // numericoid: number 1*( "." number )
             let mut dots = 0;
@@ -408,12 +410,13 @@ impl Parser<'_> {
             while let Some(c) = self.peek() {
                 if c.is_ascii_alphanumeric() || c == b'-' || c == b'_' {
                     self.i += 1;
-                } else if c == b'.'
-                    && self.s[start..self.i].eq_ignore_ascii_case(b"oid")
-                {
+                } else if c == b'.' && self.s[start..self.i].eq_ignore_ascii_case(b"oid") {
                     // RFC 2253's "OID.1.2.3": keep the OID only.
                     self.i += 1;
-                    let mut sub = Parser { s: self.s, i: self.i };
+                    let mut sub = Parser {
+                        s: self.s,
+                        i: self.i,
+                    };
                     let oid = sub.ty()?;
                     self.i = sub.i;
                     return Ok(oid);
@@ -550,7 +553,10 @@ mod tests {
 
         let d = p("CN=James \\\"Jim\\\" Smith\\, III,DC=example,DC=net");
         assert_eq!(d.0[0].0[0].value, b"James \"Jim\" Smith, III");
-        assert_eq!(d.to_string(), "CN=James \\\"Jim\\\" Smith\\, III,DC=example,DC=net");
+        assert_eq!(
+            d.to_string(),
+            "CN=James \\\"Jim\\\" Smith\\, III,DC=example,DC=net"
+        );
 
         let d = p("CN=Before\\0dAfter,DC=example,DC=net");
         assert_eq!(d.0[0].0[0].value, b"Before\rAfter");
@@ -570,7 +576,10 @@ mod tests {
         let d = p("cn=Connection Management, cn=Front End, cn=Configuration");
         assert_eq!(d.len(), 3);
         assert_eq!(d.0[1].0[0].value, b"Front End");
-        assert_eq!(d.to_string(), "cn=Connection Management,cn=Front End,cn=Configuration");
+        assert_eq!(
+            d.to_string(),
+            "cn=Connection Management,cn=Front End,cn=Configuration"
+        );
         let d = p("OS400-SYS=SYSTEM");
         assert_eq!(d.0[0].0[0].ty, "OS400-SYS");
         let d = p("  cn = a ,  dc = b  ; dc=c ");
@@ -598,8 +607,19 @@ mod tests {
     #[test]
     fn errors() {
         for bad in [
-            "cn", "=a", "cn=a,", "cn=a,,dc=b", "1.=a", "1=a", "cn=#", "cn=#0", "cn=\\",
-            "cn=\\4", "cn=\"a", "cn=a\"x\"b,=", "cn=a+",
+            "cn",
+            "=a",
+            "cn=a,",
+            "cn=a,,dc=b",
+            "1.=a",
+            "1=a",
+            "cn=#",
+            "cn=#0",
+            "cn=\\",
+            "cn=\\4",
+            "cn=\"a",
+            "cn=a\"x\"b,=",
+            "cn=a+",
         ] {
             assert!(Dn::parse(bad).is_err(), "{bad} parsed");
         }
@@ -622,7 +642,10 @@ mod tests {
         assert_eq!(d.rdn().unwrap().to_string(), "cn=a");
         assert!(p("cn=a+sn=b").0[0].raw_eq(&Rdn::parse("SN=b+CN=a").unwrap()));
         assert!(Rdn::parse("cn=a,dc=b").is_err());
-        assert_eq!(base.child(Rdn::single("cn", "x")).to_string(), "cn=x,OU=b,DC=c");
+        assert_eq!(
+            base.child(Rdn::single("cn", "x")).to_string(),
+            "cn=x,OU=b,DC=c"
+        );
         assert!(p("CN=X,dc=c").raw_eq(&p("cn=X, DC=c")));
     }
 }

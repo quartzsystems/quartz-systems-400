@@ -1105,7 +1105,10 @@ mod tests {
         );
         let text = std::fs::read_to_string(path).unwrap();
         let mut n = 0;
-        for line in text.lines().filter(|l| !l.starts_with('#') && !l.is_empty()) {
+        for line in text
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.is_empty())
+        {
             let (attr, value) = line.split_once(": ").unwrap();
             let v = SchemaValue::parse(attr, value).unwrap_or_else(|e| panic!("{line}: {e}"));
             assert!(v.attr().eq_ignore_ascii_case(attr));
@@ -1141,7 +1144,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(a.desc.as_deref(), Some("'x\\"));
-        assert_eq!(a.syntax.as_deref(), Some("1.3.6.1.4.1.1466.115.121.1.15{32768}"));
+        assert_eq!(
+            a.syntax.as_deref(),
+            Some("1.3.6.1.4.1.1466.115.121.1.15{32768}")
+        );
         assert_eq!(a.extensions[0].1.len(), 2);
         assert_eq!(AttributeTypeDesc::parse(&a.to_string()).unwrap(), a);
 
@@ -1160,15 +1166,15 @@ mod tests {
 
         let u = MatchingRuleUseDesc::parse("( 2.5.13.2 APPLIES ( cn $ sn ) )").unwrap();
         assert_eq!(MatchingRuleUseDesc::parse(&u.to_string()).unwrap(), u);
-        let c = DitContentRuleDesc::parse("( 2.5.6.6 NAME 'personRule' AUX ( a $ b ) NOT c )")
-            .unwrap();
+        let c =
+            DitContentRuleDesc::parse("( 2.5.6.6 NAME 'personRule' AUX ( a $ b ) NOT c )").unwrap();
         assert_eq!(c.not, ["c"]);
         assert_eq!(DitContentRuleDesc::parse(&c.to_string()).unwrap(), c);
         let s = DitStructureRuleDesc::parse("( 2 NAME 'r' FORM nf SUP ( 1 3 ) )").unwrap();
         assert_eq!(s.sup, [1, 3]);
         assert_eq!(DitStructureRuleDesc::parse(&s.to_string()).unwrap(), s);
-        let n = NameFormDesc::parse("( 1.2.3 NAME 'nf' OC person MUST cn MAY ( uid $ sn ) )")
-            .unwrap();
+        let n =
+            NameFormDesc::parse("( 1.2.3 NAME 'nf' OC person MUST cn MAY ( uid $ sn ) )").unwrap();
         assert_eq!(NameFormDesc::parse(&n.to_string()).unwrap(), n);
     }
 
@@ -1183,7 +1189,10 @@ mod tests {
         assert_eq!(i.length, Some(256));
         assert_eq!(
             i.other[0],
-            ("DBNAME".to_string(), vec!["cn".to_string(), "cn".to_string()])
+            (
+                "DBNAME".to_string(),
+                vec!["cn".to_string(), "cn".to_string()]
+            )
         );
         assert_eq!(i.other.len(), 5);
         assert_eq!(IbmAttributeType::parse(&i.to_string()).unwrap(), i);

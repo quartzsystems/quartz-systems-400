@@ -322,7 +322,12 @@ fn record(lines: &[Line]) -> Result<Record, LdifError> {
             let (ty, v) = split(l)?;
             if ty.eq_ignore_ascii_case("changetype") {
                 i += 1;
-                Some((l.no, data_text(l.no, "changetype", v)?.trim().to_ascii_lowercase()))
+                Some((
+                    l.no,
+                    data_text(l.no, "changetype", v)?
+                        .trim()
+                        .to_ascii_lowercase(),
+                ))
             } else {
                 None
             }
@@ -330,7 +335,10 @@ fn record(lines: &[Line]) -> Result<Record, LdifError> {
         None => None,
     };
     if !controls.is_empty() && change.is_none() {
-        return err(lines[i.min(lines.len() - 1)].no, "control: without changetype:");
+        return err(
+            lines[i.min(lines.len() - 1)].no,
+            "control: without changetype:",
+        );
     }
     let rest = &lines[i..];
     let body = match change {
@@ -567,7 +575,8 @@ fn safe(v: &[u8]) -> bool {
         Some(b' ' | b':' | b'<') => false,
         Some(_) => {
             v.last() != Some(&b' ')
-                && v.iter().all(|&b| b != 0 && b != b'\n' && b != b'\r' && b < 0x80)
+                && v.iter()
+                    .all(|&b| b != 0 && b != b'\n' && b != b'\r' && b < 0x80)
         }
     }
 }
@@ -678,7 +687,16 @@ mod tests {
 
     #[test]
     fn base64() {
-        for s in [&b""[..], b"f", b"fo", b"foo", b"foob", b"fooba", b"foobar", &[0, 255, 128]] {
+        for s in [
+            &b""[..],
+            b"f",
+            b"fo",
+            b"foo",
+            b"foob",
+            b"fooba",
+            b"foobar",
+            &[0, 255, 128],
+        ] {
             assert_eq!(base64_decode(base64_encode(s).as_bytes()).unwrap(), s);
         }
         assert_eq!(base64_encode(b"foobar"), "Zm9vYmFy");
@@ -719,7 +737,10 @@ empty:\n";
             Value::Data(b"Babs is a big sailing fan, and travels extensively in search of perfect sailing conditions.".to_vec())
         );
         assert_eq!(a[1].value, Value::Data(b" Product Manager".to_vec()));
-        assert_eq!(a[2].value, Value::Url("file:///usr/local/directory/photos/fiona.jpg".into()));
+        assert_eq!(
+            a[2].value,
+            Value::Url("file:///usr/local/directory/photos/fiona.jpg".into())
+        );
         assert_eq!(a[3].value, Value::Data(Vec::new()));
         let g = group(a, |u| Ok::<_, ()>(u.as_bytes().to_vec())).unwrap();
         assert_eq!(g.len(), 4);
@@ -781,12 +802,22 @@ changetype: delete\n";
         let l = ok(src);
         assert_eq!(l.records.len(), 6);
         assert!(matches!(l.records[1].body, Body::Delete));
-        let Body::ModDn { delete_old_rdn, new_superior, .. } = &l.records[3].body else {
+        let Body::ModDn {
+            delete_old_rdn,
+            new_superior,
+            ..
+        } = &l.records[3].body
+        else {
             panic!()
         };
         assert!(!delete_old_rdn);
-        assert_eq!(new_superior.as_deref(), Some("ou=Accounting, dc=airius, dc=com"));
-        let Body::Modify(m) = &l.records[4].body else { panic!() };
+        assert_eq!(
+            new_superior.as_deref(),
+            Some("ou=Accounting, dc=airius, dc=com")
+        );
+        let Body::Modify(m) = &l.records[4].body else {
+            panic!()
+        };
         assert_eq!(m.len(), 5);
         assert_eq!(m[1].op, ModOp::Delete);
         assert!(m[1].values.is_empty());
@@ -830,9 +861,18 @@ changetype: delete\n";
                 dn: "cn=Lučić,dc=x".into(),
                 controls: vec![],
                 body: Body::Content(vec![
-                    super::AttrValue { ty: "description".into(), value: Value::Data(vec![b'x'; 200]) },
-                    super::AttrValue { ty: "a".into(), value: Value::Data(b" lead".to_vec()) },
-                    super::AttrValue { ty: "b".into(), value: Value::Data(b"x\ny".to_vec()) },
+                    super::AttrValue {
+                        ty: "description".into(),
+                        value: Value::Data(vec![b'x'; 200]),
+                    },
+                    super::AttrValue {
+                        ty: "a".into(),
+                        value: Value::Data(b" lead".to_vec()),
+                    },
+                    super::AttrValue {
+                        ty: "b".into(),
+                        value: Value::Data(b"x\ny".to_vec()),
+                    },
                 ]),
             }],
         };
@@ -845,7 +885,10 @@ changetype: delete\n";
 
     #[test]
     fn ibm_files() {
-        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../../tools/conformance/oracle/dirsrv/");
+        let root = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tools/conformance/oracle/dirsrv/"
+        );
         let conf = std::fs::read(format!("{root}ibmslapd-shape.ldif")).unwrap();
         let l = parse(&conf).unwrap_or_else(|e| panic!("{e}"));
         assert_eq!(l.charset.as_deref(), Some("ISO-8859-1"));
