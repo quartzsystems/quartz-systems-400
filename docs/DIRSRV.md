@@ -1799,10 +1799,28 @@ after step 107; `cargo run -p conformance -- --only
 | 194 | `ldaptest bench`: binds a minute and a paged search (below) |
 | 10 | (the install suite) the slip install from V1R1M0 then 186's checks on the upgraded system: the shipped files, `QDIRSRV`, its job descriptions, `QUSRDIRDB`, the `*DIRDB` made at the first start |
 
+**Performance** (step 194, `ldaptest bench` from the host through
+QEMU's user network, KVM, 2026-11-14):
+
+| Measure | Result | Target |
+|---|---|---|
+| Binds on one connection (administrator) | 471 510 to 491 986 a minute | 10 000 |
+| Binds with a connection each | 2 186 a minute (1 196 before the accept loop's fix; 171 660 a minute in memory on the loopback, `dirsrv --test server bind_rate`) | 10 000: **not met** |
+| Adds (one at a time, each a store transaction) | 81 a second over 100 000 entries (20.6 minutes), 115 a second over 10 000 | — |
+| Paged search, one level, pages of 1000 | 100 000 entries in 101 pages, 6.04 s (16 563 a second); 10 000 in 0.62 s | 1 000 000 |
+
+1 000 000 entries were not loaded: at 81 adds a second the load takes
+about 3.4 hours. The paged search's rate held from 10 000 to 100 000
+entries (16 035 and 16 563 a second), so a million pages in about a
+minute by extrapolation (not measured). A connection each is dominated
+by the job's per-connection setup under QEMU (a thread and its own link
+to the storage service, `hello_thread`, and the session's open), not by
+the bind: the next thing to look at for the 10 000 a minute target.
+
 What the steps found and fixed (DS-14): `CHGDIRSVRA` never reached a
 running instance (`cpp/dircmd.rs` now calls `serve::config_changed`);
 the entry store lost its index root when a modify replaced a value
-(delete and insert of the same count moved the root but did not save
+(a delete and an insert of the same count moved the root but did not save
 it, and the next write freed a page twice: every write failed after
 `ldaptest`'s `assertion-write`); proxied authorization was refused on
 whoami and password modify, and a bound user's attempt answered 50
@@ -1811,7 +1829,8 @@ base search below `cn=monitor` answered 53 where one-level should be
 32; the LDAP client could not resolve `localhost` in a job (no
 `/etc/hosts`: RFC 6761's loopback now); the default `publisherName`
 (`QS400 SYSTEM`) was not a DN, so every published entry was refused
-(21); and `ldaptest`'s searches dropped continuation references (ldap3's
+(21); the accept loop polled every 50 ms, so each new connection waited up
+to that (`server/listen.rs`: blocking accepts now); and `ldaptest`'s searches dropped continuation references (ldap3's
 `search` filters them).
 
 ## 17. NEEDS-CODY
@@ -1863,6 +1882,6 @@ own:
 | Publishing's configuration through Navigator, QAP and `dir_admin`, the sealed password (§10.1) | built, not served | `BLOCKED(rel)`: the service does not answer request 1568 yet, so Navigator's and QAP's Directory server pages are refused live; `cargo test -p navigator --test dirsrv`, `-p qapd --test dirsrv` over `MemAdmin` |
 | `tools/ldaptest`, independent of the server, and its oracle record (§13) | proven | steps 187-189; `cargo test --manifest-path tools/ldaptest/Cargo.toml` |
 | The differences from the primary (§15) | proven | step 187's diff (`dirsrv-187-oracle.diff`) |
-| Performance: 10 000 binds a minute, a paged search of 1 000 000 entries (§16) | measured | step 194 (below) |
-| The slip install from V1R1M0 brings the directory server | see §16 | install step 10 |
+| Performance: 10 000 binds a minute, a paged search of 1 000 000 entries (§16) | measured, partly met | step 194: binds on one connection far past it, a connection each 2 186 a minute; paged search measured at 100 000 (§16) |
+| The slip install from V1R1M0 brings the directory server | built, not run | install step 10 calls `dir_after_upgrade`; not run (needs the V1R1M0 development ISO built first) |
 | Apache Directory Studio, the primary's administrator view, publishing to and from the primary | NEEDS-CODY | §17 |
