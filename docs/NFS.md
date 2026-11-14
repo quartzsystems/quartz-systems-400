@@ -553,7 +553,15 @@ one is made (the client applied its own).
   (file ID, caller, read or write), 64 kept, each closed after 5
   seconds unused, dropped when the object is removed, renamed over or
   found stale. Authority is checked when it is opened and again on
-  every `READ` and `WRITE` (`access()` as the caller). An `OPEN` that a
+  every `READ` and `WRITE` (`access()` as the caller). A `READ` or
+  `WRITE` with a kept descriptor is two service requests: the handle
+  found with the caller's `access()` answered beside it
+  (`IfsClient::stat_by_id_access`, checked after the handle's own
+  checks, so the errors come in the same order), then the data
+  (`pread`, or `pwrite_stat`: the write, its sync when the reply must
+  be stable, and the attributes after). A sync is made on the IFS's
+  syncer thread while the request waits (`IFS.md`, "Syncs off the
+  loop"), so writes of several clients share one. An `OPEN` that a
   share reservation refuses (`EBUSY`) closes the kept descriptors of
   the object, this thread's and those of the job's other threads not
   in a call (`ifsvfs::jobfds`: the threads of one server start share a
@@ -664,14 +672,21 @@ single-byte CCSID; others `INVAL`) and the IFS's UTF-8.
 
 `v3::call(vfs, gate, ctx, d)` answers one call; `v3::Nfs3<V>` is the
 `LocalProgram` of a thread serving version 3 alone. All 22 procedures.
-`FSINFO`: `rtmax`/`wtmax` 1 MiB, `rtpref`/`wtpref`/`dtpref` 64 KiB,
-multiples 4096, `maxfilesize` `i64::MAX`, `time_delta` 1 ns,
+`FSINFO`: `rtmax`/`wtmax` and `rtpref`/`wtpref` 1 MiB (each call costs
+the same service requests, and with `*SYNC` a sync, whatever its
+size: the largest is the cheapest per byte, as Linux's `nfsd` also
+says), `dtpref` 64 KiB, multiples 4096, `maxfilesize` `i64::MAX`, `time_delta` 1 ns,
 `LINK|SYMLINK|HOMOGENEOUS|CANSETTIME`. `PATHCONF`: `name_max` 255,
 `no_trunc`, `chown_restricted`, case-insensitive per file system,
 case-preserving. A change through an export the client may not write is
 `NFS3ERR_ROFS`. `WRITE` with `count` above 1 MiB is `FBIG`, with less
 data than `count` `INVAL`; `*SYNC` hosts get `FILE_SYNC`. The write
-verifier is the `Instance`'s, new at every start. `READ` reports end of
+verifier is the `Instance`'s, new at every start. Data is on disk
+whenever the reply says so: `FILE_SYNC` and `DATA_SYNC` writes, every
+write of a `*SYNC` host (the default, IBM's "data will be written to
+disk immediately"), and `COMMIT` are synced before the answer; an
+`UNSTABLE` write of an `*ASYNC` host is not, and is answered
+`UNSTABLE` with the verifier, which a restart changes. `READ` reports end of
 file at the size or on a short read. `ACCESS` asks `access()` as the
 caller for each bit (`LOOKUP` on directories, `EXECUTE` on files,
 `DELETE` on directories only; none of the changing bits on a
@@ -1373,7 +1388,7 @@ injected failures, and the threads that called it.
 
 The storage service answers every job on one thread
 (`STORAGE_SERVICE.md`). A remote mount (`ifs::remote::RemoteMount`)
-owns a cache and a queue served by its own worker threads (four in the
+owns a cache and a queue served by its own worker threads (eight in the
 service, `ifsremote::THREADS`); the IFS on the service's thread only
 reads the cache and queues work:
 
@@ -1442,7 +1457,10 @@ reads the cache and queues work:
   next `fsync` or close (the close still closes). Sizes and times seen
   locally include writes not yet sent. `O_APPEND` writes at the size
   the server gives at the time. Clean data past 64 MiB per mount goes,
-  oldest first; past 16 MiB dirty a write waits for the write-back.
+  oldest first (data written and sent counts too); past 16 MiB dirty a
+  write queues every block still waiting at once, so the mount's
+  workers send them side by side, and waits for the last (data only
+  sent unstable waits for a commit).
 
 ### 7.4 Operations on a remote object
 
@@ -1587,7 +1605,7 @@ or always (version 4).
 **Calls and the retry policy** (`channel`). Every call is `AUTH_SYS`
 with the IFS's `Cred` (16 GIDs at most) and this system's name. A mount
 keeps a pool of connections per server program, as many as its worker
-threads call at once (`ClientEnv::connections`, eight in the service);
+threads call at once (`ClientEnv::connections`, sixteen in the service);
 replies are matched by XID per connection. One call keeps its XID
 through every retransmission: attempt n waits `timeo` times 2 to the
 n, at most 60 s (UDP sends the same datagram again; TCP waits on the
@@ -2157,8 +2175,10 @@ below, and the QEMU steps (last item).
     left out (the server cannot call the host back through one-way
     forwards); the README's `KNOWN` (empty) is reported, not failed;
   - 175 `nfstest --vers 4.0` and `4.1` through the forwarded 2049;
-  - 176 `nfstest bench --mib 1024`, version 3 and then 4.1 with the
-    forwarded 2049 alone (`QS400_NFS_BENCH_MIB`);
+  - 176 `nfstest bench --mib 1024`, version 3 (in the server's
+    preferred size, 1 MiB, and with `--bs 65536`) and then 4.1 with the
+    forwarded 2049 alone (`--bs 1048576` and `65536`)
+    (`QS400_NFS_BENCH_MIB`);
   - 177 the guest mounting a Linux export, versions 3 and 4, when
     `QS400_NFS_LINUX=host:/path` (as the guest reaches it; the export
     `insecure`) is set, skipped otherwise;
@@ -2212,25 +2232,132 @@ below, and the QEMU steps (last item).
   export and mount tables, binder file and the host's probe to
   `nfs-<step>-<guest>.txt` and its whole serial log (the daemons' and
   the service's `nfs` notes) to `nfs-<step>-<guest>.serial.txt` in the
-  suite's output directory; the
+  suite's output directory (with `QS400_NFS_KEEP_SERIAL` set, a step
+  that passes writes them too); the
   `nfstest` runs are kept in `nfs-174-nfstest.txt` and
   `nfs-175-nfstest.txt`, the figures in `nfs-perf.txt`.
 
-  Measured on 2026-11-13 (1 GiB each way; QEMU with KVM in WSL 2, two
-  vCPUs and 1 GiB per guest, the host's loopback between the guests;
-  `nfs-perf.txt`, the same run as the PASS lines):
+  **Performance** (1 GiB each way; QEMU with KVM in WSL 2, two vCPUs
+  and 1 GiB per guest, the host's loopback between the guests;
+  `nfs-perf.txt`; "before" is main at `e035bea39`, the same harness).
+  Every run is `cargo run -p build -- all`, then `cargo run -p
+  conformance -- --only 173,174,175,176,178,185,179,180,181,182,183,184`
+  (step 176 is `nfstest bench --mib 1024`, step 184 `CPY` of a 1 GiB
+  file):
 
-  | Measured (`nfs-perf.txt`) | Version 3 | Version 4 |
-  |---|---|---|
-  | host to guest, `nfstest bench`, write (to the `COMMIT`) | 12.4 MiB/s | 7.4 MiB/s (4.1) |
-  | host to guest, `nfstest bench`, read | 69.0 MiB/s | 66.6 MiB/s (4.1) |
-  | guest A to guest B, `CPY` through B's mount (B reads) | 99.8 MiB/s | 63.7 MiB/s |
-  | guest B to guest A, `CPY` through B's mount (B writes) | 6.4 MiB/s | 6.0 MiB/s |
+  | Measured (`nfs-perf.txt`) | Before, version 3 | Before, version 4 | After, version 3 | After, version 4 |
+  |---|---|---|---|---|
+  | host to guest, `bench` write, 64 KiB (to the `COMMIT`) | 6.9 to 17.8 MiB/s | 6.0 to 12.2 MiB/s (4.1) | 12.4 to 18.4 MiB/s | 9.1 to 10.8 MiB/s (4.1) |
+  | host to guest, `bench` write, 1 MiB (the preferred size now) | (64 KiB preferred) | | 22.0 to 79.6 MiB/s | 14.5 to 22.7 MiB/s (4.1) |
+  | host to guest, `bench` write, 1 MiB, `*ASYNC` host | | | 135.8 MiB/s | |
+  | host to guest, `bench` read, 64 KiB | 66.2 to 69.0 MiB/s | 43.8 to 66.6 MiB/s | 62.0 to 69.8 MiB/s | 60.4 to 64.6 MiB/s (4.1) |
+  | host to guest, `bench` read, 1 MiB | | | 94.8 to 103.2 MiB/s | 88.7 to 101.8 MiB/s (4.1) |
+  | guest A to guest B, `CPY` through B's mount (B reads) | 30.9 to 99.8 MiB/s | 15.5 to 63.7 MiB/s | 9.1 to 93.5 MiB/s (68.6 in the last) | 6.7 to 90.7 MiB/s (66.6) |
+  | guest B to guest A, `CPY` through B's mount (B writes) | 1.0 to 6.4 MiB/s | 5.2 to 6.0 MiB/s | 3.3 to 11.0 MiB/s (7.6) | 4.0 to 44.3 MiB/s (4.3) |
 
-  Writes are the slow direction (64 MiB from B to A went at 16 MiB/s,
-  1 GiB at 6); why is not yet looked into. Earlier runs the same
-  day: `bench` 12.1 to 19.6 MiB/s writing and 66.7 to 70.4 reading;
-  `CPY` 64.6 to 99.8 reading and 5.2 to 6.4 writing.
+  Ranges are the runs of 2026-11-13 (the previous agent's and this
+  work's, some with the timers below); the guests share the host's disk
+  and its page cache, so a figure moves by a factor of two to four from
+  run to run with what the host is writing back: a version 4.1 run comes
+  right after 2 GiB of version 3 writes, and its syncs took 60 to 115 ms
+  each against 5 to 15 ms in the version 3 run before it. The last run
+  (all twelve steps passing): version 3 `bench` 62.2 MiB/s writing and
+  101.9 reading in 1 MiB, 12.4 and 62.0 in 64 KiB; 4.1 14.5 and 88.7 in
+  1 MiB, 9.2 and 64.6 in 64 KiB; `*ASYNC` 135.8 and 95.2. A 512 MiB
+  `CPY` from B to A went at 39.3 (version 3) and 38.8 MiB/s (version
+  4); one 1 GiB run reached 44.3 (version 4). The server alone now
+  writes within a factor of two of its reads in its preferred size (and
+  faster than it reads with `*ASYNC`); 64 KiB writes are bound by a sync
+  each (below).
+
+  **Where the time went** (measured with temporary timers around each
+  stage in `IfsVfs` and around each request in the service loop,
+  `nfstest bench` version 3 in 64 KiB writes, 10-second windows, before
+  the fixes):
+
+  | Per 64 KiB `WRITE` | Service requests | Time at the daemon | Of it in the service |
+  |---|---|---|---|
+  | find the handle (`stat_by_id`) | 1 | 0.10 to 0.24 ms | 0.07 to 0.13 ms |
+  | `access()` | 1 | 0.06 to 0.12 ms | 0.03 to 0.06 ms |
+  | `pwrite()` | 1 | 0.29 to 0.44 ms | 0.06 to 0.18 ms |
+  | `fsync()` (`*SYNC`: every write is answered `FILE_SYNC`) | 1 | 2.1 to 2.6 ms | the same: on the service's only thread |
+  | `fstat()` (post-op attributes) | 1 | 0.10 to 0.19 ms | 0.05 to 0.10 ms |
+  | the whole `WRITE` | 5 (version 4: 6, a `GETATTR` first) | 2.9 to 3.6 ms | |
+
+  That is 16 `WRITE`s, 80 service requests and 16 syncs per MiB, about
+  48 ms per MiB, three quarters of it the sync. A 64 KiB `READ` was 3
+  requests and 0.36 to 0.44 ms. The sync is the guest's `fsync`, which
+  under QEMU is the host's `fdatasync` of the disk image: 2 ms on a
+  quiet host, 30 to 115 ms on average (single ones up to 33 s in step
+  184) once the host is writing back a gigabyte written just before.
+  That is why writes slowed down with the size of the file: the more the
+  host has to write back, the longer each sync. And while it ran, the
+  storage service answered no other request of any job (a 33-second
+  sync in step 184 stopped guest A for 33 seconds; the kernel reported
+  a stalled vCPU). On the client (guest B), with IBM's default
+  `wsize=32768`: 32 KiB `WRITE`s, four workers, every one waiting for
+  guest A's sync in turn; at the 16 MiB dirty limit one worker sent what
+  was left one block at a time (`FlushAll`); the data written stayed in
+  the mount's cache (the whole file, on a 1 GiB guest), and the dirty
+  count walked every cached block on each write.
+
+  **What changed** (each with its test):
+
+  - A `READ` or `WRITE` is two service requests: `stat_by_id_access`
+    (the handle and the caller's `access()` at once, the answers checked
+    in the old order) and `pread` or `pwrite_stat` (the write, its sync
+    when the reply must be stable, the attributes after). Version 4's
+    `READ` and `WRITE` through an open's stateid skip the `GETATTR`
+    (only a regular file has an open). Tests: `stg --test ifs_server`,
+    `nfs` `srv3_*`, `srv4_*`.
+  - Syncs are made off the service's thread by the IFS's syncer, one
+    per file for every request waiting (`IFS.md`, "Syncs off the
+    loop"): the service goes on with every other job meanwhile, and
+    concurrent `WRITE`s to one file share a sync (in step 184 with eight
+    client workers, 4 to 5 writes per sync). The reply still waits for
+    a sync begun after its data was written. Tests: `ifs`
+    `ops::syncer`, `server_calls.rs` `syncs_wait_off_the_callers_thread`,
+    `srv3_handles.rs` `writes_are_synced_as_the_reply_says` (an
+    `UNSTABLE` write unsynced, `COMMIT` and `FILE_SYNC` synced, a
+    `*SYNC` host answered `FILE_SYNC` and synced; the verifier across a
+    restart is `handles_outlive_a_restart`).
+  - `FSINFO` prefers 1 MiB for reads and writes: one sync per MiB under
+    `*SYNC` instead of sixteen (Linux clients use `wtmax` anyway).
+  - The client: past the dirty limit every waiting block is queued at
+    once over all the workers (identical work once), written data counts
+    as clean data and goes past the cache's limit, the byte count kept
+    right; eight workers and sixteen connections, so eight `WRITE`s are
+    in flight to share the server's syncs; a write larger than the dirty
+    limit goes when nothing waits (it waited for ever before). Tests:
+    `remote_data.rs` `write_back_sends_each_block_once`,
+    `copy_to_the_mount_sends_each_block_once`.
+
+  **What remains.** The default `HOSTOPT` write mode is `*SYNC`, which
+  IBM documents as data written to disk immediately: every `WRITE`
+  waits for a sync, whatever the client asks. Under QEMU a sync is the
+  host's `fdatasync` of the disk image, 2 ms at best and far more while
+  the host writes back, which no change inside the guest removes; with
+  `*ASYNC` (the `*ASYNC` row) unstable writes wait for nothing and only
+  `COMMIT` syncs. `NetServer` (step 168) does not sync per write, which
+  is the gap to its figures. With IBM's default `wsize=32768`, a mount
+  of QS/400 makes 32768 `WRITE`s per GiB to a `*SYNC` server, eight at a
+  time sharing syncs; a larger `wsize` in `OPTIONS` divides them. In
+  steady state the client now sends 12,000 to 15,000 32 KiB `WRITE`s
+  per 10 seconds (40 MiB/s, 5 to 6 ms each, guest A answering each with
+  two service requests and a shared sync), but a 1 GiB copy still
+  averages 4 to 11 MiB/s: guest A's syncs, and guest B's own device
+  flushes after it wrote the 1 GiB it read just before, stop for 20 to
+  44 seconds at a time while the host writes back (`qsstg: IFS device
+  flush took 44136 ms`). And in four of the five 1 GiB copies from B
+  that were counted, the mount's cache took 2.6 to 3.6 times the file's
+  blocks (98,304 new blocks for 32,768 in one), as if `CPY` went over
+  parts of the file again, with no copy error logged; it did not happen
+  in memory (`copy_to_the_mount_sends_each_block_once`, also with a
+  helper and the service's sizes), at 512 MiB, or in the fifth run
+  (counted with a log of every fresh open of the copy and every park:
+  none after the data began), so its cause is not found yet and it is
+  the first thing to look at next for the client: it alone makes the
+  copy two to three times slower.
 
 ### 11.1 Proving a v3 mount under QEMU
 

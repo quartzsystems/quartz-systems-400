@@ -888,6 +888,24 @@ one `AF` entry, not two. After the answer the service's audit flush
 filters the recorded events by `QAUDCTL`/`QAUDLVL` and writes them to
 `QAUDJRN`, as for every other request.
 
+### Syncs off the loop
+
+`fsync()` of a stream file can take milliseconds (under QEMU a guest
+flush is the host's `fdatasync` of the disk image, up to seconds after
+a large copy), and the service answers every job on one thread. So a
+request that may wait (`Fsync`, and `PWriteStat` with a sync, are
+always parked when they wait) hands the sync to the syncer thread
+(`ifs::ops::syncer`): the backend file's `sync_handle` (a duplicate
+descriptor) goes on its queue, the request defers on the ticket as a
+remote mount's request does, and its next run takes the result (the
+write before it is not made again). The syncer takes every sync
+queued and makes one per file, `fsync()` when any asked for it, else
+`fdatasync()`: a sync begun after a write was made covers it, so the
+writes of several jobs or NFS clients that wait together share one,
+and the reply still comes only after a sync that covers its data. A
+sync outside such a request (a console line, a write with `O_SYNC`)
+is made in place, as before.
+
 ### The protocol
 
 One request, `ifs` (tag 440 in `stg::proto`), carries a
@@ -911,7 +929,9 @@ waiting lock 76, cancel a waiting lock 77, release a sub-owner's
 locks 78; 79 is free; for remote mounts, `docs/NFS.md` section 7: `MOUNT
 TYPE(*NFS)` 80, `UNMOUNT` by type and directory 81, the mount table 82,
 a block I/O helper's take 83 and post 84, answered as replies `Mounts`
-80 and `Helper` 81 besides the shared ones). The answer is an
+80 and `Helper` 81 besides the shared ones; for file servers, stat by
+file ID with an `access()` 85 and a write with its sync and the
+attributes after 86, replies `Checked` 82 and `Wrote` 83). The answer is an
 `IfsReply` whose variant is the method's return type, each a `Result`
 whose error is the IBM `errno` number; `Errno::message_id` gives the
 `CPExxxx` and `command_message` the `CPFA0xx` a command sends. A reply

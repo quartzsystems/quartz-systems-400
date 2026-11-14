@@ -483,10 +483,10 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `database/sql/tests/trigger.rs:266` | in exec::reads); every row its scan keeps here. |
 | `BLOCKED(rel)` | `docs/DB_OPEN_QUESTIONS.md:283` | the database |
 | `NEEDS-CODY` | `docs/NFS.md:244` | IBM's user, section 12), as the service's own |
-| `NEEDS-CODY` | `docs/NFS.md:1212` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
-| `NEEDS-CODY` | `docs/NFS.md:1853` | the primary's `EXPE0100` |
-| `NEEDS-CODY` | `docs/NFS.md:1895` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
-| `NEEDS-CODY` | `docs/NFS.md:2265` | 12. |
+| `NEEDS-CODY` | `docs/NFS.md:1227` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
+| `NEEDS-CODY` | `docs/NFS.md:1871` | the primary's `EXPE0100` |
+| `NEEDS-CODY` | `docs/NFS.md:1913` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
+| `NEEDS-CODY` | `docs/NFS.md:2401` | 12. |
 | `BLOCKED(rel)` | `docs/PHASE12.md:99` | SAVLICPGM writes no IFS records, RSTLICPGM restores none |
 | `BLOCKED(rel)` | `docs/PHASE12.md:104` | at jobcmd.rs:153 |
 | `BLOCKED(rel)` | `docs/PHASE12.md:138` | (b855a775) |
