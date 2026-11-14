@@ -20,6 +20,8 @@
 
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
+// Codecs read best with short names for readers, writers and tags.
+#![allow(clippy::many_single_char_names, clippy::too_many_lines)]
 
 pub mod ber;
 pub mod client;
