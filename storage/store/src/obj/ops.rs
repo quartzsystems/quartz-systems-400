@@ -524,14 +524,20 @@ fn check_in_library(txn: &mut Txn<'_>, op: &'static str, h: &ObjectHeader) -> Re
     guard::check_id(txn, op, h.library)
 }
 
-/// Entries of a library, in key order (type, then EBCDIC name).
+/// Entries of a library, in key order (type, then EBCDIC name). Without
+/// a type, internal types (`types::hidden`) are left out.
 pub fn list(
     txn: &mut Txn<'_>,
     library: ObjectId,
     type_code: Option<u16>,
 ) -> Result<Vec<(DirKey, ObjectId)>> {
     guard::check_id(txn, "lib.list", library)?;
-    Library::load(txn, library)?.list(txn, type_code)
+    let mut all = Library::load(txn, library)?.list(txn, type_code)?;
+    // Internal types show only when asked for by type.
+    if type_code.is_none() {
+        all.retain(|(k, _)| !types::hidden(k.type_code));
+    }
+    Ok(all)
 }
 
 /// Every library, in EBCDIC name order.

@@ -680,6 +680,13 @@ by its header's `sql` field. Deleting the owner deletes it. A library's
 SQL names are not kept this way: its header's tree root slot 0 is the
 library's SQL name index (`docs/DB_FORMAT.md` §8.2).
 
+`*DIRDB` (0x00FC, from V1R2M0) is internal: one directory server
+instance's entry store, `QUSRDIRDB/name`, whose payload is its
+attribute area and four B+trees (entries, names, index, change log;
+`docs/DIRSRV.md` §5 and §5.2 have the layouts). It has a library
+directory entry but listings leave it out (`types::hidden`); RCLSTG,
+delete and the save handle it through its tree roots.
+
 **Owned objects.** An object whose `library` field names an object that
 is not a library belongs to that object and has no library directory
 entry; it is reached through its owner and listed only in the object
@@ -1158,5 +1165,7 @@ From body offset 32, `count` entries, in volume order.
 Frozen: the page and its trailer, the unit label, the superblock, the WAL pages and records, B+tree nodes and their key and value codecs, the allocation bitmaps and free log, the parity table and partial-parity log, the IFS map, and the object header with the type codes and the payloads the store itself defines (authority, data areas, data queues, user indexes, system values). The versions are the superblock's and unit's `FORMAT_VERSION` and the object header's `HEADER_VERSION`.
 
 V1R1M0 freezes object header version 2 (with the `sql` link to the object's `*SQLINF`, and the `*SQLINF`/`*SQLUDT` type codes); the superblock and unit stay at version 2. The superblock's hot spare list (`spare_count`, `spares`, §5) and its `threshold` take bytes version 2 left reserved: V1R0M0 wrote them as zeros, which read as no spares and the default threshold, so the version does not move and a V1R0M0 ASP opens unchanged. V1R0M0 wrote object header version 1. A V1R1M0 system reads a version 1 header as an object with no SQL information and writes it as version 2 at its next change, so a slip install from V1R0M0 (`INSTALL.md` §4) converts the store in place without a pass of its own.
+
+The type registry has a version of its own, `TYPE_REGISTRY_VERSION` in `storage/store/src/obj/types.rs`: 1 at V1R1M0, 2 at V1R2M0 with `*DIRDB` (0x00FC); a V1R1M0 system never opens a V1R2M0 ASP, so it never meets the new code.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

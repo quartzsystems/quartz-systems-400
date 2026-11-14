@@ -18,6 +18,7 @@ version = [
     "storage/store/src/asp/superblock.rs::FORMAT_VERSION",
     "storage/store/src/asp/unit.rs::FORMAT_VERSION",
     "storage/store/src/obj/header.rs::HEADER_VERSION",
+    "storage/store/src/obj/types.rs::TYPE_REGISTRY_VERSION",
 ]
 files = [
     "storage/store/src/page/mod.rs",

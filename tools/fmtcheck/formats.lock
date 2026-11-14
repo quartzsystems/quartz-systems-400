@@ -14,6 +14,11 @@ frozen_at = "V1R1M0"
 version = "1/1/1"
 hash = "a3bfceda47a2609e023bf600973abcdfb6dabdefafe211368a722934928f0e01"
 
+[format.dirdb]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "1ea38f80a45554ddb94315a6e0093d5e136c2338f75aee8044cbb655e9b18047"
+
 [format.host-servers]
 frozen_at = "V1R1M0"
 version = "1"
@@ -141,8 +146,8 @@ hash = "9b51cd78feb9d8294c8784bd1fa4d4c6944a863d2abe6db10a5219206af38c19"
 
 [format.store]
 frozen_at = "V1R1M0"
-version = "2/2/2"
-hash = "c424fcef47a6eab7d9452543bd3d9433b86d54ae4c896f72c54a4a65dc08bc86"
+version = "2/2/2/2"
+hash = "79352d88fbeeaaee33bd2e7d0e4142d173d8b1231d9b2b78bdb9f6ea001413e3"
 
 [format.ui-objects]
 frozen_at = "V1R1M0"

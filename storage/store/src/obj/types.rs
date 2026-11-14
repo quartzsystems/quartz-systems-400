@@ -4,6 +4,9 @@
 
 //! The object type registry. Codes are part of the on-disk format.
 
+/// The registry's version: 1 at V1R1M0, 2 from V1R2M0 (`*DIRDB`).
+pub const TYPE_REGISTRY_VERSION: u32 = 2;
+
 /// Which module gives a type its payload semantics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Module {
@@ -120,6 +123,9 @@ pub const SRVPGM: u16 = 0x0016;
 pub const BNDDIR: u16 = 0x0017;
 /// Code of `*SQLUDT`, an SQL user-defined type.
 pub const SQLUDT: u16 = 0x002D;
+/// Code of `*DIRDB` (internal): a directory server instance's entry
+/// store (`docs/DIRSRV.md` §5), in `QUSRDIRDB` and in no listing.
+pub const DIRDB: u16 = 0x00FC;
 /// Code of `*SQLINF` (internal): the SQL attributes of the object that
 /// owns it (`docs/DB_FORMAT.md` §8).
 pub const SQLINF: u16 = 0x00FD;
@@ -215,10 +221,18 @@ pub static TYPES: &[TypeInfo] = &[
     ),
     t(SQLUDT, "*SQLUDT", true, true, false, false, Module::Opaque),
     t(TIMZON, "*TIMZON", true, false, true, false, Module::Opaque),
+    t(DIRDB, "*DIRDB", false, false, false, true, Module::Opaque),
     t(SQLINF, "*SQLINF", false, true, false, false, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
 ];
+
+/// Whether listings leave the type out although it has a library
+/// directory entry: `*DIRDB`. Saves and `RCLSTG` still see it.
+#[must_use]
+pub const fn hidden(code: u16) -> bool {
+    code == DIRDB
+}
 
 /// The type with `code`.
 #[must_use]
@@ -242,7 +256,8 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 45);
+        assert_eq!(TYPES.len(), 46);
+        assert!(hidden(DIRDB) && !hidden(MBR));
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);
