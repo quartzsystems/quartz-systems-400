@@ -1700,6 +1700,30 @@ ignored.
   `supportedSASLMechanisms` `EXTERNAL`.
 - `cn=monitor` has the counters QS/400 keeps (§8), its times as
   Generalized Time.
+- QEMU step 187 diffs `ldaptest oracle` against the primary's record
+  (`tools/conformance/oracle/dirsrv/ldaptest-primary.txt`). Beyond the
+  items above (and §7's deliberate ones: the second paged search, the
+  request after an abandoned persistent search), these remain, each
+  QS/400's on purpose:
+  - a base search of the root DSE whose filter is false is success
+    with no entries (RFC 4511 §4.5.1); the primary answers 32;
+  - `cn=` (an empty value) is a DN (RFC 4514 §3), so a search of it is
+    32 (under no suffix); the primary says 34. `cn=\zz` is 34 on both;
+  - `cn=schema` has `matchingRuleUse` (27 values) and QS/400's own
+    types, classes, syntaxes and rules (`entryDN`, `entryUUID`,
+    `structuralObjectClass` and their rules): 1631 attribute types, 429
+    classes, 45 syntaxes, 39 rules against the primary's 1627, 428, 43
+    and 34; 8 attribute names against 6;
+  - `+` returns `entryDN`, `entryUUID`, `hasSubordinates`,
+    `numSubordinates` and `structuralObjectClass` too (RFC 4512's
+    operational attributes); the primary gives the last ones only
+    when named;
+  - the projected root's `objectClass` is `os400-root` and `top` (the
+    superclass every structural class has); the primary lists
+    `os400-root` alone;
+  - the harness's forward of 636 accepts and closes when nothing
+    listens, so `ldaps` reads end-of-file where the primary refuses the
+    connection: the same answer, through QEMU's network.
 - The client's numbers and structures where the LDAP C API draft gives
   none are QS/400's (§13): a program is compiled against QS/400's
   `QSYSINC` members, not IBM's. `ber_*` are `QGLDCLNT`'s.
