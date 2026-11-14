@@ -354,13 +354,13 @@ member.
 
 What reads more than what was in flight:
 
-- **A stale member is rebuilt whole.** A member recorded failed that is
-  back, or that the others' state pages record failed after the
-  caller's record (`recorded_failures`), opens `Rebuilding(0)`: every
-  other member is read for it. Bounding that takes what the mirrored
-  set now has (section 11): a map per member kept from the moment it
-  failed, set before each write while it is away, and a rebuild of the
-  stripes in its dirty regions only.
+- **A stale member is rebuilt whole, unless the set keeps maps.** A
+  member recorded failed that is back, or that the others' state pages
+  record failed after the caller's record (`recorded_failures`), opens
+  `Rebuilding(0)`: every other member is read for it. A set opened with
+  a `ParityIntent` (handoff 16, section 12) keeps a map per member from
+  the moment it fails, set before each write while it is away, and
+  rebuilds only the stripes of its regions.
 - **A synchronization mark behind** is taken from the caller's record,
   so the stripes between it and the engine's mark at the cut are
   computed again: bounded by how often the caller records the mark. A
@@ -1028,3 +1028,123 @@ it, through a generic of the standard library it shares with a crate
 
 `tools/fmtcheck` reports every format the same with no version bump;
 `Cargo.lock` did not change, so `deny` and the notices are as they were.
+
+## 12. Handoff 16: a parity set's maps of members out of service
+
+A RAID 5 or RAID 6 member recorded failed that came back opened
+`Rebuilding(0)`, and every other member was read for it (section 5).
+`set::ParitySet` now keeps a map for each member out of service, as
+`MirrorSet` does (section 11), when the caller asks for one. QS/400 does
+not: `store` drives `parity::Engine` and never `ParitySet`, and no file
+under `parity/` changed.
+
+### The map
+
+`ParitySet::open_with(.., Some(intent))` and `create_with` keep them;
+`open` and `create` are the same calls with `None` and behave as
+before. A `set::ParityIntent` is:
+
+| Field | What | Default |
+|---|---|---|
+| `magic` | eight bytes of the caller's, first in the kept bytes | (the caller's) |
+| `region_blocks` | blocks of the layout (`Geometry::blocks`) a region: one region is the same rows and parity pages on every member | 1,024 (1,024 × n pages of each member: 16 MiB of each member of a set of four) |
+| `away` | for each member, an `intent::IntentStore` for its map | none |
+
+The bytes are `intent::IntentMap`'s, kind 2 (`Away`), the member's
+identity in them; `HEADER_LAYOUT` and the version did not change. A
+QS/VS pool disk keeps its member's map beside its label: one bit a
+region and 64 bytes of header: 4 KiB of bits for a set of four 512 GiB
+members at the default region.
+
+### Its life
+
+- **Leaving.** When a member's device fails I/O, the set writes the
+  member's map before the engine goes on without it: every member's
+  device is wrapped, and its error keeps the map first. The map is the
+  regions written since the last flush that completed, and from the
+  mark on when the member was being rebuilt whole. `detach` flushes and
+  keeps the map before the member is taken out. A member recorded in
+  step and missing at open, that the others did not record failed, gets
+  the regions of the stripes in the partial-parity slots.
+- **Away.** Each write sets its regions' bits in every map kept, durably,
+  before any member sees it. Nothing is cleared.
+- **Back.** At open, a member with its device and a valid map opens
+  `Rebuilding(0)`, whatever mark was recorded (it may have failed again
+  after the mark), and `step` rebuilds only its regions: the slots are
+  zeroed, then the mark jumps over the blocks outside the map (they are
+  in step) and the engine's `rebuild_step` runs over each region. Once in
+  step, the map is given up (kind 0). `away_regions(member)` shows it.
+- **No map.** A member with no store, a store holding no valid map, or
+  a map that could not be written, comes back by a full rebuild, as
+  before. `replace` (another disk) gives the map up; a replacement that
+  fails during its own rebuild gets a map from its mark on.
+
+What keeps it honest: whenever the kept bytes are a valid map, every
+stripe outside its regions holds the member's page in step. So the bits
+are written before the header that makes them a map; a bit that cannot
+be written gives the map up (its header off) and the write goes on; and
+when the header cannot be written either, the write is refused before
+any member sees it. A map the set could not give up is kept and set as
+before, a superset. A caller that opens a set with maps after opening it
+without must give the maps up first: they would miss those writes.
+
+### What it does not change
+
+- **RAID 5, a member failing during its own rebuild.** The engine cannot
+  lose a member being rebuilt in RAID 5 (`can_lose` counts it), so the
+  flush that meets it fails and the set fails I/O until it is opened
+  again. The map holds every region the member is not in step for, so
+  the next open rebuilds it from there. Fixing it is in `Engine`, which
+  `slic` links.
+- **Without maps,** a member recorded `Rebuilding(mark)` that failed
+  again after the record still opens at its mark. With maps it starts
+  over the map.
+- **QS/400.** The new code is in `set/` and `intent::IntentMap::next_set`,
+  which `store` does not call; it builds no `BTreeSet` and sorts
+  nothing (the lesson of section 11). `slic` was not rebuilt to compare
+  its bytes for this handoff.
+
+### Proof
+
+`storage/protect/tests/parity_intent_cut.rs` runs a scenario of writes
+and flushes: member 1 fails in a flush with writes held for it, writes
+while it is away (into new regions and its own rows), then (RAID 6)
+member 3 too; the set is opened again with them back, writes go into
+regions of the map and outside it during the rebuild, and after it. A
+shared count of durable steps (each member's writes and flushes and each
+map store write) cuts the power at every step, with members that cache
+writes until a flush and with members that write through, two ways: the
+devices and stores fail from then on, or the process dies where it
+stands. After each cut the caches are dropped, the set is opened again
+as the caller recorded it, and the work runs. Each time: every member
+ends in step, `verify` finds no stripe out of step, every block holds
+what the last acknowledged flush made durable or a value written since,
+and a rebuild from a map read only the blocks of its regions.
+
+| Level | Steps | Runs | Rebuilds from a map | Full rebuilds | Blocks read by the map rebuilds |
+|---|---|---|---|---|---|
+| RAID 5, 4 members, 128 blocks, 16 regions | 141 | 568 | 458 | 44 (all after a store failure) | 17,376 of 58,624 (30%) |
+| RAID 6, 5 members, 102 blocks, 13 regions | 411 | 1,648 | 1,455 | 148 (all after a store failure) | 64,016 of 148,410 (43%) |
+
+The full rebuilds all follow cuts where the stores fail with the
+devices, so no map is kept: correct, and what a mirrored set does too.
+Two changes to the code fail it (a stripe's parity out of step after
+the rebuild): a write while a member is away that does not set its
+bit, and a map made at a failure without the regions held for the
+flush. A third, an open that keeps the recorded mark of a member with a
+map, fails `tests/parity_intent.rs`. A fourth is caught by neither: not
+zeroing the member's slots before its mark jumps. A stale slot does harm
+only at a later open where another page of its stripe is unknown (the
+repair otherwise reads every page); the set zeroes them, as the engine
+does at mark 0.
+
+`storage/protect/tests/parity_intent.rs`: a member back is rebuilt in
+its two regions only, RAID 5 and RAID 6; a member failing in a flush
+keeps what was in flight; two RAID 6 members away come back each by its
+map, one while the other is still away; a member failing during its own
+rebuild comes back by the same map (RAID 5 and 6, the failure recorded
+or only the mark before it); a replaced member is rebuilt whole and its
+map given up, and the replacement failing part way gets a map from its
+mark; no map kept means a full rebuild; a map that cannot be kept is
+given up or the write refused; a member missing at open gets a map of
+what was in flight, kept across opens while it stays away.
