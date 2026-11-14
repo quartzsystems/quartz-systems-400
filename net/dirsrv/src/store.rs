@@ -3,3 +3,7 @@
 // root directory of this project.
 
 //! The entry store over the object store: `*DIRDB` (docs/DIRSRV.md §5).
+
+pub mod normalize;
+
+pub use normalize::{AsciiFold, NormError, Normalizer, Rule};
