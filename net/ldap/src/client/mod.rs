@@ -159,9 +159,22 @@ impl std::fmt::Debug for Client {
     }
 }
 
+/// The addresses of `host`: `localhost` is the loopback whatever the
+/// resolver says (RFC 6761 §6.3; a job has no `/etc/hosts`).
+fn addresses(host: &str, port: u16) -> Result<Vec<std::net::SocketAddr>> {
+    let h = host.trim_end_matches('.');
+    if h.eq_ignore_ascii_case("localhost") {
+        return Ok(vec![
+            (std::net::Ipv4Addr::LOCALHOST, port).into(),
+            (std::net::Ipv6Addr::LOCALHOST, port).into(),
+        ]);
+    }
+    Ok((host, port).to_socket_addrs()?.collect())
+}
+
 fn tcp(host: &str, port: u16, timeout: Duration) -> Result<TcpStream> {
     let mut last = None;
-    for addr in (host, port).to_socket_addrs()? {
+    for addr in addresses(host, port)? {
         match TcpStream::connect_timeout(&addr, timeout) {
             Ok(s) => {
                 s.set_nodelay(true)?;
