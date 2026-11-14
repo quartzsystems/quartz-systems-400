@@ -14,3 +14,16 @@ pub mod scheme;
 
 pub use policy::{Partial, Policy, State};
 pub use scheme::{Scheme, verify};
+
+/// `password` as `{SSHA512}` with a fresh 16-byte salt: how the
+/// configuration keeps `ibm-slapdAdminPW` (`CHGDIRSVRA`).
+///
+/// # Panics
+///
+/// If the system has no random source.
+#[must_use]
+pub fn hash(password: &[u8]) -> String {
+    let mut salt = [0u8; 16];
+    getrandom::fill(&mut salt).expect("no random source");
+    String::from_utf8(Scheme::Ssha512.hash(password, &salt)).unwrap_or_default()
+}
