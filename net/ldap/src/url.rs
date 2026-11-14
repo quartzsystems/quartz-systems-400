@@ -220,10 +220,14 @@ fn parse_hostport(s: &str) -> Result<(Option<String>, Option<u16>), UrlError> {
         };
         (h.to_string(), port)
     } else {
-        match s.rsplit_once(':') {
+        let (h, p) = match s.rsplit_once(':') {
             Some((h, p)) => (decode(h)?, Some(p)),
             None => (decode(s)?, None),
+        };
+        if h.contains([':', '[', ']']) {
+            return Err(UrlError("a host with ':' needs brackets"));
         }
+        (h, p)
     };
     let port = match port {
         None | Some("") => None,
@@ -281,7 +285,12 @@ impl fmt::Display for LdapUrl {
                 if e.critical {
                     f.write_str("!")?;
                 }
-                f.write_str(&encode(&e.name, b",="))?;
+                let name = encode(&e.name, b",=");
+                // A leading '!' of the name itself must not read as critical.
+                match name.strip_prefix('!') {
+                    Some(rest) => write!(f, "%21{rest}")?,
+                    None => f.write_str(&name)?,
+                }
                 if let Some(v) = &e.value {
                     write!(f, "={}", encode(v, b","))?;
                 }

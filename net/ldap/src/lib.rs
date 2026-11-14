@@ -14,6 +14,7 @@
 //! - [`schema`]: schema descriptions (RFC 4512 §4.1).
 //! - [`code`]: result codes.
 //! - [`client`]: a blocking client.
+//! - [`fuzzing`]: the entry points of the fuzz targets.
 //!
 //! The types here are the interface every other directory crate uses;
 //! the codecs fill them.
@@ -30,6 +31,7 @@ pub mod control;
 pub mod dn;
 pub mod ext;
 pub mod filter;
+pub mod fuzzing;
 pub mod ldif;
 pub mod msg;
 pub mod schema;

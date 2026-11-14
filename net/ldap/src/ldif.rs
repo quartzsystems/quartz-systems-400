@@ -223,6 +223,9 @@ fn split(l: &Line) -> Result<(String, Value), LdifError> {
         }
         Some(b'<') => {
             let u = trim_spaces(&rest[1..]);
+            if u.iter().any(u8::is_ascii_control) {
+                return err(l.no, "control character in a URL");
+            }
             Value::Url(String::from_utf8_lossy(u).into_owned())
         }
         _ => {
@@ -487,7 +490,7 @@ pub const FOLD: usize = 76;
 pub fn write(ldif: &Ldif) -> String {
     let mut out = String::new();
     if let Some(c) = &ldif.charset {
-        line(&mut out, &format!("charset: {c}"));
+        attr(&mut out, "charset", &Value::Data(c.as_bytes().to_vec()));
     }
     if let Some(v) = ldif.version {
         line(&mut out, &format!("version: {v}"));
@@ -546,7 +549,7 @@ fn write_record(out: &mut String, r: &Record) {
                     ModOp::Replace => "replace",
                     ModOp::Increment => "increment",
                 };
-                line(out, &format!("{op}: {}", s.ty));
+                attr(out, op, &Value::Data(s.ty.as_bytes().to_vec()));
                 for v in &s.values {
                     attr(out, &s.ty, v);
                 }
