@@ -585,6 +585,9 @@ attributeTypes: ( 2.5.18.3 NAME 'creatorsName' DESC 'Who added the entry' EQUALI
 attributeTypes: ( 2.5.18.4 NAME 'modifiersName' DESC 'Who last changed the entry' EQUALITY
   distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION USAGE
   directoryOperation )
+attributeTypes: ( 1.3.6.1.1.20 NAME 'entryDN' DESC 'The DN of the entry itself' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  directoryOperation )
 attributeTypes: ( 2.5.18.9 NAME 'hasSubordinates' DESC 'Whether the entry has entries below it'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
 attributeTypes: ( 2.5.18.10 NAME 'subschemaSubentry' DESC 'The subschema entry that governs this
