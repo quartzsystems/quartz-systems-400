@@ -1465,6 +1465,7 @@ dependencies = [
  "instmedia",
  "ipc",
  "jrn",
+ "ldap",
  "mail",
  "netserver",
  "nfs",
