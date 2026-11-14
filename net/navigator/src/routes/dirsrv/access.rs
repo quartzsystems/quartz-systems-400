@@ -52,7 +52,7 @@ fn source(rq: &Rq<'_>, i: &InstanceInfo, s: &str, own: bool) -> String {
 }
 
 /// `/dirsrv/inst/<name>/access` and its posts.
-#[allow(clippy::many_single_char_names)]
+#[allow(clippy::many_single_char_names, clippy::too_many_lines)]
 pub fn route(rq: &Rq<'_>, i: &InstanceInfo) -> Response {
     let d = &rq.env().dirsrv;
     let dn = rq.query().str("dn").trim().to_string();

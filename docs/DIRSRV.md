@@ -57,7 +57,7 @@ difference (§15).
 | The client API | `runtime/ldapclnt` | `QGLDCLNT`'s exports as bound procedures over `net/ldap::client`; QS/400's own `QSYSINC/H(LDAP, LBER, LDAPSSL)` and `QRPGLESRC(LDAP)` |
 | QSH tools | `qsh/qsh-utils/src/net/ldap/` | the nine tools over `net/ldap::client` |
 | Test client | `tools/ldaptest` | outside the workspace with its own lockfile, wire code by other authors than `net/ldap` (§13) |
-| Navigator, QAP | `net/navigator/src/routes/dirsrv/`, `work/qap-proto` version 12 (`Dirsrv`, service 14) | server properties, suffixes, schema, access, publishing |
+| Navigator, QAP | `net/dirsrv/src/admin/` (`DirAdmin`, the interface both use, its `ibmslapd.conf` side `conf`, `MemAdmin` in memory), `work/stg/src/diradmin.rs` (request 1568), `net/navigator/src/routes/dirsrv/`, `work/qap-proto` version 12 (`Dirsrv`, service 14), `net/qapd/src/dirsrv.rs` | instances, server properties, suffixes, indexes, the administrator, schema, access, publishing, counters |
 
 The server runs as the job; the data lives in the storage service. Every
 operation is a request from the job to the service (§4), as the NFS
@@ -229,6 +229,25 @@ the backends and the schema, and answers:
 | 1571 `dirpub_events` | an agent's changes after its cursor, or a resync; the agent's status reported with the ask (§10.1) |
 | 1572 `dirpub_list` | every user or printer to publish and the cursor they are as of (§10.1) |
 | 1573-1579 | reserved |
+
+**Administration** (`net/dirsrv/src/admin/`): `DirAdmin` is what
+Navigator's Directory server pages and QAP's `Dirsrv` service ask, one
+method per question (instances, start, end, restart, autostart;
+properties; suffixes; indexes; the administrator; schema; an entry's
+access; publishing and its status; `cn=monitor`'s counters), each with
+the signed-on profile: reads need `*IOSYSCFG`, changes `*ALLOBJ` and
+`*IOSYSCFG` (`CPF222E`), start and end `*IOSYSCFG`. A refusal is an
+`AdminError`: its kind, the message ID (`GLD` where `QGLDMSG` has one,
+`CPF9898` with Quartz text otherwise) and data. `admin::conf` answers
+the configuration's questions over `config::SlapdConf` (what the
+service and `MemAdmin` share), `admin::access` checks `aclEntry` and
+`entryOwner` values, `MemAdmin` is a directory server in memory for
+tests and fixtures. Request 1568 carries each method as a
+`stg::diradmin::DirAdminOp` answered by a `DirAdminReply`
+(`stg::diradmin::serve` on the service's side, `Remote` over a
+`Sender` on the job's); the job sets the user before it asks, so no
+request names one. Until the service answers 1568 the job's sender
+(`NotBuilt`) refuses every request (`BLOCKED(rel)`).
 
 ACL evaluation, schema checking and password policy run in the
 service, beside the data, with the session's identity.
@@ -956,7 +975,12 @@ attributes (written to `QAUDJRN` as `DI` entries rather than IBM's
 `audit.log`, §12), `ibm-slapdOs400UsrprjRead`, `ibm-slapdConfigPwdPolicyOn`
 and the `cn=pwdPolicy Admin` attributes; QS/400's own
 `ibm-slapdIndex` (attribute index list), `ibm-slapdChangeLogMaxEntries`,
-`ibm-slapdReferral`.
+`ibm-slapdReferral` (default referrals, LDAP URLs). `ibm-slapdIndex` is on
+the `cn=Directory` backend entry, one value per attribute,
+`ATTRIBUTE:KINDS` with kinds `p` presence, `e` equality, `s` substring
+(`telephoneNumber:pe`); the six indexes every store has are not listed
+there and cannot be removed. A new or changed index is built at the
+instance's next start.
 
 Changes through `cn=configuration` or `CHGDIRSVRA` are written to the
 file at once and take effect at the instance's next start, except the
@@ -1375,6 +1399,14 @@ ignored.
   quality, history, reset, expiry, grace, group and individual
   policies, the identity, audit and configuration hooks, a hiding
   backend).
+- `cargo test -p dirsrv --lib admin`, `cargo test -p stg --lib
+  diradmin`: the properties, suffixes, indexes and administrator over
+  the shipped `ibmslapd.conf`, ACL values, `MemAdmin`, and every
+  request across the wire into `MemAdmin` and back.
+- `cargo test -p navigator --test dirsrv`: the Directory server pages
+  against `tests/golden/nav/dirsrv-*.html` and every action;
+  `cargo test -p qap-proto --test version12`, `cargo test -p qapd
+  --test dirsrv`: QAP version 12.
 
 ## 17. NEEDS-CODY
 
