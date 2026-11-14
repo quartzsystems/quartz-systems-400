@@ -7,10 +7,10 @@
  Object type  . . . . . . . . . . > *FILE         *ALL, *ALRTBL, *AUTL...       
  ASP device . . . . . . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
  Users  . . . . . . . . . . . . . > ANNE          Name, *PUBLIC                 
-                       + for more values                                        
+                + for more values                                               
  Authorization list . . . . . . .                 Name                          
  Authority  . . . . . . . . . . . > *USE          *CHANGE, *ALL, *USE...        
-                       + for more values                                        
+                + for more values                                               
  Reference object . . . . . . . .   *NONE         Name, *NONE                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Reference object type  . . . . .   *OBJTYPE      *OBJTYPE, *ALRTBL, *AUTL...   

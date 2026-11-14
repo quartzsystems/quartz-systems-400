@@ -9,7 +9,7 @@
  To user profile  . . . . . . . . > *SYSOPR       Name, *SYSOPR, *ALLACT...     
  To message queue . . . . . . . .                 Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
-                       + for more values                                        
+                + for more values                                               
  Message type . . . . . . . . . .   *INFO         *INFO, *INQ                   
                                                                                 
                                                                                 

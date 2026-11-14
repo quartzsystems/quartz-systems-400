@@ -11,7 +11,7 @@
  Flagging severity level  . . . .   0             0-30                          
  File type  . . . . . . . . . . .   *DATA         *DATA, *SRC                   
  Source listing options . . . . .   *SRC          *SRC, *SOURCE, *NOSRC...      
-                       + for more values                                        
+                + for more values                                               
  System . . . . . . . . . . . . .   *LCL          *LCL, *RMT, *FILETYPE         
                                                                                 
                                                                                 

@@ -430,12 +430,12 @@ impl Prompter {
                             }
                             kept = next;
                         }
-                        c = if kept.is_empty() {
-                            choices.chars().take(room.saturating_sub(3)).collect()
-                        } else {
-                            kept
-                        };
-                        c.push_str("...");
+                        // Not one whole choice fits: none is shown (the
+                        // primary's INSTANCE of STRTCPSVR, a 32-long field).
+                        c = kept;
+                        if !c.is_empty() {
+                            c.push_str("...");
+                        }
                     }
                     s.put(row, ccol, &c);
                 }
@@ -444,18 +444,20 @@ impl Prompter {
                 path,
                 indent,
                 groups,
+                width,
             } => {
-                // A list of groups: the text at 17 and the field at 35.
-                let (text, field) = if *groups {
-                    (17 + indent, MARKER_COL + indent)
+                // The text at 17; a list of groups has a one-character
+                // field at 35, a list of values a value's field at 37.
+                let (field, width) = if *groups {
+                    (MARKER_COL + indent, 1)
                 } else {
-                    (24 + indent, FIELD_COL + indent)
+                    (FIELD_COL + indent, *width)
                 };
-                s.put(row, text, "+ for more values");
+                s.put(row, 17 + indent, "+ for more values");
                 s.field(
                     row,
                     field,
-                    1,
+                    width,
                     "",
                     Some(Path::parm(path.parm).step(usize::MAX)),
                 );
@@ -556,6 +558,7 @@ impl Prompter {
         let shown = self.screen();
         let before = self.lines().visible;
         let mut more: Option<usize> = None;
+        let mut more_value: Option<String> = None;
         for (f, typed) in shown.fields.iter().zip(fields) {
             let Some(path) = &f.path else {
                 continue;
@@ -572,8 +575,18 @@ impl Prompter {
                 continue;
             }
             if path.steps.last() == Some(&usize::MAX) {
-                if !typed.trim().is_empty() {
+                let t = typed.trim();
+                if !t.is_empty() {
                     more = Some(path.parm);
+                    // A value typed there instead of `+` is the next one.
+                    let group = self
+                        .def
+                        .parms
+                        .get(path.parm)
+                        .is_some_and(|p| p.ty.is_group());
+                    if t != "+" && !group {
+                        more_value = Some(typed.trim_end().to_string());
+                    }
                 }
                 continue;
             }
@@ -585,7 +598,11 @@ impl Prompter {
         match key {
             0 => {
                 if let Some(parm) = more {
-                    *self.expanded.entry(parm).or_insert(1) += 1;
+                    let n = self.expanded.entry(parm).or_insert(1);
+                    if let Some(v) = more_value {
+                        self.texts.insert(Path::parm(parm).step(*n), v);
+                    }
+                    *n += 1;
                     return Step::Show;
                 }
                 self.conds_closed = false;
@@ -1071,6 +1088,10 @@ fn default_texts(p: &Parm, path: &Path, out: &mut HashMap<Path, String>) {
             }
         }
         ParmType::Elem { .. } => {
+            // A single value leaves the other elements blank (the
+            // primary's STRTCPSVR INSTANCE(*DFT)).
+            let single = matches!(toks.as_slice(), [Tok::Word(w)]
+                if p.sngval.iter().any(|s| s.from.eq_ignore_ascii_case(w)));
             match toks.as_slice() {
                 [one] => tok_texts(p, one, path, out),
                 many if !many.is_empty() => {
@@ -1084,7 +1105,12 @@ fn default_texts(p: &Parm, path: &Path, out: &mut HashMap<Path, String>) {
             }
             for (k, e) in p.items.iter().enumerate() {
                 let sub = path.step(k);
-                if !out.contains_key(&sub) && !out.contains_key(&sub.step(0)) {
+                if out.contains_key(&sub) || out.contains_key(&sub.step(0)) {
+                    continue;
+                }
+                if single && e.items.is_empty() {
+                    out.insert(sub, String::new());
+                } else {
                     default_texts(e, &sub, out);
                 }
             }

@@ -7,7 +7,7 @@
  Frequency  . . . . . . . . . . . > *WEEKLY       *ONCE, *WEEKLY, *MONTHLY      
  Schedule date  . . . . . . . . .   *CURRENT      Date, *CURRENT, *MONTHSTR...  
  Schedule day . . . . . . . . . .   *NONE         *NONE, *ALL, *MON, *TUE...    
-                       + for more values                                        
+                + for more values                                               
  Schedule time  . . . . . . . . .   *CURRENT      Time, *CURRENT                
                                                                                 
                                                                                 

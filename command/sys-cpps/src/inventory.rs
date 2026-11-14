@@ -154,11 +154,13 @@ pub fn orphans() -> Vec<String> {
 
 /// Commands shipped `*PUBLIC *EXCLUDE`: the save/restore, PTF, licensed
 /// program and service commands pub400 refuses an ordinary profile
-/// (`tools/conformance/golden/phase11/prompts/*-refused.txt`).
+/// (`tools/conformance/golden/phase11/prompts/*-refused.txt`), and
+/// `CHGDIRSVRA` (`tools/conformance/oracle/dirsrv/README.md`).
 pub const PUBLIC_EXCLUDE: &[&str] = &[
     "ADDLICKEY",
     "ANZPRB",
     "APYPTF",
+    "CHGDIRSVRA",
     "CHGIPLA",
     "CHGLICINF",
     "CHGPRB",
@@ -228,6 +230,8 @@ pub const DIRECT: &[&str] = &[
     "CHGPFCST",
     "DSPCPCST",
     "RMVPFCST",
+    // --- the directory server (lic/slic/src/cpp/dircmd.rs)
+    "CHGDIRSVRA",
     // --- NFS (lic/slic/src/cpp/nfscmd.rs)
     "CHGNFSEXP",
     "DSPMFSINF",

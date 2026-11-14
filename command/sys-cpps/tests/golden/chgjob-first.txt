@@ -16,8 +16,8 @@
  Print text . . . . . . . . . . .   *SAME                           *SAME...    
  Message logging:                                                               
    Level  . . . . . . . . . . . .   *SAME         0-4, *SAME                    
-   Severity . . . . . . . . . . .   *SAME         0-99, *SAME                   
-   Text . . . . . . . . . . . . .   *SAME         *SAME, *MSG, *SECLVL, *NOLIST 
+   Severity . . . . . . . . . . .                 0-99, *SAME                   
+   Text . . . . . . . . . . . . .                 *SAME, *MSG, *SECLVL, *NOLIST 
                                                                         More... 
  F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
  F24=More keys                                                                  

@@ -132,6 +132,16 @@ TIMZON = "The time zone description to delete, or a generic name for every descr
 about = "Use the Work with Time Zone Descriptions (WRKTIMZON) command to show the time zone descriptions in QSYS and change, delete, display or print them, or make one the system's time zone. The description the QTIMZON system value names is marked with a greater-than sign."
 TIMZON = "The time zone descriptions to show: a name, a generic name, or *ALL."
 
+# --- the directory server (docs/DIRSRV.md)
+
+[CHGDIRSVRA]
+about = "Use the Change Directory Server Attributes (CHGDIRSVRA) command to set the administrator of a directory server instance and its password, or the password of the instance's update distinguished name. The values go to the instance's configuration file; a new password is used at once. You need *ALLOBJ and *IOSYSCFG special authorities."
+INSTANCE = "The directory server instance to change, as the instance list names it. QUSRDIR is the instance every system has."
+DN = "The distinguished name to change and its new password. The password is kept as a salted hash, never as typed."
+"DN.*SAME" = "Nothing is changed."
+"DN.*ADMINDN" = "The administrator's password changes; the administrator stays the one the instance has (cn=Administrator unless changed)."
+"DN.*UPDATEDN" = "The password of the update distinguished name changes. Replication is not supported, so nothing binds with it."
+
 # --- NFS, the RPC binder and mounted file systems (docs/NFS.md)
 
 [STRNFSSVR]

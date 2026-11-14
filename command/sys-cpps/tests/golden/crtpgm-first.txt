@@ -6,7 +6,7 @@
    Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
  Module . . . . . . . . . . . . .   *PGM          Name, generic*, *ALL, *PGM    
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB...     
-                       + for more values                                        
+                + for more values                                               
  Program entry module . . . . . .   *FIRST        Name, *FIRST, *ONLY, *PGM     
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB...     
  Bind service program:                                                          
@@ -16,7 +16,7 @@
                 + for more values                                               
  Binding directory  . . . . . . .   *NONE         Name, *NONE                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB...     
-                       + for more values                                        
+                + for more values                                               
  Activation group . . . . . . . .   *NEW          Name, *NEW, *CALLER           
                                                                          Bottom 
  F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      

@@ -5,7 +5,7 @@
  Output . . . . . . . . . . . . .   *             *, *PRINT                     
  Reset statistics . . . . . . . .   *NO           *NO, *YES                     
  Subsystem  . . . . . . . . . . .   *ALL          Name, *ALL                    
-                       + for more values                                        
+                + for more values                                               
  CPU percent limit  . . . . . . .   *NONE         0-99.9, *NONE                 
  Response time limit  . . . . . .   *NONE         0-999.9, *NONE                
  Sequence . . . . . . . . . . . .   *SBS          *SBS, *CPUPCT, *FUNCTION...   

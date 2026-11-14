@@ -8,7 +8,7 @@
  Key file . . . . . . . . . . . .   *NONE         Name, *NONE, *FILE...         
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Source update options  . . . . .   *SAME         *SAME, *SEQNBR                
-                       + for more values                                        
+                + for more values                                               
  Source sequence numbering:                                                     
    Starting number  . . . . . . .   1.00          0.01-9999.99                  
    Increment  . . . . . . . . . .   1.00          0.01-9999.99                  

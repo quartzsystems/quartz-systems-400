@@ -14,10 +14,10 @@
                                                                                 
  Message logging:                                                               
    Level  . . . . . . . . . . . .   *JOBD         0-4                           
-   Severity . . . . . . . . . . .   0             0-99                          
-   Text . . . . . . . . . . . . .   *NOLIST       *MSG, *SECLVL, *NOLIST        
+   Severity . . . . . . . . . . .                 0-99                          
+   Text . . . . . . . . . . . . .                 *MSG, *SECLVL, *NOLIST        
  Initial library list . . . . . .   *JOBD         Name, *JOBD, *SYSVAL...       
-                       + for more values                                        
+                + for more values                                               
                                                                         More... 
  F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
  F24=More keys                                                                  

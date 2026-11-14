@@ -5,10 +5,10 @@
  File . . . . . . . . . . . . . . > CUST          Name, generic*, *ALL          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB...     
  Type of information  . . . . . .   *ALL          *ALL, *BASATR, *ATR...        
-                       + for more values                                        
+                + for more values                                               
  Output . . . . . . . . . . . . .   *             *, *PRINT, *OUTFILE           
  File attributes  . . . . . . . .   *ALL          *ALL, *BSCF, *CMNF, *DDMF...  
-                       + for more values                                        
+                + for more values                                               
                                                                                 
                                                                                 
                                                                                 

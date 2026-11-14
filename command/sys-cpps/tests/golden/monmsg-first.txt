@@ -3,7 +3,7 @@
  Type choices, press Enter.                                                     
                                                                                 
  Message identifier . . . . . . . > CPF0000       Name                          
-                       + for more values                                        
+                + for more values                                               
  Comparison data  . . . . . . . .   *NONE                         *NONE         
  Command to run . . . . . . . . .                                               
                                                                                 

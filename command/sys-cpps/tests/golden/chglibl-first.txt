@@ -4,7 +4,7 @@
                                                                                 
  Libraries for current thread . . > QGPL          Name, *NONE                   
                                     QTEMP         Name, *NONE                   
-                       + for more values                                        
+                + for more values                                               
  Current library  . . . . . . . .   *SAME         Name, *SAME, *CRTDFT          
                                                                                 
                                                                                 

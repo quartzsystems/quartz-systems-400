@@ -357,6 +357,7 @@ pub fn file_of(msgid: &str) -> &'static str {
         Some("QSH") => "QZSHMSGF",
         Some("EDT") => "QEDTMSG",
         Some("TXT") => "QSTXTMSG",
+        Some("GLD") => "QGLDMSG",
         _ => "QCPFMSG",
     }
 }

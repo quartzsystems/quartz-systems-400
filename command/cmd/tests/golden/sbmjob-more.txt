@@ -14,8 +14,8 @@
                                                                                 
  Message logging:                                                               
    Level  . . . . . . . . . . . .   *JOBD         0-4                           
-   Severity . . . . . . . . . . .   0             0-99                          
-   Text . . . . . . . . . . . . .   *NOLIST       *MSG, *SECLVL, *NOLIST        
+   Severity . . . . . . . . . . .                 0-99                          
+   Text . . . . . . . . . . . . .                 *MSG, *SECLVL, *NOLIST        
                                                                                 
                                                                                 
                                                                         More... 

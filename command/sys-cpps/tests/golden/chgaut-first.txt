@@ -5,10 +5,10 @@
  Object . . . . . . . . . . . . . > '/home/qstest'                              
                                                                                 
  User . . . . . . . . . . . . . . > *PUBLIC       Name, *PUBLIC                 
-                       + for more values                                        
+                + for more values                                               
  New data authorities . . . . . . > *RX           *SAME, *NONE, *RWX, *RX...    
  New object authorities . . . . .   *SAME         *SAME, *NONE, *ALL...         
-                       + for more values                                        
+                + for more values                                               
  Authorization list . . . . . . .                 Name, *NONE                   
  Symbolic link  . . . . . . . . .   *NO           *NO, *YES                     
  Directory subtree  . . . . . . .   *NONE         *NONE, *ALL                   

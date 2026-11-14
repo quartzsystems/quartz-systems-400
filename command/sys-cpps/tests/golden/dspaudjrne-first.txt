@@ -3,7 +3,7 @@
  Type choices, press Enter.                                                     
                                                                                 
  Entry types  . . . . . . . . . . > AF            AD, AF, AP, AU, AX, CA, CD... 
-                       + for more values                                        
+                + for more values                                               
  User profile . . . . . . . . . .   *ALL          Name, *ALL                    
  Journal receiver . . . . . . . .   *CURRENT      Name, *CURRENT, *CURCHAIN     
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        

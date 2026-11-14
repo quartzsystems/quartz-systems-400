@@ -23,7 +23,7 @@ through the servers framework.
 :EPARML.
 :P.Also accepted&colon. *TELNET, *FTP, *SMTP, *LPD, *HTTP, *SNMP,
 *ROUTED, *BOOTP, *TFTP, *REXEC, *DHCP, *DNS, *POP, *NTP, *SSHD,
-*HOSTSVR, *QAP, *NETSVR.
+*HOSTSVR, *QAP, *NETSVR, *DIRSRV.
 :EHELP.
 :HELP NAME='ENDTCPSVR/HTTPSVR'.HTTP server (HTTPSVR)
 :P.The HTTP server for this command.
@@ -35,8 +35,8 @@ through the servers framework.
 :EPARML.
 :P.Also accepted&colon. *ADMIN.
 :EHELP.
-:HELP NAME='ENDTCPSVR/INSTANCE'.Server instance (INSTANCE)
-:P.The server instance for this command.
+:HELP NAME='ENDTCPSVR/INSTANCE'.Instance (INSTANCE)
+:P.The instance for this command.
 :PARML.
 :PT.:PK DEF.*DFT:EPK.
 :PD.The default value.
@@ -83,7 +83,7 @@ start with IBM's names in their subsystems.
 :EPARML.
 :P.Also accepted&colon. *AUTOSTART, *TELNET, *FTP, *SMTP, *LPD, *HTTP,
 *SNMP, *ROUTED, *BOOTP, *TFTP, *REXEC, *DHCP, *DNS, *POP, *NTP, *SSHD,
-*HOSTSVR, *QAP, *NETSVR.
+*HOSTSVR, *QAP, *NETSVR, *DIRSRV.
 :EHELP.
 :HELP NAME='STRTCPSVR/RESTART'.Restart server (RESTART)
 :P.The restart server for this command.
@@ -116,16 +116,27 @@ start with IBM's names in their subsystems.
 :PD.Type up to 256 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='STRTCPSVR/INSTANCE'.Server instance (INSTANCE)
-:P.The server instance for this command.
+:HELP NAME='STRTCPSVR/INSTANCE'.Instance (INSTANCE)
+:P.The instance for this command.
 :PARML.
 :PT.:PK DEF.*DFT:EPK.
 :PD.The default value.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *AUTOSTART.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Server instance
+:PARML.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 32 characters.
 :EPARML.
-:P.Also accepted&colon. *AUTOSTART.
+:H4.Part 2&colon. Instance startup values
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 300 characters.
+:EPARML.
 :EHELP.
 :EPNLGRP.

@@ -830,6 +830,14 @@ note = "TYPE(*UDFS), TYPE(*NFS), TYPE(*ALL), MNTOVRDIR(*ALL)"
 [cmd.RMVMFS]
 note = "as UNMOUNT"
 
+# --- the directory server (docs/DIRSRV.md section 2.2): the instance's
+# configuration file through net/dirsrv::config (lic/slic/src/cpp/dircmd.rs)
+[cmd.CHGDIRSVRA]
+cpp = "QGLDCHGATR"
+comp = "GLD0123"
+comp_data = ["INSTANCE"]
+note = "the administrator DN and password, or the update DN's password, of an instance; *ALLOBJ and *IOSYSCFG"
+
 # --- NFS (docs/NFS.md section 8): the export table in the service
 # (lic/slic/src/cpp/nfscmd.rs), the daemons started by the job
 # (work/qsjob/src/command/nfs.rs), DSPMFSINF a panel at a display

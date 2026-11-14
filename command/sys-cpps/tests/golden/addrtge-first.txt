@@ -17,7 +17,7 @@
  Storage pool identifier  . . . .   1             1-10                          
  Thread resources affinity:                                                     
    Group  . . . . . . . . . . . .   *SYSVAL       *NOGROUP, *GROUP              
-   Level  . . . . . . . . . . . .   *NORMAL       *NORMAL, *HIGH                
+   Level  . . . . . . . . . . . .                 *NORMAL, *HIGH                
                                                                         More... 
  F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
  F24=More keys                                                                  

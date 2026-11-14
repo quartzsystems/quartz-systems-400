@@ -78,8 +78,12 @@ pub enum Line {
         /// Indentation.
         indent: usize,
         /// A list of groups: the text at column 17 and a one-character
-        /// field at column 35.
+        /// field at column 35. A list of values has the text at column
+        /// 17 and a field as wide as a value's at column 37, where the
+        /// next value can be typed (the primary's prompts).
         groups: bool,
+        /// The width of a value's field.
+        width: usize,
     },
     /// A row a long field continues on.
     Cont,
@@ -404,6 +408,7 @@ fn item_lines(
             path: path.clone(),
             indent,
             groups: matches!(p.ty, ParmType::Elem { .. }),
+            width: field_width(p).max(1),
         });
         return;
     }
