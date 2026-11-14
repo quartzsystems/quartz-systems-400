@@ -1,0 +1,156 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.system.oc: operational attributes and classes (RFC 4512, 4530, 3045, 3296) and IBM's directory
+# attributes and classes QS/400 honours (DIRSRV.md section 6).
+
+objectClasses: ( 1.3.6.1.4.1.42.2.27.8.2.1 NAME 'pwdPolicy' DESC 'A password policy' SUP top
+  AUXILIARY MUST pwdAttribute MAY ( pwdAllowUserChange $ pwdCheckSyntax $ pwdExpireWarning $
+  pwdFailureCountInterval $ pwdGraceLoginLimit $ pwdInHistory $ pwdLockout $ pwdLockoutDuration $
+  pwdMaxAge $ pwdMaxFailure $ pwdMinAge $ pwdMinLength $ pwdMustChange $ pwdSafeModify ) )
+objectClasses: ( 1.3.6.1.4.1.1466.101.120.111 NAME 'extensibleObject' DESC 'Lets an entry hold any
+  user attribute' SUP top AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.174 NAME 'ibmSubSchema' DESC 'IBM extension values in the subschema
+  entry' SUP subschema AUXILIARY MAY IBMAttributeTypes )
+objectClasses: ( 1.3.18.0.2.6.242 NAME 'ibm-auditConfig' DESC 'Audit configuration' SUP top
+  STRUCTURAL MUST cn MAY ( ibm-audit $ ibm-auditAdd $ ibm-auditAttributesOnGroupEvalOp $
+  ibm-auditBind $ ibm-auditCompare $ ibm-auditDelete $ ibm-auditExtOp $ ibm-auditExtOpEvent $
+  ibm-auditFailedOpOnly $ ibm-auditGroupsOnGroupControl $ ibm-auditLog $ ibm-auditModify $
+  ibm-auditModifyDN $ ibm-auditPerformance $ ibm-auditPTABindInfo $ ibm-auditSearch $ ibm-auditUnbind
+  $ ibm-auditVersion ) )
+objectClasses: ( 1.3.18.0.2.6.448 NAME 'ibm-nestedGroup' SUP top AUXILIARY MAY ibm-memberGroup )
+objectClasses: ( 1.3.18.0.2.6.449 NAME 'ibm-dynamicGroup' SUP top AUXILIARY MAY memberURL )
+objectClasses: ( 1.3.18.0.2.6.451 NAME 'ibm-staticGroup' SUP top AUXILIARY MAY member )
+objectClasses: ( 1.3.18.0.2.6.485 NAME 'ibm-slapdReferral' DESC 'The default referral' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdReferral ) )
+objectClasses: ( 1.3.18.0.2.6.486 NAME 'ibm-slapdConfigEntry' DESC 'The server\27s main
+  configuration entry' SUP top ABSTRACT MUST cn MAY ( ibm-slapdInvalidLine $ ibm-slapdMigrationInfo )
+  )
+objectClasses: ( 1.3.18.0.2.6.487 NAME 'ibm-slapdOs400Top' DESC 'IBM i configuration values' SUP top
+  AUXILIARY MAY ( ibm-slapdAuthIntegration $ ibm-slapdIpAddress $ ibm-slapdlogmessages $
+  ibm-slapdOs400AuditLevel ) )
+objectClasses: ( 1.3.18.0.2.6.488 NAME 'ibm-slapdSupplier' SUP ( ibm-slapdConfigEntry $ top )
+  STRUCTURAL MUST ( cn $ ibm-slapdMasterDN $ ibm-slapdReplicaSubtree ) MAY ibm-slapdMasterPW )
+objectClasses: ( 1.3.18.0.2.6.489 NAME 'ibm-slapdAdmin' SUP ( ibm-slapdConfigEntry $ top )
+  STRUCTURAL MUST ( cn $ ibm-slapdPort ) MAY ibm-slapdSecurePort )
+objectClasses: ( 1.3.18.0.2.6.490 NAME 'ibm-slapdConfigBackend' DESC 'The configuration backend' SUP
+  ( ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdPlugin $ ibm-slapdSuffix ) MAY
+  ibm-slapdReadOnly )
+objectClasses: ( 1.3.18.0.2.6.491 NAME 'ibm-slapdTransaction' DESC 'Transaction configuration' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdMaxNumOfTransactions $
+  ibm-slapdMaxOpPerTransaction $ ibm-slapdMaxTimeLimitOfTransactions $ ibm-slapdTransactionEnable )
+  MAY ibm-slapdMaxTimeBetweenPrepareAndCommit )
+objectClasses: ( 1.3.18.0.2.6.492 NAME 'ibm-slapdSSL' DESC 'TLS configuration' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdSecurePort $ ibm-slapdSecurity $
+  ibm-slapdSslAuth ) MAY ( ibm-slapdSslCertificate $ ibm-slapdSslCipherSpec $ ibm-slapdSslCipherSpecs
+  $ ibm-slapdSSLKeyDatabase $ ibm-slapdSSLKeyDatabasePW $ ibm-slapdSslKeyRingFilePW ) )
+objectClasses: ( 1.3.18.0.2.6.493 NAME 'ibm-slapdCRL' SUP ( ibm-slapdConfigEntry $ top ) STRUCTURAL
+  MUST ( cn $ ibm-slapdLdapCrlHost $ ibm-slapdLdapCrlPort ) MAY ( ibm-slapdLdapCrlPassword $
+  ibm-slapdLdapCrlUser ) )
+objectClasses: ( 1.3.18.0.2.6.494 NAME 'ibm-slapdKerberos' SUP ( ibm-slapdConfigEntry $ top )
+  STRUCTURAL MUST ( cn $ ibm-slapdKrbAdminDN $ ibm-slapdKrbEnable $ ibm-slapdKrbIdentityMap $
+  ibm-slapdKrbKeyTab $ ibm-slapdKrbRealm ) )
+objectClasses: ( 1.3.18.0.2.6.495 NAME 'ibm-slapdLdcfBackend' DESC 'The schema backend' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST cn MAY ( ibm-slapdPlugin $ ibm-slapdReadOnly $
+  ibm-slapdSuffix ) )
+objectClasses: ( 1.3.18.0.2.6.496 NAME 'ibm-slapdReplication' SUP ( ibm-slapdConfigEntry $ top )
+  STRUCTURAL MUST cn MAY ( ibm-slapdMasterDN $ ibm-slapdMasterPW $ ibm-slapdMasterReferral $
+  ibm-slapdNoReplConflictResolution ) )
+objectClasses: ( 1.3.18.0.2.6.497 NAME 'ibm-slapdRdbmBackend' DESC 'A database backend' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST cn MAY ( ibm-slapdBulkloadErrors $
+  ibm-slapdCachedAttribute $ ibm-slapdCachedAttributeAutoAdjust $
+  ibm-slapdCachedAttributeAutoAdjustTime $ ibm-slapdCachedAttributeAutoAdjustTimeInterval $
+  ibm-slapdCachedAttributeSize $ ibm-slapdChangeLogMaxAge $ ibm-slapdChangeLogMaxEntries $
+  ibm-slapdCLIErrors $ ibm-slapdDB2CP $ ibm-slapdDBAlias $ ibm-slapdDbConnections $
+  ibm-slapdDbInstance $ ibm-slapdDbLocation $ ibm-slapdDbName $ ibm-slapdDbUserID $ ibm-slapdDbUserPW
+  $ ibm-slapdEnableRemotePWPExOps $ ibm-slapdGroupMembersCacheBypassLimit $
+  ibm-slapdGroupMembersCacheSize $ ibm-slapdLanguageTagsEnabled $ ibm-slapdNumRetry $
+  ibm-slapdPagedResAllowNonAdmin $ ibm-slapdPagedResLmt $ ibm-slapdPlugin $ ibm-slapdReadOnly $
+  ibm-slapdReplDbConns $ ibm-slapdSortKeyLimit $ ibm-slapdSortSrchAllowNonAdmin $ ibm-slapdSuffix $
+  ibm-slapdUseProcessIdPW ) )
+objectClasses: ( 1.3.18.0.2.6.498 NAME 'ibm-slapdTop' DESC 'Base class of the configuration entries'
+  SUP ( ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdAdminDN $ ibm-slapdAdminPW $
+  ibm-slapdCryptoSync $ ibm-slapdDerefAliases $ ibm-slapdPort $ ibm-slapdPwEncryption $
+  ibm-slapdSizeLimit $ ibm-slapdTimeLimit ) MAY ( ibm-slapdAdminGroupEnabled $ ibm-slapdIpAddress $
+  ibm-slapdMaxPendingChangesDisplayed $ ibm-slapdPtaEnabled $ ibm-slapdServerBackend $
+  ibm-slapdServerId $ ibm-slapdStartupTraceEnabled $ ibm-slapdSupportedWebAdmVersion $
+  ibm-slapdTraceMessageLevel $ ibm-slapdTraceMessageLog $ ibm-slapdVersion ) )
+objectClasses: ( 1.3.18.0.2.6.499 NAME 'ibm-slapdSchema' DESC 'Schema configuration' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdIncludeSchema $ ibm-slapdSchemaCheck )
+  MAY ibm-slapdSchemaAdditions )
+objectClasses: ( 1.3.18.0.2.6.500 NAME 'ibm-slapdEventNotification' SUP ( ibm-slapdConfigEntry $ top
+  ) STRUCTURAL MUST ( cn $ ibm-slapdEnableEventNotification ) MAY ( ibm-slapdMaxEventsPerConnection $
+  ibm-slapdMaxEventsTotal ) )
+objectClasses: ( 1.3.18.0.2.6.501 NAME 'ibm-slapdFrontEnd' DESC 'Front-end configuration' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST cn MAY ( ibm-slapdACLCache $ ibm-slapdACLCacheSize $
+  ibm-slapdDB2CP $ ibm-slapdEntryCacheSize $ ibm-slapdFilterCacheBypassLimit $
+  ibm-slapdFilterCacheSize $ ibm-slapdIdleTimeOut $ ibm-slapdPlugin $ ibm-slapdSetenv ) )
+objectClasses: ( 1.3.18.0.2.6.520 NAME 'ibm-capabilitiesSubentry' DESC 'Lists the server\27s
+  capabilities' SUP top STRUCTURAL MAY ( ibm-enabledCapabilities $ ibm-supportedCapabilities ) )
+objectClasses: ( 1.3.18.0.2.6.524 NAME 'ibm-pwdPolicyExt' DESC 'IBM password policy extensions' SUP
+  pwdPolicy AUXILIARY MAY ( ibm-PwdPolicy $ ibm-pwdPolicyStartTime $ passwordMaxRepeatedChars $
+  passwordMinAlphaChars $ passwordMinDiffChars $ passwordMinOtherChars ) )
+objectClasses: ( 1.3.18.0.2.6.525 NAME 'ibm-slapdOs400SystemBackend' DESC 'The projected backend of
+  user profiles' SUP top STRUCTURAL MUST ( cn $ ibm-slapdPlugin $ ibm-slapdSuffix ) MAY (
+  ibm-slapdOs400UsrprjRead $ ibm-slapdReadOnly ) )
+objectClasses: ( 1.3.18.0.2.6.526 NAME 'ibm-slapdPendingMigration' SUP top AUXILIARY MAY
+  ibm-slapdMigrationInfo )
+objectClasses: ( 1.3.18.0.2.6.556 NAME 'ibm-slapdAdminGroupMember' SUP ( ibm-slapdConfigEntry $ top
+  ) STRUCTURAL MUST ( ibm-slapdAdminDN $ ibm-slapdAdminPW $ ibm-slapdAdminRole ) MAY (
+  ibm-slapdDigestAdminUser $ ibm-slapdKrbAdminDN ) )
+objectClasses: ( 1.3.18.0.2.6.560 NAME 'ibm-slapdConnectionManagement' DESC 'Connection management
+  configuration' SUP ( ibm-slapdConfigEntry $ top ) STRUCTURAL MUST cn MAY ( ibm-slapdAllowAnon $
+  ibm-slapdAllReapingThreshold $ ibm-slapdAnonReapingThreshold $ ibm-slapdBoundReapingThreshold $
+  ibm-slapdESizeThreshold $ ibm-slapdEThreadActivate $ ibm-slapdEThreadEnable $
+  ibm-slapdETimeThreshold $ ibm-slapdIdleTimeOut $ ibm-slapdWriteTimeout ) )
+objectClasses: ( 1.3.18.0.2.6.575 NAME 'ibm-slapdDigest' SUP ibm-slapdConfigEntry STRUCTURAL MUST
+  ibm-slapdDigestEnabled MAY ( ibm-slapdDigestAdminUser $ ibm-slapdDigestAttr $ ibm-slapdDigestRealm
+  ) )
+objectClasses: ( 1.3.18.0.2.6.585 NAME 'ibm-slapdProxyBackendServer' SUP ( ibm-slapdConfigEntry $
+  top ) STRUCTURAL MUST ( cn $ ibm-slapdProxyBindMethod $ ibm-slapdProxyTargetURL ) MAY (
+  ibm-slapdProxyConnectionPoolSize $ ibm-slapdProxyDigestRealm $ ibm-slapdProxyDigestUserName $
+  ibm-slapdProxyDn $ ibm-slapdProxyPw $ ibm-slapdServerId $ ibm-slapdSslCertificate $
+  ibm-slapdSSLKeyDatabase $ ibm-slapdSSLKeyDatabasePW $ ibm-slapdSslKeyRingFilePW ) )
+objectClasses: ( 1.3.18.0.2.6.586 NAME 'ibm-slapdProxyBackend' SUP ( ibm-slapdConfigEntry $ top )
+  STRUCTURAL MUST ( cn $ ibm-slapdPlugin ) MAY ibm-slapdSuffix )
+objectClasses: ( 1.3.18.0.2.6.588 NAME 'ibm-slapdLogConfig' SUP ( ibm-slapdConfigEntry $ top )
+  AUXILIARY MAY ( ibm-slapdLog $ ibm-slapdLogArchivePath $ ibm-slapdLogMaxArchives $
+  ibm-slapdLogOptions $ ibm-slapdLogSizeThreshold ) )
+objectClasses: ( 1.3.18.0.2.6.592 NAME 'ibm-slapdPwdPolicyAdmin' DESC 'The administrator\27s
+  password policy' SUP ( ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ibm-slapdConfigPwdPolicyOn MAY
+  ( passwordMaxRepeatedChars $ passwordMinAlphaChars $ passwordMinDiffChars $ passwordMinOtherChars $
+  pwdAccountLockedTime $ pwdFailureCountInterval $ pwdLockout $ pwdLockoutDuration $ pwdMaxFailure $
+  pwdMinLength ) )
+objectClasses: ( 1.3.18.0.2.6.593 NAME 'ibm-slapdProxyBackendSplitContainer' SUP (
+  ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $ ibm-slapdProxyNumPartitions $
+  ibm-slapdProxyPartitionBase ) )
+objectClasses: ( 1.3.18.0.2.6.594 NAME 'ibm-slapdProxyBackendSplit' SUP top STRUCTURAL MUST (
+  ibm-slapdProxyBackendServerDn $ ibm-slapdProxyPartitionIndex ) )
+objectClasses: ( 1.3.18.0.2.6.596 NAME 'ibm-slapdReplicationConfiguration' SUP top STRUCTURAL MUST
+  cn MAY ( description $ ibm-replicationOnHold $ ibm-slapdMaxPendingChangesDisplayed $
+  ibm-slapdReplConflictMaxEntrySize $ ibm-slapdReplContextCacheSize $ ibm-slapdReplMaxErrors $
+  ibm-slapdReplRestrictedAccess ) )
+objectClasses: ( 1.3.18.0.2.6.619 NAME 'ibm-slapdProxyBackendServerGroup' SUP ( ibm-slapdConfigEntry
+  $ top ) STRUCTURAL MUST ibm-slapdProxyBackendServerDn )
+objectClasses: ( 1.3.18.0.2.6.622 NAME 'ibm-pwdPolicyExt2' DESC 'More IBM password policy
+  extensions' SUP ( ibm-pwdPolicyExt $ pwdPolicy $ top ) AUXILIARY MUST ibm-pwdPolicyStartTime )
+objectClasses: ( 1.3.18.0.2.6.631 NAME 'ibm-slapdPersistentSearch' DESC 'Persistent search
+  configuration' SUP ( ibm-slapdConfigEntry $ top ) STRUCTURAL MUST ( cn $
+  ibm-slapdEnablePersistentSearch $ ibm-slapdMaxPersistentSearches ) )
+objectClasses: ( 1.3.18.0.2.6.632 NAME 'ibm-slapdPta' SUP ibm-slapdConfigEntry STRUCTURAL MUST (
+  ibm-slapdPtaSubtree $ ibm-slapdPtaURL ) MAY ( ibm-slapdPtaConnectionPoolSize $
+  ibm-slapdPtaMigratePwd $ ibm-slapdPtaResultTimeout ) )
+objectClasses: ( 1.3.18.0.2.6.633 NAME 'ibm-slapdPtaExt' SUP ibm-slapdConfigEntry AUXILIARY MUST (
+  ibm-slapdPtaAttrMapping $ ibm-slapdPtaBindDN $ ibm-slapdPtaBindPW $ ibm-slapdPtaSearchBase ) )
+objectClasses: ( 1.3.18.0.2.6.636 NAME 'ibm-pwdGroupAndIndividualPolicies' DESC 'Group and
+  individual password policies' SUP top AUXILIARY MUST ibm-pwdGroupAndIndividualEnabled )
+objectClasses: ( 2.5.6.0 NAME 'top' DESC 'The class every class descends from' ABSTRACT MUST
+  objectClass )
+objectClasses: ( 2.5.6.1 NAME 'alias' DESC 'An entry that stands for another entry' SUP top
+  STRUCTURAL MUST aliasedObjectName )
+objectClasses: ( 2.5.20.1 NAME 'subschema' DESC 'A subschema entry that publishes the schema' SUP
+  top AUXILIARY MAY ( attributeTypes $ ditContentRules $ ditStructureRules $ ldapSyntaxes $
+  matchingRules $ matchingRuleUse $ nameForms $ objectClasses ) )
+objectClasses: ( 2.16.840.1.113730.3.2.6 NAME 'referral' DESC 'An entry that refers clients to
+  another server' SUP top STRUCTURAL MUST ref )

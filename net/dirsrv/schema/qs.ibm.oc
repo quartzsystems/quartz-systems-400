@@ -1,0 +1,803 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.ibm.oc: every other definition IBM's server lists, so LDIF exported from it loads;
+# QS/400 defines them and does nothing more with them.
+
+objectClasses: ( oldQualityLabelledData-oid NAME 'oldQualityLabelledData' SUP top STRUCTURAL MUST
+  singleLevelQuality MAY ( subtreeMaximumQuality $ subtreeMinimumQuality ) )
+objectClasses: ( 1.2.840.113533.7.67.0 NAME 'entrustUser' SUP top AUXILIARY MAY userCertificate )
+objectClasses: ( 1.2.840.113533.7.67.1 NAME 'entrustCA' SUP top AUXILIARY MAY ( attributeCertificate
+  $ authorityRevocationList $ caCertificate $ certificateRevocationList $ crossCertificatePair $
+  userPassword ) )
+objectClasses: ( 1.2.840.113533.7.67.2 NAME 'ccMailUser' SUP top AUXILIARY MAY ( ccMailComments $
+  ccMailName $ ccMailPostOffice ) )
+objectClasses: ( 1.2.840.113533.7.67.3 NAME 'msMailUser' SUP top AUXILIARY MAY ( msMailFullname $
+  msMailId $ msMailNetwork $ msMailPostOffice ) )
+objectClasses: ( 1.2.840.113533.7.67.4 NAME 'uniquelyIdentifiedUser' SUP top AUXILIARY MUST
+  SerialNumber )
+objectClasses: ( 1.2.840.113533.7.67.5 NAME 'simpleAuthObject' SUP top AUXILIARY MUST userPassword )
+objectClasses: ( 1.2.840.113533.7.67.6 NAME 'qmMailUser' SUP top AUXILIARY MAY ( qmMailCenter $
+  qmUserName $ qmZone ) )
+objectClasses: ( 1.2.840.113533.7.67.7 NAME 'rfc822MailUser' SUP top AUXILIARY MAY mail )
+objectClasses: ( 1.2.840.113533.7.67.8 NAME 'trustTypes' SUP top AUXILIARY MAY ( objsigntrust $
+  Smimetrust $ Ssltrust ) )
+objectClasses: ( 1.2.840.113533.7.67.9 NAME 'emailAddressUser' SUP top AUXILIARY MAY email )
+objectClasses: ( 1.2.840.113533.7.67.11 NAME 'cEPDevice' SUP top AUXILIARY MAY ( unstructuredAddress
+  $ unstructuredName ) )
+objectClasses: ( 1.2.840.113533.7.67.12 NAME 'pKCS10Device' SUP top AUXILIARY MAY SerialNumber )
+objectClasses: ( 1.2.840.113533.7.67.13 NAME 'entrustRoamingUser' SUP top AUXILIARY MAY (
+  eNTrustRoamFileEncInfo $ entrustRoamingCAPAB $ eNTrustRoamingEOP $ eNTrustRoamingPAB $
+  eNTrustRoamingProfile $ eNTrustRoamingPrV $ eNTrustRoamingRecipList $ eNTrustRoamingSLA $ uid ) )
+objectClasses: ( 1.2.840.113533.7.67.14 NAME 'entrustDNQualifierUser' SUP top AUXILIARY MAY
+  dnQualifier )
+objectClasses: ( 1.2.840.113533.7.67.15 NAME 'entrustNamedObject' SUP top AUXILIARY MAY ( c $ cn $
+  dc $ dmdName $ generationQualifier $ givenName $ initials $ l $ name $ o $ ou $ Sn $ St $ title ) )
+objectClasses: ( 1.2.840.113533.7.67.16 NAME 'uniquelyQualifiedObject' SUP top AUXILIARY MAY (
+  description $ dnQualifier $ mail $ SerialNumber $ uid ) )
+objectClasses: ( 1.2.840.113533.7.67.17 NAME 'entrustPolicyObject' SUP top AUXILIARY MAY
+  eNTrustPolicyCertificate )
+objectClasses: ( 1.2.840.113556.1.5.87 NAME 'calEntry' SUP top AUXILIARY MAY ( calCalAdrURI $
+  calCalURI $ calCAPURI $ calFBURL $ calOtherCalAdrURIs $ calOtherCalURIs $ calOtherCAPURIs $
+  calOtherFBURLs ) )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.1 NAME 'javaContainer' SUP top STRUCTURAL MUST cn )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.4 NAME 'javaObject' SUP top ABSTRACT MUST javaClassName MAY
+  ( description $ javaClassNames $ javaCodebase $ javaDoc ) )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.5 NAME 'javaSerializedObject' SUP javaObject AUXILIARY MUST
+  javaSerializedData )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.7 NAME 'javaNamingReference' SUP javaObject AUXILIARY MAY (
+  javaFactory $ javaReferenceAddress ) )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.8 NAME 'javaMarshalledObject' SUP javaObject AUXILIARY MUST
+  javaSerializedData )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.9 NAME 'corbaObject' SUP top ABSTRACT MAY (
+  corbaRepositoryId $ description ) )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.10 NAME 'corbaContainer' SUP top STRUCTURAL MUST cn )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.4.2.11 NAME 'corbaObjectReference' SUP corbaObject AUXILIARY
+  MUST corbaIor )
+objectClasses: ( 1.3.6.1.4.1.42.2.27.6.2.1 NAME 'slpService' SUP top ABSTRACT MUST ( description $
+  service-advert-scopes $ service-advert-service-type $ template-major-version-number $
+  template-minor-version-number $ template-url-syntax ) MAY ( service-advert-attribute-authenticator
+  $ service-advert-url-authenticator ) )
+objectClasses: ( 1.3.6.1.4.1.250.3.18 NAME 'cacheObject' SUP top AUXILIARY MAY ttl )
+objectClasses: ( 1.3.6.1.4.1.1466.154.151.160.1 NAME 'liPerson' SUP person STRUCTURAL MAY ( c $
+  facsimileTelephoneNumber $ generationQualifier $ givenName $ homeFax $ homePhone $
+  homePostalAddress $ initials $ l $ labeledURI $ mail $ manager $ middleName $ mobile $ o $
+  otherMailbox $ ou $ pager $ personalTitle $ postalAddress $ roomNumber $ secretary $ telexNumber $
+  thumbNailLogo $ thumbNailPhoto $ title $ uniqueIdentifier $ userCertificate ) )
+objectClasses: ( 1.3.6.1.4.1.1466.154.151.160.2 NAME 'liOrganization' SUP organization STRUCTURAL
+  MAY ( c $ labeledURI $ mail $ manager $ otherMailbox $ thumbNailLogo $ uniqueIdentifier ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.6 NAME 'secUser' SUP eUser STRUCTURAL MUST ( secAuthority $
+  secLoginType ) MAY ( secAcctValid $ secCertDN $ secCertSerialNumber $ secDN $ secDomainId $
+  secHasPolicy $ secHomeGroup $ secOtherAlias $ secPartnerAlias $ secPwdFailCountTime $
+  secPwdFailures $ secPwdLastChanged $ secPwdLastFailed $ secPwdLastUsed $ secPwdUnlockTime $
+  secPwdValid $ secSelfAlias $ secUUID ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.7 NAME 'secGroup' SUP top STRUCTURAL MUST ( cn $ secAuthority )
+  MAY ( secDN $ secHasPolicy $ secUUID ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.8 NAME 'secAuthorityInfo' SUP eApplicationSystem STRUCTURAL MUST
+  ( secAuthority $ version ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.10 NAME 'secMap' SUP top STRUCTURAL MUST ( secDN $ secUUID ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.17 NAME 'secPolicy' SUP ePasswordPolicy STRUCTURAL MAY (
+  secAcctExpires $ secAcctInactivity $ secAcctLife $ secMaxWebSessions $ secPwdAlpha $
+  secPwdFailureCountInterval $ secPwdMgmtBind $ secPwdSpaces $ secTODAccess ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.21 NAME 'secPolicyData' SUP top STRUCTURAL MUST cn MAY (
+  secPwdFailures $ secPwdLastChanged $ secPwdLastUsed ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.304 NAME 'secResource' SUP top STRUCTURAL MUST ( secResourceID $
+  secType ) MAY ( description $ secUUID $ secValid ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.305 NAME 'secResGroup' SUP top STRUCTURAL MUST ( secResGroupID $
+  secType ) MAY ( description $ member $ secUUID $ secValid ) )
+objectClasses: ( 1.3.6.1.4.1.4228.1.306 NAME 'secResCreds' SUP top STRUCTURAL MUST ( secResCredsID $
+  secType ) MAY ( description $ secAuthnData $ secAuthnLength $ secAuthnType $ secUid $ secUUID $
+  secValid ) )
+objectClasses: ( 1.3.18.0.2.6.15 NAME 'iGNObject' SUP top AUXILIARY MAY ( billingAccount $
+  billingCountry $ geographicalCoverage $ IGNCodePage $ iGNFlags $ info $ languageCode $ membership $
+  productOrService $ wWWURL ) )
+objectClasses: ( 1.3.18.0.2.6.16 NAME 'iGNPerson' SUP top AUXILIARY MUST uniqueIdentifier MAY (
+  businessCategory $ generationQualifier $ givenName $ initials $ localUserid $ mail $
+  mailPreferenceOption $ mobile $ pager $ preferredTechnicalFormats $ textEncodedOrAddress $ uid $
+  videoTelephoneNumber ) )
+objectClasses: ( 1.3.18.0.2.6.18 NAME 'directoryOperation' SUP top STRUCTURAL MUST cn MAY (
+  description $ directoryOperationString $ iGNFlags $ ldapBaseObject $ ldapFilter $ ldapOperation $
+  sizeLimit ) )
+objectClasses: ( 1.3.18.0.2.6.19 NAME 'directoryOperationSchedule' SUP top STRUCTURAL MUST cn MAY (
+  actionDate $ changedSince $ deliveryFormat $ description $ directoryOperationName $ emailFormat $
+  iGNFlags $ mail $ performanceFrequency $ performedDate $ sizeLimit $ validFrom $ validTo ) )
+objectClasses: ( 1.3.18.0.2.6.20 NAME 'publisher' SUP top AUXILIARY MUST publisherName MAY
+  publisherType )
+objectClasses: ( 1.3.18.0.2.6.21 NAME 'ibmIBMCSClient' SUP top AUXILIARY MAY ( APPCLoadBalancing $
+  APPCServerList $ APPCSessionLimit $ APPCTransTableFilename $ AS400Host $ AS400HostUserid $
+  AS400LUName $ AS400ModeName $ attachRecord $ attachRecordServerList $ cpi_crecord $ cpi_crecord2 $
+  cpi_csecurityuserid $ cpi_cserverlist $ LU62LocalLUAlias $ LU62PartnerLUAlias $ LUxServerList $
+  sna3270Attributes $ sna3270LUxSession ) )
+objectClasses: ( 1.3.18.0.2.6.22 NAME 'ibmIBMCSServerList' SUP top STRUCTURAL MUST cn MAY ( APPCUser
+  $ attachUser $ cpi_cuser $ discovery $ discoveryEncryption $ LUxUser $ ou $ server ) )
+objectClasses: ( 1.3.18.0.2.6.23 NAME 'OS400Card' SUP cimCard STRUCTURAL MAY ( OS400CardCategory $
+  OS400CardFamilyLevel ) )
+objectClasses: ( 1.3.18.0.2.6.24 NAME 'OS400MCIApplication' SUP top AUXILIARY MAY (
+  mciHDWCollectDateTime $ mciHDWCollectVersion $ mciPTFCollectDateTime $ mciPTFCollectVersion $
+  mciSFWCollectDateTime $ mciSFWCollectVersion ) )
+objectClasses: ( 1.3.18.0.2.6.25 NAME 'OS400PTF' SUP top AUXILIARY MAY ( OS400ProductID $
+  OS400PTFMax $ OS400PTFMin $ OS400PTFSaveFileStatus $ OS400PTFSupersedingPTFId ) )
+objectClasses: ( 1.3.18.0.2.6.26 NAME 'OS400Software' SUP top AUXILIARY MAY ( OS400Level $
+  OS400ProductOption $ OS400SupportedState ) )
+objectClasses: ( 1.3.18.0.2.6.27 NAME 'eGSOuser' SUP eUser STRUCTURAL MUST ( cn $ userState $
+  userType ) MAY ( associatedName $ subadminGroup $ targetGroup ) )
+objectClasses: ( 1.3.18.0.2.6.28 NAME 'container' SUP top STRUCTURAL MUST cn )
+objectClasses: ( 1.3.18.0.2.6.29 NAME 'eTargetRecord' SUP cimSetting STRUCTURAL MUST cn MAY (
+  accountService $ autoInitiate $ autoTerminate $ launchable $ optIdentifier $ passwordGenerator $
+  prereqTarget $ reqIdentifier $ secretKey $ targetAdapter $ targetService $ tsType $ uid ) )
+objectClasses: ( 1.3.18.0.2.6.30 NAME 'eGSOApplicationSystem' SUP eSystem STRUCTURAL MAY (
+  hostedSoftwarePtr $ osPtr ) )
+objectClasses: ( 1.3.18.0.2.6.31 NAME 'eGSOaccount' SUP eAccount STRUCTURAL MUST cn MAY (
+  accountService $ otherPrincipalPtr $ secretKey ) )
+objectClasses: ( 1.3.18.0.2.6.32 NAME 'eTargetServiceType' SUP top STRUCTURAL MUST tsType MAY (
+  authenticationType $ capability $ caption $ description $ msgFileName $ optIdentifierName $
+  reqIdentifierName ) )
+objectClasses: ( 1.3.18.0.2.6.33 NAME 'eTargetService' SUP top STRUCTURAL MUST ( tsName $ tsType )
+  MAY ( authenticationType $ caption $ description $ optIdentifier $ reqIdentifier ) )
+objectClasses: ( 1.3.18.0.2.6.34 NAME 'eTargetAdapter' SUP top STRUCTURAL MUST ( javaClassName $
+  taName $ tsType ) MAY ( caption $ description $ jarFileName $ msgFileName $ osType $ propertyType )
+  )
+objectClasses: ( 1.3.18.0.2.6.35 NAME 'eGSOattachment' SUP eProperty STRUCTURAL MUST propertyType )
+objectClasses: ( 1.3.18.0.2.6.37 NAME 'eGSOSoftware' SUP cimLogicalElement STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.38 NAME 'eGSOmachineProfile' SUP top STRUCTURAL MUST ( cn $ osType )
+  MAY ( caption $ description $ reqIdentifier ) )
+objectClasses: ( 1.3.18.0.2.6.39 NAME 'ePasswordGenerator' SUP top STRUCTURAL MUST ( cn $ secretKey
+  ) MAY ( caption $ description $ member ) )
+objectClasses: ( 1.3.18.0.2.6.40 NAME 'eObjectDescription' SUP top STRUCTURAL MUST cn MAY ( caption
+  $ description $ editable $ msgFileName $ objectClassCaption $ required $ validValues ) )
+objectClasses: ( 1.3.18.0.2.6.41 NAME 'eGSODomain' SUP top STRUCTURAL MUST cn MAY ( caption $
+  description $ targetLocation ) )
+objectClasses: ( 1.3.18.0.2.6.42 NAME 'INamingService' SUP top STRUCTURAL MUST ( bt $ oref $
+  TypelessRDN ) MAY sequenceNumber )
+objectClasses: ( 1.3.18.0.2.6.43 NAME 'BBOPIRRepository' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) )
+objectClasses: ( 1.3.18.0.2.6.44 NAME 'BBOPIRRepositoryId' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_pkstring ) )
+objectClasses: ( 1.3.18.0.2.6.45 NAME 'BBOPIRModuleDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_name $ bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.46 NAME 'BBOPIRConstantDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_name $ bbop_type_def $ bbop_value
+  $ bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.47 NAME 'BBOPIRStructDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_members $ bbop_name $ bbop_refer $
+  bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.48 NAME 'BBOPIRUnionDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_disc_td $ bbop_id $ bbop_members $ bbop_name $ bbop_refer
+  $ bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.49 NAME 'BBOPIREnumDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_members $ bbop_name $ bbop_refer $
+  bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.50 NAME 'BBOPIRAliasDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_name $ bbop_orig_td $ bbop_refer $
+  bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.51 NAME 'BBOPIRExceptionDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_members $ bbop_name $ bbop_refer $
+  bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.52 NAME 'BBOPIRAttributeDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_def_in $ bbop_id $ bbop_mode $ bbop_name $ bbop_type_def $
+  bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.53 NAME 'BBOPIROperationDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_contexts $ bbop_def_in $ bbop_except $ bbop_id $ bbop_mode
+  $ bbop_name $ bbop_params $ bbop_res_def $ bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.54 NAME 'BBOPIRInterfaceDef' SUP top STRUCTURAL MUST ( bbop_def_kind $
+  TypelessRDN ) MAY ( bbop_abs_name $ bbop_base_int $ bbop_def_in $ bbop_id $ bbop_name $ bbop_refer
+  $ bbop_version ) )
+objectClasses: ( 1.3.18.0.2.6.72 NAME 'replicaObject' SUP top STRUCTURAL MUST ( cn $ replicaBindDN $
+  replicaCredentials $ replicaHost ) MAY ( description $ replicaBindMethod $ replicaPort $
+  replicaUpdateTimeInterval $ replicaUseSSL $ seeAlso ) )
+objectClasses: ( 1.3.18.0.2.6.73 NAME 'ePerson' SUP top AUXILIARY MAY ( accessHint $ accountHint $
+  audio $ businessCategory $ c $ carLicense $ configPtr $ departmentNumber $ description $
+  destinationIndicator $ displayName $ employeeNumber $ employeeType $ facsimileTelephoneNumber $
+  generationQualifier $ givenName $ homeFax $ homePhone $ homePostalAddress $ initials $
+  internationalISDNNumber $ jpegPhoto $ l $ labeledURI $ mail $ manager $ middleName $ mobile $ o $
+  organizationalStatus $ otherMailbox $ ou $ pager $ personalTitle $ photo $
+  physicalDeliveryOfficeName $ postalAddress $ postalCode $ postOfficeBox $ preferredDeliveryMethod $
+  preferredLanguage $ registeredAddress $ roomNumber $ secretary $ seeAlso $ st $ street $
+  telephoneNumber $ teletexTerminalIdentifier $ telexNumber $ thumbNailLogo $ thumbNailPhoto $ title
+  $ uid $ uniqueIdentifier $ userCertificate $ userPassword $ userPKCS12 $ userSMIMECertificate $
+  x121Address $ x500UniqueIdentifier ) )
+objectClasses: ( 1.3.18.0.2.6.74 NAME 'aliasObject' SUP top AUXILIARY MUST aliasedObjectName )
+objectClasses: ( 1.3.18.0.2.6.75 NAME 'accessGroup' SUP top STRUCTURAL MUST cn MAY (
+  businessCategory $ description $ member $ o $ ou $ owner $ seeAlso ) )
+objectClasses: ( 1.3.18.0.2.6.76 NAME 'accessRole' SUP top STRUCTURAL MUST cn MAY ( businessCategory
+  $ description $ member $ o $ ou $ owner $ seeAlso ) )
+objectClasses: ( 1.3.18.0.2.6.77 NAME 'namedACL' SUP top STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.78 NAME 'eAccount' SUP account STRUCTURAL MAY ( caption $ principalPtr
+  $ userCertificate $ userPassword ) )
+objectClasses: ( 1.3.18.0.2.6.79 NAME 'eUser' SUP cimManagedElement STRUCTURAL MAY ( accessHint $
+  accountHint $ configPtr $ principalName $ userCertificate ) )
+objectClasses: ( 1.3.18.0.2.6.80 NAME 'eManagedElement' SUP cimManagedElement AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.81 NAME 'eSystem' SUP cimLogicalElement STRUCTURAL MAY ( nameFormat $
+  primaryOwnerContact $ primaryOwnerName $ sys $ systemRoles ) )
+objectClasses: ( 1.3.18.0.2.6.82 NAME 'eOperatingSystem' SUP eSystem STRUCTURAL MAY ( applSystemHint
+  $ currentTimeZone $ distributedOS $ maxNumberOfProcesses $ numberOfLicensedUsers $ osType $
+  otherOSTypeDescription $ sizeStoredInPagingFiles $ totalSwapSpaceSize $ version ) )
+objectClasses: ( 1.3.18.0.2.6.83 NAME 'eComputerSystem' SUP eSystem STRUCTURAL MAY ( host $ location
+  ) )
+objectClasses: ( 1.3.18.0.2.6.84 NAME 'eApplicationSystem' SUP eSystem STRUCTURAL MAY (
+  hostedSoftwarePtr $ osPtr ) )
+objectClasses: ( 1.3.18.0.2.6.85 NAME 'eApplicationSoftware' SUP cimProduct STRUCTURAL MAY ( appl $
+  hostedSoftwarePtr $ installSoftwarePtr $ osType $ otherOSTypeDescription ) )
+objectClasses: ( 1.3.18.0.2.6.86 NAME 'eSoftware' SUP cimLogicalElement STRUCTURAL MAY (
+  applSoftwareHint $ applSystemHint $ buildNumber $ codeSet $ identificationCode $ identifyingNumber
+  $ labeledURI $ languageEdition $ localPath $ manufacturer $ osType $ otherOSTypeDescription $
+  serialNumber $ software $ softwareElementID $ softwareElementState $ supportingFiles $ vendor $
+  version ) )
+objectClasses: ( 1.3.18.0.2.6.87 NAME 'eService' SUP cimLogicalElement STRUCTURAL MAY ( sapPtr $
+  serviceName $ startMode $ startupParameters ) )
+objectClasses: ( 1.3.18.0.2.6.88 NAME 'eSAP' SUP cimLogicalElement STRUCTURAL MAY ( labeledURI $
+  sapName $ serviceHint ) )
+objectClasses: ( 1.3.18.0.2.6.89 NAME 'ePropertySet' SUP cimConfiguration STRUCTURAL MAY configPtr )
+objectClasses: ( 1.3.18.0.2.6.90 NAME 'eProperty' SUP cimSetting STRUCTURAL MAY ( binProperty $
+  binPropertyType $ cesProperty $ cesPropertyType $ cisProperty $ cisPropertyType $ propertyType ) )
+objectClasses: ( 1.3.18.0.2.6.91 NAME 'ePasswordPolicy' SUP top STRUCTURAL MUST cn MAY (
+  maxFailedLogins $ numberWarnDays $ passwordCheckMethods $ passwordDictFiles $ passwordExpireTime $
+  passwordMaxAge $ passwordMaxRepeatedChars $ passwordMinAge $ passwordMinAlphaChars $
+  passwordMinDiffChars $ passwordMinLength $ passwordMinOtherChars $ passwordRegistry $
+  passwordReuseNum $ passwordTimeReuse $ timeExpireLockout ) )
+objectClasses: ( 1.3.18.0.2.6.92 NAME 'resourceLimits' SUP top STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.93 NAME 'eNFIChangeControlServer' SUP top AUXILIARY MAY (
+  nfiCmWindowEnd $ nfiCmWindowEndGMT $ nfiCmWindowStart $ nfiCmWindowStartGmt $ nfiDistWindowEnd $
+  nfiDistWindowEndGMT $ nfiDistWindowStart $ nfiDistWindowStartGMT $ nfiMode $ nfiProtocolType $
+  nfiRen $ nfiRgn $ nfiServerName $ nfiTargetType ) )
+objectClasses: ( 1.3.18.0.2.6.94 NAME 'eNFIOperatingSystem' SUP top AUXILIARY MAY ( nfiAdapterMemory
+  $ nfiBaseMemory $ nfiBoardMemory $ nfiCacheableMemory $ nfiDedicatedIRQ $ nfiMemoryDetected $
+  nfiNVRAM $ nfiParallelPorts $ nfiReferenceDisk $ nfiSerialPorts $ nfiSharedIRQ ) )
+objectClasses: ( 1.3.18.0.2.6.95 NAME 'eNFIServer' SUP top AUXILIARY MAY ( networkAddress $
+  nfiInventoryServerID $ nfiIPXAddress $ nfiKeywords $ nfiLocalDmMgr $ nfiLocalServerInv $ nfiMode $
+  nfiNbrKeywords $ nfiNetIdCPName $ nfiPreviousServerID $ nfiRemoteDmMgr $ nfiRemoteServerID $
+  nfiSnaAddress ) )
+objectClasses: ( 1.3.18.0.2.6.96 NAME 'eMotherBoard' SUP cimCard STRUCTURAL MAY ( primaryBusType $
+  revisionNumber $ secondaryBusType ) )
+objectClasses: ( 1.3.18.0.2.6.97 NAME 'eBIOSElement' SUP cimBIOSelement STRUCTURAL MAY BIOSDate )
+objectClasses: ( 1.3.18.0.2.6.98 NAME 'eChassis' SUP cimChassis STRUCTURAL MAY ( connectorType $
+  modelNumber $ modelSubNumber $ otherConnectorTypeDescription $ physicalElementLocation ) )
+objectClasses: ( 1.3.18.0.2.6.99 NAME 'eContactPerson' SUP top AUXILIARY MAY ( backupName $
+  backupTelephoneNumber $ cellularTelephoneNumber $ externalTelephoneNumber $
+  facsimileTelephoneNumber $ internalTelephoneNumber $ mail $ managerName $ managerTelephoneNumber $
+  pager $ secretaryName $ secretaryTelephoneNumber ) )
+objectClasses: ( 1.3.18.0.2.6.100 NAME 'eController' SUP cimController STRUCTURAL MAY ( addMajor $
+  addMinor $ busAttributes $ hostBusType $ ioAccessSupported $ maxCDB $ maxScatter $ slotNumber ) )
+objectClasses: ( 1.3.18.0.2.6.101 NAME 'eDesktopMonitor' SUP cimDesktopMonitor STRUCTURAL MAY (
+  horizontalSize $ slotLocation $ verticalSize $ videoSubsystem ) )
+objectClasses: ( 1.3.18.0.2.6.102 NAME 'eDiskDrive' SUP cimDiskDrive STRUCTURAL MAY ( ansiLevel $
+  bytesPerSector $ diskDriveIndex $ interfaceType $ manufacturer $ mediaLoaded $ mediaType $ model $
+  partitions $ SCSIBus $ SCSILogicalUnit $ SCSIPort $ SCSITargetID $ sectorsPerTrack $ size $
+  totalCylinders $ totalHeads $ totalSectors $ totalTracks $ tracksPerCylinder $ unitStatus $ version
+  ) )
+objectClasses: ( 1.3.18.0.2.6.103 NAME 'eKeyboard' SUP cimKeyboard STRUCTURAL MAY ( codePage $
+  countryCode $ subcountryCode $ typeMaticDelay $ typeMaticRate ) )
+objectClasses: ( 1.3.18.0.2.6.104 NAME 'eLocation' SUP cimLocation STRUCTURAL MAY ( buildingName $ c
+  $ city $ companyName $ floor $ ou $ postalCode $ roomNumber $ st ) )
+objectClasses: ( 1.3.18.0.2.6.105 NAME 'eLogicalDisk' SUP cimLogicalDisk STRUCTURAL MAY (
+  bytesPerSector $ compressed $ driveType $ fileSystem $ maximumComponentLength $ mediaType $
+  providerName $ sectorsPerCluster $ supportsFileBasedCompression $ volumeName $ volumeSerialNumber )
+  )
+objectClasses: ( 1.3.18.0.2.6.106 NAME 'eMotherBoardConfiguration' SUP cimSetting STRUCTURAL MUST
+  settingID MAY ( externalCacheEnabled $ internalCacheEnabled $ planarSpeed ) )
+objectClasses: ( 1.3.18.0.2.6.107 NAME 'eNFIApplication' SUP top AUXILIARY MAY (
+  nfiHDWCollectDateTime $ nfiLogicalGroupID $ nfiManagingID $ nfiSFWCollectDateTime ) )
+objectClasses: ( 1.3.18.0.2.6.108 NAME 'eNFIPrinter' SUP cimPrinter STRUCTURAL MUST portName MAY
+  driverName )
+objectClasses: ( 1.3.18.0.2.6.109 NAME 'ePCVideoController' SUP cimPCVideoController STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.110 NAME 'ePhysicalMemory' SUP cimPhysicalMemory STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.111 NAME 'ePointingDevice' SUP cimPointingDevice STRUCTURAL MAY (
+  doubleClickRate $ IRQNumber ) )
+objectClasses: ( 1.3.18.0.2.6.112 NAME 'eProcessor' SUP cimProcessor STRUCTURAL MAY processorNumber
+  )
+objectClasses: ( 1.3.18.0.2.6.113 NAME 'eProcessorCard' SUP cimCard STRUCTURAL MAY family )
+objectClasses: ( 1.3.18.0.2.6.114 NAME 'eSCSIController' SUP top AUXILIARY MAY ( deviceMap $
+  driverName $ hardwareVersion $ logicalUnit $ manufacturer $ SCSIControllerIndex ) )
+objectClasses: ( 1.3.18.0.2.6.115 NAME 'eNFISoftware' SUP top AUXILIARY MAY serviceHint )
+objectClasses: ( 1.3.18.0.2.6.116 NAME 'DB2Node' SUP eSAP STRUCTURAL MUST db2nodeName MAY (
+  db2instanceName $ db2nodeAlias $ db2Type $ host $ protocolInformation ) )
+objectClasses: ( 1.3.18.0.2.6.117 NAME 'DB2Database' SUP cimSetting STRUCTURAL MUST (
+  db2databaseName $ db2nodePtr ) MAY ( db2additionalParameters $ db2altgwPtr $ db2altnodePtr $
+  db2ARLibrary $ db2authenticationLocation $ db2databaseAlias $ db2databaseRelease $ db2gwPtr $
+  DCEPrincipalName ) )
+objectClasses: ( 1.3.18.0.2.6.118 NAME 'eNTAccount' SUP eAccount STRUCTURAL MUST ntuserid MAY (
+  codePage $ eNTUserBadPwCount $ eNTUserFlags $ eNTUserLogonHours $ eNTUserMaxStorage $
+  eNTUserPasswordExpired $ eNTUserPrimaryGroupId $ eNTUserPriv $ eNTUserUnitsPerWeek $ ntDomainUserID
+  $ ntUserAcctExpires $ ntuserauthflags $ ntUserComment $ ntUserCountryCode $ NTUserHomeDir $
+  ntUserHomeDirDrive $ ntUserLastLogoff $ ntUserLastLogon $ ntUserLogonServer $ ntUserNumLogons $
+  ntUserParms $ ntUserProfile $ ntUserScriptPath $ ntUserWorkstations ) )
+objectClasses: ( 1.3.18.0.2.6.119 NAME 'eNTUser' SUP eUser STRUCTURAL MUST ( ntDomainUserID $ uid )
+  MAY ( eNTPasswordSync $ secretKey ) )
+objectClasses: ( 1.3.18.0.2.6.120 NAME 'eNTGroup' SUP top STRUCTURAL MUST eNTDomainGroupID MAY (
+  description $ eNTGroupAttributes $ member $ ntGroupCreateNewGroup $ ntGroupDeleteGroup $ ntGroupID
+  $ ntGroupType $ principalPtr ) )
+objectClasses: ( 1.3.18.0.2.6.121 NAME 'eNTInitialPopulation' SUP top STRUCTURAL MUST (
+  AccountSuffix $ GroupSuffix $ LdifFileName $ ntDomain $ UserSuffix ) MAY ( eNetworkHostName $
+  eNetworkPort $ ntDefaultPassword ) )
+objectClasses: ( 1.3.18.0.2.6.122 NAME 'eDominoAccount' SUP top STRUCTURAL MUST ( sn $ userid ) MAY
+  ( certificateExpirationDate $ certifierId $ certifierPassword $ clienttypereg $
+  createAddressBookEntry $ createFullTextIndex $ createIdFile $ createMailDatabase $
+  createNorthAmericanId $ createNotesUser $ description $ fullName $ givenName $ idFilePath $ idtype
+  $ initialPassword $ initialPopulation $ internetAddress $ l $ localadmin $ location $ mail $
+  mailDomain $ mailFile $ mailFileOwnerAccess $ mailFileTemplate $ mailProgram $ mailServer $
+  mailSystem $ middleName $ minPasswordLength $ ou $ overwriteaddressbook $ overwriteidfile $
+  principalPtr $ profiles $ proposedaltcommonname $ proposedAltFullNameLanguage $ proposedAltOrgUnit
+  $ registrationServer $ saveIdInAddressBook $ saveIdInFile $ setDbQuota $ setWarningThreshold $
+  shortName ) )
+objectClasses: ( 1.3.18.0.2.6.123 NAME 'eDominoGroup' SUP top STRUCTURAL MUST ( groupid $ listname )
+  MAY ( availableForDirSync $ description $ dominogroupmembers $ GroupType $ localadmin $ owner $
+  principalPtr ) )
+objectClasses: ( 1.3.18.0.2.6.124 NAME 'eDominoInitialPopulation' SUP top STRUCTURAL MUST (
+  AccountSuffix $ GroupSuffix $ LdifFileName $ UserSuffix ) MAY ( defaultpassword $ initialPopulation
+  $ mailDomain ) )
+objectClasses: ( 1.3.18.0.2.6.125 NAME 'eDominoUser' SUP top STRUCTURAL MUST domainuserid MAY (
+  accountHint $ httppassword $ httppasswordsync ) )
+objectClasses: ( 1.3.18.0.2.6.126 NAME 'eSoftwareMaintenanceUnit' SUP eSoftware STRUCTURAL MAY (
+  actionPending $ coverLetterStatus $ IPLAction $ maintenanceUnitForSoftware ) )
+objectClasses: ( 1.3.18.0.2.6.127 NAME 'cimCard' SUP cimPhysicalPackage ABSTRACT MAY ( card $
+  hostingBoard $ requirementsDescription $ requiresDaughterBoard $ slotLayout $ specialRequirements )
+  )
+objectClasses: ( 1.3.18.0.2.6.128 NAME 'linkedContainer' SUP container ABSTRACT MAY nextContainerDN
+  )
+objectClasses: ( 1.3.18.0.2.6.129 NAME 'cimLogicalElement' SUP cimManagedSystemElement ABSTRACT )
+objectClasses: ( 1.3.18.0.2.6.130 NAME 'cimProduct' SUP cimManagedElement ABSTRACT MAY (
+  identifyingNumber $ skuNumber $ vendor $ version ) )
+objectClasses: ( 1.3.18.0.2.6.131 NAME 'cimSetting' SUP cimManagedElement ABSTRACT MAY settingID )
+objectClasses: ( 1.3.18.0.2.6.132 NAME 'cimManagedElement' SUP top ABSTRACT MAY ( caption $
+  description ) )
+objectClasses: ( 1.3.18.0.2.6.133 NAME 'cimManagedSystemElement' SUP cimManagedElement ABSTRACT MAY
+  ( configPtr $ installDate ) )
+objectClasses: ( 1.3.18.0.2.6.134 NAME 'cimConfiguration' SUP cimManagedElement ABSTRACT MAY ( cid $
+  usingElementPtr ) )
+objectClasses: ( 1.3.18.0.2.6.135 NAME 'cimLogicalDevice' SUP cimLogicalElement ABSTRACT MAY (
+  deviceID $ powerManagementCapabilities $ powerManagementSupported ) )
+objectClasses: ( 1.3.18.0.2.6.136 NAME 'cimMediaAccessDevice' SUP cimLogicalDevice ABSTRACT MAY (
+  compressionMethod $ defaultBlockSize $ errorMethodology $ maxBlockSize $ maxMediaSize $
+  mediaAccessDeviceCapabilities $ minBlockSize $ numberOfMediaSupported ) )
+objectClasses: ( 1.3.18.0.2.6.137 NAME 'cimDiskDrive' SUP cimMediaAccessDevice ABSTRACT )
+objectClasses: ( 1.3.18.0.2.6.138 NAME 'cimDisketteDrive' SUP cimMediaAccessDevice ABSTRACT )
+objectClasses: ( 1.3.18.0.2.6.139 NAME 'cimStorageExtent' SUP cimLogicalDevice ABSTRACT MAY (
+  blockSize $ errorMethodology $ numberOfBlocks $ storageExtentAccess $ storageExtentPurpose ) )
+objectClasses: ( 1.3.18.0.2.6.140 NAME 'cimLogicalDisk' SUP cimStorageExtent ABSTRACT )
+objectClasses: ( 1.3.18.0.2.6.141 NAME 'cimController' SUP cimLogicalDevice ABSTRACT MAY (
+  maxNumberControlled $ otherProtocolSupportedDescription $ protocolSupported $ timeOfLastReset ) )
+objectClasses: ( 1.3.18.0.2.6.142 NAME 'cimSCSIController' SUP cimController ABSTRACT MAY (
+  controllerTimeouts $ maxDataWidth $ maxTransferRate $ protectionManagement ) )
+objectClasses: ( 1.3.18.0.2.6.143 NAME 'cimVideoController' SUP cimController ABSTRACT MAY (
+  acceleratorCapabilities $ currentBitsPerPixel $ currentHorizontalResolution $
+  currentNumberOfColumns $ currentNumberOfRows $ currentRefreshRate $ currentScanMode $
+  currentVerticalResolution $ maxMemorySupported $ maxRefreshRate $ minRefreshRate $
+  numberOfVideoPages $ videoMemoryType $ videoProcessor ) )
+objectClasses: ( 1.3.18.0.2.6.144 NAME 'cimPCVideoController' SUP cimVideoController ABSTRACT MAY (
+  numberOfColorPlanes $ otherVideoArchitectureDescription $ videoArchitecture $ videoMode ) )
+objectClasses: ( 1.3.18.0.2.6.145 NAME 'cimUserDevice' SUP cimLogicalDevice ABSTRACT MAY isLocked )
+objectClasses: ( 1.3.18.0.2.6.146 NAME 'cimDisplay' SUP cimUserDevice ABSTRACT )
+objectClasses: ( 1.3.18.0.2.6.147 NAME 'cimDesktopMonitor' SUP cimDisplay ABSTRACT MAY ( bandWidth $
+  displayType ) )
+objectClasses: ( 1.3.18.0.2.6.148 NAME 'cimProcessor' SUP cimLogicalDevice ABSTRACT MAY (
+  addressWidth $ currentClockSpeed $ dataWidth $ family $ loadPercentage $ maxClockSpeed $
+  otherFamilyDescription $ role $ stepping $ upgradeMethod ) )
+objectClasses: ( 1.3.18.0.2.6.149 NAME 'cimPrinter' SUP cimLogicalDevice ABSTRACT MAY (
+  availableJobSheets $ currentMimeType $ currentPaperType $ defaultCopies $ defaultMimeType $
+  defaultNumberUp $ defaultPaperType $ detectedErrorState $ horizontalResolution $
+  jobCountSinceLastReset $ languagesSupported $ markingTechnology $ maxCopies $ maxNumberUp $
+  mimeTypesSupported $ paperSizesSupported $ paperTypesAvailable $ printerCapabilities $
+  printerCharSetsSupported $ printerCurrentCapabilities $ printerCurrentCharSet $
+  printerCurrentLanguage $ printerCurrentNaturalLanguage $ printerDefaultCapabilities $
+  printerDefaultLanguage $ printerMaxSizeSupported $ printerNaturalLanguagesSupported $ printerStatus
+  $ queueName $ timeOfLastReset $ verticalResolution ) )
+objectClasses: ( 1.3.18.0.2.6.150 NAME 'cimPhysicalElement' SUP cimManagedSystemElement ABSTRACT MAY
+  ( manufacturer $ model $ serialNumber $ skuNumber $ tag $ version ) )
+objectClasses: ( 1.3.18.0.2.6.151 NAME 'cimPhysicalComponent' SUP cimPhysicalElement ABSTRACT MAY (
+  hotSwappable $ removable $ replaceable ) )
+objectClasses: ( 1.3.18.0.2.6.152 NAME 'cimChip' SUP cimPhysicalComponent ABSTRACT MAY formFactor )
+objectClasses: ( 1.3.18.0.2.6.153 NAME 'cimPhysicalMemory' SUP cimChip ABSTRACT MAY ( bankLabel $
+  capacity $ dataWidth $ interleavePosition $ memoryType $ positionInRow $ speed $ totalWidth ) )
+objectClasses: ( 1.3.18.0.2.6.154 NAME 'cimKeyboard' SUP cimUserDevice ABSTRACT MAY ( layout $
+  numberOfFunctionKeys $ userPassword ) )
+objectClasses: ( 1.3.18.0.2.6.155 NAME 'cimPointingDevice' SUP cimUserDevice ABSTRACT MAY (
+  headedness $ numberOfButtons $ pointingDeviceResolution $ pointingType ) )
+objectClasses: ( 1.3.18.0.2.6.156 NAME 'cimPhysicalPackage' SUP cimPhysicalElement ABSTRACT MAY (
+  depth $ height $ hotSwappable $ isCompatible $ removable $ replaceable $ weight $ width ) )
+objectClasses: ( 1.3.18.0.2.6.157 NAME 'cimPhysicalFrame' SUP cimPhysicalPackage ABSTRACT MAY (
+  audibleAlarm $ breachDescription $ cableManagementStrategy $ lockPresent $ securityBreach $
+  serviceDescriptions $ servicePhilosophy $ visibleAlarm ) )
+objectClasses: ( 1.3.18.0.2.6.158 NAME 'cimChassis' SUP cimPhysicalFrame ABSTRACT MAY ( chassisTypes
+  $ currentRequiredOrProduced $ heatGeneration $ numberOfPowerCords ) )
+objectClasses: ( 1.3.18.0.2.6.159 NAME 'cimBIOSelement' SUP eSoftware ABSTRACT MAY primaryBIOS )
+objectClasses: ( 1.3.18.0.2.6.160 NAME 'cimLocation' SUP top ABSTRACT MAY ( locationName $
+  physicalPosition $ postalAddress ) )
+objectClasses: ( 1.3.18.0.2.6.163 NAME 'eOnDemandApplicationSystem' SUP eApplicationSystem
+  STRUCTURAL MAY userPassword )
+objectClasses: ( 1.3.18.0.2.6.164 NAME 'eOnDemandSoftware' SUP eSoftware STRUCTURAL MAY (
+  captionMulti $ eOnDemandCategory $ eOnDemandSoftwareContext $ eOnDemandSoftwareType $
+  jarFileNameLong $ javaClassNameLong $ labeledURILong $ largeIconURLStructured $
+  smallIconURLStructured ) )
+objectClasses: ( 1.3.18.0.2.6.165 NAME 'eOnDemandAccount' SUP eAccount STRUCTURAL MAY (
+  authenticationHost $ authenticationUserID $ eOnDemandAuthenticationType $ eOnDemandEarliestOAT $
+  eOnDemandPasswordTimestamp $ hashedPassword $ isAccountEnabled $ isAdministrator $
+  lastPasswordCheck ) )
+objectClasses: ( 1.3.18.0.2.6.166 NAME 'eLDAPServer' SUP top AUXILIARY MAY ( maxEntries $
+  serviceActive ) )
+objectClasses: ( 1.3.18.0.2.6.167 NAME 'AIXAccount' SUP eAccount STRUCTURAL MUST ( gid $
+  passwordChar $ userName ) MAY ( adminGroupNames $ AIXDefaultMACLevel $ AIXFuncMode $ AIXisDCEExport
+  $ AIXLowMACLevel $ AIXPromptMAC $ AIXScreens $ AIXUpperMACLevel $ auditClasses $ authMethod1 $
+  authMethod2 $ capability $ coreSizeLimit $ coreSizeLimitHard $ cpuSize $ cpuSizeHard $ dataSegSize
+  $ dataSegSizeHard $ filePermMask $ fileSizeLimit $ fileSizeLimitHard $ gecos $ groupList $
+  groupSwitchUserAllowed $ homeDirectory $ hostLastLogin $ hostLastUnsuccessfulLogin $
+  hostsAllowedLogin $ hostsDeniedLogin $ ibm-aixProjectNameList $ isAccountEnabled $ isAdministrator
+  $ isDaemon $ isLoginAllowed $ isRemoteAccessAllowed $ isSwitchUserAllowed $ ixLastUpdate $
+  ixTimeLastLogin $ ixTimeLastUnsuccessfulLogin $ loginShell $ loginTimes $ maxFailedLogins $
+  maxLogin $ numberWarnDays $ openFileLimit $ openFileLimitHard $ passwordCheckMethods $
+  passwordDictFiles $ passwordExpiredWeeks $ passwordExpireTime $ passwordFlags $ passwordHistExpire
+  $ passwordHistList $ passwordHistSize $ passwordMaxAge $ passwordMaxRepeatedChars $ passwordMinAge
+  $ passwordMinAlphaChars $ passwordMinDiffChars $ passwordMinLength $ passwordMinOtherChars $
+  physicalMemLimit $ physicalMemLimitHard $ rcmds $ roleList $ stackSizeLimit $ stackSizeLimitHard $
+  systemEnvironment $ terminalAccess $ terminalLastLogin $ terminalLastUnsuccessfulLogin $
+  timeExpiredLogout $ timeExpireLockout $ trustedPathStatus $ unsuccessfulLoginCount $
+  userEnvironment ) )
+objectClasses: ( 1.3.18.0.2.6.168 NAME 'AIXAccessRoles' SUP top STRUCTURAL MUST roleName MAY (
+  AIXScreens $ authorizationLevel $ groupList $ msgFileName $ msgNumber $ roleList $ roleVisibility )
+  )
+objectClasses: ( 1.3.18.0.2.6.169 NAME 'AIXAdmin' SUP top STRUCTURAL MAY ( AIXAdminGroupId $
+  AIXAdminUserId $ AIXGroupID $ AIXUserID $ cn ) )
+objectClasses: ( 1.3.18.0.2.6.170 NAME 'AIXaccessGroup' SUP top STRUCTURAL MUST ( gid $ GroupName )
+  MAY ( AIXGroupAdminList $ AIXisDCEExport $ AIXScreens $ groupPassword $ ibm-aixProjectNameList $
+  isAdministrator $ member ) )
+objectClasses: ( 1.3.18.0.2.6.171 NAME 'eAdminDomain' SUP eSystem STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.172 NAME 'ibmCom1986-Rsfw-Software' SUP eSoftware STRUCTURAL MUST (
+  ibmCom1986-Common-ComponentName $ ibmCom1986-Common-featureName $
+  ibmCom1986-Rsfw-RegisteredSoftwareName $ localPath $ software $ version ) )
+objectClasses: ( 1.3.18.0.2.6.173 NAME 'ibmCom1986-Krb-kerberosService' SUP eService STRUCTURAL MUST
+  ibmCom1986-Krb-kerberosRealm MAY ( ipServicePort $ seeAlso ) )
+objectClasses: ( 1.3.18.0.2.6.175 NAME 'subentry' SUP top STRUCTURAL MUST ( cn $
+  subtreeSpecification ) )
+objectClasses: ( 1.3.18.0.2.6.176 NAME 'ibm-Tsm-Srv-NodeClass' SUP top STRUCTURAL MUST
+  ibm-Tsm-Srv-NodeName )
+objectClasses: ( 1.3.18.0.2.6.177 NAME 'ibm-Tsm-Srv-TcpHttpClass' SUP top STRUCTURAL MUST (
+  ibm-Tsm-Srv-Address $ ibm-Tsm-Srv-Port ) )
+objectClasses: ( 1.3.18.0.2.6.178 NAME 'ibm-Tsm-Srv-NetbiosClass' SUP top STRUCTURAL MUST (
+  ibm-Tsm-Srv-Name $ ibm-Tsm-Srv-NetServer ) )
+objectClasses: ( 1.3.18.0.2.6.179 NAME 'ibm-Tsm-Srv-IpxSpxClass' SUP top STRUCTURAL MUST (
+  ibm-Tsm-Srv-Address $ ibm-Tsm-Srv-Socket ) )
+objectClasses: ( 1.3.18.0.2.6.180 NAME 'ibm-Tsm-Srv-NamedPipeClass' SUP top STRUCTURAL MUST
+  ibm-Tsm-Srv-Name )
+objectClasses: ( 1.3.18.0.2.6.181 NAME 'cimPrintQueue' SUP cimJobDestination ABSTRACT MAY (
+  availableJobSheets $ defaultJobPriority $ jobPriorityHigh $ jobPriorityLow $ maxJobSize $
+  numberOnQueue $ printQueueAccepting $ printQueueEnabled $ printQueueStatus $ printQueueStatusInfo )
+  )
+objectClasses: ( 1.3.18.0.2.6.182 NAME 'cimJobDestination' SUP cimLogicalElement ABSTRACT )
+objectClasses: ( 1.3.18.0.2.6.184 NAME 'ePrintQueue' SUP cimPrintQueue STRUCTURAL MUST queueName MAY
+  ( prtServicedBy $ queuePtr ) )
+objectClasses: ( 1.3.18.0.2.6.185 NAME 'ePrinter' SUP cimPrinter STRUCTURAL MUST deviceID MAY (
+  location $ owner $ queuePtr ) )
+objectClasses: ( 1.3.18.0.2.6.186 NAME 'eUNIXPrintAlias' SUP top AUXILIARY MAY prtQAlias )
+objectClasses: ( 1.3.18.0.2.6.187 NAME 'eUNIXPrintQueue' SUP cimPrintQueue STRUCTURAL MUST ( cn $
+  isConfiguredByDirectory $ prtLocalName $ prtNetworkEntity ) MAY ( accessList $ prtAcceptState $
+  prtAllowBannerOverride $ prtDefaults $ prtDisabledReason $ prtEnabledState $ prtInputTypes $
+  prtMailIfFail $ prtNetworkSystem $ prtOtherInfo $ prtOutputContent $ prtPrintProtocol $
+  prtRecoveryType $ prtRejectReason $ prtServicedBy $ prtSystemAllow $ prtSystemDeny $ prtUserAllow $
+  prtUserDeny ) )
+objectClasses: ( 1.3.18.0.2.6.188 NAME 'eUNIXPrinter' SUP cimPrinter STRUCTURAL MUST ( cn $
+  isConfiguredByDirectory $ prtPrinterType ) MAY ( bseLocation $ location $ owner $
+  prtColourSupported $ prtDuplexSupported $ prtFinishingSupported $ prtMediaTrays $ prtPrinterState $
+  prtPrintLanguage $ prtServicingQueue $ prtSpeed ) )
+objectClasses: ( 1.3.18.0.2.6.234 NAME 'ibm-HostedOnSystemPtr' SUP top AUXILIARY MAY
+  ibm-HostedOnSystemRef )
+objectClasses: ( 1.3.18.0.2.6.235 NAME 'ibm-ServicePort' SUP top AUXILIARY MAY ipServicePort )
+objectClasses: ( 1.3.18.0.2.6.236 NAME 'ibm-PolicyPtr' SUP top AUXILIARY MAY ibm-PolicyRef )
+objectClasses: ( 1.3.18.0.2.6.237 NAME 'ibm-SdpApplicationSystem' SUP eApplicationSystem STRUCTURAL
+  MAY ( ibm-SdpAdminID $ software $ userPassword $ version ) )
+objectClasses: ( 1.3.18.0.2.6.238 NAME 'ibm-SdpComponent' SUP top AUXILIARY MAY (
+  ibm-SdpComponentType $ version ) )
+objectClasses: ( 1.3.18.0.2.6.239 NAME 'ibm-SdpUser' SUP eUser AUXILIARY MAY ( ibm-tismStatus $
+  ibm-WapClient $ ibm-WgClient ) )
+objectClasses: ( 1.3.18.0.2.6.240 NAME 'ibm-ServiceComponentPtr' SUP top AUXILIARY MAY (
+  ibm-ServiceUsedByServiceRef $ ibm-ServiceUsesServiceRef ) )
+objectClasses: ( 1.3.18.0.2.6.241 NAME 'ibm-SecurityIdentities' SUP top AUXILIARY MAY (
+  altSecurityIdentities $ userPrincipalName ) )
+objectClasses: ( 1.3.18.0.2.6.243 NAME 'ibm-OS400PrintQueue' SUP top AUXILIARY MAY (
+  ibm-OS400PrintImageConfig $ ibm-OS400PrintQueueLibrary $ printer-make-and-model $ sys ) )
+objectClasses: ( 1.3.18.0.2.6.244 NAME 'ibm-OS400Printer' SUP top AUXILIARY MAY (
+  ibm-OS400PrintDriverType $ ibm-OS400PrintImageConfig $ ibm-OS400PrintIsAdvancedFunctionPrinting $
+  ibm-OS400PrintQueueLibrary $ ibm-OS400PrintWriterStatus $ sys ) )
+objectClasses: ( 1.3.18.0.2.6.245 NAME 'ibm-HostTable' SUP top STRUCTURAL MUST ( host $ ipAddress )
+  MAY ( description $ ibm-hostAlias $ ipAddressType ) )
+objectClasses: ( 1.3.18.0.2.6.246 NAME 'ibm-OS400PrintInfo' SUP top AUXILIARY MAY ( deviceID $
+  ibm-OS400PrintQueueLibrary $ queueName ) )
+objectClasses: ( 1.3.18.0.2.6.247 NAME 'KrbRealm' SUP top STRUCTURAL MUST ( krbRealmName $
+  princSubtree ) )
+objectClasses: ( 1.3.18.0.2.6.253 NAME 'printerLPR' SUP top AUXILIARY MUST printer-name MAY
+  printer-aliases )
+objectClasses: ( 1.3.18.0.2.6.254 NAME 'slpServicePrinter' SUP slpService AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.255 NAME 'printerService' SUP printerAbstract STRUCTURAL MAY (
+  printer-uri $ printer-xri-supported ) )
+objectClasses: ( 1.3.18.0.2.6.256 NAME 'printerIPP' SUP top AUXILIARY MAY (
+  printer-ipp-versions-supported $ printer-multiple-document-jobs-supported ) )
+objectClasses: ( 1.3.18.0.2.6.257 NAME 'printerServiceAuxClass' SUP printerAbstract AUXILIARY MAY (
+  printer-uri $ printer-xri-supported ) )
+objectClasses: ( 1.3.18.0.2.6.258 NAME 'printerAbstract' SUP top ABSTRACT MAY (
+  printer-charset-configured $ printer-charset-supported $ printer-color-supported $
+  printer-compression-supported $ printer-copies-supported $ printer-current-operator $
+  printer-delivery-orientation-supported $ printer-document-format-supported $
+  printer-finishings-supported $ printer-generated-natural-language-supported $ printer-info $
+  printer-job-k-octets-supported $ printer-job-priority-supported $ printer-location $
+  printer-make-and-model $ printer-media-local-supported $ printer-media-supported $
+  printer-more-info $ printer-multiple-document-jobs-supported $ printer-name $
+  printer-natural-language-configured $ printer-number-up-supported $
+  printer-output-features-supported $ printer-pages-per-minute $ printer-pages-per-minute-color $
+  printer-print-quality-supported $ printer-resolution-supported $ printer-service-person $
+  printer-sides-supported $ printer-stacking-order-supported ) )
+objectClasses: ( 1.3.18.0.2.6.261 NAME 'KrbAlias' SUP top AUXILIARY MAY ( krbAliasedObjectName $
+  krbHintAliases ) )
+objectClasses: ( 1.3.18.0.2.6.262 NAME 'ibm-changelog' SUP top AUXILIARY MAY
+  ibm-changeInitiatorsName )
+objectClasses: ( 1.3.18.0.2.6.263 NAME 'krbRealm-V2' SUP top STRUCTURAL MUST ( krbPrincSubtree $
+  krbRealmName-V2 ) )
+objectClasses: ( 1.3.18.0.2.6.298 NAME 'ibm-policyGroup' SUP ibm-policy STRUCTURAL MUST
+  ibm-policyGroupName MAY ( ibm-policyGroupKeywords $ ibm-policyGroupsAuxContainedSet $
+  ibm-policyRulesAuxContainedSet ) )
+objectClasses: ( 1.3.18.0.2.6.299 NAME 'ibm-hostConditionAuxClass' SUP
+  ibm-networkingPolicyConditionAuxClass AUXILIARY MAY ( ibm-destinationIPAddressRange $
+  ibm-serverDomainName $ ibm-sourceIPAddressRange ) )
+objectClasses: ( 1.3.18.0.2.6.300 NAME 'ibm-routeConditionAuxClass' SUP
+  ibm-networkingPolicyConditionAuxClass AUXILIARY MAY ibm-interface )
+objectClasses: ( 1.3.18.0.2.6.301 NAME 'ibm-serviceCategories' SUP ibm-policyAction STRUCTURAL MAY (
+  ibm-DiffServExcessTrafficTreatment $ ibm-DiffServInProfileMaxPacketSize $
+  ibm-DiffServInProfilePeakRate $ ibm-DiffServInProfileRate $ ibm-DiffServInProfileTokenBucket $
+  ibm-DiffServOutProfileTransmittedTOSByte $ ibm-FlowServiceType $ ibm-interface $ ibm-MaxConnections
+  $ ibm-MaxDelay $ ibm-MaxFlows $ ibm-MaxRate $ ibm-MaxRatePerFlow $ ibm-MaxTokenBucketPerFlow $
+  ibm-MinRate $ ibm-outgoingTOS $ ibm-permission $ ibm-PolicyScope ) )
+objectClasses: ( 1.3.18.0.2.6.302 NAME 'ibm-applicationConditionAuxClass' SUP
+  ibm-networkingPolicyConditionAuxClass AUXILIARY MAY ( ibm-applicationData $ ibm-applicationName $
+  ibm-applicationPriority $ ibm-destinationPortRange $ ibm-protocolNumberRange $ ibm-sourcePortRange
+  ) )
+objectClasses: ( 1.3.18.0.2.6.303 NAME 'ibm-policyTimePeriodCondition' SUP ibm-policyCondition
+  STRUCTURAL MAY ( ibm-ptpConditionDayofMonthMask $ ibm-ptpConditionDayOfWeekMask $
+  ibm-ptpConditionMonthOfYearMask $ ibm-ptpConditionTime $ ibm-ptpConditionTimeOfDayMask $
+  ibm-ptpConditionTimeZone ) )
+objectClasses: ( 1.3.18.0.2.6.304 NAME 'ibm-policyAction' SUP top STRUCTURAL MUST
+  ibm-policyActionName MAY ( cn $ description ) )
+objectClasses: ( 1.3.18.0.2.6.305 NAME 'setSubnetPrioTosMask' SUP top STRUCTURAL MUST subnetTosMask
+  MAY ( cn $ description $ priorityTosMapping $ SubnetAddr ) )
+objectClasses: ( 1.3.18.0.2.6.306 NAME 'ibm-networkingPolicyCondition' SUP ibm-policyCondition
+  STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.307 NAME 'ibm-policyGroupContainmentAuxClass' SUP top AUXILIARY MAY
+  ibm-policyGroupsAuxContainedSet )
+objectClasses: ( 1.3.18.0.2.6.308 NAME 'ibm-policyCondition' SUP top STRUCTURAL MUST
+  ibm-policyConditionName MAY ( cn $ description ) )
+objectClasses: ( 1.3.18.0.2.6.309 NAME 'ibm-policyRuleContainmentAuxClass' SUP top AUXILIARY MAY
+  ibm-policyRulesAuxContainedSet )
+objectClasses: ( 1.3.18.0.2.6.310 NAME 'ibm-policyRule' SUP ibm-policy STRUCTURAL MUST
+  ibm-policyRuleName MAY ( ibm-policyRoles $ ibm-policyRuleActionList $ ibm-policyRuleActionListDN $
+  ibm-policyRuleConditionList $ ibm-policyRuleConditionListDN $ ibm-policyRuleConditionListType $
+  ibm-policyRuleEnabled $ ibm-policyRuleKeywords $ ibm-policyRuleMandatory $ ibm-policyRulePriority $
+  ibm-policyRuleSequencedActions $ ibm-policyRuleUsage $ ibm-policyRuleValidityPeriodList ) )
+objectClasses: ( 1.3.18.0.2.6.311 NAME 'ibm-policyGroupLoadDistributionAuxClass' SUP top AUXILIARY
+  MAY ibm-policyGroupForLoadDistribution )
+objectClasses: ( 1.3.18.0.2.6.312 NAME 'ibm-policyRuleActionAssociation' SUP ibm-policy STRUCTURAL
+  MUST ( ibm-policyActionName $ ibm-policyActionOrder ) MAY ibm-policyActionDN )
+objectClasses: ( 1.3.18.0.2.6.313 NAME 'ibm-policyConditionAuxClass' SUP top AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.314 NAME 'ibm-policyTimePeriodConditionAuxClass' SUP
+  ibm-policyConditionAuxClass AUXILIARY MAY ( ibm-ptpConditionDayofMonthMask $
+  ibm-ptpConditionDayOfWeekMask $ ibm-ptpConditionLocalOrUtcTime $ ibm-ptpConditionMonthOfYearMask $
+  ibm-ptpConditionTime $ ibm-ptpConditionTimeOfDayMask $ ibm-ptpConditionTimeZone ) )
+objectClasses: ( 1.3.18.0.2.6.315 NAME 'ibm-serviceCategoriesAuxClass' SUP ibm-policyActionAuxClass
+  AUXILIARY MAY ( ibm-DiffServExcessTrafficTreatment $ ibm-DiffServInProfileMaxPacketSize $
+  ibm-DiffServInProfilePeakRate $ ibm-DiffServInProfileRate $ ibm-DiffServInProfileTokenBucket $
+  ibm-DiffServOutProfileTransmittedTOSByte $ ibm-FlowServiceType $ ibm-interface $ ibm-MaxConnections
+  $ ibm-MaxDelay $ ibm-MaxFlows $ ibm-MaxRate $ ibm-MaxRatePerFlow $ ibm-MaxTokenBucketPerFlow $
+  ibm-MinRate $ ibm-outgoingTOS $ ibm-permission $ ibm-PolicyScope $ ibm-signalClient ) )
+objectClasses: ( 1.3.18.0.2.6.316 NAME 'ibm-networkingPolicyConditionAuxClass' SUP
+  ibm-policyConditionAuxClass AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.317 NAME 'ibm-policyRepository' SUP top STRUCTURAL MUST
+  ibm-policyRepositoryName MAY ( cn $ description ) )
+objectClasses: ( 1.3.18.0.2.6.318 NAME 'ibm-policy' SUP top ABSTRACT MAY ( cn $ description $
+  ibm-policyKeywords ) )
+objectClasses: ( 1.3.18.0.2.6.319 NAME 'ibm-policyInstance' SUP ibm-policy STRUCTURAL MAY
+  ibm-policyInstanceName )
+objectClasses: ( 1.3.18.0.2.6.320 NAME 'ibm-policyActionAuxClass' SUP top AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.321 NAME 'ibm-policySubtreesPtrAuxClass' SUP top AUXILIARY MAY
+  ibm-policySubtreesAuxContainedSet )
+objectClasses: ( 1.3.18.0.2.6.322 NAME 'ibm-policyActionInstance' SUP ibm-policyInstance STRUCTURAL
+  MAY ibm-policyActionName )
+objectClasses: ( 1.3.18.0.2.6.323 NAME 'ibm-policyConditionInstance' SUP ibm-policyInstance
+  STRUCTURAL MAY ibm-policyConditionName )
+objectClasses: ( 1.3.18.0.2.6.324 NAME 'ibm-policyElementAuxClass' SUP ibm-policy AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.325 NAME 'ibm-policyRuleConditionAssociation' SUP ibm-policy
+  STRUCTURAL MUST ( ibm-policyConditionGroupNumber $ ibm-policyConditionName $
+  ibm-policyConditionNegated ) MAY ibm-policyConditionDN )
+objectClasses: ( 1.3.18.0.2.6.326 NAME 'ibm-idsScanEventConditionAuxClass' SUP
+  ibm-idsConditionAuxClass AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.327 NAME 'ibm-idsTrafficRegulationConditionAuxClass' SUP
+  ibm-idsConditionAuxClass AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.328 NAME 'ibm-idsScanConditionAuxClass' SUP ibm-idsConditionAuxClass
+  AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.329 NAME 'ibm-idsConditionAuxClass' SUP ibm-policyConditionAuxClass
+  AUXILIARY MUST ibm-idsConditionType )
+objectClasses: ( 1.3.18.0.2.6.330 NAME 'ibm-idsActionAuxClass' SUP ibm-policyActionAuxClass
+  AUXILIARY MUST ibm-idsActionType )
+objectClasses: ( 1.3.18.0.2.6.331 NAME 'ibm-idsHostConditionAuxClass' SUP ibm-idsConditionAuxClass
+  AUXILIARY MAY ( ibm-idsLocalHostIPAddress $ ibm-idsRemoteHostIPAddress ) )
+objectClasses: ( 1.3.18.0.2.6.332 NAME 'ibm-idsAttackConditionAuxClass' SUP ibm-idsConditionAuxClass
+  AUXILIARY MAY ibm-idsAttackType )
+objectClasses: ( 1.3.18.0.2.6.333 NAME 'ibm-idsTRtcpActionAuxClass' SUP
+  ibm-idsTrafficRegulationActionAuxClass AUXILIARY MAY ( ibm-idsTRtcpLimitScope $
+  ibm-idsTRtcpPercentage $ ibm-idsTRtcpTotalConnections ) )
+objectClasses: ( 1.3.18.0.2.6.334 NAME 'ibm-idsAttackActionsAuxClass' SUP ibm-idsActionAuxClass
+  AUXILIARY MAY ibm-idsMaxEventMessage )
+objectClasses: ( 1.3.18.0.2.6.335 NAME 'ibm-idsIPAttackConditionAuxClass' SUP
+  ibm-idsAttackConditionAuxClass AUXILIARY MAY ibm-idsIPOptionRange )
+objectClasses: ( 1.3.18.0.2.6.336 NAME 'ibm-idsTRudpActionAuxClass' SUP
+  ibm-idsTrafficRegulationActionAuxClass AUXILIARY MAY ibm-idsTRudpQueueSize )
+objectClasses: ( 1.3.18.0.2.6.337 NAME 'ibm-idsScanSensitivityActionAuxClass' SUP
+  ibm-idsActionAuxClass AUXILIARY MAY ibm-idsSensitivity )
+objectClasses: ( 1.3.18.0.2.6.338 NAME 'ibm-idsScanActionAuxClass' SUP ibm-idsActionAuxClass
+  AUXILIARY MAY ( ibm-idsFSInterval $ ibm-idsFSThreshold $ ibm-idsSSInterval $ ibm-idsSSThreshold ) )
+objectClasses: ( 1.3.18.0.2.6.339 NAME 'ibm-idsScanExclusionActionAuxClass' SUP
+  ibm-idsActionAuxClass AUXILIARY MAY ibm-idsScanExclusion )
+objectClasses: ( 1.3.18.0.2.6.340 NAME 'ibm-idsTrafficRegulationActionAuxClass' SUP
+  ibm-idsActionAuxClass AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.341 NAME 'ibm-idsTransportConditionAuxClass' SUP
+  ibm-idsConditionAuxClass AUXILIARY MAY ( ibm-idsLocalPortRange $ ibm-idsProtocolRange $
+  ibm-idsRemotePortRange ) )
+objectClasses: ( 1.3.18.0.2.6.342 NAME 'ibm-idsNotificationAuxClass' SUP ibm-idsActionAuxClass
+  AUXILIARY MAY ( ibm-idsLoggingLevel $ ibm-idsNotification $ ibm-idsStatInterval $ ibm-idsTraceData
+  $ ibm-idsTraceRecordSize $ ibm-idsTypeActions ) )
+objectClasses: ( 1.3.18.0.2.6.375 NAME 'ibm-userConditionAuxClass' SUP
+  ibm-networkingPolicyConditionAuxClass AUXILIARY MAY ( ibm-userNameId $ ibm-userQoSGroup ) )
+objectClasses: ( 1.3.18.0.2.6.376 NAME 'ibm-eimIdentifier' SUP top STRUCTURAL MUST cn MAY (
+  description $ ibm-eimAdditionalInformation $ ibm-eimAdminUserAssoc $ ibm-eimSourceUserAssoc ) )
+objectClasses: ( 1.3.18.0.2.6.377 NAME 'ibm-eimSourceRelationship' SUP top STRUCTURAL MUST ( cn $
+  ibm-eimUserAssoc ) )
+objectClasses: ( 1.3.18.0.2.6.378 NAME 'ibm-eimRegistryUser' SUP top STRUCTURAL MUST ( cn $
+  ibm-eimTargetUserName ) MAY ( description $ ibm-eimAdditionalInformation $ ibm-eimTargetIdAssoc ) )
+objectClasses: ( 1.3.18.0.2.6.379 NAME 'ibm-eimDomain' SUP top STRUCTURAL MUST ( ibm-eimDomainName $
+  ibm-eimDomainVersion ) MAY description )
+objectClasses: ( 1.3.18.0.2.6.380 NAME 'ibm-eimRegistry' SUP top ABSTRACT MUST ( ibm-eimRegistryName
+  $ ibm-eimRegistryType ) MAY ( description $ ibm-eimRegistryAliases ) )
+objectClasses: ( 1.3.18.0.2.6.381 NAME 'ibm-eimSystemRegistry' SUP ibm-eimRegistry STRUCTURAL MAY
+  labeledURI )
+objectClasses: ( 1.3.18.0.2.6.382 NAME 'ibm-eimApplicationRegistry' SUP ibm-eimRegistry STRUCTURAL
+  MUST ibm-eimRegistryEntryName )
+objectClasses: ( 1.3.18.0.2.6.383 NAME 'ibm-eimTargetRelationship' SUP top STRUCTURAL MUST
+  ibm-eimTargetIdAssoc MAY ibm-eimTargetUserName )
+objectClasses: ( 1.3.18.0.2.6.388 NAME 'ibm-jarFile' SUP top STRUCTURAL MUST ( cn $
+  ibm-javaSerializedJarFile ) MAY ( description $ ibm-ownerName $ version ) )
+objectClasses: ( 1.3.18.0.2.6.389 NAME 'ibm-deviceList' SUP top AUXILIARY MUST ibm-deviceIDList )
+objectClasses: ( 1.3.18.0.2.6.390 NAME 'ibm-device' SUP cimLogicalDevice STRUCTURAL MUST ( deviceID
+  $ ibm-deviceIDType $ ibm-isDeviceEnabled ) MAY ( ibm-deviceOS $ ibm-deviceType ) )
+objectClasses: ( 1.3.18.0.2.6.391 NAME 'ibm-CertificateForDN' SUP top AUXILIARY MAY
+  ibm-CertificateSubjectAndIssuer )
+objectClasses: ( 1.3.18.0.2.6.412 NAME 'ibm-inboundConnectionAuxClass' SUP (
+  ibm-policyActionAuxClass $ top ) AUXILIARY MAY ( ibm-applicationRequestBurstSize $
+  ibm-applicationRequestPeakRate $ ibm-averageApplicationRequestRate $ ibm-averageConnectionRate $
+  ibm-connectionBurstSize $ ibm-inboundScope $ ibm-PeakConnectionRate $ ibm-prioritizedQueue ) )
+objectClasses: ( 1.3.18.0.2.6.443 NAME 'eUNIXSystem' SUP eComputerSystem STRUCTURAL MUST
+  isConfiguredByDirectory MAY ( unixHomeFile $ unixMountPoint ) )
+objectClasses: ( 1.3.18.0.2.6.444 NAME 'eNetworkedEntity' SUP top STRUCTURAL MUST ( host $ sys ) MAY
+  ( networkAddress $ networkAddresses ) )
+objectClasses: ( 1.3.18.0.2.6.445 NAME 'ibm-versionedSet' SUP top STRUCTURAL MUST ibm-setVersion MAY
+  cn )
+objectClasses: ( 1.3.18.0.2.6.446 NAME 'ibm-versionedSetAux' SUP top AUXILIARY MAY ibm-setVersion )
+objectClasses: ( 1.3.18.0.2.6.450 NAME 'ibm-dynamicMember' SUP top AUXILIARY MAY ibm-group )
+objectClasses: ( 1.3.18.0.2.6.452 NAME 'ibm-TypedePropertySet' SUP top AUXILIARY MAY
+  ibm-ePropertySetType )
+objectClasses: ( 1.3.18.0.2.6.472 NAME 'aixAuxAccount' SUP top AUXILIARY MAY ( adminGroupNames $
+  aIXDefaultMACLevel $ aIXFuncMode $ aIXisDCEExport $ aIXLowMACLevel $ aIXPromptMAC $ aIXScreens $
+  aIXUpperMACLevel $ auditClasses $ authMethod1 $ authMethod2 $ capability $ coreSizeLimit $
+  coreSizeLimitHard $ cPuSize $ cPuSizeHard $ dataSegSize $ dataSegSizeHard $ filePermMask $
+  fileSizeLimit $ fileSizeLimitHard $ groupList $ groupSwitchUserAllowed $ hostLastLogin $
+  hostLastUnsuccessfulLogin $ hostsAllowedLogin $ hostsDeniedLogin $ ibm-aixProjectNameList $
+  isAccountEnabled $ isAdministrator $ isDaemon $ isLoginAllowed $ isRemoteAccessAllowed $
+  isSwitchUserAllowed $ ixTimeLastLogin $ ixTimeLastUnsuccessfulLogin $ loginTimes $ maxFailedLogins
+  $ maxLogin $ openFileLimit $ openFileLimitHard $ passwordChar $ passwordCheckMethods $
+  passwordDictFiles $ passwordExpireTime $ passwordFlags $ passwordHistExpire $ passwordHistList $
+  passwordHistSize $ passwordMaxRepeatedChars $ passwordMinAlphaChars $ passwordMinDiffChars $
+  passwordMinLength $ passwordMinOtherChars $ physicalMemLimit $ physicalMemLimitHard $ rcmds $
+  roleList $ StackSizeLimit $ StackSizeLimitHard $ SystemEnvironment $ terminalAccess $
+  terminalLastLogin $ terminalLastUnsuccessfulLogin $ timeExpiredLogout $ timeExpireLockout $
+  trustedPathStatus $ unsuccessfulLoginCount $ userEnvironment ) )
+objectClasses: ( 1.3.18.0.2.6.473 NAME 'aixAuxGroup' SUP top AUXILIARY MAY ( aIXGroupAdminList $
+  aIXisDCEExport $ aIXScreens $ groupPassword $ ibm-aixProjectNameList $ isAdministrator ) )
+objectClasses: ( 1.3.18.0.2.6.475 NAME 'ibm-appUUIDAux' SUP top AUXILIARY MAY ibm-appUUID )
+objectClasses: ( 1.3.18.0.2.6.476 NAME 'ibm-replicaGroup' SUP top STRUCTURAL MUST ibm-replicaGroup
+  MAY description )
+objectClasses: ( 1.3.18.0.2.6.477 NAME 'ibm-replicaSubentry' SUP top STRUCTURAL MUST ( cn $
+  ibm-replicaServerId $ ibm-replicationServerIsMaster ) MAY description )
+objectClasses: ( 1.3.18.0.2.6.478 NAME 'ibm-replicationCredentialsExternal' SUP
+  ibm-replicationCredentials STRUCTURAL MAY ( ibm-replicaKeyfile $ ibm-replicaKeylabel $
+  ibm-replicaKeypwd ) )
+objectClasses: ( 1.3.18.0.2.6.479 NAME 'ibm-replicationCredentialsKerberos' SUP
+  ibm-replicationCredentials STRUCTURAL MAY ( replicaBindDN $ replicaCredentials ) )
+objectClasses: ( 1.3.18.0.2.6.480 NAME 'ibm-replicationDailySchedule' SUP top STRUCTURAL MAY ( cn $
+  description $ ibm-replDailySchedName $ ibm-replicationBatchStart $ ibm-replicationImmediateStart $
+  ibm-replicationTimesUTC ) )
+objectClasses: ( 1.3.18.0.2.6.481 NAME 'ibm-replicationCredentialsSimple' SUP
+  ibm-replicationCredentials STRUCTURAL MUST ( replicaBindDN $ replicaCredentials ) )
+objectClasses: ( 1.3.18.0.2.6.482 NAME 'ibm-replicationWeeklySchedule' SUP top STRUCTURAL MAY ( cn $
+  description $ ibm-replWeeklySchedName $ ibm-scheduleFriday $ ibm-scheduleMonday $
+  ibm-scheduleSaturday $ ibm-scheduleSunday $ ibm-scheduleThursday $ ibm-scheduleTuesday $
+  ibm-scheduleWednesday ) )
+objectClasses: ( 1.3.18.0.2.6.483 NAME 'ibm-replicationAgreement' SUP top STRUCTURAL MUST ( cn $
+  ibm-replicaConsumerId $ ibm-replicaCredentialsDN $ ibm-replicaURL ) MAY ( description $
+  ibm-replicaConsumerConnections $ ibm-replicaMethod $ ibm-replicaScheduleDN $
+  ibm-replicationCreateMissingEntries $ ibm-replicationExcludedCapability $ ibm-replicationFilterDN $
+  ibm-replicationOnHold ) )
+objectClasses: ( 1.3.18.0.2.6.484 NAME 'ibm-replicationContext' SUP top AUXILIARY MAY
+  ibm-replicaReferralURL )
+objectClasses: ( 1.3.18.0.2.6.521 NAME 'ibm-replicationCredentials' SUP top ABSTRACT MAY ( cn $
+  description $ ibm-replCredName ) )
+objectClasses: ( 1.3.18.0.2.6.522 NAME 'ibm-realm' SUP top STRUCTURAL MUST cn MAY (
+  ibm-realmAdminGroup $ ibm-realmGroupContainer $ ibm-realmUserContainer $ ibm-realmUserSearchFilter
+  $ ibm-realmUserTemplate ) )
+objectClasses: ( 1.3.18.0.2.6.523 NAME 'ibm-descriptiveInfoAux' SUP top AUXILIARY MAY ( caption $
+  description $ displayName $ seeAlso ) )
+objectClasses: ( 1.3.18.0.2.6.527 NAME 'ibm-idsFloodAttackActionsAuxClass' SUP
+  ibm-idsAttackActionsAuxClass AUXILIARY MAY ( ibm-idsIfcFloodMinDiscard $ ibm-idsIfcFloodPercentage
+  ) )
+objectClasses: ( 1.3.18.0.2.6.546 NAME 'ibm-itdPerson' SUP top AUXILIARY MAY ( buildingName $ co $
+  displayName $ floor $ generationQualifier $ ibm-alternateLocalityName $ ibm-alternatePostalAddress1
+  $ ibm-alternatePostalAddress2 $ ibm-alternatePostalCode $ ibm-alternateStateOrProvinceName $
+  ibm-alternateTelephoneNumber $ ibm-alternateUserid $ ibm-backupCommonName $
+  ibm-cellularServiceProvider $ ibm-departmentCode $ ibm-divisionCode $
+  ibm-informationTelephoneNumber $ ibm-isManager $ ibm-itdAdditionalInformation $
+  ibm-itdContractorCompany $ ibm-itdLastUpdatedBy $ ibm-itdLotusNotesEmail $
+  ibm-itdMarketingTerritory $ ibm-itdTradeArea $ ibm-itdWorkplaceIndicator $ ibm-itdWorkplaceLocation
+  $ ibm-jobResponsibilities $ ibm-mailboxTelephoneNumber $ ibm-middleInitial $ ibm-pagerId $
+  ibm-pagerServiceProvider $ ibm-pagerType $ ibm-preferredFirstName $ ibm-preferredLastName $
+  ibm-primaryUserId $ ibm-shiftCode $ middleName $ serialNumber ) )
+objectClasses: ( 1.3.18.0.2.6.548 NAME 'ibm-eimFilterPolicy' SUP top STRUCTURAL MUST cn MAY (
+  ibm-eimFilterType $ ibm-eimFilterValue ) )
+objectClasses: ( 1.3.18.0.2.6.549 NAME 'ibm-eimDefaultPolicy' SUP top STRUCTURAL MUST cn MAY
+  ibm-eimPolicyStatus )
+objectClasses: ( 1.3.18.0.2.6.550 NAME 'ibm-eimPolicyListAux' SUP top AUXILIARY MAY
+  ibm-eimPolicyStatus )
+objectClasses: ( 1.3.18.0.2.6.555 NAME 'ibm-replicaGateway' SUP top AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.567 NAME 'ibm-ToSConditionAuxClass' SUP ibm-routeConditionAuxClass
+  AUXILIARY MAY ibm-IncomingTOS )
+objectClasses: ( 1.3.18.0.2.6.568 NAME 'ibm-acceptQueueConfigurationActionAuxClass' SUP
+  ibm-policyActionAuxClass AUXILIARY MUST ibm-numberOfAcceptQueues MAY ( ibm-acceptQueueIDandWeight $
+  ibm-defaultAcceptQueueID ) )
+objectClasses: ( 1.3.18.0.2.6.569 NAME 'ibm-acceptQueueConfigurationConditionAuxClass' SUP
+  ibm-policyConditionAuxClass AUXILIARY MAY ( ibm-localApplicationName $ ibm-localIPAddressRange $
+  ibm-localPortRange ) )
+objectClasses: ( 1.3.18.0.2.6.570 NAME 'ibm-routeInboundConnectionAuxClass' SUP
+  ibm-policyActionAuxClass AUXILIARY MAY ibm-inboundAcceptQueueID )
+objectClasses: ( 1.3.18.0.2.6.572 NAME 'ibm-proxyGroup' SUP top AUXILIARY MAY member )
+objectClasses: ( 1.3.18.0.2.6.573 NAME 'ibm-searchLimits' SUP top AUXILIARY MUST ( cn $
+  ibm-searchSizeLimit $ ibm-searchTimeLimit ) )
+objectClasses: ( 1.3.18.0.2.6.574 NAME 'ibm-UniqueAttributes' SUP top STRUCTURAL MUST ( cn $
+  ibm-UniqueAttributeTypes ) )
+objectClasses: ( 1.3.18.0.2.6.584 NAME 'ibm-globalAdminGroup' SUP top STRUCTURAL MUST
+  globalGroupName MAY member )
+objectClasses: ( 1.3.18.0.2.6.587 NAME 'ibm-cryptoConfig' SUP top STRUCTURAL MUST (
+  ibm-slapdCryptoSalt $ ibm-slapdCryptoSync ) )
+objectClasses: ( 1.3.18.0.2.6.589 NAME 'ids-instance' SUP top STRUCTURAL MUST ( ids-instanceLocation
+  $ ids-instanceVersion ) MAY ids-instanceDesc )
+objectClasses: ( 1.3.18.0.2.6.591 NAME 'ibm-splitlevelParent' SUP top AUXILIARY )
+objectClasses: ( 1.3.18.0.2.6.615 NAME 'ibm-eimRegistryUserCredentials' SUP top STRUCTURAL MUST (
+  secAuthnData $ secAuthnType $ secValid ) )
+objectClasses: ( 1.3.18.0.2.6.616 NAME 'ibm-eimGroupRegistry' SUP ibm-eimRegistry STRUCTURAL MAY
+  ibm-eimRegistryMember )
+objectClasses: ( 1.3.18.0.2.6.620 NAME 'ibm-aixAccountingAdminPolicy' SUP top STRUCTURAL MUST (
+  ibm-aixAdminPolicyEntry $ ibm-aixAdminPolicyName ) )
+objectClasses: ( 1.3.18.0.2.6.621 NAME 'ibm-aixAccountingProject' SUP top STRUCTURAL MUST (
+  ibm-aixProjectDefinition $ ibm-aixProjectName ) )
+objectClasses: ( 1.3.18.0.2.6.630 NAME 'ibm-replicationFilter' SUP top STRUCTURAL MUST ( cn $
+  ibm-replicationFilterAttr ) )
+objectClasses: ( 1.3.18.0.2.6.634 NAME 'ibm-PtaReferral' SUP top AUXILIARY MUST (
+  ibm-PtaLinkAttribute $ ibm-PtaLinkValue ) )
+objectClasses: ( 2.16.840.1.113730.3.2.1 NAME 'changeLogEntry' SUP top STRUCTURAL MUST (
+  changeNumber $ changeTime $ changeType $ targetDN ) MAY ( changes $ deleteOldRdn $ modifiersName $
+  newRdn $ newSuperior ) )
+objectClasses: ( 2.16.840.1.113730.3.2.31 NAME 'groupOfCertificates' SUP top STRUCTURAL MUST cn MAY
+  ( businessCategory $ description $ memberCertificateDescription $ o $ ou $ owner $ seeAlso ) )
+objectClasses: ( 2.16.840.1.113730.3.2.33 NAME 'groupOfURLs' SUP top STRUCTURAL MUST cn MAY (
+  businessCategory $ description $ memberURL $ o $ ou $ owner $ seeAlso ) )
+objectClasses: ( 2.16.840.1.113730.3.2.35 NAME 'LDAPServer' SUP top STRUCTURAL MUST cn MAY ( aci $
+  changeLogMaximumAge $ changeLogMaximumSize $ description $ generation $ l $ ou $ seeAlso ) )
+objectClasses: ( 2.16.840.1.113730.3.2.74 NAME 'nsLiPtr' SUP top STRUCTURAL MAY ( aci $ nsLiPtrURL $
+  owner ) )
+objectClasses: ( 2.16.840.1.113730.3.2.75 NAME 'nsLiProfile' SUP top STRUCTURAL MUST nsLiProfileName
+  MAY ( aci $ nsLiPrefs $ owner $ uid ) )
+objectClasses: ( 2.16.840.1.113730.3.2.76 NAME 'nsLiProfileElement' SUP top STRUCTURAL MUST
+  nsLiElementType MAY ( aci $ nsLiData $ nsLiVersion $ owner ) )
+objectClasses: ( 2.16.840.1.113730.3.2.77 NAME 'nsLiServer' SUP top STRUCTURAL MUST serverHostName
+  MAY ( aci $ cn $ description $ nsLiServerType $ nsServerPort $ serverRoot ) )

@@ -1,0 +1,619 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.system.at: operational attributes and classes (RFC 4512, 4530, 3045, 3296) and IBM's directory
+# attributes and classes QS/400 honours (DIRSRV.md section 6).
+
+attributeTypes: ( 1.3.1.1.4.1.453.16.2.103 NAME 'numSubordinates' DESC 'How many entries are
+  immediately below this one' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.1.4 NAME 'vendorName' DESC 'Who made this server' EQUALITY
+  caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  dSAOperation )
+attributeTypes: ( 1.3.6.1.1.5 NAME 'vendorVersion' DESC 'This server\27s release' EQUALITY
+  caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  dSAOperation )
+attributeTypes: ( 1.3.6.1.1.16.4 NAME 'entryUUID' DESC 'A unique identifier given to every entry'
+  EQUALITY uuidMatch ORDERING uuidOrderingMatch SYNTAX 1.3.6.1.1.16.1 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.1 NAME 'pwdAttribute' DESC 'The attribute the policy
+  applies to' EQUALITY objectIdentifierMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.38 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.2 NAME 'pwdMinAge' DESC 'Seconds before a password may
+  change again' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.3 NAME 'pwdMaxAge' DESC 'Seconds a password stays valid'
+  EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.4 NAME 'pwdInHistory' DESC 'Old passwords kept to refuse
+  reuse' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.5 NAME 'pwdCheckSyntax' DESC 'How password quality is
+  checked' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.6 NAME 'pwdMinLength' DESC 'Shortest password allowed'
+  EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.7 NAME 'pwdExpireWarning' DESC 'Seconds of warning before
+  a password expires' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.8 NAME 'pwdGraceLoginLimit' DESC 'Binds allowed with an
+  expired password' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.9 NAME 'pwdLockout' DESC 'Whether failed binds lock the
+  account' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.10 NAME 'pwdLockoutDuration' DESC 'Seconds an account
+  stays locked' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.11 NAME 'pwdMaxFailure' DESC 'Failed binds before the
+  account locks' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.12 NAME 'pwdFailureCountInterval' DESC 'Seconds after
+  which failures are forgotten' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.13 NAME 'pwdMustChange' DESC 'Whether a reset password
+  must be changed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.14 NAME 'pwdAllowUserChange' DESC 'Whether users may
+  change their passwords' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.15 NAME 'pwdSafeModify' DESC 'Whether the old password is
+  needed to change it' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.16 NAME 'pwdChangedTime' DESC 'When the password last
+  changed' EQUALITY generalizedTimeMatch ORDERING generalizedTimeOrderingMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.17 NAME 'pwdAccountLockedTime' DESC 'When the account was
+  locked' EQUALITY generalizedTimeMatch ORDERING generalizedTimeOrderingMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.18 NAME 'pwdExpirationWarned' DESC 'When the expiry
+  warning was first given' EQUALITY generalizedTimeMatch ORDERING generalizedTimeOrderingMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.19 NAME 'pwdFailureTime' DESC 'When binds failed' EQUALITY
+  generalizedTimeMatch ORDERING generalizedTimeOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.20 NAME 'pwdHistory' DESC 'Old passwords' EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.20 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.21 NAME 'pwdGraceUseTime' DESC 'When grace binds were
+  used' EQUALITY generalizedTimeMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.8.1.22 NAME 'pwdReset' DESC 'Whether the password was reset'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.5 NAME 'namingContexts' DESC 'The suffixes this server
+  holds' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 USAGE dSAOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.6 NAME 'altServer' DESC 'Other servers to try when this
+  one is unavailable' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 USAGE
+  dSAOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.7 NAME 'supportedExtension' DESC 'Extended operations
+  this server performs' SYNTAX 1.3.6.1.4.1.1466.115.121.1.38 USAGE dSAOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.13 NAME 'supportedControl' DESC 'Controls this server
+  recognises' SYNTAX 1.3.6.1.4.1.1466.115.121.1.38 USAGE dSAOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.14 NAME 'supportedSASLMechanisms' DESC 'SASL mechanisms
+  this server accepts' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE
+  dSAOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.15 NAME 'supportedLDAPVersion' DESC 'LDAP protocol
+  versions this server speaks' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 USAGE dSAOperation )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.16 NAME 'ldapSyntaxes' DESC 'Syntax definitions' EQUALITY
+  objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.54 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.138 NAME 'passwordGenerator' DESC 'Password generator (older form)'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.285 NAME 'aclEntry' DESC 'Access granted on the entry and,
+  propagated, below it' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE
+  directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.285 ACCESS-CLASS restricted )
+attributeTypes: ( 1.3.18.0.2.4.286 NAME 'aclPropagate' DESC 'Whether the entry\27s ACL applies below
+  it' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.286 ACCESS-CLASS restricted )
+attributeTypes: ( 1.3.18.0.2.4.287 NAME 'aclSource' DESC 'The entry whose ACL applies here' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.287 ACCESS-CLASS system )
+attributeTypes: ( 1.3.18.0.2.4.288 NAME 'entryOwner' DESC 'Owners of the entry' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.288 ACCESS-CLASS restricted )
+attributeTypes: ( 1.3.18.0.2.4.289 NAME 'ownerPropagate' DESC 'Whether the entry\27s owners own the
+  entries below it' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.289 ACCESS-CLASS restricted )
+attributeTypes: ( 1.3.18.0.2.4.290 NAME 'ownerSource' DESC 'The entry whose owners apply here'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.290 ACCESS-CLASS system )
+attributeTypes: ( 1.3.18.0.2.4.453 NAME 'passwordReuseNum' DESC 'Old passwords refused (older form)'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.454 NAME 'passwordMaxRepeatedChars' DESC 'Most repeated characters
+  allowed (older form)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.458 NAME 'passwordCheckMethods' DESC 'Password checks (older form)'
+  EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.463 NAME 'passwordDictFiles' DESC 'Password dictionaries (older
+  form)' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.465 NAME 'passwordMinAge' DESC 'Password minimum age (older form)'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.469 NAME 'passwordMinOtherChars' DESC 'Fewest non-letters (older
+  form)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.470 NAME 'IBMAttributeTypes' DESC 'IBM extension values of attribute
+  types: access class and length' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.472 NAME 'vendor' DESC 'The vendor of the product an entry describes'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.473 NAME 'passwordMinAlphaChars' DESC 'Fewest letters (older form)'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.482 NAME 'passwordTimeReuse' DESC 'Time before reuse (older form)'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.485 NAME 'passwordExpireTime' DESC 'Expiry time (older form)' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 )
+attributeTypes: ( 1.3.18.0.2.4.489 NAME 'passwordRegistry' DESC 'Password registry (older form)'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.499 NAME 'passwordMinDiffChars' DESC 'Fewest characters changed
+  (older form)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.753 NAME 'passwordFlags' DESC 'Password flags (older form)' EQUALITY
+  caseExactMatch ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.772 NAME 'passwordHistSize' DESC 'Old passwords kept (older form)'
+  EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.788 NAME 'passwordExpiredWeeks' DESC 'Weeks before expiry (older
+  form)' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.802 NAME 'passwordChar' DESC 'Password characters (older form)'
+  EQUALITY caseExactMatch ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1069 NAME 'ibm-auditExtOpEvent' DESC 'Whether event notification is
+  audited' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1070 NAME 'ibm-auditBind' DESC 'Whether binds are audited' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1071 NAME 'ibm-auditDelete' DESC 'Whether deletes are audited' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1072 NAME 'ibm-auditModify' DESC 'Whether modifies are audited'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1073 NAME 'ibm-auditAdd' DESC 'Whether adds are audited' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1074 NAME 'ibm-auditSearch' DESC 'Whether searches are audited'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1075 NAME 'ibm-auditModifyDN' DESC 'Whether renames are audited'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1076 NAME 'ibm-auditUnbind' DESC 'Whether unbinds are audited' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1077 NAME 'ibm-audit' DESC 'Whether auditing is on' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1078 NAME 'ibm-auditFailedOpOnly' DESC 'Whether only failures are
+  audited' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1079 NAME 'ibm-auditLog' DESC 'Where IBM\27s audit log goes (QS/400
+  writes QAUDJRN)' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.1101 NAME 'passwordHistList' DESC 'Old passwords (older form)'
+  EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+IBMAttributeTypes: ( 1.3.18.0.2.4.1101 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.1780 NAME 'ibm-entryUuid' DESC 'The entry\27s unique identifier (the
+  same value as entryUUID)' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2033 NAME 'ibm-groupList' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.2242 NAME 'ibm-memberGroup' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.2243 NAME 'ibm-allMembers' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2244 NAME 'ibm-allGroups' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2245 NAME 'ibm-group' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2325 NAME 'ibm-entryChecksum' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2326 NAME 'ibm-entryChecksumOp' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2328 NAME 'ibm-serverId' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2362 NAME 'ibm-slapdSslCipherSpecs' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2363 NAME 'ibm-slapdSchemaCheck' DESC 'How strictly entries are
+  checked against the schema' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2364 NAME 'ibm-slapdIncludeSchema' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2365 NAME 'ibm-slapdIpAddress' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2366 NAME 'ibm-slapdAuthIntegration' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2367 NAME 'ibm-slapdReplicaSubtree' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.2368 NAME 'ibm-slapdBulkloadErrors' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2369 NAME 'ibm-slapdDB2CP' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2370 NAME 'ibm-slapdFilterCacheSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2371 NAME 'ibm-slapdFilterCacheBypassLimit' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2372 NAME 'ibm-slapdEntryCacheSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2373 NAME 'ibm-slapdACLCacheSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2374 NAME 'ibm-slapdACLCache' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2375 NAME 'ibm-slapdSSLKeyDatabase' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2376 NAME 'ibm-slapdPagedResAllowNonAdmin' DESC 'Whether all users
+  may page results' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2377 NAME 'ibm-slapdSortSrchAllowNonAdmin' DESC 'Whether all users
+  may sort results' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2378 NAME 'ibm-slapdIdleTimeOut' DESC 'Seconds before an idle
+  connection closes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2380 NAME 'ibm-slapdPagedResLmt' DESC 'Most paged searches a
+  connection may hold' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2381 NAME 'ibm-slapdSortKeyLimit' DESC 'Most sort keys a search may
+  use' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2382 NAME 'ibm-slapdDbLocation' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2384 NAME 'ibm-slapdTransactionEnable' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2385 NAME 'ibm-slapdMaxOpPerTransaction' EQUALITY
+  integerFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2386 NAME 'ibm-slapdMaxTimeLimitOfTransactions' EQUALITY
+  integerFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2388 NAME 'ibm-slapdSuffix' DESC 'A suffix a backend holds' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2389 NAME 'ibm-slapdSslCertificate' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2390 NAME 'ibm-slapdSslKeyRingFilePW' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2390 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2391 NAME 'ibm-slapdTimeLimit' DESC 'Most seconds a search runs'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2392 NAME 'ibm-slapdSslKeyRingFile' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2393 NAME 'ibm-slapdSysLogLevel' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2394 NAME 'ibm-slapdKrbEnable' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2395 NAME 'ibm-slapdSslAuth' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2396 NAME 'ibm-slapdSizeLimit' DESC 'Most entries a search returns'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2397 NAME 'ibm-slapdSetenv' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2398 NAME 'ibm-slapdSecurePort' DESC 'The port for LDAP over TLS'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2399 NAME 'ibm-slapdSecurity' DESC 'Which of LDAP and LDAPS the
+  server offers' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2400 NAME 'ibm-slapdKrbRealm' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2401 NAME 'ibm-slapdMasterReferral' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2402 NAME 'ibm-slapdPwEncryption' DESC 'How new passwords are stored'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation
+  )
+attributeTypes: ( 1.3.18.0.2.4.2403 NAME 'ibm-slapdLdapCrlUser' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2404 NAME 'ibm-slapdLdapCrlPort' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2405 NAME 'ibm-slapdMaxEventsTotal' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2406 NAME 'ibm-slapdPlugin' DESC 'A backend or plug-in the server
+  loads' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2407 NAME 'ibm-slapdLdapCrlPassword' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2407 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2408 NAME 'ibm-slapdPort' DESC 'The port for LDAP' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2409 NAME 'ibm-slapdMasterDN' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2411 NAME 'ibm-slapdMasterPW' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2411 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2412 NAME 'ibm-slapdMaxEventsPerConnection' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2413 NAME 'ibm-slapdReadOnly' DESC 'Whether a backend refuses
+  changes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2415 NAME 'ibm-slapdLdapCrlHost' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2416 NAME 'ibm-slapdKrbKeyTab' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2417 NAME 'ibm-slapdDbConnections' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2418 NAME 'ibm-slapdDbInstance' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2419 NAME 'ibm-slapdKrbIdentityMap' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2420 NAME 'ibm-slapdKrbAdminDN' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2421 NAME 'ibm-slapdEnableEventNotification' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2422 NAME 'ibm-slapdDbUserID' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2423 NAME 'ibm-slapdDbUserPW' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2423 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2424 NAME 'ibm-slapdErrorLog' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2425 NAME 'ibm-slapdAdminPW' DESC 'The administrator\27s password,
+  hashed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2425 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2426 NAME 'ibm-slapdDbName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2427 NAME 'ibm-slapdChangeLogMaxEntries' DESC 'Most change log
+  entries kept' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2428 NAME 'ibm-slapdAdminDN' DESC 'The administrator\27s DN' EQUALITY
+  distinguishedNameMatch ORDERING distinguishedNameOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2429 NAME 'ibm-slapdSslCipherSpec' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2430 NAME 'ibm-slapdInvalidLine' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2431 NAME 'ibm-slapdDBAlias' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2432 NAME 'ibm-slapdCLIErrors' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2433 NAME 'ibm-slapdServerId' DESC 'The server\27s identifier'
+  EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2434 NAME 'ibm-slapdReplDbConns' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2436 NAME 'ibm-slapdVersion' DESC 'The server\27s configuration
+  level' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2437 NAME 'ibm-slapdSchemaAdditions' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2438 NAME 'ibm-slapdSSLKeyDatabasePW' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2438 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2439 NAME 'ibm-slapdMaxNumOfTransactions' EQUALITY
+  integerFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2443 NAME 'ibm-filterAclEntry' DESC 'Filter-based access (not
+  supported by QS/400)' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE
+  directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2443 ACCESS-CLASS restricted )
+attributeTypes: ( 1.3.18.0.2.4.2444 NAME 'ibm-effectiveAcl' DESC 'The access in force on the entry'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE
+  directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2444 ACCESS-CLASS system )
+attributeTypes: ( 1.3.18.0.2.4.2445 NAME 'ibm-filterAclInherit' DESC 'Whether filter-based access is
+  inherited (not supported by QS/400)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE
+  directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2445 ACCESS-CLASS restricted )
+attributeTypes: ( 1.3.18.0.2.4.2449 NAME 'ibm-slapdDN' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2480 NAME 'ibm-slapdSupportedWebAdmVersion' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2481 NAME 'ibm-supportedCapabilities' DESC 'Capabilities the server
+  has' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE
+  dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2482 NAME 'ibm-enabledCapabilities' DESC 'Capabilities in effect'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE
+  dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2483 NAME 'ibm-capabilitiessubentry' DESC 'The entry that lists the
+  server\27s capabilities' EQUALITY distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2485 NAME 'ibm-slapdACLAccess' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2486 NAME 'ibm-slapdMaxPendingChangesDisplayed' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.2487 NAME 'ibm-slapdReferral' DESC 'The default referral' EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2493 NAME 'ibm-pwdPolicy' DESC 'Whether the password policy is on'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2495 NAME 'ibm-replicationThisServerIsMaster' DESC 'Whether this
+  server takes updates (always TRUE on QS/400)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2498 NAME 'ibm-replicationIsQuiesced' DESC 'Whether the subtree is
+  quiesced (always FALSE on QS/400)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2499 NAME 'ibm-slapdUseProcessIdPW' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2500 NAME 'ibm-slapdMigrationInfo' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2504 NAME 'passwordHistExpire' DESC 'When old passwords are forgotten
+  (older form)' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2991 NAME 'ibm-slapdlogmessages' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.3007 NAME 'ibm-slapdOs400AuditLevel' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3012 NAME 'ibm-slapdChangeLogMaxAge' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3013 NAME 'ibm-slapdAdminGroupEnabled' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3021 NAME 'ibm-slapdAllowAnon' DESC 'Whether anonymous binds are
+  allowed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3022 NAME 'ibm-slapdAnonReapingThreshold' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3023 NAME 'ibm-slapdBoundReapingThreshold' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3024 NAME 'ibm-slapdAllReapingThreshold' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3026 NAME 'ibm-slapdWriteTimeout' DESC 'Seconds a write to a client
+  may block' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3028 NAME 'ibm-slapdESizeThreshold' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3029 NAME 'ibm-slapdETimeThreshold' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3030 NAME 'ibm-slapdEThreadActivate' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3031 NAME 'ibm-slapdEThreadEnable' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3032 NAME 'ibm-slapdDigestAdminUser' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3054 NAME 'ibm-slapdDerefAliases' DESC 'How the server dereferences
+  aliases' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3055 NAME 'ibm-auditVersion' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3056 NAME 'ibm-auditExtOp' DESC 'Whether extended operations are
+  audited' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3058 NAME 'ibm-slapdStartupTraceEnabled' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3059 NAME 'ibm-slapdTraceMessageLog' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3060 NAME 'ibm-slapdTraceMessageLevel' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3068 NAME 'ibm-slapdCachedAttributeSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3069 NAME 'ibm-slapdCachedAttribute' EQUALITY caseIgnoreIA5Match
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3074 NAME 'ibm-slapdLanguageTagsEnabled' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3082 NAME 'ibm-slapdDigestAttr' EQUALITY objectIdentifierMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.38 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3083 NAME 'ibm-slapdDigestRealm' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3098 NAME 'IBMDirectoryVersion' DESC 'The IBM directory server level
+  this server follows' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.3108 NAME 'ibm-auditAttributesOnGroupEvalOp' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3111 NAME 'ibm-slapdServerBackend' DESC 'The kind of store behind the
+  server' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3116 NAME 'ibm-slapdCryptoSync' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3117 NAME 'ibm-slapdProxyBindMethod' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3118 NAME 'ibm-slapdProxyConnectionPoolSize' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3119 NAME 'ibm-slapdProxyDigestUserName' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3120 NAME 'ibm-slapdProxyDn' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3121 NAME 'ibm-slapdProxyPw' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+IBMAttributeTypes: ( 1.3.18.0.2.4.3121 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.3122 NAME 'ibm-slapdProxyTargetURL' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3123 NAME 'ibm-slapdDistributedDynamicGroups' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3124 NAME 'ibm-auditCompare' DESC 'Whether compares are audited'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3125 NAME 'ibm-auditGroupsOnGroupControl' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3127 NAME 'ibm-slapdCryptoSalt' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3128 NAME 'ibm-slapdLog' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3129 NAME 'ibm-slapdLogMaxArchives' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3130 NAME 'ibm-slapdLogOptions' DESC 'What the server logs' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3131 NAME 'ibm-slapdLogSizeThreshold' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3134 NAME 'ibm-slapdLogArchivePath' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3135 NAME 'ibm-slapdProxyDigestRealm' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3140 NAME 'ibm-slapdConfigPwdPolicyOn' DESC 'Whether the password
+  policy is enforced' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3141 NAME 'ibm-pwdAccountLocked' DESC 'Whether the account is locked
+  by an administrator' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3142 NAME 'ibm-slapdReplConflictMaxEntrySize' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3143 NAME 'ibm-slapdProxyNumPartitions' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3144 NAME 'ibm-slapdProxyPartitionBase' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE distributedOperation )
+attributeTypes: ( 1.3.18.0.2.4.3145 NAME 'ibm-slapdProxyPartitionIndex' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.3146 NAME 'ibm-slapdProxyBackendServerDn' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE distributedOperation )
+attributeTypes: ( 1.3.18.0.2.4.3147 NAME 'ibm-slapdCachedAttributeAutoAdjust' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3148 NAME 'ibm-slapdCachedAttributeAutoAdjustTimeInterval' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3149 NAME 'ibm-slapdCachedAttributeAutoAdjustTime' EQUALITY
+  caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3152 NAME 'ibm-slapdReplMaxErrors' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3153 NAME 'ibm-slapdReplContextCacheSize' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3222 NAME 'ibm-auditencodeddn' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3238 NAME 'ibm-pwdPolicyStartTime' DESC 'When the password policy
+  took effect' ORDERING generalizedTimeOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3256 NAME 'ibm-slapdMaxTimeBetweenPrepareAndCommit' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3257 NAME 'ibm-slapdNumRetry' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3277 NAME 'ibm-slapdOs400UsrprjRead' DESC 'Whether the projected
+  backend is read-only' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3287 NAME 'ibm-slapdGroupMembersCacheBypassLimit' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3297 NAME 'ibm-slapdGroupMembersCacheSize' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3298 NAME 'ibm-slapdMaxPersistentSearches' DESC 'Most persistent
+  searches at once' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3299 NAME 'ibm-slapdAdminRole' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3300 NAME 'ibm-slapdEnablePersistentSearch' DESC 'Whether persistent
+  search is allowed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3302 NAME 'ibm-pwdIndividualPolicyDN' DESC 'The entry\27s own
+  password policy' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3303 NAME 'ibm-pwdGroupPolicyDN' DESC 'A group\27s password policy'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3304 NAME 'ibm-slapdDigestEnabled' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3306 NAME 'ibm-slapdEnableRemotePWPExOps' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3310 NAME 'ibm-slapdPtaAttrMapping' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3311 NAME 'ibm-slapdPtaSearchBase' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3312 NAME 'ibm-slapdPtaBindPW' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+IBMAttributeTypes: ( 1.3.18.0.2.4.3312 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.3313 NAME 'ibm-slapdPtaBindDN' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3314 NAME 'ibm-slapdPtaURL' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3315 NAME 'ibm-slapdPtaSubtree' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3316 NAME 'ibm-slapdPtaConnectionPoolSize' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3317 NAME 'ibm-slapdPtaMigratePwd' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3318 NAME 'ibm-slapdPtaResultTimeout' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3319 NAME 'ibm-slapdPtaEnabled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3320 NAME 'ibm-slapdReplRestrictedAccess' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3321 NAME 'ibm-slapdNoReplConflictResolution' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3322 NAME 'ibm-auditPTABindInfo' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3328 NAME 'ibm-auditPerformance' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3329 NAME 'ibm-pwdGroupAndIndividualEnabled' DESC 'Whether group and
+  individual policies apply' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 2.5.4.0 NAME 'objectClass' DESC 'The classes an entry belongs to' EQUALITY
+  objectIdentifierMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.38 )
+attributeTypes: ( 2.5.4.1 NAME ( 'aliasedObjectName' 'aliasedentryname' ) DESC 'The entry an alias
+  points at' EQUALITY distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE USAGE
+  directoryOperation )
+attributeTypes: ( 2.5.18.1 NAME 'createTimestamp' DESC 'When the entry was added' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 2.5.18.2 NAME 'modifyTimestamp' DESC 'When the entry was last changed' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 2.5.18.3 NAME 'creatorsName' DESC 'Who added the entry' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  directoryOperation )
+attributeTypes: ( 2.5.18.4 NAME 'modifiersName' DESC 'Who last changed the entry' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  directoryOperation )
+attributeTypes: ( 2.5.18.9 NAME 'hasSubordinates' DESC 'Whether the entry has entries below it'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 2.5.18.10 NAME 'subschemaSubentry' DESC 'The subschema entry that governs this
+  entry' EQUALITY distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 2.5.21.1 NAME 'ditStructureRules' DESC 'DIT structure rule definitions' EQUALITY
+  integerFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.17 USAGE directoryOperation )
+attributeTypes: ( 2.5.21.2 NAME 'ditContentRules' DESC 'DIT content rule definitions' EQUALITY
+  objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.16 USAGE directoryOperation )
+attributeTypes: ( 2.5.21.4 NAME 'matchingRules' DESC 'Matching rule definitions' EQUALITY
+  objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.30 USAGE directoryOperation )
+attributeTypes: ( 2.5.21.5 NAME 'attributeTypes' DESC 'Attribute type definitions' EQUALITY
+  objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.3 USAGE directoryOperation )
+attributeTypes: ( 2.5.21.6 NAME 'objectClasses' DESC 'Object class definitions' EQUALITY
+  objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.37 USAGE directoryOperation )
+attributeTypes: ( 2.5.21.7 NAME 'nameForms' DESC 'Name form definitions' EQUALITY
+  objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.35 USAGE directoryOperation )
+attributeTypes: ( 2.5.21.8 NAME 'matchingRuleUse' DESC 'Which attributes each matching rule applies
+  to' EQUALITY objectIdentifierFirstComponentMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.31 USAGE
+  directoryOperation )
+attributeTypes: ( 2.5.21.9 NAME 'structuralObjectClass' DESC 'The entry\27s structural object class'
+  EQUALITY objectIdentifierMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.38 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 2.5.21.10 NAME 'governingStructureRule' DESC 'The DIT structure rule that governs
+  the entry' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 2.16.840.1.113730.3.1.34 NAME 'ref' DESC 'Where a referral object points' EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 2.16.840.1.113730.3.1.97 NAME 'passwordMaxAge' DESC 'Password lifetime (older
+  form)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 2.16.840.1.113730.3.1.99 NAME 'passwordMinLength' DESC 'Shortest password allowed
+  (older form)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )

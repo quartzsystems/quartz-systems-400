@@ -1,0 +1,2339 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.ibm.at: every other definition IBM's server lists, so LDIF exported from it loads;
+# QS/400 defines them and does nothing more with them.
+
+attributeTypes: ( 1.2.840.113533.7.68.2 NAME 'ccMailName' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.3 NAME 'ccMailPostOffice' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.4 NAME 'ccMailComments' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.6 NAME 'msMailFullname' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.7 NAME 'msMailId' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.8 NAME 'msMailNetwork' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.9 NAME 'msMailPostOffice' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.10 NAME ( 'attributeCertificate' 'attributeCertificate;binary'
+  ) SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.12 NAME 'qmUserName' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.13 NAME 'qmMailCenter' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.14 NAME 'qmZone' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113533.7.68.17 NAME 'smimetrust' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113533.7.68.18 NAME 'ssltrust' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113533.7.68.19 NAME 'objsigntrust' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113533.7.68.22 NAME 'entrustRoamFileEncInfo' EQUALITY octetStringMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.23 NAME 'entrustRoamingProfile' EQUALITY octetStringMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.24 NAME 'entrustRoamingPAB' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.25 NAME 'entrustRoamingRecipList' EQUALITY octetStringMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.26 NAME 'entrustRoamingSLA' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.27 NAME 'entrustRoamingPRV' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.28 NAME 'entrustRoamingEOP' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.68.30 NAME 'entrustPolicyCertificate' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113533.7.79.0 NAME 'entrustRoamingCAPAB' EQUALITY octetStringMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.2.840.113549.1.9.1 NAME ( 'email' 'emailAddress' ) EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113549.1.9.2 NAME 'unstructuredName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113549.1.9.8 NAME 'unstructuredAddress' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.840.113556.1.4.25 NAME 'ntUserCountryCode' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.44 NAME 'NTUserHomeDir' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.45 NAME 'ntUserHomeDirDrive' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.51 NAME 'ntUserLastLogoff' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.52 NAME 'ntUserLastLogon' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.62 NAME 'ntUserScriptPath' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.86 NAME 'ntUserWorkstations' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.159 NAME 'ntUserAcctExpires' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.478 NAME 'calCalURI' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.479 NAME 'calFBURL' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.480 NAME 'calCAPURI' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.481 NAME 'calCalAdrURI' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.482 NAME 'calOtherCalURIs' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113556.1.4.483 NAME 'calOtherFBURLs' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113556.1.4.484 NAME 'calOtherCAPURIs' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113556.1.4.485 NAME 'calOtherCalAdrURIs' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.2.840.113556.1.4.656 NAME 'userPrincipalName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.2.840.113556.1.4.867 NAME 'altSecurityIdentities' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.6 NAME 'javaClassName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.7 NAME 'javaCodebase' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.8 NAME 'javaSerializedData' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.10 NAME 'javaFactory' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.11 NAME 'javaReferenceAddress' EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.12 NAME 'javaDoc' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.13 NAME 'javaClassNames' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.14 NAME 'corbaIor' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.4.1.15 NAME 'corbaRepositoryId' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.1 NAME 'template-major-version-number' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.2 NAME 'template-minor-version-number' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.3 NAME 'template-url-syntax' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.4 NAME 'service-advert-service-type' EQUALITY
+  caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.5 NAME 'service-advert-scopes' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.6 NAME 'service-advert-url-authenticator' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.42.2.27.6.1.7 NAME 'service-advert-attribute-authenticator' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.250.1.60 NAME ( 'ttl' 'timeToLive' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.31 NAME 'homeFax' SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.6.1.4.1.1466.101.120.34 NAME 'middleName' SUP name EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.1 NAME 'secUUID' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.2 NAME 'secLoginType' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.3 NAME 'secAuthority' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.4 NAME 'secAcctValid' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.5 NAME 'secPwdValid' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.9 NAME 'secDN' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.11 NAME 'secPwdMgmtBind' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.12 NAME 'secAcctExpires' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.13 NAME 'secAcctInactivity' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.14 NAME 'secAcctLife' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.15 NAME 'secPwdAlpha' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.16 NAME 'secPwdSpaces' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.18 NAME 'secPwdFailures' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.19 NAME 'secPwdLastChanged' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.20 NAME 'secPwdLastUsed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.22 NAME 'secCertDN' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.23 NAME 'secCertSerialNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.25 NAME 'secHasPolicy' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.26 NAME 'secHomeGroup' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.27 NAME 'secDomainId' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.105 NAME 'secAuthnData' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.106 NAME 'secAuthnLength' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.108 NAME 'secAuthnType' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.109 NAME 'secMaxWebSessions' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.110 NAME 'secPwdFailureCountInterval' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.111 NAME 'secPwdUnlockTime' EQUALITY generalizedTimeMatch
+  ORDERING generalizedTimeOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.112 NAME 'secPwdLastFailed' EQUALITY generalizedTimeMatch
+  ORDERING generalizedTimeOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.113 NAME 'secPwdFailCountTime' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.143 NAME 'secResCredsID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.144 NAME 'secResGroupID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.145 NAME 'secResourceID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.146 NAME 'secType' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.147 NAME 'secUid' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.150 NAME 'secValid' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.400 NAME 'secSelfAlias' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.401 NAME 'secPartnerAlias' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.4228.1.402 NAME 'secOtherAlias' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.6.1.4.1.4228.24 NAME 'secTODAccess' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.52 NAME 'languageCode' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.53 NAME 'IGNCodePage' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.54 NAME 'wWWURL' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.55 NAME 'iGNFlags' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.57 NAME 'localUserid' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.58 NAME 'productOrService' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.59 NAME 'geographicalCoverage' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.60 NAME 'videoTelephoneNumber' SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.18.0.2.4.61 NAME 'preferredTechnicalFormats' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.62 NAME 'membership' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.64 NAME 'billingAccount' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.65 NAME 'ldapOperation' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.66 NAME 'ldapBaseObject' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.67 NAME 'ldapFilter' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.68 NAME 'directoryOperationString' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.69 NAME 'sizeLimit' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.70 NAME 'directoryOperationName' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  )
+attributeTypes: ( 1.3.18.0.2.4.71 NAME 'deliveryFormat' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.72 NAME 'performanceFrequency' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.73 NAME 'actionDate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.74 NAME 'performedDate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.75 NAME 'validFrom' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.76 NAME 'validTo' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.77 NAME 'changedSince' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.78 NAME 'emailFormat' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.79 NAME 'publisherName' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.80 NAME 'sna3270LUxSession' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.81 NAME 'sna3270Attributes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.82 NAME 'discovery' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.83 NAME 'LUxServerList' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.84 NAME 'LUxUser' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.85 NAME 'APPCServerList' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.86 NAME 'APPCTransTableFilename' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.88 NAME 'APPCSessionLimit' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.89 NAME 'APPCUser' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.90 NAME ( 'cpi_crecord' 'cpi-crecord' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.91 NAME ( 'cpi_csecurityuserid' 'cpi-csecurityuserid' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.92 NAME ( 'cpi_crecord2' 'cpi-crecord2' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.93 NAME ( 'cpi_cserverlist' 'cpi-cserverlist' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.94 NAME ( 'cpi_cuser' 'cpi-cuser' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.95 NAME 'attachRecord' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.96 NAME 'attachRecordServerList' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  )
+attributeTypes: ( 1.3.18.0.2.4.97 NAME 'attachUser' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.98 NAME 'AS400Host' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.99 NAME 'AS400HostUserid' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.100 NAME 'AS400LUName' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.101 NAME 'AS400ModeName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.102 NAME 'OS400CardCategory' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.103 NAME 'OS400CardFamilyLevel' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.104 NAME 'OS400ProductOption' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.105 NAME 'OS400Level' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.106 NAME 'OS400SupportedState' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.107 NAME 'maintenanceUnitForSoftware' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.108 NAME 'OS400ProductID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.109 NAME 'coverLetterStatus' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.110 NAME 'billingCountry' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.111 NAME 'actionPending' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.112 NAME 'OS400PTFSaveFileStatus' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.113 NAME 'OS400PTFMin' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.114 NAME 'OS400PTFMax' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.115 NAME 'OS400PTFSupersedingPTFId' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.116 NAME 'mciHDWCollectDateTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.117 NAME 'mciHDWCollectVersion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.118 NAME 'mciSFWCollectDateTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.119 NAME 'mciSFWCollectVersion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.120 NAME 'mciPTFCollectDateTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.121 NAME 'mciPTFCollectVersion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.122 NAME 'publisherType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.123 NAME 'userType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.124 NAME 'userState' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.125 NAME 'subadminGroup' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.126 NAME 'targetGroup' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.127 NAME 'prereqTarget' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.128 NAME 'autoInitiate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.129 NAME 'autoTerminate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.130 NAME 'accountService' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.131 NAME 'targetService' EQUALITY distinguishedNameMatch ORDERING
+  distinguishedNameOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.132 NAME 'tsType' EQUALITY caseIgnoreIA5Match ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.133 NAME 'targetAdapter' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.134 NAME 'reqIdentifierName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.135 NAME 'reqIdentifier' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.136 NAME 'optIdentifierName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.137 NAME 'optIdentifier' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.139 NAME 'launchable' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.141 NAME 'otherPrincipalPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.142 NAME 'tsName' EQUALITY caseIgnoreIA5Match ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.143 NAME 'taName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.144 NAME 'authenticationType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.145 NAME 'capability' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.147 NAME 'jarFileName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.155 NAME 'secretKey' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.156 NAME 'key' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.157 NAME 'keyLocation' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.158 NAME 'objectClassCaption' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.159 NAME 'validValues' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.160 NAME 'required' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.161 NAME 'editable' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.162 NAME 'targetLocation' EQUALITY caseIgnoreIA5Match ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.163 NAME ( 'bbop_def_kind' 'bbop-def-kind' 'bbopDefKind' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.164 NAME ( 'bbop_id' 'bbop-id' 'bbopId' ) EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.165 NAME ( 'bbop_name' 'bbop-name' 'bbopName' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.166 NAME ( 'bbop_version' 'bbop-version' 'bbopVersion' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.167 NAME ( 'bbop_def_in' 'bbop-def-in' 'bbopDefIn' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.168 NAME ( 'bbop_abs_name' 'bbop-abs-name' 'bbopAbsName' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.169 NAME ( 'bbop_type_def' 'bbop-type-def' 'bbopTypeDef' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.170 NAME ( 'bbop_value' 'bbop-value' 'bbopValue' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.171 NAME ( 'bbop_members' 'bbop-members' 'bbopMembers' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.172 NAME ( 'bbop_disc_td' 'bbop-disc-td' 'bbopDiscTd' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.173 NAME ( 'bbop_orig_td' 'bbop-orig-td' 'bbopOrigTd' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.174 NAME ( 'bbop_mode' 'bbop-mode' 'bbopMode' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.175 NAME ( 'bbop_res_def' 'bbop-res-def' 'bbopResDef' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.176 NAME ( 'bbop_params' 'bbop-params' 'bbopParams' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.177 NAME ( 'bbop_contexts' 'bbop-contexts' 'bbopContexts' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.178 NAME ( 'bbop_except' 'bbop-except' 'bbopExcept' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.179 NAME ( 'bbop_base_int' 'bbop-base-int' 'bbopBaseInt' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.180 NAME ( 'bbop_pkstring' 'bbop-pkstring' 'bbopPkstring' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.181 NAME ( 'bbop_refer' 'bbop-refer' 'bbopRefer' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.182 NAME 'sequenceNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.183 NAME ( 'bt' 'bindingType' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.184 NAME ( 'oref' 'objectReference' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.185 NAME 'sysplex' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.186 NAME 'profileType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.215 NAME 'SAFDfpDataApplication' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.216 NAME 'SAFDfpDataClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.217 NAME 'SAFDfpManagementClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.218 NAME 'SAFDfpStorageClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.221 NAME 'SAFAccountNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.222 NAME 'SAFDefaultCommand' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.223 NAME 'SAFDestination' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.224 NAME 'SAFHoldClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.225 NAME 'SAFJobClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.226 NAME 'SAFMessageClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.227 NAME 'SAFDefaultLoginProc' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.228 NAME 'SAFLogonSize' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.229 NAME 'SAFMaximumRegionSize' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.230 NAME 'SAFDefaultSysoutClass' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.231 NAME 'SAFUserdata' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.232 NAME 'SAFDefaultUnit' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.233 NAME 'SAFTsoSecurityLabel' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.292 NAME 'accessHint' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.293 NAME 'accountHint' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.295 NAME ( 'appl' 'applicationName' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.296 NAME 'applSoftwareHint' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.297 NAME 'applSystemHint' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.298 NAME 'replicaHost' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.299 NAME 'replicaBindDN' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.300 NAME ( 'replicaCredentials' 'replicaBindCredentials' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.301 NAME 'replicaPort' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.302 NAME 'replicaBindMethod' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.303 NAME 'replicaUseSSL' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.304 NAME 'replicaUpdateTimeInterval' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.305 NAME 'binProperty' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.306 NAME 'binPropertyType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.307 NAME 'cesProperty' EQUALITY caseExactMatch SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.308 NAME 'cesPropertyType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.309 NAME 'cisProperty' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.310 NAME 'cisPropertyType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.311 NAME ( 'cid' 'configID' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.312 NAME 'configPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.313 NAME 'hostedSoftwarePtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.314 NAME 'installSoftwarePtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.315 NAME 'localPath' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.316 NAME 'location' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.317 NAME 'osPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.318 NAME ( 'principalName' 'principal' ) EQUALITY caseIgnoreIA5Match
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.319 NAME 'principalPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.320 NAME 'propertyType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.321 NAME ( 'sapName' 'sap' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.322 NAME 'sapPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.323 NAME 'serviceHint' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.324 NAME ( 'serviceName' 'svc' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.325 NAME ( 'settingID' 'sid' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.327 NAME ( 'software' 'softwareName' ) EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.328 NAME 'supportingFiles' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.329 NAME ( 'sys' 'systemName' ) EQUALITY caseIgnoreIA5Match ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.330 NAME 'usingElementPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.332 NAME 'msgFileName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.333 NAME 'IPLAction' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.334 NAME 'APPCLoadBalancing' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.335 NAME 'compressed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.336 NAME 'deviceMap' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.337 NAME 'diskDriveIndex' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.338 NAME 'driveType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.339 NAME 'fileSystem' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.340 NAME 'hardwareVersion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.341 NAME 'interfaceType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.342 NAME 'maximumComponentLength' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.343 NAME 'mediaLoaded' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.344 NAME 'mediaType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.345 NAME 'partitions' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.346 NAME 'providerName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.347 NAME 'SCSIBus' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.348 NAME 'SCSIControllerIndex' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.349 NAME 'SCSILogicalUnit' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.350 NAME 'SCSIPort' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.351 NAME 'SCSITargetID' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.352 NAME 'sectorsPerTrack' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.353 NAME 'size' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.354 NAME 'supportsFileBasedCompression' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.355 NAME 'totalCylinders' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.356 NAME 'totalHeads' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.357 NAME 'totalSectors' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.358 NAME 'totalTracks' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.359 NAME 'tracksPerCylinder' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.360 NAME 'volumeName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.361 NAME 'volumeSerialNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.362 NAME 'nfiAdapterMemory' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.363 NAME 'nfiBaseMemory' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.364 NAME 'nfiBoardMemory' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.365 NAME 'nfiCacheableMemory' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.366 NAME 'nfiCmWindowEnd' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.367 NAME 'nfiCmWindowEndGMT' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.368 NAME 'nfiCmWindowStart' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.369 NAME 'nfiCmWindowStartGmt' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.370 NAME 'nfiDedicatedIRQ' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.371 NAME 'nfiDistWindowEnd' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.372 NAME 'nfiDistWindowEndGMT' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.373 NAME 'nfiDistWindowStart' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.374 NAME 'nfiDistWindowStartGMT' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.375 NAME 'nfiHDWCollectDateTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.376 NAME 'nfiInventoryServerID' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.377 NAME 'nfiIPXAddress' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.378 NAME 'nfiKeywords' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.379 NAME 'nfiLocalDmMgr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.380 NAME 'nfiLocalServerInv' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.381 NAME 'nfiLogicalGroupID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.382 NAME 'nfiManagingID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.383 NAME 'nfiMemoryDetected' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.384 NAME 'nfiMode' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.386 NAME 'nfiNbrKeywords' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.387 NAME 'nfiNetIdCPName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.388 NAME 'nfiNVRAM' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.389 NAME 'nfiParallelPorts' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.390 NAME 'nfiPreviousServerID' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.391 NAME 'nfiProtocolType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.392 NAME 'nfiReferenceDisk' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.393 NAME 'nfiRemoteDmMgr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.394 NAME 'nfiRemoteServerID' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.395 NAME 'nfiRen' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.396 NAME 'nfiRgn' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.397 NAME 'nfiSerialPorts' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.398 NAME 'nfiServerName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.399 NAME 'nfiSFWCollectDateTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.400 NAME 'nfiSharedIRQ' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.401 NAME 'nfiSnaAddress' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.402 NAME 'nfiTargetType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.403 NAME 'osType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.407 NAME 'AccountSuffix' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.408 NAME 'clienttypereg' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.409 NAME 'countryreg' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.410 NAME 'domainuserid' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.411 NAME 'eNetworkHostName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.412 NAME 'eNetworkPort' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.413 NAME 'httppassword' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.414 NAME 'ntDomain' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.415 NAME 'ntuserauthflags' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.416 NAME 'ntDomainUserID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.417 NAME 'ntDefaultPassword' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.418 NAME 'db2Type' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.419 NAME 'db2nodeName' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.420 NAME 'db2nodeAlias' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.421 NAME 'db2databaseName' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.422 NAME 'db2databaseAlias' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.423 NAME 'db2nodePtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.424 NAME 'db2gwPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.425 NAME 'db2authenticationLocation' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.426 NAME 'db2additionalParameters' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.427 NAME 'db2ARLibrary' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.428 NAME ( 'db2instanceName' 'instance' ) EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.429 NAME ( 'db2databaseRelease' 'db2Release' ) EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.430 NAME 'eNTUserPrimaryGroupId' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.431 NAME 'eNTUserFlags' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.432 NAME 'eNTPasswordSync' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.433 NAME 'eNTUserUnitsPerWeek' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.434 NAME 'eNTUserLogonHours' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.435 NAME 'eNTUserPriv' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.436 NAME 'eNTUserBadPwCount' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.437 NAME 'eNTGroupAttributes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.438 NAME 'eNTUserPasswordExpired' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.439 NAME 'eNTDomainGroupID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.440 NAME 'eNTUserMaxStorage' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.441 NAME 'UserSuffix' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.442 NAME 'LdifFileName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.443 NAME 'DCEPrincipalName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.444 NAME 'codePage' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.445 NAME 'ntUserNumLogons' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.446 NAME 'primaryOwnerName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.447 NAME 'sizeStoredInPagingFiles' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.448 NAME 'codeSet' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.449 NAME 'documentAuthorSurName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.450 NAME ( 'skuNumber' 'sku' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.451 NAME 'obsoletesDocument' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.452 NAME 'distributedOS' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.455 NAME 'buildNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.456 NAME 'userPKCS12' DESC 'PKCS #12 personal information exchange'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.460 NAME 'softwareElementState' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  )
+attributeTypes: ( 1.3.18.0.2.4.461 NAME 'startupParameters' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.462 NAME 'maxNumberOfProcesses' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.464 NAME 'numberWarnDays' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.466 NAME 'totalSwapSpaceSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.467 NAME 'subject' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.468 NAME 'currentTimeZone' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.471 NAME 'nextContainerDN' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.474 NAME 'timeExpireLockout' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.475 NAME 'documentStore' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.476 NAME 'obsoletedByDocument' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.477 NAME 'languageEdition' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.478 NAME 'updatesDocument' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.479 NAME 'version' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.480 NAME 'documentAuthorCommonName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.481 NAME 'identificationCode' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.483 NAME 'caption' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.484 NAME 'systemRoles' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.486 NAME ( 'host' 'hostName' ) DESC 'Host name' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.487 NAME 'startMode' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.488 NAME 'otherOSTypeDescription' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.490 NAME 'nameFormat' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.491 NAME 'updatedByDocument' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.492 NAME 'numberOfLicensedUsers' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.493 NAME 'installDate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.494 NAME 'primaryOwnerContact' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.495 NAME 'dmdName' SUP name EQUALITY caseIgnoreIA5Match SUBSTR
+  caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.496 NAME 'identifyingNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.497 NAME 'softwareElementID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.498 NAME 'manufacturer' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.500 NAME 'keywords' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.501 NAME 'userid' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.502 NAME 'certificateExpirationDate' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.503 NAME 'certifierId' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.504 NAME 'certifierPassword' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.505 NAME 'createAddressBookEntry' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.506 NAME 'createIdFile' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.507 NAME 'createMailDatabase' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.508 NAME 'createNorthAmericanId' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.509 NAME 'idFilePath' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.510 NAME 'idtype' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.511 NAME 'initialPassword' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.512 NAME 'localadmin' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.513 NAME 'mailFile' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.514 NAME 'mailProgram' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.515 NAME 'mailServer' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.517 NAME 'minPasswordLength' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.518 NAME 'overwriteaddressbook' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.519 NAME 'overwriteidfile' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.520 NAME 'profiles' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.521 NAME 'registrationServer' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.522 NAME 'saveIdInAddressBook' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.523 NAME 'saveIdInFile' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.524 NAME 'createFullTextIndex' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.525 NAME 'createNotesUser' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.526 NAME 'fullName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.527 NAME 'initialPopulation' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.528 NAME 'internetAddress' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.529 NAME 'mailDomain' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.530 NAME 'mailFileOwnerAccess' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.531 NAME 'mailFileTemplate' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.532 NAME 'mailSystem' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.533 NAME 'proposedAltFullNameLanguage' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.534 NAME 'proposedAltOrgUnit' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.535 NAME 'setDbQuota' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.536 NAME 'setWarningThreshold' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.537 NAME 'shortName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.538 NAME 'groupid' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.539 NAME 'listname' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.540 NAME 'availableForDirSync' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.541 NAME 'dominogroupmembers' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.542 NAME 'GroupType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.543 NAME 'defaultpassword' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.544 NAME 'httppasswordsync' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.545 NAME 'GroupSuffix' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.547 NAME 'maxTransferRate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.548 NAME 'controllerTimeouts' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.549 NAME 'videoProcessor' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.550 NAME 'logicalUnit' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.551 NAME 'videoMemoryType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.552 NAME 'numberOfVideoPages' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.553 NAME 'maxMemorySupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.554 NAME 'acceleratorCapabilities' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.555 NAME 'currentBitsPerPixel' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.556 NAME 'currentHorizontalResolution' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.557 NAME 'currentVerticalResolution' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.558 NAME 'maxRefreshRate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.559 NAME 'minRefreshRate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.560 NAME 'currentRefreshRate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.561 NAME 'currentScanMode' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.562 NAME 'currentNumberOfRows' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.563 NAME 'currentNumberOfColumns' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.564 NAME 'videoArchitecture' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.565 NAME 'otherVideoArchitectureDescription' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.566 NAME 'videoMode' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.567 NAME 'numberOfColorPlanes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.568 NAME 'isLocked' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.569 NAME 'displayType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.570 NAME 'bandWidth' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.571 NAME 'horizontalSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.572 NAME 'verticalSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.573 NAME 'videoSubsystem' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.574 NAME 'slotLocation' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.575 NAME 'role' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.576 NAME 'otherFamilyDescription' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.577 NAME 'family' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.578 NAME 'upgradeMethod' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.579 NAME 'maxClockSpeed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.580 NAME 'currentClockSpeed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.581 NAME 'dataWidth' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.582 NAME 'addressWidth' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.583 NAME 'loadPercentage' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.584 NAME 'stepping' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.585 NAME 'internalCacheEnabled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.586 NAME 'externalCacheEnabled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.587 NAME 'planarSpeed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.588 NAME 'processorNumber' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.589 NAME 'printerStatus' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.590 NAME 'detectedErrorState' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.591 NAME 'paperSizesSupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.592 NAME 'languagesSupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.593 NAME 'jobCountSinceLastReset' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.594 NAME 'timeOfLastReset' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.595 NAME 'horizontalResolution' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.596 NAME 'verticalResolution' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.597 NAME 'queueName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.598 NAME 'portName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.599 NAME 'driverName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.600 NAME 'primaryBusType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.601 NAME 'revisionNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.602 NAME 'secondaryBusType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.603 NAME 'model' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.604 NAME 'tag' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.605 NAME 'removable' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.606 NAME 'hostBusType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.607 NAME 'minBlockSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.608 NAME 'maxCDB' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.609 NAME 'mediaAccessDeviceCapabilities' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.610 NAME 'ansiLevel' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.611 NAME 'addMinor' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.612 NAME 'busAttributes' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.613 NAME 'blockSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.614 NAME 'powerManagementSupported' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.615 NAME 'networkAddress' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.616 NAME 'slotNumber' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.617 NAME 'unitStatus' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.618 NAME 'compressionMethod' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.619 NAME 'maxBlockSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.620 NAME 'bytesPerSector' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.621 NAME 'storageExtentPurpose' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.622 NAME 'numberOfBlocks' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.623 NAME 'maxMediaSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.624 NAME 'ioAccessSupported' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.625 NAME 'protocolSupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.626 NAME 'defaultBlockSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.627 NAME 'maxDataWidth' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.628 NAME 'maxNumberControlled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.629 NAME 'deviceID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.630 NAME 'sectorsPerCluster' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.631 NAME 'otherProtocolSupportedDescription' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.632 NAME 'numberOfMediaSupported' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.633 NAME 'protectionManagement' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.634 NAME 'powerManagementCapabilities' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.635 NAME 'storageExtentAccess' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.636 NAME 'errorMethodology' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.637 NAME 'addMajor' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.638 NAME 'maxScatter' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.639 NAME 'replaceable' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.640 NAME 'hotSwappable' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.641 NAME 'formFactor' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.642 NAME 'memoryType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.643 NAME 'totalWidth' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.644 NAME 'speed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.645 NAME 'capacity' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.646 NAME 'bankLabel' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.647 NAME 'positionInRow' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.648 NAME 'interleavePosition' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.649 NAME 'numberOfFunctionKeys' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.651 NAME 'layout' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.652 NAME 'countryCode' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.653 NAME 'subcountryCode' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.654 NAME 'typeMaticRate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.655 NAME 'typeMaticDelay' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.656 NAME 'pointingType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.657 NAME 'numberOfButtons' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.658 NAME 'headedness' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.659 NAME 'pointingTypeResolution' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.660 NAME 'IRQNumber' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.661 NAME 'doubleClickRate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.662 NAME 'internalTelephoneNumber' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.18.0.2.4.663 NAME 'externalTelephoneNumber' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.18.0.2.4.664 NAME 'cellularTelephoneNumber' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.18.0.2.4.665 NAME 'backupName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.666 NAME 'backupTelephoneNumber' SYNTAX 1.3.6.1.4.1.1466.115.121.1.50
+  )
+attributeTypes: ( 1.3.18.0.2.4.667 NAME 'height' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.668 NAME 'depth' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.669 NAME 'width' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.670 NAME 'weight' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.671 NAME 'isCompatible' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.672 NAME 'requiresDaughterBoard' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.673 NAME 'specialRequirements' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.674 NAME 'requirementsDescription' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.675 NAME 'lockPresent' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.676 NAME 'visibleAlarm' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.677 NAME 'cableManagementStrategy' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.678 NAME 'servicePhilosophy' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.679 NAME 'serviceDescriptions' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.680 NAME 'audibleAlarm' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.681 NAME 'securityBreach' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.682 NAME 'breachDescription' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.683 NAME 'numberOfPowerCords' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.684 NAME 'currentRequiredOrProduced' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.685 NAME 'heatGeneration' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.686 NAME 'chassisTypes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.687 NAME 'connectorType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.688 NAME 'otherConnectorTypeDescription' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.689 NAME 'modelSubNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.690 NAME 'modelNumber' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.691 NAME 'primaryBIOS' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.692 NAME 'BIOSDate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.693 NAME 'locationName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.694 NAME 'physicalPosition' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.695 NAME 'companyName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.696 NAME 'floor' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.697 NAME 'printerCapabilities' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.698 NAME 'pointingDeviceResolution' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.699 NAME 'managerName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.700 NAME 'managerTelephoneNumber' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.18.0.2.4.701 NAME 'secretaryTelephoneNumber' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 1.3.18.0.2.4.702 NAME 'secretaryName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.703 NAME 'hostingBoard' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.704 NAME 'slotLayout' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.705 NAME 'city' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.706 NAME 'physicalElementLocation' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.708 NAME 'abstract' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.710 NAME 'maxFailedLogins' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.711 NAME ( 'card' 'cardName' ) EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.712 NAME 'url' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.715 NAME 'displayName' DESC 'Name to show' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.716 NAME 'ntuserid' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.717 NAME 'ntUserComment' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.718 NAME 'proposedaltcommonname' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.719 NAME 'eOnDemandCategory' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.720 NAME 'jarFileNameLong' SUP jarFileName EQUALITY caseExactMatch
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.721 NAME 'javaClassNameLong' SUP javaClassName EQUALITY
+  caseExactMatch SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.722 NAME 'largeIconURLStructured' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.723 NAME 'eOnDemandEarliestOAT' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.724 NAME 'eOnDemandSoftwareType' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.725 NAME 'eOnDemandAuthenticationType' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.726 NAME 'isAccountEnabled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.727 NAME 'authenticationHost' SUP host SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.728 NAME 'isAdministrator' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.729 NAME 'eOnDemandSoftwareContext' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.730 NAME 'authenticationUserID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.731 NAME 'eOnDemandPasswordTimestamp' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.732 NAME 'smallIconURLStructured' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.733 NAME 'labeledURILong' SUP labeledURI EQUALITY caseExactMatch )
+attributeTypes: ( 1.3.18.0.2.4.734 NAME 'hashedPassword' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.735 NAME 'captionMulti' SUP caption )
+attributeTypes: ( 1.3.18.0.2.4.736 NAME 'lastPasswordCheck' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.737 NAME 'LU62LocalLUAlias' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.738 NAME 'LU62PartnerLUAlias' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.739 NAME 'server' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.18.0.2.4.740 NAME 'discoveryEncryption' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.741 NAME 'serviceActive' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.742 NAME 'maxEntries' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.743 NAME 'isLoginAllowed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.744 NAME 'physicalMemLimitHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.745 NAME 'roleName' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.746 NAME 'AIXUpperMACLevel' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.748 NAME 'hostLastUnsuccessfulLogin' SUP host EQUALITY
+  caseExactIA5Match ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.749 NAME 'ixTimeLastUnsuccessfulLogin' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.751 NAME 'coreSizeLimit' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.752 NAME 'AIXScreens' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.754 NAME 'stackSizeLimitHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.755 NAME 'authorizationLevel' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.756 NAME 'AIXAdminGroupId' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.757 NAME 'filePermMask' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.758 NAME 'dataSegSizeHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.759 NAME 'stackSizeLimit' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.760 NAME 'ixLastUpdate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.761 NAME 'isDaemon' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.18.0.2.4.762 NAME 'authMethod1' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.763 NAME 'dataSegSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.765 NAME 'groupPassword' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.766 NAME 'AIXFuncMode' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.767 NAME 'terminalLastLogin' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.768 NAME 'AIXGroupAdminList' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.769 NAME 'terminalLastUnsuccessfulLogin' EQUALITY caseExactMatch
+  ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.770 NAME 'AIXUserID' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.771 NAME 'ixTimeLastLogin' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.773 NAME 'groupSwitchUserAllowed' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.774 NAME 'msgNumber' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.776 NAME 'AIXAdminUserId' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.777 NAME 'AIXPromptMAC' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.778 NAME 'AIXLowMACLevel' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.779 NAME 'fileSizeLimitHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.780 NAME 'authMethod2' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.781 NAME 'openFileLimit' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.782 NAME 'AIXGroupID' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.783 NAME 'userName' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.784 NAME 'openFileLimitHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.785 NAME 'fileSizeLimit' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.786 NAME 'roleList' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.787 NAME 'hostLastLogin' SUP host EQUALITY caseExactIA5Match ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.789 NAME 'cpuSizeHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.790 NAME 'physicalMemLimit' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.793 NAME 'AIXDefaultMACLevel' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.794 NAME 'roleVisibility' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.795 NAME 'userEnvironment' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.796 NAME 'maxage' SUP passwordMaxAge SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.797 NAME 'AIXisDCEExport' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.798 NAME 'coreSizeLimitHard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.799 NAME 'isRemoteAccessAllowed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.800 NAME 'trustedPathStatus' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.801 NAME 'loginTimes' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.803 NAME 'groupList' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.804 NAME 'systemEnvironment' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.805 NAME 'cpuSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.806 NAME 'timeExpiredLogout' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.807 NAME 'maxLogin' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.808 NAME 'isSwitchUserAllowed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.809 NAME 'terminalAccess' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.810 NAME 'adminGroupNames' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.811 NAME 'unsuccessfulLoginCount' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.812 NAME 'auditClasses' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.813 NAME 'gid' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.814 NAME 'GroupName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.815 NAME 'ibmCom1986-Common-ComponentName' EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.816 NAME 'ibmCom1986-Rsfw-RegisteredSoftwareName' SUP name EQUALITY
+  caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.817 NAME 'ibmCom1986-Common-featureName' EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.818 NAME ( 'ibmCom1986-Krb-kerberosRealm' 'KerberosRealm' ) EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.819 NAME 'subtreeSpecification' SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.820 NAME 'ibm-Tsm-Srv-Port' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.821 NAME 'ibm-Tsm-Srv-Address' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.822 NAME 'ibm-Tsm-Srv-Name' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.823 NAME 'ibm-Tsm-Srv-Socket' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.824 NAME 'ibm-Tsm-Srv-NetServer' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.825 NAME 'ibm-Tsm-Srv-NodeName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.832 NAME 'paperTypesAvailable' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.833 NAME 'defaultPaperType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.834 NAME 'currentPaperType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.835 NAME 'mimeTypesSupported' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.836 NAME 'printerCurrentLanguage' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.837 NAME 'currentMimeType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.838 NAME 'printerDefaultLanguage' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.839 NAME 'defaultMimeType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.840 NAME 'printerDefaultCapabilities' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.841 NAME 'printerCurrentCapabilities' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.842 NAME 'maxCopies' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.843 NAME 'defaultCopies' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.844 NAME 'maxNumberUp' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.845 NAME 'defaultNumberUp' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.846 NAME 'printerCharSetsSupported' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.847 NAME 'printerCurrentCharSet' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.848 NAME 'printerNaturalLanguagesSupported' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.849 NAME 'printerCurrentNaturalLanguage' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.850 NAME 'printerMaxSizeSupported' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.851 NAME 'availableJobSheets' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.852 NAME 'markingTechnology' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.853 NAME 'printQueueEnabled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.854 NAME 'printQueueAccepting' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.855 NAME 'numberOnQueue' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.856 NAME 'printQueueStatus' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.857 NAME 'printQueueStatusInfo' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.858 NAME 'maxJobSize' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.859 NAME 'defaultJobPriority' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.860 NAME 'jobPriorityHigh' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.861 NAME 'jobPriorityLow' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.862 NAME 'prtMailIfFail' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.864 NAME 'prtPrinterType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.865 NAME 'prtRecoveryType' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.866 NAME 'prtPrintProtocol' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.867 NAME 'prtDefaults' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.868 NAME 'prtLocalName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.869 NAME 'prtAllowBannerOverride' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.870 NAME 'prtUserAllow' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.871 NAME 'prtQAlias' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.872 NAME 'prtUserDeny' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.873 NAME 'prtNetworkEntity' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.874 NAME 'isConfiguredByDirectory' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.875 NAME 'prtServicedBy' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.876 NAME 'queuePtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.877 NAME 'prtUNIXServicedBy' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.878 NAME 'accessList' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1060 NAME 'ibm-HostedOnSystemRef' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1061 NAME 'ibm-PolicyRef' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1062 NAME 'ibm-SdpComponentType' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1063 NAME 'ibm-SdpAdminID' SUP uid EQUALITY caseIgnoreIA5Match
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.1064 NAME 'ibm-WgClient' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1065 NAME 'ibm-WapClient' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1066 NAME 'ibm-ServiceUsesServiceRef' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1067 NAME 'ibm-ServiceUsedByServiceRef' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1068 NAME ( 'ibm-kn' 'ibm-kerberosName' ) EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1080 NAME 'ibm-OS400PrintImageConfig' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1081 NAME 'ibm-OS400PrintDriverType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1082 NAME 'ibm-OS400PrintQueueLibrary' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1083 NAME 'ibm-OS400PrintIsAdvancedFunctionPrinting' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1084 NAME 'ibm-OS400PrintWriterStatus' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1085 NAME ( 'ipAddressType' 'ipV4-V6AddressType' ) SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1086 NAME ( 'ipAddress' 'ipV4-V6Address' ) EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1087 NAME ( 'ibm-hostAlias' 'hostNameAlias' ) EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1088 NAME 'krbAliasedObjectName' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1089 NAME 'krbRealmName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1090 NAME 'princSubtree' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1091 NAME 'krbPrincipalName' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1107 NAME 'printer-xri-supported' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1108 NAME 'printer-aliases' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1109 NAME 'printer-charset-configured' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1110 NAME 'printer-job-priority-supported' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1111 NAME 'printer-job-k-octets-supported' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1112 NAME 'printer-current-operator' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1113 NAME 'printer-service-person' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1114 NAME 'printer-delivery-orientation-supported' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1115 NAME 'printer-stacking-order-supported' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1116 NAME 'printer-output-features-supported' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1117 NAME 'printer-media-local-supported' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1118 NAME 'printer-copies-supported' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1119 NAME 'printer-natural-language-configured' EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1120 NAME 'printer-print-quality-supported' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1121 NAME 'printer-resolution-supported' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1122 NAME 'printer-media-supported' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1123 NAME 'printer-sides-supported' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1124 NAME 'printer-number-up-supported' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.1125 NAME 'printer-finishings-supported' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1126 NAME 'printer-pages-per-minute-color' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1127 NAME 'printer-pages-per-minute' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1128 NAME 'printer-compression-supported' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1129 NAME 'printer-color-supported' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1130 NAME 'printer-document-format-supported' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1131 NAME 'printer-charset-supported' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1132 NAME 'printer-multiple-document-jobs-supported' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1133 NAME 'printer-ipp-versions-supported' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1134 NAME 'printer-more-info' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1135 NAME 'printer-name' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1136 NAME 'printer-location' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1137 NAME 'printer-generated-natural-language-supported' EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1138 NAME 'printer-make-and-model' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1139 NAME 'printer-info' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1140 NAME 'printer-uri' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1141 NAME 'ibm-tismStatus' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1154 NAME 'krbHintAliases' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1155 NAME 'ibm-changeInitiatorsName' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1156 NAME 'krbPrincSubtree' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1157 NAME 'krbRealmName-V2' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1728 NAME 'ibm-sourceIPAddressRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1729 NAME 'ibm-MaxConnections' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1730 NAME 'ibm-destinationIPAddressRange' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1731 NAME 'ibm-DiffServInProfileTokenBucket' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1732 NAME 'ibm-outgoingTOS' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1733 NAME 'ibm-MinRate' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1734 NAME 'ibm-interface' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1735 NAME 'ibm-MaxFlows' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1736 NAME 'ibm-MaxRate' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1737 NAME 'ibm-MaxDelay' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1738 NAME 'ibm-sourcePortRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1739 NAME 'ibm-DiffServInProfileRate' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1740 NAME 'priorityTosMapping' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1741 NAME 'ibm-applicationData' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1742 NAME 'ibm-DiffServInProfileMaxPacketSize' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1743 NAME 'ibm-DiffServExcessTrafficTreatment' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1744 NAME 'ibm-PolicyScope' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1745 NAME 'ibm-DiffServInProfilePeakRate' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1746 NAME 'ibm-policyRuleActionList' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1747 NAME 'ibm-ptpConditionTimeZone' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1748 NAME 'ibm-destinationPortRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1749 NAME 'ibm-policyGroupsAuxContainedSet' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1750 NAME 'ibm-policyRulePriority' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1751 NAME 'ibm-policyRulesAuxContainedSet' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1752 NAME 'ibm-policyRuleValidityPeriodList' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1753 NAME 'ibm-policyRuleMandatory' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1754 NAME 'ibm-ptpConditionDayofMonthMask' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1755 NAME 'ibm-ptpConditionTime' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1756 NAME 'ibm-policyActionName' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1757 NAME 'ibm-policyConditionName' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1758 NAME 'ibm-policyRuleName' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1759 NAME 'ibm-policyGroupName' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1760 NAME 'ibm-policyRuleKeywords' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1761 NAME 'SubnetAddr' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1762 NAME 'SubnetTosMask' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1763 NAME 'ibm-policyRuleUsage' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1764 NAME 'ibm-DiffServOutProfileTransmittedTOSByte' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1765 NAME 'ibm-policyRuleConditionListType' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1766 NAME 'ibm-policyRuleSequencedActions' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1767 NAME 'ibm-policyRuleEnabled' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1768 NAME 'ibm-MaxTokenBucketPerFlow' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1769 NAME 'ibm-MaxRatePerFlow' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1770 NAME 'ibm-policyGroupKeywords' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1771 NAME 'ibm-policyRuleConditionList' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1772 NAME 'ibm-permission' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1773 NAME 'ibm-ptpConditionMonthOfYearMask' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1774 NAME 'ibm-ptpConditionTimeOfDayMask' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1775 NAME 'ibm-ptpConditionDayOfWeekMask' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1776 NAME 'ibm-applicationName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1777 NAME 'ibm-FlowServiceType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1778 NAME 'ibm-protocolNumberRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1781 NAME 'ibm-policyGroupForLoadDistribution' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1782 NAME 'ibm-policyConditionNegated' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1783 NAME 'ibm-policyConditionGroupNumber' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1784 NAME 'ibm-policyRuleActionListDN' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1785 NAME 'ibm-policySubtreesAuxContainedSet' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1786 NAME 'ibm-applicationPriority' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1787 NAME 'ibm-policyRoles' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1788 NAME 'ibm-ptpConditionLocalOrUtcTime' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1789 NAME 'ibm-policyRuleConditionListDN' EQUALITY
+  distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.1790 NAME 'ibm-policyKeywords' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1791 NAME 'ibm-policyActionDN' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1792 NAME 'ibm-policyConditionDN' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1793 NAME 'ibm-policyInstanceName' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1794 NAME 'ibm-policyRepositoryName' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1795 NAME 'ibm-policyActionOrder' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1796 NAME 'ibm-idsLocalHostIPAddress' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1797 NAME 'ibm-idsNotification' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1798 NAME 'ibm-idsTRtcpTotalConnections' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1799 NAME 'ibm-idsAttackType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1800 NAME 'ibm-idsRemoteHostIPAddress' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1801 NAME 'ibm-idsActionType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1802 NAME 'ibm-idsIPOptionRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1803 NAME 'ibm-idsProtocolRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1804 NAME 'ibm-idsTRudpQueueSize' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1805 NAME 'ibm-idsFSThreshold' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1806 NAME 'ibm-idsSensitivity' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1807 NAME 'ibm-idsTRtcpLimitScope' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1808 NAME 'ibm-idsScanExclusion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1809 NAME 'ibm-idsTypeActions' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1810 NAME 'ibm-idsSSThreshold' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1811 NAME 'ibm-idsTraceData' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1812 NAME 'ibm-idsSSInterval' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1813 NAME 'ibm-idsLoggingLevel' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1814 NAME 'ibm-idsTraceRecordSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1815 NAME 'ibm-idsStatInterval' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1816 NAME 'ibm-idsFSInterval' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1817 NAME 'ibm-idsRemotePortRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1818 NAME 'ibm-idsLocalPortRange' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1819 NAME 'ibm-idsMaxEventMessage' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1820 NAME 'ibm-idsTRtcpPercentage' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1821 NAME 'ibm-idsConditionType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.1992 NAME 'ibm-userQoSGroup' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1993 NAME 'ibm-userNameId' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1994 NAME 'ibm-serverDomainName' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.1995 NAME 'ibm-eimTargetUserName' EQUALITY caseExactIA5Match SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1996 NAME 'ibm-eimAdminUserAssoc' EQUALITY caseExactIA5Match SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1997 NAME 'ibm-eimSourceUserAssoc' EQUALITY caseExactIA5Match SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1998 NAME 'ibm-eimUserAssoc' EQUALITY caseExactIA5Match SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.1999 NAME 'ibm-eimRegistryName' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2000 NAME 'ibm-eimRegistryType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2001 NAME 'ibm-eimAdditionalInformation' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2002 NAME 'ibm-eimRegistryEntryName' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2003 NAME 'ibm-eimDomainName' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2004 NAME 'ibm-eimTargetIdAssoc' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2005 NAME 'ibm-eimRegistryAliases' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2006 NAME 'ibm-eimDomainVersion' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2008 NAME 'ibm-personalAddressBookApplicationServerName' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2009 NAME 'ibm-personalAddressBookPathName' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2010 NAME 'ibm-personalAddressBookServerType' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2013 NAME 'ibm-PMString' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2014 NAME 'ibm-timeSeparator' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2015 NAME 'ibm-timeZone' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2016 NAME 'ibm-todayString' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2017 NAME 'ibm-yesterdayString' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2018 NAME 'ibm-tomorrowString' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2019 NAME 'ibm-AMString' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2020 NAME 'ibm-dateSeparator' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2023 NAME 'ibm-use24HourTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2024 NAME 'ibm-observeDST' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2026 NAME 'ibm-dateOrder' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2027 NAME 'ibm-appDeviceAddress' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2028 NAME 'ibm-javaSerializedJarFile' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2029 NAME 'ibm-ownerName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2030 NAME 'ibm-deviceOS' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2031 NAME 'ibm-deviceIDType' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2032 NAME 'ibm-isDeviceEnabled' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2034 NAME 'ibm-appProtocolType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2035 NAME 'ibm-appProtocolVersion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2036 NAME 'ibm-appProtocol' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2037 NAME 'ibm-deviceIDList' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2038 NAME 'ibm-deviceType' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2039 NAME 'ibm-CertificateSubjectAndIssuer' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2101 NAME 'ibm-applicationRequestPeakRate' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2102 NAME 'ibm-applicationRequestBurstSize' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2103 NAME 'ibm-PeakConnectionRate' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2104 NAME 'ibm-prioritizedQueue' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2105 NAME 'ibm-averageApplicationRequestRate' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2106 NAME 'ibm-connectionBurstSize' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2107 NAME 'ibm-averageConnectionRate' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2204 NAME 'ibm-signalClient' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2205 NAME 'ibm-inboundScope' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2214 NAME 'ibm-useSystemDateTimeFormatSettings' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2215 NAME 'ibm-useSystemTimeZoneSettings' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2216 NAME 'unixHomeFile' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2217 NAME 'unixMountPoint' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2218 NAME 'networkAddresses' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2219 NAME 'prtNetworkSystem' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.2220 NAME 'prtSystemDeny' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.2221 NAME 'prtSystemAllow' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.2222 NAME 'prtOutputContent' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2223 NAME 'prtRejectReason' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2224 NAME 'prtAcceptState' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2225 NAME 'prtDisabledReason' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2226 NAME 'prtEnabledState' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2227 NAME 'prtOtherInfo' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2228 NAME 'prtInputTypes' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2229 NAME 'prtSpeed' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.2230 NAME 'prtPrintLanguage' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2231 NAME 'prtPrinterState' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )
+attributeTypes: ( 1.3.18.0.2.4.2232 NAME 'bseLocation' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2233 NAME 'prtFinishingSupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2234 NAME 'prtMediaTrays' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2235 NAME 'prtDuplexSupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2236 NAME 'prtColourSupported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2237 NAME 'prtServicingQueue' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2238 NAME 'ibm-setVersion' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2246 NAME 'ibm-ePropertySetType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2321 NAME 'hostsAllowedLogin' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2322 NAME 'hostsDeniedLogin' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2323 NAME 'ibm-appUUID' EQUALITY caseExactMatch ORDERING
+  caseExactOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2327 NAME 'ibm-supportedReplicationModels' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.2329 NAME 'ibm-replicationServerIsMaster' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2330 NAME 'ibm-replicationChangeLDIF' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2331 NAME 'ibm-effectiveReplicationModel' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2332 NAME 'ibm-replicationLastResultAdditional' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE directoryOperation
+  )
+attributeTypes: ( 1.3.18.0.2.4.2333 NAME 'ibm-replicationPendingChangeCount' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2334 NAME 'ibm-replicationLastChangeId' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2335 NAME 'ibm-replicationLastFinishTime' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2336 NAME 'ibm-replicationState' EQUALITY caseExactIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2337 NAME 'ibm-replicationPendingChanges' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2338 NAME 'ibm-replicationLastActivationTime' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2339 NAME 'ibm-replicationNextTime' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2340 NAME 'ibm-replicationLastResult' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2341 NAME 'ibm-replicationBatchStart' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.2342 NAME 'ibm-replicaKeyfile' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2343 NAME 'ibm-replicaKeylabel' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2344 NAME 'ibm-scheduleTuesday' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2345 NAME 'ibm-replicationTimesUTC' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2346 NAME 'ibm-scheduleFriday' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2347 NAME 'ibm-scheduleSaturday' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2348 NAME 'ibm-scheduleWednesday' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2349 NAME 'ibm-replicationOnHold' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2350 NAME 'ibm-scheduleSunday' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2351 NAME 'ibm-replicaCredentialsDN' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2352 NAME 'ibm-replicationImmediateStart' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.2353 NAME 'ibm-scheduleMonday' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2354 NAME 'ibm-replicaKeypwd' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  SINGLE-VALUE )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2354 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2355 NAME 'ibm-replicaScheduleDN' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2356 NAME 'ibm-scheduleThursday' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2357 NAME 'ibm-replicaConsumerId' EQUALITY caseExactIA5Match SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2358 NAME 'ibm-replicaReferralURL' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2359 NAME 'ibm-replicaServerId' EQUALITY caseExactIA5Match SUBSTR
+  caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2360 NAME 'ibm-replicaURL' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2361 NAME 'ibm-replicaGroup' SUP name SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2448 NAME 'ibm-replicationLastGlobalChangeId' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2484 NAME 'ibm-replicationExcludedCapability' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2488 NAME 'ibm-realmUserSearchFilter' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2489 NAME 'ibm-realmGroupContainer' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2490 NAME 'ibm-realmUserTemplate' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2491 NAME 'ibm-realmUserContainer' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2492 NAME 'ibm-realmAdminGroup' EQUALITY distinguishedNameMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2494 NAME 'ibm-replDailySchedName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2496 NAME 'ibm-replCredName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2497 NAME 'ibm-replWeeklySchedName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2502 NAME 'ibm-idsIfcFloodMinDiscard' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2503 NAME 'ibm-idsIfcFloodPercentage' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2958 NAME 'ibm-pagerId' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2959 NAME 'ibm-divisionCode' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2960 NAME 'ibm-pagerServiceProvider' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2961 NAME 'ibm-shiftCode' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2962 NAME 'ibm-itdAdditionalInformation' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2963 NAME 'ibm-alternatePostalAddress1' SUP postalAddress EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2964 NAME 'ibm-itdWorkplaceLocation' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2965 NAME 'ibm-middleInitial' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2966 NAME 'ibm-itdWorkplaceIndicator' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2967 NAME 'ibm-itdLastUpdatedBy' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2968 NAME 'ibm-itdContractorCompany' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2969 NAME 'ibm-jobResponsibilities' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2970 NAME 'ibm-primaryUserId' SUP uid EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2971 NAME 'ibm-cellularServiceProvider' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2972 NAME 'ibm-alternateUserid' SUP uid EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2973 NAME 'ibm-pagerType' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2974 NAME 'ibm-itdTradeArea' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2975 NAME 'ibm-preferredLastName' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2976 NAME 'ibm-backupCommonName' SUP dn EQUALITY
+  distinguishedNameMatch )
+attributeTypes: ( 1.3.18.0.2.4.2977 NAME 'ibm-informationTelephoneNumber' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2978 NAME 'ibm-alternateTelephoneNumber' SUP telephoneNumber EQUALITY
+  telephoneNumberMatch SUBSTR telephoneNumberSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2979 NAME 'ibm-isManager' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2980 NAME 'ibm-departmentCode' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2981 NAME 'ibm-alternateStateOrProvinceName' SUP st EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2982 NAME 'ibm-alternatePostalCode' SUP postalCode EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2983 NAME 'ibm-preferredFirstName' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2984 NAME 'ibm-itdLotusNotesEmail' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2985 NAME 'ibm-alternatePostalAddress2' SUP postalAddress EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2986 NAME 'ibm-mailboxTelephoneNumber' SUP telephoneNumber EQUALITY
+  telephoneNumberMatch SUBSTR telephoneNumberSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2987 NAME 'ibm-itdMarketingTerritory' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2988 NAME 'ibm-alternateLocalityName' SUP l EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.18.0.2.4.2992 NAME 'ibm-eimFilterType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2993 NAME 'ibm-eimFilterValue' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2994 NAME 'ibm-eimPolicyStatus' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3053 NAME 'ibm-IncomingTOS' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3061 NAME 'ibm-acceptQueueIDandWeight' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3062 NAME 'ibm-numberOfAcceptQueues' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3063 NAME 'ibm-defaultAcceptQueueID' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3064 NAME 'ibm-inboundAcceptQueueID' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3065 NAME 'ibm-localApplicationName' EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3066 NAME 'ibm-localPortRange' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3067 NAME 'ibm-localIPAddressRange' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3072 NAME 'ibm-searchSizeLimit' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3073 NAME 'ibm-searchTimeLimit' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3077 NAME 'ibm-UniqueAttributeTypes' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3081 NAME 'ibm-sasldigestrealmname' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.3092 NAME 'db2altgwPtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.3093 NAME 'db2altnodePtr' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 1.3.18.0.2.4.3094 NAME 'firstchangenumber' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.3095 NAME 'lastchangenumber' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.3096 NAME 'ibm-ldapservicename' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 1.3.18.0.2.4.3107 NAME 'rcmds' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3110 NAME 'ids-instanceDesc' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3112 NAME 'ibm-PartitionBase' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3113 NAME 'ibm-PartitionHash' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3114 NAME 'ibm-PartitionName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3115 NAME 'ibm-NumPartitions' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3126 NAME 'globalGroupName' EQUALITY caseIgnoreMatch ORDERING
+  caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3132 NAME 'ids-instanceLocation' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3133 NAME 'ids-instanceVersion' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3138 NAME 'ibm-replicationFailedChangeCount' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3139 NAME 'ibm-replicationFailedChanges' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3150 NAME 'ibm-replicaMethod' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3151 NAME 'ibm-replicaConsumerConnections' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3155 NAME 'ids-instanceAutoStart' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3214 NAME 'ibm-eimRegistryMember' EQUALITY caseIgnoreIA5Match SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.18.0.2.4.3223 NAME 'ibm-replicationperformance' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3233 NAME 'ibm-aixAdminPolicyEntry' EQUALITY caseExactIA5Match
+  ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3234 NAME 'ibm-aixAdminPolicyName' EQUALITY caseExactIA5Match
+  ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3235 NAME 'ibm-aixProjectDefinition' EQUALITY caseExactIA5Match
+  ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3236 NAME 'ibm-aixProjectName' EQUALITY caseExactIA5Match ORDERING
+  caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3237 NAME 'ibm-aixProjectNameList' EQUALITY caseExactIA5Match
+  ORDERING caseExactOrderingMatch SUBSTR caseExactSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3294 NAME 'ibm-replicationCreateMissingEntries' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3295 NAME 'ibm-replicationFilterDN' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3296 NAME 'ibm-replicationFilterAttr' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.3308 NAME 'ibm-PtaLinkValue' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3309 NAME 'ibm-PtaLinkAttribute' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE USAGE directoryOperation )
+attributeTypes: ( 1.3.22.1.2.2 NAME 'TypelessRDN' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.128.113533.1.1400.1 NAME 'thumbNailPhoto' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  )
+attributeTypes: ( 2.16.128.113533.1.1400.2 NAME 'thumbNailLogo' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  )
+attributeTypes: ( 2.16.840.1.113730.3.1.5 NAME 'changeNumber' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.6 NAME 'targetDN' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.7 NAME 'changeType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.8 NAME 'changes' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5
+  SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.9 NAME 'newRdn' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.10 NAME 'deleteOldRdn' SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.11 NAME 'newSuperior' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.35 NAME 'changelog' EQUALITY distinguishedNameMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.12 NO-USER-MODIFICATION USAGE dSAOperation )
+attributeTypes: ( 2.16.840.1.113730.3.1.45 NAME 'ntGroupCreateNewGroup' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.46 NAME 'ntGroupDeleteGroup' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.47 NAME 'ntGroupType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.55 NAME 'aci' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.16.840.1.113730.3.1.61 NAME 'ntUserUsrComment' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.62 NAME 'ntUserParms' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.65 NAME 'ntUserLogonServer' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.67 NAME 'ntUserProfile' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.70 NAME 'serverRoot' SUP name EQUALITY caseIgnoreIA5Match
+  SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.16.840.1.113730.3.1.76 NAME 'serverHostName' SUP host )
+attributeTypes: ( 2.16.840.1.113730.3.1.77 NAME 'changeTime' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+  SINGLE-VALUE NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.110 NAME 'ntGroupID' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.198 NAME 'memberURL' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.199 NAME 'memberCertificateDescription' EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.200 NAME 'changeLogMaximumAge' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.201 NAME 'changeLogMaximumSize' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 NO-USER-MODIFICATION )
+attributeTypes: ( 2.16.840.1.113730.3.1.280 NAME 'nsServerPort' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.399 NAME 'nsLiPtrURL' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.400 NAME 'nsLiPrefs' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.401 NAME 'nsLiProfileName' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.402 NAME 'nsLiData' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.16.840.1.113730.3.1.403 NAME 'nsLiElementType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.404 NAME 'nsLiServerType' EQUALITY caseIgnoreMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.405 NAME 'nsLiVersion' SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  )
+attributeTypes: ( 2.16.840.1.113730.3.1.612 NAME 'generation' EQUALITY caseExactMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )

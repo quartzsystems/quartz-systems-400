@@ -1,0 +1,269 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.user.at: the user schema: RFC 4519, 4524, 2798, 2307, 2079.
+
+attributeTypes: ( 0.9.2342.19200300.100.1.1 NAME 'uid' DESC 'User ID' EQUALITY caseIgnoreIA5Match
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.2 NAME 'textEncodedOrAddress' DESC 'Text-encoded O/R
+  address' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.3 NAME ( 'mail' 'rfc822mailbox' ) DESC 'Email address'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.4 NAME 'info' DESC 'General information' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.5 NAME ( 'drink' 'favouriteDrink' ) DESC 'Favourite drink'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.6 NAME 'roomNumber' DESC 'Room number' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.7 NAME 'photo' DESC 'A photograph (fax format)' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 0.9.2342.19200300.100.1.8 NAME 'userClass' DESC 'Category of computer user'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.10 NAME 'manager' DESC 'The person\27s manager, by DN'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 0.9.2342.19200300.100.1.11 NAME 'documentIdentifier' DESC 'Document identifier'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.12 NAME 'documentTitle' DESC 'Document title' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.13 NAME 'documentVersion' DESC 'Document version' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.14 NAME 'documentAuthor' DESC 'Document author, by DN'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 0.9.2342.19200300.100.1.15 NAME 'documentLocation' DESC 'Where the document is'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.20 NAME ( 'homePhone' 'homeTelephoneNumber' ) DESC 'Home
+  telephone number' SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 0.9.2342.19200300.100.1.21 NAME 'secretary' DESC 'The person\27s secretary, by DN'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 0.9.2342.19200300.100.1.22 NAME 'otherMailbox' DESC 'Mailbox of another kind'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.23 NAME 'lastModifiedTime' DESC 'When last changed
+  (obsolete)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )
+attributeTypes: ( 0.9.2342.19200300.100.1.24 NAME 'lastModifiedBy' DESC 'Who last changed it
+  (obsolete)' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 SINGLE-VALUE )
+attributeTypes: ( 0.9.2342.19200300.100.1.25 NAME ( 'dc' 'domainComponent' ) DESC 'Domain component'
+  EQUALITY caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 0.9.2342.19200300.100.1.26 NAME 'dnsRecord' DESC 'DNS resource record' EQUALITY
+  caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 0.9.2342.19200300.100.1.37 NAME 'associatedDomain' DESC 'DNS domain the object
+  belongs to' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.38 NAME 'associatedName' DESC 'Entry the domain belongs
+  to, by DN' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 0.9.2342.19200300.100.1.39 NAME 'homePostalAddress' DESC 'Home mailing address'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.40 NAME 'personalTitle' DESC 'Personal title such as Dr.'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.41 NAME ( 'mobile' 'mobileTelephoneNumber' ) DESC 'Mobile
+  telephone number' SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 0.9.2342.19200300.100.1.42 NAME ( 'pager' 'pagerTelephoneNumber' ) DESC 'Pager
+  number' SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 0.9.2342.19200300.100.1.43 NAME ( 'co' 'friendlyCountryName' ) DESC 'Country name'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.44 NAME 'uniqueIdentifier' DESC 'Unique identifier'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.45 NAME 'organizationalStatus' DESC 'Category of person in
+  the organization' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.46 NAME 'janetMailbox' DESC 'JANET mailbox' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.47 NAME 'mailPreferenceOption' DESC 'Mailing list
+  preference' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.48 NAME 'buildingName' DESC 'Building name' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.49 NAME 'dsAQuality' DESC 'Quality of a directory system
+  agent' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 0.9.2342.19200300.100.1.50 NAME 'singleLevelQuality' DESC 'Quality of one level of
+  data' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 0.9.2342.19200300.100.1.51 NAME 'subtreeMaximumQuality' DESC 'Best quality of a
+  subtree' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 0.9.2342.19200300.100.1.52 NAME 'subtreeMinimumQuality' DESC 'Worst quality of a
+  subtree' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 0.9.2342.19200300.100.1.53 NAME 'personalSignature' DESC 'A signature image'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 0.9.2342.19200300.100.1.54 NAME 'ditRedirect' DESC 'Where the object moved to, by
+  DN' SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 0.9.2342.19200300.100.1.55 NAME 'audio' DESC 'A sound' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 0.9.2342.19200300.100.1.56 NAME 'documentPublisher' DESC 'Who published the
+  document' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 0.9.2342.19200300.100.1.60 NAME 'jpegPhoto' DESC 'A JPEG photograph' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 1.3.6.1.1.1.1.0 NAME 'uidNumber' DESC 'Numeric user ID' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.1 NAME 'gidNumber' DESC 'Numeric group ID' EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.2 NAME 'gecos' DESC 'GECOS field' EQUALITY caseIgnoreIA5Match SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.3 NAME 'homeDirectory' DESC 'Home directory path' EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.4 NAME 'loginShell' DESC 'Login shell path' EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.5 NAME 'shadowLastChange' DESC 'Day the password last changed'
+  EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.6 NAME 'shadowMin' DESC 'Days before the password may change'
+  EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.7 NAME 'shadowMax' DESC 'Days the password stays valid' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.8 NAME 'shadowWarning' DESC 'Days of warning before the password
+  expires' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.9 NAME 'shadowInactive' DESC 'Days an expired account stays usable'
+  EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.10 NAME 'shadowExpire' DESC 'Day the account expires' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.11 NAME 'shadowFlag' DESC 'Reserved shadow flag' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.12 NAME 'memberUid' DESC 'Member of the group, by user name'
+  EQUALITY caseExactIA5Match SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.13 NAME 'memberNisNetgroup' DESC 'Member netgroup' EQUALITY
+  caseExactIA5Match SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.14 NAME 'nisNetgroupTriple' DESC 'Netgroup triple' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.15 NAME 'ipServicePort' DESC 'Service port number' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.16 NAME 'ipServiceProtocol' DESC 'Service protocol name' SUP name
+  EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.6.1.1.1.1.17 NAME 'ipProtocolNumber' DESC 'IP protocol number' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.18 NAME 'oncRpcNumber' DESC 'ONC RPC program number' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.19 NAME 'ipHostNumber' DESC 'IP address' EQUALITY caseIgnoreIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.20 NAME 'ipNetworkNumber' DESC 'IP network number' EQUALITY
+  caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.21 NAME 'ipNetmaskNumber' DESC 'IP netmask' EQUALITY
+  caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 1.3.6.1.1.1.1.22 NAME 'macAddress' DESC 'MAC address' EQUALITY caseIgnoreIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.23 NAME 'bootParameter' DESC 'Boot parameter' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.24 NAME 'bootFile' DESC 'Boot image name' EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 1.3.6.1.1.1.1.26 NAME 'nisMapName' DESC 'NIS map name' SUP name EQUALITY
+  caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 1.3.6.1.1.1.1.27 NAME 'nisMapEntry' DESC 'NIS map entry' EQUALITY
+  caseExactIA5Match SUBSTR caseExactSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE
+  )
+attributeTypes: ( 1.3.6.1.4.1.250.1.57 NAME 'labeledURI' DESC 'A URI and its label' EQUALITY
+  caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.2 NAME 'knowledgeInformation' DESC 'Knowledge information (obsolete)'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.3 NAME ( 'cn' 'commonName' ) DESC 'Common name' SUP name EQUALITY
+  caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.4 NAME ( 'sn' 'surName' ) DESC 'Surname' SUP name EQUALITY caseIgnoreMatch
+  ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.5 NAME 'serialNumber' DESC 'Serial number of a device' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.6 NAME ( 'c' 'countryName' ) DESC 'Two-letter country code' SUP name
+  EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch SINGLE-VALUE )
+attributeTypes: ( 2.5.4.7 NAME ( 'l' 'localityName' ) DESC 'Locality: a city or other place name'
+  SUP name EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.8 NAME ( 'st' 'stateOrProvince' 'stateOrProvinceName' ) DESC 'State or
+  province' SUP name EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.9 NAME ( 'street' 'streetAddress' ) DESC 'Street address' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.10 NAME ( 'o' 'organization' 'organizationName' ) DESC 'Organization name'
+  SUP name EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.11 NAME ( 'ou' 'organizationalUnit' 'organizationalUnitName' ) DESC
+  'Organizational unit name' SUP name EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.12 NAME 'title' DESC 'Job title' SUP name EQUALITY caseIgnoreIA5Match SUBSTR
+  caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.13 NAME 'description' DESC 'Free-form description' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.14 NAME 'searchGuide' DESC 'Suggested search criteria' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 2.5.4.15 NAME 'businessCategory' DESC 'Kind of business' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.16 NAME 'postalAddress' DESC 'Mailing address' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.17 NAME 'postalCode' DESC 'Postal or ZIP code' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.18 NAME 'postOfficeBox' DESC 'Post office box' EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.19 NAME 'physicalDeliveryOfficeName' DESC 'Office for physical delivery'
+  EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.20 NAME 'telephoneNumber' DESC 'Telephone number' EQUALITY
+  telephoneNumberMatch SUBSTR telephoneNumberSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 2.5.4.21 NAME ( 'telexNumber' 'telexeNumber' ) DESC 'Telex number' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.22 NAME 'teletexTerminalIdentifier' DESC 'Teletex terminal identifier'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.23 NAME ( 'facsimileTelephoneNumber' 'fax' ) DESC 'Fax number' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.50 )
+attributeTypes: ( 2.5.4.24 NAME 'x121Address' DESC 'X.121 address' EQUALITY caseIgnoreMatch SUBSTR
+  caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 2.5.4.25 NAME 'internationalISDNNumber' DESC 'International ISDN number' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributeTypes: ( 2.5.4.26 NAME 'registeredAddress' DESC 'Address for registered mail' SUP
+  postalAddress EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.27 NAME 'destinationIndicator' DESC 'Telegram destination indicator'
+  EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.28 NAME 'preferredDeliveryMethod' DESC 'How the person prefers to be
+  reached' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.5.4.29 NAME 'presentationAddress' DESC 'OSI presentation address' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributeTypes: ( 2.5.4.30 NAME 'supportedApplicationContext' DESC 'OSI application contexts
+  supported' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE dSAOperation )
+attributeTypes: ( 2.5.4.31 NAME 'member' DESC 'A member of the group, by DN' SUP dn EQUALITY
+  distinguishedNameMatch )
+attributeTypes: ( 2.5.4.32 NAME 'owner' DESC 'Who owns the object, by DN' SUP dn EQUALITY
+  distinguishedNameMatch )
+attributeTypes: ( 2.5.4.33 NAME 'roleOccupant' DESC 'Who fills the role, by DN' SUP dn EQUALITY
+  distinguishedNameMatch )
+attributeTypes: ( 2.5.4.34 NAME 'seeAlso' DESC 'Related entries, by DN' SUP dn EQUALITY
+  distinguishedNameMatch )
+attributeTypes: ( 2.5.4.35 NAME 'userPassword' DESC 'Password, usually stored hashed' EQUALITY
+  octetStringMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+IBMAttributeTypes: ( 2.5.4.35 ACCESS-CLASS critical )
+attributeTypes: ( 2.5.4.36 NAME ( 'userCertificate' 'userCertificate;binary' ) DESC 'The user\27s
+  X.509 certificate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.37 NAME ( 'caCertificate' 'caCertificate;binary' ) DESC 'A certification
+  authority\27s certificate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.38 NAME ( 'authorityRevocationList' 'authorityRevocationList;binary' ) DESC
+  'Revoked CA certificates' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.39 NAME ( 'certificateRevocationList' 'certificateRevocationList;binary' )
+  DESC 'Revoked user certificates' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.40 NAME ( 'crossCertificatePair' 'crossCertificatePair;binary' ) DESC 'Cross
+  certificates of a CA' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.41 NAME 'name' DESC 'Base type of the naming attributes' EQUALITY
+  caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.42 NAME 'givenName' DESC 'First name' SUP name EQUALITY caseIgnoreIA5Match
+  SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.43 NAME 'initials' DESC 'Initials' SUP name EQUALITY caseIgnoreIA5Match
+  SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.44 NAME 'generationQualifier' DESC 'Generation suffix such as Jr.' SUP name
+  EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreSubstringsMatch )
+attributeTypes: ( 2.5.4.45 NAME 'x500UniqueIdentifier' DESC 'Identifier that tells apart reused
+  names' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.46 NAME 'dnQualifier' DESC 'Qualifier that tells apart otherwise equal DNs'
+  EQUALITY caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.47 NAME 'enhancedSearchGuide' DESC 'Suggested search criteria with scopes'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.48 NAME 'protocolInformation' DESC 'OSI protocol information' SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.49 NAME ( 'dn' 'distinguishedName' ) DESC 'Base type of the DN-valued
+  attributes' EQUALITY distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 2.5.4.50 NAME 'uniqueMember' DESC 'A member of the group, by DN with an optional
+  identifier' EQUALITY distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.12 )
+attributeTypes: ( 2.5.4.51 NAME 'houseIdentifier' DESC 'Building identifier' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.5.4.52 NAME ( 'supportedAlgorithms' 'supportedAlgorithms;binary' ) DESC
+  'Algorithms supported' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.5.4.53 NAME ( 'deltaRevocationList' 'deltaRevocationList;binary' ) DESC 'Changes
+  to a revocation list' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )
+attributeTypes: ( 2.16.840.1.113730.3.1.1 NAME 'carLicense' DESC 'Vehicle licence or registration
+  plate' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.2 NAME 'departmentNumber' DESC 'Department number' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.3 NAME 'employeeNumber' DESC 'Employee number' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE
+  )
+attributeTypes: ( 2.16.840.1.113730.3.1.4 NAME 'employeeType' DESC 'Kind of employment' EQUALITY
+  caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 2.16.840.1.113730.3.1.39 NAME 'preferredLanguage' DESC 'Preferred written or
+  spoken language' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 2.16.840.1.113730.3.1.40 NAME ( 'userSMIMECertificate'
+  'userSMIMECertificate;binary' ) DESC 'S/MIME certificate' SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 )

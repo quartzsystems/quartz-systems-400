@@ -1,0 +1,131 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.os400.at: the projected backend's classes and attributes (DIRSRV.md section 9).
+
+attributeTypes: ( 1.3.18.0.2.4.2051 NAME 'os400-sys' DESC 'The system\27s name' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2052 NAME 'os400-ptylmt' DESC 'Highest scheduling priority' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2053 NAME 'os400-dspsgninf' DESC 'Display sign-on information'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2054 NAME 'os400-grpaut' DESC 'Group authority' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2055 NAME 'os400-msgq' DESC 'Message queue' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2056 NAME 'os400-usropt' DESC 'User options' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2057 NAME 'os400-inlpgm' DESC 'Initial program' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2058 NAME 'os400-uid' DESC 'User ID number' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2059 NAME 'os400-spcaut' DESC 'Special authorities' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2060 NAME 'os400-inlmnu' DESC 'Initial menu' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2061 NAME 'os400-astlvl' DESC 'Assistance level' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2062 NAME 'os400-status' DESC 'Status: *ENABLED or *DISABLED'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2063 NAME 'os400-curlib' DESC 'Current library' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2064 NAME 'os400-kbdbuf' DESC 'Keyboard buffering' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2065 NAME 'os400-lmtdevssn' DESC 'Limit device sessions' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2066 NAME 'os400-maxstg' DESC 'Maximum storage allowed' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2067 NAME 'os400-homedir' DESC 'Home directory' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2068 NAME 'os400-groupmember' DESC 'Members of a group profile'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2069 NAME 'os400-pwdexp' DESC 'Whether the password is set to
+  expired' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2070 NAME 'os400-ccsid' DESC 'Coded character set ID' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2071 NAME 'os400-dlvry' DESC 'Message queue delivery' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2072 NAME 'os400-spcenv' DESC 'Special environment' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2073 NAME 'os400-grpprf' DESC 'Group profile' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2074 NAME 'os400-profile' DESC 'Profile name' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2075 NAME 'os400-chridctl' DESC 'Character identifier control'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2076 NAME 'os400-aut' DESC 'Public authority to the profile' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2077 NAME 'os400-prtdev' DESC 'Print device' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2078 NAME 'os400-gid' DESC 'Group ID number' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2079 NAME 'os400-docpwd' DESC 'Document password' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2079 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2080 NAME 'os400-supgrpprf' DESC 'Supplemental groups' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2081 NAME 'os400-text' DESC 'Profile text' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2082 NAME 'os400-pwdexpitv' DESC 'Password expiration interval'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2083 NAME 'os400-outq' DESC 'Output queue' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2084 NAME 'os400-locale' DESC 'Locale path' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2085 NAME 'os400-jobd' DESC 'Job description' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2086 NAME 'os400-grpauttyp' DESC 'Group authority type' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2087 NAME 'os400-sev' DESC 'Message queue severity' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2088 NAME 'os400-langid' DESC 'Language ID' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2089 NAME 'os400-acgcde' DESC 'Accounting code' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2090 NAME 'os400-password' DESC 'Profile password (write only)'
+  EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+IBMAttributeTypes: ( 1.3.18.0.2.4.2090 ACCESS-CLASS critical )
+attributeTypes: ( 1.3.18.0.2.4.2091 NAME 'os400-atnpgm' DESC 'Attention program' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2092 NAME 'os400-cntryid' DESC 'Country or region ID' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2093 NAME 'os400-srtseq' DESC 'Sort sequence' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2094 NAME 'os400-lmtcpb' DESC 'Limit capabilities' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2095 NAME 'os400-usrcls' DESC 'User class' EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2096 NAME 'os400-setjobatr' DESC 'Job attributes from the locale'
+  EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2100 NAME 'os400-owner' DESC 'Owner of objects created' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2176 NAME 'os400-audlvl' DESC 'Action auditing values' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.3.18.0.2.4.2177 NAME 'os400-objaud' DESC 'Object auditing value' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.2178 NAME 'os400-IaspStorageInformation' DESC 'Storage used on
+  independent ASPs' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2179 NAME 'os400-invalidSignonCount' DESC 'Sign-on attempts not
+  valid' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION
+  USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2180 NAME 'os400-passwordExpirationDate' DESC 'When the password
+  expires' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2181 NAME 'os400-passwordLastChanged' DESC 'When the password last
+  changed' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2182 NAME 'os400-previousSignon' DESC 'Previous sign-on' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2183 NAME 'os400-storageUsed' DESC 'Storage used' EQUALITY
+  integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE NO-USER-MODIFICATION USAGE
+  directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.2184 NAME 'os400-storageUsedOnIasp' DESC 'Storage used on an
+  independent ASP' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE
+  NO-USER-MODIFICATION USAGE directoryOperation )
+attributeTypes: ( 1.3.18.0.2.4.3003 NAME 'os400-eimassoc' DESC 'EIM association' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributeTypes: ( 1.3.18.0.2.4.3004 NAME 'os400-lclpwdmgt' DESC 'Local password management' EQUALITY
+  caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )

@@ -1,0 +1,20 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# qs.os400.oc: the projected backend's classes and attributes (DIRSRV.md section 9).
+
+objectClasses: ( 1.3.18.0.2.6.398 NAME 'os400-root' DESC 'The root of the projected backend' SUP top
+  STRUCTURAL )
+objectClasses: ( 1.3.18.0.2.6.399 NAME 'os400-usrprf' DESC 'A user or group profile' SUP top
+  STRUCTURAL MUST os400-profile MAY ( os400-acgcde $ os400-astlvl $ os400-atnpgm $ os400-audlvl $
+  os400-aut $ os400-ccsid $ os400-chridctl $ os400-cntryid $ os400-curlib $ os400-dlvry $
+  os400-docpwd $ os400-dspsgninf $ os400-eimassoc $ os400-gid $ os400-groupmember $ os400-grpaut $
+  os400-grpauttyp $ os400-grpprf $ os400-homedir $ os400-IaspStorageInformation $ os400-inlmnu $
+  os400-inlpgm $ os400-invalidSignonCount $ os400-jobd $ os400-kbdbuf $ os400-langid $
+  os400-lclpwdmgt $ os400-lmtcpb $ os400-lmtdevssn $ os400-locale $ os400-maxstg $ os400-msgq $
+  os400-objaud $ os400-outq $ os400-owner $ os400-password $ os400-passwordExpirationDate $
+  os400-passwordLastChanged $ os400-previousSignon $ os400-prtdev $ os400-ptylmt $ os400-pwdexp $
+  os400-pwdexpitv $ os400-setjobatr $ os400-sev $ os400-spcaut $ os400-spcenv $ os400-srtseq $
+  os400-status $ os400-storageUsed $ os400-storageUsedOnIasp $ os400-supgrpprf $ os400-text $
+  os400-uid $ os400-usrcls $ os400-usropt ) )
