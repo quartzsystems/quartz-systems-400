@@ -246,3 +246,80 @@ fn small_files_and_holes() {
     assert_eq!(read_all(&c, fd).unwrap(), want);
     c.close(fd).unwrap();
 }
+
+/// Past the dirty limit a sequential write sends every waiting block
+/// over all the workers, each once (a block in flight at the close may
+/// go again): written data is kept only up to the cache's limit.
+#[test]
+fn write_back_sends_each_block_once() {
+    for (sync, ms) in [(false, 0), (true, 0), (false, 2), (true, 2)] {
+        let mut i = info();
+        i.sync_writes = sync;
+        let r = mounted_with(
+            i,
+            RemoteConfig {
+                threads: 4,
+                behind: 2,
+                dirty_bytes: 8 * 1024,
+                cache_bytes: 16 * 1024,
+                ..RemoteConfig::default()
+            },
+        );
+        r.server.set_latency(Duration::from_millis(ms));
+        let c = r.client("BOB", 1);
+        let data: Vec<u8> = (0..256 * 1024u32)
+            .map(|i| u8::try_from(i % 251).unwrap())
+            .collect();
+        let fd = c
+            .open("/mnt/seq", OpenArgs::new(O_WRONLY | O_CREAT).mode(0o644))
+            .unwrap();
+        for piece in data.chunks(2048) {
+            write_all(&c, fd, piece).unwrap();
+        }
+        c.close(fd).unwrap();
+        assert_eq!(r.server.file("seq").unwrap(), data);
+        // A block in flight when the close writes back may go twice.
+        let n = r.server.calls_of("write");
+        assert!(
+            (256..=260).contains(&n),
+            "sync {sync} latency {ms}: {n} writes"
+        );
+        assert!(r.mount().cached_bytes() <= 16 * 1024 + 2048, "sync {sync}");
+    }
+}
+
+/// `CPY` of a local file to the mount, one request run again each time
+/// it waits, each of its 64 KiB writes larger than the dirty limit
+/// (which goes when nothing else waits): each block is written once.
+#[test]
+fn copy_to_the_mount_sends_each_block_once() {
+    for ms in [0, 2, 12] {
+        let mut i = info();
+        i.sync_writes = true;
+        let r = mounted_with(
+            i,
+            RemoteConfig {
+                threads: 4,
+                behind: 2,
+                dirty_bytes: 8 * 1024,
+                cache_bytes: 16 * 1024,
+                ..RemoteConfig::default()
+            },
+        );
+        r.server.set_latency(Duration::from_millis(ms));
+        let c = r.client("QSECOFR", 1);
+        let data: Vec<u8> = (0..256 * 1024u32)
+            .map(|i| u8::try_from(i % 251).unwrap())
+            .collect();
+        let fd = c
+            .open("/tmp/src", OpenArgs::new(O_WRONLY | O_CREAT).mode(0o644))
+            .unwrap();
+        write_all(&c, fd, &data).unwrap();
+        c.close(fd).unwrap();
+        c.copy("/tmp/src", "/mnt/dst", ifs::ops::CopyOpts::default())
+            .unwrap();
+        let n = r.server.calls_of("write");
+        assert!((256..=260).contains(&n), "latency {ms}: {n} writes");
+        assert_eq!(r.server.file("dst").unwrap(), data);
+    }
+}

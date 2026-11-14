@@ -650,7 +650,9 @@ impl RemoteMount {
         let bs = self.core.bs();
         let end = off + data.len() as u64;
         let mut c = self.core.cache();
-        if c.dirty_bytes() + data.len() > self.core.cfg.dirty_bytes {
+        let dirty = c.dirty_bytes();
+        // A write larger than the limit alone goes when nothing waits.
+        if dirty > 0 && dirty + data.len() > self.core.cfg.dirty_bytes {
             return Need::Wait(self.write_back(c, cred));
         }
         // Blocks partly written before and not read: read them first.
