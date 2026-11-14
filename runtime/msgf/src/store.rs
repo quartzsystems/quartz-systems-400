@@ -154,7 +154,7 @@ pub fn dspmsgd(file: &str, d: &MsgDesc) -> String {
 }
 
 /// Install the system message files (`QCPFMSG`, `QCEEMSG`, `QSQLMSG`, `QSTXTMSG`,
-/// `QRPGLEMSG`, `QRNXMSG`, `QTCPMSG`, `QZSHMSGF`, `QEDTMSG`) into `QSYS`
+/// `QRPGLEMSG`, `QRNXMSG`, `QTCPMSG`, `QZSHMSGF`, `QEDTMSG`, `QGLDMSG`) into `QSYS`
 /// when absent; returns the objects created. A product library's files
 /// come with its product ([`install_product_files`]).
 pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<Vec<ObjectId>> {

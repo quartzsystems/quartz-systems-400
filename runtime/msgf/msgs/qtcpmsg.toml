@@ -7,6 +7,12 @@ name = "QTCPMSG"
 text = "TCP/IP messages"
 
 [[msg]]
+id = "TCP1617"
+sev = 30
+text = "INSTANCE is not valid with SERVER(*ALL) or SERVER(*AUTOSTART)."
+help = "An instance names one instance of one server. Name the server on SERVER, or leave INSTANCE out."
+
+[[msg]]
 id = "TCP1A00"
 sev = 0
 text = "TCP/IP started."

@@ -1,0 +1,3265 @@
+# QGLDMSG: the directory server's messages (docs/DIRSRV.md section 2).
+# Identifiers, severities and substitution layouts are the primary's QSYS/QGLDMSG
+# (tools/conformance/oracle/dirsrv/messages.txt); every text is ours. The
+# identifiers QS/400 issues have their own text; the others keep IBM's number
+# and layout so programs that monitor for them compile, with a plain text
+# (docs/DIRSRV.md section 2.1 lists the ones QS/400 issues). A *QTDCHAR or
+# *HEX with *VARY is *CHAR *VARY here: the same data, no other form in the
+# frozen *MSGF payload.
+name = "QGLDMSG"
+text = "Directory server messages"
+
+[[msg]]
+id = "GLD0101"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6, &7, &8."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0102"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0103"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0104"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0105"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0106"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0108"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0109"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD010A"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD010B"
+sev = 0
+text = "Publishing agent &1 ended: publishing is not available yet."
+help = "The publishing agents start with QSYSWRK and end at once until QS/400 publishes users and printers. Nothing was published."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "GLD010C"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD010D"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0110"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0112"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0113"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0114"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0115"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0116"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0117"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0118"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD011A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6, &7."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD011C"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD011D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD011E"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD011F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0120"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0121"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0122"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0123"
+sev = 0
+text = "Directory server instance &1 changed."
+help = "The new values are in the instance's configuration file. A new administrator password is used at once; a new administrator name at the instance's next start."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0124"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0126"
+sev = 40
+text = "&1 in &2 is not supported."
+help = "The configuration names an attribute or entry QS/400 does not honour, with a value other than its default. Remove it or set it back to its default, then start the instance again."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0127"
+sev = 40
+text = "Configuration file &1 cannot be used."
+help = "The file is missing or is not LDIF the directory server can read. The job log has the reason."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0128"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0129"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD012A"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD012B"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD012C"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD012D"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 32"]
+
+[[msg]]
+id = "GLD012E"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0130"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0131"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0132"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0133"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0136"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0137"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0138"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0139"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0140"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0141"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0142"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0143"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0144"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0145"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0146"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0147"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0148"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0149"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD014A"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD014B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD014C"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD014D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD014E"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0150"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0151"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0154"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0155"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0156"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0157"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0158"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0159"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD015A"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD015B"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD015C"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0164"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0165"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0166"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0167"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0168"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0169"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD016A"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD016B"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD016C"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD016D"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD016E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD016F"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0170"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0171"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0172"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0173"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0174"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0175"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0176"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0177"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0178"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0179"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD017A"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD017B"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD017C"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD017D"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD017E"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD017F"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0181"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0182"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0183"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0184"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0185"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0186"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0187"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0188"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0189"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0190"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0191"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0192"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0193"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0194"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0195"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0196"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0197"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0198"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0199"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD019A"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD019B"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD01FF"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0201"
+sev = 40
+text = "Directory server instance &1 not found."
+help = "The instance is not in the instance list (/QIBM/UserData/OS400/DirSrv/idsinstinfo/idsinstances.ldif)."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0202"
+sev = 40
+text = "A password is required."
+help = "Give the distinguished name's new password as the second element of DN."
+
+[[msg]]
+id = "GLD0203"
+sev = 40
+text = "Directory server instance &1 not found."
+help = "STRTCPSVR and ENDTCPSVR SERVER(*DIRSRV) name the instances of the instance list; *DFT is QUSRDIR."
+vars = ["*CHAR 32"]
+
+[[msg]]
+id = "GLD0204"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0205"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0206"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0207"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0208"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0209"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD020A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD020B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD020D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD020E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0211"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0212"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 15"]
+
+[[msg]]
+id = "GLD0213"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0215"
+sev = 40
+text = "Instance &1 has no update distinguished name."
+help = "*UPDATEDN changes the password of the update distinguished name, and the instance's configuration names none."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0217"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0218"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0219"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD021A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD021B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD021C"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD021D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD021E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 15"]
+
+[[msg]]
+id = "GLD021F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0221"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0222"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0223"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0224"
+sev = 40
+text = "Distinguished name &1 is not valid."
+help = "The value is not a distinguished name in the form of RFC 4514, such as cn=Administrator."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0225"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0226"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0227"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0228"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0229"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD022A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD022B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "GLD022C"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD022D"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD022E"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD022F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0231"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0232"
+sev = 40
+text = "Value &2 of &1 is not valid."
+help = "The configuration gives an attribute a value QS/400 does not take. The job log of the instance has the values it takes."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0233"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 30", "*CHAR 30"]
+
+[[msg]]
+id = "GLD0234"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "GLD0235"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 15"]
+
+[[msg]]
+id = "GLD0236"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*BIN 4"]
+
+[[msg]]
+id = "GLD0237"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0238"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0239"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD023A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD023B"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD023C"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD023D"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD023E"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "GLD023F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*BIN 4", "*CHAR 7", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0240"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*BIN 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0241"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0242"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 30"]
+
+[[msg]]
+id = "GLD0243"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0244"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "GLD0245"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0246"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 8", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0247"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0248"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0249"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0250"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0251"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0252"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 8", "*CHAR 91"]
+
+[[msg]]
+id = "GLD0253"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 8", "*CHAR 200", "*BIN 4"]
+
+[[msg]]
+id = "GLD0254"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0255"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 100", "*CHAR 100"]
+
+[[msg]]
+id = "GLD0256"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "GLD0257"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 100", "*CHAR 100"]
+
+[[msg]]
+id = "GLD0258"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "GLD0259"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0260"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "GLD0261"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "GLD0262"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 100", "*CHAR 100"]
+
+[[msg]]
+id = "GLD0263"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "GLD0264"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0265"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0266"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0267"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0268"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0269"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 8", "*CHAR 10"]
+
+[[msg]]
+id = "GLD026A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 7"]
+
+[[msg]]
+id = "GLD026B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0271"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0272"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0273"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0274"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 200"]
+
+[[msg]]
+id = "GLD0275"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0276"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "GLD0277"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0278"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0279"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD027A"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD027B"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0282"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0283"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0284"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0285"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0286"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0287"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0301"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0302"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0303"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "GLD0304"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "GLD0305"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0306"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "GLD0307"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0308"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "GLD0309"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0310"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0311"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0312"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0380"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0381"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0384"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0385"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0386"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0387"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0388"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0401"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0402"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0403"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0404"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0405"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0407"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0408"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0409"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD040A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD040B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD040E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD040F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0410"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0411"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0413"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6, &7."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0414"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0416"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0417"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0418"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0419"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD041A"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD041B"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD041C"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD041E"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD041F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0420"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0421"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "GLD0422"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "GLD0423"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0424"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0425"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0426"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0427"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0428"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0429"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD042A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD042B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD042C"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD042D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6, &7."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD042E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD042F"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0430"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0431"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0432"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0433"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0434"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0435"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0436"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0437"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0438"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0439"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD043A"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD043B"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD043C"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD043D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD043E"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD043F"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0440"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0441"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0442"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0443"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0444"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0446"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0447"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0448"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0449"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD044A"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD044B"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD044C"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD044D"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD044E"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD044F"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0450"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0451"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0452"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0453"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0454"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0455"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0456"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0457"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0458"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0459"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD045A"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD045B"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD045C"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD045D"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD045E"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD045F"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0460"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0461"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0501"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*HEX 4"]
+
+[[msg]]
+id = "GLD0502"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*HEX 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0503"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*HEX 4"]
+
+[[msg]]
+id = "GLD0504"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*QTDCHAR 8"]
+
+[[msg]]
+id = "GLD0505"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0506"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0507"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0508"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0509"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD050A"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0601"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0602"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0701"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0702"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0703"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0704"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0705"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0706"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0707"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0708"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0709"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD070A"
+sev = 99
+text = "Directory server failure."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD070B"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD070C"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD070E"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD070F"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0710"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0711"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0712"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0713"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0714"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0715"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0716"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0717"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0718"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD071C"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD071D"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD071E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD071F"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0720"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0721"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "GLD0722"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0723"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0724"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0726"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0727"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0728"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0729"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD072A"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD072B"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD072C"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD072D"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD072E"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD072F"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0730"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0731"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0732"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0733"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0734"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0735"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0736"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4, &5, &6."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0737"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0738"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0739"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD073A"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD073B"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD073C"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD073D"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD073E"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD073F"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0740"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0741"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0742"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0743"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0744"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0745"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0746"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0747"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0748"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0749"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD074A"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD074B"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD074C"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD074D"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD074E"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD074F"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0750"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0751"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0752"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0753"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0754"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "GLD0755"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0756"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0757"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0758"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0801"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0802"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3, &4."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0803"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0804"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0805"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0806"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0807"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0808"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0809"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0840"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0860"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0883"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0884"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0885"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0886"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0887"
+sev = 10
+text = "Directory server notice."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0901"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0902"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0903"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0904"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0905"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0906"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0907"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0908"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0909"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0910"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0911"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0912"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0913"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0914"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0915"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0916"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0917"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0918"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0919"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0920"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0921"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0922"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0923"
+sev = 20
+text = "Directory server warning."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "GLD0924"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0925"
+sev = 0
+text = "Directory server information."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+
+[[msg]]
+id = "GLD0926"
+sev = 40
+text = "Directory server error."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "GLD0950"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0951"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0952"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0953"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0954"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0955"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "GLD0956"
+sev = 30
+text = "Directory server request not done."
+help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]

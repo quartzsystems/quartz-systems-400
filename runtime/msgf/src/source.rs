@@ -30,6 +30,9 @@ pub const QEDTMSG: &str = include_str!("../msgs/qedtmsg.toml");
 /// from `net/httpadmin/src/msgs.rs`.
 pub const QZHBMSG: &str = include_str!("../msgs/qzhbmsg.toml");
 
+/// The source of `QGLDMSG`, the directory server's messages.
+pub const QGLDMSG: &str = include_str!("../msgs/qgldmsg.toml");
+
 /// The source of `QSTXTMSG`, the displays' text.
 pub const QSTXTMSG: &str = include_str!("../msgs/qstxtmsg.toml");
 
@@ -212,6 +215,7 @@ impl MsgToml {
 pub fn builtin() -> Vec<MsgFile> {
     [
         QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG, QSTXTMSG,
+        QGLDMSG,
     ]
     .iter()
     .map(|s| parse(s).expect("the built-in sources parse"))
@@ -234,7 +238,7 @@ mod tests {
     #[test]
     fn builtin_sources_parse_and_look_up() {
         let files = builtin();
-        assert_eq!(files.len(), 9);
+        assert_eq!(files.len(), 10);
         let cpf = &files[0];
         assert_eq!(cpf.name, "QCPFMSG");
         let m = cpf.find("MCH1211").unwrap();
