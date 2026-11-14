@@ -6,7 +6,9 @@
 //! oracle's (pub400, V7R5M0, `docs/NET_OPEN_QUESTIONS.md` "Server jobs
 //! and subsystems") except `QTLPD00nnn`, which no oracle runs (IBM's
 //! documentation names it; it runs as `QTMPLPD`, the profile LPD
-//! spooled files belong to) and `*QAP`, ours (docs/QAP.md).
+//! spooled files belong to), `*QAP`, ours (docs/QAP.md), and
+//! `*DIRSRV`, the primary's (one job per instance, named after it;
+//! docs/DIRSRV.md section 4).
 
 use super::{JobKind, JobSpec, Port, Readiness, ServerSpec};
 
@@ -323,5 +325,27 @@ pub static SPECS: &[ServerSpec] = &[
         start_subsystem: false,
         instances: &[],
         readiness: Readiness::Built,
+    },
+    ServerSpec {
+        special: "*DIRSRV",
+        name: "DIRSRV",
+        // The shipped instance's job; another instance's job has the
+        // instance's name (framework::dirsrv).
+        jobs: &[job(
+            "QUSRDIR",
+            "QDIRSRV",
+            "QSYSWRK",
+            JobKind::Listener,
+            "DIRSRV",
+        )],
+        ports: &[tcp(389, false), tcp(636, true)],
+        attrs_cmd: Some("CHGDIRSVRA"),
+        // QIBM_GLD_DIRSRV_SERVER (net/certs/src/apps.rs).
+        app_id: Some("QS400_DIRECTORY_SERVER"),
+        exit_points: &[],
+        start_subsystem: false,
+        // The instance list's (idsinstances.ldif); QUSRDIR is shipped.
+        instances: &["QUSRDIR"],
+        readiness: Readiness::Slot("the directory server (net/dirsrv)"),
     },
 ];

@@ -34,6 +34,7 @@ pub const STANDARD: &[(&str, bool)] = &[
     ("*HOSTSVR", false),
     ("*QAP", false),
     ("*NETSVR", false),
+    ("*DIRSRV", false),
 ];
 
 /// One server's attributes.

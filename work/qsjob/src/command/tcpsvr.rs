@@ -66,6 +66,27 @@ pub fn http_instances(host: &Host) -> Vec<servers::framework::HttpInstance> {
     })
 }
 
+/// The directory server's instances from `idsinstances.ldif`, read as
+/// this job's user; the shipped list when it cannot be read.
+pub fn dir_instances(host: &Host) -> Vec<servers::framework::dirsrv::DirInstance> {
+    let text = crate::work::ifsfiles::with_files(&host.link, |files| {
+        files.read(dirsrv::config::INSTANCES).ok()
+    });
+    let Some(list) = text
+        .and_then(|b| String::from_utf8(b).ok())
+        .and_then(|t| dirsrv::config::InstanceList::parse(&t).ok())
+    else {
+        return servers::framework::dirsrv::shipped();
+    };
+    list.instances
+        .into_iter()
+        .map(|i| servers::framework::dirsrv::DirInstance {
+            name: i.name,
+            autostart: i.autostart,
+        })
+        .collect()
+}
+
 /// Every server's autostart and attributes from the service.
 pub fn server_table(host: &Host) -> Vec<ServerInfo> {
     match host.link.borrow_mut().with(|l| l.tcp(TcpOp::Servers)) {
@@ -201,6 +222,10 @@ impl Env for JobEnv<'_> {
         http_instances(self.host)
     }
 
+    fn dir_instances(&mut self) -> Vec<servers::framework::dirsrv::DirInstance> {
+        dir_instances(self.host)
+    }
+
     fn http_ending(&mut self, instance: &str, immediate: bool, delay: u32) {
         if immediate {
             return;
@@ -292,7 +317,15 @@ fn instance(r: &Resolved) -> Instance {
     }
     .map(|s| s.to_ascii_uppercase())
     .unwrap_or_default();
-    let inst = parms.name("INSTANCE");
+    // STRTCPSVR's INSTANCE is IBM's group (instance, startup values);
+    // ENDTCPSVR's a name.
+    let inst = match parms.get("INSTANCE") {
+        Some(Value::Elems(items)) => items.first().cloned().flatten().map(|v| text(&v)),
+        Some(v) => Some(text(v)),
+        None => None,
+    }
+    .map(|s| s.trim().to_ascii_uppercase())
+    .unwrap_or_default();
     let pick = if !http.is_empty() && http != "*ALL" {
         http
     } else if !inst.is_empty() && inst != "*DFT" {

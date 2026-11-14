@@ -21,6 +21,7 @@ pub(crate) mod cmntrc;
 mod dbg;
 pub(crate) mod ddm;
 pub(crate) mod devices;
+pub(crate) mod dirconf;
 mod dfu;
 pub(crate) mod dumps;
 pub(crate) mod exec;
@@ -385,6 +386,7 @@ fn install(system: &mut System) -> Result<usize, String> {
     }
     let mut made = r.made + r.commands_replaced;
     made += usize::from(crate::svc::neta::ensure(&mut txn, qsys, stamp.now)?);
+    made += usize::from(dirconf::ensure_library(&mut txn, qsys, &stamp)?);
     made += tcp::store::install(&mut txn, qsys, &stamp)?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)

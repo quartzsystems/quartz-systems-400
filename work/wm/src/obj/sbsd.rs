@@ -959,12 +959,27 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                     nfs(2125, "QNFSNSMD", "QZNFNSMD", "QP0LSTATD"),
                     nfs(2126, "QNFSGSSD", "QZNFGSSD", "QP0LGSSD"),
                     nfs(2127, "QNFSRGYD", "QZNFRGYD", "QP0LRGYD"),
+                    // The directory server's publishing agents
+                    // (docs/DIRSRV.md section 4): their autostart jobs'
+                    // routing data runs the program of the same name.
+                    nfs(2140, "QGLDPUBE", "QGLDPUBE", "QSYSCLS25"),
+                    nfs(2141, "QGLDPUBA", "QGLDPUBA", "QSYSCLS25"),
                     rt(9999, "*ANY", q("QSYSCLS25", "QSYS"), 1),
                 ],
-                ajes: vec![Aje {
-                    job: "QSYSSCD".into(),
-                    jobd: q("QSYSSCD", "QSYS"),
-                }],
+                ajes: vec![
+                    Aje {
+                        job: "QSYSSCD".into(),
+                        jobd: q("QSYSSCD", "QSYS"),
+                    },
+                    Aje {
+                        job: "QGLDPUBE".into(),
+                        jobd: q("QGLDPUBE", "QSYS"),
+                    },
+                    Aje {
+                        job: "QGLDPUBA".into(),
+                        jobd: q("QGLDPUBA", "QSYS"),
+                    },
+                ],
                 jobqes: vec![jq("QSYSNOMAX", "QSYS", 10, 0)],
                 // The SQL CLI's server-mode jobs, started at the first
                 // request (pub400's entry, QSYS2.PRESTART_JOB_INFO).

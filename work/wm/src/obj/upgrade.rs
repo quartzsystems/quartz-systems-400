@@ -41,6 +41,8 @@ pub struct Addition {
     pub jobqes: &'static [(&'static str, &'static str)],
     /// Prestart job entries by program (name, library).
     pub pjes: &'static [(&'static str, &'static str)],
+    /// Autostart job entries by job name.
+    pub ajes: &'static [&'static str],
 }
 
 /// Every release's additions.
@@ -53,6 +55,7 @@ pub const ADDITIONS: &[Addition] = &[
         rtges: &[800],
         jobqes: &[("QPWFSERVER", "QSYS")],
         pjes: &[("QZLSFILE", "QSYS"), ("QZLSFILET", "QSYS")],
+        ajes: &[],
     },
     Addition {
         // V1R2M0 (docs/NFS.md section 4).
@@ -62,6 +65,17 @@ pub const ADDITIONS: &[Addition] = &[
         rtges: &[2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127],
         jobqes: &[],
         pjes: &[],
+        ajes: &[],
+    },
+    Addition {
+        // V1R2M0 (docs/DIRSRV.md section 4): the publishing agents.
+        what: "the directory server",
+        sbsd: "QSYSWRK",
+        marker: ("QSYS", "QGLDPUBE", types::JOBD),
+        rtges: &[2140, 2141],
+        jobqes: &[],
+        pjes: &[],
+        ajes: &["QGLDPUBE", "QGLDPUBA"],
     },
 ];
 
@@ -151,6 +165,16 @@ pub fn merge(have: &mut Sbsd, a: &Addition) -> Option<String> {
             have.pjes.push(e.clone());
             added.push(format!("prestart job entry {name}"));
         }
+    }
+    for job in a.ajes {
+        let Some(e) = shipped.ajes.iter().find(|e| e.job == *job) else {
+            continue;
+        };
+        if have.ajes.iter().any(|x| x.job == *job) {
+            continue;
+        }
+        have.ajes.push(e.clone());
+        added.push(format!("autostart job entry {job}"));
     }
     if added.is_empty() && left.is_empty() {
         return None;
@@ -345,5 +369,22 @@ mod tests {
         assert!(s.pjes.contains(&mine));
         assert_eq!(s.rtges, vec![r]);
         assert_eq!(s.jobqes, qserver().jobqes);
+    }
+
+    #[test]
+    fn merge_adds_the_publishing_agents_to_qsyswrk() {
+        let shipped = shipped_sbsds()
+            .into_iter()
+            .find(|(n, _)| *n == "QSYSWRK")
+            .unwrap()
+            .1;
+        let mut s = shipped.clone();
+        s.rtges.retain(|r| !matches!(r.seq, 2140 | 2141));
+        s.ajes.retain(|a| !a.job.starts_with("QGLD"));
+        let a = ADDITIONS.iter().find(|a| a.marker.1 == "QGLDPUBE").unwrap();
+        let line = merge(&mut s, a).unwrap();
+        assert!(line.contains("autostart job entry QGLDPUBA"), "{line}");
+        assert_eq!(s, shipped);
+        assert_eq!(merge(&mut s, a), None);
     }
 }

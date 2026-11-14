@@ -174,6 +174,51 @@ fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
                 ..d()
             },
         ),
+        // The directory server's (docs/DIRSRV.md section 4): the
+        // instance jobs, the two publishing agents, its utilities.
+        (
+            "QSYS",
+            "QDIRSRV",
+            JobD {
+                user: "QDIRSRV".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                text: "Directory server job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
+            "QGLDPUBE",
+            JobD {
+                user: "QDIRSRV".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                rtgdta: "QGLDPUBE".into(),
+                text: "Directory publishing agent QGLDPUBE".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
+            "QGLDPUBA",
+            JobD {
+                user: "QDIRSRV".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                rtgdta: "QGLDPUBA".into(),
+                text: "Directory publishing agent QGLDPUBA".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
+            "QDIRJOBD",
+            JobD {
+                user: "QDIRSRV".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                rtgdta: "QCMDB".into(),
+                text: "Directory services job description".into(),
+                ..d()
+            },
+        ),
         (
             "QSYS",
             "QSYSSCD",

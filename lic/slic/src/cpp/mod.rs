@@ -21,6 +21,7 @@ pub(crate) mod compdiags;
 pub(crate) mod cstcmd;
 mod dbcmd;
 mod dbmoncmd;
+mod dircmd;
 mod direct;
 pub(crate) mod dspout;
 pub(crate) mod fcncmd;
@@ -126,6 +127,7 @@ fn run_cpp(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| lpcmd::run(system, name, parms))
             .or_else(|| ifscmd::run(system, name, parms))
             .or_else(|| nfscmd::run(system, name, parms))
+            .or_else(|| dircmd::run(system, name, parms))
             .or_else(|| stmfcmd::run(system, name, parms))
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| cstcmd::run(system, name, parms))

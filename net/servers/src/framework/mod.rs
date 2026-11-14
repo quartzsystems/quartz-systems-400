@@ -10,6 +10,7 @@
 //! `ServerStarter`.
 
 mod builtin;
+pub mod dirsrv;
 mod hostsvr;
 mod httpsvr;
 mod netsvr;
@@ -155,6 +156,11 @@ pub trait Env {
     fn netsvr(&mut self, start: bool, autostart: bool) -> Result<(), Refusal> {
         let _ = (start, autostart);
         Err(Refusal::new(msg::NOT_AVAILABLE, "*NETSVR"))
+    }
+    /// The directory server's instances (`idsinstances.ldif`); the
+    /// shipped list where the job cannot read it.
+    fn dir_instances(&mut self) -> Vec<dirsrv::DirInstance> {
+        dirsrv::shipped()
     }
 }
 
@@ -330,12 +336,22 @@ impl Framework {
         )
     }
 
+    /// A server of this release that is not registered names its
+    /// instances all the same: `*DIRSRV`'s, from its instance list.
+    fn check_slot(env: &mut dyn Env, req: &Request) -> Result<(), Refusal> {
+        if req.server.eq_ignore_ascii_case("*DIRSRV") {
+            dirsrv::resolve(env, &req.instance)?;
+        }
+        Ok(())
+    }
+
     /// `STRTCPSVR` for one server.
     pub fn start(&self, env: &mut dyn Env, req: &Request) -> Result<String, Refusal> {
-        match self.get(&req.server) {
-            Some(s) => s.start(env, req),
-            None => Err(Self::unavailable(&req.server)),
+        if let Some(s) = self.get(&req.server) {
+            return s.start(env, req);
         }
+        Self::check_slot(env, req)?;
+        Err(Self::unavailable(&req.server))
     }
 
     /// `ENDTCPSVR` for one server. A server this release does not run
@@ -349,6 +365,7 @@ impl Framework {
         match self.get(&req.server) {
             Some(s) => s.end(env, req, immediate),
             None if registry::lookup(&req.server).is_some() => {
+                Self::check_slot(env, req)?;
                 let name = registry::lookup(&req.server).map_or("", |s| s.name);
                 Ok(format!("{} {name} server not active.", msg::NOT_ACTIVE))
             }
