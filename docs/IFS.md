@@ -201,13 +201,13 @@ let info = xfsfmt::probe(&mut dev)?; // Some(Info { uuid, label, dblocks, .. })
 | Choice | Value |
 |---|---|
 | Version | 5 (`versionnum` 0xb4a5, plus SECTORBIT with 4 KiB sectors) |
-| Features | CRCs, ftype (incompat), bigtime (incompat), finobt and inobtcount (ro-compat). No rmapbt, reflink, sparse inodes, nrext64, exchange, parent pointers, metadir, quotas, realtime. |
+| Features | CRCs, ftype (incompat), bigtime (incompat), finobt and inobtcount (ro-compat). By option (`Options::reflink`, off by default) rmapbt and reflink (ro-compat). No sparse inodes, nrext64, exchange, parent pointers, metadir, quotas, realtime. |
 | Block | 4096 bytes; directory blocks the same |
 | Inode | 512 bytes, 8 per block, chunks of 64 aligned to 4 blocks |
 | Sector | 512 by default, 4096 by option (`Options::sector_size`); the log uses the same. The IFS volume uses 4096. |
 | AGs | 16 MiB each below 128 MiB; otherwise 4, more once one would pass 1 TiB. All AGs equal; blocks short of a whole AG at the end go unused. `Options::ag_blocks` fixes the AG size instead: the IFS volume's is a fortieth of ASP 1's usable space when it is created (16 MiB to 1 TiB, and small enough for four AGs), so the volume starts with about four AGs and a growth to the whole ASP makes about forty. |
-| Log | internal, in AG `agcount / 2` right after its btree roots: the larger of 1/2048 of the filesystem and 10 MiB (64 MiB at 300 MiB and up), at most 1 GiB. Well above the kernel's computed minimum for this geometry. |
-| Root | inode 96: AG 0 block 12, where `xfs_repair` computes mkfs would put it. The chunk also holds the empty realtime bitmap (97, `NEWRTBM`) and summary (98) inodes. |
+| Log | internal, in AG `agcount / 2` right after its btree roots: the larger of 1/2048 of the filesystem and 10 MiB (64 MiB at 300 MiB and up), at most 1 GiB. Well above the kernel's computed minimum for this geometry. With reflink the 10 MiB becomes 14 MiB: the kernel's minimum there is 2928 to 3273 blocks (to 12.8 MiB), and 4287 blocks (16.7 MiB) for 1 TiB AGs, under the 64 MiB. |
+| Root | inode 96: AG 0 block 12 (inode 128, block 16, with reflink), where `xfs_repair` computes mkfs would put it. The chunk also holds the empty realtime bitmap (97, `NEWRTBM`) and summary (98) inodes. |
 | Label | `QS400-IFS` |
 | UUID | random at creation; `51533430-0000-4000-8000-000000000006` in built images that still carry a partition (`Guids::FIXED.ifs_fs`) |
 
@@ -219,6 +219,27 @@ the primary, as the kernel's own growfs writes them. The root directory
 is short form with no entries and its parent itself. Every metadata
 block carries the filesystem UUID, its owner and address, LSN 0 and a
 CRC-32C.
+
+With reflink, the reverse-mapping and refcount btree roots follow the
+free inode btree's, and the free list holds six blocks (two more for
+the rmap btree, as `xfs_alloc_min_freelist` asks). The rmap leaf holds
+one record per run of metadata, as mkfs writes them: the headers (owner
+FS), the free space btree roots, the rmap root and the free list (AG),
+the inode btree roots (INOBT), the refcount root (REFC), the log (LOG)
+and AG 0's inode chunk (INODES). The refcount leaf is empty. The output
+matches `mkfs.xfs -m rmapbt=1,reflink=1` 6.18 at the same geometry and
+UUID byte for byte, apart from mkfs's secondary superblocks and the
+inodes' times and generation numbers.
+
+What reflink costs: on disk, four blocks per AG at format (the two
+roots, two more on the free list). At mount the kernel reserves room in
+every AG for the rmap and refcount btrees to grow to their worst case:
+about 1.8% of the filesystem (18.6 GiB per TiB, measured with statfs on
+1 TiB and 64 TiB images, reflink on against off), counted as used
+space though nothing is written until files need it. The limit stays
+64 TiB (64 AGs of 1 TiB) with or without reflink: such an image mounts,
+clones and passes `xfs_repair -n` (`tools/conformance/xfs/verify.sh
+big`).
 
 The log is cleared and holds one cycle-1 record at its first block: an
 unmount record (transaction ID `0xb0c0d0d0`, the userspace mark), its
