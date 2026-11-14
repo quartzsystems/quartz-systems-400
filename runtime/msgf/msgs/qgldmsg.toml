@@ -196,8 +196,8 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR *VARY 4", "*CHAR *VARY 4", "*C
 [[msg]]
 id = "GLD0122"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "Directory server instance &1 is not active."
+help = "The request needs the instance's job running. Start it with STRTCPSVR SERVER(*DIRSRV) INSTANCE(name) and try again."
 vars = ["*CHAR 8"]
 
 [[msg]]
@@ -231,8 +231,8 @@ vars = ["*CHAR *VARY 4"]
 [[msg]]
 id = "GLD0128"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+text = "The directory server cannot reach the object store."
+help = "The storage service has no object store open, so the directory request was not run. The system's IPL has not finished or the storage service is ending."
 
 [[msg]]
 id = "GLD0129"
@@ -406,8 +406,8 @@ vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4", "*CHAR *VARY 4"]
 [[msg]]
 id = "GLD014B"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "The directory server has no session &1."
+help = "The connection's session ended or was never opened in this job; the instance job closes the connection."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
@@ -420,8 +420,8 @@ vars = ["*CHAR *VARY 4"]
 [[msg]]
 id = "GLD014D"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "The directory server's entry store could not be used: &1."
+help = "The instance's *DIRDB object in QUSRDIRDB could not be opened, made or changed for the reason shown. The job log of the storage service has more."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
@@ -523,22 +523,22 @@ vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 [[msg]]
 id = "GLD0166"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "Entry &1 was not found."
+help = "The directory has no entry with that distinguished name."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "GLD0167"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "The schema was not changed: &1."
+help = "The definition was refused for the reason shown; the instance's schema is as it was."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "GLD0168"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "Attribute type &1 is not in the schema."
+help = "An index is kept only for an attribute type the instance's schema defines."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
@@ -579,8 +579,8 @@ vars = ["*CHAR *VARY 4"]
 [[msg]]
 id = "GLD016E"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+text = "An entry's own access control and owner lists need at least one value each."
+help = "To give an entry its own ACL or owners, name at least one; to have it inherit them, clear its own."
 
 [[msg]]
 id = "GLD016F"
@@ -869,8 +869,8 @@ vars = ["*CHAR 32"]
 [[msg]]
 id = "GLD0204"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data."
+text = "The port must be 1 to 65535."
+help = "A publishing agent's target port is a TCP port number."
 
 [[msg]]
 id = "GLD0205"
@@ -1168,8 +1168,8 @@ help = "QS/400 does not send this message; it keeps IBM's identifier and data."
 [[msg]]
 id = "GLD0239"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "Server &1 is not a host name or address."
+help = "A publishing agent's target is a host name or an IPv4 or IPv6 address, or blank for this system's default instance."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
@@ -1244,8 +1244,8 @@ help = "QS/400 does not send this message; it keeps IBM's identifier and data."
 [[msg]]
 id = "GLD0244"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "Only a directory server instance's job, as user &1, makes this request."
+help = "The storage service answers the directory server's requests only for the job of the instance named, running as the profile shown. Start the instance with STRTCPSVR SERVER(*DIRSRV)."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -1347,8 +1347,8 @@ vars = ["*CHAR 100"]
 [[msg]]
 id = "GLD0259"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "The request is not an LDAP message: &1."
+help = "The bytes the client sent do not decode as an LDAP message; the connection ends with a notice of disconnection."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]

@@ -66,6 +66,13 @@ impl<C: ConfigSource> ConfigBackend<C> {
     /// # Errors
     /// The source's.
     pub fn modify(&self, id: u64, mods: &[Modification]) -> OpResult<()> {
+        // The file's values are text: nothing to increment.
+        if mods.iter().any(|m| m.op == ldap::msg::ModOp::Increment) {
+            return Err(OpError::new(
+                ResultCode::UnwillingToPerform,
+                "the configuration takes no increment",
+            ));
+        }
         let all = self.all();
         let i = usize::try_from(id.saturating_sub(1)).unwrap_or(usize::MAX);
         let (dn, _) = all

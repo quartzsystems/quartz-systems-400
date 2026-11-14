@@ -2720,7 +2720,7 @@ impl Service for Served<'_> {
         instance: String,
         counts: stg::dir::DirConns,
     ) -> Result<(), stg::dir::DirError> {
-        super::dirsrv::serve::conns(&self.ctx.job, &instance, counts)
+        super::dirsrv::serve::conns(self.system, &self.ctx.job, &instance, counts)
     }
 
     fn dir_changes(

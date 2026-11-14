@@ -78,7 +78,30 @@ pub fn refused(e: &ConfigError) -> DirError {
 
 /// A failure of the service's own (`CPF9898`).
 pub fn failed(text: impl Into<String>) -> DirError {
-    DirError::new("CPF9898", Vec::new(), text)
+    let text = text.into();
+    DirError::new("CPF9898", vec![text.clone()], text)
+}
+
+/// Message `msgid` of `QGLDMSG` with `vars`; its text is the message
+/// file's, filled in as the answer leaves the service
+/// ([`super::serve`]).
+pub fn dir_msg(msgid: &str, vars: Vec<String>) -> DirError {
+    DirError::new(msgid, vars, String::new())
+}
+
+/// `GLD0128`: no object store.
+pub fn no_store() -> DirError {
+    dir_msg(NO_STORE, Vec::new())
+}
+
+/// The directory server cannot reach the object store.
+pub const NO_STORE: &str = "GLD0128";
+/// The entry store could not be used: the reason.
+pub const STORE_FAILED: &str = "GLD014D";
+
+/// A missing file's reason, as the IFS words it.
+fn missing() -> String {
+    ifs::Errno::ENOENT.text().into()
 }
 
 /// The configuration file as the backend and the service share it.
@@ -131,12 +154,8 @@ impl ConfigSource for ConfFile {
                 ModOp::Replace => vals = given,
                 ModOp::Delete if given.is_empty() => vals.clear(),
                 ModOp::Delete => vals.retain(|v| !given.iter().any(|g| g.trim() == v.trim())),
-                ModOp::Increment => {
-                    return Err((
-                        ResultCode::UnwillingToPerform,
-                        "the configuration takes no increment".into(),
-                    ));
-                }
+                // ConfigBackend refuses an increment with its text first.
+                ModOp::Increment => return Err((ResultCode::UnwillingToPerform, String::new())),
             }
             // A password given in the clear is kept hashed, as CHGDIRSVRA keeps it.
             if PASSWORDS.iter().any(|p| p.eq_ignore_ascii_case(ty)) {
@@ -175,7 +194,7 @@ pub struct Instance {
 }
 
 fn store_err(e: impl std::fmt::Display) -> DirError {
-    failed(format!("The directory's store: {e}"))
+    dir_msg(STORE_FAILED, vec![e.to_string()])
 }
 
 /// A server ID for a file without one: 16 random bytes as a UUID.
@@ -199,12 +218,52 @@ fn server_id() -> String {
     )
 }
 
-/// The store of instance `name`, made when missing.
-fn dirdb(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, now: u64) -> Result<DirDb, DirError> {
+/// The instance's `V3.modifiedschema`: `ibm-slapdSchemaAdditions`, or
+/// `etc/` of its `idsslapd-NAME`.
+pub fn schema_path(conf: &SlapdConf, inst: &dirsrv::config::Instance) -> String {
+    conf.get(conf_settings::SCHEMA, "ibm-slapdSchemaAdditions")
+        .map_or_else(
+            || {
+                format!(
+                    "{}/idsslapd-{}/etc/V3.modifiedschema",
+                    inst.location.trim_end_matches('/'),
+                    inst.name
+                )
+            },
+            |p| p.trim().to_string(),
+        )
+}
+
+/// The shipped schema with the additions at `path`.
+///
+/// # Errors
+/// The IFS's; `GLD0127` for additions that do not read.
+pub fn load_schema(host: &mut impl Host, path: &str) -> Result<Schema, DirError> {
+    let mut schema = Schema::shipped().map_err(|e| failed(e.to_string()))?;
+    if let Some(t) = host.read(path).map_err(failed)? {
+        schema.load_modified(&t).map_err(|e| {
+            refused(&ConfigError::File {
+                file: path.to_string(),
+                why: e.to_string(),
+            })
+        })?;
+    }
+    Ok(schema)
+}
+
+/// The store of instance `name`, made when missing with the instance's
+/// description as its text.
+fn dirdb(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    name: &str,
+    text: &str,
+    now: u64,
+) -> Result<DirDb, DirError> {
     let lib = ops::find_library(txn, qsys, Name::parse(LIBRARY).expect("valid"))
         .map_err(|e| failed(format!("{LIBRARY}: {e}")))?
         .id;
-    let n = Name::parse(name).map_err(|_| failed(format!("{name} is not a name")))?;
+    let n = Name::parse(name).map_err(store_err)?;
     if let Some(db) = DirDb::open(txn, lib, n).map_err(store_err)? {
         return Ok(db);
     }
@@ -213,7 +272,7 @@ fn dirdb(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, now: u64) -> Result<DirD
         lib,
         n,
         &CreateOpts {
-            text: "Directory server instance".into(),
+            text: text.into(),
             owner: USER.into(),
             system: "QS400".into(),
             now,
@@ -263,6 +322,7 @@ impl Instance {
             .find(name)
             .ok_or_else(|| refused(&ConfigError::NoServerInstance(name.into())))?;
         let name = inst.name.clone();
+        let desc = inst.desc.clone();
         let path = inst.conf_path();
         let text = host
             .read(&path)
@@ -275,7 +335,7 @@ impl Instance {
             .ok_or_else(|| {
                 refused(&ConfigError::File {
                     file: path.clone(),
-                    why: "it does not exist".into(),
+                    why: missing(),
                 })
             })?;
         let mut conf = SlapdConf::parse(&path, &text).map_err(|e| refused(&e))?;
@@ -293,26 +353,8 @@ impl Instance {
         }
         let runtime = conf_settings::runtime(&conf, &name, &release::RELEASE.to_string())
             .map_err(|e| refused(&e))?;
-        let schema_path = conf
-            .get(conf_settings::SCHEMA, "ibm-slapdSchemaAdditions")
-            .map_or_else(
-                || {
-                    format!(
-                        "{}/idsslapd-{name}/etc/V3.modifiedschema",
-                        inst.location.trim_end_matches('/')
-                    )
-                },
-                |p| p.trim().to_string(),
-            );
-        let mut schema = Schema::shipped().map_err(|e| failed(e.to_string()))?;
-        if let Some(t) = host.read(&schema_path).map_err(failed)? {
-            schema.load_modified(&t).map_err(|e| {
-                refused(&ConfigError::File {
-                    file: schema_path.clone(),
-                    why: e.to_string(),
-                })
-            })?;
-        }
+        let schema_path = schema_path(&conf, inst);
+        let schema = load_schema(host, &schema_path)?;
         let bind = Rc::new(RefCell::new(host.bind_ctx()));
         let audit = Rc::new(RefCell::new(AuditCtx {
             switches: runtime.audit,
@@ -334,7 +376,7 @@ impl Instance {
         let settings = runtime.settings.clone();
         let built = host.with_store(|mut t, qsys| -> Result<Directory, DirError> {
             let txn = &mut t;
-            let db = dirdb(txn, qsys, &name, now)?;
+            let db = dirdb(txn, qsys, &name, &desc, now)?;
             let mut dir = Directory::new(txn, db, schema, settings, Box::new(SystemEnv))
                 .map_err(|e| failed(e.message))?;
             dir.seed(txn).map_err(|e| failed(e.message))?;
@@ -353,7 +395,7 @@ impl Instance {
             t.commit().map_err(store_err)?;
             Ok(dir)
         });
-        let mut dir = built.ok_or_else(|| failed("The object store is not open."))??;
+        let mut dir = built.ok_or_else(no_store)??;
         let names_or_none = names
             .clone()
             .unwrap_or_else(|| Names::new("os400-sys=SYSTEM").expect("a DN"));
@@ -433,7 +475,7 @@ impl Instance {
         let text = host.read(&path).map_err(failed)?.ok_or_else(|| {
             refused(&ConfigError::File {
                 file: path.clone(),
-                why: "it does not exist".into(),
+                why: missing(),
             })
         })?;
         self.apply_text(&text)

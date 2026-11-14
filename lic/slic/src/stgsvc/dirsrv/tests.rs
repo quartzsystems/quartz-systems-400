@@ -268,7 +268,7 @@ fn only_the_instance_job_asks() {
     let mut st = State::default();
     for j in [job("QUSRDIR", "QSECOFR", 7), job("OTHER", "QDIRSRV", 7)] {
         let e = st.open(&mut h, &j, "QUSRDIR", conn()).unwrap_err();
-        assert_eq!(e.msgid, "CPF2189");
+        assert_eq!((e.msgid.as_str(), e.vars.as_slice()), ("GLD0244", ["QDIRSRV".to_string()].as_slice()));
     }
     let e = st
         .open(&mut h, &job("NOSUCH", "QDIRSRV", 7), "NOSUCH", conn())
@@ -290,7 +290,7 @@ fn only_the_instance_job_asks() {
             conn(),
         )
         .unwrap_err();
-    assert_eq!(e.msgid, "CPF9898");
+    assert_eq!(e.msgid, "GLD014B");
 }
 
 #[test]

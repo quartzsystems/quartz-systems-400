@@ -30,7 +30,7 @@ use store::obj::ObjectId;
 use store::txn::Txn;
 
 use super::hooks::BindCtx;
-use super::instance::{Host, Instance, USER, failed};
+use super::instance::{Host, Instance, USER, dir_msg, failed, no_store};
 use crate::ipl::system::{System, now_unix};
 
 /// The certificate store's application ID of the server.
@@ -71,16 +71,30 @@ thread_local! {
     static STATE: RefCell<State> = RefCell::new(State::default());
 }
 
+/// Only an instance's job asks: the user it runs as.
+pub const NOT_ALLOWED: &str = "GLD0244";
+/// No such session: its number.
+pub const NO_SESSION: &str = "GLD014B";
+/// The request does not decode: why.
+pub const NOT_LDAP: &str = "GLD0259";
+/// The instance is not active (not open in the service): its name.
+pub const NOT_ACTIVE: &str = "GLD0122";
+
 fn not_allowed() -> DirError {
-    DirError::new(
-        "CPF2189",
-        Vec::new(),
-        format!("Only a directory server instance's job, as {USER}, asks for this."),
-    )
+    dir_msg(NOT_ALLOWED, vec![USER.into()])
 }
 
 fn no_session(id: u64) -> DirError {
-    failed(format!("The directory server has no session {id}."))
+    dir_msg(NO_SESSION, vec![id.to_string()])
+}
+
+/// `e` with its text from the message file when it has none yet.
+fn worded(system: &mut System, mut e: DirError) -> DirError {
+    if e.text.is_empty() {
+        let vars: Vec<&str> = e.vars.iter().map(String::as_str).collect();
+        e.text = crate::stgsvc::msgs::text(system, &e.msgid, &vars);
+    }
+    e
 }
 
 fn only_instance_job(job: &JobInfo, instance: &str) -> Result<(), DirError> {
@@ -95,7 +109,7 @@ fn only_instance_job(job: &JobInfo, instance: &str) -> Result<(), DirError> {
 
 fn decode(msg: &[u8]) -> Result<LdapMessage, DirError> {
     LdapMessage::decode_with_limit(msg, MAX_MESSAGE as usize)
-        .map_err(|e| failed(format!("The request is not an LDAP message: {e}")))
+        .map_err(|e| dir_msg(NOT_LDAP, vec![e.to_string()]))
 }
 
 fn encode(id: i32, r: Reply) -> Vec<u8> {
@@ -207,7 +221,7 @@ impl State {
                 }
                 o
             })
-            .ok_or_else(|| failed("The object store is not open."))?;
+            .ok_or_else(no_store)?;
         if let Some(n) = o.session {
             s.session = n;
         }
@@ -243,7 +257,7 @@ impl State {
                 }
                 o
             })
-            .ok_or_else(|| failed("The object store is not open."))?;
+            .ok_or_else(no_store)?;
         if o.succeeded() && !o.changes.is_empty() {
             host.with_store(|mut t, _| {
                 inst.dir.publish(&mut t, &o.changes);
@@ -291,7 +305,7 @@ impl State {
                 let _ = t.commit();
                 a
             })
-            .ok_or_else(|| failed("The object store is not open."))?;
+            .ok_or_else(no_store)?;
         Ok(r)
     }
 
@@ -313,7 +327,7 @@ impl State {
             let _ = t.commit();
             a
         })
-        .ok_or_else(|| failed("The object store is not open."))
+        .ok_or_else(no_store)
     }
 
     /// 1565.
@@ -363,7 +377,7 @@ impl State {
         let (owner, inst) = self
             .instances
             .get_mut(&key)
-            .ok_or_else(|| failed(format!("Instance {key} is not open.")))?;
+            .ok_or_else(|| dir_msg(NOT_ACTIVE, vec![key.clone()]))?;
         if *owner != job.number {
             return Err(not_allowed());
         }
@@ -548,7 +562,7 @@ pub fn open(
     instance: &str,
     conn: DirConn,
 ) -> Result<DirOpened, DirError> {
-    with(system, |s, h| s.open(h, job, instance, conn))
+    with(system, |s, h| s.open(h, job, instance, conn)).map_err(|e| worded(system, e))
 }
 
 /// 1561.
@@ -562,7 +576,7 @@ pub fn bind(
     msg: &[u8],
     conn: DirConn,
 ) -> Result<DirAnswer, DirError> {
-    with(system, |s, h| s.bind(h, job, id, msg, conn))
+    with(system, |s, h| s.bind(h, job, id, msg, conn)).map_err(|e| worded(system, e))
 }
 
 /// 1562.
@@ -570,7 +584,7 @@ pub fn bind(
 /// # Errors
 /// No such session, a message that does not decode, the IFS's.
 pub fn op(system: &mut System, job: &JobInfo, id: u64, msg: &[u8]) -> Result<DirAnswer, DirError> {
-    with(system, |s, h| s.op(h, job, id, msg))
+    with(system, |s, h| s.op(h, job, id, msg)).map_err(|e| worded(system, e))
 }
 
 /// 1563.
@@ -584,7 +598,7 @@ pub fn search(
     msg: &[u8],
     b: DirBudget,
 ) -> Result<DirAnswer, DirError> {
-    with(system, |s, h| s.search(h, job, id, msg, b))
+    with(system, |s, h| s.search(h, job, id, msg, b)).map_err(|e| worded(system, e))
 }
 
 /// 1564.
@@ -598,7 +612,7 @@ pub fn next(
     cursor: u64,
     b: DirBudget,
 ) -> Result<DirAnswer, DirError> {
-    with(system, |s, h| s.next(h, job, id, cursor, b))
+    with(system, |s, h| s.next(h, job, id, cursor, b)).map_err(|e| worded(system, e))
 }
 
 /// 1565.
@@ -606,15 +620,22 @@ pub fn next(
 /// # Errors
 /// No such session.
 pub fn close(system: &mut System, job: &JobInfo, id: u64, what: DirClose) -> Result<(), DirError> {
-    with(system, |s, _| s.close(job, id, what))
+    with(system, |s, _| s.close(job, id, what)).map_err(|e| worded(system, e))
 }
 
 /// 1566.
 ///
 /// # Errors
 /// Not the instance's job, or the instance is not open.
-pub fn conns(job: &JobInfo, instance: &str, c: DirConns) -> Result<(), DirError> {
-    STATE.with(|s| s.borrow_mut().conns(job, instance, c))
+pub fn conns(
+    system: &mut System,
+    job: &JobInfo,
+    instance: &str,
+    c: DirConns,
+) -> Result<(), DirError> {
+    STATE
+        .with(|s| s.borrow_mut().conns(job, instance, c))
+        .map_err(|e| worded(system, e))
 }
 
 /// 1567.
@@ -627,7 +648,7 @@ pub fn changes(
     id: u64,
     max: u32,
 ) -> Result<DirChanges, DirError> {
-    with(system, |s, _| s.changes(job, id, max))
+    with(system, |s, _| s.changes(job, id, max)).map_err(|e| worded(system, e))
 }
 
 /// A job ended (`served.rs`'s end of a job).
@@ -642,7 +663,7 @@ pub fn job_ended(number: u32) {
 /// The IFS's, or a file that does not check.
 #[allow(dead_code)] // dir_admin's (CHGDIRSVRA, Navigator, QAP)
 pub fn config_changed(system: &mut System, name: &str) -> Result<(), DirError> {
-    with(system, |s, h| s.config_changed(h, name))
+    with(system, |s, h| s.config_changed(h, name)).map_err(|e| worded(system, e))
 }
 
 /// For `dir_admin`: `f` over open instance `name`.

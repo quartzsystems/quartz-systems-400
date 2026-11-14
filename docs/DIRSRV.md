@@ -74,21 +74,35 @@ there (the same data; the frozen `*MSGF` payload has no other form).
 IBM's text was not kept, so an identifier QS/400 does not send has a
 plain text by severity and a help naming its data; the 7.5 additions
 (`messages-pub400.txt`) are left out until QS/400 sends one. The ones
-QS/400 sends, chosen by their layouts:
+QS/400 sends, chosen by their layouts (an identifier QS/400 sends with
+no IBM text known keeps IBM's severity and data layout, the text
+Quartz's):
 
 | ID | Severity, data | When |
 |---|---|---|
 | `GLD010B` | 0, `*CHAR 10` | the publishing agents `QGLDPUBE` and `QGLDPUBA` end at once (publishing is not built yet) |
+| `GLD0122` | 40, `*CHAR 8` | a request that needs the instance's job (`dir_conns`; `dir_admin`'s counters and entry access): the instance is not active |
 | `GLD0123` | 0, `*CHAR 8` | `CHGDIRSVRA` changed the instance (completion) |
 | `GLD0126` | 40, two `*CHAR *VARY` | an attribute (`name: value`) or entry of `ibmslapd.conf` QS/400 does not honour, not at IBM's default (§10), and the file |
 | `GLD0127` | 40, `*CHAR *VARY` | a configuration file missing or not LDIF |
+| `GLD0128` | 40, none | the service has no object store for a directory request |
+| `GLD014B` | 40, `*CHAR *VARY` | a session number the job does not hold (1561-1567) |
+| `GLD014D` | 40, `*CHAR *VARY` | the instance's `*DIRDB` could not be opened, made or changed: the store's reason |
+| `GLD0166` | 40, `*CHAR *VARY` | `dir_admin`: no entry with the DN |
+| `GLD0167` | 40, `*CHAR *VARY` | `dir_admin`: a schema definition refused, and why |
+| `GLD0168` | 40, `*CHAR *VARY` | `dir_admin`: an index of an attribute type the schema lacks |
+| `GLD016E` | 40, none | `dir_admin`: an entry's own ACL or owners with no value |
 | `GLD0201` | 40, `*CHAR 8` | `CHGDIRSVRA INSTANCE`: no such instance |
 | `GLD0202` | 40, none | `CHGDIRSVRA DN` without a password |
 | `GLD0203` | 40, `*CHAR 32` | `STRTCPSVR`/`ENDTCPSVR SERVER(*DIRSRV) INSTANCE`: no such instance |
+| `GLD0204` | 40, none | `dir_admin`: a publishing agent's port not 1 to 65535 |
 | `GLD0215` | 40, `*CHAR 8` | `CHGDIRSVRA DN(*UPDATEDN)`: the instance names no update DN |
 | `GLD0224` | 40, `*CHAR *VARY` | `CHGDIRSVRA DN`: not a distinguished name |
 | `GLD0232` | 40, two `*CHAR *VARY` | a value of an honoured attribute QS/400 does not take (`ibm-slapdPwEncryption: aes256`, `ibm-slapdSchemaCheck: V2`) |
+| `GLD0239` | 40, `*CHAR *VARY` | `dir_admin`: a publishing agent's server not a host name or address |
+| `GLD0244` | 40, `*CHAR 10` | a directory request (1560-1567) not from an instance's job as `QDIRSRV` (the user) |
 | `GLD0246` | 40, `*CHAR 8`, two `*BIN 4` | the instance job could not listen on `ibm-slapdPort` (the instance, the port, the errno); the job ends |
+| `GLD0259` | 40, `*CHAR *VARY` | a request that does not decode as an LDAP message, and why |
 | `GLD0265` | 0, two `*CHAR 10` | the instance job ended (the instance) |
 | `GLD0268` | 40, `*CHAR 8` | the instance job could not open its instance in the service (after the service's own message) |
 | `GLD0269` | 0, `*CHAR 8`, `*CHAR 10` | the instance job started, and its ports |
@@ -321,8 +335,10 @@ what follows (`Done`, `More { cursor }`: ask 1564, `Paused { cursor }`:
 a page of paged results is over, `Watching { watch }`: a persistent
 search's changes come from 1567). Unbind and abandon are the job's,
 told with 1565. Only the instance's job asks (user `QDIRSRV`, job name
-the instance's; `CPF2189` otherwise), and a session answers only the
-job that opened it; refusals are `DirError` (message ID, data, text).
+the instance's; `GLD0244` otherwise), and a session answers only the
+job that opened it (`GLD014B` otherwise); refusals are `DirError`
+(message ID, data, text: the message file's first-level text with the
+data, filled in as the answer leaves the service).
 The service (`stgsvc/dirsrv/serve.rs`) keeps the instance open while
 its job runs; when the job ends its sessions, cursors and persistent
 searches go, and the next start reads the configuration again. A

@@ -391,13 +391,7 @@ pub fn strtcpsvr(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
     // A directory server instance takes no startup values here
     // (docs/DIRSRV.md section 14).
     if list.iter().any(|s| s == "*DIRSRV") && !startup_values(r).is_empty() {
-        return Err(Fail::new(
-            servers::msg::NOT_STARTED,
-            format!(
-                "{} *DIRSRV could not be started: instance startup values are not taken.",
-                servers::msg::NOT_STARTED
-            ),
-        ));
+        return Err(Fail::msg(servers::msg::NOT_STARTED, &[("*DIRSRV", 10)]));
     }
     let restart = parms_of(r).name("RESTART");
     let mut env = JobEnv::new(job, host);
