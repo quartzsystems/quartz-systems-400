@@ -1292,24 +1292,148 @@ shipped `QUSRDIR` gives the three warnings.
 
 ## 13. The client, the tools, tests
 
-**`QGLDCLNT`** (`runtime/ldapclnt`): the 205 exports
-(`api-names.txt`), each a bound procedure with IBM's C signature over
-`net/ldap::client`; the `LDAP *` handle a pointer into a per-activation
-table; strings in the job's CCSID converted to UTF-8 and back unless
-`ldap_set_option(LDAP_OPT_UTF8_IO)`; `ldap_app_ssl_*` take a DCM
-application ID. A function QS/400 does not build returns
-`LDAP_NOT_SUPPORTED` (0x5C) and is listed in §14. The headers are QS/400's
-own `QSYSINC/H` members `LDAP`, `LBER`, `LDAPSSL` (constants and
-prototypes as the interface needs, Quartz's comments), plus a
+**`QGLDCLNT`** (`runtime/ldapclnt`): IBM's LDAP C API as bound
+procedures over `net/ldap::client`, `*SYSTEM` imports as `QSQCLI`'s are
+(`ile::LDAP_CLIENT_PROCS` names them; `runtime/ldapclnt/src/abi.rs` gives
+each its `sysv64` entry). The names are the union of the three headers'
+(V7R1M0) and `QGLDCLNT`'s 7.5 exports (`api-names.txt`): 215 procedures,
+159 built and 56 refused. The 20 exports that no header declares and
+that are not the `ldap_`/`ber_` API (`decode_int`, `encode_len`,
+`getLoadPtrs`, `ids_gethostbyname`, `timed_out`,
+`GetInstalledSSLCiphers__Fv`, `ldap_client_table`, ...) are IBM's
+internals and are not exported. `ber_*` are bound to `QGLDCLNT` too
+(IBM's 7.5 list does not carry them; a program binds them by name).
+
+- *The interface.* `runtime/ldapclnt/src/header/protos.txt` is the one
+  table: every prototype, its header and whether it is refused. The
+  numbers (`consts.rs`) are the LDAP C API draft's where it gives one
+  (result codes, `LDAP_RES_*`, scopes, `LDAP_MOD_*`, the first
+  `LDAP_OPT_*`) and QS/400's otherwise (`LDAP_OPT_UTF8_IO` 0x0E,
+  `LDAP_OPT_SSL_TIMEOUT` 0x0B, `LDAP_OPT_MATCHED_DN` 0x33,
+  `LDAP_OPT_EXT_ERROR` 0x34, `LDAP_SSL_*` 0x70 to 0x76). Structures as
+  ILE C lays them out with 16-byte pointers: `berval` (length at 0,
+  value at 16; 32 bytes), `LDAPControl` (OID 0, value 16, criticality
+  48; 64), `LDAPMod` (operation 0, type 16, values 32; 48),
+  `LDAPSortKey` (48), `LDAPURLDesc` (112), `LDAPVLVInfo` (80),
+  `LDAPVersion` (`sdk_version` the release as VRM, `protocol_version`,
+  `ssl_version` 13), `struct timeval` (two four-byte fields).
+- *Handles and storage.* `LDAP *`, `LDAPMessage *` and `BerElement *`
+  point into blocks the job's state owns (a chain of messages is one
+  block, message `i` at offset 16·i). Everything returned (strings,
+  arrays, `berval`s, controls, URL descriptions) is a block freed by its
+  function (`ldap_memfree`, `ldap_value_free*`, `ldap_controls_free`,
+  `ber_bvfree`, `ldap_free_urldesc`, `ldap_msgfree`); a free of storage
+  the library did not give out does nothing. The `ldap_err2string` and
+  `ldap_pwdpolicy_err2string` texts are Quartz's and kept for good.
+- *Strings* are in the job's CCSID (`ldapclnt::configure`, else 37),
+  converted to UTF-8 on the wire and back, unless `LDAP_OPT_UTF8_IO` is
+  on; the `_utf8` functions take UTF-8; `ldap_set_iconv_local_codepage`
+  and `_charset` change the local code page. `ldap_get_values` converts
+  values; `ldap_get_values_len` and `LDAP_MOD_BVALUES` pass bytes. LBER
+  passes bytes as given.
+- *Sessions.* `ldap_init` connects at the first operation (a blank
+  separated host list: `host`, `host:port`, `[v6]:port` or LDAP URLs;
+  LDAPv3), `ldap_open` at once (LDAPv2, as the API defines it).
+  `ldap_ssl_client_init` (a null key ring is the `*SYSTEM` store; the job
+  refuses another with `LDAP_SSL_INITIALIZE_FAILED`),
+  `ldap_ssl_environment_init` (the same; a stash file is
+  `LDAP_NOT_SUPPORTED`), `ldap_ssl_init` (LDAPS; `name` is a client
+  certificate label, which the job refuses: use an application ID),
+  `ldap_ssl_start`, `ldap_app_ssl_client_init_np`, `ldap_app_ssl_init_np`
+  and `ldap_app_ssl_start_np` (a DCM application ID: its CAs and, when
+  the job may have it, its certificate, through `cert_app`),
+  `ldap_start_tls_s_np` and `ldap_start_tls_app_np` (StartTLS).
+  `ldap_stop_tls_s_np` ends the TLS session and the connection, since
+  LDAP has no way back to the clear on one connection; the next
+  operation connects again in the clear, unbound.
+- *Options.* `LDAP_OPT_DEREF`, `SIZELIMIT`, `TIMELIMIT`, `REFHOPLIMIT`,
+  `REFERRALS` (off by default), `PROTOCOL_VERSION`, `UTF8_IO`,
+  `SSL_TIMEOUT`, `SERVER_CONTROLS`, `CLIENT_CONTROLS`, `ERROR_NUMBER`,
+  `ERROR_STRING`, `MATCHED_DN`, `HOST_NAME` (set before connecting),
+  `EXT_ERROR` (get), `RESTART` (on only); a null handle reaches the
+  defaults new handles take. An integer option takes a pointer to an
+  `int`; an on/off option a pointer to an `int`, null (off) or
+  `LDAP_OPT_ON` (a pointer value that addresses nothing: on).
+  `LDAP_OPT_DEBUG`, `REBIND_FN`, `REBIND_ARG`, `SSL_CIPHER`, `API_INFO`
+  and `DESC` answer `LDAP_NOT_SUPPORTED`. No client control is built: a
+  critical one fails the operation with `LDAP_NOT_SUPPORTED`.
+- *Operations.* Simple and SASL `EXTERNAL` binds (other mechanisms are
+  `LDAP_NOT_SUPPORTED`; a null DN or password takes
+  `ldap_default_dn_set`'s and `ldap_password_set`'s), every search form
+  (`_s`, `_st`, `_ext`, `_ext_s`, by URL; an `_ext` timeout is also the
+  server's time limit), add, modify (`LDAP_MOD_INCREMENT` too), delete,
+  `ldap_modrdn`, `ldap_rename`, compare, abandon and extended
+  operations, each in its asynchronous (message ID), `_s`, `_ext` and
+  `_ext_s` forms; `ldap_result` (`LDAP_MSG_ONE`, `ALL`, `RECEIVED`,
+  `LDAP_RES_ANY`, a timeout). The synchronous forms follow referrals
+  when `LDAP_OPT_REFERRALS` is on (the rebind callback is refused, so a
+  referred server is bound anonymously); the asynchronous ones hand
+  references to the program. `ldap_abandon_ext` with server controls is
+  `LDAP_NOT_SUPPORTED`.
+- *Controls* made: any (`ldap_create_control` from a `BerElement`),
+  paged results, sort (and `ldap_create_sort_keylist`'s
+  `[-]attr[:rule]` keys), proxied authorization, persistent search,
+  assertion, virtual list view (draft-ietf-ldapext-ldapv3-vlv); parsed:
+  paged results, sort, entry change, virtual list view, password policy
+  (`ldap_parse_pwdpolicy_response(ctrls, &warning, &value, &error)`);
+  lists: copy, insert, add, remove, merge, free.
+- *LBER*: `ber_printf` letters `t b i e n o O s B v V { } [ ]`,
+  `ber_scanf` letters `a s O o b e i B n l t T x v V { } [ ]`; the
+  variable list is read from the call's stack words by the format (an
+  `int` takes a word, a pointer an aligned pair; `ABI.md` §1).
+
+The headers are QS/400's own `QSYSINC/H` members `LDAP`, `LBER`,
+`LDAPSSL` (constants, structures and prototypes from the table,
+Quartz's comments; a refused function says so), plus the
 `QSYSINC/QRPGLESRC(LDAP)` copy member generated from the same table (a
-QS/400 addition: IBM ships none).
+QS/400 addition: IBM ships none; every prototype but the two variadic
+ones, `pointer value options(*string)` for strings). They are generated
+into `lic/osobjects/shipped/qsysinc/` (`QS400_UPDATE_QSYSINC=1 cargo
+test -p ldapclnt` rewrites them), and `osobjects::qsysinc` makes the
+library `QSYSINC`, the source files `H` (RCDLEN 92) and `QRPGLESRC`
+(112) and the members at every IPL, rewriting a member that differs.
+`QSYSINC` is not in a product load: the IPL makes it, as it makes
+`QSTRUP`.
 
 **QSH tools** (`qsh/qsh-utils/src/net/ldap/`): `ldapsearch`, `ldapadd`,
 `ldapmodify`, `ldapdelete`, `ldapmodrdn`, `ldapchangepwd`, `ldapexop`,
-`ldapcompare`, `ldapdiff`, with IBM's option letters (`qsh-tools.txt`);
-`LDAP_BASEDN` from the environment as IBM's; their usage text Quartz's.
-`ldapexop -op` takes the operations built; `ldapdiff` compares two
-servers' subtrees (no replication needed).
+`ldapcompare`, `ldapdiff`, with IBM's option letters (`qsh-tools.txt`)
+and Quartz's usage text, over `net/ldap::client` on the job's own
+sockets. Every tool takes `-h -p -D -w` (`-w ?` reads the password from
+standard input), `-V`, `-Z` (LDAPS), `-Y` (StartTLS), `-K` (only the
+`*SYSTEM` store), `-P`, `-N` (refused by the job: no certificate by
+label), `-m EXTERNAL`, `-y` (proxied authorization), `-M` (manageDsaIT),
+`-R` (do not follow referrals; they are followed by default), `-O`,
+`-C` (the input's character set), `-v` and `-n`. The exit status is the
+LDAP result code (89 for a usage error, 81 when the server cannot be
+reached, 92 for a refusal).
+
+- `ldapsearch`: `-b` (else `$LDAP_BASEDN`), `-s`, `-a`, `-z`, `-l`, `-A`,
+  `-L` (LDIF; else `dn` then `attribute=value` lines, `-F` another
+  separator), `-B` (values that are not text as they are), `-t` (values
+  to files), `-q` paging with `-T` seconds between pages, `-o` sort
+  (repeatable, `-attr` reverses), `-c types[:changesonly[:ecs]]` a
+  persistent search (`any` or `add,delete,modify,moddn`), `-f`/`-i` (a
+  filter per line, `%s` in the filter is the line), `-e` (the version).
+- `ldapadd`, `ldapmodify`: LDIF records (`-f`/`-i` or standard input); a
+  record without a change type adds with `-a` (always for `ldapadd`),
+  else adds its values (`-r` replaces them); `-c`, `-e file` (the
+  records that failed), `-b` (a value starting with `/` is that file's
+  contents), `file://` values, `control:` lines.
+- `ldapdelete` (`-s` the tree delete control, `-c`, `-f`),
+  `ldapmodrdn` (`-r`, `-c`, `-f` pairs of lines), `ldapcompare`
+  (`DN attr=value`, `-f` pairs; status 0 true, 5 false),
+  `ldapchangepwd` (`-D -w -n`: binds and replaces `userPassword`).
+- `ldapexop -op whoami` and `-op passwd [-a old] [-s new] [user]` (RFC
+  3062; a generated password is printed). IBM's operations
+  (`acctstatus`, `onlineBackup`, the log, replication and server
+  control ones) are refused with a message.
+- `ldapdiff -b base -sh host -ch host` (`-sp -sD -sw -sZ -sK -sP -sN` and
+  the `-c` forms for the consumer): the LDIF that makes the consumer's
+  subtree match the supplier's (adds parents first, deletes children
+  first, modifies by replacing or deleting user attributes), to
+  `-L file` or standard output; `-F` applies it; `-S` compares the
+  schemas; `-C n` stops after `n` differences.
 
 **`tools/ldaptest`**: an LDAP client from crates by other authors than
 `net/ldap` (the agent picks the crate, `cargo deny` checked), scenarios
@@ -1348,6 +1472,48 @@ ignored.
   (Navigator replaces it), `idsldif2db`-style tools.
 - The SNADS system distribution directory (`*DIRE`) is not LDAP and is
   out of scope.
+- The client (`QGLDCLNT`, §13): each answers `LDAP_NOT_SUPPORTED` (an
+  `int` function returns it; a pointer function returns null with it as
+  the error): Kerberos (`ldap_krb_init_tkt`, `ldap_krb_cc_destroy`,
+  `ldap_krb_ctx_destroy`); PKCS #11 and FIPS mode
+  (`ldap_ssl_pkcs11_client_init`, `ldap_ssl_pkcs11_environment_init`,
+  `ldap_ssl_set_fips_mode_np`); cipher strings (`ldap_set_cipher`,
+  `LDAP_OPT_SSL_CIPHER`: `QSSLCSL` chooses); a key ring stash file; the
+  rebind callback (`ldap_set_rebind_proc`, `LDAP_OPT_REBIND_FN`,
+  `LDAP_OPT_REBIND_ARG`); `LDAP_OPT_DEBUG`, `LDAP_OPT_API_INFO`,
+  `LDAP_OPT_DESC`, `LDAP_OPT_RESTART` off; client controls (a critical
+  one); SASL mechanisms but `EXTERNAL` and `ldap_plugin_sasl_bind_s`,
+  `ldap_plugin_pblock_get`, `_set`, `_free`; server location by DNS
+  (`ldap_server_locate`, `ldap_server_free_list`,
+  `ldap_server_conf_save`, `ldap_enetwork_domain_set`, `_get`); locales
+  (`ldap_set_locale`, `ldap_get_locale`); friendly names
+  (`ldap_friendly_name`, `ldap_free_friendlymap`);
+  `ldap_proxy_dn_prefix` and its `_utf8` form; IBM's transactions
+  (`ldap_start_transaction`, `ldap_end_transaction`,
+  `ldap_prepare_transaction` and their `_s` forms, `ldap_get_tran_id`,
+  `ldap_create_transaction_control`, `ldap_create_abort_`, `commit_` and
+  `prepare_transaction_request`); IBM's own requests
+  (`ldap_create_account_status_request`, `effective_pwdpolicy_request`
+  and `ldap_parse_effective_pwdpolicy_response`, `get_file_request`,
+  `group_eval_request`, `locate_entry_request`, `online_backup_request`,
+  `resume_role_request`, `user_type_request`,
+  `password_policy_bind_init_request`, `_finalize_request`) and controls
+  (`ldap_create_group_control`, `_from_list`,
+  `modify_groups_only_control`,
+  `omit_group_referential_integrity_control`,
+  `limit_num_values_control` with its parse and free,
+  `chaining_audit_control`, `return_deleted_objects_control`), whose
+  encodings IBM does not publish; `ldap_url_parse_internal` and
+  `ldap_xlate_local_to_utf8_wrp`; `ldap_abandon_ext` with server
+  controls. IBM's 20 internal exports are not exported at all.
+- The QSH tools (§13): `-G` (a `DIGEST-MD5` realm), `-U` (a SASL user),
+  `-m` but `EXTERNAL`, `-d` (debug traces), `-k` (IBM's server
+  administration control), `-x`, `ldapsearch -j` and `-J` (IBM's limit
+  on attribute values), `ldapadd`/`ldapmodify -t` (transactions), `-B`,
+  `-g`, `-j`, `-l` (replication controls, also `ldapdelete` and
+  `ldapmodrdn -l`), `ldapdiff -a -j -x -O`, a key database other than
+  the `*SYSTEM` store (`-K`), a client certificate by label (`-N`), and
+  `ldapexop`'s IBM operations: each a message and status 92.
 
 ## 15. Differences from IBM i (documented)
 
@@ -1375,6 +1541,10 @@ ignored.
   `supportedSASLMechanisms` `EXTERNAL`.
 - `cn=monitor` has the counters QS/400 keeps (§8), its times as
   Generalized Time.
+- The client's numbers and structures where the LDAP C API draft gives
+  none are QS/400's (§13): a program is compiled against QS/400's
+  `QSYSINC` members, not IBM's. `ber_*` are `QGLDCLNT`'s.
+  `ldap_stop_tls_s_np` ends the connection with the TLS session.
 
 ## 16. Tests and performance
 
@@ -1407,6 +1577,23 @@ ignored.
   against `tests/golden/nav/dirsrv-*.html` and every action;
   `cargo test -p qap-proto --test version12`, `cargo test -p qapd
   --test dirsrv`: QAP version 12.
+- `cargo test -p ldapclnt`: every export against `protos.txt` (each
+  built entry's arguments, pads included) and the oracle's names;
+  `tests/api.rs` (the functions over a fake directory on the loopback:
+  binds, every search form, the asynchronous face, entries and values,
+  updates, paging, sorting, persistent search, control lists, options,
+  `UTF8_IO`, extended operations, StartTLS, LDAPS, application IDs, DNs,
+  URLs, code pages, LBER, refusals); `tests/ile.rs` (an IR program
+  calling `ldap_init`, `ldap_simple_bind_s`, `ldap_search_s`, the
+  entry walk and a variadic `ber_printf`); the shipped `QSYSINC` members
+  are current.
+- `cargo test -p qsh-utils --test ldap`: the nine tools against a fake
+  directory (text and LDIF output, paging, sorting, persistent search,
+  filters from a file, `LDAP_BASEDN`, LDIF updates with `-c` and `-e`,
+  deletes, renames, compares, password changes, `whoami` and `passwd`,
+  `ldapdiff`, StartTLS and LDAPS, the refusals).
+- `cargo test -p osobjects --test create`: `QSYSINC` and its members at
+  the first IPL, nothing made the second time.
 
 ## 17. NEEDS-CODY
 
