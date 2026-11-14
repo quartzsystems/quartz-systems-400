@@ -707,6 +707,21 @@ pub const TARGETS: &[Target] = &[
         dict: &[b"ldap://", b"ldaps://", b"[::1]", b"%2C", b"?", b"!", b"=", b"sub"],
         max_len: 2048,
     },
+    Target {
+        name: "dirsrvconf",
+        what: "the directory server's instance list and ibmslapd.conf: read, checked, changed and read again",
+        run: dirsrv::config::fuzz,
+        seeds: &[
+            b"\x00version: 1\n\ndn: cn=QUSRDIR, CN=IDS INSTANCES\ncn: QUSRDIR\nids-instanceAutostart: 1\nobjectClass: ids-instance\n",
+            b"\x01# c\nversion: 1\n\ndn: cn=Configuration\ncn: Configuration\nibm-slapdAdminDN: cn=Administrator\nibm-slapdPort: 389\nibm-slapdPwEncryption: ssha512\n\ndn: cn=SSL, cn=Configuration\nibm-slapdSecurity: none\n",
+            b"\x01dn: CN=CONFIGURATION\nibm-slapdAdminPW:: e1NTSEE1MTJ9eA==\nibm-slapdNoSuch: 1\n folded\n",
+        ],
+        dict: &[
+            b"dn: ", b"cn=Configuration", b"ibm-slapd", b"::", b"\n ", b"\n\n", b"version: 1\n",
+            b"objectClass: ids-instance\n", b"# ",
+        ],
+        max_len: 8192,
+    },
 ];
 
 /// The target named `name`.

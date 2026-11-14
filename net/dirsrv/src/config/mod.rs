@@ -65,6 +65,37 @@ pub fn dn_key(s: &str) -> String {
     )
 }
 
+/// The `dirsrvconf` fuzz target (`tools/fuzz`): the first byte picks
+/// the file; an `ibmslapd.conf` is checked, an attribute set and read
+/// back, the text parsed again.
+pub fn fuzz(data: &[u8]) {
+    let Some((&which, rest)) = data.split_first() else {
+        return;
+    };
+    let Ok(text) = std::str::from_utf8(rest) else {
+        return;
+    };
+    if which & 1 == 0 {
+        let _ =
+            InstanceList::parse(text).map(|l| l.resolve(&instances::Which::All).map(|v| v.len()));
+        return;
+    }
+    let Ok(mut c) = SlapdConf::parse("fuzz", text) else {
+        return;
+    };
+    let _ = c.problems(DEFAULT_INSTANCE);
+    let _ = (c.admin_dn(), c.admin_pw(), c.update_dn());
+    if c.has_entry(slapd::CONFIGURATION) {
+        c.set(slapd::CONFIGURATION, "ibm-slapdPort", &["3389"])
+            .expect("the entry is there");
+        assert_eq!(
+            c.get(slapd::CONFIGURATION, "ibm-slapdPort").as_deref(),
+            Some("3389"),
+            "a value set reads back"
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,6 +106,8 @@ mod tests {
             dn_key("CN=AUDIT, CN=LOG MANAGEMENT, CN=CONFIGURATION"),
             dn_key("cn=Audit,cn=Log Management,cn=Configuration")
         );
+        fuzz(b"\x01dn: cn=Configuration\nibm-slapdPort: 389\n");
+        fuzz(shipped::INSTANCES.as_bytes());
         assert_eq!(
             conf_path(ROOT, "QUSRDIR"),
             "/QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/ibmslapd.conf"
