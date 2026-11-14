@@ -3,8 +3,9 @@
 // root directory of this project.
 
 //! Short-form (AG-relative) v5 btree blocks: the free space trees by
-//! block and by size, and the inode and free inode trees. A new
-//! filesystem has one leaf per tree.
+//! block and by size, the inode and free inode trees, and with reflink
+//! the reverse-mapping and refcount trees. A new filesystem has one
+//! leaf per tree.
 
 use super::{Buf, NULLAGBLOCK};
 use crate::geom::BLOCK_SIZE;
@@ -34,6 +35,10 @@ pub const CNT_MAGIC: u32 = 0x4142_3343;
 pub const INO_MAGIC: u32 = 0x4941_4233;
 /// "FIB3", chunks with free inodes.
 pub const FINO_MAGIC: u32 = 0x4649_4233;
+/// "RMB3", reverse mappings.
+pub const RMAP_MAGIC: u32 = 0x524d_4233;
+/// "R3FC", shared extent reference counts.
+pub const REFC_MAGIC: u32 = 0x5233_4643;
 
 /// An inode chunk record: first AG inode, free count, free mask.
 #[derive(Debug, Clone, Copy)]
@@ -82,4 +87,21 @@ pub fn ino_leaf(magic: u32, recs: &[InoRec], at: Place<'_>) -> Vec<u8> {
         b.u64(off::RECS + 16 * i + 8, r.free);
     }
     b.sealed(off::CRC)
+}
+
+/// A reverse-mapping leaf: `(start, length, owner)` records, all
+/// metadata owners (offset and flags zero).
+pub fn rmap_leaf(recs: &[(u32, u32, u64)], at: Place<'_>) -> Vec<u8> {
+    let mut b = leaf(RMAP_MAGIC, recs.len(), at);
+    for (i, &(start, len, owner)) in recs.iter().enumerate() {
+        b.u32(off::RECS + 24 * i, start);
+        b.u32(off::RECS + 24 * i + 4, len);
+        b.u64(off::RECS + 24 * i + 8, owner);
+    }
+    b.sealed(off::CRC)
+}
+
+/// An empty refcount leaf: nothing is shared yet.
+pub fn refcount_leaf(at: Place<'_>) -> Vec<u8> {
+    leaf(REFC_MAGIC, 0, at).sealed(off::CRC)
 }

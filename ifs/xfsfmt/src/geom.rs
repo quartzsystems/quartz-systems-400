@@ -26,8 +26,11 @@ pub const CHUNK_INODES: u32 = 64;
 pub const CHUNK_BLOCKS: u32 = CHUNK_INODES / INOPB;
 /// Inode chunk alignment in blocks (a 16 KiB cluster).
 pub const INO_ALIGN: u32 = 4;
-/// Blocks put on each AG free list at format time, as mkfs does.
+/// Blocks put on each AG free list at format time, as mkfs does: two
+/// per free space btree (`xfs_alloc_min_freelist` at level 1).
 pub const AGFL_PREFILL: u32 = 4;
+/// The same with the reverse-mapping btree: two more for it.
+pub const AGFL_PREFILL_RMAP: u32 = 6;
 /// Smallest AG: 16 MiB.
 const MIN_AG_BLOCKS: u32 = 4096;
 /// Largest AG: 1 TiB.
@@ -35,6 +38,10 @@ const MAX_AG_BLOCKS: u64 = 1 << 28;
 /// Disk blocks per filesystem block.
 const BB_PER_BLOCK: u64 = (BLOCK_SIZE / 512) as u64;
 const MIB: u64 = 1024 * 1024;
+/// The log below 300 MiB with reflink. The kernel wants 2928 to 3273
+/// blocks there (above the 10 MiB floor); 14 MiB keeps a margin and
+/// still fits a 16 MiB AG.
+const REFLINK_SMALL_LOG: u64 = 14 * MIB;
 
 /// Smallest device: four 16 MiB AGs.
 pub const MIN_BYTES: u64 = 4 * MIN_AG_BLOCKS as u64 * BLOCK_SIZE as u64;
@@ -62,6 +69,41 @@ pub struct Geometry {
     pub log_blocks: u32,
     /// AG 0 block of the first inode chunk (root, rt bitmap, rt summary).
     pub chunk_agbno: u32,
+    /// Reflink with the reverse-mapping btree: two more roots in every
+    /// AG (rmap, refcount) and a longer free list.
+    pub reflink: bool,
+}
+
+/// An rmap owner that is not an inode (`XFS_RMAP_OWN_*`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RmapOwner {
+    /// The AG headers.
+    Fs,
+    /// The internal log.
+    Log,
+    /// Free space and rmap btree blocks, and the free list's blocks.
+    Ag,
+    /// Inode btree blocks.
+    Inobt,
+    /// Inode chunks.
+    Inodes,
+    /// Refcount btree blocks.
+    Refc,
+}
+
+impl RmapOwner {
+    /// The on-disk owner value.
+    pub fn value(self) -> u64 {
+        let n: i64 = match self {
+            Self::Fs => -3,
+            Self::Log => -4,
+            Self::Ag => -5,
+            Self::Inobt => -6,
+            Self::Inodes => -7,
+            Self::Refc => -8,
+        };
+        n.cast_unsigned()
+    }
 }
 
 #[allow(clippy::similar_names)] // agno and agbno are the format's names.
@@ -74,6 +116,17 @@ impl Geometry {
     /// The same with the AG size fixed (16 MiB to 1 TiB, and the
     /// device at least one AG long), when `ag` is given.
     pub fn for_bytes_with(bytes: u64, sector_size: u32, ag: Option<u32>) -> Result<Self, Error> {
+        Self::for_features(bytes, sector_size, ag, false)
+    }
+
+    /// The same with reflink and the reverse-mapping btree when
+    /// `reflink` is set.
+    pub fn for_features(
+        bytes: u64,
+        sector_size: u32,
+        ag: Option<u32>,
+        reflink: bool,
+    ) -> Result<Self, Error> {
         if sector_size != 512 && sector_size != 4096 {
             return Err(Error::SectorSize(sector_size));
         }
@@ -112,15 +165,18 @@ impl Geometry {
         let dblocks = u64::from(ag_count) * u64::from(ag_blocks);
         let ag_blk_log = u8::try_from(32 - (ag_blocks - 1).leading_zeros()).expect("< 32");
 
-        let prealloc = prealloc_blocks(sector_size);
+        let prealloc = prealloc_blocks(sector_size, reflink);
+        let agfl = agfl_prefill(reflink);
         let fs_bytes = dblocks * u64::from(BLOCK_SIZE);
         let floor = if fs_bytes >= 300 * MIB {
             64 * MIB
+        } else if reflink {
+            REFLINK_SMALL_LOG
         } else {
             10 * MIB
         };
         let log_bytes = (fs_bytes / 2048).max(floor).min(1024 * MIB);
-        let room = ag_blocks - prealloc - AGFL_PREFILL - 16;
+        let room = ag_blocks - prealloc - agfl - 16;
         let log_blocks = u32::try_from(log_bytes / u64::from(BLOCK_SIZE))
             .expect("at most 1 GiB")
             .min(room);
@@ -134,14 +190,21 @@ impl Geometry {
             log_ag: ag_count / 2,
             log_agbno: prealloc,
             log_blocks,
-            chunk_agbno: (prealloc + AGFL_PREFILL).next_multiple_of(INO_ALIGN),
+            chunk_agbno: (prealloc + agfl).next_multiple_of(INO_ALIGN),
+            reflink,
         })
     }
 
     /// Blocks at the head of every AG before free space: the headers
-    /// and the four btree roots (bno, cnt, ino, fino).
+    /// and the btree roots (bno, cnt, ino, fino; rmap and refcount with
+    /// reflink).
     pub fn prealloc_blocks(&self) -> u32 {
-        prealloc_blocks(self.sector_size)
+        prealloc_blocks(self.sector_size, self.reflink)
+    }
+
+    /// Blocks on each AG free list.
+    pub fn agfl_count(&self) -> u32 {
+        agfl_prefill(self.reflink)
     }
 
     /// log2 of the sector size.
@@ -158,6 +221,12 @@ impl Geometry {
     pub fn roots(&self) -> [u32; 4] {
         let first = self.agfl_block() + 1;
         [first, first + 1, first + 2, first + 3]
+    }
+
+    /// The rmap and refcount btree roots, with reflink.
+    pub fn reflink_roots(&self) -> Option<[u32; 2]> {
+        let after = self.roots()[3] + 1;
+        self.reflink.then_some([after, after + 1])
     }
 
     /// Filesystem block number of an AG block.
@@ -190,19 +259,26 @@ impl Geometry {
         self.ino_at(self.chunk_agbno)
     }
 
-    /// The four blocks put on an AG's free list.
+    /// The first four blocks put on an AG's free list (all of them
+    /// without reflink; [`Geometry::agfl_blocks`] has every one).
     pub fn agfl(&self, agno: u32) -> [u32; 4] {
+        let first = self.agfl_blocks(agno).start;
+        [first, first + 1, first + 2, first + 3]
+    }
+
+    /// Every block put on an AG's free list.
+    pub fn agfl_blocks(&self, agno: u32) -> std::ops::Range<u32> {
         let first = if agno == self.log_ag {
             self.log_agbno + self.log_blocks
         } else {
             self.prealloc_blocks()
         };
-        [first, first + 1, first + 2, first + 3]
+        first..first + self.agfl_count()
     }
 
     /// Free extents of an AG as `(start, length)`, in block order.
     pub fn free_extents(&self, agno: u32) -> Vec<(u32, u32)> {
-        let after_agfl = self.agfl(agno)[3] + 1;
+        let after_agfl = self.agfl_blocks(agno).end;
         if agno == 0 {
             let mut out = Vec::new();
             if self.chunk_agbno > after_agfl {
@@ -224,75 +300,56 @@ impl Geometry {
     /// `sb_fdblocks`: free space plus the free lists.
     pub fn fdblocks(&self) -> u64 {
         (0..self.ag_count)
-            .map(|a| u64::from(self.free_blocks(a) + AGFL_PREFILL))
+            .map(|a| u64::from(self.free_blocks(a) + self.agfl_count()))
             .sum()
+    }
+
+    /// The used space of an AG as rmap records `(start, length, owner)`,
+    /// in block order, neighbours of one owner merged, as mkfs writes
+    /// them into a new rmap btree.
+    pub fn rmap_records(&self, agno: u32) -> Vec<(u32, u32, RmapOwner)> {
+        let headers = self.agfl_block() + 1;
+        let [bno, _, ino, _] = self.roots();
+        let mut used = vec![
+            (0, headers, RmapOwner::Fs),
+            (bno, 2, RmapOwner::Ag),
+            (ino, 2, RmapOwner::Inobt),
+        ];
+        if let Some([rmap, refc]) = self.reflink_roots() {
+            used.push((rmap, 1, RmapOwner::Ag));
+            used.push((refc, 1, RmapOwner::Refc));
+        }
+        if agno == self.log_ag {
+            used.push((self.log_agbno, self.log_blocks, RmapOwner::Log));
+        }
+        let agfl = self.agfl_blocks(agno);
+        used.push((agfl.start, agfl.end - agfl.start, RmapOwner::Ag));
+        if agno == 0 {
+            used.push((self.chunk_agbno, CHUNK_BLOCKS, RmapOwner::Inodes));
+        }
+        used.sort_by_key(|r| r.0);
+        let mut out: Vec<(u32, u32, RmapOwner)> = Vec::with_capacity(used.len());
+        for r in used {
+            match out.last_mut() {
+                Some(last) if last.2 == r.2 && last.0 + last.1 == r.0 => last.1 += r.1,
+                _ => out.push(r),
+            }
+        }
+        out
     }
 }
 
-fn prealloc_blocks(sector_size: u32) -> u32 {
-    3 * sector_size / BLOCK_SIZE + 1 + 4
+fn prealloc_blocks(sector_size: u32, reflink: bool) -> u32 {
+    3 * sector_size / BLOCK_SIZE + 1 + 4 + if reflink { 2 } else { 0 }
+}
+
+fn agfl_prefill(reflink: bool) -> u32 {
+    if reflink {
+        AGFL_PREFILL_RMAP
+    } else {
+        AGFL_PREFILL
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    const GIB: u64 = 1024 * MIB;
-
-    #[test]
-    fn small_filesystem_matches_mkfs() {
-        // mkfs.xfs 6.18 -d agcount=4 -l size=2560b on 64 MiB.
-        let g = Geometry::for_bytes(64 * MIB, 512).unwrap();
-        assert_eq!((g.ag_count, g.ag_blocks, g.ag_blk_log), (4, 4096, 12));
-        assert_eq!(g.log_start(), 8197);
-        assert_eq!(g.log_blocks, 2560);
-        assert_eq!(g.root_ino(), 96);
-        assert_eq!(g.fdblocks(), 13796);
-        assert_eq!(g.free_extents(0), vec![(9, 3), (20, 4076)]);
-        assert_eq!(g.free_blocks(2), 1527);
-    }
-
-    #[test]
-    fn four_k_sectors_match_mkfs() {
-        let g = Geometry::for_bytes(64 * MIB, 4096).unwrap();
-        assert_eq!(g.log_start(), 8200);
-        assert_eq!(g.roots(), [4, 5, 6, 7]);
-        assert_eq!(g.agfl(0), [8, 9, 10, 11]);
-        assert_eq!(g.root_ino(), 96);
-        assert_eq!(g.fdblocks(), 13784);
-    }
-
-    #[test]
-    fn larger_filesystems() {
-        let g = Geometry::for_bytes(GIB, 512).unwrap();
-        assert_eq!((g.ag_count, g.ag_blocks, g.log_blocks), (4, 65536, 16384));
-        assert_eq!(g.ag_blk_log, 16);
-        let g = Geometry::for_bytes(256 * GIB + 4096 * 3, 512).unwrap();
-        assert_eq!(g.ag_count, 4);
-        assert_eq!(g.log_blocks, 32768);
-        assert_eq!(g.dblocks, 4 * u64::from(g.ag_blocks));
-        let g = Geometry::for_bytes(5 << 40, 4096).unwrap();
-        assert_eq!(g.ag_count, 5);
-        assert!(Geometry::for_bytes(MIN_BYTES - 1, 512).is_err());
-        assert!(Geometry::for_bytes(GIB, 1024).is_err());
-    }
-
-    #[test]
-    fn a_fixed_ag_size_keeps_whole_ags_and_leaves_the_rest() {
-        let g = Geometry::for_bytes_with(GIB + 5 * MIB, 4096, Some(16_384)).unwrap();
-        assert_eq!((g.ag_count, g.ag_blocks), (16, 16_384));
-        assert_eq!(g.dblocks, 16 * 16_384);
-        assert_eq!(g.log_ag, 8);
-        assert!(Geometry::for_bytes_with(64 * MIB, 4096, Some(32_768)).is_err());
-    }
-
-    #[test]
-    fn odd_sizes_keep_whole_ags() {
-        for bytes in [MIN_BYTES + 4095, 100 * MIB + 12345, 513 * MIB + 7] {
-            let g = Geometry::for_bytes(bytes, 512).unwrap();
-            assert!(g.dblocks * u64::from(BLOCK_SIZE) <= bytes);
-            assert!(g.log_agbno + g.log_blocks + AGFL_PREFILL < g.ag_blocks);
-            assert_eq!(g.chunk_agbno % INO_ALIGN, 0);
-        }
-    }
-}
+mod tests;

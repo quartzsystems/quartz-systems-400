@@ -59,6 +59,8 @@ const VERSION_SECTOR: u16 = 0x0800;
 const FEATURES2: u32 = 0x18a;
 /// FINOBT, INOBTCNT.
 pub const RO_COMPAT: u32 = 0x1 | 0x8;
+/// RMAPBT, REFLINK.
+pub const RO_COMPAT_REFLINK: u32 = 0x2 | 0x4;
 /// FTYPE, BIGTIME.
 pub const INCOMPAT: u32 = 0x1 | 0x8;
 
@@ -121,7 +123,8 @@ pub fn build(g: &Geometry, uuid: &[u8; 16], label: &[u8], counts: &Counts) -> Ve
     }
     b.u32(off::FEATURES2, FEATURES2);
     b.u32(off::BAD_FEATURES2, FEATURES2);
-    b.u32(off::FEATURES_RO_COMPAT, RO_COMPAT);
+    let reflink = if g.reflink { RO_COMPAT_REFLINK } else { 0 };
+    b.u32(off::FEATURES_RO_COMPAT, RO_COMPAT | reflink);
     b.u32(off::FEATURES_INCOMPAT, INCOMPAT);
     b.sealed(off::CRC)
 }

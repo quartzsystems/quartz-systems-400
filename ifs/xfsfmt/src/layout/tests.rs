@@ -7,7 +7,8 @@
 //! against what `mkfs.xfs` 6.18 writes for the same geometry and UUID
 //! (`-b size=4096 -s size=512 -m crc=1,finobt=1,rmapbt=0,reflink=0,
 //! bigtime=1,inobtcount=1 -i sparse=0,size=512,nrext64=0 -n ftype=1
-//! -d agcount=4 -l size=2560b -L QS400-IFS` on 64 MiB).
+//! -d agcount=4 -l size=2560b -L QS400-IFS` on 64 MiB), and with
+//! `rmapbt=1,reflink=1 -l size=3584b`.
 
 use super::{ag, btree, inode, log, sb};
 use crate::{Geometry, Timestamp};
@@ -193,4 +194,96 @@ fn root_inode_matches_mkfs() {
         ],
     );
     assert_eq!(ours, mkfs);
+}
+
+/// The same with `-m rmapbt=1,reflink=1 -l size=3584b`.
+fn reflink_geometry() -> Geometry {
+    Geometry::for_features(64 * 1024 * 1024, 512, None, true).unwrap()
+}
+
+#[test]
+fn reflink_superblock_matches_mkfs() {
+    let mkfs = sector(
+        512,
+        &[
+            (0x00, "5846 5342 0000 1000 0000 0000 0000 4000"),
+            (0x20, "5153 3430 0000 4000 8000 0000 0000 0005"),
+            (0x30, "0000 0000 0000 2007 0000 0000 0000 0080"),
+            (0x40, "0000 0000 0000 0081 0000 0000 0000 0082"),
+            (0x50, "0000 0001 0000 1000 0000 0004 0000 0000"),
+            (0x60, "0000 0e00 b4a5 0200 0200 0008 5153 3430"),
+            (0x70, "302d 4946 5300 0000 0c09 0903 0c00 0019"),
+            (0x80, "0000 0000 0000 0040 0000 0000 0000 003d"),
+            (0x90, "0000 0000 0000 31dc"),
+            (0xb0, "0000 0000 0000 0004"),
+            (0xc0, "0000 0000 0000 0001 0000 018a 0000 018a"),
+            (0xd0, "0000 0000 0000 000f 0000 0009 0000 0000"),
+            (0xe0, "1947 344a"),
+        ],
+    );
+    let counts = sb::Counts {
+        icount: 64,
+        ifree: 61,
+    };
+    let ours = sb::build(&reflink_geometry(), &UUID, b"QS400-IFS", &counts);
+    assert_eq!(ours, mkfs);
+}
+
+#[test]
+fn reflink_agf_matches_mkfs() {
+    assert_eq!([ag::agf::RMAP_ROOT, ag::agf::RMAP_LEVEL], [24, 36]);
+    assert_eq!([ag::agf::RMAP_BLOCKS, ag::agf::REFCOUNT_LEVEL], [80, 92]);
+    let mkfs = sector(
+        512,
+        &[
+            (0x00, "5841 4746 0000 0001 0000 0000 0000 1000"),
+            (0x10, "0000 0001 0000 0002 0000 0005 0000 0001"),
+            (0x20, "0000 0001 0000 0001 0000 0001 0000 0006"),
+            (0x30, "0000 0006 0000 0feb 0000 0fe8 0000 0000"),
+            (0x40, "5153 3430 0000 4000 8000 0000 0000 0005"),
+            (0x50, "0000 0001 0000 0001 0000 0006 0000 0001"),
+            (0xd0, "0000 0000 0000 0000 9360 1e3d"),
+        ],
+    );
+    assert_eq!(ag::build_agf(&reflink_geometry(), 0, &UUID), mkfs);
+}
+
+#[test]
+fn reflink_roots_match_mkfs() {
+    let g = reflink_geometry();
+    let recs: Vec<_> = g
+        .rmap_records(0)
+        .into_iter()
+        .map(|(start, len, owner)| (start, len, owner.value()))
+        .collect();
+    let rmap = sector(
+        4096,
+        &[
+            (0x00, "524d 4233 0000 0007 ffff ffff ffff ffff"),
+            (0x10, "0000 0000 0000 0028"),
+            (0x20, "5153 3430 0000 4000 8000 0000 0000 0005"),
+            (0x30, "0000 0000 6d70 cbb5 0000 0000 0000 0001"),
+            (0x40, "ffff ffff ffff fffd 0000 0000 0000 0000"),
+            (0x50, "0000 0001 0000 0002 ffff ffff ffff fffb"),
+            (0x60, "0000 0000 0000 0000 0000 0003 0000 0002"),
+            (0x70, "ffff ffff ffff fffa 0000 0000 0000 0000"),
+            (0x80, "0000 0005 0000 0001 ffff ffff ffff fffb"),
+            (0x90, "0000 0000 0000 0000 0000 0006 0000 0001"),
+            (0xa0, "ffff ffff ffff fff8 0000 0000 0000 0000"),
+            (0xb0, "0000 0007 0000 0006 ffff ffff ffff fffb"),
+            (0xc0, "0000 0000 0000 0000 0000 0010 0000 0008"),
+            (0xd0, "ffff ffff ffff fff9"),
+        ],
+    );
+    assert_eq!(btree::rmap_leaf(&recs, (40, &UUID, 0)), rmap);
+    let refc = sector(
+        4096,
+        &[
+            (0x00, "5233 4643 0000 0000 ffff ffff ffff ffff"),
+            (0x10, "0000 0000 0000 0030"),
+            (0x20, "5153 3430 0000 4000 8000 0000 0000 0005"),
+            (0x30, "0000 0000 f4a3 f05c"),
+        ],
+    );
+    assert_eq!(btree::refcount_leaf((48, &UUID, 0)), refc);
 }

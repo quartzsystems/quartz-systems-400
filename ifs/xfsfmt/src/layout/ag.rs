@@ -7,7 +7,6 @@
 
 use super::{Buf, NULLAGBLOCK, NULLAGINO};
 use crate::Geometry;
-use crate::geom::AGFL_PREFILL;
 
 /// AGF field offsets.
 #[allow(dead_code)] // The whole table; the tests hold it against the format.
@@ -18,14 +17,20 @@ pub mod agf {
     pub const LENGTH: usize = 12;
     pub const BNO_ROOT: usize = 16;
     pub const CNT_ROOT: usize = 20;
+    pub const RMAP_ROOT: usize = 24;
     pub const BNO_LEVEL: usize = 28;
     pub const CNT_LEVEL: usize = 32;
+    pub const RMAP_LEVEL: usize = 36;
     pub const FLFIRST: usize = 40;
     pub const FLLAST: usize = 44;
     pub const FLCOUNT: usize = 48;
     pub const FREEBLKS: usize = 52;
     pub const LONGEST: usize = 56;
     pub const UUID: usize = 64;
+    pub const RMAP_BLOCKS: usize = 80;
+    pub const REFCOUNT_BLOCKS: usize = 84;
+    pub const REFCOUNT_ROOT: usize = 88;
+    pub const REFCOUNT_LEVEL: usize = 92;
     pub const LSN: usize = 208;
     pub const CRC: usize = 216;
 }
@@ -87,11 +92,20 @@ pub fn build_agf(g: &Geometry, agno: u32, uuid: &[u8; 16]) -> Vec<u8> {
     b.u32(agf::BNO_LEVEL, 1);
     b.u32(agf::CNT_LEVEL, 1);
     b.u32(agf::FLFIRST, FLFIRST);
-    b.u32(agf::FLLAST, FLFIRST + AGFL_PREFILL - 1);
-    b.u32(agf::FLCOUNT, AGFL_PREFILL);
+    let count = g.agfl_count();
+    b.u32(agf::FLLAST, FLFIRST + count - 1);
+    b.u32(agf::FLCOUNT, count);
     b.u32(agf::FREEBLKS, g.free_blocks(agno));
     b.u32(agf::LONGEST, longest);
     b.bytes(agf::UUID, uuid);
+    if let Some([rmap, refc]) = g.reflink_roots() {
+        b.u32(agf::RMAP_ROOT, rmap);
+        b.u32(agf::RMAP_LEVEL, 1);
+        b.u32(agf::RMAP_BLOCKS, 1);
+        b.u32(agf::REFCOUNT_BLOCKS, 1);
+        b.u32(agf::REFCOUNT_ROOT, refc);
+        b.u32(agf::REFCOUNT_LEVEL, 1);
+    }
     b.sealed(agf::CRC)
 }
 
@@ -140,7 +154,7 @@ pub fn build_agfl(g: &Geometry, agno: u32, uuid: &[u8; 16]) -> Vec<u8> {
     for slot in 0..(len - agfl::BNO) / 4 {
         b.u32(agfl::BNO + 4 * slot, NULLAGBLOCK);
     }
-    for (i, bno) in g.agfl(agno).into_iter().enumerate() {
+    for (i, bno) in g.agfl_blocks(agno).enumerate() {
         b.u32(agfl::BNO + 4 * (FLFIRST as usize + i), bno);
     }
     b.sealed(agfl::CRC)

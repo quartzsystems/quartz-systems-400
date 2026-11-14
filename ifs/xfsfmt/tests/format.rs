@@ -104,3 +104,17 @@ fn refusals() {
         Err(Error::SectorSize(2048))
     ));
 }
+
+#[test]
+fn reflink_is_deterministic_and_its_own_layout() {
+    let r = Options {
+        reflink: true,
+        ..opts()
+    };
+    assert!(!opts().reflink);
+    let a = formatted(64 * MIB, &r);
+    assert!(same(&a, &formatted(64 * MIB, &r)));
+    assert!(!same(&a, &formatted(64 * MIB, &opts())));
+    let mut a = a;
+    assert_eq!(probe(&mut a).unwrap().unwrap().fdblocks, 12764);
+}

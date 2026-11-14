@@ -45,10 +45,14 @@ pub struct Options {
     /// a device that will grow keeps one AG size (whole AGs from the
     /// start; the rest of the device is left for the first growth).
     pub ag_blocks: Option<u32>,
+    /// Reflink (shared extents, `FICLONE`) with the reverse-mapping
+    /// btree it needs. Off by default.
+    pub reflink: bool,
 }
 
 impl Options {
-    /// Label [`LABEL`], 512-byte sectors, a device that is not known zero.
+    /// Label [`LABEL`], 512-byte sectors, a device that is not known zero,
+    /// no reflink.
     #[must_use]
     pub fn new(uuid: Uuid, time: Timestamp) -> Self {
         Self {
@@ -58,6 +62,7 @@ impl Options {
             time,
             zeroed: false,
             ag_blocks: None,
+            reflink: false,
         }
     }
 }
@@ -65,7 +70,7 @@ impl Options {
 /// Write an empty filesystem onto the first `bytes` of `dev`. The
 /// primary superblock goes last, so an interrupted format never mounts.
 pub fn format<D: Write + Seek>(dev: &mut D, bytes: u64, opts: &Options) -> Result<Geometry, Error> {
-    let g = Geometry::for_bytes_with(bytes, opts.sector_size, opts.ag_blocks)?;
+    let g = Geometry::for_features(bytes, opts.sector_size, opts.ag_blocks, opts.reflink)?;
     if opts.label.len() > 12 {
         return Err(Error::Label(opts.label.len()));
     }
@@ -181,6 +186,16 @@ fn write_ag<D: Write + Seek>(
     ];
     for (agbno, block) in blocks {
         put(dev, g.offset(agno, agbno), &block)?;
+    }
+    if let Some([rmap, refc]) = g.reflink_roots() {
+        let recs: Vec<_> = g
+            .rmap_records(agno)
+            .into_iter()
+            .map(|(start, len, owner)| (start, len, owner.value()))
+            .collect();
+        let block = btree::rmap_leaf(&recs, leaf(rmap));
+        put(dev, g.offset(agno, rmap), &block)?;
+        put(dev, g.offset(agno, refc), &btree::refcount_leaf(leaf(refc)))?;
     }
     Ok(())
 }
