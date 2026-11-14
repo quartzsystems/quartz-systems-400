@@ -275,6 +275,67 @@ pub fn client_config_with(
         .map_err(|e| e.to_string())
 }
 
+/// A client configuration for the LDAP client (`ldapclnt`): the
+/// `*SYSTEM` store's trusted CAs, or a DCM application's definition (its
+/// CAs, and its certificate when the job may have it). A key ring other
+/// than the `*SYSTEM` store, or a certificate by label, is refused.
+pub fn ldap_client_config(
+    link: &mut Link,
+    want: &ldapclnt::TlsWant,
+) -> Result<Arc<rustls::ClientConfig>, String> {
+    use ldapclnt::TlsWant;
+    match want {
+        TlsWant::System { label: None } => client_config(link),
+        TlsWant::KeyRing {
+            path, label: None, ..
+        } if path.eq_ignore_ascii_case(certs::paths::SYSTEM_STORE) => client_config(link),
+        TlsWant::System { label: Some(l) } | TlsWant::KeyRing { label: Some(l), .. } => Err(
+            format!("a client certificate by label ({l}) is not available; use an application ID"),
+        ),
+        TlsWant::KeyRing { path, .. } => Err(format!(
+            "the key ring {path} is not available; use the *SYSTEM store or an application ID"
+        )),
+        TlsWant::App(id) => {
+            let t = link.cert_app(id.clone()).map_err(|e| e.to_string())??;
+            let roots = trusted_roots(t.roots);
+            let identity = if t.chain.is_empty() || t.key.is_empty() {
+                None
+            } else {
+                let info =
+                    certs::x509::CertInfo::from_der(&t.chain[0]).map_err(|e| e.to_string())?;
+                Some(tls::config::Identity {
+                    label: t.label.clone(),
+                    chain: t.chain.into_iter().map(CertificateDer::from).collect(),
+                    key: Arc::new(PrivateKeyDer::Pkcs8(t.key.into())),
+                    info,
+                })
+            };
+            tls::config::client_config(
+                &policy(link),
+                roots,
+                identity.as_ref(),
+                tls::config::ServerAuthMode::Full,
+            )
+            .map_err(|e| e.to_string())
+        }
+    }
+}
+
+/// The QSH LDAP tools' TLS hook: the `*SYSTEM` store's trusted CAs as
+/// this job sees them when the shell starts. A certificate by label or
+/// another key database is refused, as the tools say.
+pub fn qsh_ldap_hook(link: &mut Link) -> Option<qsh_utils::net::ldap::TlsHook> {
+    let cfg = client_config(link).ok()?;
+    Some(Arc::new(move |ask: &qsh_utils::net::ldap::TlsAsk| {
+        if let Some(l) = &ask.label {
+            return Err(format!(
+                "a client certificate by label ({l}) is not available"
+            ));
+        }
+        Ok(cfg.clone())
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

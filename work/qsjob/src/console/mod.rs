@@ -381,6 +381,14 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
         link,
         crate::work::hostsvr::daemon::internal_id(&host.start),
     )));
+    // The LDAP client (QGLDCLNT): strings in the job's CCSID, secure
+    // connections from the *SYSTEM store or an application ID.
+    ldapclnt::install(&mut job);
+    ldapclnt::configure(&job, ccsid);
+    let ldap_link = link.clone();
+    ldapclnt::set_tls_source(Some(Rc::new(move |w: &ldapclnt::TlsWant| {
+        crate::work::tls::ldap_client_config(&mut ldap_link.borrow_mut(), w)
+    })));
     // Domain and state are enforced at the level of this IPL.
     job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
     let ctl = host.ctl.clone();

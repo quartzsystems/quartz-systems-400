@@ -23,6 +23,7 @@ mi = { path = "../../runtime/mi", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
 sqlcli = { path = "../../runtime/sqlcli", version = "0.1.0" }
+ldapclnt = { path = "../../runtime/ldapclnt", version = "0.1.0" }
 regfac = { path = "../../net/regfac", version = "0.1.0" }
 hostserver = { path = "../../net/hostserver", version = "0.1.0" }
 hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }
@@ -83,6 +84,7 @@ libc = "0.2.190"
 rustix = { version = "1.1.5", features = ["fs", "process"] }
 qsh = { path = "../../qsh/qsh", version = "0.1.0" }
 qsh-job = { path = "../../qsh/qsh-job", version = "0.1.0" }
+qsh-utils = { path = "../../qsh/qsh-utils", version = "0.1.0" }
 pase = { path = "../../qsh/pase", version = "0.1.0" }
 qshterm = { path = "../../devtools/qshterm", version = "0.1.0" }
 thiserror.workspace = true

@@ -88,6 +88,8 @@ pub fn setup(host: &Host, terminal: &str) -> Setup {
             _ => "/".to_string(),
         }
     };
+    // The LDAP tools' secure connections, as this job sees the store.
+    qsh_utils::net::ldap::set_tls(crate::work::tls::qsh_ldap_hook(&mut host.link.borrow_mut()));
     Setup {
         env,
         cwd,
