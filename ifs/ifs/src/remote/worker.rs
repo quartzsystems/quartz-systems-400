@@ -11,12 +11,12 @@
 #![allow(clippy::many_single_char_names)]
 
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use super::cache::{BState, Block, ListEnt, Listing};
 use super::fs::access;
-use super::mount::{Core, RemoteEvent};
+use super::mount::{Core, RemoteEvent, Stats};
 use super::request;
 use super::tickets;
 use super::types::{Cred, RHandle, RKind, RResult, RemoteError, Stable};
@@ -90,6 +90,7 @@ pub(super) fn watch(core: &Arc<Core>) {
                 .collect();
             for k in &late {
                 if let Some((t, w, _)) = q.lent.remove(k) {
+                    Stats::add(&core.stats.reclaimed);
                     q.items.push_front((t, w));
                 }
             }
@@ -317,6 +318,7 @@ fn read_block(core: &Core, h: &RHandle, cred: &Cred, k: u64, ok: &mut bool) {
     }
     let bs = core.bs();
     let len = u32::try_from(bs).unwrap_or(u32::MAX);
+    Stats::add(&core.stats.read);
     let r = counted(core, core.fs.read(cred, h, k * bs, len), ok);
     apply_read(core, h, k, r);
 }
@@ -368,6 +370,7 @@ pub(super) fn apply_read(core: &Core, h: &RHandle, k: u64, r: RResult<(Vec<u8>, 
                             dirty: None,
                             epoch: 0,
                             eof,
+                            went: 0,
                         },
                     );
                 }
@@ -380,16 +383,27 @@ pub(super) fn apply_read(core: &Core, h: &RHandle, k: u64, r: RResult<(Vec<u8>, 
     }
 }
 
-/// What one block has to send: its offset, bytes and generation.
-pub(super) fn snapshot(core: &Core, h: &RHandle, k: u64) -> Option<(u64, Vec<u8>, u64)> {
+/// What one block has to send: its offset, bytes and generation;
+/// counted in `n`, and as again when that generation went before.
+pub(super) fn snapshot(
+    core: &Core,
+    h: &RHandle,
+    k: u64,
+    n: &AtomicU64,
+) -> Option<(u64, Vec<u8>, u64)> {
     let bs = core.bs();
-    let c = core.cache();
-    let b = c.inodes.get(h)?.blocks.get(&k)?;
+    let mut c = core.cache();
+    let b = c.inodes.get_mut(h)?.blocks.get_mut(&k)?;
     if b.state != BState::Dirty {
         return None;
     }
     let (a, z) = b.dirty?;
     let z = z.min(b.data.len());
+    Stats::add(n);
+    if b.went == b.epoch {
+        Stats::add(&core.stats.again);
+    }
+    b.went = b.epoch;
     Some((k * bs + a as u64, b.data[a..z].to_vec(), b.epoch))
 }
 
@@ -468,7 +482,7 @@ pub(super) fn sent(core: &Core, h: &RHandle, k: u64, epoch: u64, r: RResult<(u64
 }
 
 fn write_block(core: &Core, h: &RHandle, cred: &Cred, k: u64, ok: &mut bool) {
-    let Some((off, data, epoch)) = snapshot(core, h, k) else {
+    let Some((off, data, epoch)) = snapshot(core, h, k, &core.stats.sent) else {
         return;
     };
     let stable = if core.info.sync_writes {
@@ -480,6 +494,26 @@ fn write_block(core: &Core, h: &RHandle, cred: &Cred, k: u64, ok: &mut bool) {
     sent(core, h, k, epoch, r);
 }
 
+/// How long a flush waits for blocks already on their way before it
+/// sends them itself (a helper's lend and a little).
+const GOING_WAIT: Duration = Duration::from_secs(35);
+
+/// Wait, until `until` at the latest, for the blocks of `h` handed out
+/// to be sent (by another worker or a helper) to come back: sending
+/// them again here would only send them twice.
+fn wait_going(core: &Core, h: &RHandle, until: Instant) {
+    let going = |c: &super::cache::Cache| {
+        c.inodes.get(h).is_some_and(|i| {
+            i.blocks
+                .values()
+                .any(|b| b.state == BState::Dirty && b.went == b.epoch)
+        })
+    };
+    while going(&core.cache()) && Instant::now() < until {
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
+
 /// Write every dirty block of `h` and commit: blocks the server lost
 /// (its write verifier changed) are sent again, stable. The first
 /// write error comes back (and is cleared).
@@ -489,7 +523,9 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
     } else {
         Stable::Unstable
     };
+    let until = Instant::now() + GOING_WAIT;
     for _ in 0..8 {
+        wait_going(core, h, until);
         let ks: Vec<u64> = core
             .cache()
             .inodes
@@ -506,12 +542,33 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
             break;
         }
         for k in ks {
-            if let Some((off, data, epoch)) = snapshot(core, h, k) {
+            if let Some((off, data, epoch)) = snapshot(core, h, k, &core.stats.sent) {
                 let r = send(core, h, cred, off, &data, stable, ok);
                 sent(core, h, k, epoch, r);
             }
         }
     }
+    commit_sent(core, h, cred, ok);
+    let a = counted(core, core.fs.getattr(cred, h), ok);
+    let mut c = core.cache();
+    if let Ok(a) = a {
+        c.put_attr(h, a);
+    }
+    c.trim();
+    let i = c.inode(h);
+    if !i.has_dirty() {
+        i.size_local = None;
+        i.mtime_local = None;
+    }
+    match i.write_err.take() {
+        Some(e) => Err(e),
+        None => Ok(()),
+    }
+}
+
+/// Commit what was sent unstable: what the server lost (its verifier
+/// changed) goes again, stable; an error is kept for the flush.
+fn commit_sent(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) {
     let unsent: Vec<(u64, u64)> = core
         .cache()
         .inodes
@@ -559,6 +616,8 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
                             })
                     };
                     if let Some((off, data, epoch)) = snap {
+                        Stats::add(&core.stats.sent);
+                        Stats::add(&core.stats.again);
                         let r = send(core, h, cred, off, &data, Stable::FileSync, ok);
                         sent(core, h, k, epoch, r);
                     }
@@ -568,21 +627,6 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
                 core.cache().inode(h).write_err.get_or_insert(e);
             }
         }
-    }
-    let a = counted(core, core.fs.getattr(cred, h), ok);
-    let mut c = core.cache();
-    if let Ok(a) = a {
-        c.put_attr(h, a);
-    }
-    c.trim();
-    let i = c.inode(h);
-    if !i.has_dirty() {
-        i.size_local = None;
-        i.mtime_local = None;
-    }
-    match i.write_err.take() {
-        Some(e) => Err(e),
-        None => Ok(()),
     }
 }
 

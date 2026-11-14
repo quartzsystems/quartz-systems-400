@@ -14,7 +14,7 @@
 
 use std::time::{Duration, Instant};
 
-use super::mount::RemoteMount;
+use super::mount::{RemoteMount, Stats};
 use super::tickets;
 use super::types::{Cred, RemoteError, Stable};
 use super::work::Work;
@@ -104,7 +104,9 @@ impl RemoteMount {
             let bs = core.bs();
             let (off, data) = if op == HelperOp::Write {
                 drop(q);
-                let Some((off, data, epoch)) = worker::snapshot(core, &h, block) else {
+                let Some((off, data, epoch)) =
+                    worker::snapshot(core, &h, block, &core.stats.lent)
+                else {
                     // Written meanwhile: nothing to lend.
                     let mut q = core.queue();
                     q.inflight.remove(&w);
@@ -117,6 +119,7 @@ impl RemoteMount {
                 q.gens.insert(id, epoch);
                 (off, data)
             } else {
+                Stats::add(&core.stats.read);
                 q.lent.insert(id, (t, w.clone(), Instant::now() + LEND));
                 (block * bs, Vec::new())
             };

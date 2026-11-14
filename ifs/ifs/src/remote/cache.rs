@@ -90,6 +90,8 @@ pub(crate) struct Block {
     pub epoch: u64,
     /// The server said end of file after it.
     pub eof: bool,
+    /// The epoch last handed out to be sent (0: none).
+    pub went: u64,
 }
 
 impl Block {

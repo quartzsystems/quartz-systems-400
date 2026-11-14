@@ -115,6 +115,44 @@ pub(super) struct Queue {
     pub stop: bool,
 }
 
+/// Counts of a mount's data traffic, logged when it ends (step 184
+/// looks for blocks sent more than once).
+#[derive(Debug, Default)]
+pub struct Stats {
+    /// Blocks a write made in the cache.
+    pub made: AtomicU64,
+    /// Blocks read from the server.
+    pub read: AtomicU64,
+    /// Block writes sent by the mount's threads.
+    pub sent: AtomicU64,
+    /// Block writes lent to helpers.
+    pub lent: AtomicU64,
+    /// Of those sent or lent, ones whose data had gone before.
+    pub again: AtomicU64,
+    /// Lent work taken back from a helper that did not post in time.
+    pub reclaimed: AtomicU64,
+}
+
+impl Stats {
+    pub(super) fn add(n: &AtomicU64) {
+        n.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// The counts as numbers: made, read, sent, lent, again, reclaimed.
+    #[must_use]
+    pub fn get(&self) -> [u64; 6] {
+        [
+            &self.made,
+            &self.read,
+            &self.sent,
+            &self.lent,
+            &self.again,
+            &self.reclaimed,
+        ]
+        .map(|n| n.load(Ordering::Relaxed))
+    }
+}
+
 /// What the mount's threads share.
 pub(super) struct Core {
     pub fs: Box<dyn RemoteFs>,
@@ -132,6 +170,7 @@ pub(super) struct Core {
     pub cfg: RemoteConfig,
     pub statfs: Mutex<Option<(RResult<FsStat>, Instant)>>,
     pub calls: AtomicU64,
+    pub stats: Stats,
 }
 
 impl Core {
@@ -228,6 +267,7 @@ impl RemoteMount {
             cfg,
             statfs: Mutex::new(None),
             calls: AtomicU64::new(0),
+            stats: Stats::default(),
         });
         for n in 0..cfg.threads.max(1) {
             let c = Arc::clone(&core);
@@ -298,9 +338,22 @@ impl RemoteMount {
         self.core.calls.load(Ordering::Relaxed)
     }
 
+    /// Its data traffic so far.
+    #[must_use]
+    pub fn stats(&self) -> &Stats {
+        &self.core.stats
+    }
+
     /// End the worker threads once they have nothing left (a call in
     /// progress finishes first; nobody waits for it).
     pub(crate) fn shutdown(&self) {
+        let [made, read, sent, lent, again, reclaimed] = self.core.stats.get();
+        tracing::info!(
+            target: "ifs::remote::stats",
+            source = %self.core.info.source,
+            made, read, sent, lent, again, reclaimed,
+            "remote mount ended"
+        );
         self.core.queue().stop = true;
         self.core.cv.notify_all();
     }
@@ -694,6 +747,9 @@ impl RemoteMount {
             let src =
                 &data[usize::try_from(k * bs + from as u64 - off).unwrap_or(0)..][..to - from];
             let i = c.inode(h);
+            if !i.blocks.contains_key(&k) {
+                Stats::add(&self.core.stats.made);
+            }
             let b = i.blocks.entry(k).or_insert_with(|| Block {
                 data: Vec::new(),
                 base: k * bs >= size,
@@ -703,6 +759,7 @@ impl RemoteMount {
                 dirty: None,
                 epoch: 0,
                 eof: false,
+                went: 0,
             });
             if b.data.len() < to {
                 added += to - b.data.len();

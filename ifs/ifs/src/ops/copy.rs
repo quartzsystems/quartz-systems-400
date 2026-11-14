@@ -124,9 +124,14 @@ impl<B: Backend> Ifs<B> {
     ) -> Result<()> {
         let key = format!("copy-file:{from}>{to}");
         let file_ccsid = o.to_ccsid.unwrap_or(sm.ccsid);
+        let began = format!("copy-began:{from}>{to}");
         let mut fc = if let Some(fc) = request::take_step::<FileCopy>(&key) {
             fc
         } else {
+            if request::step::<bool>(&began).is_some() {
+                // Its descriptors were lost between runs: the data goes again.
+                tracing::warn!(from, to, "copy begun again");
+            }
             {
                 let mut flags = f::O_WRONLY | f::O_CREAT | f::O_TRUNC;
                 if !o.replace {
@@ -158,6 +163,7 @@ impl<B: Backend> Ifs<B> {
                     }
                     _ => None,
                 };
+                request::keep_step(&began, true);
                 FileCopy {
                     src,
                     dst,

@@ -2357,7 +2357,15 @@ below, and the QEMU steps (last item).
   (counted with a log of every fresh open of the copy and every park:
   none after the data began), so its cause is not found yet and it is
   the first thing to look at next for the client: it alone makes the
-  copy two to three times slower.
+  copy two to three times slower. To settle it, each mount now counts
+  its blocks (made by writes, read, sent by its threads, lent to
+  helpers, sent again, taken back from a helper after `LEND`) and logs
+  them when it ends (`ifs::remote::stats` on the serial console), and a
+  `CPY` whose descriptors were lost between runs logs `copy begun
+  again`. One cause of sending twice is fixed: a flush (`fsync`, the
+  last close) sent again every block another worker or a helper was
+  still sending; it now waits for them (at most 35 seconds). Tests:
+  `remote_data.rs` (each block made once and sent once).
 
 ### 11.1 Proving a v3 mount under QEMU
 

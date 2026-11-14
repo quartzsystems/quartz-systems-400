@@ -55,7 +55,8 @@ pub fn log_to_console() {
         .without_time();
     let only = Targets::new()
         .with_target("nfs", LevelFilter::INFO)
-        .with_target("ifs", LevelFilter::WARN);
+        .with_target("ifs", LevelFilter::WARN)
+        .with_target("ifs::remote::stats", LevelFilter::INFO);
     let _ = tracing_subscriber::registry()
         .with(layer)
         .with(only)

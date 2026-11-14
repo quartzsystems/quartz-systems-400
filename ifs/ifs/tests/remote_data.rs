@@ -278,12 +278,11 @@ fn write_back_sends_each_block_once() {
         }
         c.close(fd).unwrap();
         assert_eq!(r.server.file("seq").unwrap(), data);
-        // A block in flight when the close writes back may go twice.
+        // A block in flight when the close writes back is waited for,
+        // not sent again.
         let n = r.server.calls_of("write");
-        assert!(
-            (256..=260).contains(&n),
-            "sync {sync} latency {ms}: {n} writes"
-        );
+        assert_eq!(n, 256, "sync {sync} latency {ms}: {n} writes");
+        assert_eq!(r.mount().stats().get()[4], 0, "sync {sync}: sent again");
         assert!(r.mount().cached_bytes() <= 16 * 1024 + 2048, "sync {sync}");
     }
 }
@@ -319,7 +318,10 @@ fn copy_to_the_mount_sends_each_block_once() {
         c.copy("/tmp/src", "/mnt/dst", ifs::ops::CopyOpts::default())
             .unwrap();
         let n = r.server.calls_of("write");
-        assert!((256..=260).contains(&n), "latency {ms}: {n} writes");
+        assert!(n == 256, "latency {ms}: {n} writes");
         assert_eq!(r.server.file("dst").unwrap(), data);
+        // Each block made once and sent once.
+        let [made, _, sent, lent, again, reclaimed] = r.mount().stats().get();
+        assert_eq!((made, sent + lent, again, reclaimed), (256, 256, 0, 0));
     }
 }
