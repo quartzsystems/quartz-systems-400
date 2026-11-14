@@ -169,24 +169,23 @@ impl Tracker {
             }
         };
         let crash: Vec<u64> = map.dirty().collect();
-        let regions = crash
-            .iter()
-            .map(|&r| {
-                (
-                    r,
-                    Region {
-                        inflight: 0,
-                        last: 0,
-                        at: None,
-                    },
-                )
-            })
-            .collect();
-        let pending = if active >= 2 {
-            crash.iter().copied().collect()
-        } else {
-            BTreeSet::new()
-        };
+        // Built by inserting, not by `collect`: that sorts, and a sort
+        // of `u64` here would be the one the binaries of a caller link.
+        let mut regions = BTreeMap::new();
+        let mut pending = BTreeSet::new();
+        for &r in &crash {
+            regions.insert(
+                r,
+                Region {
+                    inflight: 0,
+                    last: 0,
+                    at: None,
+                },
+            );
+            if active >= 2 {
+                pending.insert(r);
+            }
+        }
         let mut away = Vec::with_capacity(members.len());
         for (i, &(uuid, state)) in members.iter().enumerate() {
             let store = intent.away.get_mut(i).and_then(Option::take);
@@ -435,7 +434,8 @@ impl Tracker {
     /// own map, not done in a resume's map that a journal kept: the
     /// member may have missed writes in them since they were copied.
     pub(crate) fn redo(&self, member: usize, state: &mut ResumeState) {
-        let mut regions: BTreeSet<u64> = self.crash.iter().copied().collect();
+        let mut regions = BTreeSet::new();
+        regions.extend(self.crash.iter().copied());
         if let Some(Away::Keeping(m, _)) = self.away.get(member) {
             regions.extend(m.dirty());
         }
