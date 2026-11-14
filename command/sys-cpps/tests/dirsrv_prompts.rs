@@ -226,20 +226,23 @@ fn check_parm(cmd: &str, x: &str, p: &Parm, bad: &mut Vec<String>) {
         check("length", p.length().len == len.parse::<u32>().unwrap_or(0));
     }
     let label = matches!(p.pmtctl, Some(PmtCtlRef::Label { .. }));
-    check(
-        "PMTCTL",
-        (get(&a, "PmtCtl") == Some("PMTCTL")) == label,
-    );
+    check("PMTCTL", (get(&a, "PmtCtl") == Some("PMTCTL")) == label);
     let elem_first = x.find("<Elem ").unwrap_or(x.len());
     if x.find("<SngVal>").is_some_and(|i| i < elem_first) {
         let ours = ours_values(&p.sngval);
         let want = values(x, "SngVal");
-        check(&format!("single values {ours:?}, captured {want:?}"), ours == want);
+        check(
+            &format!("single values {ours:?}, captured {want:?}"),
+            ours == want,
+        );
     }
     if x.find("<SpcVal>").is_some_and(|i| i < elem_first) {
         let ours = ours_values(&p.spcval);
         let want = values(&x[..elem_first], "SpcVal");
-        check(&format!("special values {ours:?}, captured {want:?}"), ours == want);
+        check(
+            &format!("special values {ours:?}, captured {want:?}"),
+            ours == want,
+        );
     }
     let elems: Vec<&str> = x.split("<Elem ").skip(1).collect();
     check("elements", elems.len() == p.items.len());
@@ -266,7 +269,10 @@ fn check_parm(cmd: &str, x: &str, p: &Parm, bad: &mut Vec<String>) {
         }
         let ours = ours_values(&e.spcval);
         let want = values(ex, "SpcVal");
-        check(&format!("{ek} special values {ours:?}, captured {want:?}"), ours == want);
+        check(
+            &format!("{ek} special values {ours:?}, captured {want:?}"),
+            ours == want,
+        );
     }
 }
 
@@ -307,7 +313,11 @@ fn instance_matches_the_primary() {
             .find(|p| p.starts_with("Kwd=\"INSTANCE\""))
             .expect("INSTANCE in the XML");
         let px = px.split("</Parm>").next().unwrap_or(px);
-        let p = d.parms.iter().find(|p| p.kwd == "INSTANCE").expect("INSTANCE");
+        let p = d
+            .parms
+            .iter()
+            .find(|p| p.kwd == "INSTANCE")
+            .expect("INSTANCE");
         check_parm(name, px, p, &mut bad);
         if !d.deps.iter().any(|x| x.msgid.as_deref() == Some("TCP1617")) {
             bad.push(format!("{name}: no TCP1617 dependency"));

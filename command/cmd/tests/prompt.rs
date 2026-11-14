@@ -173,8 +173,7 @@ fn sbmjob_groups_lists_and_selective() {
         .fields
         .iter()
         .map(|f| {
-            if f
-                .path
+            if f.path
                 .as_ref()
                 .is_some_and(|p| p.steps.last() == Some(&usize::MAX))
             {
