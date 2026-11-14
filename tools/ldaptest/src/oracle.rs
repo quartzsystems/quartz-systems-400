@@ -29,16 +29,23 @@ pub fn run(c: &Ctx) -> Result<(Report, PathBuf), Error> {
     );
     text.push_str(&mask.apply(&rep.to_string()));
     if mask.leaks(&text) {
-        return Err(Error::Check("the record still holds a masked name; not written".into()));
+        return Err(Error::Check(
+            "the record still holds a masked name; not written".into(),
+        ));
     }
-    let path = c.t.out.clone().unwrap_or_else(|| PathBuf::from(DEFAULT_OUT));
+    let path =
+        c.t.out
+            .clone()
+            .unwrap_or_else(|| PathBuf::from(DEFAULT_OUT));
     std::fs::write(&path, text)?;
     Ok((rep, path))
 }
 
 /// Today as YYYY-MM-DD (UTC).
 fn today() -> String {
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
     let (y, m, d) = civil(i64::try_from(secs / 86_400).unwrap_or(0));
     format!("{y:04}-{m:02}-{d:02}")
 }

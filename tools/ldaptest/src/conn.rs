@@ -61,7 +61,12 @@ impl ServerCertVerifier for AnyCert {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, rustls::Error> {
-        verify_tls12_signature(message, cert, dss, &self.0.signature_verification_algorithms)
+        verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &self.0.signature_verification_algorithms,
+        )
     }
 
     fn verify_tls13_signature(
@@ -70,7 +75,12 @@ impl ServerCertVerifier for AnyCert {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, rustls::Error> {
-        verify_tls13_signature(message, cert, dss, &self.0.signature_verification_algorithms)
+        verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &self.0.signature_verification_algorithms,
+        )
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
@@ -87,14 +97,18 @@ pub fn tls_config(t: &Target, with_cert: bool) -> Result<Arc<ClientConfig>, Erro
         .map_err(|e| Error::Tls(e.to_string()))?;
     let builder = if let Some(ca) = &t.ca {
         let mut roots = RootCertStore::empty();
-        for c in CertificateDer::pem_file_iter(ca).map_err(|e| Error::Tls(format!("{}: {e}", ca.display())))? {
+        for c in CertificateDer::pem_file_iter(ca)
+            .map_err(|e| Error::Tls(format!("{}: {e}", ca.display())))?
+        {
             roots
                 .add(c.map_err(|e| Error::Tls(e.to_string()))?)
                 .map_err(|e| Error::Tls(e.to_string()))?;
         }
         builder.with_root_certificates(roots)
     } else {
-        builder.dangerous().with_custom_certificate_verifier(Arc::new(AnyCert(p)))
+        builder
+            .dangerous()
+            .with_custom_certificate_verifier(Arc::new(AnyCert(p)))
     };
     let config = match (&t.client, with_cert) {
         (Some((cert, key)), true) => {
@@ -102,8 +116,11 @@ pub fn tls_config(t: &Target, with_cert: bool) -> Result<Arc<ClientConfig>, Erro
                 .map_err(|e| Error::Tls(format!("{}: {e}", cert.display())))?
                 .collect::<Result<_, _>>()
                 .map_err(|e| Error::Tls(e.to_string()))?;
-            let key = PrivateKeyDer::from_pem_file(key).map_err(|e| Error::Tls(format!("{}: {e}", key.display())))?;
-            builder.with_client_auth_cert(chain, key).map_err(|e| Error::Tls(e.to_string()))?
+            let key = PrivateKeyDer::from_pem_file(key)
+                .map_err(|e| Error::Tls(format!("{}: {e}", key.display())))?;
+            builder
+                .with_client_auth_cert(chain, key)
+                .map_err(|e| Error::Tls(e.to_string()))?
         }
         _ => builder.with_no_client_auth(),
     };

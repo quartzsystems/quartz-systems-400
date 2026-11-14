@@ -34,11 +34,21 @@ pub const LIST: [Scenario; 17] = [
     s("invalid-dn", invalid_dn),
     s("anon-bind", anon_bind),
     s("special-subtrees", special_subtrees),
-    Scenario { name: "unauth-bind", suite: Suite::Read, oracle: false, run: unauth_bind },
+    Scenario {
+        name: "unauth-bind",
+        suite: Suite::Read,
+        oracle: false,
+        run: unauth_bind,
+    },
 ];
 
 const fn s(name: &'static str, run: fn(&Ctx) -> Lines) -> Scenario {
-    Scenario { name, suite: Suite::Read, oracle: true, run }
+    Scenario {
+        name,
+        suite: Suite::Read,
+        oracle: true,
+        run,
+    }
 }
 
 /// `rc ..., N entries[, M refs]`.
@@ -81,12 +91,22 @@ fn rootdse(c: &Ctx) -> Lines {
     let d = &c.dse;
     let mut out = Vec::new();
     let vers = d.get("supportedLDAPVersion");
-    check(vers.iter().any(|v| v == "3"), || format!("supportedLDAPVersion {vers:?} has no 3"))?;
-    check(!d.get("namingContexts").is_empty(), || "no namingContexts".into())?;
-    check(d.one("subschemaSubentry").is_some(), || "no subschemaSubentry".into())?;
+    check(vers.iter().any(|v| v == "3"), || {
+        format!("supportedLDAPVersion {vers:?} has no 3")
+    })?;
+    check(!d.get("namingContexts").is_empty(), || {
+        "no namingContexts".into()
+    })?;
+    check(d.one("subschemaSubentry").is_some(), || {
+        "no subschemaSubentry".into()
+    })?;
     out.push(format!(
         "attributes: {}",
-        d.attrs.iter().map(|(k, v)| format!("{k}({})", v.len())).collect::<Vec<_>>().join(" ")
+        d.attrs
+            .iter()
+            .map(|(k, v)| format!("{k}({})", v.len()))
+            .collect::<Vec<_>>()
+            .join(" ")
     ));
     for name in [
         "supportedLDAPVersion",
@@ -108,9 +128,17 @@ fn rootdse(c: &Ctx) -> Lines {
         "vendorName",
         "vendorVersion",
     ] {
-        out.push(format!("{}: {}", name.to_ascii_lowercase(), d.get(name).join(" | ")));
+        out.push(format!(
+            "{}: {}",
+            name.to_ascii_lowercase(),
+            d.get(name).join(" | ")
+        ));
     }
-    for name in ["supportedControl", "supportedExtension", "supportedFeatures"] {
+    for name in [
+        "supportedControl",
+        "supportedExtension",
+        "supportedFeatures",
+    ] {
         let all = d.get(name);
         let mut uniq = all.to_vec();
         uniq.sort();
@@ -132,15 +160,24 @@ fn rootdse_default_attrs(c: &Ctx) -> Lines {
     let f = a.find("", Scope::Base, "(objectClass=*)", &[])?;
     out.push(format!("no list: {}", summary(&f)));
     if let Some(e) = f.entries.first() {
-        out.push(format!("no list names: {}", names(&e.attrs, &e.bin_attrs).join(" ")));
+        out.push(format!(
+            "no list names: {}",
+            names(&e.attrs, &e.bin_attrs).join(" ")
+        ));
     }
     let f = a.find("", Scope::Base, "(objectClass=*)", &["+"])?;
     if let Some(e) = f.entries.first() {
-        out.push(format!("+ names: {}", names(&e.attrs, &e.bin_attrs).join(" ")));
+        out.push(format!(
+            "+ names: {}",
+            names(&e.attrs, &e.bin_attrs).join(" ")
+        ));
     }
     let f = a.find("", Scope::Base, "(objectClass=*)", &["namingContexts"])?;
     if let Some(e) = f.entries.first() {
-        out.push(format!("namingContexts only: {}", names(&e.attrs, &e.bin_attrs).join(" ")));
+        out.push(format!(
+            "namingContexts only: {}",
+            names(&e.attrs, &e.bin_attrs).join(" ")
+        ));
     }
     let f = a.find("", Scope::Base, "(cn=nothing)", &["*"])?;
     out.push(format!("(cn=nothing): {}", summary(&f)));
@@ -151,7 +188,16 @@ fn rootdse_one_level(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
     for (label, scope) in [("one", Scope::OneLevel), ("sub", Scope::Subtree)] {
-        let f = a.search("", scope, "(objectClass=*)", &["1.1"], &Opts { size: 50, ..Opts::default() })?;
+        let f = a.search(
+            "",
+            scope,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                size: 50,
+                ..Opts::default()
+            },
+        )?;
         out.push(format!("{label}: {}", summary(&f)));
         out.push(format!("{label} dns: {}", sorted_dns(&f).join(" | ")));
     }
@@ -159,15 +205,37 @@ fn rootdse_one_level(c: &Ctx) -> Lines {
 }
 
 fn schema_read(c: &Ctx) -> Lines {
-    let base = c.dse.one("subschemaSubentry").unwrap_or("cn=schema").to_owned();
+    let base = c
+        .dse
+        .one("subschemaSubentry")
+        .unwrap_or("cn=schema")
+        .to_owned();
     let mut a = c.anon()?;
-    let kinds = ["attributeTypes", "objectClasses", "ldapSyntaxes", "matchingRules", "matchingRuleUse"];
+    let kinds = [
+        "attributeTypes",
+        "objectClasses",
+        "ldapSyntaxes",
+        "matchingRules",
+        "matchingRuleUse",
+    ];
     let mut want: Vec<&str> = kinds.to_vec();
     want.push("objectClass");
     let f = a.find(&base, Scope::Base, "(objectClass=subschema)", &want)?;
     expect_rc("schema", &f.res, 0)?;
-    let e = f.entries.first().ok_or_else(|| Error::Check("schema: no entry".into()))?;
-    let mut out = vec![format!("objectclass: {}", folded(&values(e, "objectClass").iter().map(|s| (*s).to_owned()).collect::<Vec<_>>()).join(" "))];
+    let e = f
+        .entries
+        .first()
+        .ok_or_else(|| Error::Check("schema: no entry".into()))?;
+    let mut out = vec![format!(
+        "objectclass: {}",
+        folded(
+            &values(e, "objectClass")
+                .iter()
+                .map(|s| (*s).to_owned())
+                .collect::<Vec<_>>()
+        )
+        .join(" ")
+    )];
     let mut parsed = std::collections::HashMap::new();
     for k in kinds {
         let vals = values(e, k);
@@ -179,12 +247,18 @@ fn schema_read(c: &Ctx) -> Lines {
                 Err(_) => bad += 1,
             }
         }
-        out.push(format!("{}: {} values, {bad} unparsed", k.to_ascii_lowercase(), vals.len()));
+        out.push(format!(
+            "{}: {} values, {bad} unparsed",
+            k.to_ascii_lowercase(),
+            vals.len()
+        ));
         parsed.insert(k, descs);
     }
     let at = &parsed["attributeTypes"];
     let oc = &parsed["objectClasses"];
-    check(!at.is_empty() && !oc.is_empty(), || "no attribute types or object classes".into())?;
+    check(!at.is_empty() && !oc.is_empty(), || {
+        "no attribute types or object classes".into()
+    })?;
     let has = |list: &Vec<schema::Desc>, oid: &str, name: &str| {
         list.iter().any(|d| d.oid == oid && d.named(name))
     };
@@ -197,11 +271,24 @@ fn schema_read(c: &Ctx) -> Lines {
         ("2.5.18.1", "createTimestamp"),
         ("2.5.4.49", "distinguishedName"),
     ] {
-        out.push(format!("attributetype {oid} {name}: {}", has(at, oid, name)));
+        out.push(format!(
+            "attributetype {oid} {name}: {}",
+            has(at, oid, name)
+        ));
     }
-    for name in ["aclEntry", "aclPropagate", "entryOwner", "ibm-entryuuid", "ibm-effectiveAcl", "os400-profile"] {
+    for name in [
+        "aclEntry",
+        "aclPropagate",
+        "entryOwner",
+        "ibm-entryuuid",
+        "ibm-effectiveAcl",
+        "os400-profile",
+    ] {
         let found = at.iter().find(|d| d.named(name));
-        out.push(format!("attributetype {name}: {}", found.map_or("absent".into(), |d| d.oid.clone())));
+        out.push(format!(
+            "attributetype {name}: {}",
+            found.map_or("absent".into(), |d| d.oid.clone())
+        ));
     }
     for (oid, name) in [
         ("2.5.6.0", "top"),
@@ -215,10 +302,16 @@ fn schema_read(c: &Ctx) -> Lines {
     }
     for name in ["os400-root", "os400-usrprf", "os400-container"] {
         let found = oc.iter().find(|d| d.named(name));
-        out.push(format!("objectclass {name}: {}", found.map_or("absent".into(), |d| d.oid.clone())));
+        out.push(format!(
+            "objectclass {name}: {}",
+            found.map_or("absent".into(), |d| d.oid.clone())
+        ));
     }
     if let Some(p) = oc.iter().find(|d| d.named("person")) {
-        out.push(format!("person must: {}", folded(p.get("MUST").unwrap_or(&[])).join(" ")));
+        out.push(format!(
+            "person must: {}",
+            folded(p.get("MUST").unwrap_or(&[])).join(" ")
+        ));
     }
     let syn = &parsed["ldapSyntaxes"];
     out.push(format!(
@@ -226,7 +319,10 @@ fn schema_read(c: &Ctx) -> Lines {
         syn.iter().any(|d| d.oid == "1.3.6.1.4.1.1466.115.121.1.15")
     ));
     let mr = &parsed["matchingRules"];
-    out.push(format!("matchingrule 2.5.13.2 caseIgnoreMatch: {}", has(mr, "2.5.13.2", "caseIgnoreMatch")));
+    out.push(format!(
+        "matchingrule 2.5.13.2 caseIgnoreMatch: {}",
+        has(mr, "2.5.13.2", "caseIgnoreMatch")
+    ));
     Ok(out)
 }
 
@@ -238,7 +334,15 @@ fn naming_contexts(c: &Ctx) -> Lines {
         let oc = f
             .entries
             .first()
-            .map(|e| folded(&values(e, "objectClass").iter().map(|s| (*s).to_owned()).collect::<Vec<_>>()).join(" "))
+            .map(|e| {
+                folded(
+                    &values(e, "objectClass")
+                        .iter()
+                        .map(|s| (*s).to_owned())
+                        .collect::<Vec<_>>(),
+                )
+                .join(" ")
+            })
             .unwrap_or_default();
         out.push(format!("{nc}: {} objectclass {oc}", summary(&f)));
     }
@@ -249,7 +353,11 @@ fn search_scopes(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
     for b in bases(c) {
-        for (label, scope) in [("base", Scope::Base), ("one", Scope::OneLevel), ("sub", Scope::Subtree)] {
+        for (label, scope) in [
+            ("base", Scope::Base),
+            ("one", Scope::OneLevel),
+            ("sub", Scope::Subtree),
+        ] {
             let f = a.find(&b, scope, "(objectClass=*)", &["1.1"])?;
             expect_rc(&format!("{b} {label}"), &f.res, 0)?;
             out.push(format!("{b} {label}: {}", summary(&f)));
@@ -313,7 +421,9 @@ fn filters(c: &Ctx) -> Lines {
                     }
                     l
                 }
-                Err(Error::Ldap(ldap3::LdapError::FilterParsing)) => format!("{b} {flt}: the client cannot encode it"),
+                Err(Error::Ldap(ldap3::LdapError::FilterParsing)) => {
+                    format!("{b} {flt}: the client cannot encode it")
+                }
                 Err(e) => return Err(e),
             };
             out.push(line);
@@ -329,12 +439,23 @@ fn size_limit(c: &Ctx) -> Lines {
         let all = a.find(&b, Scope::Subtree, "(objectClass=*)", &["1.1"])?;
         let n = all.entries.len();
         for size in [1, 2, 0] {
-            let f = a.search(&b, Scope::Subtree, "(objectClass=*)", &["1.1"], &Opts { size, ..Opts::default() })?;
+            let f = a.search(
+                &b,
+                Scope::Subtree,
+                "(objectClass=*)",
+                &["1.1"],
+                &Opts {
+                    size,
+                    ..Opts::default()
+                },
+            )?;
             out.push(format!("{b} size {size}: {}", summary(&f)));
             let size_u = usize::try_from(size).unwrap_or(0);
             if size > 0 && n > size_u {
                 expect_rc(&format!("{b} size {size}"), &f.res, 4)?;
-                check(f.entries.len() == size_u, || format!("{b} size {size}: {} entries", f.entries.len()))?;
+                check(f.entries.len() == size_u, || {
+                    format!("{b} size {size}: {} entries", f.entries.len())
+                })?;
             } else {
                 expect_rc(&format!("{b} size {size}"), &f.res, 0)?;
             }
@@ -348,7 +469,16 @@ fn time_limit(c: &Ctx) -> Lines {
     let mut out = Vec::new();
     for b in bases(c) {
         for time in [1, 0] {
-            let f = a.search(&b, Scope::Subtree, "(objectClass=*)", &["1.1"], &Opts { time, ..Opts::default() })?;
+            let f = a.search(
+                &b,
+                Scope::Subtree,
+                "(objectClass=*)",
+                &["1.1"],
+                &Opts {
+                    time,
+                    ..Opts::default()
+                },
+            )?;
             out.push(format!("{b} time {time}: {}", summary(&f)));
         }
     }
@@ -359,14 +489,35 @@ fn types_only(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
     for b in bases(c) {
-        let f = a.search(&b, Scope::Base, "(objectClass=*)", &["*"], &Opts { types_only: true, ..Opts::default() })?;
+        let f = a.search(
+            &b,
+            Scope::Base,
+            "(objectClass=*)",
+            &["*"],
+            &Opts {
+                types_only: true,
+                ..Opts::default()
+            },
+        )?;
         expect_rc(&b, &f.res, 0)?;
-        let e = f.entries.first().ok_or_else(|| Error::Check(format!("{b}: no entry")))?;
-        let with_values: Vec<&String> = e.attrs.iter().filter(|(_, v)| !v.is_empty()).map(|(k, _)| k).collect();
-        check(with_values.is_empty() && e.bin_attrs.values().all(Vec::is_empty), || {
-            format!("{b}: values returned with typesOnly: {with_values:?}")
-        })?;
-        out.push(format!("{b} typesonly: {}", names(&e.attrs, &e.bin_attrs).join(" ")));
+        let e = f
+            .entries
+            .first()
+            .ok_or_else(|| Error::Check(format!("{b}: no entry")))?;
+        let with_values: Vec<&String> = e
+            .attrs
+            .iter()
+            .filter(|(_, v)| !v.is_empty())
+            .map(|(k, _)| k)
+            .collect();
+        check(
+            with_values.is_empty() && e.bin_attrs.values().all(Vec::is_empty),
+            || format!("{b}: values returned with typesOnly: {with_values:?}"),
+        )?;
+        out.push(format!(
+            "{b} typesonly: {}",
+            names(&e.attrs, &e.bin_attrs).join(" ")
+        ));
     }
     Ok(out)
 }
@@ -386,13 +537,27 @@ fn attr_selection(c: &Ctx) -> Lines {
             &["nosuchattribute"],
             &["*", "aclEntry"],
             &["entryOwner", "ownerSource", "aclSource", "aclPropagate"],
-            &["createTimestamp", "modifyTimestamp", "creatorsName", "modifiersName"],
-            &["ibm-entryuuid", "entryDN", "hasSubordinates", "numSubordinates", "subschemaSubentry"],
+            &[
+                "createTimestamp",
+                "modifyTimestamp",
+                "creatorsName",
+                "modifiersName",
+            ],
+            &[
+                "ibm-entryuuid",
+                "entryDN",
+                "hasSubordinates",
+                "numSubordinates",
+                "subschemaSubentry",
+            ],
             &[],
         ] {
             let f = a.find(&b, Scope::Base, "(objectClass=*)", sel)?;
             expect_rc(&b, &f.res, 0)?;
-            let e = f.entries.first().ok_or_else(|| Error::Check(format!("{b}: no entry")))?;
+            let e = f
+                .entries
+                .first()
+                .ok_or_else(|| Error::Check(format!("{b}: no entry")))?;
             let got = names(&e.attrs, &e.bin_attrs);
             if sel == ["1.1"] {
                 check(got.is_empty(), || format!("{b} 1.1 returned {got:?}"))?;
@@ -443,7 +608,12 @@ fn no_such_object(c: &Ctx) -> Lines {
         }
     }
     if let Some(b) = bases(c).first() {
-        let f = a.find(&format!("cn=nothing,{b}"), Scope::Base, "(objectClass=*)", &["1.1"])?;
+        let f = a.find(
+            &format!("cn=nothing,{b}"),
+            Scope::Base,
+            "(objectClass=*)",
+            &["1.1"],
+        )?;
         expect_rc("missing entry", &f.res, 32)?;
     }
     Ok(out)
@@ -475,7 +645,13 @@ fn anon_bind(c: &Ctx) -> Lines {
 fn special_subtrees(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
-    for dn in ["cn=monitor", "cn=configuration", "cn=changelog", "cn=schema", "cn=connections,cn=monitor"] {
+    for dn in [
+        "cn=monitor",
+        "cn=configuration",
+        "cn=changelog",
+        "cn=schema",
+        "cn=connections,cn=monitor",
+    ] {
         let f = a.find(dn, Scope::Base, "(objectClass=*)", &["*", "+"])?;
         out.push(format!("{dn}: {}", summary(&f)));
         if let Some(e) = f.entries.first() {
@@ -497,10 +673,15 @@ fn special_subtrees(c: &Ctx) -> Lines {
 /// A name with no password (RFC 4513 §5.1.2): servers should refuse it.
 fn unauth_bind(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
-    let dn = format!("cn=ldaptest-nobody,{}", bases(c).first().map_or("cn=localhost", String::as_str));
+    let dn = format!(
+        "cn=ldaptest-nobody,{}",
+        bases(c).first().map_or("cn=localhost", String::as_str)
+    );
     let r = a.bind(&dn, "")?;
     let mut out = Vec::new();
     rc_lines(&format!("bind {dn} \"\""), &r, &mut out);
-    check(r.rc == 53 || r.rc == 0, || format!("unauthenticated bind: {}", rc(&r)))?;
+    check(r.rc == 53 || r.rc == 0, || {
+        format!("unauthenticated bind: {}", rc(&r))
+    })?;
     Ok(out)
 }

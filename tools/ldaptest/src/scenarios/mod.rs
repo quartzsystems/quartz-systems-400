@@ -65,7 +65,14 @@ pub fn all() -> Vec<Scenario> {
 pub fn names() -> Vec<String> {
     all()
         .iter()
-        .map(|s| format!("{} {}{}", s.name, s.suite.name(), if s.oracle { " oracle" } else { "" }))
+        .map(|s| {
+            format!(
+                "{} {}{}",
+                s.name,
+                s.suite.name(),
+                if s.oracle { " oracle" } else { "" }
+            )
+        })
         .collect()
 }
 
@@ -83,7 +90,11 @@ impl Ctx {
     /// Reads the root DSE of `t`.
     pub fn new(t: Target) -> Result<Ctx, Error> {
         let dse = RootDse::read(&t)?;
-        Ok(Ctx { t, dse, tag: format!("{}", std::process::id()) })
+        Ok(Ctx {
+            t,
+            dse,
+            tag: format!("{}", std::process::id()),
+        })
     }
 
     /// An anonymous connection.
@@ -117,12 +128,20 @@ impl Ctx {
 
     /// Skips unless the root DSE lists control `oid`.
     pub fn need_control(&self, oid: &str, what: &str) -> Result<(), Error> {
-        if self.dse.control(oid) { Ok(()) } else { skip(format!("{what} ({oid}) not in supportedControl")) }
+        if self.dse.control(oid) {
+            Ok(())
+        } else {
+            skip(format!("{what} ({oid}) not in supportedControl"))
+        }
     }
 
     /// Skips unless the root DSE lists extended operation `oid`.
     pub fn need_ext(&self, oid: &str, what: &str) -> Result<(), Error> {
-        if self.dse.extension(oid) { Ok(()) } else { skip(format!("{what} ({oid}) not in supportedExtension")) }
+        if self.dse.extension(oid) {
+            Ok(())
+        } else {
+            skip(format!("{what} ({oid}) not in supportedExtension"))
+        }
     }
 
     /// A sandbox under the suffix, as the administrator.
@@ -131,7 +150,14 @@ impl Ctx {
         let mut admin = self.admin()?;
         let dn = format!("ou=ldaptest-{name}-{},{suffix}", self.tag);
         let ou = format!("ldaptest-{name}-{}", self.tag);
-        let r = admin.add(&dn, &[("objectClass", &["top", "organizationalUnit"]), ("ou", &[&ou])], vec![])?;
+        let r = admin.add(
+            &dn,
+            &[
+                ("objectClass", &["top", "organizationalUnit"]),
+                ("ou", &[&ou]),
+            ],
+            vec![],
+        )?;
         expect_rc(&format!("add {dn}"), &r, 0)?;
         Ok(Sandbox { dn, admin })
     }
@@ -170,7 +196,10 @@ impl Sandbox {
         self.add(
             &format!("cn={name}"),
             &[
-                ("objectClass", &["top", "person", "organizationalPerson", "inetOrgPerson"]),
+                (
+                    "objectClass",
+                    &["top", "person", "organizationalPerson", "inetOrgPerson"],
+                ),
                 ("cn", &[name]),
                 ("sn", &[name]),
                 ("description", &["made by ldaptest"]),
@@ -185,7 +214,14 @@ impl Sandbox {
             Some(b) => format!("ou={name},{b}"),
             None => self.child(&format!("ou={name}")),
         };
-        let r = self.admin.add(&dn, &[("objectClass", &["top", "organizationalUnit"]), ("ou", &[name])], vec![])?;
+        let r = self.admin.add(
+            &dn,
+            &[
+                ("objectClass", &["top", "organizationalUnit"]),
+                ("ou", &[name]),
+            ],
+            vec![],
+        )?;
         expect_rc(&format!("add {dn}"), &r, 0)?;
         Ok(dn)
     }
@@ -228,7 +264,11 @@ pub fn run(c: &Ctx) -> Report {
     let mut rep = Report::default();
     let only: HashSet<&str> = c.t.only.iter().map(String::as_str).collect();
     for s in all() {
-        let chosen = if only.is_empty() { c.t.suites.contains(&s.suite) } else { only.contains(s.name) };
+        let chosen = if only.is_empty() {
+            c.t.suites.contains(&s.suite)
+        } else {
+            only.contains(s.name)
+        };
         if !chosen {
             continue;
         }
@@ -275,7 +315,10 @@ mod tests {
     fn oracle_scenarios_are_reading_suites() {
         for s in all().iter().filter(|s| s.oracle) {
             assert!(
-                matches!(s.suite, Suite::Read | Suite::Controls | Suite::Ext | Suite::Projected),
+                matches!(
+                    s.suite,
+                    Suite::Read | Suite::Controls | Suite::Ext | Suite::Projected
+                ),
                 "{} writes",
                 s.name
             );

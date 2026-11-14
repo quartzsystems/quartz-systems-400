@@ -88,7 +88,10 @@ pub fn parse(s: &str) -> Result<Desc, Error> {
     let Some(Tok::Word(oid)) = it.next() else {
         return Err(Error::Decode("no OID".into()));
     };
-    let mut d = Desc { oid, ..Desc::default() };
+    let mut d = Desc {
+        oid,
+        ..Desc::default()
+    };
     loop {
         match it.next() {
             Some(Tok::Close) => break,
@@ -132,9 +135,17 @@ pub fn parse(s: &str) -> Result<Desc, Error> {
 
 /// Keywords that take no value.
 fn is_flag(key: &str) -> bool {
-    ["OBSOLETE", "SINGLE-VALUE", "COLLECTIVE", "NO-USER-MODIFICATION", "ABSTRACT", "STRUCTURAL", "AUXILIARY"]
-        .iter()
-        .any(|k| k.eq_ignore_ascii_case(key))
+    [
+        "OBSOLETE",
+        "SINGLE-VALUE",
+        "COLLECTIVE",
+        "NO-USER-MODIFICATION",
+        "ABSTRACT",
+        "STRUCTURAL",
+        "AUXILIARY",
+    ]
+    .iter()
+    .any(|k| k.eq_ignore_ascii_case(key))
 }
 
 #[cfg(test)]
@@ -151,7 +162,10 @@ mod tests {
         assert_eq!(d.oid, "2.5.4.3");
         assert_eq!(d.names, ["cn", "commonName"]);
         assert_eq!(d.get("DESC").unwrap(), ["a (paren) inside"]);
-        assert_eq!(d.get("syntax").unwrap(), ["1.3.6.1.4.1.1466.115.121.1.15{256}"]);
+        assert_eq!(
+            d.get("syntax").unwrap(),
+            ["1.3.6.1.4.1.1466.115.121.1.15{256}"]
+        );
         assert!(d.named("CN"));
     }
 
@@ -169,7 +183,9 @@ mod tests {
 
     #[test]
     fn single_value_flag_before_a_keyword() {
-        let d = parse("( 1.2.3 NAME 'x' SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )").unwrap();
+        let d =
+            parse("( 1.2.3 NAME 'x' SINGLE-VALUE NO-USER-MODIFICATION USAGE directoryOperation )")
+                .unwrap();
         assert!(d.get("SINGLE-VALUE").unwrap().is_empty());
         assert_eq!(d.get("USAGE").unwrap(), ["directoryOperation"]);
     }

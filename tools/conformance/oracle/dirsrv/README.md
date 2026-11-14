@@ -31,6 +31,7 @@ try (see below).
 | `probes/LdapFiles.java` | | the configuration files and the QSYSINC/H members, copied out of the tree |
 | `probes/LdapTools.java` | | `TOOL -?` for each QSH tool; `QMHRTVM RTVM0400` for each `QGLDMSG` ID |
 | `rootdse.ldif` | anonymous base search of `""`, `*` and `+` | the primary's root DSE |
+| `ldaptest-primary.txt` | `ldaptest oracle` (`tools/ldaptest`) | the anonymous read-only scenarios' answers: scopes, filters, limits, attribute selection, compare, the controls and extended operations, result codes; what QS/400's answers are diffed against |
 | `schema-primary.txt` | anonymous base search of `cn=schema` | 1627 attribute types, 428 object classes, 43 syntaxes, 34 matching rules; `DESC` removed |
 | `ibmslapd-shape.ldif` | `/QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/ibmslapd.conf` | the instance configuration's entries and attribute names with non-secret values; comments dropped, every password and the password policy values masked |
 | `idsinstances.ldif` | `/QIBM/UserData/OS400/DirSrv/idsinstinfo/idsinstances.ldif` | the instance list (`QUSRDIR`, autostart) |

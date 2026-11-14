@@ -22,13 +22,20 @@ pub struct Entry {
 impl Entry {
     /// An entry named `dn`.
     pub fn new(dn: impl Into<String>) -> Self {
-        Entry { dn: dn.into(), attrs: Vec::new() }
+        Entry {
+            dn: dn.into(),
+            attrs: Vec::new(),
+        }
     }
 
     /// Adds a value of `name`.
     pub fn add(&mut self, name: &str, value: impl Into<Vec<u8>>) -> &mut Self {
         let v = value.into();
-        if let Some((_, vals)) = self.attrs.iter_mut().find(|(n, _)| n.eq_ignore_ascii_case(name)) {
+        if let Some((_, vals)) = self
+            .attrs
+            .iter_mut()
+            .find(|(n, _)| n.eq_ignore_ascii_case(name))
+        {
             vals.push(v);
         } else {
             self.attrs.push((name.into(), vec![v]));
@@ -41,7 +48,9 @@ impl Entry {
     pub fn normal(&self) -> BTreeMap<String, Vec<Vec<u8>>> {
         let mut m: BTreeMap<String, Vec<Vec<u8>>> = BTreeMap::new();
         for (n, vals) in &self.attrs {
-            m.entry(n.to_ascii_lowercase()).or_default().extend(vals.iter().cloned());
+            m.entry(n.to_ascii_lowercase())
+                .or_default()
+                .extend(vals.iter().cloned());
         }
         for v in m.values_mut() {
             v.sort();
@@ -56,7 +65,10 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 pub fn b64_encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
-        let n = chunk.iter().enumerate().fold(0u32, |a, (i, b)| a | u32::from(*b) << (16 - 8 * i));
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |a, (i, b)| a | u32::from(*b) << (16 - 8 * i));
         for i in 0..4 {
             if i <= chunk.len() {
                 out.push(B64[(n >> (18 - 6 * i) & 63) as usize] as char);
@@ -97,7 +109,8 @@ fn safe(v: &[u8]) -> bool {
     let bad_first = matches!(v.first(), Some(b' ' | b':' | b'<'));
     !bad_first
         && v.last() != Some(&b' ')
-        && v.iter().all(|b| *b != 0 && *b != b'\r' && *b != b'\n' && *b < 0x80)
+        && v.iter()
+            .all(|b| *b != 0 && *b != b'\r' && *b != b'\n' && *b < 0x80)
 }
 
 /// One `name: value` line, folded at 76 columns.

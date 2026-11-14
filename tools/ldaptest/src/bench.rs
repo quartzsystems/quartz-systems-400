@@ -8,10 +8,10 @@ use std::time::Instant;
 
 use ldap3::Scope;
 
+use crate::Error;
 use crate::client::{Conn, expect_rc};
 use crate::conn::Tls;
 use crate::scenarios::{Ctx, controls, read};
-use crate::Error;
 
 /// The bench's lines.
 pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
@@ -20,7 +20,11 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
         Some(p) => (c.t.admin_dn.clone(), p.clone()),
         None => (String::new(), String::new()),
     };
-    let who = if dn.is_empty() { "anonymous" } else { dn.as_str() };
+    let who = if dn.is_empty() {
+        "anonymous"
+    } else {
+        dn.as_str()
+    };
     let n = c.t.binds.max(1);
     let started = Instant::now();
     for _ in 0..n {
@@ -29,14 +33,20 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
         expect_rc("bind", &r, 0)?;
         x.close();
     }
-    out.push(format!("binds: {n} as {who}, a connection each, {:.0} a minute", per_minute(n, started)));
+    out.push(format!(
+        "binds: {n} as {who}, a connection each, {:.0} a minute",
+        per_minute(n, started)
+    ));
     let mut x = Conn::open(&c.t, Tls::None)?;
     let started = Instant::now();
     for _ in 0..n {
         let r = x.bind(&dn, &pw)?;
         expect_rc("bind", &r, 0)?;
     }
-    out.push(format!("binds: {n} on one connection, {:.0} a minute", per_minute(n, started)));
+    out.push(format!(
+        "binds: {n} on one connection, {:.0} a minute",
+        per_minute(n, started)
+    ));
     x.close();
 
     if c.t.suffix.is_some() && c.t.admin_pw.is_some() {
@@ -47,7 +57,14 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
         out.push(format!("adds: {m}, {:.0} a second", per_second(m, started)));
         let mut a = c.admin()?;
         let started = Instant::now();
-        let p = controls::paged(&mut a, &sb.dn, Scope::OneLevel, "(objectClass=person)", c.t.page, &[])?;
+        let p = controls::paged(
+            &mut a,
+            &sb.dn,
+            Scope::OneLevel,
+            "(objectClass=person)",
+            c.t.page,
+            &[],
+        )?;
         out.push(format!(
             "paged search: {} entries in {} pages of {}, {:.2} s, {:.0} entries a second ({})",
             p.dns.len(),

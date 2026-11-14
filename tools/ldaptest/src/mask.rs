@@ -11,7 +11,7 @@ use crate::dse::RootDse;
 /// What to replace, longest first.
 #[derive(Debug, Default)]
 pub struct Mask {
-    pairs: Vec<(String, &'static str)>,
+    pairs: Vec<(String, String)>,
 }
 
 impl Mask {
@@ -35,6 +35,12 @@ impl Mask {
                 .filter(|(k, _)| k.eq_ignore_ascii_case("dc"))
                 .map(|(_, v)| v)
                 .collect();
+            if dcs.len() >= 2 {
+                // The whole suffix as the captures write it, however many parts.
+                let key = if ctx.starts_with("DC=") { "DC" } else { "dc" };
+                m.add(ctx, &format!("{key}={{host}},{key}={{domain}}"));
+                m.add(&dcs[1..].join("."), "{domain}");
+            }
             for (i, dc) in dcs.iter().enumerate() {
                 m.add(dc, if i == 0 { "{host}" } else { "{domain}" });
             }
@@ -43,7 +49,7 @@ impl Mask {
         let labels: Vec<String> = m
             .pairs
             .iter()
-            .filter(|(_, r)| *r == "{system}")
+            .filter(|(_, r)| r == "{system}")
             .filter_map(|(v, _)| v.split_once('.').map(|(h, _)| h.to_owned()))
             .filter(|h| h.starts_with(|c: char| c.is_ascii_alphabetic()))
             .collect();
@@ -54,10 +60,10 @@ impl Mask {
         m
     }
 
-    fn add(&mut self, v: &str, r: &'static str) {
+    fn add(&mut self, v: &str, r: &str) {
         // Too short to mask without spoiling ordinary words.
         if v.len() >= 3 && !self.pairs.iter().any(|(p, _)| p.eq_ignore_ascii_case(v)) {
-            self.pairs.push((v.to_owned(), r));
+            self.pairs.push((v.to_owned(), r.to_owned()));
         }
     }
 
@@ -73,7 +79,9 @@ impl Mask {
     /// Whether any masked name is still in `text` (case ignored).
     pub fn leaks(&self, text: &str) -> bool {
         let low = text.to_ascii_lowercase();
-        self.pairs.iter().any(|(v, _)| low.contains(&v.to_ascii_lowercase()))
+        self.pairs
+            .iter()
+            .any(|(v, _)| low.contains(&v.to_ascii_lowercase()))
     }
 }
 
@@ -98,18 +106,28 @@ mod tests {
     #[test]
     fn masks_every_form() {
         let mut d = RootDse::default();
-        d.attrs.insert("ibm-ldapservicename".into(), vec!["box1.corp.example".into()]);
-        d.attrs.insert("ibm-osregistrycontext".into(), vec!["OS400-SYS=BOX1.CORP.EXAMPLE".into()]);
-        d.attrs.insert("ibm-serverid".into(), vec!["abc-123-def".into()]);
+        d.attrs.insert(
+            "ibm-ldapservicename".into(),
+            vec!["box1.corp.example".into()],
+        );
+        d.attrs.insert(
+            "ibm-osregistrycontext".into(),
+            vec!["OS400-SYS=BOX1.CORP.EXAMPLE".into()],
+        );
+        d.attrs
+            .insert("ibm-serverid".into(), vec!["abc-123-def".into()]);
         d.attrs.insert(
             "namingcontexts".into(),
-            vec!["CN=SCHEMA".into(), "dc=box1,dc=corp,dc=example".into()],
+            vec![
+                "CN=SCHEMA".into(),
+                "dc=box1,dc=ad,dc=corp,dc=example".into(),
+            ],
         );
         let m = Mask::from_dse(&d, "10.1.2.3");
-        let t = m.apply("OS400-SYS=BOX1.CORP.EXAMPLE dc=box1,dc=corp,dc=example id abc-123-def at 10.1.2.3 cn=schema");
+        let t = m.apply("OS400-SYS=BOX1.CORP.EXAMPLE dc=box1,dc=ad,dc=corp,dc=example id abc-123-def at 10.1.2.3 cn=schema ad.corp.example");
         assert_eq!(
             t,
-            "OS400-SYS={system} dc={host},dc={domain},dc={domain} id {server-id} at {system} cn=schema"
+            "OS400-SYS={system} dc={host},dc={domain} id {server-id} at {system} cn=schema {domain}"
         );
         assert!(!m.leaks(&t));
         assert!(m.leaks("Box1"));

@@ -1,0 +1,388 @@
+# ldaptest oracle: the anonymous read-only scenarios against the primary,
+# port 389, recorded 2026-11-14 (`ldaptest oracle`). Names masked as the README says.
+# Lines ending in `diag: ...` are the server's own wording.
+
+ok rootdse
+  attributes: ibm-ldapservicename(1) ibm-opattrclasses(10) ibm-osregistrycontext(1) ibm-osregistrytype(1) ibm-sasldigestrealmname(1) ibm-serverid(1) ibm-slapdderefaliases(1) ibm-slapdisconfigurationmode(1) ibm-slapdserverbackend(1) ibm-slapdserverinstancename(1) ibm-slapdsizelimit(1) ibm-slapdtimelimit(1) ibm-supportedacimechanisms(3) ibm-supportedauditversion(1) ibmdirectoryversion(1) namingcontexts(5) port(1) security(1) subschemasubentry(1) supportedcontrol(21) supportedextension(30) supportedldapversion(2) supportedsaslmechanisms(2) vendorname(1) vendorversion(1)
+  supportedldapversion: 2 | 3
+  namingcontexts: CN=SCHEMA | CN=LOCALHOST | CN=IBMPOLICIES | DC={host},DC={domain} | OS400-SYS={system}
+  subschemasubentry: cn=schema
+  supportedsaslmechanisms: DIGEST-MD5 | OS400-PRFTKN
+  ibm-supportedacimechanisms: 1.3.18.0.2.26.3 | 1.3.18.0.2.26.4 | 1.3.18.0.2.26.2
+  ibmdirectoryversion: 6.1
+  ibm-slapdserverbackend: RDBM
+  ibm-slapdserverinstancename: QUSRDIR
+  ibm-slapdsizelimit: 500
+  ibm-slapdtimelimit: 900
+  ibm-slapdderefaliases: always
+  ibm-osregistrycontext: OS400-SYS={system}
+  ibm-osregistrytype: 1.3.18.0.2.33.2-caseIgnore
+  ibm-slapdisconfigurationmode: FALSE
+  security: none
+  port: 389
+  vendorname: International Business Machines (IBM)
+  vendorversion: 6.1
+  supportedcontrol (21 values, 21 distinct): 1.2.840.113556.1.4.319 1.2.840.113556.1.4.473 1.2.840.113556.1.4.805 1.3.18.0.2.10.15 1.3.18.0.2.10.18 1.3.18.0.2.10.21 1.3.18.0.2.10.22 1.3.18.0.2.10.23 1.3.18.0.2.10.24 1.3.18.0.2.10.25 1.3.18.0.2.10.26 1.3.18.0.2.10.27 1.3.18.0.2.10.28 1.3.18.0.2.10.30 1.3.18.0.2.10.5 1.3.18.0.2.10.8 1.3.18.0.2.10.9 1.3.6.1.4.1.42.2.27.8.5.1 2.16.840.1.113730.3.4.18 2.16.840.1.113730.3.4.2 2.16.840.1.113730.3.4.3
+  supportedextension (30 values, 27 distinct): 1.3.18.0.2.12.15 1.3.18.0.2.12.16 1.3.18.0.2.12.17 1.3.18.0.2.12.19 1.3.18.0.2.12.20 1.3.18.0.2.12.22 1.3.18.0.2.12.24 1.3.18.0.2.12.28 1.3.18.0.2.12.30 1.3.18.0.2.12.35 1.3.18.0.2.12.37 1.3.18.0.2.12.40 1.3.18.0.2.12.44 1.3.18.0.2.12.46 1.3.18.0.2.12.5 1.3.18.0.2.12.50 1.3.18.0.2.12.54 1.3.18.0.2.12.56 1.3.18.0.2.12.58 1.3.18.0.2.12.6 1.3.18.0.2.12.64 1.3.18.0.2.12.73 1.3.18.0.2.12.75 1.3.18.0.2.12.79 1.3.18.0.2.12.80 1.3.6.1.4.1.1466.20037 2.16.840.1.113730.3.4.3
+  supportedfeatures (0 values, 0 distinct): 
+ok rootdse-default-attrs
+  no list: rc 0 success, 1 entries
+  no list names: ibm-ldapservicename ibm-opattrclasses ibm-osregistrycontext ibm-osregistrytype ibm-sasldigestrealmname ibm-serverid ibm-slapdderefaliases ibm-slapdisconfigurationmode ibm-slapdserverbackend ibm-slapdserverinstancename ibm-slapdsizelimit ibm-slapdtimelimit ibm-supportedacimechanisms ibm-supportedauditversion ibmdirectoryversion namingcontexts port security subschemasubentry supportedcontrol supportedextension supportedldapversion supportedsaslmechanisms vendorname vendorversion
+  + names: 
+  namingContexts only: namingcontexts
+  (cn=nothing): rc 32 noSuchObject, 0 entries
+ok rootdse-one-level
+  one: rc 53 unwillingToPerform, 0 entries
+  one dns: 
+  sub: rc 0 success, 5 entries
+  sub dns: CN=IBMPOLICIES | cn=localhost | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES | CN=REPLICATION,CN=LOCALHOST
+ok schema-read
+  objectclass: ibmsubschema subschema top
+  attributetypes: 1627 values, 0 unparsed
+  objectclasses: 428 values, 0 unparsed
+  ldapsyntaxes: 43 values, 0 unparsed
+  matchingrules: 34 values, 0 unparsed
+  matchingruleuse: 0 values, 0 unparsed
+  attributetype 2.5.4.0 objectClass: true
+  attributetype 2.5.4.3 cn: true
+  attributetype 2.5.4.4 sn: true
+  attributetype 2.5.4.35 userPassword: true
+  attributetype 0.9.2342.19200300.100.1.1 uid: true
+  attributetype 2.5.18.1 createTimestamp: true
+  attributetype 2.5.4.49 distinguishedName: true
+  attributetype aclEntry: 1.3.18.0.2.4.285
+  attributetype aclPropagate: 1.3.18.0.2.4.286
+  attributetype entryOwner: 1.3.18.0.2.4.288
+  attributetype ibm-entryuuid: 1.3.18.0.2.4.1780
+  attributetype ibm-effectiveAcl: 1.3.18.0.2.4.2444
+  attributetype os400-profile: 1.3.18.0.2.4.2074
+  objectclass 2.5.6.0 top: true
+  objectclass 2.5.6.6 person: true
+  objectclass 2.5.6.5 organizationalUnit: true
+  objectclass 2.16.840.1.113730.3.2.2 inetOrgPerson: true
+  objectclass 2.16.840.1.113730.3.2.6 referral: true
+  objectclass 2.5.6.1 alias: true
+  objectclass os400-root: 1.3.18.0.2.6.398
+  objectclass os400-usrprf: 1.3.18.0.2.6.399
+  objectclass os400-container: absent
+  person must: cn sn
+  syntax 1.3.6.1.4.1.1466.115.121.1.15: true
+  matchingrule 2.5.13.2 caseIgnoreMatch: true
+ok naming-contexts
+  CN=SCHEMA: rc 0 success, 1 entries objectclass ibmsubschema subschema top
+  CN=LOCALHOST: rc 0 success, 1 entries objectclass container top
+  CN=IBMPOLICIES: rc 0 success, 1 entries objectclass container ibm-replicationcontext top
+  DC={host},DC={domain}: rc 32 noSuchObject, 0 entries objectclass 
+  OS400-SYS={system}: rc 0 success, 1 entries objectclass os400-root
+ok search-scopes
+  cn=localhost base: rc 0 success, 1 entries
+  cn=localhost base dns: cn=localhost
+  cn=localhost one: rc 0 success, 1 entries
+  cn=localhost one dns: CN=REPLICATION,CN=LOCALHOST
+  cn=localhost sub: rc 0 success, 2 entries
+  cn=localhost sub dns: cn=localhost | CN=REPLICATION,CN=LOCALHOST
+  cn=ibmpolicies base: rc 0 success, 1 entries
+  cn=ibmpolicies base dns: CN=IBMPOLICIES
+  cn=ibmpolicies one: rc 0 success, 2 entries
+  cn=ibmpolicies one dns: cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES
+  cn=ibmpolicies sub: rc 0 success, 3 entries
+  cn=ibmpolicies sub dns: CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES
+ok filters
+  cn=localhost (objectClass=*): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (objectclass=*): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (cn=*): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (cn=pwdpolicy): rc 0 success, 0 entries
+  cn=localhost (CN=PWDPOLICY): rc 0 success, 0 entries
+  cn=localhost (cn=pwd*): rc 0 success, 0 entries
+  cn=localhost (cn=*policy): rc 0 success, 0 entries
+  cn=localhost (cn=*dpo*): rc 0 success, 0 entries
+  cn=localhost (cn=p*d*y): rc 0 success, 0 entries
+  cn=localhost (cn=*): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (cn>=m): rc 0 success, 1 entries [CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (cn<=m): rc 0 success, 1 entries [cn=localhost]
+  cn=localhost (cn~=pwdpolicy): rc 0 success, 0 entries
+  cn=localhost (cn~=ibmpolicy): rc 0 success, 0 entries
+  cn=localhost (objectClass=pwdPolicy): rc 0 success, 0 entries
+  cn=localhost (objectClass=container): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (!(cn=pwdpolicy)): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (&(objectClass=*)(cn=pwdpolicy)): rc 0 success, 0 entries
+  cn=localhost (|(cn=nothing)(cn=pwdpolicy)): rc 0 success, 0 entries
+  cn=localhost (&(|(cn=a*)(cn=p*))(!(cn=a*))): rc 0 success, 0 entries
+  cn=localhost (cn:caseExactMatch:=pwdpolicy): rc 0 success, 0 entries
+  cn=localhost (cn:2.5.13.5:=pwdPolicy): rc 0 success, 0 entries
+  cn=localhost (cn:dn:=ibmpolicies): rc 0 success, 0 entries
+  cn=localhost (:dn:2.5.13.2:=ibmpolicies): rc 0 success, 0 entries
+  cn=localhost (:caseIgnoreMatch:=pwdpolicy): rc 0 success, 0 entries
+  cn=localhost (nosuchattribute=x): rc 0 success, 0 entries
+  cn=localhost (nosuchattribute=*): rc 0 success, 0 entries
+  cn=localhost (!(nosuchattribute=x)): rc 0 success, 0 entries
+  cn=localhost (cn=\2a): rc 0 success, 0 entries
+  cn=localhost (cn=pwd\70olicy): rc 0 success, 0 entries
+  cn=localhost (cn=): rc 0 success, 0 entries
+  cn=localhost (&): rc 0 success, 0 entries
+  cn=localhost (|): rc 0 success, 0 entries
+  cn=localhost (entryOwner=*): rc 53 unwillingToPerform, 0 entries
+  cn=localhost (aclEntry=*): rc 53 unwillingToPerform, 0 entries
+  cn=localhost (createTimestamp>=19700101000000Z): rc 0 success, 2 entries [cn=localhost | CN=REPLICATION,CN=LOCALHOST]
+  cn=localhost (createTimestamp<=19700101000000Z): rc 0 success, 0 entries
+  cn=ibmpolicies (objectClass=*): rc 0 success, 3 entries [CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (objectclass=*): rc 0 success, 3 entries [CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (cn=*): rc 0 success, 3 entries [CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (cn=pwdpolicy): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (CN=PWDPOLICY): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn=pwd*): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn=*policy): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn=*dpo*): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn=p*d*y): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn=*): rc 0 success, 3 entries [CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (cn>=m): rc 0 success, 2 entries [cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (cn<=m): rc 0 success, 1 entries [CN=IBMPOLICIES]
+  cn=ibmpolicies (cn~=pwdpolicy): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn~=ibmpolicy): rc 0 success, 1 entries [CN=IBMPOLICIES]
+  cn=ibmpolicies (objectClass=pwdPolicy): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (objectClass=container): rc 0 success, 3 entries [CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (!(cn=pwdpolicy)): rc 0 success, 2 entries [CN=IBMPOLICIES | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (&(objectClass=*)(cn=pwdpolicy)): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (|(cn=nothing)(cn=pwdpolicy)): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (&(|(cn=a*)(cn=p*))(!(cn=a*))): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn:caseExactMatch:=pwdpolicy): rc 0 success, 0 entries
+  cn=ibmpolicies (cn:2.5.13.5:=pwdPolicy): rc 0 success, 0 entries
+  cn=ibmpolicies (cn:dn:=ibmpolicies): rc 0 success, 0 entries
+  cn=ibmpolicies (:dn:2.5.13.2:=ibmpolicies): rc 0 success, 0 entries
+  cn=ibmpolicies (:caseIgnoreMatch:=pwdpolicy): rc 0 success, 0 entries
+  cn=ibmpolicies (nosuchattribute=x): rc 0 success, 0 entries
+  cn=ibmpolicies (nosuchattribute=*): rc 0 success, 0 entries
+  cn=ibmpolicies (!(nosuchattribute=x)): rc 0 success, 0 entries
+  cn=ibmpolicies (cn=\2a): rc 0 success, 0 entries
+  cn=ibmpolicies (cn=pwd\70olicy): rc 0 success, 1 entries [cn=pwdpolicy,cn=ibmpolicies]
+  cn=ibmpolicies (cn=): rc 0 success, 0 entries
+  cn=ibmpolicies (&): rc 0 success, 0 entries
+  cn=ibmpolicies (|): rc 0 success, 0 entries
+  cn=ibmpolicies (entryOwner=*): rc 53 unwillingToPerform, 0 entries
+  cn=ibmpolicies (aclEntry=*): rc 53 unwillingToPerform, 0 entries
+  cn=ibmpolicies (createTimestamp>=19700101000000Z): rc 0 success, 3 entries [CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES]
+  cn=ibmpolicies (createTimestamp<=19700101000000Z): rc 0 success, 0 entries
+ok size-limit
+  cn=localhost size 1: rc 4 sizeLimitExceeded, 1 entries
+  cn=localhost size 2: rc 0 success, 2 entries
+  cn=localhost size 0: rc 0 success, 2 entries
+  cn=ibmpolicies size 1: rc 4 sizeLimitExceeded, 1 entries
+  cn=ibmpolicies size 2: rc 4 sizeLimitExceeded, 2 entries
+  cn=ibmpolicies size 0: rc 0 success, 3 entries
+ok time-limit
+  cn=localhost time 1: rc 0 success, 2 entries
+  cn=localhost time 0: rc 0 success, 2 entries
+  cn=ibmpolicies time 1: rc 0 success, 3 entries
+  cn=ibmpolicies time 0: rc 0 success, 3 entries
+ok types-only
+  cn=localhost typesonly: cn objectclass
+  cn=ibmpolicies typesonly: cn objectclass
+ok attr-selection
+  cn=localhost [*]: cn objectclass
+  cn=localhost [+]: aclentry aclpropagate aclsource createtimestamp creatorsname entryowner ibm-capabilitiessubentry ibm-effectiveacl ibm-replicationisquiesced ibm-replicationthisserverismaster modifiersname modifytimestamp ownerpropagate ownersource subschemasubentry
+  cn=localhost [1.1]: 
+  cn=localhost [* +]: aclentry aclpropagate aclsource cn createtimestamp creatorsname entryowner ibm-capabilitiessubentry ibm-effectiveacl ibm-replicationisquiesced ibm-replicationthisserverismaster modifiersname modifytimestamp objectclass ownerpropagate ownersource subschemasubentry
+  cn=localhost [cn objectClass]: cn objectclass
+  cn=localhost [CN]: cn
+  cn=localhost [1.1 cn]: cn
+  cn=localhost [nosuchattribute]: 
+  cn=localhost [* aclEntry]: aclentry cn objectclass
+  cn=localhost [entryOwner ownerSource aclSource aclPropagate]: aclpropagate aclsource entryowner ownersource
+  cn=localhost [createTimestamp modifyTimestamp creatorsName modifiersName]: createtimestamp creatorsname modifiersname modifytimestamp
+  cn=localhost [ibm-entryuuid entryDN hasSubordinates numSubordinates subschemaSubentry]: hassubordinates numsubordinates subschemasubentry
+  cn=localhost []: cn objectclass
+  cn=ibmpolicies [*]: cn objectclass
+  cn=ibmpolicies [+]: aclentry aclpropagate aclsource createtimestamp creatorsname entryowner ibm-capabilitiessubentry ibm-effectiveacl ibm-entryuuid ibm-replicationisquiesced ibm-replicationthisserverismaster modifiersname modifytimestamp ownerpropagate ownersource subschemasubentry
+  cn=ibmpolicies [1.1]: 
+  cn=ibmpolicies [* +]: aclentry aclpropagate aclsource cn createtimestamp creatorsname entryowner ibm-capabilitiessubentry ibm-effectiveacl ibm-entryuuid ibm-replicationisquiesced ibm-replicationthisserverismaster modifiersname modifytimestamp objectclass ownerpropagate ownersource subschemasubentry
+  cn=ibmpolicies [cn objectClass]: cn objectclass
+  cn=ibmpolicies [CN]: cn
+  cn=ibmpolicies [1.1 cn]: cn
+  cn=ibmpolicies [nosuchattribute]: 
+  cn=ibmpolicies [* aclEntry]: aclentry cn objectclass
+  cn=ibmpolicies [entryOwner ownerSource aclSource aclPropagate]: aclpropagate aclsource entryowner ownersource
+  cn=ibmpolicies [createTimestamp modifyTimestamp creatorsName modifiersName]: createtimestamp creatorsname modifiersname modifytimestamp
+  cn=ibmpolicies [ibm-entryuuid entryDN hasSubordinates numSubordinates subschemaSubentry]: hassubordinates ibm-entryuuid numsubordinates subschemasubentry
+  cn=ibmpolicies []: cn objectclass
+ok compare
+  cn=localhost cn=localhost: rc 6 compareTrue
+  cn=localhost cn=LOCALHOST: rc 6 compareTrue
+  cn=localhost cn=nothing: rc 5 compareFalse
+  cn=localhost objectClass=top: rc 6 compareTrue
+  cn=localhost objectClass=person: rc 5 compareFalse
+  cn=localhost nosuchattribute=x: rc 16 noSuchAttribute
+  cn=localhost description=x: rc 16 noSuchAttribute
+  cn=nothing,cn=localhost: rc 32 noSuchObject matched "CN=LOCALHOST"
+  cn=ibmpolicies cn=ibmpolicies: rc 6 compareTrue
+  cn=ibmpolicies cn=IBMPOLICIES: rc 6 compareTrue
+  cn=ibmpolicies cn=nothing: rc 5 compareFalse
+  cn=ibmpolicies objectClass=top: rc 6 compareTrue
+  cn=ibmpolicies objectClass=person: rc 5 compareFalse
+  cn=ibmpolicies nosuchattribute=x: rc 16 noSuchAttribute
+  cn=ibmpolicies description=x: rc 16 noSuchAttribute
+  cn=nothing,cn=ibmpolicies: rc 32 noSuchObject matched "CN=IBMPOLICIES"
+ok no-such-object
+  cn=nothing,cn=localhost base: rc 32 noSuchObject matched "CN=LOCALHOST"
+  cn=nothing,cn=localhost sub: rc 32 noSuchObject matched "CN=LOCALHOST"
+  cn=nothing,cn=ibmpolicies base: rc 32 noSuchObject matched "CN=IBMPOLICIES"
+  cn=nothing,cn=ibmpolicies sub: rc 32 noSuchObject matched "CN=IBMPOLICIES"
+  cn=a,cn=nothing,cn=localhost base: rc 32 noSuchObject matched "CN=LOCALHOST"
+  cn=a,cn=nothing,cn=localhost sub: rc 32 noSuchObject matched "CN=LOCALHOST"
+  cn=a,cn=nothing,cn=ibmpolicies base: rc 32 noSuchObject matched "CN=IBMPOLICIES"
+  cn=a,cn=nothing,cn=ibmpolicies sub: rc 32 noSuchObject matched "CN=IBMPOLICIES"
+  dc=ldaptest-nowhere base: rc 32 noSuchObject
+  dc=ldaptest-nowhere sub: rc 32 noSuchObject
+  o=ldaptest-nowhere,c=us base: rc 32 noSuchObject
+  o=ldaptest-nowhere,c=us sub: rc 32 noSuchObject
+ok invalid-dn
+  "not a dn": rc 34 invalidDNSyntax
+  "cn=": rc 34 invalidDNSyntax
+  "=x": rc 34 invalidDNSyntax
+  "cn=a,,cn=b": rc 34 invalidDNSyntax
+  "cn=a+": rc 34 invalidDNSyntax
+  "cn=\zz": rc 34 invalidDNSyntax
+  compare "not a dn": rc 34 invalidDNSyntax
+ok anon-bind
+  bind "" "": rc 0 success
+  search after: rc 0 success, 1 entries
+ok special-subtrees
+  cn=monitor: rc 0 success, 1 entries
+  cn=monitor: 82 attribute names
+  cn=monitor names: abandonscompleted abandonsrequested acl_cache acl_cache_size addscompleted addsrequested auto_connection_cleaner_run available_workers bindscompleted bindsrequested bypass_deref_aliases cached_attribute_auto_adjust cached_attribute_auto_adjust_time cached_attribute_auto_adjust_time_interval cached_attribute_configured_size cached_attribute_total_size comparescompleted comparesrequested current_workqueue_size currentconnections currentpersistentsearches currenttime deletescompleted deletesrequested en_currentregs en_notificationssent entriessent entry_cache_current entry_cache_hit entry_cache_miss entry_cache_size extopscompleted extopsrequested filter_cache_bypass_limit filter_cache_current filter_cache_hit filter_cache_miss filter_cache_size group_members_cache_bypass group_members_cache_current group_members_cache_hit group_members_cache_miss group_members_cache_size idle_connections_closed largest_workqueue_size livethreads lostpersistentsearchconns maxconnections maximum_operations_waiting modifiescompleted modifiesrequested modrdnscompleted modrdnsrequested operations_deadlocked operations_retried operations_waiting opscompleted opsinitiated persistentsearchpendingchanges persistentsearchprocessedchanges readwaiters searchescompleted searchesrequested starttime total_ssl_connections total_tls_connections totalconnections transactioncommitsrequested transactionpreparescompleted transactionpreparesrequested transactionrollbacksrequested transactionscommitted transactionscompleted transactionspreparedwaitingoncommit transactionsrequested transactionsrolledback unbindscompleted unbindsrequested unknownopscompleted unknownopsrequested version writewaiters
+  cn=monitor one: rc 32 noSuchObject, 0 entries
+  cn=configuration: rc 50 insufficientAccessRights, 0 entries
+  cn=configuration one: rc 50 insufficientAccessRights, 0 entries
+  cn=changelog: rc 32 noSuchObject, 0 entries
+  cn=changelog one: rc 32 noSuchObject, 0 entries
+  cn=schema: rc 0 success, 1 entries
+  cn=schema: 6 attribute names
+  cn=schema one: rc 2 protocolError, 0 entries
+  cn=connections,cn=monitor: rc 53 unwillingToPerform, 0 entries
+  cn=connections,cn=monitor one: rc 32 noSuchObject, 0 entries
+ok paged-results
+  cn=localhost size 1: 3 pages, 2 entries, rc 0 success
+  cn=localhost size 2: 2 pages, 2 entries, rc 0 success
+  cn=localhost size 1000: 1 pages, 2 entries, rc 0 success
+  cn=ibmpolicies size 1: 4 pages, 3 entries, rc 0 success
+  cn=ibmpolicies size 2: 2 pages, 3 entries, rc 0 success
+  cn=ibmpolicies size 1000: 1 pages, 3 entries, rc 0 success
+ok paged-abandon
+  cn=localhost first page: rc 0 success, 1 entries
+  cn=localhost size 0 with the cookie: rc 0 success, 0 entries, cookie octets Some(0)
+  cn=ibmpolicies first page: rc 0 success, 1 entries
+  cn=ibmpolicies size 0 with the cookie: rc 0 success, 0 entries, cookie octets Some(0)
+ok paged-outstanding
+  cn=ibmpolicies open 1: rc 0 success, 1 entries
+  cn=ibmpolicies open 2: rc 80 other, 0 entries
+  cn=ibmpolicies open 3: rc 0 success, 1 entries
+  cn=ibmpolicies open 4: rc 53 unwillingToPerform, 0 entries
+  cn=ibmpolicies end 1: rc 0 success, 0 entries
+  cn=ibmpolicies end 3: rc 0 success, 0 entries
+  cn=ibmpolicies open after ending them: rc 0 success, 1 entries
+ok paged-bad-cookie
+  cn=localhost bad cookie: rc 53 unwillingToPerform, 0 entries
+  cn=localhost critical: 3 pages, 2 entries, rc 0 success
+  cn=ibmpolicies bad cookie: rc 53 unwillingToPerform, 0 entries
+  cn=ibmpolicies critical: 4 pages, 3 entries, rc 0 success
+ok sort
+  cn=localhost one cn asc: rc 0 success, 1 entries, sortResult 0 success
+  cn=localhost one cn asc order: REPLICATION
+  cn=localhost sub cn asc: rc 0 success, 2 entries, sortResult 0 success
+  cn=localhost sub cn asc order: localhost | REPLICATION
+  cn=localhost one cn desc: rc 0 success, 1 entries, sortResult 0 success
+  cn=localhost one cn desc order: REPLICATION
+  cn=localhost sub cn desc: rc 0 success, 2 entries, sortResult 0 success
+  cn=localhost sub cn desc order: REPLICATION | localhost
+  cn=localhost one objectclass,cn: rc 0 success, 1 entries, sortResult 0 success
+  cn=localhost sub objectclass,cn: rc 0 success, 2 entries, sortResult 0 success
+  cn=localhost one caseExactOrderingMatch: rc 0 success, 1 entries, sortResult 0 success
+  cn=localhost sub caseExactOrderingMatch: rc 0 success, 2 entries, sortResult 0 success
+  cn=localhost one nosuchattribute critical: rc 12 unavailableCriticalExtension, 0 entries, sortResult 16 noSuchAttribute
+  cn=localhost sub nosuchattribute critical: rc 12 unavailableCriticalExtension, 0 entries, sortResult 16 noSuchAttribute
+  cn=localhost one nosuchattribute: rc 0 success, 1 entries, sortResult 16 noSuchAttribute
+  cn=localhost sub nosuchattribute: rc 0 success, 2 entries, sortResult 16 noSuchAttribute
+  cn=localhost one four keys: rc 0 success, 1 entries, sortResult 11 adminLimitExceeded
+  cn=localhost sub four keys: rc 0 success, 2 entries, sortResult 11 adminLimitExceeded
+  cn=ibmpolicies one cn asc: rc 0 success, 2 entries, sortResult 0 success
+  cn=ibmpolicies one cn asc order: pwdPolicy | REPLICATION
+  cn=ibmpolicies sub cn asc: rc 0 success, 3 entries, sortResult 0 success
+  cn=ibmpolicies sub cn asc order: IBMpolicies | pwdPolicy | REPLICATION
+  cn=ibmpolicies one cn desc: rc 0 success, 2 entries, sortResult 0 success
+  cn=ibmpolicies one cn desc order: REPLICATION | pwdPolicy
+  cn=ibmpolicies sub cn desc: rc 0 success, 3 entries, sortResult 0 success
+  cn=ibmpolicies sub cn desc order: REPLICATION | pwdPolicy | IBMpolicies
+  cn=ibmpolicies one objectclass,cn: rc 0 success, 2 entries, sortResult 0 success
+  cn=ibmpolicies sub objectclass,cn: rc 0 success, 3 entries, sortResult 0 success
+  cn=ibmpolicies one caseExactOrderingMatch: rc 0 success, 2 entries, sortResult 0 success
+  cn=ibmpolicies sub caseExactOrderingMatch: rc 0 success, 3 entries, sortResult 0 success
+  cn=ibmpolicies one nosuchattribute critical: rc 12 unavailableCriticalExtension, 0 entries, sortResult 16 noSuchAttribute
+  cn=ibmpolicies sub nosuchattribute critical: rc 12 unavailableCriticalExtension, 0 entries, sortResult 16 noSuchAttribute
+  cn=ibmpolicies one nosuchattribute: rc 0 success, 2 entries, sortResult 16 noSuchAttribute
+  cn=ibmpolicies sub nosuchattribute: rc 0 success, 3 entries, sortResult 16 noSuchAttribute
+  cn=ibmpolicies one four keys: rc 0 success, 2 entries, sortResult 11 adminLimitExceeded
+  cn=ibmpolicies sub four keys: rc 0 success, 3 entries, sortResult 11 adminLimitExceeded
+ok sort-paged
+  cn=localhost sorted, size 1: 3 pages, 2 entries, rc 0 success
+  cn=localhost order: cn=localhost | CN=REPLICATION,CN=LOCALHOST
+  cn=ibmpolicies sorted, size 1: 4 pages, 3 entries, rc 0 success
+  cn=ibmpolicies order: CN=IBMPOLICIES | cn=pwdpolicy,cn=ibmpolicies | CN=REPLICATION,CN=IBMPOLICIES
+ok manage-dsa-it
+  cn=localhost manageDsaIT: rc 0 success, 1 entries
+  cn=localhost manageDsaIT critical: rc 0 success, 1 entries
+  cn=localhost without: rc 0 success, 1 entries
+  cn=ibmpolicies manageDsaIT: rc 0 success, 1 entries
+  cn=ibmpolicies manageDsaIT critical: rc 0 success, 1 entries
+  cn=ibmpolicies without: rc 0 success, 1 entries
+  dc=ldaptest-nowhere manageDsaIT: rc 32 noSuchObject, 0 entries
+  dc=ldaptest-nowhere manageDsaIT critical: rc 32 noSuchObject, 0 entries
+  dc=ldaptest-nowhere without: rc 32 noSuchObject, 0 entries
+  referral objects: rc 0 success, 0 entries
+ok psearch-accept
+  cn=localhost psearch: 1 of 1 initial entries, still open
+  after abandon: rc 53 unwillingToPerform, 0 entries
+  a second after abandon: rc 0 success, 1 entries
+  another connection: rc 0 success, 1 entries
+  cn=localhost psearch non-critical changesOnly: waiting (2 s)
+ok proxied-authz-anon
+  proxy "dn:cn=Administrator": rc 50 insufficientAccessRights, 0 entries
+  proxy "": rc 50 insufficientAccessRights, 0 entries
+  proxy "u:ldaptest-nobody": rc 50 insufficientAccessRights, 0 entries
+ok assertion-read
+  cn=localhost assert (cn=localhost) critical: rc 12 unavailableCriticalExtension, 0 entries
+  cn=localhost assert (cn=ldaptest-no) critical: rc 12 unavailableCriticalExtension, 0 entries
+  cn=localhost assert (cn=ldaptest-no): rc 0 success, 1 entries
+  cn=localhost compare with assertion: rc 12 unavailableCriticalExtension
+  cn=ibmpolicies assert (cn=ibmpolicies) critical: rc 12 unavailableCriticalExtension, 0 entries
+  cn=ibmpolicies assert (cn=ldaptest-no) critical: rc 12 unavailableCriticalExtension, 0 entries
+  cn=ibmpolicies assert (cn=ldaptest-no): rc 0 success, 1 entries
+  cn=ibmpolicies compare with assertion: rc 12 unavailableCriticalExtension
+ok unknown-control
+  unknown control critical: rc 12 unavailableCriticalExtension
+  unknown control: rc 0 success
+  paged results on compare, critical: rc 12 unavailableCriticalExtension
+ok unknown-extop
+  extended 1.3.6.1.4.1.99999.9.9: rc 2 protocolError
+  extended 1.3.6.1.4.1.99999.9.9 diag: unsupported extended operation
+  extended 1.3.6.1.4.1.99999.9.9 response name: None
+  extended 1.3.6.1.4.1.99999.9.8: rc 2 protocolError
+  extended 1.3.6.1.4.1.99999.9.8 diag: unsupported extended operation
+  extended 1.3.6.1.4.1.99999.9.8 response name: None
+  search after: rc 0 success, 1 entries
+ok whoami-anon
+  whoami: rc 2 protocolError
+  whoami diag: unsupported extended operation
+  whoami not advertised
+ok starttls
+  StartTLS: rc 2 protocolError
+  StartTLS with a value: rc 2 protocolError
+ok ldaps
+  LDAPS port 636: ConnectionRefused
+ok projected-anon
+  root: objectclass os400-root; attributes objectclass
+  one: rc 0 success, 0 entries []
+  sub: rc 0 success, 1 entries [OS400-SYS={system}]
+  sub profiles: rc 0 success, 0 entries []
+  accounts base: rc 0 success, 0 entries []
+  accounts one: rc 0 success, 0 entries []
+  QSECOFR: rc 0 success, 0 entries []
+  compare root objectClass: rc 6 compareTrue

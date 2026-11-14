@@ -104,7 +104,9 @@ impl<'a> Reader<'a> {
             if n == 0 || n > 4 || rest.len() < n {
                 return Err(Error::Decode(format!("BER length form {l0:#04x}")));
             }
-            let v = rest[..n].iter().fold(0usize, |a, b| (a << 8) | usize::from(*b));
+            let v = rest[..n]
+                .iter()
+                .fold(0usize, |a, b| (a << 8) | usize::from(*b));
             rest = &rest[n..];
             v
         };

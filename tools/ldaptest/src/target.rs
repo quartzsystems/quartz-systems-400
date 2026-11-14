@@ -144,7 +144,10 @@ pub struct Target {
 
 impl Target {
     /// Parses `args`, reading passwords and the oracle's host through `env`.
-    pub fn from_args(args: &[String], env: &dyn Fn(&str) -> Option<String>) -> Result<Target, Error> {
+    pub fn from_args(
+        args: &[String],
+        env: &dyn Fn(&str) -> Option<String>,
+    ) -> Result<Target, Error> {
         let mut t = Target {
             command: Command::Run,
             host: String::new(),
@@ -183,12 +186,17 @@ impl Target {
                 "--ldaps-port" => t.ldaps_port = num(a, val()?)?,
                 "--timeout" => t.timeout = Duration::from_secs(num(a, val()?)?),
                 "--suite" => {
-                    t.suites = val()?.split(',').map(Suite::parse).collect::<Result<_, _>>()?;
+                    t.suites = val()?
+                        .split(',')
+                        .map(Suite::parse)
+                        .collect::<Result<_, _>>()?;
                 }
                 "--only" => t.only = val()?.split(',').map(str::to_owned).collect(),
                 "--admin-dn" => val()?.clone_into(&mut t.admin_dn),
                 "--suffix" => t.suffix = Some(val()?.to_owned()),
-                "--profile" => t.profile = Some((val()?.to_ascii_uppercase(), env("LDAPTEST_PROFILE_PW"))),
+                "--profile" => {
+                    t.profile = Some((val()?.to_ascii_uppercase(), env("LDAPTEST_PROFILE_PW")))
+                }
                 "--disabled-profile" => {
                     t.disabled = Some((val()?.to_ascii_uppercase(), env("LDAPTEST_DISABLED_PW")));
                 }
@@ -200,14 +208,20 @@ impl Target {
                 "--page" => t.page = num(a, val()?)?,
                 "--binds" => t.binds = num(a, val()?)?,
                 "--out" => t.out = Some(val()?.into()),
-                s if s.starts_with("--") => return Err(Error::Usage(format!("unknown option {s}"))),
+                s if s.starts_with("--") => {
+                    return Err(Error::Usage(format!("unknown option {s}")));
+                }
                 s => pos.push(s),
             }
         }
         match (cert, key) {
             (Some(c), Some(k)) => t.client = Some((c, k)),
             (None, None) => {}
-            _ => return Err(Error::Usage("--client-cert and --client-key go together".into())),
+            _ => {
+                return Err(Error::Usage(
+                    "--client-cert and --client-key go together".into(),
+                ));
+            }
         }
         if t.command == Command::List {
             return Ok(t);
@@ -263,7 +277,8 @@ impl Target {
 }
 
 fn num<T: std::str::FromStr>(what: &str, s: &str) -> Result<T, Error> {
-    s.parse().map_err(|_| Error::Usage(format!("{what}: not a number: {s}")))
+    s.parse()
+        .map_err(|_| Error::Usage(format!("{what}: not a number: {s}")))
 }
 
 #[cfg(test)]
@@ -285,7 +300,11 @@ mod tests {
 
     #[test]
     fn run_with_options() {
-        let t = Target::from_args(&args("h --port 1389 --suite read,acl --suffix dc=t --profile qstest"), &env).unwrap();
+        let t = Target::from_args(
+            &args("h --port 1389 --suite read,acl --suffix dc=t --profile qstest"),
+            &env,
+        )
+        .unwrap();
         assert_eq!(t.command, Command::Run);
         assert_eq!(t.url(), "ldap://h:1389");
         assert_eq!(t.suites, [Suite::Read, Suite::Acl]);

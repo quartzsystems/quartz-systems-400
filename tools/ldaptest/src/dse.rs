@@ -27,7 +27,11 @@ impl RootDse {
         let f = c.find("", Scope::Base, "(objectClass=*)", &["*", "+"])?;
         c.close();
         crate::client::expect_rc("root DSE", &f.res, 0)?;
-        let e = f.entries.into_iter().next().ok_or_else(|| Error::Check("root DSE: no entry".into()))?;
+        let e = f
+            .entries
+            .into_iter()
+            .next()
+            .ok_or_else(|| Error::Check("root DSE: no entry".into()))?;
         let mut attrs: BTreeMap<String, Vec<String>> = BTreeMap::new();
         for (k, v) in e.attrs {
             attrs.entry(k.to_ascii_lowercase()).or_default().extend(v);
@@ -37,7 +41,9 @@ impl RootDse {
 
     /// The values of `name`.
     pub fn get(&self, name: &str) -> &[String] {
-        self.attrs.get(&name.to_ascii_lowercase()).map_or(&[], Vec::as_slice)
+        self.attrs
+            .get(&name.to_ascii_lowercase())
+            .map_or(&[], Vec::as_slice)
     }
 
     /// The first value of `name`.
@@ -57,7 +63,9 @@ impl RootDse {
 
     /// Whether `mech` is in `supportedSASLMechanisms`.
     pub fn sasl(&self, mech: &str) -> bool {
-        self.get("supportedSASLMechanisms").iter().any(|v| v.eq_ignore_ascii_case(mech))
+        self.get("supportedSASLMechanisms")
+            .iter()
+            .any(|v| v.eq_ignore_ascii_case(mech))
     }
 
     /// The projected backend's `os400-sys=` value, from `ibm-osregistrycontext`.
@@ -69,6 +77,8 @@ impl RootDse {
 
     /// The naming context, if any, equal to `dn` (case ignored).
     pub fn has_context(&self, dn: &str) -> bool {
-        self.get("namingContexts").iter().any(|v| v.eq_ignore_ascii_case(dn))
+        self.get("namingContexts")
+            .iter()
+            .any(|v| v.eq_ignore_ascii_case(dn))
     }
 }

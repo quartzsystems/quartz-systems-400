@@ -37,18 +37,37 @@ pub const LIST: [Scenario; 9] = [
 ];
 
 const fn o(name: &'static str, run: fn(&Ctx) -> Lines) -> Scenario {
-    Scenario { name, suite: Suite::Ext, oracle: true, run }
+    Scenario {
+        name,
+        suite: Suite::Ext,
+        oracle: true,
+        run,
+    }
 }
 
 const fn w(name: &'static str, run: fn(&Ctx) -> Lines) -> Scenario {
-    Scenario { name, suite: Suite::Ext, oracle: false, run }
+    Scenario {
+        name,
+        suite: Suite::Ext,
+        oracle: false,
+        run,
+    }
 }
 
 fn unknown_extop(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
-    for (oid, val) in [("1.3.6.1.4.1.99999.9.9", Some(vec![1u8, 2, 3])), ("1.3.6.1.4.1.99999.9.8", None)] {
-        let (e, r) = a.extended(Exop { name: Some(oid.into()), val }, vec![])?;
+    for (oid, val) in [
+        ("1.3.6.1.4.1.99999.9.9", Some(vec![1u8, 2, 3])),
+        ("1.3.6.1.4.1.99999.9.8", None),
+    ] {
+        let (e, r) = a.extended(
+            Exop {
+                name: Some(oid.into()),
+                val,
+            },
+            vec![],
+        )?;
         rc_lines(&format!("extended {oid}"), &r, &mut out);
         out.push(format!("extended {oid} response name: {:?}", e.name));
         check(r.rc != 0, || format!("{oid}: accepted"))?;
@@ -84,7 +103,15 @@ fn password_modify_anon(c: &Ctx) -> Lines {
     // write request, so not run against the oracle.
     let mut a = c.anon()?;
     let mut out = Vec::new();
-    let (_, r) = a.extended(PasswordModify { user_id: None, old_pass: None, new_pass: None }.into(), vec![])?;
+    let (_, r) = a.extended(
+        PasswordModify {
+            user_id: None,
+            old_pass: None,
+            new_pass: None,
+        }
+        .into(),
+        vec![],
+    )?;
     rc_lines("password modify, anonymous", &r, &mut out);
     check(r.rc != 0, || "anonymous password modify succeeded".into())?;
     Ok(out)
@@ -94,25 +121,48 @@ fn starttls(c: &Ctx) -> Lines {
     let mut out = Vec::new();
     match Conn::open(&c.t, Tls::StartTls) {
         Ok(mut s) => {
-            let f = s.find("", Scope::Base, "(objectClass=*)", &["security", "supportedExtension"])?;
+            let f = s.find(
+                "",
+                Scope::Base,
+                "(objectClass=*)",
+                &["security", "supportedExtension"],
+            )?;
             out.push(format!("StartTLS: established; root DSE {}", summary(&f)));
             // A second StartTLS on a protected connection is an error (RFC 4511 §4.14.1).
-            let (_, r) = s.extended(Exop { name: Some(STARTTLS.into()), val: None }, vec![])?;
+            let (_, r) = s.extended(
+                Exop {
+                    name: Some(STARTTLS.into()),
+                    val: None,
+                },
+                vec![],
+            )?;
             rc_lines("second StartTLS", &r, &mut out);
             check(r.rc != 0, || "a second StartTLS succeeded".into())?;
             s.close();
         }
         Err(Error::Ldap(ldap3::LdapError::LdapResult { result })) => {
             rc_lines("StartTLS", &result, &mut out);
-            if c.dse.extension(STARTTLS) && !c.t.is_oracle() && c.dse.one("security").is_some_and(|s| s != "none") {
-                return Err(Error::Check(format!("StartTLS refused: {}", crate::client::rc(&result))));
+            if c.dse.extension(STARTTLS)
+                && !c.t.is_oracle()
+                && c.dse.one("security").is_some_and(|s| s != "none")
+            {
+                return Err(Error::Check(format!(
+                    "StartTLS refused: {}",
+                    crate::client::rc(&result)
+                )));
             }
         }
         Err(e) => out.push(format!("StartTLS: {e}")),
     }
     // StartTLS with a value is a protocol error.
     let mut a = c.anon()?;
-    let (_, r) = a.extended(Exop { name: Some(STARTTLS.into()), val: Some(ber::octets(b"x")) }, vec![])?;
+    let (_, r) = a.extended(
+        Exop {
+            name: Some(STARTTLS.into()),
+            val: Some(ber::octets(b"x")),
+        },
+        vec![],
+    )?;
     rc_lines("StartTLS with a value", &r, &mut out);
     Ok(out)
 }
@@ -124,14 +174,27 @@ fn ldaps(c: &Ctx) -> Lines {
             let f = s.find("", Scope::Base, "(objectClass=*)", &["security", "port"])?;
             out.push(format!("LDAPS: established; root DSE {}", summary(&f)));
             if let Some(e) = f.entries.first() {
-                out.push(format!("security: {}", crate::client::values(e, "security").join(" ")));
+                out.push(format!(
+                    "security: {}",
+                    crate::client::values(e, "security").join(" ")
+                ));
             }
-            let (_, r) = s.extended(Exop { name: Some(STARTTLS.into()), val: None }, vec![])?;
+            let (_, r) = s.extended(
+                Exop {
+                    name: Some(STARTTLS.into()),
+                    val: None,
+                },
+                vec![],
+            )?;
             rc_lines("StartTLS over LDAPS", &r, &mut out);
             s.close();
         }
         Err(Error::Ldap(ldap3::LdapError::Io { source })) => {
-            out.push(format!("LDAPS port {}: {:?}", c.t.ldaps_port, source.kind()));
+            out.push(format!(
+                "LDAPS port {}: {:?}",
+                c.t.ldaps_port,
+                source.kind()
+            ));
         }
         Err(Error::Ldap(ldap3::LdapError::Timeout { .. })) => {
             out.push(format!("LDAPS port {}: timed out", c.t.ldaps_port));
@@ -157,7 +220,9 @@ fn sasl_external(c: &Ctx) -> Lines {
             let (e, r) = s.extended(WhoAmI.into(), vec![])?;
             expect_rc("whoami", &r, 0)?;
             let id = whoami_id(&e);
-            check(id.starts_with("dn:"), || format!("EXTERNAL identity {id:?}"))?;
+            check(id.starts_with("dn:"), || {
+                format!("EXTERNAL identity {id:?}")
+            })?;
             out.push(format!("{tls:?}: {id}"));
         } else {
             out.push(format!("{tls:?}: bound"));
@@ -172,11 +237,15 @@ fn sasl_external_no_cert(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let r = a.external()?;
     rc_lines("EXTERNAL in the clear", &r, &mut out);
-    check(r.rc != 0, || "EXTERNAL with no certificate succeeded".into())?;
+    check(r.rc != 0, || {
+        "EXTERNAL with no certificate succeeded".into()
+    })?;
     if let Ok(mut s) = Conn::open(&c.t, Tls::StartTls) {
         let r = s.external()?;
         rc_lines("EXTERNAL over TLS with no certificate", &r, &mut out);
-        check(r.rc != 0, || "EXTERNAL with no certificate succeeded".into())?;
+        check(r.rc != 0, || {
+            "EXTERNAL with no certificate succeeded".into()
+        })?;
     }
     Ok(out)
 }
@@ -189,10 +258,15 @@ fn whoami_bound(c: &Ctx) -> Lines {
     let (e, r) = u.extended(WhoAmI.into(), vec![])?;
     expect_rc("whoami", &r, 0)?;
     let id = whoami_id(&e);
-    check(id.eq_ignore_ascii_case(&format!("dn:{user}")), || format!("whoami {id}"))?;
+    check(id.eq_ignore_ascii_case(&format!("dn:{user}")), || {
+        format!("whoami {id}")
+    })?;
     let mut a = c.admin()?;
     let (e, _) = a.extended(WhoAmI.into(), vec![])?;
-    Ok(vec![format!("user: {id}"), format!("administrator: {}", whoami_id(&e))])
+    Ok(vec![
+        format!("user: {id}"),
+        format!("administrator: {}", whoami_id(&e)),
+    ])
 }
 
 fn password_modify(c: &Ctx) -> Lines {
@@ -202,7 +276,15 @@ fn password_modify(c: &Ctx) -> Lines {
     let mut out = Vec::new();
     // The user changes their own password.
     let mut u = c.bound(&user, "Old-pass-1")?;
-    let (_, r) = u.extended(PasswordModify { user_id: None, old_pass: Some("Old-pass-1"), new_pass: Some("New-pass-2") }.into(), vec![])?;
+    let (_, r) = u.extended(
+        PasswordModify {
+            user_id: None,
+            old_pass: Some("Old-pass-1"),
+            new_pass: Some("New-pass-2"),
+        }
+        .into(),
+        vec![],
+    )?;
     expect_rc("own password", &r, 0)?;
     u.close();
     let mut x = c.anon()?;
@@ -212,20 +294,48 @@ fn password_modify(c: &Ctx) -> Lines {
     out.push("own change: old refused, new accepted".into());
     // A wrong old password.
     let mut u = c.bound(&user, "New-pass-2")?;
-    let (_, r) = u.extended(PasswordModify { user_id: None, old_pass: Some("wrong"), new_pass: Some("Other-3") }.into(), vec![])?;
+    let (_, r) = u.extended(
+        PasswordModify {
+            user_id: None,
+            old_pass: Some("wrong"),
+            new_pass: Some("Other-3"),
+        }
+        .into(),
+        vec![],
+    )?;
     rc_lines("wrong old password", &r, &mut out);
     check(r.rc != 0, || "a wrong old password was taken".into())?;
     // The administrator resets it, with a generated password.
     let mut a = c.admin()?;
-    let (e, r) = a.extended(PasswordModify { user_id: Some(&format!("dn:{user}")), old_pass: None, new_pass: None }.into(), vec![])?;
+    let (e, r) = a.extended(
+        PasswordModify {
+            user_id: Some(&format!("dn:{user}")),
+            old_pass: None,
+            new_pass: None,
+        }
+        .into(),
+        vec![],
+    )?;
     expect_rc("reset", &r, 0)?;
-    let generated = <PasswordModifyResp as ExopParser>::parse(e.val.as_deref().unwrap_or(&[])).gen_pass;
+    let generated =
+        <PasswordModifyResp as ExopParser>::parse(e.val.as_deref().unwrap_or(&[])).gen_pass;
     check(!generated.is_empty(), || "no generated password".into())?;
     c.bound(&user, &generated)?.close();
-    out.push(format!("reset: a generated password of {} characters binds", generated.chars().count()));
+    out.push(format!(
+        "reset: a generated password of {} characters binds",
+        generated.chars().count()
+    ));
     // Anonymous users may not change another's.
     let mut n = c.anon()?;
-    let (_, r) = n.extended(PasswordModify { user_id: Some(&format!("dn:{user}")), old_pass: None, new_pass: Some("x-Y-z-9") }.into(), vec![])?;
+    let (_, r) = n.extended(
+        PasswordModify {
+            user_id: Some(&format!("dn:{user}")),
+            old_pass: None,
+            new_pass: Some("x-Y-z-9"),
+        }
+        .into(),
+        vec![],
+    )?;
     rc_lines("anonymous change of another's", &r, &mut out);
     check(r.rc != 0, || "anonymous change succeeded".into())?;
     Ok(out)

@@ -15,8 +15,12 @@ use crate::ldif::{self, Entry};
 use crate::target::Suite;
 
 /// This suite.
-pub const LIST: [Scenario; 1] =
-    [Scenario { name: "ldif-round-trip", suite: Suite::Ldif, oracle: false, run: ldif_round_trip }];
+pub const LIST: [Scenario; 1] = [Scenario {
+    name: "ldif-round-trip",
+    suite: Suite::Ldif,
+    oracle: false,
+    run: ldif_round_trip,
+}];
 
 /// An LDIF entry of a search entry.
 pub fn from_search(e: &SearchEntry) -> Entry {
@@ -40,25 +44,39 @@ fn ldif_round_trip(c: &Ctx) -> Lines {
     let generated = ldif::generate(&sb.dn, n);
     let text = ldif::write(&generated);
     let parsed = ldif::read(&text)?;
-    check(parsed.len() == n, || format!("{} entries read of {n}", parsed.len()))?;
+    check(parsed.len() == n, || {
+        format!("{} entries read of {n}", parsed.len())
+    })?;
     let started = std::time::Instant::now();
     for e in &parsed {
-        let attrs: Vec<(Vec<u8>, HashSet<Vec<u8>>)> =
-            e.attrs.iter().map(|(k, v)| (k.as_bytes().to_vec(), v.iter().cloned().collect())).collect();
+        let attrs: Vec<(Vec<u8>, HashSet<Vec<u8>>)> = e
+            .attrs
+            .iter()
+            .map(|(k, v)| (k.as_bytes().to_vec(), v.iter().cloned().collect()))
+            .collect();
         let r = sb.admin.add_bytes(&e.dn, attrs)?;
         crate::client::expect_rc(&format!("import {}", e.dn), &r, 0)?;
     }
     let import = started.elapsed();
-    let f = sb.admin.find(&sb.dn, Scope::OneLevel, "(objectClass=inetOrgPerson)", &["*"])?;
+    let f = sb.admin.find(
+        &sb.dn,
+        Scope::OneLevel,
+        "(objectClass=inetOrgPerson)",
+        &["*"],
+    )?;
     crate::client::expect_rc("export", &f.res, 0)?;
     let exported: Vec<Entry> = f.entries.iter().map(from_search).collect();
     let back = ldif::read(&ldif::write(&exported))?;
     let by_dn = |es: &[Entry]| -> BTreeMap<String, BTreeMap<String, Vec<Vec<u8>>>> {
-        es.iter().map(|e| (e.dn.to_ascii_lowercase(), e.normal())).collect()
+        es.iter()
+            .map(|e| (e.dn.to_ascii_lowercase(), e.normal()))
+            .collect()
     };
     let want = by_dn(&generated);
     let got = by_dn(&back);
-    check(want.len() == got.len(), || format!("{} exported of {}", got.len(), want.len()))?;
+    check(want.len() == got.len(), || {
+        format!("{} exported of {}", got.len(), want.len())
+    })?;
     let mut diffs = Vec::new();
     for (dn, attrs) in &want {
         match got.get(dn) {
@@ -85,10 +103,15 @@ fn ldif_round_trip(c: &Ctx) -> Lines {
             }
         }
     }
-    check(diffs.is_empty(), || format!("{} differences, first {}", diffs.len(), diffs[0]))?;
+    check(diffs.is_empty(), || {
+        format!("{} differences, first {}", diffs.len(), diffs[0])
+    })?;
     let b64 = text.lines().filter(|l| l.contains(":: ")).count();
     Ok(vec![
-        format!("{n} entries imported in {:.0} ms, exported and compared", import.as_secs_f64() * 1e3),
+        format!(
+            "{n} entries imported in {:.0} ms, exported and compared",
+            import.as_secs_f64() * 1e3
+        ),
         format!("{b64} base64 lines, LDIF {} bytes", text.len()),
     ])
 }

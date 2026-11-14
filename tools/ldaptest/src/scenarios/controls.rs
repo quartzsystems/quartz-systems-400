@@ -10,7 +10,9 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 
-use ldap3::controls::{Assertion, ManageDsaIt, PagedResults, PostRead, PreRead, ProxyAuth, RawControl, ReadEntryResp};
+use ldap3::controls::{
+    Assertion, ManageDsaIt, PagedResults, PostRead, PreRead, ProxyAuth, RawControl, ReadEntryResp,
+};
 use ldap3::exop::{WhoAmI, WhoAmIResp};
 use ldap3::{Mod, Scope};
 
@@ -23,9 +25,10 @@ use crate::target::Suite;
 use crate::{Error, Target};
 
 /// This suite.
-pub const LIST: [Scenario; 18] = [
+pub const LIST: [Scenario; 19] = [
     o("paged-results", paged_results),
     o("paged-abandon", paged_abandon),
+    o("paged-outstanding", paged_outstanding),
     o("paged-bad-cookie", paged_bad_cookie),
     o("sort", sort),
     o("sort-paged", sort_paged),
@@ -45,11 +48,21 @@ pub const LIST: [Scenario; 18] = [
 ];
 
 const fn o(name: &'static str, run: fn(&Ctx) -> Lines) -> Scenario {
-    Scenario { name, suite: Suite::Controls, oracle: true, run }
+    Scenario {
+        name,
+        suite: Suite::Controls,
+        oracle: true,
+        run,
+    }
 }
 
 const fn w(name: &'static str, run: fn(&Ctx) -> Lines) -> Scenario {
-    Scenario { name, suite: Suite::Controls, oracle: false, run }
+    Scenario {
+        name,
+        suite: Suite::Controls,
+        oracle: false,
+        run,
+    }
 }
 
 /// A paged search's outcome.
@@ -66,13 +79,48 @@ pub struct Paged {
 }
 
 /// Pages through `base` `size` at a time, `extra` controls on each request.
-pub fn paged(c: &mut Conn, base: &str, scope: Scope, filter: &str, size: i32, extra: &[RawControl]) -> Result<Paged, Error> {
+pub fn paged(
+    c: &mut Conn,
+    base: &str,
+    scope: Scope,
+    filter: &str,
+    size: i32,
+    extra: &[RawControl],
+) -> Result<Paged, Error> {
+    paged_with(c, base, scope, filter, size, extra, false)
+}
+
+/// [`paged`], the paged results control critical when `critical`.
+pub fn paged_with(
+    c: &mut Conn,
+    base: &str,
+    scope: Scope,
+    filter: &str,
+    size: i32,
+    extra: &[RawControl],
+    critical: bool,
+) -> Result<Paged, Error> {
     let mut p = Paged::default();
     let mut cookie = Vec::new();
     loop {
         let mut ctrls = extra.to_vec();
-        ctrls.push(PagedResults { size, cookie: cookie.clone() }.into());
-        let f = c.search(base, scope, filter, &["1.1"], &Opts { ctrls, ..Opts::default() })?;
+        let mut pr: RawControl = PagedResults {
+            size,
+            cookie: cookie.clone(),
+        }
+        .into();
+        pr.crit = critical;
+        ctrls.push(pr);
+        let f = c.search(
+            base,
+            scope,
+            filter,
+            &["1.1"],
+            &Opts {
+                ctrls,
+                ..Opts::default()
+            },
+        )?;
         p.pages += 1;
         p.dns.extend(f.dns());
         p.last = rc(&f.res);
@@ -98,13 +146,20 @@ fn paged_results(c: &Ctx) -> Lines {
         let all = a.find(&b, Scope::Subtree, "(objectClass=*)", &["1.1"])?;
         for size in [1, 2, 1000] {
             let p = paged(&mut a, &b, Scope::Subtree, "(objectClass=*)", size, &[])?;
-            out.push(format!("{b} size {size}: {} pages, {} entries, {}", p.pages, p.dns.len(), p.last));
+            out.push(format!(
+                "{b} size {size}: {} pages, {} entries, {}",
+                p.pages,
+                p.dns.len(),
+                p.last
+            ));
             if p.rc == 0 {
                 let mut x = p.dns.clone();
                 x.sort();
                 let mut y = all.dns();
                 y.sort();
-                check(x == y, || format!("{b} size {size}: paged entries differ from a plain search"))?;
+                check(x == y, || {
+                    format!("{b} size {size}: paged entries differ from a plain search")
+                })?;
             }
         }
     }
@@ -120,7 +175,16 @@ fn paged_abandon(c: &Ctx) -> Lines {
             Scope::Subtree,
             "(objectClass=*)",
             &["1.1"],
-            &Opts { ctrls: vec![PagedResults { size: 1, cookie: vec![] }.into()], ..Opts::default() },
+            &Opts {
+                ctrls: vec![
+                    PagedResults {
+                        size: 1,
+                        cookie: vec![],
+                    }
+                    .into(),
+                ],
+                ..Opts::default()
+            },
         )?;
         out.push(format!("{b} first page: {}", summary(&f)));
         let Some(cookie) = ctrl::find(&f.res.ctrls, ctrl::PAGED)
@@ -139,13 +203,94 @@ fn paged_abandon(c: &Ctx) -> Lines {
             Scope::Subtree,
             "(objectClass=*)",
             &["1.1"],
-            &Opts { ctrls: vec![PagedResults { size: 0, cookie }.into()], ..Opts::default() },
+            &Opts {
+                ctrls: vec![PagedResults { size: 0, cookie }.into()],
+                ..Opts::default()
+            },
         )?;
         let back = ctrl::find(&f.res.ctrls, ctrl::PAGED)
             .and_then(|r| r.val.as_deref())
-            .map(|v| <PagedResults as ldap3::controls::ControlParser>::parse(v).cookie.len());
-        out.push(format!("{b} size 0 with the cookie: {}, cookie octets {back:?}", summary(&f)));
+            .map(|v| {
+                <PagedResults as ldap3::controls::ControlParser>::parse(v)
+                    .cookie
+                    .len()
+            });
+        out.push(format!(
+            "{b} size 0 with the cookie: {}, cookie octets {back:?}",
+            summary(&f)
+        ));
     }
+    Ok(out)
+}
+
+/// Several paged searches left open at once on one connection (IBM keeps
+/// `ibm-slapdPagedResLmt`), then each ended with a size of 0.
+fn paged_outstanding(c: &Ctx) -> Lines {
+    let mut a = c.anon()?;
+    let mut out = Vec::new();
+    let Some(b) = bases(c).into_iter().last() else {
+        return crate::error::skip("no base to search");
+    };
+    let mut cookies = Vec::new();
+    for i in 1..=4 {
+        let f = a.search(
+            &b,
+            Scope::Subtree,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                ctrls: vec![
+                    PagedResults {
+                        size: 1,
+                        cookie: vec![],
+                    }
+                    .into(),
+                ],
+                ..Opts::default()
+            },
+        )?;
+        out.push(format!("{b} open {i}: {}", summary(&f)));
+        if !f.res.text.is_empty() {
+            out.push(format!("{b} open {i} diag: {}", f.res.text.trim()));
+        }
+        if let Some(v) = ctrl::find(&f.res.ctrls, ctrl::PAGED).and_then(|r| r.val.as_deref()) {
+            cookies.push(<PagedResults as ldap3::controls::ControlParser>::parse(v).cookie);
+        }
+    }
+    for (i, cookie) in cookies
+        .into_iter()
+        .enumerate()
+        .filter(|(_, k)| !k.is_empty())
+    {
+        let f = a.search(
+            &b,
+            Scope::Subtree,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                ctrls: vec![PagedResults { size: 0, cookie }.into()],
+                ..Opts::default()
+            },
+        )?;
+        out.push(format!("{b} end {}: {}", i + 1, summary(&f)));
+    }
+    let f = a.search(
+        &b,
+        Scope::Subtree,
+        "(objectClass=*)",
+        &["1.1"],
+        &Opts {
+            ctrls: vec![
+                PagedResults {
+                    size: 1,
+                    cookie: vec![],
+                }
+                .into(),
+            ],
+            ..Opts::default()
+        },
+    )?;
+    out.push(format!("{b} open after ending them: {}", summary(&f)));
     Ok(out)
 }
 
@@ -153,16 +298,44 @@ fn paged_bad_cookie(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
     for b in bases(c) {
-        let ctrls = vec![PagedResults { size: 1, cookie: b"ldaptest-not-a-cookie".to_vec() }.into()];
-        let f = a.search(&b, Scope::Subtree, "(objectClass=*)", &["1.1"], &Opts { ctrls, ..Opts::default() })?;
+        let ctrls = vec![
+            PagedResults {
+                size: 1,
+                cookie: b"ldaptest-not-a-cookie".to_vec(),
+            }
+            .into(),
+        ];
+        let f = a.search(
+            &b,
+            Scope::Subtree,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                ctrls,
+                ..Opts::default()
+            },
+        )?;
         out.push(format!("{b} bad cookie: {}", summary(&f)));
         if !f.res.text.is_empty() {
             out.push(format!("{b} bad cookie diag: {}", f.res.text.trim()));
         }
-        let mut crit: RawControl = PagedResults { size: 1, cookie: vec![] }.into();
-        crit.crit = true;
-        let f = a.search(&b, Scope::Subtree, "(objectClass=*)", &["1.1"], &Opts { ctrls: vec![crit], ..Opts::default() })?;
-        out.push(format!("{b} critical: {}", summary(&f)));
+        // Critical, paged to the end so nothing is left outstanding.
+        let mut fresh = c.anon()?;
+        let p = paged_with(
+            &mut fresh,
+            &b,
+            Scope::Subtree,
+            "(objectClass=*)",
+            1,
+            &[],
+            true,
+        )?;
+        out.push(format!(
+            "{b} critical: {} pages, {} entries, {}",
+            p.pages,
+            p.dns.len(),
+            p.last
+        ));
     }
     Ok(out)
 }
@@ -171,7 +344,12 @@ fn paged_bad_cookie(c: &Ctx) -> Lines {
 fn sort_result(f: &crate::client::Found) -> String {
     match ctrl::find(&f.res.ctrls, ctrl::SORT_RESPONSE).and_then(|r| r.val.as_deref()) {
         Some(v) => match ctrl::sort_response(v) {
-            Ok(r) => format!("sortResult {} {}{}", r.result, crate::code::name(r.result as u32), r.attr.map(|a| format!(" attr {a}")).unwrap_or_default()),
+            Ok(r) => format!(
+                "sortResult {} {}{}",
+                r.result,
+                crate::code::name(r.result as u32),
+                r.attr.map(|a| format!(" attr {a}")).unwrap_or_default()
+            ),
             Err(e) => format!("sort response undecodable: {e}"),
         },
         None => "no sort response".into(),
@@ -180,7 +358,14 @@ fn sort_result(f: &crate::client::Found) -> String {
 
 /// Values of `attr` per entry, in the order returned.
 fn first_values(f: &crate::client::Found, attr: &str) -> Vec<String> {
-    f.entries.iter().map(|e| values(e, attr).first().map_or(String::new(), |s| (*s).to_owned())).collect()
+    f.entries
+        .iter()
+        .map(|e| {
+            values(e, attr)
+                .first()
+                .map_or(String::new(), |s| (*s).to_owned())
+        })
+        .collect()
 }
 
 fn sort(c: &Ctx) -> Lines {
@@ -190,17 +375,63 @@ fn sort(c: &Ctx) -> Lines {
         for (label, keys, crit) in [
             ("cn asc", vec![SortKey::asc("cn")], true),
             ("cn desc", vec![SortKey::desc("cn")], true),
-            ("objectclass,cn", vec![SortKey::asc("objectClass"), SortKey::asc("cn")], false),
-            ("caseExactOrderingMatch", vec![SortKey { attr: "cn".into(), rule: Some("2.5.13.6".into()), reverse: false }], false),
-            ("nosuchattribute critical", vec![SortKey::asc("nosuchattribute")], true),
-            ("nosuchattribute", vec![SortKey::asc("nosuchattribute")], false),
-            ("four keys", vec![SortKey::asc("cn"), SortKey::asc("sn"), SortKey::asc("ou"), SortKey::asc("o")], false),
+            (
+                "objectclass,cn",
+                vec![SortKey::asc("objectClass"), SortKey::asc("cn")],
+                false,
+            ),
+            (
+                "caseExactOrderingMatch",
+                vec![SortKey {
+                    attr: "cn".into(),
+                    rule: Some("2.5.13.6".into()),
+                    reverse: false,
+                }],
+                false,
+            ),
+            (
+                "nosuchattribute critical",
+                vec![SortKey::asc("nosuchattribute")],
+                true,
+            ),
+            (
+                "nosuchattribute",
+                vec![SortKey::asc("nosuchattribute")],
+                false,
+            ),
+            (
+                "four keys",
+                vec![
+                    SortKey::asc("cn"),
+                    SortKey::asc("sn"),
+                    SortKey::asc("ou"),
+                    SortKey::asc("o"),
+                ],
+                false,
+            ),
         ] {
             for scope in [Scope::OneLevel, Scope::Subtree] {
-                let sl = if scope == Scope::OneLevel { "one" } else { "sub" };
+                let sl = if scope == Scope::OneLevel {
+                    "one"
+                } else {
+                    "sub"
+                };
                 let ctrls = vec![ctrl::sort_request(&keys, crit)];
-                let f = a.search(&b, scope, "(objectClass=*)", &["cn"], &Opts { ctrls, ..Opts::default() })?;
-                out.push(format!("{b} {sl} {label}: {}, {}", summary(&f), sort_result(&f)));
+                let f = a.search(
+                    &b,
+                    scope,
+                    "(objectClass=*)",
+                    &["cn"],
+                    &Opts {
+                        ctrls,
+                        ..Opts::default()
+                    },
+                )?;
+                out.push(format!(
+                    "{b} {sl} {label}: {}, {}",
+                    summary(&f),
+                    sort_result(&f)
+                ));
                 if label.starts_with("cn ") && f.res.rc == 0 {
                     let got = first_values(&f, "cn");
                     out.push(format!("{b} {sl} {label} order: {}", got.join(" | ")));
@@ -210,7 +441,9 @@ fn sort(c: &Ctx) -> Lines {
                     if label == "cn desc" {
                         want.reverse();
                     }
-                    check(got == want, || format!("{b} {sl} {label}: order {got:?}, wanted {want:?}"))?;
+                    check(got == want, || {
+                        format!("{b} {sl} {label}: order {got:?}, wanted {want:?}")
+                    })?;
                 }
             }
         }
@@ -233,7 +466,12 @@ fn sort_paged(c: &Ctx) -> Lines {
     for b in bases(c) {
         let s = ctrl::sort_request(&[SortKey::asc("cn")], false);
         let p = paged(&mut a, &b, Scope::Subtree, "(objectClass=*)", 1, &[s])?;
-        out.push(format!("{b} sorted, size 1: {} pages, {} entries, {}", p.pages, p.dns.len(), p.last));
+        out.push(format!(
+            "{b} sorted, size 1: {} pages, {} entries, {}",
+            p.pages,
+            p.dns.len(),
+            p.last
+        ));
         out.push(format!("{b} order: {}", p.dns.join(" | ")));
     }
     Ok(out)
@@ -248,13 +486,31 @@ fn manage_dsa_it(c: &Ctx) -> Lines {
         for crit in [false, true] {
             let mut m: RawControl = ManageDsaIt.into();
             m.crit = crit;
-            let f = a.search(&dn, Scope::Base, "(objectClass=*)", &["1.1"], &Opts { ctrls: vec![m], ..Opts::default() })?;
-            out.push(format!("{dn} manageDsaIT{}: {}", if crit { " critical" } else { "" }, summary(&f)));
+            let f = a.search(
+                &dn,
+                Scope::Base,
+                "(objectClass=*)",
+                &["1.1"],
+                &Opts {
+                    ctrls: vec![m],
+                    ..Opts::default()
+                },
+            )?;
+            out.push(format!(
+                "{dn} manageDsaIT{}: {}",
+                if crit { " critical" } else { "" },
+                summary(&f)
+            ));
         }
         let f = a.find(&dn, Scope::Base, "(objectClass=*)", &["1.1"])?;
         out.push(format!("{dn} without: {}", summary(&f)));
     }
-    let f = a.find(bases(c).first().map_or("", String::as_str), Scope::Subtree, "(objectClass=referral)", &["ref"])?;
+    let f = a.find(
+        bases(c).first().map_or("", String::as_str),
+        Scope::Subtree,
+        "(objectClass=referral)",
+        &["ref"],
+    )?;
     out.push(format!("referral objects: {}", summary(&f)));
     Ok(out)
 }
@@ -265,7 +521,10 @@ fn psearch_accept(c: &Ctx) -> Lines {
         return crate::error::skip("no base to search");
     };
     let mut probe = c.anon()?;
-    let n = probe.find(&b, Scope::OneLevel, "(objectClass=*)", &["1.1"])?.entries.len();
+    let n = probe
+        .find(&b, Scope::OneLevel, "(objectClass=*)", &["1.1"])?
+        .entries
+        .len();
     let mut a = c.anon()?;
     let raw = a.raw();
     raw.with_controls(vec![ctrl::psearch(15, false, true)]);
@@ -287,12 +546,20 @@ fn psearch_accept(c: &Ctx) -> Lines {
     if ended {
         rc_lines(&format!("{b} psearch ended"), &res, &mut out);
     } else {
-        out.push(format!("{b} psearch: {got} of {n} initial entries, still open"));
+        out.push(format!(
+            "{b} psearch: {got} of {n} initial entries, still open"
+        ));
         let _ = a.raw().abandon(id);
     }
-    // The connection serves another request after the abandon.
+    // What the connection answers after the abandon, at once and a second later.
     let f = a.find("", Scope::Base, "(objectClass=*)", &["1.1"])?;
     out.push(format!("after abandon: {}", summary(&f)));
+    thread::sleep(Duration::from_secs(1));
+    let f = a.find("", Scope::Base, "(objectClass=*)", &["1.1"])?;
+    out.push(format!("a second after abandon: {}", summary(&f)));
+    let mut fresh = c.anon()?;
+    let f = fresh.find("", Scope::Base, "(objectClass=*)", &["1.1"])?;
+    out.push(format!("another connection: {}", summary(&f)));
     let mut a2 = c.anon()?;
     let mut nc = ctrl::psearch(15, true, true);
     nc.crit = false;
@@ -303,10 +570,18 @@ fn psearch_accept(c: &Ctx) -> Lines {
     match st.next() {
         Ok(None) => {
             let res = st.result();
-            rc_lines(&format!("{b} psearch non-critical changesOnly"), &res, &mut out);
+            rc_lines(
+                &format!("{b} psearch non-critical changesOnly"),
+                &res,
+                &mut out,
+            );
         }
-        Ok(Some(_)) => out.push(format!("{b} psearch non-critical changesOnly: an entry with no change")),
-        Err(ldap3::LdapError::Timeout { .. }) => out.push(format!("{b} psearch non-critical changesOnly: waiting (2 s)")),
+        Ok(Some(_)) => out.push(format!(
+            "{b} psearch non-critical changesOnly: an entry with no change"
+        )),
+        Err(ldap3::LdapError::Timeout { .. }) => out.push(format!(
+            "{b} psearch non-critical changesOnly: waiting (2 s)"
+        )),
         Err(e) => return Err(e.into()),
     }
     Ok(out)
@@ -316,9 +591,27 @@ fn proxied_authz_anon(c: &Ctx) -> Lines {
     let mut a = c.anon()?;
     let mut out = Vec::new();
     let b = bases(c).into_iter().next().unwrap_or_default();
-    for id in [format!("dn:{}", c.t.admin_dn), String::new(), "u:ldaptest-nobody".into()] {
-        let ctrls = vec![ProxyAuth { authzid: id.clone() }.into()];
-        let f = a.search(&b, Scope::Base, "(objectClass=*)", &["1.1"], &Opts { ctrls, ..Opts::default() })?;
+    for id in [
+        format!("dn:{}", c.t.admin_dn),
+        String::new(),
+        "u:ldaptest-nobody".into(),
+    ] {
+        let ctrls = vec![
+            ProxyAuth {
+                authzid: id.clone(),
+            }
+            .into(),
+        ];
+        let f = a.search(
+            &b,
+            Scope::Base,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                ctrls,
+                ..Opts::default()
+            },
+        )?;
         out.push(format!("proxy \"{id}\": {}", summary(&f)));
         if !f.res.text.is_empty() {
             out.push(format!("proxy \"{id}\" diag: {}", f.res.text.trim()));
@@ -332,11 +625,28 @@ fn assertion_read(c: &Ctx) -> Lines {
     let mut out = Vec::new();
     for b in bases(c) {
         let v = b.split_once('=').map_or("", |(_, v)| v).to_owned();
-        for (flt, crit) in [(format!("(cn={v})"), true), ("(cn=ldaptest-no)".into(), true), ("(cn=ldaptest-no)".into(), false)] {
+        for (flt, crit) in [
+            (format!("(cn={v})"), true),
+            ("(cn=ldaptest-no)".into(), true),
+            ("(cn=ldaptest-no)".into(), false),
+        ] {
             let mut ac = Assertion::new(flt.clone());
             ac.crit = crit;
-            let f = a.search(&b, Scope::Base, "(objectClass=*)", &["1.1"], &Opts { ctrls: vec![ac], ..Opts::default() })?;
-            out.push(format!("{b} assert {flt}{}: {}", if crit { " critical" } else { "" }, summary(&f)));
+            let f = a.search(
+                &b,
+                Scope::Base,
+                "(objectClass=*)",
+                &["1.1"],
+                &Opts {
+                    ctrls: vec![ac],
+                    ..Opts::default()
+                },
+            )?;
+            out.push(format!(
+                "{b} assert {flt}{}: {}",
+                if crit { " critical" } else { "" },
+                summary(&f)
+            ));
         }
         let mut ac = Assertion::new(format!("(cn={v})"));
         ac.crit = true;
@@ -351,7 +661,16 @@ fn assertion_read(c: &Ctx) -> Lines {
         let b = bases(c).into_iter().next().unwrap_or_default();
         let mut ac = Assertion::new("(cn=ldaptest-no)");
         ac.crit = true;
-        let f = a.search(&b, Scope::Base, "(objectClass=*)", &["1.1"], &Opts { ctrls: vec![ac], ..Opts::default() })?;
+        let f = a.search(
+            &b,
+            Scope::Base,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                ctrls: vec![ac],
+                ..Opts::default()
+            },
+        )?;
         expect_rc("false assertion", &f.res, 122)?;
     }
     Ok(out)
@@ -362,13 +681,34 @@ fn unknown_control(c: &Ctx) -> Lines {
     let mut out = Vec::new();
     let b = bases(c).into_iter().next().unwrap_or_default();
     for crit in [true, false] {
-        let ctrls = vec![RawControl { ctype: "1.3.6.1.4.1.99999.1.2.3".into(), crit, val: Some(vec![1, 2, 3]) }];
-        let f = a.search(&b, Scope::Base, "(objectClass=*)", &["1.1"], &Opts { ctrls, ..Opts::default() })?;
-        rc_lines(&format!("unknown control{}", if crit { " critical" } else { "" }), &f.res, &mut out);
+        let ctrls = vec![RawControl {
+            ctype: "1.3.6.1.4.1.99999.1.2.3".into(),
+            crit,
+            val: Some(vec![1, 2, 3]),
+        }];
+        let f = a.search(
+            &b,
+            Scope::Base,
+            "(objectClass=*)",
+            &["1.1"],
+            &Opts {
+                ctrls,
+                ..Opts::default()
+            },
+        )?;
+        rc_lines(
+            &format!("unknown control{}", if crit { " critical" } else { "" }),
+            &f.res,
+            &mut out,
+        );
         expect_rc("unknown control", &f.res, if crit { 12 } else { 0 })?;
     }
     // A known request control on an operation it does not apply to.
-    let mut p: RawControl = PagedResults { size: 1, cookie: vec![] }.into();
+    let mut p: RawControl = PagedResults {
+        size: 1,
+        cookie: vec![],
+    }
+    .into();
     p.crit = true;
     let r = {
         let raw = a.raw();
@@ -387,20 +727,50 @@ fn paged_many(c: &Ctx) -> Lines {
     fill(&mut sb, c.t.entries)?;
     let mut a = c.admin()?;
     let started = std::time::Instant::now();
-    let p = paged(&mut a, &sb.dn, Scope::OneLevel, "(objectClass=person)", c.t.page, &[])?;
+    let p = paged(
+        &mut a,
+        &sb.dn,
+        Scope::OneLevel,
+        "(objectClass=person)",
+        c.t.page,
+        &[],
+    )?;
     let took = started.elapsed();
     check(p.rc == 0, || format!("paged: {}", p.last))?;
     let uniq: HashSet<&String> = p.dns.iter().collect();
-    check(p.dns.len() == c.t.entries && uniq.len() == c.t.entries, || {
-        format!("{} entries ({} distinct), wanted {}", p.dns.len(), uniq.len(), c.t.entries)
-    })?;
+    check(
+        p.dns.len() == c.t.entries && uniq.len() == c.t.entries,
+        || {
+            format!(
+                "{} entries ({} distinct), wanted {}",
+                p.dns.len(),
+                uniq.len(),
+                c.t.entries
+            )
+        },
+    )?;
     let want_pages = c.t.entries.div_ceil(usize::try_from(c.t.page).unwrap_or(1));
-    check(p.pages >= want_pages, || format!("{} pages, wanted at least {want_pages}", p.pages))?;
+    check(p.pages >= want_pages, || {
+        format!("{} pages, wanted at least {want_pages}", p.pages)
+    })?;
     // Anonymous users page too.
     let mut anon = c.anon()?;
-    let pa = paged(&mut anon, &sb.dn, Scope::OneLevel, "(objectClass=person)", c.t.page, &[])?;
+    let pa = paged(
+        &mut anon,
+        &sb.dn,
+        Scope::OneLevel,
+        "(objectClass=person)",
+        c.t.page,
+        &[],
+    )?;
     Ok(vec![
-        format!("{} entries in {} pages of {}, {:.0} ms", p.dns.len(), p.pages, c.t.page, took.as_secs_f64() * 1e3),
+        format!(
+            "{} entries in {} pages of {}, {:.0} ms",
+            p.dns.len(),
+            p.pages,
+            c.t.page,
+            took.as_secs_f64() * 1e3
+        ),
         format!("anonymous: {} entries, {}", pa.dns.len(), pa.last),
     ])
 }
@@ -412,7 +782,14 @@ pub fn fill(sb: &mut Sandbox, n: usize) -> Result<(), Error> {
         let sn = format!("s{:07}", (i * 7919) % n.max(1));
         sb.add(
             &format!("cn={cn}"),
-            &[("objectClass", &["top", "person", "organizationalPerson", "inetOrgPerson"]), ("cn", &[&cn]), ("sn", &[&sn])],
+            &[
+                (
+                    "objectClass",
+                    &["top", "person", "organizationalPerson", "inetOrgPerson"],
+                ),
+                ("cn", &[&cn]),
+                ("sn", &[&sn]),
+            ],
         )?;
     }
     Ok(())
@@ -425,7 +802,11 @@ fn sort_many(c: &Ctx) -> Lines {
     fill(&mut sb, n)?;
     let mut a = c.admin()?;
     let mut out = Vec::new();
-    for (label, key) in [("sn asc", SortKey::asc("sn")), ("sn desc", SortKey::desc("sn")), ("cn desc", SortKey::desc("cn"))] {
+    for (label, key) in [
+        ("sn asc", SortKey::asc("sn")),
+        ("sn desc", SortKey::desc("sn")),
+        ("cn desc", SortKey::desc("cn")),
+    ] {
         let ctrls = vec![ctrl::sort_request(std::slice::from_ref(&key), true)];
         let f = sb_search(&mut a, &sb.dn, &key.attr, ctrls)?;
         expect_rc(label, &f.res, 0)?;
@@ -435,14 +816,33 @@ fn sort_many(c: &Ctx) -> Lines {
         if key.reverse {
             want.reverse();
         }
-        check(got == want && got.len() == n, || format!("{label}: not in order ({} entries)", got.len()))?;
-        out.push(format!("{label}: {n} entries in order, {}", sort_result(&f)));
+        check(got == want && got.len() == n, || {
+            format!("{label}: not in order ({} entries)", got.len())
+        })?;
+        out.push(format!(
+            "{label}: {n} entries in order, {}",
+            sort_result(&f)
+        ));
     }
     Ok(out)
 }
 
-fn sb_search(a: &mut Conn, base: &str, attr: &str, ctrls: Vec<RawControl>) -> Result<crate::client::Found, Error> {
-    a.search(base, Scope::OneLevel, "(objectClass=person)", &[attr], &Opts { ctrls, ..Opts::default() })
+fn sb_search(
+    a: &mut Conn,
+    base: &str,
+    attr: &str,
+    ctrls: Vec<RawControl>,
+) -> Result<crate::client::Found, Error> {
+    a.search(
+        base,
+        Scope::OneLevel,
+        "(objectClass=person)",
+        &[attr],
+        &Opts {
+            ctrls,
+            ..Opts::default()
+        },
+    )
 }
 
 fn referrals(c: &Ctx) -> Lines {
@@ -450,24 +850,52 @@ fn referrals(c: &Ctx) -> Lines {
     let mut sb = c.sandbox("ref")?;
     let url = "ldap://ldaptest.invalid/ou=far,dc=example";
     let rdn = "ou=ref";
-    let dn = sb.add(rdn, &[("objectClass", &["top", "referral", "extensibleObject"]), ("ou", &["ref"]), ("ref", &[url])])?;
+    let dn = sb.add(
+        rdn,
+        &[
+            ("objectClass", &["top", "referral", "extensibleObject"]),
+            ("ou", &["ref"]),
+            ("ref", &[url]),
+        ],
+    )?;
     let mut a = c.anon()?;
     let mut out = Vec::new();
     let f = a.find(&sb.dn, Scope::Subtree, "(objectClass=*)", &["1.1"])?;
     out.push(format!("subtree: {}", summary(&f)));
-    check(f.refs.iter().any(|r| r.iter().any(|u| u.starts_with("ldap://ldaptest.invalid/"))), || {
-        format!("no continuation reference: {:?}", f.refs)
-    })?;
+    check(
+        f.refs
+            .iter()
+            .any(|r| r.iter().any(|u| u.starts_with("ldap://ldaptest.invalid/"))),
+        || format!("no continuation reference: {:?}", f.refs),
+    )?;
     let f = a.find(&dn, Scope::Base, "(objectClass=*)", &["1.1"])?;
     rc_lines("base on the referral", &f.res, &mut out);
     expect_rc("base on the referral", &f.res, 10)?;
-    let f = a.find(&format!("cn=below,{dn}"), Scope::Base, "(objectClass=*)", &["1.1"])?;
+    let f = a.find(
+        &format!("cn=below,{dn}"),
+        Scope::Base,
+        "(objectClass=*)",
+        &["1.1"],
+    )?;
     rc_lines("below the referral", &f.res, &mut out);
     expect_rc("below the referral", &f.res, 10)?;
     let m: RawControl = ManageDsaIt.into();
-    let f = a.search(&dn, Scope::Base, "(objectClass=*)", &["ref"], &Opts { ctrls: vec![m.clone()], ..Opts::default() })?;
+    let f = a.search(
+        &dn,
+        Scope::Base,
+        "(objectClass=*)",
+        &["ref"],
+        &Opts {
+            ctrls: vec![m.clone()],
+            ..Opts::default()
+        },
+    )?;
     expect_rc("manageDsaIT", &f.res, 0)?;
-    let refs: Vec<&str> = f.entries.first().map(|e| values(e, "ref")).unwrap_or_default();
+    let refs: Vec<&str> = f
+        .entries
+        .first()
+        .map(|e| values(e, "ref"))
+        .unwrap_or_default();
     check(refs == [url], || format!("ref {refs:?}"))?;
     out.push(format!("with manageDsaIT: {}", summary(&f)));
     // Compare and modify on it act on the referral object only with the control.
@@ -485,7 +913,12 @@ fn persistent_search(c: &Ctx) -> Lines {
     let raw = a.raw();
     raw.with_controls(vec![ctrl::psearch(15, true, true)]);
     raw.with_timeout(Duration::from_secs(15));
-    let mut st = raw.streaming_search(&sb.dn, Scope::Subtree, "(objectClass=*)", vec!["cn", "description"])?;
+    let mut st = raw.streaming_search(
+        &sb.dn,
+        Scope::Subtree,
+        "(objectClass=*)",
+        vec!["cn", "description"],
+    )?;
     let t: Target = c.t.clone();
     let base = sb.dn.clone();
     let writer = thread::spawn(move || -> Result<(), Error> {
@@ -494,9 +927,24 @@ fn persistent_search(c: &Ctx) -> Lines {
         let r = w.bind(&t.admin_dn, t.admin_pw.as_deref().unwrap_or(""))?;
         expect_rc("bind", &r, 0)?;
         let dn = format!("cn=ps,{base}");
-        let r = w.add(&dn, &[("objectClass", &["top", "person"]), ("cn", &["ps"]), ("sn", &["ps"])], vec![])?;
+        let r = w.add(
+            &dn,
+            &[
+                ("objectClass", &["top", "person"]),
+                ("cn", &["ps"]),
+                ("sn", &["ps"]),
+            ],
+            vec![],
+        )?;
         expect_rc("add", &r, 0)?;
-        let r = w.modify(&dn, vec![Mod::Replace("description".into(), HashSet::from(["changed".to_owned()]))], vec![])?;
+        let r = w.modify(
+            &dn,
+            vec![Mod::Replace(
+                "description".into(),
+                HashSet::from(["changed".to_owned()]),
+            )],
+            vec![],
+        )?;
         expect_rc("modify", &r, 0)?;
         let r = w.moddn(&dn, "cn=ps2", true, None)?;
         expect_rc("modify DN", &r, 0)?;
@@ -516,16 +964,41 @@ fn persistent_search(c: &Ctx) -> Lines {
         let e = ldap3::SearchEntry::construct(re);
         let change = match ecn {
             Some(v) => ctrl::entry_change(&v)?,
-            None => return Err(Error::Check(format!("{}: no entry change notification", e.dn))),
+            None => {
+                return Err(Error::Check(format!(
+                    "{}: no entry change notification",
+                    e.dn
+                )));
+            }
         };
-        out.push(format!("change {} {}{}", change.kind, e.dn, change.previous_dn.as_ref().map(|p| format!(" from {p}")).unwrap_or_default()));
+        out.push(format!(
+            "change {} {}{}",
+            change.kind,
+            e.dn,
+            change
+                .previous_dn
+                .as_ref()
+                .map(|p| format!(" from {p}"))
+                .unwrap_or_default()
+        ));
         kinds.push(change.kind);
     }
     let id = st.last_id();
     drop(st.result());
     let _ = a.raw().abandon(id);
-    writer.join().map_err(|_| Error::Check("writer panicked".into()))??;
-    check(kinds == [ctrl::change::ADD, ctrl::change::MODIFY, ctrl::change::MODDN, ctrl::change::DELETE], || format!("changes {kinds:?}, wanted add, modify, modDN, delete"))?;
+    writer
+        .join()
+        .map_err(|_| Error::Check("writer panicked".into()))??;
+    check(
+        kinds
+            == [
+                ctrl::change::ADD,
+                ctrl::change::MODIFY,
+                ctrl::change::MODDN,
+                ctrl::change::DELETE,
+            ],
+        || format!("changes {kinds:?}, wanted add, modify, modDN, delete"),
+    )?;
     drop(sb);
     Ok(out)
 }
@@ -540,16 +1013,35 @@ fn proxied_authz(c: &Ctx) -> Lines {
     let target = sb.child("ou=byproxy");
     let r = a.add(
         &target,
-        &[("objectClass", &["top", "organizationalUnit"]), ("ou", &["byproxy"])],
-        vec![ProxyAuth { authzid: format!("dn:{user}") }.into()],
+        &[
+            ("objectClass", &["top", "organizationalUnit"]),
+            ("ou", &["byproxy"]),
+        ],
+        vec![
+            ProxyAuth {
+                authzid: format!("dn:{user}"),
+            }
+            .into(),
+        ],
     )?;
     rc_lines("add as the user by proxy", &r, &mut out);
     expect_rc("add as the user by proxy", &r, 50)?;
     if c.dse.extension("1.3.6.1.4.1.4203.1.11.3") {
-        let (e, r) = a.extended(WhoAmI.into(), vec![ProxyAuth { authzid: format!("dn:{user}") }.into()])?;
+        let (e, r) = a.extended(
+            WhoAmI.into(),
+            vec![
+                ProxyAuth {
+                    authzid: format!("dn:{user}"),
+                }
+                .into(),
+            ],
+        )?;
         expect_rc("whoami by proxy", &r, 0)?;
-        let id = <WhoAmIResp as ldap3::exop::ExopParser>::parse(e.val.as_deref().unwrap_or(&[])).authzid;
-        check(id.eq_ignore_ascii_case(&format!("dn:{user}")), || format!("whoami by proxy: {id}"))?;
+        let id =
+            <WhoAmIResp as ldap3::exop::ExopParser>::parse(e.val.as_deref().unwrap_or(&[])).authzid;
+        check(id.eq_ignore_ascii_case(&format!("dn:{user}")), || {
+            format!("whoami by proxy: {id}")
+        })?;
         out.push(format!("whoami by proxy: {id}"));
     }
     // The user may not act as the administrator.
@@ -559,7 +1051,15 @@ fn proxied_authz(c: &Ctx) -> Lines {
         Scope::Base,
         "(objectClass=*)",
         &["1.1"],
-        &Opts { ctrls: vec![ProxyAuth { authzid: format!("dn:{}", c.t.admin_dn) }.into()], ..Opts::default() },
+        &Opts {
+            ctrls: vec![
+                ProxyAuth {
+                    authzid: format!("dn:{}", c.t.admin_dn),
+                }
+                .into(),
+            ],
+            ..Opts::default()
+        },
     )?;
     rc_lines("user proxying the administrator", &f.res, &mut out);
     expect_rc("user proxying the administrator", &f.res, 123)?;
@@ -577,11 +1077,21 @@ fn tree_delete(c: &Ctx) -> Lines {
     let r = sb.admin.delete(&top, vec![])?;
     rc_lines("delete without the control", &r, &mut out);
     expect_rc("delete without the control", &r, 66)?;
-    let r = sb.admin.delete(&top, vec![ctrl::bare(ctrl::TREE_DELETE, true)])?;
+    let r = sb
+        .admin
+        .delete(&top, vec![ctrl::bare(ctrl::TREE_DELETE, true)])?;
     expect_rc("tree delete", &r, 0)?;
-    let f = sb.admin.find(&sb.dn, Scope::Subtree, "(objectClass=*)", &["1.1"])?;
-    check(f.entries.len() == 1, || format!("{} entries left", f.entries.len()))?;
-    out.push(format!("tree delete: {}, sandbox has {} entry", rc(&r), f.entries.len()));
+    let f = sb
+        .admin
+        .find(&sb.dn, Scope::Subtree, "(objectClass=*)", &["1.1"])?;
+    check(f.entries.len() == 1, || {
+        format!("{} entries left", f.entries.len())
+    })?;
+    out.push(format!(
+        "tree delete: {}, sandbox has {} entry",
+        rc(&r),
+        f.entries.len()
+    ));
     // Anonymous users may not.
     let leaf = sb.ou("again", None)?;
     let mut a = c.anon()?;
@@ -594,7 +1104,14 @@ fn tree_delete(c: &Ctx) -> Lines {
 fn assertion_write(c: &Ctx) -> Lines {
     c.need_control(ctrl::ASSERTION, "assertion")?;
     let mut sb = c.sandbox("assert")?;
-    let dn = sb.add("cn=a", &[("objectClass", &["top", "person"]), ("cn", &["a"]), ("sn", &["one"])])?;
+    let dn = sb.add(
+        "cn=a",
+        &[
+            ("objectClass", &["top", "person"]),
+            ("cn", &["a"]),
+            ("sn", &["one"]),
+        ],
+    )?;
     let mut out = Vec::new();
     let replace = |v: &str| vec![Mod::Replace("sn".to_owned(), HashSet::from([v.to_owned()]))];
     let mut no = Assertion::new("(sn=other)");
@@ -606,8 +1123,14 @@ fn assertion_write(c: &Ctx) -> Lines {
     yes.crit = true;
     let r = sb.admin.modify(&dn, replace("two"), vec![yes])?;
     expect_rc("modify, true assertion", &r, 0)?;
-    let f = sb.admin.find(&dn, Scope::Base, "(objectClass=*)", &["sn"])?;
-    let sn: Vec<&str> = f.entries.first().map(|e| values(e, "sn")).unwrap_or_default();
+    let f = sb
+        .admin
+        .find(&dn, Scope::Base, "(objectClass=*)", &["sn"])?;
+    let sn: Vec<&str> = f
+        .entries
+        .first()
+        .map(|e| values(e, "sn"))
+        .unwrap_or_default();
     check(sn == ["two"], || format!("sn {sn:?}"))?;
     let mut no = Assertion::new("(sn=one)");
     no.crit = true;
@@ -621,11 +1144,24 @@ fn pre_post_read(c: &Ctx) -> Lines {
     c.need_control(ctrl::PRE_READ, "pre-read")?;
     c.need_control(ctrl::POST_READ, "post-read")?;
     let mut sb = c.sandbox("read")?;
-    let dn = sb.add("cn=r", &[("objectClass", &["top", "person"]), ("cn", &["r"]), ("sn", &["before"])])?;
+    let dn = sb.add(
+        "cn=r",
+        &[
+            ("objectClass", &["top", "person"]),
+            ("cn", &["r"]),
+            ("sn", &["before"]),
+        ],
+    )?;
     let r = sb.admin.modify(
         &dn,
-        vec![Mod::Replace("sn".to_owned(), HashSet::from(["after".to_owned()]))],
-        vec![PreRead::new(vec!["sn"]), PostRead::new(vec!["sn", "modifyTimestamp"])],
+        vec![Mod::Replace(
+            "sn".to_owned(),
+            HashSet::from(["after".to_owned()]),
+        )],
+        vec![
+            PreRead::new(vec!["sn"]),
+            PostRead::new(vec!["sn", "modifyTimestamp"]),
+        ],
     )?;
     expect_rc("modify", &r, 0)?;
     let get = |oid: &str| -> Result<ReadEntryResp, Error> {
@@ -636,20 +1172,44 @@ fn pre_post_read(c: &Ctx) -> Lines {
     };
     let pre = get(ctrl::PRE_READ)?;
     let post = get(ctrl::POST_READ)?;
-    let sn = |e: &ReadEntryResp| e.attrs.iter().find(|(k, _)| k.eq_ignore_ascii_case("sn")).map(|(_, v)| v.clone());
-    check(sn(&pre) == Some(vec!["before".into()]), || format!("pre-read {:?}", pre.attrs))?;
-    check(sn(&post) == Some(vec!["after".into()]), || format!("post-read {:?}", post.attrs))?;
+    let sn = |e: &ReadEntryResp| {
+        e.attrs
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("sn"))
+            .map(|(_, v)| v.clone())
+    };
+    check(sn(&pre) == Some(vec!["before".into()]), || {
+        format!("pre-read {:?}", pre.attrs)
+    })?;
+    check(sn(&post) == Some(vec!["after".into()]), || {
+        format!("post-read {:?}", post.attrs)
+    })?;
     // Post-read on an add, pre-read on a delete.
     let dn2 = sb.child("cn=r2");
-    let r = sb.admin.add(&dn2, &[("objectClass", &["top", "person"]), ("cn", &["r2"]), ("sn", &["x"])], vec![PostRead::new(vec!["cn"])])?;
+    let r = sb.admin.add(
+        &dn2,
+        &[
+            ("objectClass", &["top", "person"]),
+            ("cn", &["r2"]),
+            ("sn", &["x"]),
+        ],
+        vec![PostRead::new(vec!["cn"])],
+    )?;
     expect_rc("add with post-read", &r, 0)?;
-    check(ctrl::find(&r.ctrls, ctrl::POST_READ).is_some(), || "add: no post-read response".into())?;
+    check(ctrl::find(&r.ctrls, ctrl::POST_READ).is_some(), || {
+        "add: no post-read response".into()
+    })?;
     let r = sb.admin.delete(&dn2, vec![PreRead::new(vec!["sn"])])?;
     expect_rc("delete with pre-read", &r, 0)?;
-    check(ctrl::find(&r.ctrls, ctrl::PRE_READ).is_some(), || "delete: no pre-read response".into())?;
+    check(ctrl::find(&r.ctrls, ctrl::PRE_READ).is_some(), || {
+        "delete: no pre-read response".into()
+    })?;
     Ok(vec![
         format!("pre-read sn: {:?}", sn(&pre).unwrap_or_default()),
-        format!("post-read: {}", crate::client::names(&post.attrs, &post.bin_attrs).join(" ")),
+        format!(
+            "post-read: {}",
+            crate::client::names(&post.attrs, &post.bin_attrs).join(" ")
+        ),
     ])
 }
 

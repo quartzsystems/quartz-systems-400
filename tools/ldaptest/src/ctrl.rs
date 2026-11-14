@@ -49,12 +49,20 @@ pub struct SortKey {
 impl SortKey {
     /// Ascending by `attr`.
     pub fn asc(attr: &str) -> Self {
-        SortKey { attr: attr.into(), rule: None, reverse: false }
+        SortKey {
+            attr: attr.into(),
+            rule: None,
+            reverse: false,
+        }
     }
 
     /// Descending by `attr`.
     pub fn desc(attr: &str) -> Self {
-        SortKey { attr: attr.into(), rule: None, reverse: true }
+        SortKey {
+            attr: attr.into(),
+            rule: None,
+            reverse: true,
+        }
     }
 }
 
@@ -154,12 +162,20 @@ pub fn entry_change(val: &[u8]) -> Result<EntryChange, Error> {
     if r.peek() == Some(tag::INTEGER) {
         number = Some(r.int(tag::INTEGER)?);
     }
-    Ok(EntryChange { kind, previous_dn, number })
+    Ok(EntryChange {
+        kind,
+        previous_dn,
+        number,
+    })
 }
 
 /// A control with no value.
 pub fn bare(oid: &str, critical: bool) -> RawControl {
-    RawControl { ctype: oid.into(), crit: critical, val: None }
+    RawControl {
+        ctype: oid.into(),
+        crit: critical,
+        val: None,
+    }
 }
 
 /// The first control of type `oid` among `ctrls`, as raw.
@@ -178,7 +194,10 @@ mod tests {
         assert!(c.crit);
         assert_eq!(
             c.val.unwrap(),
-            [0x30, 0x0f, 0x30, 0x04, 0x04, 0x02, b'c', b'n', 0x30, 0x07, 0x04, 0x02, b's', b'n', 0x81, 0x01, 0xff]
+            [
+                0x30, 0x0f, 0x30, 0x04, 0x04, 0x02, b'c', b'n', 0x30, 0x07, 0x04, 0x02, b's', b'n',
+                0x81, 0x01, 0xff
+            ]
         );
     }
 
@@ -186,11 +205,17 @@ mod tests {
     fn sort_response_forms() {
         assert_eq!(
             sort_response(&[0x30, 0x03, 0x0a, 0x01, 0x00]).unwrap(),
-            SortResponse { result: 0, attr: None }
+            SortResponse {
+                result: 0,
+                attr: None
+            }
         );
         assert_eq!(
             sort_response(&[0x30, 0x07, 0x0a, 0x01, 0x10, 0x80, 0x02, b'c', b'n']).unwrap(),
-            SortResponse { result: 16, attr: Some("cn".into()) }
+            SortResponse {
+                result: 16,
+                attr: Some("cn".into())
+            }
         );
         assert!(sort_response(&[0x30, 0x02, 0x0a, 0x01]).is_err());
     }
@@ -198,15 +223,30 @@ mod tests {
     #[test]
     fn psearch_and_ecn() {
         let c = psearch(15, true, true);
-        assert_eq!(c.val.unwrap(), [0x30, 0x09, 0x02, 0x01, 0x0f, 0x01, 0x01, 0xff, 0x01, 0x01, 0xff]);
-        let ecn = [0x30, 0x0b, 0x0a, 0x01, 0x08, 0x04, 0x03, b'o', b'=', b'x', 0x02, 0x01, 0x07];
+        assert_eq!(
+            c.val.unwrap(),
+            [
+                0x30, 0x09, 0x02, 0x01, 0x0f, 0x01, 0x01, 0xff, 0x01, 0x01, 0xff
+            ]
+        );
+        let ecn = [
+            0x30, 0x0b, 0x0a, 0x01, 0x08, 0x04, 0x03, b'o', b'=', b'x', 0x02, 0x01, 0x07,
+        ];
         assert_eq!(
             entry_change(&ecn).unwrap(),
-            EntryChange { kind: 8, previous_dn: Some("o=x".into()), number: Some(7) }
+            EntryChange {
+                kind: 8,
+                previous_dn: Some("o=x".into()),
+                number: Some(7)
+            }
         );
         assert_eq!(
             entry_change(&[0x30, 0x03, 0x0a, 0x01, 0x01]).unwrap(),
-            EntryChange { kind: 1, previous_dn: None, number: None }
+            EntryChange {
+                kind: 1,
+                previous_dn: None,
+                number: None
+            }
         );
     }
 }

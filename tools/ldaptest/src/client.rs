@@ -66,7 +66,11 @@ impl Conn {
 
     /// A new connection, presenting the client certificate when `with_cert`.
     pub fn open_with(t: &Target, tls: Tls, with_cert: bool) -> Result<Conn, Error> {
-        Ok(Conn { c: conn::open_with(t, tls, with_cert)?, timeout: t.timeout, read_only: t.is_oracle() })
+        Ok(Conn {
+            c: conn::open_with(t, tls, with_cert)?,
+            timeout: t.timeout,
+            read_only: t.is_oracle(),
+        })
     }
 
     /// The underlying connection, with the timeout set for its next operation.
@@ -86,7 +90,9 @@ impl Conn {
     /// A simple bind. Refused in oracle mode unless anonymous.
     pub fn bind(&mut self, dn: &str, pw: &str) -> Result<LdapResult, Error> {
         if self.read_only && !(dn.is_empty() && pw.is_empty()) {
-            return Err(Error::Check("bind refused: read-only run binds anonymously only".into()));
+            return Err(Error::Check(
+                "bind refused: read-only run binds anonymously only".into(),
+            ));
         }
         Ok(self.raw().simple_bind(dn, pw)?)
     }
@@ -98,8 +104,18 @@ impl Conn {
     }
 
     /// A search.
-    pub fn search(&mut self, base: &str, scope: Scope, filter: &str, attrs: &[&str], o: &Opts) -> Result<Found, Error> {
-        let opts = SearchOptions::new().sizelimit(o.size).timelimit(o.time).typesonly(o.types_only);
+    pub fn search(
+        &mut self,
+        base: &str,
+        scope: Scope,
+        filter: &str,
+        attrs: &[&str],
+        o: &Opts,
+    ) -> Result<Found, Error> {
+        let opts = SearchOptions::new()
+            .sizelimit(o.size)
+            .timelimit(o.time)
+            .typesonly(o.types_only);
         let c = self.raw();
         c.with_search_options(opts);
         if !o.ctrls.is_empty() {
@@ -110,7 +126,13 @@ impl Conn {
     }
 
     /// A search with no options.
-    pub fn find(&mut self, base: &str, scope: Scope, filter: &str, attrs: &[&str]) -> Result<Found, Error> {
+    pub fn find(
+        &mut self,
+        base: &str,
+        scope: Scope,
+        filter: &str,
+        attrs: &[&str],
+    ) -> Result<Found, Error> {
         self.search(base, scope, filter, attrs, &Opts::default())
     }
 
@@ -120,7 +142,11 @@ impl Conn {
     }
 
     /// An extended operation, with controls.
-    pub fn extended(&mut self, exop: Exop, ctrls: Vec<RawControl>) -> Result<(Exop, LdapResult), Error> {
+    pub fn extended(
+        &mut self,
+        exop: Exop,
+        ctrls: Vec<RawControl>,
+    ) -> Result<(Exop, LdapResult), Error> {
         let c = self.raw();
         if !ctrls.is_empty() {
             c.with_controls(ctrls);
@@ -130,11 +156,21 @@ impl Conn {
     }
 
     /// An add. Refused in oracle mode.
-    pub fn add(&mut self, dn: &str, attrs: &[(&str, &[&str])], ctrls: Vec<RawControl>) -> Result<LdapResult, Error> {
+    pub fn add(
+        &mut self,
+        dn: &str,
+        attrs: &[(&str, &[&str])],
+        ctrls: Vec<RawControl>,
+    ) -> Result<LdapResult, Error> {
         self.writable("add")?;
         let v: Vec<(String, HashSet<String>)> = attrs
             .iter()
-            .map(|(n, vals)| ((*n).to_owned(), vals.iter().map(|s| (*s).to_owned()).collect()))
+            .map(|(n, vals)| {
+                (
+                    (*n).to_owned(),
+                    vals.iter().map(|s| (*s).to_owned()).collect(),
+                )
+            })
             .collect();
         let c = self.raw();
         if !ctrls.is_empty() {
@@ -144,13 +180,22 @@ impl Conn {
     }
 
     /// An add of byte values. Refused in oracle mode.
-    pub fn add_bytes(&mut self, dn: &str, attrs: Vec<(Vec<u8>, HashSet<Vec<u8>>)>) -> Result<LdapResult, Error> {
+    pub fn add_bytes(
+        &mut self,
+        dn: &str,
+        attrs: Vec<(Vec<u8>, HashSet<Vec<u8>>)>,
+    ) -> Result<LdapResult, Error> {
         self.writable("add")?;
         Ok(self.raw().add(dn, attrs)?)
     }
 
     /// A modify. Refused in oracle mode.
-    pub fn modify(&mut self, dn: &str, mods: Vec<Mod<String>>, ctrls: Vec<RawControl>) -> Result<LdapResult, Error> {
+    pub fn modify(
+        &mut self,
+        dn: &str,
+        mods: Vec<Mod<String>>,
+        ctrls: Vec<RawControl>,
+    ) -> Result<LdapResult, Error> {
         self.writable("modify")?;
         let c = self.raw();
         if !ctrls.is_empty() {
@@ -160,7 +205,13 @@ impl Conn {
     }
 
     /// A modify DN. Refused in oracle mode.
-    pub fn moddn(&mut self, dn: &str, rdn: &str, delete_old: bool, sup: Option<&str>) -> Result<LdapResult, Error> {
+    pub fn moddn(
+        &mut self,
+        dn: &str,
+        rdn: &str,
+        delete_old: bool,
+        sup: Option<&str>,
+    ) -> Result<LdapResult, Error> {
         self.writable("modify DN")?;
         Ok(self.raw().modifydn(dn, rdn, delete_old, sup)?)
     }
@@ -183,7 +234,12 @@ impl Conn {
 
 /// Splits raw entries into entries and references.
 pub fn split(raw: Vec<ResultEntry>, res: LdapResult) -> Found {
-    let mut f = Found { entries: Vec::new(), entry_ctrls: Vec::new(), refs: Vec::new(), res };
+    let mut f = Found {
+        entries: Vec::new(),
+        entry_ctrls: Vec::new(),
+        refs: Vec::new(),
+        res,
+    };
     for re in raw {
         if re.is_ref() {
             f.refs.push(ldap3::parse_refs(re.0));
@@ -217,8 +273,15 @@ pub fn rc_lines(what: &str, res: &LdapResult, out: &mut Vec<String>) {
 }
 
 /// An attribute map's names, lower-cased and sorted.
-pub fn names(attrs: &HashMap<String, Vec<String>>, bin: &HashMap<String, Vec<Vec<u8>>>) -> Vec<String> {
-    let mut v: Vec<String> = attrs.keys().chain(bin.keys()).map(|k| k.to_ascii_lowercase()).collect();
+pub fn names(
+    attrs: &HashMap<String, Vec<String>>,
+    bin: &HashMap<String, Vec<Vec<u8>>>,
+) -> Vec<String> {
+    let mut v: Vec<String> = attrs
+        .keys()
+        .chain(bin.keys())
+        .map(|k| k.to_ascii_lowercase())
+        .collect();
     v.sort();
     v.dedup();
     v
@@ -236,12 +299,21 @@ pub fn values<'a>(e: &'a SearchEntry, name: &str) -> Vec<&'a str> {
 /// Fails unless `res` has code `want`.
 pub fn expect_rc(what: &str, res: &LdapResult, want: u32) -> Result<(), Error> {
     crate::error::check(res.rc == want, || {
-        format!("{what}: {}, wanted {want} {}{}", rc(res), code::name(want), diag(res))
+        format!(
+            "{what}: {}, wanted {want} {}{}",
+            rc(res),
+            code::name(want),
+            diag(res)
+        )
     })
 }
 
 fn diag(res: &LdapResult) -> String {
-    if res.text.is_empty() { String::new() } else { format!(" ({})", res.text.trim()) }
+    if res.text.is_empty() {
+        String::new()
+    } else {
+        format!(" ({})", res.text.trim())
+    }
 }
 
 #[cfg(test)]
@@ -254,7 +326,10 @@ mod tests {
     fn oracle_connections_are_read_only() {
         let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let port = l.local_addr().unwrap().port().to_string();
-        let args: Vec<String> = ["oracle", "--port", &port, "--timeout", "2"].iter().map(|s| (*s).to_owned()).collect();
+        let args: Vec<String> = ["oracle", "--port", &port, "--timeout", "2"]
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect();
         let env = |k: &str| (k == "QS_ORACLE_HOST").then(|| "127.0.0.1".to_owned());
         let t = Target::from_args(&args, &env).unwrap();
         let mut c = Conn::open(&t, Tls::None).unwrap();
