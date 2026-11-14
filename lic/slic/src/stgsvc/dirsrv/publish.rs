@@ -51,14 +51,12 @@ fn only_qdirsrv(job: &JobInfo) -> Result<(), String> {
     if job.user.trim().eq_ignore_ascii_case(USER) {
         Ok(())
     } else {
-        Err(format!(
-            "CPF2189 Only the publishing jobs, as {USER}, ask for this."
-        ))
+        Err(format!("CPF2189 {USER}"))
     }
 }
 
 fn kind_of(agent: &str) -> Result<Kind, String> {
-    Kind::from_name(agent).ok_or_else(|| format!("CPF9898 No publishing agent {agent}."))
+    Kind::from_name(agent).ok_or_else(|| format!("CPF9898 {agent}"))
 }
 
 /// The configuration as the file has it; none when there is no file.
@@ -95,7 +93,8 @@ pub fn write_config(
             None => None,
             Some(p) => {
                 let key = crate::stgsvc::certs::sealer(system).ok_or_else(|| {
-                    "CPF9898 The LIC partition holds no key to keep the password with.".to_string()
+                    eprintln!("slic: {}: the LIC partition holds no key", config::PATH);
+                    format!("GLD0127 {}", config::PATH)
                 })?;
                 Some(config::seal_password(&key, *kind, p).map_err(|e| format!("CPF9898 {e}"))?)
             }
@@ -127,13 +126,17 @@ pub fn config(system: &mut System, job: &JobInfo) -> Result<PubConfig, String> {
     let mut passwords = Vec::new();
     for a in &cfg.agents {
         let Some(sealed) = &a.bind_pw else { continue };
-        let key = crate::stgsvc::certs::sealer(system)
-            .ok_or_else(|| "CPF9898 The LIC partition holds no key.".to_string())?;
+        let key = crate::stgsvc::certs::sealer(system).ok_or_else(|| {
+            eprintln!("slic: {}: the LIC partition holds no key", config::PATH);
+            format!("GLD0127 {}", config::PATH)
+        })?;
         let pw = config::unseal_password(&key, a.kind, sealed).map_err(|e| {
-            format!(
-                "CPF9898 The {} agent's password does not open: {e}",
+            eprintln!(
+                "slic: {}: the {} agent's password does not open: {e}",
+                config::PATH,
                 a.kind.name()
-            )
+            );
+            format!("GLD0127 {}", config::PATH)
         })?;
         passwords.push((a.kind.name().to_string(), pw));
     }
