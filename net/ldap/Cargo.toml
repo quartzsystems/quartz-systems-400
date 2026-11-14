@@ -7,8 +7,12 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+tls = { path = "../../net/tls", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
+
+[dev-dependencies]
+certs = { path = "../../net/certs", version = "0.1.0" }
 
 [lints]
 workspace = true
