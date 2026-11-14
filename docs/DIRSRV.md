@@ -909,7 +909,19 @@ root (as the primary shows).
   passwords (49 with the password policy response control's
   `passwordExpired`), `QMAXSIGN` counting and `QMAXSGNACN` acting on the
   invalid attempts, `QAUDJRN` `PW` entries for failures as for any
-  sign-on (`SECURITY.md`). The bound identity is the DN, and the
+  sign-on (`SECURITY.md`). The service makes the check with the
+  call every server's sign-on makes, `sec::signon::sign_on(txn, qsys,
+  &Attempt { user, password, device: String::new(), console: false,
+  sessions: 0, now, proof: None, ticket: false }, &Values::from_sysvals(..),
+  &|_, _| None)`, in a transaction it commits whatever the answer (the
+  count and a disabling are kept): it records the `PW` entry (`U` no
+  such profile, `P` wrong password, `Q` disabled) with
+  `sec::audit::record`, which the service drains after the request as
+  for any other, counts `QMAXSIGN` and disables the profile under
+  `QMAXSGNACN` 2 or 3 (with no device there is nothing to vary off).
+  `Err(Refused)` answers 49 (`CPF1393`, `CPF1394` and `CPF1118` too);
+  `Ok` with `Next::ChangePassword` is the expired password. The bound
+  identity is the DN, and the
   profile's groups are its groups for access control. A profile with
   function usage `QIBM_DIRSRV_ADMIN` allowed binds as an administrator
   (IBM's administrative group of OS profiles);
@@ -1222,13 +1234,37 @@ evaluated in the service:
 
 **Auditing**: every bind, search, compare, add, modify, delete, modify
 DN and extended operation reaches the `Audit` hook (`ops::AuditEvent`:
-the operation, the DN it named, the session's DN, the result code). The
-service writes them to `QAUDJRN` (entry type `DI`, directory service,
-with IBM's subtype letters where IBM documents them) when `ibm-audit:
-true` and the operation's switch is on; `PW` for failed profile binds
-as §9. `QSSECCHK` learns three checks: anonymous binds allowed, simple
-binds accepted without TLS on 389 (`ibm-slapdSecurity: none`), an
-administrator password unset or one of the well-known defaults.
+the operation, the DN it named, the session's DN, the result code).
+The hook's implementation in the service writes it. Auditing goes to `QAUDJRN` as entry type `DI` when `ibm-audit: true`
+and the operation's switch is on (`ibm-auditBind`, `ibm-auditAdd` ...;
+`ibm-auditFailedOPonly` keeps the failures only): the service calls
+`sec::audit::di::audit_di(op, &DiFields { .. })` with `op` one of
+IBM's `DIOPER` codes (`Op::Bind` `BN`, `Op::PasswordFail` `PW`,
+`Op::AuthFail` `AF`, `Op::Create` `CO`, `Op::Delete` `DO`,
+`Op::Rename` `OM`, `Op::Change` `ZC`, `Op::Read` `ZR`,
+`Op::AclChange` `CA`, `Op::OwnerChange` `OW`, `Op::PasswordChange`
+`CP`, `Op::ConfigChange` `CF`, `Op::Unbind` `UB`, ...) and the
+instance, connection, client address, TLS flag, bound DN, entry DN and
+the old and new values. The entry is written when `QAUDLVL` selects
+the operation's value: `*AUTFAIL` for `AF` and `PW`, `*CREATE`,
+`*DELETE`, `*OBJMGT` for `CO`, `DO`, `OM`, object auditing
+(`QAUDCTL(*OBJAUD)`) for `ZC` and `ZR`, and `*SECDIRSRV` (in
+`*SECURITY`) for the rest. The layout is `SECURITY.md` §7 `AuditDI`
+(audit layouts version 2), its fields IBM's `QASYDIJ4`
+(`tools/conformance/oracle/dirsrv/qasydij4-primary.txt`); the value
+sets of `DIACOD`, `DICCHG`, `DICCOD`, `DIBNDC` and `DIRTYP` are not
+settled (NEEDS-CODY, §17 item 5). A failed bind as an OS profile also
+writes `PW` (§9).
+
+`QSSECCHK` checks each instance of the instance list (area `DIRSRV`,
+`SECURITY.md` §10): anonymous binds allowed (`ibm-slapdAllowAnon:
+TRUE`, a warning), no TLS (`ibm-slapdSecurity: none`, so simple binds
+on 389 send passwords in the clear, a warning), and the administrator
+password: unset is a warning (binds as the administrator are refused,
+so nothing is open), one that verifies as a well-known password
+(`secret`, `password`, `admin`, `administrator`, `root`, `qsecofr`, the
+instance's name, in lower, upper and capitalized case) a failure. The
+shipped `QUSRDIR` gives the three warnings.
 
 ## 13. The client, the tools, tests
 
@@ -1358,6 +1394,12 @@ own:
    50 000 entries, bind as an OS profile.
 4. Publishing user profiles from QS/400 to QS/400 and from the primary
    to QS/400 (Navigator's Publishing on the primary).
+5. The `DI` entry's values (only if Cody agrees: it turns directory
+   auditing on): on a test instance of the primary with
+   `ibm-audit: true` and `QAUDLVL` with `*SECDIRSRV *AUTFAIL *CREATE`,
+   a failed bind, an add, a modify, an ACL change and a modify DN, then
+   `CPYAUDJRNE ENTTYP(DI) OUTFILE(QTEMP/DI)` and `DSPPFM QTEMP/QAUDITDI`
+   (the field list itself is settled, from `QSYS/QASYDIJ4`).
 
 ## 18. Acceptance
 

@@ -301,8 +301,9 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
         "qssecchk" => {
             let system_name = system.system_name();
             let product = format!("{} {}", release::PRODUCT_ID, release::RELEASE);
+            let dir = dirsrv_facts(system);
             let lines = in_store(system, |txn, env| {
-                let inputs = seccheck_inputs(txn, env);
+                let inputs = seccheck_inputs(txn, env, dir);
                 let found = sec::cmd::seccheck::run(txn, env, &inputs)?;
                 Ok(sec::cmd::seccheck::report(
                     &found,
@@ -327,10 +328,93 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
     Some(r.unwrap_or_else(|e| format!("{e}\n")))
 }
 
+/// Each directory server instance's configuration, for `QSSECCHK`:
+/// read through the service's IFS as the commands read it.
+fn dirsrv_facts(system: &mut System) -> Vec<sec::cmd::seccheck::DirFacts> {
+    use dirsrv::config::SlapdConf;
+    use sec::cmd::seccheck::{AdminPw, DirFacts, admin_defaults};
+    let list = match crate::stgsvc::dirconf::instances(system) {
+        Ok(l) => l,
+        Err(e) => {
+            return vec![DirFacts {
+                instance: "*INSTANCES".into(),
+                unreadable: Some(e.to_string()),
+                ..DirFacts::default()
+            }];
+        }
+    };
+    let mut out = Vec::new();
+    for inst in &list.instances {
+        let path = inst.conf_path();
+        let unreadable = |why: String| DirFacts {
+            instance: inst.name.clone(),
+            unreadable: Some(why),
+            ..DirFacts::default()
+        };
+        let text = match crate::stgsvc::dirconf::read(system, &path) {
+            Ok(Some(t)) => t,
+            Ok(None) => {
+                out.push(unreadable(format!("{path}: {}", ifs::Errno::ENOENT.text())));
+                continue;
+            }
+            Err(why) => {
+                out.push(unreadable(why));
+                continue;
+            }
+        };
+        let conf = match SlapdConf::parse(&path, &text) {
+            Ok(c) => c,
+            Err(e) => {
+                out.push(unreadable(e.to_string()));
+                continue;
+            }
+        };
+        let allow_anon = conf
+            .get(
+                "cn=Connection Management, cn=Front End, cn=Configuration",
+                "ibm-slapdAllowAnon",
+            )
+            .is_none_or(|v| v.trim().eq_ignore_ascii_case("true"));
+        let security = conf
+            .get("cn=SSL, cn=Configuration", "ibm-slapdSecurity")
+            .unwrap_or_else(|| "none".into());
+        let admin = match conf.admin_pw() {
+            None => AdminPw::Unset,
+            Some(stored) => {
+                let stored = stored.trim();
+                // A value with no {scheme} is a clear password.
+                let is = |w: &str| {
+                    if stored.starts_with('{') {
+                        dirsrv::pwd::verify(w.as_bytes(), stored)
+                    } else {
+                        stored == w
+                    }
+                };
+                admin_defaults(&inst.name)
+                    .into_iter()
+                    .find(|w| is(w))
+                    .map_or(AdminPw::Set, AdminPw::Default)
+            }
+        };
+        out.push(DirFacts {
+            instance: inst.name.clone(),
+            unreadable: None,
+            allow_anon,
+            security,
+            admin,
+        });
+    }
+    out
+}
+
 /// What `QSSECCHK` needs from outside `sec`: the registered exit
-/// programs, the TLS policy the system values make, and the commands
-/// shipped `*PUBLIC *EXCLUDE`.
-fn seccheck_inputs(txn: &mut store::Txn<'_>, env: &Env<'_>) -> sec::cmd::seccheck::Inputs<'static> {
+/// programs, the TLS policy the system values make, the commands
+/// shipped `*PUBLIC *EXCLUDE`, and the directory server's instances.
+fn seccheck_inputs(
+    txn: &mut store::Txn<'_>,
+    env: &Env<'_>,
+    dirsrv: Vec<sec::cmd::seccheck::DirFacts>,
+) -> sec::cmd::seccheck::Inputs<'static> {
     use sec::cmd::seccheck::{ExitReg, Inputs, TlsFacts};
     let reg = regfac::store::load(txn, env.qsys).unwrap_or_default();
     let exits: Vec<ExitReg> = reg
@@ -379,6 +463,7 @@ fn seccheck_inputs(txn: &mut store::Txn<'_>, env: &Env<'_>) -> sec::cmd::secchec
         exits,
         tls,
         exclude_cmds: sys_cpps::inventory::PUBLIC_EXCLUDE,
+        dirsrv,
     }
 }
 

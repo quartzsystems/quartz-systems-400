@@ -72,6 +72,14 @@ impl Suite {
                 Some(format!("{}:{}", w.first()?, w.get(1)?))
             })
             .collect();
+        // The shipped QUSRDIR: anonymous binds, no TLS, no administrator
+        // password (SECURITY.md §10).
+        let dir = warns.iter().filter(|w| w.starts_with("DIRSRV:")).count();
+        if dir != 3 {
+            return Err(format!(
+                "QSSECCHK: want 3 DIRSRV warnings for QUSRDIR, got {dir}:\n{out}"
+            ));
+        }
         let total = out
             .lines()
             .find(|l| l.contains("checks:"))
