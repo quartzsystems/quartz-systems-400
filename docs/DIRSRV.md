@@ -81,7 +81,9 @@ daemons' file operations are.
   `Dn::normalize` against the schema's matching rules is `dirsrv`'s.
   IBM's case and spacing (`OS400-SYS=...`, `dc=a, dc=b`) parse.
 - `filter`: RFC 4515 strings to `Filter` and the BER form both ways;
-  extensible match; a depth limit (64).
+  extensible match; a depth limit (64). A filter's own nesting is
+  counted against this limit, not against BER's 32, so a search request
+  may carry a filter 64 deep.
 - `control`: the controls of §7 as typed values with their OIDs.
 - `ext`: the extended operations of §7 (request and response values).
 - `ldif`: RFC 2849 content and change records, folding, base64, `< url`
@@ -710,6 +712,13 @@ ignored.
 ## 16. Tests and performance
 
 (Filled as the work lands: the kits, the QEMU steps, the numbers.)
+
+- `cargo test -p ldap`: the codecs against RFC examples and vectors
+  written by hand from the ASN.1, `schema-primary.txt` and the IBM LDIF
+  files round-tripped, a seeded mutation pass over every fuzz entry
+  point, and `tests/client.rs` (the client against a fake server on the
+  loopback: binds, the asynchronous face, paging, sorting, referrals,
+  timeouts, a notice of disconnection, LDAPS and `StartTLS`).
 
 ## 17. NEEDS-CODY
 
