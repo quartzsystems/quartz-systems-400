@@ -937,8 +937,8 @@ is 53, a cookie the server did not give 53, a page size of 0 with a
 cookie ends the search; sorting with more keys than
 `ibm-slapdSortKeyLimit` is sortResult 11 and with an unknown attribute
 16 — the search fails with 12 when the control is critical and is
-answered unsorted otherwise; proxied authorization by anyone but an
-administrator is 50; a control the operation does not take is 12 when
+answered unsorted otherwise; proxied authorization by an anonymous
+user is 50 (a bound one that is not an administrator 123, RFC 4370); a control the operation does not take is 12 when
 critical (paged results on a compare included). Deliberately not
 followed: the primary's 80 for the second paged search opened while
 one is open (the limit is what counts), and its 53 for the request
@@ -952,7 +952,7 @@ Controls (`ops::controls`; each in `supportedControl`):
 | 1.2.840.113556.1.4.473 / .474 | server-side sort (RFC 2891) | search | built; the least value ascending, the greatest descending, entries without one last; non-administrators only with `ibm-slapdSortSrchAllowNonAdmin` |
 | 2.16.840.1.113730.3.4.2 | manageDsaIT (RFC 3296) | all but bind and extended | built |
 | 2.16.840.1.113730.3.4.3 | persistent search | search | built when `ibm-slapdEnablePersistentSearch`, at most `ibm-slapdMaxPersistentSearches` (11 past it), entry change notifications, 10 000 queued changes per watch |
-| 2.16.840.1.113730.3.4.18 | proxied authorization v2 (RFC 4370) | all but bind and extended | built; administrators only (50 for others), `dn:` or empty identities (123 for `u:`), must be critical (2) |
+| 2.16.840.1.113730.3.4.18 | proxied authorization v2 (RFC 4370) | all but bind (whoami and password modify run as the identity) | built; administrators only (50 for anonymous users, as the primary; 123 for a bound user), `dn:` or empty identities (123 for `u:`), must be critical (2) |
 | 1.2.840.113556.1.4.805 | tree delete | delete | built; `object:d` on every entry |
 | 1.3.6.1.1.12 | assertion (RFC 4528) | all but bind and extended | built (QS/400 addition: the primary answers 12); an add's assertion is tested against the entry to be added; 122 when false |
 | 1.3.6.1.1.13.1 / .2 | pre-read, post-read (RFC 4527) | modify, delete, modify DN / add, modify, modify DN | built (QS/400 addition), with the requester's read rights |

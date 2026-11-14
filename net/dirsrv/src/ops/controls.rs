@@ -71,7 +71,8 @@ fn allowed(op: Op, oid: &str) -> bool {
     match oid {
         control::MANAGE_DSA_IT => !matches!(op, Bind | Extended),
         control::PAGED_RESULTS | control::SORT_REQUEST | control::PERSISTENT_SEARCH => op == Search,
-        control::PROXIED_AUTHZ | control::ASSERTION => !matches!(op, Bind | Extended),
+        control::PROXIED_AUTHZ => op != Bind,
+        control::ASSERTION => !matches!(op, Bind | Extended),
         control::TREE_DELETE => op == Delete,
         control::PRE_READ => matches!(op, Modify | Delete | ModDn),
         control::POST_READ => matches!(op, Add | Modify | ModDn),

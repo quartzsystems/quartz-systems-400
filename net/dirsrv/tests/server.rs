@@ -777,3 +777,60 @@ fn tls_pair() -> (Arc<ServerConfig>, Arc<ClientConfig>) {
     let ccfg = client_config(&policy, roots, None, ServerAuthMode::Full).unwrap();
     (scfg, ccfg)
 }
+
+/// Through the loop, an anonymous subtree search meets a referral
+/// object as a continuation reference.
+#[test]
+fn continuation_references_reach_the_client() {
+    let r = start(Setup::default());
+    let mut c = r.admin();
+    for (dn, attrs) in [
+        (
+            "ou=Sb,o=Acme",
+            vec![
+                text("objectClass", &["organizationalUnit"]),
+                text("ou", &["Sb"]),
+            ],
+        ),
+        (
+            "ou=ref,ou=Sb,o=Acme",
+            vec![
+                text("objectClass", &["top", "referral", "extensibleObject"]),
+                text("ou", &["ref"]),
+                text("ref", &["ldap://ldaptest.invalid/ou=far,dc=example"]),
+            ],
+        ),
+    ] {
+        let a = c.add(dn, attrs, &[]).unwrap();
+        assert!(a.result.is_success(), "{dn}: {:?}", a.result);
+    }
+    let mut anon = r.client();
+    let req = anon
+        .search_request("ou=Sb,o=Acme", Scope::Sub, "(objectClass=*)", &["1.1"])
+        .unwrap();
+    let got = anon.search(&req, &[]).unwrap();
+    assert!(got.result.is_success(), "{:?}", got.result);
+    assert_eq!(
+        got.references,
+        [vec!["ldap://ldaptest.invalid/ou=far,dc=example".to_string()]],
+        "{got:?}"
+    );
+}
+
+/// Not a test: the connection loop over a directory in memory for
+/// `tools/ldaptest` to run against (`--suffix o=Acme`, the
+/// administrator's password `secret`). The port goes to
+/// `LDAPTEST_SERVE_FILE`; it serves for `LDAPTEST_SERVE_SECS` (600).
+#[test]
+#[ignore = "a server for ldaptest, run by hand"]
+fn serve_for_ldaptest() {
+    let r = start(Setup::default());
+    let file = std::env::var("LDAPTEST_SERVE_FILE").unwrap_or_else(|_| "ldaptest-port.txt".into());
+    std::fs::write(&file, r.port.to_string()).unwrap();
+    let secs = std::env::var("LDAPTEST_SERVE_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(600);
+    std::thread::sleep(Duration::from_secs(secs));
+    drop(r);
+}

@@ -216,8 +216,16 @@ impl Directory {
         let Some(p) = proxy else {
             return Ok(session.clone());
         };
+        // Anonymous users get 50, as the primary answers; a bound user
+        // that may not proxy 123 (RFC 4370).
         if !session.admin {
-            return Err(OpError::access());
+            if session.dn.is_none() {
+                return Err(OpError::access());
+            }
+            return Err(OpError::new(
+                super::error::AUTHORIZATION_DENIED,
+                "only an administrator may act as another identity",
+            ));
         }
         if p.is_empty() {
             return Ok(Session::anonymous());
