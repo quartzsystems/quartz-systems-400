@@ -108,6 +108,22 @@ mod tests {
         );
         fuzz(b"\x01dn: cn=Configuration\nibm-slapdPort: 389\n");
         fuzz(shipped::INSTANCES.as_bytes());
+        // Found by the fuzzer: `version:` directly above the first `dn:`.
+        fuzz(
+            b"cversion:1
+dn:cn=Configuration
+n:",
+        );
+        fuzz(
+            b"version:1
+dn:CN=CONFIGURATI
+ ON
+i:
+ibm-slapdPort:
+
+dn:cn=Configuration
+n:",
+        );
         assert_eq!(
             conf_path(ROOT, "QUSRDIR"),
             "/QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/ibmslapd.conf"

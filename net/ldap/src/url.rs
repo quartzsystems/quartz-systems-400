@@ -214,6 +214,12 @@ fn parse_hostport(s: &str) -> Result<(Option<String>, Option<u16>), UrlError> {
     }
     let (host, port) = if let Some(rest) = s.strip_prefix('[') {
         let (h, after) = rest.split_once(']').ok_or(UrlError("unclosed '['"))?;
+        // Inside brackets only an IPv6 literal (RFC 3986 §3.2.2).
+        let literal =
+            |c: char| c.is_ascii_alphanumeric() || matches!(c, ':' | '.' | '%' | '-' | '_');
+        if !h.contains(':') || !h.chars().all(literal) {
+            return Err(UrlError("not an IPv6 literal in '[...]'"));
+        }
         let port = match after {
             "" => None,
             p => Some(p.strip_prefix(':').ok_or(UrlError("text after ']'"))?),
@@ -315,6 +321,14 @@ mod tests {
 
     fn p(s: &str) -> LdapUrl {
         LdapUrl::parse(s).unwrap_or_else(|e| panic!("{s}: {e}"))
+    }
+
+    #[test]
+    fn brackets_hold_an_ipv6_literal() {
+        // Found by the fuzzer: a printed URL must parse back.
+        assert!(LdapUrl::parse("ldap://[[]").is_err());
+        crate::fuzzing::url(b"ldap://[[]");
+        assert!(LdapUrl::parse("ldap://[::1]:389/").is_ok());
     }
 
     #[test]

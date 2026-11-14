@@ -51,6 +51,14 @@ fn entries(lines: &[&str]) -> Vec<Vec<Logical>> {
     if !cur.is_empty() {
         out.push(cur);
     }
+    // `version: 1` may sit directly above the first entry's `dn:`, with
+    // no blank line between, as LDIF allows.
+    if let Some(e) = out.first_mut()
+        && e.len() > 1
+        && attr_of(&e[0].text).0.eq_ignore_ascii_case("version")
+    {
+        e.remove(0);
+    }
     out.retain(|e| {
         e.first()
             .is_some_and(|l| attr_of(&l.text).0.eq_ignore_ascii_case("dn"))
