@@ -449,31 +449,20 @@ impl Suite {
         self.nfs_probe()?;
         // Version 3 in the server's preferred size (`FSINFO`) and in
         // 64 KiB; 4.1, which has no preference, in 1 MiB and 64 KiB.
+        // A call waits up to two minutes: the host's write-back can stop
+        // the guest's disk for tens of seconds.
+        let wait = ["--timeout".to_string(), "120".to_string()];
         let mut runs = Vec::new();
         for bs in [None, Some(65_536)] {
             let mut a = vec!["bench".to_string()];
             a.extend(self.nfs_target("nfsbench"));
             a.extend(["--mib".into(), mib.to_string()]);
+            a.extend(wait.clone());
             if let Some(bs) = bs {
                 a.extend(["--bs".into(), bs.to_string()]);
             }
             runs.push(("3", host::run(&a, Duration::from_mins(60))?));
         }
-        // The same through an `*ASYNC` host, whose unstable writes are
-        // not synced each: what the server costs without the sync.
-        public_dir(s, ASYNC_EXPORT)?;
-        export(
-            s,
-            ASYNC_EXPORT,
-            &format!("RW,ANON={ANON_UID}"),
-            "('10.0.2.2' *BINARY *ASCII *ASYNC)",
-        )?;
-        // The daemons read the table once a second.
-        std::thread::sleep(Duration::from_secs(3));
-        let mut a = vec!["bench".to_string()];
-        a.extend(self.nfs_target_at(ASYNC_EXPORT, "nfsbench"));
-        a.extend(["--mib".into(), mib.to_string()]);
-        runs.push(("3 *ASYNC", host::run(&a, Duration::from_mins(60))?));
         // Version 4.1 needs only the forwarded 2049 (after the grace period).
         self.nfs_after_grace();
         let port = host::host_port(&self.nfs.borrow().map, 2049).ok_or("2049 is not forwarded")?;
@@ -491,23 +480,56 @@ impl Suite {
                 &mib.to_string(),
                 "--bs",
                 &bs.to_string(),
+                "--timeout",
+                "120",
             ]
             .iter()
             .map(|s| (*s).to_string())
             .collect();
             runs.push(("4.1", host::run(&a4, Duration::from_mins(60))?));
         }
+        // Last, the same through an `*ASYNC` host, whose unstable writes
+        // are not synced each: what the server costs without the sync.
+        // A figure only, not a check: unsynced, the guest's dirty data
+        // can stall its disk past any time-out.
+        public_dir(s, ASYNC_EXPORT)?;
+        export(
+            s,
+            ASYNC_EXPORT,
+            &format!("RW,ANON={ANON_UID}"),
+            "('10.0.2.2' *BINARY *ASCII *ASYNC)",
+        )?;
+        // The daemons read the table once a second.
+        std::thread::sleep(Duration::from_secs(3));
+        let mut a = vec!["bench".to_string()];
+        a.extend(self.nfs_target_at(ASYNC_EXPORT, "nfsbench"));
+        a.extend(["--mib".into(), mib.to_string()]);
+        a.extend(wait);
+        let async_run = host::run(&a, Duration::from_mins(60))?;
         let mut text = String::new();
-        for (_, r) in &runs {
+        for r in runs.iter().map(|(_, r)| r).chain([&async_run]) {
             let _ = writeln!(text, "$ {}\n{}{}", r.line, r.out, r.err);
         }
         let _ = std::fs::write(self.out_dir.join("nfs-176-bench.txt"), &text);
+        let rates = |r: &host::Run| {
+            Some((
+                host::value(&r.out, "write MiB/s: ")?.to_string(),
+                host::value(&r.out, "read MiB/s: ")?.to_string(),
+            ))
+        };
+        let async_line = match rates(&async_run) {
+            Some((w, rd)) => format!(
+                "host -> guest, version 3, *ASYNC host, {mib} MiB: write {w} MiB/s, read {rd} MiB/s (block {})",
+                host::value(&async_run.out, "block: ").unwrap_or("?")
+            ),
+            None => format!(
+                "host -> guest, version 3, *ASYNC host: not measured ({})",
+                async_run.out.trim()
+            ),
+        };
         let mut lines = Vec::new();
         for (vers, r) in &runs {
-            let (Some(w), Some(rd)) = (
-                host::value(&r.out, "write MiB/s: "),
-                host::value(&r.out, "read MiB/s: "),
-            ) else {
+            let Some((w, rd)) = rates(r) else {
                 return Err(format!("no rates for version {vers}:\n{text}"));
             };
             let line = format!(
@@ -517,6 +539,8 @@ impl Suite {
             super::pairsteps::perf_line(&self.out_dir, &line);
             lines.push(line);
         }
+        super::pairsteps::perf_line(&self.out_dir, &async_line);
+        lines.push(async_line);
         Ok(lines.join("; "))
     }
 
