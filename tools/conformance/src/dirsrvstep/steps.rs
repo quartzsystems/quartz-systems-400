@@ -848,9 +848,10 @@ impl Suite {
         }
         let _ = a.unbind();
         let conf = format!(
-            "version: 1\n\ndn: cn=publishing\nqs400-pubFormat: 1\n\ndn: cn=users,cn=publishing\nqs400-pubEnabled: TRUE\nqs400-pubHost: localhost\nqs400-pubPort: 389\nqs400-pubParentDN: {PUB_PARENT}\nqs400-pubCreateParent: FALSE\nqs400-pubRetry: 10\nqs400-pubResync: 60"
+            "version: 1\n\ndn: cn=publishing\nqs400-pubFormat: 1\n\ndn: cn=users,cn=publishing\nqs400-pubEnabled: TRUE\nqs400-pubHost: localhost\nqs400-pubPort: 389\nqs400-pubParentDN: {PUB_PARENT}\nqs400-pubCreateParent: FALSE\nqs400-pubRetry: 10\nqs400-pubResync: 60\n"
         );
-        let put = s.command(&format!("svc.ifs put {PUB_CONF} {conf}"), CMD)?;
+        crate::qsh::push_hex(s, "PUBCONF", conf.as_bytes())?;
+        let put = s.command(&format!("svc.ifs putx {PUB_CONF} PUBCONF 600"), CMD)?;
         if !put.contains("bytes") {
             return Err(format!("{PUB_CONF}: {put}"));
         }
