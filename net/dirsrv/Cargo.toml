@@ -12,7 +12,10 @@ certs = { path = "../certs", version = "0.1.0" }
 tls = { path = "../tls", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
+ntlm = { path = "../../security/ntlm", version = "0.1.0" }
+sha1 = "0.11.0"
 sha2.workspace = true
+getrandom = "0.4.3"
 thiserror.workspace = true
 tracing.workspace = true
 

@@ -2,4 +2,6 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Access control: owners, ACL entries, evaluation (docs/DIRSRV.md §12).
+//! Operations, controls and extended operations (docs/DIRSRV.md §7).
+
+pub mod clock;
