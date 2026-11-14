@@ -298,7 +298,7 @@ the backends and the schema, and answers:
 | 1565 `dir_close` | the search of a message ID abandoned (its cursor or persistent search), or the connection ended (unbind, close, idle time-out: the session and all it holds, and the `UB` audit entry) |
 | 1566 `dir_conns` | the job's connection counts (open, total, StartTLS, secure port), for `cn=monitor` |
 | 1567 `dir_changes` | what the session's persistent searches saw since the last call, answered at once (the job's watcher thread polls), and the searches that no longer exist |
-| 1568 `dir_admin` | `CHGDIRSVRA`, the configuration's changes, the instance list, Navigator's and QAP's questions |
+| 1568 `dir_admin` | Navigator's and QAP's questions (`DirAdmin`, below): the configuration, the instance list, start and end, the schema, access, publishing, counters |
 | 1569 | reserved |
 | 1570 `dirpub_config` | the publishing configuration for `QGLDPUBE` and `QGLDPUBA`: the file's text and the agents' passwords unsealed (only to `QDIRSRV`'s jobs) (§10.1) |
 | 1571 `dirpub_events` | an agent's changes after its cursor, or a resync; the agent's status reported with the ask (§10.1) |
@@ -314,15 +314,59 @@ the signed-on profile: reads need `*IOSYSCFG`, changes `*ALLOBJ` and
 `*IOSYSCFG` (`CPF222E`), start and end `*IOSYSCFG`. A refusal is an
 `AdminError`: its kind, the message ID (`GLD` where `QGLDMSG` has one,
 `CPF9898` with Quartz text otherwise) and data. `admin::conf` answers
-the configuration's questions over `config::SlapdConf` (what the
-service and `MemAdmin` share), `admin::access` checks `aclEntry` and
-`entryOwner` values, `MemAdmin` is a directory server in memory for
-tests and fixtures. Request 1568 carries each method as a
+the configuration's questions over `config::SlapdConf`,
+`admin::schema` the schema's (a page of definitions, an addition, a
+removal), `admin::publish` the agents' over `publish.conf` (§10.1),
+all three shared by the service and `MemAdmin`; `admin::access` checks
+`aclEntry` and `entryOwner` values; `MemAdmin` is a directory server
+in memory for tests and fixtures. Request 1568 carries each method as a
 `stg::diradmin::DirAdminOp` answered by a `DirAdminReply`
 (`stg::diradmin::serve` on the service's side, `Remote` over a
-`Sender` on the job's); the job sets the user before it asks, so no
-request names one. Until the service answers 1568 the job's sender
-(`NotBuilt`) refuses every request (`BLOCKED(rel)`).
+`Sender` on the job's: Navigator's asks on the job's thread swapped to
+the signed-on profile, QAP's on the connection's secondary thread,
+which runs as it); the job sets the user before it asks, so no request
+names one.
+
+The service's side (`lic/slic/src/stgsvc/dirsrv/admin.rs`) answers as
+the job's current profile, and every refusal's text is its message's
+first-level text with the data:
+
+- *The configuration* (properties, suffixes, indexes, the
+  administrator): the instance's `ibmslapd.conf` read, changed through
+  `admin::conf` and written (`dirconf::write`), then
+  `serve::config_changed` has a running instance apply what takes
+  effect at once (§10); the rest at its next start. `CHGDIRSVRA` does
+  the same. An index needs an attribute type of the instance's schema
+  (`GLD0168`). Suffix entry counts are not given (`None`).
+- *The instance list*: `idsinstances.ldif`; autostart is its
+  `ids-instanceAutostart`, edited in place
+  (`config::instances::with_autostart`). An
+  instance runs when a job of its name runs as `QDIRSRV` (`Ending` once
+  its end was asked); its certificate is the label assigned to
+  `QS400_DIRECTORY_SERVER`.
+- *Start, end, restart* are `STRTCPSVR`'s and `ENDTCPSVR`'s, since the
+  instance jobs are started by a job, not the service: a start checks
+  the file (`GLD0126`, `GLD0232`) and submits a batch job `QGLDSTRSVR`
+  (`QSYS/QDIRJOBD`, `QSYSNOMAX`) running `STRTCPSVR SERVER(*DIRSRV)
+  INSTANCE(name)` as the profile; an end is the instance job's
+  `ENDJOB OPTION(*CNTRLD)`; a restart ends it and schedules the start
+  15 seconds later, past the job's 10 seconds to end. Each answers once
+  asked; the outcome is the instance's state and the jobs' logs.
+- *The schema*: a running instance's, changed in place and its
+  additions written to `V3.modifiedschema` as a `cn=schema` modify
+  writes them; otherwise the shipped schema with the file's additions.
+- *An entry's access and the counters* are a running instance's
+  (`GLD0122` otherwise): the access attributes read as the
+  administrator (`aclEntry`, `aclPropagate`, `aclSource`,
+  `entryOwner`, `ownerPropagate`, `ownerSource`; an entry is explicit
+  when its source is itself, `GLD0166` when there is no entry); a
+  change replaces the entry's own values (none: removed, so it
+  inherits) in one modify whose changes reach the persistent searches.
+- *Publishing*: `publish.conf` (`publish::read_config`, the shipped
+  state without one) seen through `admin::publish`; a change is
+  checked there (`GLD0204`, `GLD0239`, `GLD0224`, `GLD0232`), then
+  written with the new password sealed (`publish::write_config`). The
+  status is each agent's last report (1571) and its job.
 
 ACL evaluation, schema checking and password policy run in the
 service, beside the data, with the session's identity.

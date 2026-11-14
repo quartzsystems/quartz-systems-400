@@ -258,7 +258,7 @@ pub struct Env {
     /// NFS.
     pub nfs: Arc<dyn nfs::Nfs>,
     /// The directory server.
-    pub dirsrv: Arc<dyn dirsrv::DirAdmin>,
+    pub dirsrv: Arc<dyn dirsrv::DirAdmin + Send + Sync>,
     /// The database.
     pub db: Arc<dyn db::Db>,
     /// The audit journal.

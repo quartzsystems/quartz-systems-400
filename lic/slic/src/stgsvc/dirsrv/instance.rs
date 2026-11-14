@@ -466,7 +466,6 @@ impl Instance {
 
     /// The file changed outside (`CHGDIRSVRA`, `dir_admin`): read it
     /// again and apply it.
-    #[allow(dead_code)] // dir_admin's
     ///
     /// # Errors
     /// The IFS's, or a file that does not check.

@@ -579,6 +579,7 @@ wire_enum!(AgentKind {
 
 /// One agent's configuration.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)] // flags
 pub struct PublishAgent {
     /// Which.
     pub kind: AgentKind,
@@ -588,14 +589,24 @@ pub struct PublishAgent {
     pub server: String,
     /// Its port.
     pub port: u16,
-    /// LDAPS.
+    /// TLS: LDAPS, or `StartTLS` with `start_tls`.
     pub tls: bool,
-    /// The DN it binds as.
+    /// The DN it binds as; empty: anonymous.
     pub bind_dn: String,
     /// A bind password is kept (ignored in requests).
     pub password_set: bool,
-    /// The parent DN of what it publishes.
+    /// The parent DN of what it publishes; empty: the agent's default.
     pub parent_dn: String,
+    /// With `tls`: `StartTLS` rather than LDAPS.
+    pub start_tls: bool,
+    /// The parent and its missing ancestors are added.
+    pub create_parent: bool,
+    /// Seconds before the first retry.
+    pub retry: u32,
+    /// Seconds between full resyncs; 0 for none.
+    pub resync: u32,
+    /// The `publisherName` value; empty: the system's default.
+    pub publisher: String,
 }
 
 wire_struct!(PublishAgent {
@@ -606,7 +617,12 @@ wire_struct!(PublishAgent {
     tls,
     bind_dn,
     password_set,
-    parent_dn
+    parent_dn,
+    start_tls,
+    create_parent,
+    retry,
+    resync,
+    publisher
 });
 
 /// `GetPublishing`'s reply.

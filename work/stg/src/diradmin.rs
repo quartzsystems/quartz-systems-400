@@ -10,10 +10,9 @@
 //!
 //! [`Remote`] is a `DirAdmin` that sends each call through a [`Sender`]
 //! (the job's side); [`serve`] answers one request from a `DirAdmin`
-//! (the service's side). The request itself is
-//! `1568 => fn dir_admin / DirAdmin (op: crate::diradmin::DirAdminOp)
-//! -> crate::diradmin::DirAdminReply;` in [`crate::proto`], added with
-//! the service's implementation.
+//! (the service's side) as request 1568 `dir_admin` of [`crate::proto`].
+//! A sender on the job's main thread is `Send + Sync` (Navigator's);
+//! one over a thread's own link need not be (QAP's).
 
 use dirsrv::admin::{
     Access, AdminChange, AdminError, AdminInfo, AgentStatus, Counters, DirAdmin, ErrorKind, Index,
@@ -260,7 +259,7 @@ pub fn serve(a: &dyn DirAdmin, user: &str, op: DirAdminOp) -> DirAdminReply {
 
 /// What carries a request to the service as `user` and brings back its
 /// answer.
-pub trait Sender: Send + Sync {
+pub trait Sender {
     /// Send `op` as `user`.
     fn send(&self, user: &str, op: DirAdminOp) -> DirAdminReply;
 }
@@ -473,19 +472,6 @@ impl<S: Sender> DirAdmin for Remote<S> {
     }
 }
 
-/// The sender until the service answers `dir_admin`: every request is
-/// refused as not available.
-pub struct NotBuilt;
-
-impl Sender for NotBuilt {
-    fn send(&self, _user: &str, _op: DirAdminOp) -> DirAdminReply {
-        // BLOCKED(rel): the storage service's dir_admin (1568) is not built; the job refuses every request until it is.
-        DirAdminReply::Refused {
-            error: AdminError::not_built(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -546,10 +532,5 @@ mod tests {
             .unwrap();
         assert!(r.counters("QSECOFR", "QUSRDIR").is_ok());
         assert_eq!(r.publishing("QSECOFR").unwrap().len(), 2);
-        let n = Remote(NotBuilt);
-        assert_eq!(
-            n.instances("QSECOFR").unwrap_err().kind,
-            ErrorKind::Unavailable
-        );
     }
 }

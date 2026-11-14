@@ -2657,7 +2657,7 @@ impl Service for Served<'_> {
         super::nfs::api::call(self.system, &me, &api, &parms)
     }
 
-    // --- the directory server (1560-1567; stgsvc/dirsrv/)
+    // --- the directory server (1560-1568; stgsvc/dirsrv/)
     fn dir_open(
         &mut self,
         instance: String,
@@ -2730,6 +2730,12 @@ impl Service for Served<'_> {
     ) -> Result<stg::dir::DirChanges, stg::dir::DirError> {
         self.system.current_job = self.ctx.job.number;
         super::dirsrv::serve::changes(self.system, &self.ctx.job, session, max)
+    }
+
+    fn dir_admin(&mut self, op: stg::diradmin::DirAdminOp) -> stg::diradmin::DirAdminReply {
+        self.system.current_job = self.ctx.job.number;
+        let me = self.ctx.session.borrow().principal.clone();
+        super::dirsrv::admin::request(self.system, &me, op)
     }
 
     // --- directory publishing (1570-1572; stgsvc/dirsrv/publish.rs)

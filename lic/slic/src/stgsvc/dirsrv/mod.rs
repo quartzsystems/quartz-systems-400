@@ -3,11 +3,13 @@
 // root directory of this project.
 
 //! The directory server's side in the service (docs/DIRSRV.md §4):
-//! `serve` the requests 1560-1567 and the sessions, `instance` one
+//! `serve` the requests 1560-1567 and the sessions, `admin` request
+//! 1568 `dir_admin`, `instance` one
 //! instance's store, schema, configuration and directory, `profiles` the
 //! projected backend's profiles, `hooks` profile binds and `DI` auditing,
 //! `publish` the publishing agents' requests 1570-1572.
 
+pub(crate) mod admin;
 pub(crate) mod hooks;
 pub(crate) mod instance;
 pub(crate) mod profiles;

@@ -464,7 +464,6 @@ impl State {
     ///
     /// # Errors
     /// The IFS's, or a file that does not check.
-    #[allow(dead_code)] // dir_admin's (CHGDIRSVRA, Navigator, QAP)
     pub fn config_changed(&mut self, host: &mut impl Host, name: &str) -> Result<(), DirError> {
         match self.instances.get_mut(&name.trim().to_ascii_uppercase()) {
             Some((_, inst)) => inst.reload(host),
@@ -474,7 +473,6 @@ impl State {
 
     /// Run `f` over open instance `name` (`dir_admin`'s questions:
     /// counters, settings, the schema); `None` when it is not open.
-    #[allow(dead_code)] // dir_admin's (CHGDIRSVRA, Navigator, QAP)
     pub fn with_instance<T>(
         &mut self,
         name: &str,
@@ -661,13 +659,11 @@ pub fn job_ended(number: u32) {
 ///
 /// # Errors
 /// The IFS's, or a file that does not check.
-#[allow(dead_code)] // dir_admin's (CHGDIRSVRA, Navigator, QAP)
 pub fn config_changed(system: &mut System, name: &str) -> Result<(), DirError> {
     with(system, |s, h| s.config_changed(h, name)).map_err(|e| worded(system, e))
 }
 
 /// For `dir_admin`: `f` over open instance `name`.
-#[allow(dead_code)] // dir_admin's (CHGDIRSVRA, Navigator, QAP)
 pub fn with_instance<T>(name: &str, f: impl FnOnce(&mut Instance) -> T) -> Option<T> {
     STATE.with(|s| s.borrow_mut().with_instance(name, f))
 }

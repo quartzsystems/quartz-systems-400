@@ -131,9 +131,30 @@ impl InstanceList {
     }
 }
 
+
+/// The instances' container entry.
+pub const CONTAINER: &str = "CN=IDS INSTANCES";
+
+/// The list's text `text` with instance `name` started by
+/// `INSTANCE(*AUTOSTART)` or not, kept in its order and comments;
+/// `None` when the file has no entry for it.
+#[must_use]
+pub fn with_autostart(text: &str, name: &str, on: bool) -> Option<String> {
+    let dn = format!("cn={},{CONTAINER}", name.trim());
+    super::edit::set(text, &dn, "ids-instanceAutostart", &[if on { "1" } else { "0" }])
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn autostart_is_edited_in_place() {
+        let t = with_autostart(crate::config::shipped::INSTANCES, "qusrdir", false).unwrap();
+        let l = InstanceList::parse(&t).unwrap();
+        assert!(!l.find("QUSRDIR").unwrap().autostart);
+        assert!(t.contains("# The directory server instances"));
+        assert!(with_autostart(&t, "NONE", true).is_none());
+    }
 
     #[test]
     fn the_primarys_list() {

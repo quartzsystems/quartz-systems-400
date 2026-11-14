@@ -11,6 +11,8 @@
 //!   suffixes, indexes, the administrator; what the storage service and
 //!   [`MemAdmin`] share.
 //! - [`access`]: `aclEntry` and `entryOwner` values checked.
+//! - [`publish`]: the publishing agents over `publish.conf`.
+//! - [`schema`]: pages of the schema and its changes.
 //! - [`mem`]: [`MemAdmin`], a directory server in memory for tests and
 //!   the fixtures.
 //!
@@ -22,6 +24,8 @@
 pub mod access;
 pub mod conf;
 pub mod mem;
+pub mod publish;
+pub mod schema;
 
 use ipc::{wire_enum, wire_struct};
 
@@ -98,16 +102,6 @@ impl AdminError {
             data: vec![what.into()],
             text: format!("Special authority {what} is needed for this."),
         }
-    }
-
-    /// The function is not available yet (the service side is not
-    /// built): what the job answers until it is.
-    #[must_use]
-    pub fn not_built() -> Self {
-        Self::plain(
-            ErrorKind::Unavailable,
-            "Directory server administration is not available on this system yet.",
-        )
     }
 }
 
@@ -622,6 +616,7 @@ impl AgentKind {
 
 /// One agent's configuration (`publish.conf`'s entry).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)] // flags
 pub struct PublishAgent {
     /// Which agent.
     pub kind: AgentKind,
@@ -632,14 +627,26 @@ pub struct PublishAgent {
     pub server: String,
     /// Its port.
     pub port: u16,
-    /// LDAPS (`true`) or plain LDAP.
+    /// TLS: LDAPS, or `StartTLS` with `start_tls`; plain LDAP otherwise.
     pub tls: bool,
-    /// The DN it binds as.
+    /// The DN it binds as; empty binds anonymously.
     pub bind_dn: String,
     /// A password for the bind DN is kept (ignored in a change).
     pub password_set: bool,
-    /// The parent DN of the published entries.
+    /// The parent DN of the published entries; empty for the agent's
+    /// default (`ou=Users` or `ou=Printers` over `cn=localhost`).
     pub parent_dn: String,
+    /// With `tls`: `StartTLS` after connecting rather than LDAPS.
+    pub start_tls: bool,
+    /// The parent and its missing ancestors are added.
+    pub create_parent: bool,
+    /// Seconds before the first retry (10 to 86400).
+    pub retry: u32,
+    /// Seconds between full resyncs, 0 for none, else 60 or more.
+    pub resync: u32,
+    /// The `publisherName` value; empty for `QS400 ` and the system
+    /// name.
+    pub publisher: String,
 }
 
 wire_struct!(PublishAgent {
@@ -650,7 +657,12 @@ wire_struct!(PublishAgent {
     tls,
     bind_dn,
     password_set,
-    parent_dn
+    parent_dn,
+    start_tls,
+    create_parent,
+    retry,
+    resync,
+    publisher
 });
 
 /// One agent's status.
@@ -744,7 +756,7 @@ wire_struct!(Counters {
 /// What the administration surfaces ask of the directory server. `user`
 /// is the signed-on profile; `instance` an instance's name (case
 /// ignored).
-pub trait DirAdmin: Send + Sync {
+pub trait DirAdmin {
     /// The instance list, in its order.
     ///
     /// # Errors

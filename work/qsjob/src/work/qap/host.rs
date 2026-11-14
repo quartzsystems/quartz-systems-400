@@ -361,11 +361,23 @@ impl Host for JobHost {
     }
 }
 
+/// `dir_admin` (1568) over a thread's link. The thread runs as the
+/// session's profile already, which the service checks.
+pub struct ThreadDir(Shared);
+
+impl stg::diradmin::Sender for ThreadDir {
+    fn send(&self, _user: &str, op: stg::diradmin::DirAdminOp) -> stg::diradmin::DirAdminReply {
+        self.0.borrow_mut().with(|l| l.dir_admin(op))
+    }
+}
+
 /// A secondary thread of the connection job.
 pub struct JobThread {
     shared: Shared,
     /// The IFS over the thread's link, as the job's profile.
     ifs: RemoteIfs,
+    /// The directory server's administration over the thread's link.
+    dir: stg::diradmin::Remote<ThreadDir>,
     /// The debugger over the thread's link.
     debug: super::debug::thread::Thread,
 }
@@ -387,6 +399,7 @@ impl JobThread {
         Self {
             ifs: RemoteIfs::new(Rc::clone(&shared)),
             debug: super::debug::thread::Thread::new(Rc::clone(&shared)),
+            dir: stg::diradmin::Remote(ThreadDir(Rc::clone(&shared))),
             shared,
         }
     }
@@ -742,10 +755,7 @@ impl ThreadHost for JobThread {
     }
 
     fn dirsrv(&mut self) -> Option<&dyn dirsrv::admin::DirAdmin> {
-        // The storage service's dir_admin, once built (stg::diradmin).
-        static DIR: stg::diradmin::Remote<stg::diradmin::NotBuilt> =
-            stg::diradmin::Remote(stg::diradmin::NotBuilt);
-        Some(&DIR)
+        Some(&self.dir)
     }
 
     fn power_down(&mut self, req: &PowerDown) -> Result<(), Refusal> {

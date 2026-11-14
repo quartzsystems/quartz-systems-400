@@ -17,12 +17,11 @@
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard};
 
-use ldap::msg::{Attribute, ModOp, Modification};
 
 use super::{
     Access, AdminChange, AdminError, AdminInfo, AgentKind, AgentStatus, Counters, DirAdmin,
-    ErrorKind, Index, InstanceInfo, InstanceState, Properties, PublishAgent, Result, SchemaDef,
-    SchemaKind, SchemaPage, SchemaQuery, Suffix, SuffixKind, access, conf,
+    ErrorKind, Index, InstanceInfo, InstanceState, Properties, PublishAgent, Result, SchemaKind,
+    SchemaPage, SchemaQuery, Suffix, SuffixKind, access, conf, schema,
 };
 use crate::config::{ConfigError, DEFAULT_INSTANCE, ROOT, SlapdConf, dn_key, shipped};
 use crate::schema::Schema;
@@ -206,6 +205,11 @@ impl MemAdmin {
             bind_dn: "cn=Administrator".into(),
             password_set: true,
             parent_dn: "ou=Users,dc=quartz,dc=example".into(),
+            start_tls: false,
+            create_parent: true,
+            retry: 300,
+            resync: 86_400,
+            publisher: String::new(),
         };
         let printers = PublishAgent {
             kind: AgentKind::Printers,
@@ -263,75 +267,6 @@ impl MemAdmin {
     pub fn conf_text(&self, instance: &str) -> Option<String> {
         self.with(instance, |i| Ok(i.conf.text().to_string())).ok()
     }
-}
-
-fn def_of(s: &Schema, kind: SchemaKind, oid: &str) -> Option<SchemaDef> {
-    let name_of = |id: &String| {
-        s.attribute(id)
-            .map_or_else(|| id.clone(), |a| a.name().to_string())
-    };
-    match kind {
-        SchemaKind::Attribute => {
-            let a = s.attribute(oid)?;
-            Some(SchemaDef {
-                kind,
-                oid: a.oid().into(),
-                names: a.def.names.clone(),
-                desc: a.def.desc.clone().unwrap_or_default(),
-                sup: a.def.sup.iter().cloned().collect(),
-                syntax: match (&a.syntax, a.syntax_len) {
-                    (Some(o), Some(n)) => format!("{o}{{{n}}}"),
-                    (Some(o), None) => o.clone(),
-                    _ => String::new(),
-                },
-                single_value: a.single_value(),
-                access: a.access.keyword().into(),
-                custom: s.is_modified(a.oid()),
-                protected: s.is_protected(a.oid()),
-                text: a.def.to_string(),
-                ..SchemaDef::default()
-            })
-        }
-        SchemaKind::Class => {
-            let c = s.class(oid)?;
-            Some(SchemaDef {
-                kind,
-                oid: c.oid().into(),
-                names: c.def.names.clone(),
-                desc: c.def.desc.clone().unwrap_or_default(),
-                sup: c.def.sup.clone(),
-                class_kind: match c.kind() {
-                    ldap::schema::ClassKind::Abstract => "ABSTRACT",
-                    ldap::schema::ClassKind::Structural => "STRUCTURAL",
-                    ldap::schema::ClassKind::Auxiliary => "AUXILIARY",
-                }
-                .into(),
-                must: c.must.iter().map(name_of).collect(),
-                may: c.may.iter().map(name_of).collect(),
-                custom: s.is_modified(c.oid()),
-                protected: s.is_protected(c.oid()),
-                text: c.def.to_string(),
-                ..SchemaDef::default()
-            })
-        }
-    }
-}
-
-fn schema_attr(kind: SchemaKind) -> &'static str {
-    match kind {
-        SchemaKind::Attribute => "attributetypes",
-        SchemaKind::Class => "objectclasses",
-    }
-}
-
-fn schema_error(e: &crate::schema::SchemaError) -> AdminError {
-    use crate::schema::SchemaError as S;
-    let kind = match e {
-        S::Duplicate(_) => ErrorKind::Exists,
-        S::NotFound(_) => ErrorKind::NotFound,
-        _ => ErrorKind::Invalid,
-    };
-    AdminError::plain(kind, &format!("The schema was not changed: {e}."))
 }
 
 /// The entry `dn` and its ancestors' keys, nearest first.
@@ -521,82 +456,18 @@ impl DirAdmin for MemAdmin {
 
     fn schema(&self, user: &str, instance: &str, q: &SchemaQuery) -> Result<SchemaPage> {
         self.read(user)?;
-        self.with(instance, |i| {
-            let needle = q.contains.trim().to_ascii_lowercase();
-            let oids: Vec<String> = match q.kind {
-                SchemaKind::Attribute => i.schema.attributes().map(|a| a.oid().into()).collect(),
-                SchemaKind::Class => i.schema.classes().map(|c| c.oid().into()).collect(),
-            };
-            let mut all: Vec<SchemaDef> = oids
-                .iter()
-                .filter_map(|o| def_of(&i.schema, q.kind, o))
-                .filter(|d| !q.custom_only || d.custom)
-                .filter(|d| {
-                    needle.is_empty()
-                        || d.oid.contains(&needle)
-                        || d.names
-                            .iter()
-                            .any(|n| n.to_ascii_lowercase().contains(&needle))
-                })
-                .collect();
-            let key = |d: &SchemaDef| {
-                d.names
-                    .first()
-                    .map_or_else(|| d.oid.clone(), |n| n.to_ascii_lowercase())
-            };
-            all.sort_by_key(key);
-            let total = u32::try_from(all.len()).unwrap_or(u32::MAX);
-            let start = usize::try_from(q.start).unwrap_or(usize::MAX);
-            let take = if q.max == 0 {
-                usize::MAX
-            } else {
-                usize::try_from(q.max).unwrap_or(usize::MAX)
-            };
-            Ok(SchemaPage {
-                total,
-                defs: all.into_iter().skip(start).take(take).collect(),
-            })
-        })
+        self.with(instance, |i| Ok(schema::page(&i.schema, q)))
     }
 
     fn add_schema(&self, user: &str, instance: &str, kind: SchemaKind, text: &str) -> Result<()> {
         self.change(user)?;
-        self.with(instance, |i| {
-            let m = Modification {
-                op: ModOp::Add,
-                attr: Attribute {
-                    ty: schema_attr(kind).into(),
-                    vals: vec![text.trim().as_bytes().to_vec()],
-                },
-            };
-            i.schema.modify(&[m]).map_err(|e| schema_error(&e))
-        })
+        self.with(instance, |i| schema::add(&mut i.schema, kind, text))
     }
 
     fn remove_schema(&self, user: &str, instance: &str, kind: SchemaKind, id: &str) -> Result<()> {
         self.change(user)?;
-        self.with(instance, |i| {
-            let oid = match kind {
-                SchemaKind::Attribute => i.schema.attribute(id.trim()).map(|a| a.oid().to_string()),
-                SchemaKind::Class => i.schema.class(id.trim()).map(|c| c.oid().to_string()),
-            }
-            .ok_or_else(|| schema_error(&crate::schema::SchemaError::NotFound(id.trim().into())))?;
-            if i.schema.is_protected(&oid) {
-                return Err(schema_error(&crate::schema::SchemaError::Protected(
-                    id.trim().into(),
-                )));
-            }
-            let m = Modification {
-                op: ModOp::Delete,
-                attr: Attribute {
-                    ty: schema_attr(kind).into(),
-                    vals: vec![format!("( {oid} )").into_bytes()],
-                },
-            };
-            i.schema.modify(&[m]).map_err(|e| schema_error(&e))
-        })
+        self.with(instance, |i| schema::remove(&mut i.schema, kind, id))
     }
-
     fn access(&self, user: &str, instance: &str, dn: &str) -> Result<Access> {
         self.read(user)?;
         self.with(instance, |i| {
@@ -675,33 +546,17 @@ impl DirAdmin for MemAdmin {
         password: Option<&str>,
     ) -> Result<()> {
         self.change(user)?;
-        for dn in [&agent.bind_dn, &agent.parent_dn] {
-            if ldap::Dn::parse(dn.trim()).map_or(true, |d| d.is_root()) {
-                return Err(ConfigError::BadDn(dn.trim().into()).into());
-            }
-        }
-        if agent.port == 0 {
-            return Err(AdminError::plain(
-                ErrorKind::Invalid,
-                "The port must be 1 to 65535.",
-            ));
-        }
-        if agent
-            .server
-            .chars()
-            .any(|c| !(c.is_ascii_alphanumeric() || ".-:".contains(c)))
-        {
-            return Err(AdminError::plain(
-                ErrorKind::Invalid,
-                &format!("Server {} is not a host name or address.", agent.server),
-            ));
-        }
+        super::publish::check(agent)?;
         let mut s = self.lock();
         let Some((a, pw)) = s.agents.iter_mut().find(|(a, _)| a.kind == agent.kind) else {
             return Err(AdminError::plain(ErrorKind::NotFound, "No such agent."));
         };
         if let Some(p) = password {
             *pw = (!p.is_empty()).then(|| crate::pwd::hash(p.as_bytes()));
+        }
+        // An anonymous bind keeps no password, as publish.conf.
+        if agent.bind_dn.trim().is_empty() {
+            *pw = None;
         }
         *a = PublishAgent {
             server: agent.server.trim().into(),

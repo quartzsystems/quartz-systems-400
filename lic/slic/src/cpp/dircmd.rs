@@ -106,7 +106,13 @@ fn chgdirsvra(system: &mut System, parms: &Parms) -> Reply {
         return fail(&e);
     }
     match dirconf::write(system, &path, conf.text()) {
-        Ok(()) => done,
+        Ok(()) => {
+            // A running instance takes the new password at once.
+            if let Err(e) = crate::stgsvc::dirsrv::serve::config_changed(system, &inst.name) {
+                eprintln!("qsstg: CHGDIRSVRA {}: {e}", inst.name);
+            }
+            done
+        }
         Err(why) => fail(&ConfigError::File { file: path, why }),
     }
 }

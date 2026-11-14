@@ -212,6 +212,11 @@ fn bodies_round_trip() {
         bind_dn: "cn=Publisher".into(),
         password_set: true,
         parent_dn: "ou=Printers,dc=example".into(),
+        start_tls: false,
+        create_parent: true,
+        retry: 300,
+        resync: 0,
+        publisher: "QS400 HQ".into(),
     };
     same(&Publishing {
         agents: vec![agent.clone()],

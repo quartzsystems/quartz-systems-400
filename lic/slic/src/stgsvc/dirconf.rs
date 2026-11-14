@@ -160,14 +160,33 @@ pub fn read(system: &mut System, path: &str) -> Result<Option<String>, String> {
 ///
 /// The IFS's, as text.
 pub fn write(system: &mut System, path: &str, text: &str) -> Result<(), String> {
+    replace(system, path, text, 0o600, config::CONF_CCSID)
+}
+
+/// Replace the instance list, readable by everyone and [`OWNER`]'s.
+///
+/// # Errors
+///
+/// The IFS's, as text.
+pub fn write_instances(system: &mut System, text: &str) -> Result<(), String> {
+    replace(
+        system,
+        config::INSTANCES,
+        text,
+        0o644,
+        config::INSTANCES_CCSID,
+    )
+}
+
+fn replace(system: &mut System, path: &str, text: &str, mode: u32, ccsid: u32) -> Result<(), String> {
     super::certs::as_system(system, |c| {
         let tmp = format!("{path}.new");
         let fd = c
             .open(
                 &tmp,
                 OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID)
-                    .mode(0o600)
-                    .conv(config::CONF_CCSID),
+                    .mode(mode)
+                    .conv(ccsid),
             )
             .map_err(|e| format!("{tmp}: {}", e.text()))?;
         let w = ifs::client::write_all(c, fd, text.as_bytes()).and_then(|()| c.fsync(fd, false));

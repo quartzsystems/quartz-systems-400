@@ -254,6 +254,11 @@ fn agent_out(x: a::PublishAgent) -> PublishAgent {
         bind_dn: x.bind_dn,
         password_set: x.password_set,
         parent_dn: x.parent_dn,
+        start_tls: x.start_tls,
+        create_parent: x.create_parent,
+        retry: x.retry,
+        resync: x.resync,
+        publisher: x.publisher,
     }
 }
 
@@ -270,6 +275,11 @@ fn agent_in(x: &PublishAgent) -> a::PublishAgent {
         bind_dn: x.bind_dn.clone(),
         password_set: false,
         parent_dn: x.parent_dn.clone(),
+        start_tls: x.start_tls,
+        create_parent: x.create_parent,
+        retry: x.retry,
+        resync: x.resync,
+        publisher: x.publisher.clone(),
     }
 }
 

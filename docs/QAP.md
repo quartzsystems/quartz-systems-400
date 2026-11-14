@@ -691,7 +691,7 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 - `DirAdmin` = { `dn` String, `password_set` flag, `update_dn` Option of String }. `AdminTarget` enum: `Password` 0 (`*ADMINDN`), `NewDn` 1, `UpdatePassword` 2 (`*UPDATEDN`).
 - `SchemaKind` enum: `AttributeType` 0, `ObjectClass` 1. `SchemaDefinition` = { `kind` SchemaKind, `oid` String, `names` list of String, `description` String, `superior` list of String, `syntax` String, `single_value` flag, `access_class` String, `class_kind` String, `must` list of String, `may` list of String, `added` flag, `protected` flag, `text` String (the RFC 4512 description) }.
 - `EntryAccess` = { `dn` String, `own_acl` flag, `acl` list of String, `acl_propagate` flag, `acl_source` String, `own_owners` flag, `owners` list of String, `owner_propagate` flag, `owner_source` String } (the sources are ignored in requests; `default` when nothing above sets one).
-- `AgentKind` enum: `Users` 0, `Printers` 1. `PublishAgent` = { `kind` AgentKind, `enabled` flag, `server` String (empty: this system's default instance), `port` u16, `tls` flag, `bind_dn` String, `password_set` flag (ignored in requests), `parent_dn` String }. `AgentStatus` = { `kind` AgentKind, `job` Option of JobId, `active` flag, `published` u64, `failed` u64, `last` i64, `message_id` Option of String, `message_text` String }.
+- `AgentKind` enum: `Users` 0, `Printers` 1. `PublishAgent` = { `kind` AgentKind, `enabled` flag, `server` String (empty: this system's default instance), `port` u16, `tls` flag (LDAPS, or StartTLS with `start_tls`), `bind_dn` String (empty: anonymous), `password_set` flag (ignored in requests), `parent_dn` String (empty: the agent's default), `start_tls` flag, `create_parent` flag, `retry` u32 (seconds, 10 to 86400), `resync` u32 (seconds, 0 for none, else 60 or more), `publisher` String (empty: `QS400 ` and the system name) }: `publish.conf`'s agent (DIRSRV.md 10.1). `AgentStatus` = { `kind` AgentKind, `job` Option of JobId, `active` flag, `published` u64, `failed` u64, `last` i64, `message_id` Option of String, `message_text` String }.
 - `DirCounters` = { `started` i64, `connections` u32, `total_connections` u64, `operations_started` u64, `operations_completed` u64, `binds` u64, `searches` u64, `compares` u64, `adds` u64, `modifies` u64, `deletes` u64, `modify_dns` u64, `extended` u64, `abandons` u64, `entries_sent` u64, `persistent_searches` u32 }.
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
@@ -1711,9 +1711,8 @@ Version 12, as built on 2026-11-14 (draft; decisions made in the build, for Cody
   (`status_of`). The interface is the one Navigator's pages use; QAP
   has no host trait of its own for it.
 - The job's host (`work/qsjob/src/work/qap/host.rs`) answers with
-  `stg::diradmin::Remote` over `NotBuilt`, which refuses every request
-  (`CPF9898`) until the storage service answers request 1568
-  `dir_admin` (`BLOCKED(rel)`); then the sender is the thread's link.
+  `stg::diradmin::Remote` over `ThreadDir`: request 1568 `dir_admin` on
+  the secondary thread's link, which runs as the signed-on profile.
 - The test system (`qapd::testing`) is `dirsrv::admin::MemAdmin`'s
   sample, with `SECOFR` alone holding `*ALLOBJ` and `*IOSYSCFG`;
   `net/qapd/tests/dirsrv.rs` runs each group of operations, the

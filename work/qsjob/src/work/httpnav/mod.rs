@@ -15,6 +15,7 @@
 
 mod config;
 mod db;
+mod directory;
 mod msgs;
 mod net;
 mod netsvr;
@@ -138,8 +139,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         net: Arc::new(net::LiveNet { link: l.clone() }),
         netsvr: Arc::new(netsvr::LiveNetServer { link: l.clone() }),
         nfs: Arc::new(nfs::LiveNfs { link: l.clone() }),
-        // The storage service's dir_admin, once built (stg::diradmin).
-        dirsrv: Arc::new(stg::diradmin::Remote(stg::diradmin::NotBuilt)),
+        dirsrv: Arc::new(stg::diradmin::Remote(directory::LiveDir { link: l.clone() })),
         db: Arc::new(db::LiveDb { link: l.clone() }),
         sec: Arc::new(sec::LiveSecurity { link: l.clone() }),
         sw: Arc::new(sw::LiveSoftware::new(l.clone())),
@@ -161,6 +161,7 @@ mod tests {
         let sources = [
             ("config.rs", include_str!("config.rs")),
             ("db.rs", include_str!("db.rs")),
+            ("directory.rs", include_str!("directory.rs")),
             ("msgs.rs", include_str!("msgs.rs")),
             ("net.rs", include_str!("net.rs")),
             ("netsvr.rs", include_str!("netsvr.rs")),

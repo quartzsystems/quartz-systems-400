@@ -1068,6 +1068,9 @@ ipc::rpc! {
     /// What the session's persistent searches saw since the last ask,
     /// at most `max` entries; answered at once (the job polls).
     1567 => fn dir_changes / DirChanges (session: u64, max: u32) -> Result<crate::dir::DirChanges, crate::dir::DirError>;
+    /// The directory server's administration (`dirsrv::admin::DirAdmin`)
+    /// as the job's current user: Navigator's and QAP's questions.
+    1568 => fn dir_admin / DirAdmin (op: crate::diradmin::DirAdminOp) -> crate::diradmin::DirAdminReply;
     // --- directory publishing (1570-1572; crate::dirpub, stgsvc/dirsrv/publish.rs)
     /// `publish.conf` for `QGLDPUBE` and `QGLDPUBA`, the agents'
     /// passwords unsealed: only to jobs running as `QDIRSRV`.
