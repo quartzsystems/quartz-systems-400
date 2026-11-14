@@ -121,8 +121,16 @@ impl Conn {
         if !o.ctrls.is_empty() {
             c.with_controls(o.ctrls.clone());
         }
-        let r = c.search(base, scope, filter, attrs.to_vec())?;
-        Ok(split(r.0, r.1))
+        // No adapters: `search()`'s `EntriesOnly` drops the continuation
+        // references the referral scenarios look for.
+        let none: Vec<Box<dyn ldap3::adapters::Adapter<'_, &str, Vec<&str>>>> = Vec::new();
+        let mut st = c.streaming_search_with(none, base, scope, filter, attrs.to_vec())?;
+        let mut raw = Vec::new();
+        while let Some(re) = st.next()? {
+            raw.push(re);
+        }
+        let res = st.result();
+        Ok(split(raw, res))
     }
 
     /// A search with no options.

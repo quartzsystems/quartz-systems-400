@@ -144,6 +144,7 @@ pub struct Target {
 
 impl Target {
     /// Parses `args`, reading passwords and the oracle's host through `env`.
+    #[allow(clippy::too_many_lines)] // one option after another
     pub fn from_args(
         args: &[String],
         env: &dyn Fn(&str) -> Option<String>,
@@ -195,7 +196,7 @@ impl Target {
                 "--admin-dn" => val()?.clone_into(&mut t.admin_dn),
                 "--suffix" => t.suffix = Some(val()?.to_owned()),
                 "--profile" => {
-                    t.profile = Some((val()?.to_ascii_uppercase(), env("LDAPTEST_PROFILE_PW")))
+                    t.profile = Some((val()?.to_ascii_uppercase(), env("LDAPTEST_PROFILE_PW")));
                 }
                 "--disabled-profile" => {
                     t.disabled = Some((val()?.to_ascii_uppercase(), env("LDAPTEST_DISABLED_PW")));

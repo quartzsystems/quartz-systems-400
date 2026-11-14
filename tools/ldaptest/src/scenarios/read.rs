@@ -204,6 +204,7 @@ fn rootdse_one_level(c: &Ctx) -> Lines {
     Ok(out)
 }
 
+#[allow(clippy::too_many_lines)] // one count after another
 fn schema_read(c: &Ctx) -> Lines {
     let base = c
         .dse
