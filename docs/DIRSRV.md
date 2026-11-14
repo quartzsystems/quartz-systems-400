@@ -224,7 +224,11 @@ the backends and the schema, and answers:
 | 1566 `dir_watch` | persistent search: changes under a base, delivered with 1567 |
 | 1567 `dir_changes` | the changes since the last call (polled by the job's watcher thread, bounded wait) |
 | 1568 `dir_admin` | `CHGDIRSVRA`, the configuration's changes, the instance list, Navigator's and QAP's questions |
-| 1569-1579 | reserved |
+| 1569 | reserved |
+| 1570 `dirpub_config` | the publishing configuration for `QGLDPUBE` and `QGLDPUBA`: the file's text and the agents' passwords unsealed (only to `QDIRSRV`'s jobs) (§10.1) |
+| 1571 `dirpub_events` | an agent's changes after its cursor, or a resync; the agent's status reported with the ask (§10.1) |
+| 1572 `dirpub_list` | every user or printer to publish and the cursor they are as of (§10.1) |
+| 1573-1579 | reserved |
 
 ACL evaluation, schema checking and password policy run in the
 service, beside the data, with the session's identity.
@@ -858,28 +862,138 @@ suffix of its own with another `ibm-slapdSuffix` on `cn=Directory`.
 IBM's publishing agents (`QGLDPUBE`, `QGLDPUBA`, always running in
 `QSYSWRK` as `QDIRSRV`) copy system information to a directory server:
 the user agent publishes users, the printer agent shared printers.
-QS/400 publishes:
+QS/400 has the same two jobs: `QGLDPUBE` publishes users, `QGLDPUBA`
+printers. The logic is `net/dirsrv/src/publish/` (`config`, `map`,
+`publisher`, `runner`), the jobs `work/qsjob/src/work/dirsrv/publish.rs`,
+the service's side `lic/slic/src/stgsvc/dirsrv/publish.rs`.
 
-- users: one `inetOrgPerson` (plus `publisher`-tagged) entry per user
-  profile, named `cn=TEXT-or-NAME` under the configured parent DN
-  (`ou=Users,...` by default), with `uid` the profile name, `cn` and
-  `sn` from its text, `mail` from the profile's SMTP name when one
-  exists, `publisherName: QS400 SYSTEM`, kept in step as profiles are
-  created, changed and deleted (the publishing jobs read the service's
-  profile change events);
-- printers: one entry per printer device with an output queue, under
-  `ou=Printers,...`, with IBM's `printerService`-free attributes
-  (`printer-name`, `printer-location`, `printer-uri` from RFC 3712's
-  `printerIPP` class).
+**The configuration** is `/QIBM/UserData/OS400/DirSrv/publish.conf`
+(IBM keeps it in Navigator's store; QS/400's own LDIF, CCSID 1208,
+owner-only), changed through Navigator, QAP and `dir_admin`. A missing
+file is the shipped state: both agents disabled. Its records are
+content records; every attribute is QS/400's (`qs400-pub*`, compared
+without case), each single-valued:
 
-The publishing configuration (target server, port, bind DN and
-password, TLS, parent DNs, which agents) is
-`/QIBM/UserData/OS400/DirSrv/publish.conf` (QS/400's own LDIF, one entry
-per agent; IBM keeps it in Navigator's store), changed through
-Navigator, QAP and `dir_admin`. The target may be the local instance or
-any LDAP server. The `QGLDPAPI` API (Publish an object, `QgldPubDirObj`)
-is built over the same code when its names are settled from the header
-(`NEEDS-CODY` 4 covers the wire to an IBM target).
+```
+version: 1
+
+dn: cn=publishing
+qs400-pubFormat: 1
+
+dn: cn=users,cn=publishing
+qs400-pubEnabled: TRUE
+qs400-pubHost: ldap.example.com
+qs400-pubPort: 389
+qs400-pubSecurity: STARTTLS
+qs400-pubBindDN: cn=Administrator
+qs400-pubBindPW:: <base64 of the sealed password>
+qs400-pubParentDN: ou=Users,dc=example,dc=com
+qs400-pubCreateParent: TRUE
+qs400-pubRetry: 300
+qs400-pubResync: 86400
+```
+
+| Attribute | Meaning | Default |
+|---|---|---|
+| `qs400-pubFormat` (`cn=publishing` only) | the format version, 1 | required |
+| `qs400-pubEnabled` | `TRUE` or `FALSE` | `FALSE` |
+| `qs400-pubHost` | the target server's host name or address | `localhost` (the local instance) |
+| `qs400-pubPort` | 1 to 65535 | 389, 636 for `SSL` |
+| `qs400-pubSecurity` | `NONE`, `SSL` (LDAPS), `STARTTLS` | `NONE` |
+| `qs400-pubBindDN` | the DN bound as; absent binds anonymously | none |
+| `qs400-pubBindPW` | the password, sealed | none |
+| `qs400-pubParentDN` | where the entries go | `ou=Users` or `ou=Printers` over `cn=localhost` |
+| `qs400-pubCreateParent` | add the parent and its missing ancestors | `TRUE` |
+| `qs400-pubRetry` | seconds before the first retry, 10 to 86400 | 300 |
+| `qs400-pubResync` | seconds between full resyncs, 0 for none, else 60 or more | 86400 |
+| `qs400-pubPublisher` | the `publisherName` value | `QS400 ` and the system name |
+
+The agents are `cn=users,cn=publishing` and `cn=printers,cn=publishing`;
+another `cn=` under `cn=publishing`, an agent twice, an attribute this
+table does not have, a value twice, a value out of range or a DN that
+does not parse refuse the file (the job logs it and publishes nothing;
+the writer never produces one). The password is sealed with the LIC
+partition's key (`certs::stash::Sealer`, as `ADDSMTPLE *HOSTAUTH`
+keeps the SMTP relay's) with the authenticated data `QS400 DIRSRV
+PUBLISH` and the agent's name, so a sealed value copied to the other
+agent, or to another system, does not open. Only the storage service
+holds the key: it seals on a change and hands the publishing jobs the
+password in the clear (1570). The format is frozen at V1R2M0
+(`tools/fmtcheck`, `dirsrv-publish`).
+
+TLS (`SSL`, `STARTTLS`) checks the target's certificate against the
+shipped roots and the `*SYSTEM` store's trusted CAs, by name, and
+presents the certificate assigned to `QIBM_GLD_DIRSRV_CLIENT` (QS/400's
+ID `QS400_DIRECTORY_CLIENT`) when there is one.
+
+**Users.** Every user profile except the shipped ones and the group
+profiles is one entry, objectClass `top`, `person`,
+`organizationalPerson`, `inetOrgPerson`, `publisher`:
+
+- `uid`: the profile name (what identifies the entry);
+- `cn`: the profile's text, else its name; `sn`: the last word of the
+  text, else the name;
+- `mail`: the profile's SMTP name. QS/400 has none (there is no system
+  distribution directory, §14), so the service gives none and `mail` is
+  left out; the mapping takes one when a source has it;
+- `publisherName`: the agent's publisher value.
+
+The entry is `cn=CN,PARENT`. When that DN is held by an entry that is
+not this profile's (another profile with the same text, or anyone
+else's), it is `cn=CN+uid=NAME,PARENT`.
+
+**Printers.** Every printer device description with an output queue is
+one entry, objectClass `top`, `printerService`, `printerIPP`,
+`publisher`, named `printer-name=DEVICE,PARENT`: `printer-name` the
+device, `printer-location` the device's text (left out when blank),
+`printer-make-and-model` a LAN printer's `MFRTYPMDL`, `printer-uri`
+`lpd://HOST/OUTQ` when the LPD server is an autostart server and the
+system has a host name (QS/400's LPD takes the output queue's name as
+the queue), else left out; `publisherName` as for users.
+
+**Change events.** The service keeps, per kind, the records it last
+listed and a log of what changed since (created, changed, deleted; the
+last 1024 changes), numbered from an epoch taken when the service
+starts. Profiles are listed again when a profile was written (the
+security stamp moved), devices at each ask. A job asks for the changes
+after its cursor (1571); a cursor of another epoch, or older than the
+log, gets a resync: the job lists everything again (1572).
+
+**The publisher.** Per agent: a queue of wanted changes (the last one
+per name wins), the DNs it published, the connection, the status.
+
+- A full resync (at start, when the service asks for one, every
+  `qs400-pubResync` seconds, after a change of the configuration)
+  searches the parent's subtree for `publisherName=<ours>`, adds or
+  modifies every wanted entry, and deletes the published entries whose
+  profile or device is gone.
+- An entry is found by its key (`uid` or `printer-name`) and the
+  publisher value. A found entry is renamed (modify DN, old RDN
+  deleted) when its DN no longer matches, then modified (the managed
+  attributes replaced; an empty one removed); a new one is added. An
+  add that meets an existing entry modifies it only when it carries our
+  publisher value.
+- Only entries carrying this agent's `publisherName` value are ever
+  modified, renamed or deleted; others under the parent are left as
+  they are.
+- The parent is checked once per connection; when it is missing and
+  `qs400-pubCreateParent` is `TRUE`, it and its missing ancestors below
+  the server's matched DN are added (`ou` as `organizationalUnit`, `o`
+  as `organization`, `dc` as `domain`, `cn` as `container`, `l` as
+  `locality`; another type is an error).
+- A target that cannot be reached, closes the connection, refuses the
+  bind or answers busy (51), unavailable (52) or other (80) keeps the
+  queue and is tried again after `qs400-pubRetry` seconds, doubled at
+  each failure up to 64 times (and at most a day). Any other result of
+  one entry is that entry's error: it is logged, counted, and left for
+  the next resync.
+- The status (enabled, connected, last success, last error and when,
+  pending, published, next try) is reported to the service with each
+  ask (1571) for Navigator and QAP.
+
+The `QGLDPAPI` API (Publish an object, `QgldPubDirObj`) is built over
+the same code when its names are settled from the header (`NEEDS-CODY`
+4 covers the wire to an IBM target).
 
 ## 11. Passwords
 
