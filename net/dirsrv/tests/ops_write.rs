@@ -911,7 +911,12 @@ fn proxied_authorization() {
         },
         vec![proxy("dn:cn=joe,o=Acme")],
     );
-    assert_eq!(T::code(&o), ResultCode::UnavailableCriticalExtension);
+    // Whoami runs as the identity.
+    assert_eq!(T::code(&o), ResultCode::Success);
+    let ProtocolOp::ExtendedResponse { value, .. } = &o.replies[0].op else {
+        panic!()
+    };
+    assert_eq!(value.as_deref(), Some(&b"dn:cn=joe,o=Acme"[..]));
     // As joe, the administrator cannot read joe's password.
     let r = t.search_req(
         &a,
@@ -933,6 +938,13 @@ fn proxied_authorization() {
     let (joe, _, _) = t.bind("cn=joe,o=Acme", "pw1");
     let r = t.search_req(
         &joe,
+        T::req("cn=joe,o=Acme", Scope::Base, "(objectClass=*)", &[]),
+        vec![proxy("dn:cn=Administrator")],
+    );
+    assert_eq!(done(&r).code, ResultCode::Other(123));
+    let anon = dirsrv::ops::Session::anonymous();
+    let r = t.search_req(
+        &anon,
         T::req("cn=joe,o=Acme", Scope::Base, "(objectClass=*)", &[]),
         vec![proxy("dn:cn=Administrator")],
     );
@@ -1220,4 +1232,81 @@ fn policy_response_on_bind() {
         ResultCode::Success
     );
     assert_eq!(t.bind("cn=joe,o=Acme", "pw1").1.code, ResultCode::Success);
+}
+
+/// What ldaptest's `assertion-write` does, then more adds: a false
+/// assertion's modify and delete leave the store whole.
+#[test]
+fn false_assertions_leave_the_store_whole() {
+    let mut t = T::new();
+    let a = t.admin.clone();
+    ou(&mut t, "Sb", "o=Acme");
+    t.add_ok(
+        &a,
+        "cn=a,ou=Sb,o=Acme",
+        &[
+            text("objectClass", &["top", "person"]),
+            text("cn", &["a"]),
+            text("sn", &["one"]),
+        ],
+    );
+    let assert = |f: &str| {
+        vec![ldap::control::Assertion(ldap::Filter::parse(f).unwrap()).to_control(true)]
+    };
+    let o = t.run(
+        &a,
+        ProtocolOp::ModifyRequest {
+            dn: "cn=a,ou=Sb,o=Acme".into(),
+            changes: vec![m(ModOp::Replace, "sn", &["two"])],
+        },
+        assert("(sn=other)"),
+    );
+    assert_eq!(T::code(&o), ResultCode::Other(122));
+    let o = t.run(
+        &a,
+        ProtocolOp::ModifyRequest {
+            dn: "cn=a,ou=Sb,o=Acme".into(),
+            changes: vec![m(ModOp::Replace, "sn", &["two"])],
+        },
+        assert("(sn=one)"),
+    );
+    assert_eq!(T::code(&o), ResultCode::Success);
+    let o = t.run(
+        &a,
+        ProtocolOp::DelRequest("cn=a,ou=Sb,o=Acme".into()),
+        assert("(sn=one)"),
+    );
+    assert_eq!(T::code(&o), ResultCode::Other(122));
+    for dn in ["cn=a,ou=Sb,o=Acme", "ou=Sb,o=Acme"] {
+        let o = t.run(&a, ProtocolOp::DelRequest(dn.into()), Vec::new());
+        assert_eq!(T::code(&o), ResultCode::Success, "delete {dn}");
+    }
+    for i in 0..20 {
+        ou(&mut t, &format!("After{i}"), "o=Acme");
+    }
+}
+
+/// An anonymous subtree search meets a referral object: a continuation
+/// reference.
+#[test]
+fn anonymous_searches_get_continuation_references() {
+    let mut t = T::new();
+    let a = t.admin.clone();
+    ou(&mut t, "Sb", "o=Acme");
+    t.add_ok(
+        &a,
+        "ou=ref,ou=Sb,o=Acme",
+        &[
+            text("objectClass", &["top", "referral", "extensibleObject"]),
+            text("ou", &["ref"]),
+            text("ref", &["ldap://ldaptest.invalid/ou=far,dc=example"]),
+        ],
+    );
+    let anon = dirsrv::ops::Session::anonymous();
+    let r = t.search(&anon, "ou=Sb,o=Acme", Scope::Sub, "(objectClass=*)", &["1.1"]);
+    assert!(
+        r.iter()
+            .any(|x| matches!(&x.op, ProtocolOp::SearchResultReference(_))),
+        "{r:?}"
+    );
 }

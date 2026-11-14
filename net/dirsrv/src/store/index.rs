@@ -152,6 +152,7 @@ impl DirDb {
         after: &BTreeSet<IndexKey>,
     ) -> Result<()> {
         let mut t: Index = self.tree(txn, SLOT_INDEX)?;
+        let root = t.root();
         let mut delta: i64 = 0;
         for k in before.difference(after) {
             if t.delete(txn, k)?.is_some() {
@@ -163,8 +164,12 @@ impl DirDb {
                 delta += 1;
             }
         }
-        if delta != 0 {
+        // A delete and an insert can leave the count as it was and
+        // still move the tree's root: it is kept whenever it moved.
+        if t.root() != root {
             self.set_root(txn, SLOT_INDEX, t.root())?;
+        }
+        if delta != 0 {
             let mut attr = self.attr(txn)?;
             attr.index_keys = attr.index_keys.saturating_add_signed(delta);
             self.save_attr(txn, &attr)?;
