@@ -1159,10 +1159,13 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "certs",
+ "getrandom 0.4.3",
  "ldap",
+ "ntlm",
  "qsname",
  "saverst",
  "savfmt",
+ "sha1",
  "sha2 0.11.0",
  "store",
  "thiserror 2.0.21",
