@@ -16,6 +16,12 @@ use crate::console::Console;
 
 /// Run the job. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
+    // The publishing agents (docs/DIRSRV.md section 10.1) have a role of
+    // their own.
+    let pgm = start.program.rsplit('/').next().unwrap_or("");
+    if matches!(pgm, "QGLDPUBE" | "QGLDPUBA") {
+        super::dirsrv::publish::run(ctl, link, start)
+    }
     let ending = match ctl.try_clone() {
         Ok(c) => c,
         Err(e) => {
@@ -37,8 +43,6 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         super::netsvr::server::run(&mut c, link, start.number, &start.name)
     } else if let Some(d) = stg::nfs::Daemon::of_program(pgm) {
         super::nfs::run(&mut c, link, d, start.number)
-    } else if matches!(pgm, "QGLDPUBE" | "QGLDPUBA") {
-        publisher(&mut c, pgm)
     } else if pgm == "QSPWTR" {
         super::writer::run(&mut c, link, start.rqsdta.trim())
     } else if pgm == "QCMD" {
@@ -70,16 +74,6 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         reason: format!("ended, code {code}"),
     });
     std::process::exit(0)
-}
-
-/// `QGLDPUBE` and `QGLDPUBA`, the directory server's publishing agents
-/// (docs/DIRSRV.md section 10.1): `GLD010B` in the job log, and the job
-/// ends. BLOCKED(rel): publishing users and printers is not built yet.
-fn publisher(c: &mut Console, pgm: &str) -> u16 {
-    let data = wm::joblog::data(&[(pgm, 10)]);
-    c.job()
-        .log_external("GLD010B", "QGLDMSG", &data, qir::MsgType::Info);
-    0
 }
 
 /// `QWCSTRUP`: call the program `QSTRUPPGM` names, unless `*NONE`.

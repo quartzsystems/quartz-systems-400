@@ -34,7 +34,9 @@ use crate::ipl::system::{System, now_unix};
 
 /// The profiles the system's servers run as: they may have their
 /// application's certificate.
-const SERVER_PROFILES: &[&str] = &["QSYS", "QTCP", "QUSER", "QTMHHTTP", "QTMHHTP1", "QSPLJOB"];
+const SERVER_PROFILES: &[&str] = &[
+    "QSYS", "QTCP", "QUSER", "QTMHHTTP", "QTMHHTP1", "QSPLJOB", "QDIRSRV",
+];
 
 /// How long a `cert_app` answer is reused while the files are unchanged.
 const CACHE_SECS: u64 = 600;
