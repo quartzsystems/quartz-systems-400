@@ -2,7 +2,7 @@
 [format.audit]
 frozen_at = "V1R1M0"
 version = "2"
-hash = "825f684cbdcb2586c8bd592a49d077ea98a73f0daeca2fee2d0fc4fff5f4555c"
+hash = "db51d166e843f6df8efef3fa9beb0094c2bf9a68e684385086fa92f3282e89f2"
 
 [format.authority]
 frozen_at = "V1R1M0"

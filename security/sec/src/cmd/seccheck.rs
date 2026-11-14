@@ -98,6 +98,63 @@ pub struct TlsFacts {
     pub unmapped: Vec<String>,
 }
 
+/// How an instance's administrator password stands.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum AdminPw {
+    /// None set: administrator binds are refused.
+    #[default]
+    Unset,
+    /// One of [`admin_defaults`] (the one it is, for the report).
+    Default(String),
+    /// Set, and none of the defaults.
+    Set,
+}
+
+/// A directory server instance's configuration as the service reads it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DirFacts {
+    /// The instance's name.
+    pub instance: String,
+    /// Why its configuration could not be read; the rest is then unset.
+    pub unreadable: Option<String>,
+    /// `ibm-slapdAllowAnon`.
+    pub allow_anon: bool,
+    /// `ibm-slapdSecurity` (`none`, `SSL`, `TLS`, `SSLTLS`).
+    pub security: String,
+    /// `ibm-slapdAdminPW`.
+    pub admin: AdminPw,
+}
+
+/// The well-known passwords an administrator's must not be: each of
+/// these words and the instance's name, in lower, upper and capitalized
+/// case.
+#[must_use]
+pub fn admin_defaults(instance: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for w in [
+        "secret",
+        "password",
+        "admin",
+        "administrator",
+        "root",
+        "qsecofr",
+        instance,
+    ] {
+        if w.is_empty() {
+            continue;
+        }
+        let lower = w.to_ascii_lowercase();
+        let mut cap = lower.clone();
+        cap[..1].make_ascii_uppercase();
+        for v in [lower.clone(), w.to_ascii_uppercase(), cap] {
+            if !out.contains(&v) {
+                out.push(v);
+            }
+        }
+    }
+    out
+}
+
 /// What the caller supplies besides the store.
 #[derive(Clone, Debug, Default)]
 pub struct Inputs<'a> {
@@ -107,6 +164,8 @@ pub struct Inputs<'a> {
     pub tls: TlsFacts,
     /// Commands shipped `*PUBLIC *EXCLUDE`.
     pub exclude_cmds: &'a [&'a str],
+    /// Every directory server instance in the instance list.
+    pub dirsrv: Vec<DirFacts>,
 }
 
 /// A value's judge.
@@ -185,6 +244,7 @@ pub fn run(txn: &mut Txn<'_>, env: &Env<'_>, inputs: &Inputs<'_>) -> Result<Vec<
     out.extend(exits(txn, env, &inputs.exits)?);
     out.extend(audit(txn, env)?);
     out.extend(tls(&inputs.tls));
+    out.extend(dirsrv(&inputs.dirsrv));
     Ok(out)
 }
 
@@ -567,6 +627,84 @@ pub fn tls(t: &TlsFacts) -> Vec<Finding> {
     out
 }
 
+/// Each directory server instance: anonymous binds, binds without
+/// TLS, the administrator's password.
+#[must_use]
+pub fn dirsrv(instances: &[DirFacts]) -> Vec<Finding> {
+    let mut out = Vec::new();
+    for d in instances {
+        let item = |attr: &str| format!("{} {attr}", d.instance);
+        if let Some(why) = &d.unreadable {
+            out.push(f(
+                "DIRSRV",
+                item("ibmslapd.conf"),
+                Status::Warn,
+                format!("configuration not read: {why}"),
+            ));
+            continue;
+        }
+        out.push(if d.allow_anon {
+            f(
+                "DIRSRV",
+                item("ibm-slapdAllowAnon"),
+                Status::Warn,
+                "TRUE: anyone may search without signing on",
+            )
+        } else {
+            f(
+                "DIRSRV",
+                item("ibm-slapdAllowAnon"),
+                Status::Pass,
+                "FALSE",
+            )
+        });
+        out.push(if d.security.trim().eq_ignore_ascii_case("none") {
+            f(
+                "DIRSRV",
+                item("ibm-slapdSecurity"),
+                Status::Warn,
+                "none: no TLS, passwords of simple binds cross the network in the clear",
+            )
+        } else {
+            f(
+                "DIRSRV",
+                item("ibm-slapdSecurity"),
+                Status::Pass,
+                d.security.trim(),
+            )
+        });
+        out.push(match &d.admin {
+            AdminPw::Unset => f(
+                "DIRSRV",
+                item("ibm-slapdAdminPW"),
+                Status::Warn,
+                "not set: administrator binds are refused until CHGDIRSVRA sets one",
+            ),
+            AdminPw::Default(w) => f(
+                "DIRSRV",
+                item("ibm-slapdAdminPW"),
+                Status::Fail,
+                format!("the administrator's password is the well-known {w}"),
+            ),
+            AdminPw::Set => f(
+                "DIRSRV",
+                item("ibm-slapdAdminPW"),
+                Status::Pass,
+                "set, not a well-known password",
+            ),
+        });
+    }
+    if out.is_empty() {
+        out.push(f(
+            "DIRSRV",
+            "*ALL",
+            Status::Pass,
+            "no directory server instances",
+        ));
+    }
+    out
+}
+
 /// How many of each status.
 #[must_use]
 pub fn counts(findings: &[Finding]) -> (usize, usize, usize) {
@@ -627,6 +765,32 @@ mod tests {
             ..TlsFacts::default()
         };
         assert_eq!(tls(&t)[0].status, Status::Fail);
+    }
+
+    #[test]
+    fn directory_server() {
+        let d = admin_defaults("QUSRDIR");
+        for w in ["secret", "SECRET", "Secret", "qsecofr", "QUSRDIR", "qusrdir", "Qusrdir"] {
+            assert!(d.contains(&w.to_string()), "{w}");
+        }
+        let shipped = DirFacts {
+            instance: "QUSRDIR".into(),
+            allow_anon: true,
+            security: "none".into(),
+            ..DirFacts::default()
+        };
+        let r = dirsrv(&[shipped.clone()]);
+        assert_eq!(r.len(), 3);
+        assert!(r.iter().all(|x| x.status == Status::Warn));
+        let bad = DirFacts {
+            admin: AdminPw::Default("secret".into()),
+            allow_anon: false,
+            security: "SSLTLS".into(),
+            ..shipped
+        };
+        let r = dirsrv(&[bad]);
+        assert_eq!(counts(&r), (2, 0, 1));
+        assert_eq!(dirsrv(&[])[0].status, Status::Pass);
     }
 
     #[test]

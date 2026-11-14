@@ -9,6 +9,7 @@
 //! ([`write`]), in a transaction of their own so a request that failed
 //! is audited too. `docs/SECURITY.md` §7 has the catalog and layouts.
 
+pub mod di;
 pub mod force;
 pub mod kind;
 pub mod layout;
@@ -82,6 +83,26 @@ impl Event {
             .map_or("", |(_, p)| p.as_str())
     }
 
+    /// The first tail string with `tag`, empty when there is none.
+    #[must_use]
+    pub fn tail_str(&self, tag: u8) -> &str {
+        self.tail
+            .iter()
+            .find(|(t, _)| *t == tag)
+            .map_or("", |(_, s)| s.as_str())
+    }
+
+    /// The action auditing value that selects it: the kind's, or for
+    /// `DI` its operation's (`di::category`).
+    #[must_use]
+    pub fn category(&self) -> Option<&'static str> {
+        if self.kind == Kind::Di {
+            di::category(self.get("OPER"))
+        } else {
+            self.kind.category()
+        }
+    }
+
     /// Set field `suffix`.
     #[must_use]
     pub fn set(mut self, suffix: &'static str, value: impl Into<String>) -> Self {
@@ -147,7 +168,14 @@ impl Event {
         if !r.tail().is_empty()
             && let Ok(t) = Tail::decode(r.tail())
         {
-            for tag in [TAIL_PATH, TAIL_NEW_PATH] {
+            for tag in [
+                TAIL_PATH,
+                TAIL_NEW_PATH,
+                di::TAIL_USER_DN,
+                di::TAIL_OBJECT_DN,
+                di::TAIL_OLD,
+                di::TAIL_NEW,
+            ] {
                 for s in t.strs(tag) {
                     e.tail.push((tag, s));
                 }
@@ -233,7 +261,7 @@ impl Control {
         if self.noqtemp() && e.get("OLIB") == "QTEMP" {
             return false;
         }
-        match e.kind.category() {
+        match e.category() {
             None => self.objaud(),
             Some(c) => {
                 self.has("*AUDLVL")

@@ -380,6 +380,7 @@ version = ["security/sec/src/audit/layout.rs::FORMAT_VERSION"]
 files = [
     "security/sec/src/audit/layout.rs",
     "security/sec/src/audit/kind.rs",
+    "security/sec/src/audit/di.rs",
 ]
 
 [[format]]

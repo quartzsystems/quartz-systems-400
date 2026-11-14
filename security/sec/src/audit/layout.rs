@@ -11,7 +11,7 @@ use crate::audit::kind::Kind;
 use crate::rec::{Layout, field};
 
 /// The version of these layouts (frozen at V1R1M0, `docs/SECURITY.md` §7;
-/// version 2 adds `VP`).
+/// version 2 adds `VP` and `DI`).
 pub const FORMAT_VERSION: u16 = 2;
 
 /// `AF`: authority failure.
@@ -123,6 +123,35 @@ pub static CP: Layout = Layout {
         field("CPGRPP", 123, 10),
         field("CPOWNR", 133, 10),
         field("CPGAUT", 143, 10),
+    ],
+};
+
+/// `DI`: directory server operation (`QASYDIJ4`'s fixed fields; the
+/// DNs and the path are tail items, `audit::di`). Version 2.
+pub static DI: Layout = Layout {
+    name: "AuditDI",
+    size: Some(169),
+    fields: &[
+        field("DIETYP", 0, 1),
+        field("DIOPER", 1, 2),
+        field("DIACOD", 3, 1),
+        field("DICCHG", 4, 1),
+        field("DICCOD", 5, 1),
+        field("DIPROP", 6, 1),
+        field("DIBNDC", 7, 20),
+        field("DILVRS", 27, 4),
+        field("DISSLI", 31, 1),
+        field("DIRTYP", 32, 1),
+        field("DICONN", 33, 20),
+        field("DIIPAD", 53, 50),
+        field("DIUNLN", 103, 5),
+        field("DIOBJL", 108, 5),
+        field("DIOOLN", 113, 5),
+        field("DINEWL", 118, 5),
+        field("DIOFID", 123, 32),
+        field("DIPLEN", 155, 5),
+        field("DIAPIN", 160, 1),
+        field("DIINST", 161, 8),
     ],
 };
 
@@ -392,6 +421,7 @@ pub fn of(kind: Kind) -> Option<&'static Layout> {
         Kind::Ca => &CA,
         Kind::Co => &CO,
         Kind::Cp => &CP,
+        Kind::Di => &DI,
         Kind::Do => &DO,
         Kind::Ds => &DS,
         Kind::Gr => &GR,
@@ -418,7 +448,7 @@ pub fn of(kind: Kind) -> Option<&'static Layout> {
 #[must_use]
 pub fn all() -> Vec<&'static Layout> {
     vec![
-        &AF, &AD, &AU, &CA, &CO, &CP, &DO, &DS, &GR, &JD, &JS, &OM, &OW, &PA, &PG, &PS, &PW, &SE,
+        &AF, &AD, &AU, &CA, &CO, &CP, &DI, &DO, &DS, &GR, &JD, &JS, &OM, &OW, &PA, &PG, &PS, &PW, &SE,
         &SF, &ST, &SV, &VP, &ZC, &ZR,
     ]
 }

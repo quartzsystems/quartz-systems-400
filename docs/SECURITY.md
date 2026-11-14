@@ -544,6 +544,7 @@ failure) is audited too. An event is written when:
 | `CA` | `*SECRUN` | a private, public, group or owner authority, or the list securing an object, changes |
 | `CO` | `*CREATE` | an object is created |
 | `CP` | `*SECCFG` | `CRTUSRPRF`, `CHGUSRPRF`, `DLTUSRPRF`, `CHGPWD` |
+| `DI` | by operation | the directory server, when its instance's `ibm-audit` and the operation's switch are on: `*AUTFAIL` for `AF` (access control refused) and `PW` (a bind's password not valid), `*CREATE` for `CO`, `*DELETE` for `DO`, `*OBJMGT` for `OM`, object auditing (`QAUDCTL(*OBJAUD)`) for `ZC` and `ZR`, `*SECDIRSRV` for the rest (below) |
 | `DO` | `*DELETE` | an object is deleted |
 | `DS` | `*SECCFG` | DST resets a service tools password |
 | `GR` | `*SECRUN` | the password validation program is called |
@@ -567,7 +568,36 @@ The restore family (`OR`, `RA`, `RO`, `RP`, `RU`, `RZ`) waits for save
 and restore (Phase 11); `SO`, `VA`, `VO`, `VU`, `X0`, `X1` and
 `X2` belong to servers and networks QS/400 does not have yet. They are
 defined (`sec::audit::Kind`) and never written. `VP` came with
-`NetServer` (layout version 2).
+`NetServer` and `DI` with the directory server (layout version 2).
+
+`DI` entries are written by the directory server's service code
+through `sec::audit::di::audit_di(op, &fields)`: `DIETYP` is `L` (an
+LDAP operation) and `DIOPER` the operation, IBM's codes: `AD` audit
+configuration changed, `AF` authority failure, `BN` bind, `CA` ACL
+changed, `CF` configuration changed, `CI` and `DI` instance created and
+deleted, `CO` entry added, `CP` password changed, `DO` entry deleted,
+`EX` and `IM` LDIF export and import, `OM` entry renamed (modify DN),
+`OW` owner changed, `PO` password policy changed, `PW` password not
+valid, `RM` replication management, `UB` unbind, `ZC` entry modified,
+`ZR` entry read. The operation picks the value that selects the entry,
+as IBM's table of `QAUDLVL` values does; every other operation is
+`*SECDIRSRV`'s, which `*SECURITY` includes. The DNs and the LDIF file's
+path are tail items (tag 3 the bound DN `DIUSRN`, 4 the entry's DN
+`DIOBJN`, 5 the old owner or value `DIOOWN`, 6 the new owner or DN
+`DINEWN`, 1 the path `DIPNAM`), their lengths in the fixed part. A bind
+as an OS profile that fails also writes `PW` (§9), through the sign-on
+check every server uses.
+
+The field names, types and lengths are IBM's `QASYDIJ4` and `QASYDIJ5`
+on the primary (`tools/conformance/oracle/dirsrv/qasydij4-primary.txt`,
+read from `QSYS2/SYSCOLUMNS`). Their values are not settled: no `DI`
+entry was written on an oracle. The operation codes are from IBM's
+published description of the entry; `DIACOD`, `DICCHG`, `DICCOD`,
+`DIBNDC` and `DIRTYP`'s value sets are QS/400's reading of their names
+(NEEDS-CODY: with directory auditing on for a test instance on the
+primary, `CPYAUDJRNE ENTTYP(DI) OUTFILE(QTEMP/DI)` after a failed bind,
+an add, a modify, an ACL change and a rename, then `DSPPFM
+QTEMP/QAUDITDI`).
 
 Each entry's data is the type's fields below, fixed-width CP037 text,
 named as IBM's model files name them (`QASYxxJ5` without the journal
@@ -704,6 +734,41 @@ User profile changed.
 | 123 | 10 | CPGRPP | `GRPPRF` |
 | 133 | 10 | CPOWNR | `OWNER` |
 | 143 | 10 | CPGAUT | `GRPAUT` |
+
+### `AuditDI` (169 bytes)
+
+Directory server operation. IBM's `QASYDIJ4` fields in its order, the
+variable ones (`DIUSRN`, `DIOBJN`, `DIOOWN`, `DINEWN`, `DIPNAM`) as
+tail items and their `CCSID` fields (`DIUNCC` ...) left out; `DIINST`
+is `QASYDIJ5`'s. Version 2.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | DIETYP | `L` an LDAP operation |
+| 1 | 2 | DIOPER | the operation (`BN`, `PW`, `CO` ..., §7) |
+| 3 | 1 | DIACOD | authority failure code (`AF`): `A` anonymous, `B` bound (QS/400's) |
+| 4 | 1 | DICCHG | configuration change (`CF`): `A` the administrator, `C` the configuration file (QS/400's) |
+| 5 | 1 | DICCOD | change code (`CA`, `CP`, `OW`, `CF`): `A` added, `D` deleted, `R` replaced (QS/400's) |
+| 6 | 1 | DIPROP | `T` or `F`: the ACL or owner propagates (`CA`, `OW`) |
+| 7 | 20 | DIBNDC | the bind's authentication: `SIMPLE`, `EXTERNAL` |
+| 27 | 4 | DILVRS | the protocol version: `V3` |
+| 31 | 1 | DISSLI | `Y` the connection is TLS |
+| 32 | 1 | DIRTYP | request type, blank (not settled) |
+| 33 | 20 | DICONN | the connection's ID |
+| 53 | 50 | DIIPAD | the client's IP address |
+| 103 | 5 | DIUNLN | length of the bound DN; the DN is tail item 3 |
+| 108 | 5 | DIOBJL | length of the entry's DN; tail item 4 |
+| 113 | 5 | DIOOLN | length of the old owner or value; tail item 5 |
+| 118 | 5 | DINEWL | length of the new owner or DN; tail item 6 |
+| 123 | 32 | DIOFID | file ID of an import's or export's file, hexadecimal |
+| 155 | 5 | DIPLEN | the file's path length; the path is tail item 1 |
+| 160 | 1 | DIAPIN | `Y` when the path is absolute |
+| 161 | 8 | DIINST | the instance |
+
+`CPYAUDJRNE ENTTYP(DI)` writes these fields and then the tail items as
+fixed-width fields of IBM's lengths: `DIUSRN`, `DIOBJN`, `DIOOWN`,
+`DINEWN` (2000 each) and `DIPNAM` (5000), where IBM's file has
+`VARCHAR`s.
 
 ### `AuditDO` (77 bytes)
 
@@ -1035,7 +1100,9 @@ model and prints `QPSECCHK` (through `QSYSPRT`): one line per check,
 `PASS`, `WARN` (weaker than Quartz recommends) or `FAIL` (an
 exposure), and the totals. It needs `*ALLOBJ` and `*AUDIT`. The checks
 are `sec::cmd::seccheck`; the service adds the exit points and the TLS
-policy (`lic/slic/src/svc/security.rs`).
+policy and the directory server's instances
+(`lic/slic/src/svc/security.rs`, each instance's `ibmslapd.conf` read
+through the service's IFS as `CHGDIRSVRA` reads it).
 
 | Area | Checked | Fails | Warns |
 |---|---|---|---|
@@ -1046,6 +1113,13 @@ policy (`lic/slic/src/svc/security.rs`).
 | `EXITPNT` | every program the registration facility has registered | one that does not exist (whoever may add to its library can create it), or one `*PUBLIC` may change | |
 | `AUDIT` | `QAUDCTL`, `QAUDJRN`, `QAUDLVL` | auditing on and no `QSYS/QAUDJRN` | `QAUDCTL(*NONE)`; `QAUDLVL` without `*AUTFAIL` and `*SECURITY`; `QAUDCTL` without `*AUDLVL` |
 | `TLS` | `QSSLPCL`, `QSSLCSL`, `QSSLCSLCTL` through the TLS policy | an enabled protocol below TLS 1.2; a usable suite with RC4, DES, NULL, export, MD5 or CBC with SHA-1 | no protocol enabled; protocols listed that are never enabled; suites listed that are not implemented |
+| `DIRSRV` | each instance of the directory server's instance list: `ibm-slapdAllowAnon`, `ibm-slapdSecurity`, `ibm-slapdAdminPW` | an administrator password that verifies as a well-known one: `secret`, `password`, `admin`, `administrator`, `root`, `qsecofr` or the instance's name, each in lower, upper and capitalized case | anonymous binds allowed (`TRUE`); `ibm-slapdSecurity: none` (no TLS on 389 or 636, so simple binds send passwords in the clear); no administrator password; a configuration that cannot be read |
+
+An unset administrator password is a warning, not a failure: with none
+the server refuses every bind as the administrator (49), so nothing is
+open, but the instance cannot be administered over LDAP and the first
+`CHGDIRSVRA DN(*ADMINDN ...)` decides how strong it is. A well-known
+password is a failure: whoever tries it bypasses every ACL.
 
 ### On a fresh install
 
@@ -1057,9 +1131,13 @@ history log files (`QHST...`) took `QCRTAUT`'s `*CHANGE`, so any user
 could change the job counter, the recorded security level or the
 history. The system now makes them `*USE` (`shipped::system_kept`, in the
 guard's creation hook) and narrows existing ones at each IPL.
- Its warnings are IBM's shipped values,
+At V1R2M0 a fresh install gives 26 checks, 17 passed and 9 warnings
+(V1R1M0's 23 checks and 6 warnings, and the three of the shipped
+directory server instance `QUSRDIR`); QEMU step 107 asserts no failure.
+Its warnings are IBM's shipped values,
 kept so that applications and operators find what they expect; each is
-one `CHGSYSVAL` (or `CHGSECAUD`) away from the recommended value:
+one `CHGSYSVAL` (or `CHGSECAUD`, or for the directory server
+`CHGDIRSVRA` and its configuration) away from the recommended value:
 
 | Warning | Why the shipped value stays |
 |---|---|
@@ -1067,6 +1145,7 @@ one `CHGSYSVAL` (or `CHGSECAUD`) away from the recommended value:
 | `QCRTAUT(*CHANGE)` | IBM's default; `*EXCLUDE` changes what every new object in a library with `CRTAUT(*SYSVAL)` allows |
 | `QDSPSGNINF(0)`, `QINACTITV(*NONE)`, `QLMTDEVSSN(0)` | IBM's defaults; they change how every sign-on behaves |
 | `QAUDCTL(*NONE)` | IBM ships auditing off, and `QSYS/QAUDJRN` is not shipped (§7) |
+| `DIRSRV QUSRDIR ibm-slapdAllowAnon`, `ibm-slapdSecurity`, `ibm-slapdAdminPW` | IBM ships `QUSRDIR` so: anonymous reads allowed, no certificate (so no TLS), no administrator password (`docs/DIRSRV.md` §9, §10) |
 | `PROFILE QSECOFR` | the shipped `QSECOFR` password is `QSECOFR`, expired, as IBM's (§1): the first sign-on must set another; an install with a response file sets it |
 
 ## 11. Function usage, security attributes and the profile exit points
@@ -1138,7 +1217,9 @@ Since V1R1M0: the `*USRPRF` payload is version 2 (form 4, the NT hash);
 version 1 payloads read unchanged and are written back as version 2,
 `tests/netsvr.rs` reading a payload V1R1M0 wrote
 (`tests/fixtures/usrprf-v1r1m0.bin`). The audit layouts are version 2
-(`AuditVP`; `VP` selected by `*AUTFAIL`); the entries of version 1 are
-unchanged.
+(`AuditVP`; `VP` selected by `*AUTFAIL`; `AuditDI`, `DI` selected by
+its operation); the entries of version 1 are unchanged. Both were
+added inside version 2 before V1R2M0 shipped, `fmtcheck update --force`
+re-locking the hash.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

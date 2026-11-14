@@ -41,6 +41,7 @@ try (see below).
 | `messages-pub400.txt` | JTOpen `getMessage` on pub400 | the 7.5 IDs and severities (587 to `GLD0960`) |
 | `qsh-tools.txt` | `TOOL -?` in QSH on the primary | each tool's synopsis and option letters |
 | `api-names.txt` | `QSYSINC/H(LDAP, LBER, LDAPSSL)` on the primary; `QSYS2.PROGRAM_EXPORT_IMPORT_INFO` on pub400 | function names only (no header content): 185 in `LDAP`, 16 in `LBER`, 2 in `LDAPSSL`; the 205 exports of `QSYS/QGLDCLNT` at 7.5 |
+| `qasydij4-primary.txt` | `QSYS2/SYSCOLUMNS` of `QSYS/QASYDIJ4`, `QASYDIJ5` (and `QASYDIJE`, absent) through `../netserver/probes/NsAudit.java` | the `DI` audit entry's outfile fields: names, types, lengths (`docs/SECURITY.md` §7 `AuditDI`); no entry was written, so no values |
 | `objects-primary.txt`, `objects-pub400.txt` | `DSPOBJD` to `QTEMP`; `QSYS2.OBJECT_STATISTICS` | the directory's objects, the commands, the libraries, `QUSRDIRDB`'s tables |
 | `../../golden/dirsrv/` | `tn5250-driver run --target oracle` with `../../probes/dirsrv/prompts-dirsrv.tn` | `CHGDIRSVRA` (prompt, F10, Page Down, help), `STRTCPSVR SERVER(*DIRSRV)` and `ENDTCPSVR SERVER(*DIRSRV)` (prompt, F10, Page Down), the `CMDTCP` menu |
 

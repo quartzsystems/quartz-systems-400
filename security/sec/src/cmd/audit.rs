@@ -313,6 +313,9 @@ pub fn dspaudjrne(txn: &mut Txn<'_>, env: &Env<'_>, sel: &Selection) -> Result<V
             let w = f.size.unwrap_or(10).clamp(4, 24);
             let _ = write!(head, " {:<w$}", &f.name[2..]);
         }
+        for (n, _, _) in tail_fields(k) {
+            let _ = write!(head, " {:<24}", &n[2..]);
+        }
         out.push(head);
         for (e, ev) in entries.iter().filter(|(_, ev)| ev.kind == k) {
             let mut row = format!(
@@ -327,6 +330,10 @@ pub fn dspaudjrne(txn: &mut Txn<'_>, env: &Env<'_>, sel: &Selection) -> Result<V
                 let w = f.size.unwrap_or(10).clamp(4, 24);
                 let v: String = ev.get(&f.name[2..]).chars().take(w).collect();
                 let _ = write!(row, " {v:<w$}");
+            }
+            for (_, tag, _) in tail_fields(k) {
+                let v: String = ev.tail_str(*tag).chars().take(24).collect();
+                let _ = write!(row, " {v:<24}");
             }
             out.push(row);
         }
@@ -370,7 +377,21 @@ pub fn outfile_fields(k: Kind) -> Vec<(String, u32)> {
             ));
         }
     }
+    for (n, _, len) in tail_fields(k) {
+        v.push(((*n).to_string(), *len));
+    }
     v
+}
+
+/// The tail items an output file has as fields after the type's own:
+/// name, tag and length (`DI`'s DNs and path, `QASYDIJ4`'s lengths as
+/// fixed-width text).
+#[must_use]
+pub fn tail_fields(k: Kind) -> &'static [(&'static str, u8, u32)] {
+    match k {
+        Kind::Di => crate::audit::di::TAIL_FIELDS,
+        _ => &[],
+    }
 }
 
 /// One output file record as text, every field fixed width.
@@ -398,6 +419,9 @@ pub fn outfile_record(e: &jrn::Entry, ev: &Event, system_name: &str) -> String {
         for f in l.fields {
             put(ev.get(&f.name[2..]), f.size.unwrap_or(0));
         }
+    }
+    for (_, tag, len) in tail_fields(ev.kind) {
+        put(ev.tail_str(*tag), *len as usize);
     }
     r
 }

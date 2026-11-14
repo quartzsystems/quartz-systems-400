@@ -20,6 +20,8 @@ pub enum Kind {
     Co,
     /// User profile created, changed or restored.
     Cp,
+    /// Directory server operation.
+    Di,
     /// Object deleted.
     Do,
     /// Service tools password reset (DST).
@@ -85,13 +87,14 @@ pub enum Kind {
 }
 
 /// Every kind, in code order.
-pub const ALL: [Kind; 37] = [
+pub const ALL: [Kind; 38] = [
     Kind::Ad,
     Kind::Af,
     Kind::Au,
     Kind::Ca,
     Kind::Co,
     Kind::Cp,
+    Kind::Di,
     Kind::Do,
     Kind::Ds,
     Kind::Gr,
@@ -136,6 +139,7 @@ impl Kind {
             Self::Ca => "CA",
             Self::Co => "CO",
             Self::Cp => "CP",
+            Self::Di => "DI",
             Self::Do => "DO",
             Self::Ds => "DS",
             Self::Gr => "GR",
@@ -195,6 +199,8 @@ impl Kind {
             Self::So | Self::Vo => "*SECVLDL",
             Self::Va | Self::Vu | Self::X2 => "*NETCMN",
             Self::X0 => "*SECNAS",
+            // Most of its operations; `Event::category` picks by `DIOPER`.
+            Self::Di => "*SECDIRSRV",
             Self::Zc | Self::Zr => return None,
         })
     }
