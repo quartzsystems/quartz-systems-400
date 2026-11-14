@@ -10,6 +10,7 @@
 pub mod cl;
 pub mod config;
 pub mod db;
+pub mod dirsrv;
 pub mod msgs;
 pub mod net;
 pub mod netsvr;
@@ -231,6 +232,8 @@ pub struct Fixture {
     pub netsvr: Arc<netsvr::FixtureNetServer>,
     /// NFS.
     pub nfs: Arc<nfs::FixtureNfs>,
+    /// The directory server.
+    pub dirsrv: Arc<::dirsrv::admin::MemAdmin>,
     /// The database.
     pub db: Arc<db::FixtureDb>,
     /// The audit journal.
@@ -251,6 +254,7 @@ pub fn fixture() -> Fixture {
     let net = Arc::new(net::FixtureNet::default());
     let netsvr = Arc::new(netsvr::FixtureNetServer::default());
     let nfs = Arc::new(nfs::FixtureNfs::default());
+    let dirsrv = Arc::new(dirsrv::sample());
     let db = Arc::new(db::FixtureDb::default());
     let sec = Arc::new(sec::FixtureSecurity::default());
     let sw = Arc::new(sw::FixtureSoftware::default());
@@ -264,6 +268,7 @@ pub fn fixture() -> Fixture {
         net: net.clone(),
         netsvr: netsvr.clone(),
         nfs: nfs.clone(),
+        dirsrv: dirsrv.clone(),
         db: db.clone(),
         sec: sec.clone(),
         sw: sw.clone(),
@@ -279,6 +284,7 @@ pub fn fixture() -> Fixture {
         net,
         netsvr,
         nfs,
+        dirsrv,
         db,
         sec,
         sw,

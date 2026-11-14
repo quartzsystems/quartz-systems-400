@@ -9,6 +9,7 @@
 
 pub mod config;
 pub mod db;
+pub mod dirsrv;
 pub mod msgs;
 pub mod net;
 pub mod netsvr;
@@ -256,6 +257,8 @@ pub struct Env {
     pub netsvr: Arc<dyn netsvr::NetServer>,
     /// NFS.
     pub nfs: Arc<dyn nfs::Nfs>,
+    /// The directory server.
+    pub dirsrv: Arc<dyn dirsrv::DirAdmin>,
     /// The database.
     pub db: Arc<dyn db::Db>,
     /// The audit journal.

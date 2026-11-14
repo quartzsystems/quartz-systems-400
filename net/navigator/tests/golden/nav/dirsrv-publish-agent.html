@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Publishing of users - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/dspublish" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/dirsrv/publish/Users">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navitem"><a href="/qs400/navigator/nfs">NFS</a></div>
+<div class="navitem"><a href="/qs400/navigator/dirsrv">Directory server</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/dirsrv/publish/Users">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; Directory server &#62; Publishing &#62; Users</div>
+<h1>Publishing of users</h1>
+
+<form method="post"><input type="hidden" name="csrf" value="CSRF"><table class="props" cellspacing="0">
+<tr><th>Agent</th><td>Users</td></tr>
+<tr><th>Job</th><td><span class="mono">QGLDPUBE</span></td></tr>
+<tr><th>Publish</th><td><select name="enabled"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Directory server</th><td><input type="text" name="server" value="" size="40"> <span class="small grey">host name or address; blank: this system&#39;s default instance</span></td></tr>
+<tr><th>Port</th><td><input type="text" name="port" value="389" size="5"></td></tr>
+<tr><th>Use TLS</th><td><select name="tls"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>Bind DN</th><td><input type="text" name="bind" value="cn=Administrator" size="50"></td></tr>
+<tr><th>Bind password</th><td><select name="pwop"><option>*SAME</option><option>*CHANGE</option><option>*REMOVE</option></select> <input type="password" name="pw" size="30"> <span class="small grey">a password is kept</span></td></tr>
+<tr><th>Parent DN</th><td><input type="text" name="parent" value="ou=Users,dc=quartz,dc=example" size="50"> <span class="small grey">the entries go below it (ou=Users, ...)</span></td></tr>
+</table><div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

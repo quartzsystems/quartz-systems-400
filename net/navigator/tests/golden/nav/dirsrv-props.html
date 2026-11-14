@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Properties of QUSRDIR - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="/qs400/shared/qs400.css" />
+<script type="text/javascript" src="/qs400/shared/qsnav.js" defer="defer"></script>
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="/qs400/navigator/signoff">Sign off</a> &nbsp;&nbsp; <a href="/qs400/navigator/help/dsprops" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=System&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Work%20management&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Messages&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Users%20and%20groups&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?close=Network&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="/qs400/navigator/tcp">TCP/IP configuration</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/ifc">Interfaces</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/rte">Routes</a></div>
+<div class="navitem"><a href="/qs400/navigator/tcp/servers">Servers</a></div>
+<div class="navitem"><a href="/qs400/navigator/netsvr">NetServer</a></div>
+<div class="navitem"><a href="/qs400/navigator/nfs">NFS</a></div>
+<div class="navitem"><a href="/qs400/navigator/dirsrv">Directory server</a></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Database&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Security&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Software&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="/qs400/navigator/nav?open=Performance&#38;back=/qs400/navigator/dirsrv/inst/QUSRDIR/props">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &#62; Network &#62; Directory server &#62; Instances &#62; QUSRDIR</div>
+<h1>Properties of QUSRDIR</h1>
+
+<div class="tabs"><b>Properties</b> | <a href="/qs400/navigator/dirsrv/inst/QUSRDIR/suffixes">Suffixes</a> | <a href="/qs400/navigator/dirsrv/inst/QUSRDIR/indexes">Indexes</a> | <a href="/qs400/navigator/dirsrv/inst/QUSRDIR/schema">Schema</a> | <a href="/qs400/navigator/dirsrv/inst/QUSRDIR/access">Access</a> | <a href="/qs400/navigator/dirsrv/inst/QUSRDIR/monitor">Monitor</a></div><form method="post"><input type="hidden" name="csrf" value="CSRF"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Instance</td></tr>
+<tr><th>Instance</th><td><span class="mono">QUSRDIR</span></td></tr>
+<tr><th>Configuration file</th><td><span class="mono">/QIBM/UserData/OS400/DirSrv/idsslapd-QUSRDIR/etc/ibmslapd.conf</span></td></tr>
+<tr><th>Start automatically</th><td><select name="autostart"><option>*NO</option><option selected>*YES</option></select> <span class="small grey">with STRTCPSVR SERVER(*AUTOSTART) and at IPL</span></td></tr>
+<tr class="subrow"><td colspan="2">Connections</td></tr>
+<tr><th>Port</th><td><input type="text" name="port" value="389" size="5"></td></tr>
+<tr><th>Secure port</th><td><input type="text" name="secure_port" value="636" size="5"></td></tr>
+<tr><th>Security</th><td><select name="security"><option>none</option><option>SSL</option><option>TLS</option><option>SSLTLS</option></select> <span class="small grey">none: plain LDAP only</span></td></tr>
+<tr><th>Certificate application ID</th><td><span class="mono">QS400_DIRECTORY_SERVER</span></td></tr>
+<tr><th>Certificate</th><td>None assigned: port 636 and StartTLS are off</td></tr>
+<tr><th>Allow anonymous binds</th><td><select name="allow_anon"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Idle time-out (seconds)</th><td><input type="text" name="idle_timeout" value="300" size="7"> <span class="small grey">0: never</span></td></tr>
+<tr><th>Write time-out (seconds)</th><td><input type="text" name="write_timeout" value="120" size="7"></td></tr>
+<tr class="subrow"><td colspan="2">Searches</td></tr>
+<tr><th>Size limit (entries)</th><td><input type="text" name="size_limit" value="500" size="9"> <span class="small grey">0: no limit</span></td></tr>
+<tr><th>Time limit (seconds)</th><td><input type="text" name="time_limit" value="900" size="9"> <span class="small grey">0: no limit</span></td></tr>
+<tr><th>Dereference aliases</th><td><select name="deref_aliases"><option>never</option><option>search</option><option>find</option><option selected>always</option></select></td></tr>
+<tr><th>Paged results for all users</th><td><select name="paged_non_admin"><option>*NO</option><option selected>*YES</option></select> <span class="small grey">*NO: the administrator only</span></td></tr>
+<tr><th>Paged searches per connection</th><td><input type="text" name="paged_limit" value="2" size="5"></td></tr>
+<tr><th>Sorted results for all users</th><td><select name="sort_non_admin"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Sort keys at most</th><td><input type="text" name="sort_key_limit" value="3" size="5"></td></tr>
+<tr><th>Persistent search</th><td><select name="persistent_search"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Persistent searches at most</th><td><input type="text" name="max_persistent" value="100" size="7"></td></tr>
+<tr class="subrow"><td colspan="2">Data</td></tr>
+<tr><th>Read only</th><td><select name="read_only"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>Schema checking</th><td><select name="schema_check"><option>V3_lenient</option><option>V3</option></select></td></tr>
+<tr><th>Password encryption</th><td><select name="pw_encryption"><option>ssha512</option><option>ssha256</option><option>ssha</option><option>sha</option><option>crypt</option><option>none</option></select> <span class="small grey">how new userPassword values are kept</span></td></tr>
+<tr><th>Password policy</th><td><select name="pwd_policy"><option>*NO</option><option>*YES</option></select></td></tr>
+<tr><th>User profiles read only</th><td><select name="projected_read_only"><option>*NO</option><option selected>*YES</option></select></td></tr>
+<tr><th>Change log entries</th><td><input type="text" name="changelog_max" value="0" size="9"> <span class="small grey">0: no change log</span></td></tr>
+<tr><th>Referrals</th><td><input type="text" name="referrals" value="" size="60"> <span class="small grey">LDAP URLs, separated by blanks</span></td></tr>
+<tr class="subrow"><td colspan="2">Logging</td></tr>
+<tr><th>Log options</th><td><input type="text" name="log_options" value="m" size="10"></td></tr>
+<tr><th>Audit</th><td><select name="audit"><option>*NO</option><option>*YES</option></select> <span class="small grey">operations to QAUDJRN</span></td></tr>
+<tr class="subrow"><td colspan="2">Administrator</td></tr>
+<tr><th>Administrator DN</th><td><span class="mono">cn=Administrator</span></td></tr>
+<tr><th>Password set</th><td>No &nbsp; <a href="/qs400/navigator/dirsrv/inst/QUSRDIR/admin">Change...</a></td></tr>
+<tr><th>Update DN</th><td><span class="mono">*NONE</span></td></tr>
+</table><div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 · Quartz Systems</td></tr>
+</table>
+</body>
+</html>

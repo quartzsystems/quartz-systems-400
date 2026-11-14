@@ -240,6 +240,16 @@ pub fn proto(url: &str) -> Option<String> {
         ["nfs", "servers"] => "nfs-servers".into(),
         ["nfs", "mounts"] => "nfs-mounts".into(),
         ["nfs", "mounts", "add"] => "nfs-mount".into(),
+        // The directory server: approved pages of its own (tests/dirsrv.rs).
+        ["dirsrv", ..] if matches!(segs.last(), Some(&("confirm" | "remove"))) => {
+            return Some("shared/confirm.html".into());
+        }
+        ["dirsrv"] => "dirsrv".into(),
+        ["dirsrv", "publish"] => "dirsrv-publish".into(),
+        ["dirsrv", "publish", _] => "dirsrv-publish-agent".into(),
+        ["dirsrv", "inst", _, "schema", "add"] => "dirsrv-schema-add".into(),
+        ["dirsrv", "inst", _, "schema", _, _] => "dirsrv-schema-def".into(),
+        ["dirsrv", "inst", _, page] => format!("dirsrv-{page}"),
         ["netsvr", "sessions"] => "netsvr-sessions".into(),
         ["netsvr", "sessions", _] => "netsvr-session".into(),
         ["netsvr", "disabled"] => "netsvr-disabled".into(),
@@ -283,15 +293,15 @@ pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
 /// [`assert_golden`] over golden text `g` already read (and cut) from
 /// `file`.
 pub fn assert_golden_text(served: &str, mut g: String, file: &str, fix: &[(&str, &str)]) {
-    // The Network group's NetServer and NFS items, which the prototype
-    // predates.
+    // The Network group's NetServer, NFS and Directory server items,
+    // which the prototype predates.
     for cur in ["", " class=\"navcur\""] {
         let servers =
             format!("<div class=\"navitem\"><a href=\"servers.html\"{cur}>Servers</a></div>");
         g = g.replace(
             &servers,
             &format!(
-                "{servers}\n<div class=\"navitem\"><a href=\"netsvr.html\">NetServer</a></div>\n<div class=\"navitem\"><a href=\"nfs.html\">NFS</a></div>"
+                "{servers}\n<div class=\"navitem\"><a href=\"netsvr.html\">NetServer</a></div>\n<div class=\"navitem\"><a href=\"nfs.html\">NFS</a></div>\n<div class=\"navitem\"><a href=\"dirsrv.html\">Directory server</a></div>"
             ),
         );
     }

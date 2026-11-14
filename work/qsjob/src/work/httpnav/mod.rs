@@ -138,6 +138,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         net: Arc::new(net::LiveNet { link: l.clone() }),
         netsvr: Arc::new(netsvr::LiveNetServer { link: l.clone() }),
         nfs: Arc::new(nfs::LiveNfs { link: l.clone() }),
+        // The storage service's dir_admin, once built (stg::diradmin).
+        dirsrv: Arc::new(stg::diradmin::Remote(stg::diradmin::NotBuilt)),
         db: Arc::new(db::LiveDb { link: l.clone() }),
         sec: Arc::new(sec::LiveSecurity { link: l.clone() }),
         sw: Arc::new(sw::LiveSoftware::new(l.clone())),

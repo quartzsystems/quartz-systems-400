@@ -2454,6 +2454,7 @@ dependencies = [
 name = "navigator"
 version = "0.1.0"
 dependencies = [
+ "dirsrv",
  "netsvrcfg",
  "qsweb",
  "release",

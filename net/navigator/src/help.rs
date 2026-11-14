@@ -281,6 +281,58 @@ pub const TOPICS: &[Topic] = &[
         body: "<p>Every file system mounted in the integrated file system: the system's own, user-defined file systems and NFS exports of other systems. For an NFS mount, <b>Server</b> says whether the server answers.</p>\n\
 <h2>Mount and Unmount</h2>\n<p><b>Mount NFS file system</b> runs <span class=\"mono\">MOUNT TYPE(*NFS)</span>: the server's name or address, the directory it exports, an existing directory here to mount it over, and the options (for example <span class=\"mono\">ro</span>, <span class=\"mono\">soft</span>, <span class=\"mono\">vers=4</span>). <b>Unmount</b> runs <span class=\"mono\">UNMOUNT</span>, refused while anything in the file system is open. Both need special authority <span class=\"mono\">*IOSYSCFG</span>. Mounts last until the next IPL.</p>",
     },
+    // The directory server.
+    Topic {
+        key: "dirsrv",
+        title: "Directory server instances",
+        body: "<p>The LDAP directory server instances of this system, from the instance list. Each runs as a job of its own name in subsystem <span class=\"mono\">QSYSWRK</span>, listens on its port (389 by default) and, once a certificate is assigned to application ID <span class=\"mono\">QS400_DIRECTORY_SERVER</span>, on its secure port (636). Every system has <span class=\"mono\">QUSRDIR</span>.</p>\n\
+<h2>Start, End and Restart</h2>\n<p><b>Start</b> runs <span class=\"mono\">STRTCPSVR SERVER(*DIRSRV) INSTANCE()</span> for the instance, <b>End</b> runs <span class=\"mono\">ENDTCPSVR</span>, and <b>Restart</b> both, so the instance reads the changes made to its configuration. They need special authority <span class=\"mono\">*IOSYSCFG</span>. An instance set to start automatically starts with <span class=\"mono\">STRTCPSVR SERVER(*AUTOSTART)</span> when the directory server is an autostart server.</p>",
+    },
+    Topic {
+        key: "dsprops",
+        title: "Directory server properties",
+        body: "<p>The settings of the instance's configuration file. Reading them needs special authority <span class=\"mono\">*IOSYSCFG</span>; changing them <span class=\"mono\">*ALLOBJ</span> and <span class=\"mono\">*IOSYSCFG</span>, as <span class=\"mono\">CHGDIRSVRA</span> does. A change is written to the file at once and used when the instance next starts, except the limits and logging, which apply at once. <b>Apply</b> keeps the page open; <b>OK</b> returns to the instances.</p>\n\
+<h2>Connections and security</h2>\n<p><b>Security</b> <span class=\"mono\">none</span> serves plain LDAP on the port; <span class=\"mono\">SSL</span> serves LDAPS on the secure port; <span class=\"mono\">TLS</span> adds StartTLS on the port; <span class=\"mono\">SSLTLS</span> both. TLS needs a certificate assigned in the certificate store. With <b>Allow anonymous binds</b> off, a client must bind before it can search.</p>\n\
+<h2>Searches</h2>\n<p>The size and time limits cap what one search returns (the administrator is not limited). Paged and sorted results may be kept to the administrator. Persistent searches follow changes as they are made.</p>\n\
+<h2>Data</h2>\n<p><b>Schema checking</b> <span class=\"mono\">V3</span> holds every entry to the schema strictly; <span class=\"mono\">V3_lenient</span> lets an entry omit its structural class's superclasses. <b>Password encryption</b> is how new <span class=\"mono\">userPassword</span> values are kept; <span class=\"mono\">ssha512</span> is the strongest. With a <b>change log</b> size, changes are kept under <span class=\"mono\">cn=changelog</span>. <b>Referrals</b> are where a client is sent for a name outside every suffix.</p>",
+    },
+    Topic {
+        key: "dsadmin",
+        title: "Directory server administrator",
+        body: "<p>The administrator binds with every right on the directory. Until it has a password nobody can bind as it. <span class=\"mono\">*ADMINDN</span> sets the administrator's password; <span class=\"mono\">*NEWDN</span> makes the DN typed the administrator, with the password; <span class=\"mono\">*UPDATEDN</span> sets the update DN's password. The password is kept as a salted SHA-512 hash. It needs special authorities <span class=\"mono\">*ALLOBJ</span> and <span class=\"mono\">*IOSYSCFG</span>, as <span class=\"mono\">CHGDIRSVRA</span>, which does the same from a command line.</p>",
+    },
+    Topic {
+        key: "dssuffixes",
+        title: "Directory server suffixes",
+        body: "<p>The top names the instance serves, by backend: the directory's own entries, the system's user profiles under <span class=\"mono\">os400-sys=</span>, the schema and the configuration. <b>Add suffix</b> adds a name for entries of your own, such as <span class=\"mono\">dc=example,dc=com</span>; a suffix may not lie inside or above another. <b>Remove</b> takes a suffix of your own out of the configuration; its entries stay in the instance's store. Both are used when the instance next starts.</p>",
+    },
+    Topic {
+        key: "dsindexes",
+        title: "Directory server indexes",
+        body: "<p>Indexes make searches on an attribute fast: <b>presence</b> keys for filters such as <span class=\"mono\">(mail=*)</span>, <b>equality</b> keys for <span class=\"mono\">(uid=jsmith)</span>, <b>substring</b> keys for <span class=\"mono\">(cn=*smith*)</span>. Six attributes are always indexed. A new or changed index is built when the instance next starts.</p>",
+    },
+    Topic {
+        key: "dsschema",
+        title: "Directory server schema",
+        body: "<p>The attribute types and object classes entries are made of. The list shows the definitions added since the schema was shipped; type part of a name, or choose <b>All</b>, to see the others. <b>Properties</b> shows a definition; <b>Remove</b> takes it out of the schema, which is refused while another definition uses it and for those the server needs.</p>\n\
+<h2>Add definition</h2>\n<p>Type the definition in the form <span class=\"mono\">cn=schema</span> publishes, with an OID of your organization's own arc and a name no other definition has. It is used at once and kept in the instance's modified schema file.</p>",
+    },
+    Topic {
+        key: "dsaccess",
+        title: "Directory entry access",
+        body: "<p>Who may do what to an entry. An entry has an access control list of its own, or takes the one of the nearest entry above it whose list applies below; with none, everyone may read, search and compare its normal attributes. Its owners have every right on it and, when theirs apply below, on the entries under it; the administrator owns what nobody else does.</p>\n\
+<h2>Values</h2>\n<p>One value a line. An ACL value names a subject (<span class=\"mono\">access-id:</span>, <span class=\"mono\">group:</span> or <span class=\"mono\">role:</span> and a DN, or <span class=\"mono\">group:cn=anybody</span>, <span class=\"mono\">group:cn=authenticated</span>) and rights: <span class=\"mono\">object:ad</span> to add and delete entries, and for an attribute class (<span class=\"mono\">normal</span>, <span class=\"mono\">sensitive</span>, <span class=\"mono\">critical</span>, <span class=\"mono\">system</span>, <span class=\"mono\">restricted</span>) or one attribute (<span class=\"mono\">at.mail</span>) the letters <span class=\"mono\">r</span> read, <span class=\"mono\">w</span> write, <span class=\"mono\">s</span> search and <span class=\"mono\">c</span> compare, after <span class=\"mono\">grant:</span> or <span class=\"mono\">deny:</span>. An owner value is a subject alone.</p>",
+    },
+    Topic {
+        key: "dsmonitor",
+        title: "Directory server monitor",
+        body: "<p>What the running instance has done since it started, as <span class=\"mono\">cn=monitor</span> shows it: its connections and its operations by kind.</p>",
+    },
+    Topic {
+        key: "dspublish",
+        title: "Directory publishing",
+        body: "<p>The publishing agents copy this system's information into a directory: the users agent each user profile as an <span class=\"mono\">inetOrgPerson</span> entry, the printers agent each printer with an output queue. Each publishes below its <b>parent DN</b> on the <b>directory server</b> named, binding as the <b>bind DN</b>; blank is this system's default instance. The agents run as jobs <span class=\"mono\">QGLDPUBE</span> and <span class=\"mono\">QGLDPUBA</span> in <span class=\"mono\">QSYSWRK</span>. Changing them needs special authorities <span class=\"mono\">*ALLOBJ</span> and <span class=\"mono\">*IOSYSCFG</span>.</p>",
+    },
     // Performance.
     Topic {
         key: "perfsys",

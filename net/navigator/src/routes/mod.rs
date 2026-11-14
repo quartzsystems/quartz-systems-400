@@ -11,6 +11,7 @@
 pub mod common;
 pub mod config;
 pub mod db;
+pub mod dirsrv;
 pub mod home;
 pub mod msgs;
 pub mod net;
@@ -292,6 +293,7 @@ pub fn dispatch(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
         ["tcp", ..] => net::route(&rq, &segs),
         ["netsvr", ..] => netsvr::route(&rq, &segs),
         ["nfs", ..] => nfs::route(&rq, &segs),
+        ["dirsrv", ..] => dirsrv::route(&rq, &segs),
         ["db" | "sql", ..] => db::route(&rq, &segs),
         ["audit", ..] => sec::route(&rq, &segs),
         ["licpgm" | "ptf" | "fixes", ..] => sw::route(&rq, &segs),

@@ -289,6 +289,57 @@ page and its `AF` entry.
   job's IFS client's (`IfsClient::mounts`), as the user; a refusal is
   shown above an empty list.
 
+## Directory server
+
+`env::dirsrv` is the directory server's administration interface,
+`dirsrv::admin::DirAdmin` (docs/DIRSRV.md §4, request 1568
+`dir_admin`), called as the user: it checks the authority (`*IOSYSCFG`
+to read, `*ALLOBJ` and `*IOSYSCFG` to change, as `CHGDIRSVRA`;
+`CPF222E`), validates and words the refusal (`GLD0201`, `GLD0224`,
+`GLD0232` ..., `CPF9898` for the rest). Navigator checks `*IOSYSCFG`
+first before a change, with the Not authorized page and its `AF` entry;
+a `CPF222E` from the interface gives the same page. A change ends on
+`GLD0123` (the configuration file is changed; the instance reads it at
+its next start).
+
+- Network > Directory server, two tabs: `/dirsrv` (Instances: state,
+  job, ports, security, autostart, started; Properties, Start, End,
+  Restart through `/dirsrv/inst/<name>/confirm?op=start|end|restart`)
+  and `/dirsrv/publish` (the users and printers agents: where each
+  publishes, its parent DN, its job and last message;
+  `/dirsrv/publish/<Users|Printers>` an agent's settings and bind
+  password).
+- An instance's tabs under `/dirsrv/inst/<name>/`: `props` (the honoured
+  attributes of `ibmslapd.conf` by group, the certificate application
+  ID and assignment, start automatically, the administrator with
+  `admin`, which changes it as `CHGDIRSVRA DN(*ADMINDN|dn|*UPDATEDN pw)`
+  does), `suffixes` (by backend, entries under each; Add suffix,
+  `suffixes/remove?dn=` for a user suffix), `indexes` (the six always
+  there and the configured ones; Add or change index,
+  `indexes/remove?attr=`), `schema` (attribute types or object classes:
+  the added ones, a name searched for, or all, paged;
+  `schema/attr|class/<oid>` a definition, `.../remove`, `schema/add` a
+  description typed in), `access?dn=` (an entry's ACL and owners, own
+  or inherited and from where, changed one value a line) and `monitor`
+  (the counters of `cn=monitor`).
+- Removals with no command behind them (a suffix, an index, a schema
+  definition) confirm on the shared confirmation page without an
+  equivalent command line.
+- The fixture (`fixture/dirsrv.rs`) is `dirsrv::admin::MemAdmin`'s
+  sample (`QUSRDIR` running with `dc=quartz,dc=example` and its
+  entries, `DEVDIR` stopped, the two agents) plus one attribute type and
+  one object class added; the special authorities are the sign-on
+  profiles'.
+- The pages have no prototype: their approved renderings are
+  `tests/golden/nav/dirsrv*.html`; `tests/dirsrv.rs` drives every
+  action. The tree's Network group gains Directory server after NFS
+  (the NetServer and NFS approved pages were rewritten for that line
+  alone).
+- Live (`work/qsjob/src/work/httpnav/mod.rs`): `stg::diradmin::Remote`
+  over `NotBuilt`, which refuses every request (`CPF9898`) until the
+  storage service answers `dir_admin` (`BLOCKED(rel)`); `/dirsrv` then
+  returns to System status with the message.
+
 ## The live server
 
 Navigator is licensed program `QS00NAV` `*BASE` (docs/LICPGM.md),
@@ -321,6 +372,7 @@ escape (the diagnostic before `CPF0006`) the message.
 | Net | `tcp Snapshot` (interfaces, routes), `tcp HostConfig` (domain, host table), `tcp Netstat STS` (active since), `tcp Report attr` (forwarding), the server registry with `tcp Servers` and `active_jobs` |
 | NetServer | `netsvr_api` (the `QZLS*` APIs as the user, `work/qsjob/src/work/nsadmin.rs`), `netsvr` `List` (the session table), `netsvr_disabled_users`, `active_jobs` (`QZLSSERVER` in `QSERVER`) |
 | NFS | `nfs` `Exports` (the export table, each entry read with `nfs::exports::file`), `nfs` `Daemons` (the daemon registry), `IfsClient::mounts` (the mount table); every change the command through the analyzer as the user (`Link::run`) |
+| Directory server | `stg::diradmin::Remote` over `NotBuilt`: every request refused until the storage service answers `dir_admin` (`BLOCKED(rel)`) |
 | Perf | `panel2_data SYSACT` (`WRKSYSACT`), `SYSSTS RESET(*YES)`'s pools, `DSKSTS RESET(*YES)` |
 | Db | queries over the `QSYS2` catalog views through the interactive SQL session (`isql_start` `*SQL`/`*NONE`, `isql_run`): `SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST` + `SYSKEYCST`, `SYSINDEXES` + `SYSKEYS`, `SYSVIEWDEP`; creation times from `object`. Run SQL: `isql_start` with the naming and isolation, `SET SCHEMA`, `isql_run` (the row cap), `isql_end` commits; messages from `QSQLMSG` as Enter SQL Statements words them. No `SYSTRIGGERS`/`SYSROUTINES` (no triggers, procedures), no `QSQGNDDL` (Generate SQL answers `SQL0084`), no Explain (`SQL0084`) |
 | Security | `DSPAUDJRNE ... OUTPUT(*)` through `exec`, as its 5250 display runs it (whole UTC days, cut to the filter's seconds), `secaud_panel` (`DSPSECAUD`), the receiver's creation (`object *JRNRCV`) as its attach time |
@@ -422,7 +474,7 @@ of the golden page:
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 | `nav/tcpip.html` | `13 started` → `14 started` | the Servers page lists fourteen started |
 | `nav/tcpip-interfaces.html`, `nav/servers.html` | the two buttons get names `add`/`start` and `refresh` | two nameless buttons in one form cannot be told apart |
-| `nav/tcpip.html`, `nav/tcpip-interfaces.html`, `nav/tcpip-routes.html`, `nav/servers.html` | the tree's Network group gains NetServer and NFS after Servers (`tests/common` applies it to every page) | NetServer and NFS came after the prototype |
+| `nav/tcpip.html`, `nav/tcpip-interfaces.html`, `nav/tcpip-routes.html`, `nav/servers.html` | the tree's Network group gains NetServer, NFS and Directory server after Servers (`tests/common` applies it to every page) | they came after the prototype |
 | `nav/run-sql.html` | `SQL0100`'s text → the message file's (`No row was found for FETCH.`); Download as CSV `#` → `?csv=1` | the prototype quoted another vendor's message text; the link went nowhere |
 | `nav/table-columns.html` | Generate SQL (DDL) `#` → `/ddl` | the link went nowhere |
 | `nav/table-data.html` | the list is the table's first 25 rows, all 12 columns; `12 rows returned` → `412 rows returned`; CSV `#` → `?csv=1` | the prototype pasted Run SQL's 8-column, 12-row result under `SELECT *` of a 412-row table paged 25 at a time |
@@ -450,3 +502,4 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 30 | Performance | done (golden-clean; live `Perf` pending) |
 | 31 | NetServer | done (approved pages; live) |
 | 32 | NFS | done (approved pages; live) |
+| 33 | Directory server | done (approved pages; live once `dir_admin` is answered, `BLOCKED(rel)`) |
