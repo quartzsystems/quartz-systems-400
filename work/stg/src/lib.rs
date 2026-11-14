@@ -16,6 +16,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod dir;
 pub mod dirpub;
 pub mod diradmin;
 pub mod ifs;

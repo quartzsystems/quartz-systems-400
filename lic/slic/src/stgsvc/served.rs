@@ -426,6 +426,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     super::spool::job_ended(system, &who);
     super::wtr::job_ended(system, ctx.job.number);
     super::nfs::job_ended(system, ctx.job.number, &ctx.job.qualified());
+    super::dirsrv::serve::job_ended(ctx.job.number);
     completion_message(system, ctx);
     // `end_db` dropped it.
     ctx.qtemp = None;
@@ -2654,6 +2655,81 @@ impl Service for Served<'_> {
         self.system.current_job = self.ctx.job.number;
         let me = self.ctx.session.borrow().principal.clone();
         super::nfs::api::call(self.system, &me, &api, &parms)
+    }
+
+    // --- the directory server (1560-1567; stgsvc/dirsrv/)
+    fn dir_open(
+        &mut self,
+        instance: String,
+        conn: stg::dir::DirConn,
+    ) -> Result<stg::dir::DirOpened, stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::open(self.system, &self.ctx.job, &instance, conn)
+    }
+
+    fn dir_bind(
+        &mut self,
+        session: u64,
+        msg: Vec<u8>,
+        conn: stg::dir::DirConn,
+    ) -> Result<stg::dir::DirAnswer, stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::bind(self.system, &self.ctx.job, session, &msg, conn)
+    }
+
+    fn dir_op(
+        &mut self,
+        session: u64,
+        msg: Vec<u8>,
+    ) -> Result<stg::dir::DirAnswer, stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::op(self.system, &self.ctx.job, session, &msg)
+    }
+
+    fn dir_search(
+        &mut self,
+        session: u64,
+        msg: Vec<u8>,
+        budget: stg::dir::DirBudget,
+    ) -> Result<stg::dir::DirAnswer, stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::search(self.system, &self.ctx.job, session, &msg, budget)
+    }
+
+    fn dir_next(
+        &mut self,
+        session: u64,
+        cursor: u64,
+        budget: stg::dir::DirBudget,
+    ) -> Result<stg::dir::DirAnswer, stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::next(self.system, &self.ctx.job, session, cursor, budget)
+    }
+
+    fn dir_close(
+        &mut self,
+        session: u64,
+        what: stg::dir::DirClose,
+    ) -> Result<(), stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::close(self.system, &self.ctx.job, session, what)
+    }
+
+    fn dir_conns(
+        &mut self,
+        instance: String,
+        counts: stg::dir::DirConns,
+    ) -> Result<(), stg::dir::DirError> {
+        super::dirsrv::serve::conns(&self.ctx.job, &instance, counts)
+    }
+
+    fn dir_changes(
+        &mut self,
+        session: u64,
+        max: u32,
+    ) -> Result<stg::dir::DirChanges, stg::dir::DirError> {
+        self.system.current_job = self.ctx.job.number;
+        super::dirsrv::serve::changes(self.system, &self.ctx.job, session, max)
     }
 
     // --- directory publishing (1570-1572; stgsvc/dirsrv/publish.rs)

@@ -1045,6 +1045,29 @@ ipc::rpc! {
     /// `QZNFRTVE` or `QZNFNFSO` over its parameters' bytes: the answer's
     /// bytes, or the message ID and its data for the error code.
     1541 => fn nfs_api / NfsApi (api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)>;
+    // --- the directory server (1560-1567; crate::dir, stgsvc/dirsrv/)
+    /// A connection to instance `instance` opened: its session and the
+    /// instance's settings. Only the instance's job (`QDIRSRV`, named
+    /// after it) asks; the first open of an instance makes its store.
+    1560 => fn dir_open / DirOpen (instance: String, conn: crate::dir::DirConn) -> Result<crate::dir::DirOpened, crate::dir::DirError>;
+    /// A bind request's BER bytes with the connection's facts now; the
+    /// session is bound as the answer says.
+    1561 => fn dir_bind / DirBind (session: u64, msg: Vec<u8>, conn: crate::dir::DirConn) -> Result<crate::dir::DirAnswer, crate::dir::DirError>;
+    /// An add, modify, delete, modify DN, compare or extended request:
+    /// one store transaction.
+    1562 => fn dir_op / DirOp (session: u64, msg: Vec<u8>) -> Result<crate::dir::DirAnswer, crate::dir::DirError>;
+    /// A search request (or the next page of a paged one): its first
+    /// entries within `budget`.
+    1563 => fn dir_search / DirSearch (session: u64, msg: Vec<u8>, budget: crate::dir::DirBudget) -> Result<crate::dir::DirAnswer, crate::dir::DirError>;
+    /// The next entries of `cursor` within `budget`.
+    1564 => fn dir_next / DirNext (session: u64, cursor: u64, budget: crate::dir::DirBudget) -> Result<crate::dir::DirAnswer, crate::dir::DirError>;
+    /// A search abandoned, or the connection ended.
+    1565 => fn dir_close / DirClose (session: u64, what: crate::dir::DirClose) -> Result<(), crate::dir::DirError>;
+    /// The job's connection counts, for `cn=monitor`.
+    1566 => fn dir_conns / DirConns (instance: String, counts: crate::dir::DirConns) -> Result<(), crate::dir::DirError>;
+    /// What the session's persistent searches saw since the last ask,
+    /// at most `max` entries; answered at once (the job polls).
+    1567 => fn dir_changes / DirChanges (session: u64, max: u32) -> Result<crate::dir::DirChanges, crate::dir::DirError>;
     // --- directory publishing (1570-1572; crate::dirpub, stgsvc/dirsrv/publish.rs)
     /// `publish.conf` for `QGLDPUBE` and `QGLDPUBA`, the agents'
     /// passwords unsealed: only to jobs running as `QDIRSRV`.

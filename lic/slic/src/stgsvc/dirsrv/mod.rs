@@ -5,3 +5,4 @@
 //! The directory server's side in the service (docs/DIRSRV.md §4).
 
 pub(crate) mod publish;
+pub(crate) mod serve;
