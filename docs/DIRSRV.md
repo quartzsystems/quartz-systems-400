@@ -52,7 +52,7 @@ difference (§15).
 | The server's logic | `net/dirsrv` | the schema model and matching rules (`schema`), the entry store over the object store (`store`), access control (`acl`), the backends (`backend/btree`, `backend/projected`, `backend/config`, `backend/schema`, `backend/monitor`, `backend/changelog`), operations (`ops`), password policy and storage schemes (`pwd`), the configuration file (`config`), publishing (`publish`), the connection loop (`server`) |
 | The service's side | `lic/slic/src/stgsvc/dirsrv/` | the instances' stores and backends behind `stg` requests 1560-1579, the projected backend over the profiles, binds against `sec` |
 | The job | `work/qsjob/src/work/dirsrv/` | the instance job (`QUSRDIR`): listeners on 389 and 636, a thread per connection, TLS, requests to the service; the publishing jobs `QGLDPUBE`, `QGLDPUBA` |
-| Commands | `command/sys-cpps/cmds/chgdirsvra.cmd`, `STRTCPSVR.cmd`, `ENDTCPSVR.cmd`; `lic/slic/src/cpp/dircmd.rs` | `CHGDIRSVRA`, `*DIRSRV` with `INSTANCE` |
+| Commands | `command/sys-cpps/cmds/CHGDIRSVRA.cmd`, `STRTCPSVR.cmd`, `ENDTCPSVR.cmd`; `lic/slic/src/cpp/dircmd.rs` | `CHGDIRSVRA`, `*DIRSRV` with `INSTANCE` (§2.2) |
 | Messages | `runtime/msgf/msgs/qgldmsg.toml` | `QSYS/QGLDMSG`, IBM's IDs, severities and formats, Quartz text |
 | The client API | `runtime/ldapclnt` | `QGLDCLNT`'s exports as bound procedures over `net/ldap::client`; QS/400's own `QSYSINC/H(LDAP, LBER, LDAPSSL)` and `QRPGLESRC(LDAP)` |
 | QSH tools | `qsh/qsh-utils/src/net/ldap/` | the nine tools over `net/ldap::client` |
@@ -62,6 +62,67 @@ difference (§15).
 The server runs as the job; the data lives in the storage service. Every
 operation is a request from the job to the service (§4), as the NFS
 daemons' file operations are.
+
+### 2.1 Messages
+
+`QSYS/QGLDMSG` (`runtime/msgf/msgs/qgldmsg.toml`, installed with the
+other system message files and added to an older system's at its next
+IPL) has every identifier of the primary's (481, `GLD0101` to
+`GLD0956`), with IBM's severities and substitution layouts
+(`messages.txt`); a `*QTDCHAR` or `*HEX` with `*VARY` is `*CHAR *VARY`
+there (the same data; the frozen `*MSGF` payload has no other form).
+IBM's text was not kept, so an identifier QS/400 does not send has a
+plain text by severity and a help naming its data; the 7.5 additions
+(`messages-pub400.txt`) are left out until QS/400 sends one. The ones
+QS/400 sends, chosen by their layouts:
+
+| ID | Severity, data | When |
+|---|---|---|
+| `GLD010B` | 0, `*CHAR 10` | the publishing agents `QGLDPUBE` and `QGLDPUBA` end at once (publishing is not built yet) |
+| `GLD0123` | 0, `*CHAR 8` | `CHGDIRSVRA` changed the instance (completion) |
+| `GLD0126` | 40, two `*CHAR *VARY` | an attribute (`name: value`) or entry of `ibmslapd.conf` QS/400 does not honour, not at IBM's default (§10), and the file |
+| `GLD0127` | 40, `*CHAR *VARY` | a configuration file missing or not LDIF |
+| `GLD0201` | 40, `*CHAR 8` | `CHGDIRSVRA INSTANCE`: no such instance |
+| `GLD0202` | 40, none | `CHGDIRSVRA DN` without a password |
+| `GLD0203` | 40, `*CHAR 32` | `STRTCPSVR`/`ENDTCPSVR SERVER(*DIRSRV) INSTANCE`: no such instance |
+| `GLD0215` | 40, `*CHAR 8` | `CHGDIRSVRA DN(*UPDATEDN)`: the instance names no update DN |
+| `GLD0224` | 40, `*CHAR *VARY` | `CHGDIRSVRA DN`: not a distinguished name |
+| `GLD0232` | 40, two `*CHAR *VARY` | a value of an honoured attribute QS/400 does not take (`ibm-slapdPwEncryption: aes256`, `ibm-slapdSchemaCheck: V2`) |
+
+`QTCPMSG` gains `TCP1617` (30), `STRTCPSVR` and `ENDTCPSVR`'s dependency
+message for `INSTANCE` with `SERVER(*ALL)` (or `*AUTOSTART`).
+
+### 2.2 Commands
+
+- **`CHGDIRSVRA`** is the primary's definition attribute for attribute
+  (`command/sys-cpps/tests/dirsrv_prompts.rs`), shipped `*PUBLIC
+  *EXCLUDE` (pub400 refuses it), processing program `QGLDCHGATR` in the
+  service (`cpp/dircmd.rs`); `*ALLOBJ` and `*IOSYSCFG` (`CPF222E`).
+  `INSTANCE` is looked up in the instance list (`GLD0201`). `DN(*SAME)`
+  changes nothing. Otherwise the second element is the new password
+  (`GLD0202` when blank), stored as `{SSHA512}` (`dirsrv::pwd`):
+  `DN(*ADMINDN pw)` sets `ibm-slapdAdminPW` and keeps the administrator;
+  `DN(name pw)` sets `ibm-slapdAdminDN` to the name (`GLD0224` when it is
+  not a DN) and its password; `DN(*UPDATEDN pw)` sets
+  `ibm-slapdMasterPW` of `cn=Master Server, cn=Configuration`, and
+  `GLD0215` when that entry names no `ibm-slapdMasterDN` (the shipped
+  file names none: replication is refused, §14). The file is rewritten
+  with its order and comments kept (`dirsrv::config::edit`), `GLD0123`.
+- **`STRTCPSVR`/`ENDTCPSVR`**: `*DIRSRV` among `SERVER`'s values;
+  `INSTANCE` is IBM's (on `STRTCPSVR` the group of server instance and
+  instance startup values with the single values `*DFT`, `*ALL`,
+  `*AUTOSTART`, prompted unless `SERVER` is `*ALL` or `*AUTOSTART`; on
+  `ENDTCPSVR` a name or `*DFT`/`*ALL`, prompted unless `SERVER(*ALL)`),
+  `TCP1617` the dependency, `MSGF(QTCPMSG)` as IBM's. `RESTART`,
+  `HTTPSVR` (and `ENDTCPSVR`'s QS/400 `OPTION` and `DELAY`) are prompted
+  for `*HTTP` (`RESTART` also `*DNS`, `*QOS`) as IBM's are, so the
+  `*DIRSRV` prompts are the primary's character for character
+  (`tools/conformance/golden/dirsrv/`). The prompter learned two of
+  IBM's rules for it: a list of values shows `+ for more values` at
+  column 17 with a field as wide as a value's, where the next value can
+  be typed, and a group whose default is a single value shows it in the
+  first element with the others blank; a choice text not one item of
+  which fits is not shown.
 
 ## 3. The protocol crate (`net/ldap`)
 
@@ -111,6 +172,32 @@ SERVER(*DIRSRV) INSTANCE(*DFT)` starts `QUSRDIR`; `*AUTOSTART` starts
 those with `ids-instanceAutostart: 1`; `*ALL` all; a name that one.
 `ENDTCPSVR` the same. `STRTCPSVR SERVER(*AUTOSTART)` at IPL starts the
 autostart instances when `*DIRSRV` is an autostart server.
+
+`net/servers` registers `*DIRSRV` (`registry/table.rs`): the job
+`QUSRDIR` as `QDIRSRV` in `QSYSWRK` (another instance's job has its
+name), ports 389 and 636 (TLS), `QS400_DIRECTORY_SERVER`, readiness
+`Slot`. Until the instance job is registered, `STRTCPSVR` and
+`ENDTCPSVR` resolve `INSTANCE` against the job's instance list
+(`framework::dirsrv`, the list read by `work/qsjob/src/command/tcpsvr.rs`
+through `dirsrv::config`; `GLD0203` for an unknown name) and then answer
+as for every slot (`TCP1A04`, and for an end `TCP1A09`). `*DIRSRV` is in
+the TCP/IP server table with autostart off.
+
+**Objects.** The profile `QDIRSRV` (`*USER`, no special authorities,
+password `*NONE`, UID 4294770712, `sec::profile::shipped`) and the
+function usage `QIBM_DIRSRV_ADMIN` (`sec::fcnusg`) were already shipped.
+V1R2M0 adds the job descriptions `QSYS/QDIRSRV` (the instance jobs),
+`QSYS/QGLDPUBE` and `QSYS/QGLDPUBA` (routing data of their names),
+`QSYS/QDIRJOBD` (`QCMDB`), all as `QDIRSRV` on `QSYSNOMAX`; in
+`QSYSWRK` the autostart job entries `QGLDPUBE` and `QGLDPUBA` and the
+routing entries 2140 and 2141 that run programs `QGLDPUBE` and
+`QGLDPUBA` (the sequence numbers are QS/400's: the primary's were not
+captured), which log `GLD010B` and end (publishing is not built yet,
+§10.1); and the library `QUSRDIRDB` (blank text, as the primary's),
+made at each IPL when missing (`lic/slic/src/stgsvc/dirconf.rs`). A
+V1R1M0 system gets the job descriptions and library at its first
+V1R2M0 IPL and the `QSYSWRK` entries through `wm::obj::upgrade`
+(marker `QSYS/QGLDPUBE`), as NFS's entries came.
 
 **The job** (`work/qsjob/src/work/dirsrv/`): one job per instance,
 named after it, user `QDIRSRV`, job description `QSYS/QDIRSRV`, in
@@ -737,6 +824,35 @@ once. The shipped file is QS/400's text (its comments Quartz's), written
 at the first IPL with `QUSRDIR`'s defaults as the primary has them,
 except `ibm-slapdPwEncryption: ssha512`.
 
+The model is `net/dirsrv/src/config/` (`instances`, `slapd`, `attrs`,
+`edit`, `shipped`, `error`). `attrs::ATTRS` lists every attribute by
+rule: honoured, with the values it takes; IBM's at its default (the
+primary's value, `{instance}` in paths standing for the instance:
+caches, reaping thresholds, the RDBM backend's database settings, the
+plug-in lines, the schema file paths, transactions, replication,
+digest, event notification); or kept as it is because IBM's server
+makes the value up or keeps it secret (`ibm-slapdServerId`,
+`ibm-slapdCryptoSync`, `ibm-slapdDbUserPW`, `ibm-slapdSslKeyDatabasePW`,
+`ibm-slapdEnableRemotePWPExOps`), used for nothing.
+`ibm-slapdMasterDN`/`ibm-slapdMasterPW` (`cn=Master Server`) are kept
+for `CHGDIRSVRA DN(*UPDATEDN)` and used by nothing. Anything else, a
+default attribute at another value, or a change record is `GLD0126`; a
+bad value of an honoured one `GLD0232`. Changes edit the text in place
+(order, comments and folding kept).
+
+The shipped files (`config::shipped`, written by
+`stgsvc/dirconf.rs` when the IFS starts and they are missing):
+`idsinstinfo/idsinstances.ldif` (CCSID 819) with `QUSRDIR`, autostart
+1; `idsslapd-QUSRDIR/etc/ibmslapd.conf` (CCSID 1208, owner `QDIRSRV`,
+mode 600) with every entry of the primary's in its order, no
+administrator password, no `ibm-slapdServerId` (the server makes one),
+none of the kept secrets, `ibm-slapdConfigPwdPolicyOn: FALSE` with no
+policy values, the projected suffix `os400-sys=` the system's DNS name
+(`HOSTNAME.DMNNAME`, or the system name without one), and no user
+suffix: the primary's `dc=` suffix was its administrator's choice, so a
+QS/400 system starts with `cn=localhost` and `cn=ibmpolicies` and gets a
+suffix of its own with another `ibm-slapdSuffix` on `cn=Directory`.
+
 ### 10.1 Publishing
 
 IBM's publishing agents (`QGLDPUBE`, `QGLDPUBA`, always running in
@@ -856,7 +972,9 @@ ignored.
 - SASL `DIGEST-MD5`, `CRAM-MD5`, `GSSAPI`, `OS400-PRFTKN`; Kerberos.
 - Filter-based ACLs (`ibm-filterAclEntry`).
 - Pass-through authentication (`cn=Passthrough Authentication`).
-- `ibm-slapdPwEncryption` `aes128`, `aes192`, `aes256`, `md5`.
+- `ibm-slapdPwEncryption` `aes128`, `aes192`, `aes256`, `md5`
+  (`GLD0232`); `ibm-slapdSchemaCheck: V2` (`GLD0232`); IBM's other
+  configuration attributes away from their defaults (`GLD0126`, §10).
 - Language tags, event notification, the IBM web administration tool
   (Navigator replaces it), `idsldif2db`-style tools.
 - The SNADS system distribution directory (`*DIRE`) is not LDAP and is

@@ -48,7 +48,8 @@ pub fn ensure_library(
             name,
             type_code: types::LIB,
             attribute: "PROD".into(),
-            text: "Directory server entries".into(),
+            // Blank, as the primary's.
+            text: String::new(),
             owner: "QSYS".into(),
             system: stamp.system.clone(),
             now: stamp.now,

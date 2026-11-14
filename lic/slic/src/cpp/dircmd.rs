@@ -87,7 +87,7 @@ fn chgdirsvra(system: &mut System, parms: &Parms) -> Reply {
         Ok(None) => {
             return fail(&ConfigError::File {
                 file: path,
-                why: "not found".into(),
+                why: ifs::Errno::ENOENT.text().into(),
             });
         }
         Err(why) => return fail(&ConfigError::File { file: path, why }),
