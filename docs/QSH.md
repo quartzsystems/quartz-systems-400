@@ -334,7 +334,7 @@ the system only through `Sys` (no `std::fs`, no `unsafe`).
 | `text/` | `cmp cut expand grep egrep fgrep head iconv od paste pr sed sort split tail tee tr uniq wc`; `sed/` is `parse.rs` (the script) and `exec.rs` (the cycle); `catalog/` is `gencat` and `dspmsg` over the catalog format in `format.rs` |
 | `proc/` | `basename date dirname echo env printenv expr id logname locale nohup ps pwdx sleep test true false uname xargs` |
 | `archive/` | `pax tar compress uncompress zcat ajar`: `member.rs` the model every format reads and writes, `ustar.rs` and `cpio.rs` (odc, newc, crc) the formats behind `codec.rs`, `gather.rs`/`build.rs` members from files, `restore.rs` files from members, `select.rs` patterns, `subst.rs` `-s`, `listing.rs` verbose lines, `arcio.rs` blocked archive I/O, `lzw.rs` the `.Z` coder, `zip/` CRC-32, deflate, inflate and the zip container |
-| `net/` | `hostname nslookup host dig rexec`; `dns.rs` asking the resolver, reverse names, record forms |
+| `net/` | `hostname nslookup host dig rexec`, the LDAP tools (`ldap/`, over the `ldap` client and the job's own sockets); `dns.rs` asking the resolver, reverse names, record forms |
 | `ibmi/` | `system db2 liblist sysval datarea dataq catsplf getjobid attr setccsid Rfile ipcs ipcrm clrtmp logger`; `msgs.rs` CL messages and the CL runner |
 
 Messages are `name: text` on standard error, the text Quartz-written
@@ -465,6 +465,7 @@ directory and removes it).
 | `host` | done (`-t -a -v -c -r`, the rest accepted) | `host.sh` |
 | `dig` | done (`@server -t -x -q -p -c`, `+[no]short cmd comments question answer authority additional stats all recurse`) | `dig.sh` |
 | `rexec` | done (`-n -u -l -p -P`, `.netrc`) | `rexec.sh` |
+| `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldapmodrdn`, `ldapchangepwd`, `ldapexop`, `ldapcompare`, `ldapdiff` | done (IBM's option letters; docs/DIRSRV.md §13 has what is refused) | `tests/ldap.rs` |
 | `system` | done (`-b -e -i -k -K -n -q -s -v`) | `system.sh` |
 | `db2` | done (`-S -t -v -f`) | `db2.sh` |
 | `liblist` | done (`-a -f -l -d -c`; a builtin in Qshell, a utility here) | `liblist.sh` |
@@ -572,15 +573,15 @@ and QS/400 ships nothing inside PASE.
 | `klist` | not supported | Kerberos (network authentication service): not in this phase |
 | `kpasswd` | not supported | Kerberos (network authentication service): not in this phase |
 | `ksetup` | not supported | Kerberos (network authentication service): not in this phase |
-| `ldapadd` | not supported | LDAP client: no directory server or client yet |
-| `ldapchangepwd` | not supported | LDAP client: no directory server or client yet |
-| `ldapcompare` | not supported | LDAP client: no directory server or client yet |
-| `ldapdelete` | not supported | LDAP client: no directory server or client yet |
-| `ldapdiff` | not supported | LDAP client: no directory server or client yet |
-| `ldapexop` | not supported | LDAP client: no directory server or client yet |
-| `ldapmodify` | not supported | LDAP client: no directory server or client yet |
-| `ldapmodrdn` | not supported | LDAP client: no directory server or client yet |
-| `ldapsearch` | not supported | LDAP client: no directory server or client yet |
+| `ldapadd` | implemented | docs/DIRSRV.md §13 |
+| `ldapchangepwd` | implemented | docs/DIRSRV.md §13 |
+| `ldapcompare` | implemented | docs/DIRSRV.md §13 |
+| `ldapdelete` | implemented | docs/DIRSRV.md §13 |
+| `ldapdiff` | implemented | docs/DIRSRV.md §13 |
+| `ldapexop` | implemented | docs/DIRSRV.md §13 |
+| `ldapmodify` | implemented | docs/DIRSRV.md §13 |
+| `ldapmodrdn` | implemented | docs/DIRSRV.md §13 |
+| `ldapsearch` | implemented | docs/DIRSRV.md §13 |
 | `ln` | implemented |  |
 | `locale` | implemented |  |
 | `logger` | implemented |  |

@@ -3019,9 +3019,12 @@ name = "qsh-utils"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "certs",
+ "ldap",
  "qsh",
  "release",
  "thiserror 2.0.21",
+ "tls",
 ]
 
 [[package]]

@@ -322,9 +322,9 @@ total: 0 kilobytes
 -rwxr-xr-x  1 QSHUSER  0                     0 May 28 20:26 tool*
 
 ### ls -i shows file IDs
-cd data; ls -i fruits.txt | sed 's/[0-9][0-9]*/N/'
+cd data; ls -i fruits.txt | sed 's/^ *[0-9][0-9]*/N/'
 --- out
-      N fruits.txt
+N fruits.txt
 
 ### ls -s shows blocks
 cd data; ls -s fruits.txt nums.txt

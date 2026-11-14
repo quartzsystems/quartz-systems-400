@@ -15,7 +15,9 @@
 //! - [`proc`]: `basename date dirname env expr id locale logname nohup
 //!   printenv ps pwdx sleep test true false uname xargs`.
 //! - [`archive`]: `pax tar compress uncompress zcat ajar`.
-//! - [`net`]: `hostname nslookup host dig rexec`.
+//! - [`net`]: `hostname nslookup host dig rexec` and `ldapsearch ldapadd
+//!   ldapmodify ldapdelete ldapmodrdn ldapchangepwd ldapexop ldapcompare
+//!   ldapdiff`.
 //! - [`ibmi`]: `system db2 liblist sysval datarea dataq catsplf
 //!   getjobid attr setccsid Rfile ipcs ipcrm clrtmp logger`.
 //! - [`regex`]: the POSIX basic and extended regular expressions behind
@@ -105,6 +107,15 @@ pub const UTILITIES: &[Entry] = &[
     ("id", proc::id::run_id),
     ("ipcrm", ibmi::ipcs::run_ipcrm),
     ("ipcs", ibmi::ipcs::run_ipcs),
+    ("ldapadd", net::ldap::modify::run_add),
+    ("ldapchangepwd", net::ldap::passwd::run),
+    ("ldapcompare", net::ldap::compare::run),
+    ("ldapdelete", net::ldap::delete::run),
+    ("ldapdiff", net::ldap::diff::run),
+    ("ldapexop", net::ldap::exop::run),
+    ("ldapmodify", net::ldap::modify::run_modify),
+    ("ldapmodrdn", net::ldap::modrdn::run),
+    ("ldapsearch", net::ldap::search::run),
     ("liblist", ibmi::liblist::run),
     ("ln", file::ln::run),
     ("locale", proc::locale::run),
