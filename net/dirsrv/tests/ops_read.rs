@@ -78,7 +78,7 @@ fn special_entries() {
         "(objectClass=*)",
         &[],
     );
-    assert_eq!(done(&r).code, ResultCode::NoSuchObject);
+    assert_eq!(done(&r).code, ResultCode::UnwillingToPerform);
     let r = t.search(&anon, "cn=changelog", Scope::Base, "(objectClass=*)", &[]);
     assert_eq!(done(&r).code, ResultCode::NoSuchObject);
 }
@@ -671,4 +671,21 @@ fn controls_unknown_and_misplaced() {
         vec![ldap::control::Assertion(ldap::Filter::parse("(cn=no)").unwrap()).to_control(true)],
     );
     assert_eq!(done(&r).code, ResultCode::Other(122));
+}
+
+/// Below `cn=monitor` as the primary answers: a base search 53, a
+/// one-level search 32 with `cn=monitor` matched.
+#[test]
+fn below_the_monitor() {
+    let mut t = T::new();
+    let anon = dirsrv::ops::Session::anonymous();
+    let r = t.search(
+        &anon,
+        "cn=connections,cn=monitor",
+        Scope::One,
+        "(objectClass=*)",
+        &[],
+    );
+    assert_eq!(done(&r).code, ResultCode::NoSuchObject);
+    assert_eq!(done(&r).matched_dn, "cn=monitor");
 }

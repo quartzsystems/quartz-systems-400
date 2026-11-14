@@ -510,7 +510,11 @@ impl Directory {
                 self.push_special(&mut c, crate::backend::monitor::DN, attrs);
             }
             Place::UnderMonitor => {
-                // As the primary answers (32, cn=monitor matched).
+                // As the primary answers: a base search 53, the others 32
+                // with cn=monitor matched.
+                if req.scope == Scope::Base {
+                    return fail(&OpError::unwilling("cn=monitor has no entries below it"));
+                }
                 return fail(
                     &OpError::new(
                         ResultCode::NoSuchObject,
