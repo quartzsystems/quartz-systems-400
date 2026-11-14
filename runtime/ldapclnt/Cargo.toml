@@ -8,8 +8,16 @@ publish.workspace = true
 
 [dependencies]
 ldap = { path = "../../net/ldap", version = "0.1.0" }
-thiserror.workspace = true
+mi = { path = "../../runtime/mi", version = "0.1.0" }
+codegen = { path = "../../runtime/codegen", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+tls = { path = "../../net/tls", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
 tracing.workspace = true
+
+[dev-dependencies]
+ile = { path = "../../runtime/ile", version = "0.1.0" }
+certs = { path = "../../net/certs", version = "0.1.0" }
 
 [lints]
 workspace = true

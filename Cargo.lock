@@ -2209,8 +2209,14 @@ dependencies = [
 name = "ldapclnt"
 version = "0.1.0"
 dependencies = [
+ "ccsid",
+ "certs",
+ "codegen",
+ "ile",
  "ldap",
- "thiserror 2.0.21",
+ "mi",
+ "release",
+ "tls",
  "tracing",
 ]
 

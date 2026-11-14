@@ -1,0 +1,251 @@
+# The QGLDCLNT interface, one C prototype per line: the header letter
+# (L LDAP, B LBER, S LDAPSSL), `-` when QS/400 refuses the function
+# (it is exported and answers LDAP_NOT_SUPPORTED), then the prototype.
+# runtime/ldapclnt generates QSYSINC/H(LDAP, LBER, LDAPSSL) and
+# QSYSINC/QRPGLESRC(LDAP) from this file; its tests check each built
+# function's entry against it.
+
+# Sessions
+L  LDAP *ldap_init(const char *host, int port);
+L  LDAP *ldap_open(const char *host, int port);
+L  int ldap_unbind(LDAP *ld);
+L  int ldap_unbind_s(LDAP *ld);
+L  int ldap_unbind_ext(LDAP *ld, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_version(LDAPVersion *ver);
+L  int ldap_set_option(LDAP *ld, int option, const void *invalue);
+L  int ldap_get_option(LDAP *ld, int option, void *outvalue);
+L- void ldap_set_rebind_proc(LDAP *ld, LDAPRebindProc proc);
+L  int ldap_default_dn_set(LDAP *ld, const char *dn);
+L  int ldap_default_dn_get(LDAP *ld, char **dn);
+L  int ldap_password_set(LDAP *ld, const char *password);
+L  int ldap_password_get(LDAP *ld, char **password);
+L- int ldap_proxy_dn_prefix(LDAP *ld, const char *dn);
+L- int ldap_proxy_dn_prefix_utf8(LDAP *ld, const char *dn);
+
+# Secure connections
+S  LDAP *ldap_ssl_init(char *host, int port, char *name);
+S  int ldap_ssl_client_init(char *keyring, char *keyring_pw, int ssl_timeout, int *reason);
+S  int ldap_ssl_environment_init(char *keyring, char *keyring_pw, char *keyring_stash, int ssl_timeout, int *reason);
+S  int ldap_ssl_start(LDAP *ld, char *keyring, char *keyring_pw, char *name);
+S- int ldap_ssl_pkcs11_client_init(char *module, char *token_label, char *token_pw, int ssl_timeout, int *reason);
+S- int ldap_ssl_pkcs11_environment_init(char *module, char *token_label, char *token_pw, int ssl_timeout, int *reason);
+S- int ldap_ssl_set_fips_mode_np(int on);
+S  int ldap_app_ssl_client_init_np(char *app_id, int *reason);
+S  LDAP *ldap_app_ssl_init_np(char *host, int port, char *app_id);
+S  int ldap_app_ssl_start_np(LDAP *ld, char *app_id);
+S  int ldap_start_tls_s_np(LDAP *ld, char *name);
+S  int ldap_start_tls_app_np(LDAP *ld, char *app_id);
+S  int ldap_stop_tls_s_np(LDAP *ld);
+S- int ldap_set_cipher(LDAP *ld, char *cipher);
+
+# Binds
+L  int ldap_simple_bind(LDAP *ld, const char *dn, const char *passwd);
+L  int ldap_simple_bind_s(LDAP *ld, const char *dn, const char *passwd);
+L  int ldap_bind(LDAP *ld, const char *dn, const char *cred, int method);
+L  int ldap_bind_s(LDAP *ld, const char *dn, const char *cred, int method);
+L  int ldap_sasl_bind(LDAP *ld, const char *dn, const char *mechanism, const struct berval *cred, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_sasl_bind_s(LDAP *ld, const char *dn, const char *mechanism, const struct berval *cred, LDAPControl **sctrls, LDAPControl **cctrls, struct berval **servercredp);
+L  int ldap_parse_sasl_bind_result(LDAP *ld, LDAPMessage *res, struct berval **servercredp, int freeit);
+L  int ldap_get_bind_controls(LDAP *ld, LDAPControl ***ctrls);
+L- int ldap_plugin_sasl_bind_s(LDAP *ld, const char *dn, const char *mechanism, const struct berval *cred, LDAPControl **sctrls, LDAPControl **cctrls);
+L- int ldap_krb_init_tkt(char *name, char *password);
+L- int ldap_krb_cc_destroy(void);
+L- int ldap_krb_ctx_destroy(void);
+
+# Searches
+L  int ldap_search(LDAP *ld, const char *base, int scope, const char *filter, char **attrs, int attrsonly);
+L  int ldap_search_s(LDAP *ld, const char *base, int scope, const char *filter, char **attrs, int attrsonly, LDAPMessage **res);
+L  int ldap_search_st(LDAP *ld, const char *base, int scope, const char *filter, char **attrs, int attrsonly, struct timeval *timeout, LDAPMessage **res);
+L  int ldap_search_ext(LDAP *ld, const char *base, int scope, const char *filter, char **attrs, int attrsonly, LDAPControl **sctrls, LDAPControl **cctrls, struct timeval *timeout, int sizelimit, int *msgidp);
+L  int ldap_search_ext_s(LDAP *ld, const char *base, int scope, const char *filter, char **attrs, int attrsonly, LDAPControl **sctrls, LDAPControl **cctrls, struct timeval *timeout, int sizelimit, LDAPMessage **res);
+L  int ldap_url_search(LDAP *ld, const char *url, int attrsonly);
+L  int ldap_url_search_s(LDAP *ld, const char *url, int attrsonly, LDAPMessage **res);
+L  int ldap_url_search_st(LDAP *ld, const char *url, int attrsonly, struct timeval *timeout, LDAPMessage **res);
+
+# Results
+L  int ldap_result(LDAP *ld, int msgid, int all, struct timeval *timeout, LDAPMessage **result);
+L  int ldap_msgfree(LDAPMessage *lm);
+L  int ldap_msgtype(LDAPMessage *lm);
+L  int ldap_msgid(LDAPMessage *lm);
+L  int ldap_result2error(LDAP *ld, LDAPMessage *res, int freeit);
+L  int ldap_parse_result(LDAP *ld, LDAPMessage *res, int *errcodep, char **matcheddnp, char **errmsgp, char ***referralsp, LDAPControl ***sctrlsp, int freeit);
+L  int ldap_parse_extended_result(LDAP *ld, LDAPMessage *res, char **resultoidp, struct berval **resultdatap, int freeit);
+L  int ldap_parse_extended_result_w_controls(LDAP *ld, LDAPMessage *res, char **resultoidp, struct berval **resultdatap, LDAPControl ***sctrlsp, int freeit);
+L  int ldap_parse_reference(LDAP *ld, LDAPMessage *ref, char ***referralsp, LDAPControl ***sctrlsp, int freeit);
+L  int ldap_parse_reference_np(LDAP *ld, LDAPMessage *ref, char ***referralsp, LDAPControl ***sctrlsp, int freeit);
+L  LDAPMessage *ldap_first_message(LDAP *ld, LDAPMessage *res);
+L  LDAPMessage *ldap_next_message(LDAP *ld, LDAPMessage *msg);
+L  int ldap_count_messages(LDAP *ld, LDAPMessage *res);
+L  LDAPMessage *ldap_first_entry(LDAP *ld, LDAPMessage *res);
+L  LDAPMessage *ldap_next_entry(LDAP *ld, LDAPMessage *entry);
+L  int ldap_count_entries(LDAP *ld, LDAPMessage *res);
+L  LDAPMessage *ldap_first_reference(LDAP *ld, LDAPMessage *res);
+L  LDAPMessage *ldap_next_reference(LDAP *ld, LDAPMessage *ref);
+L  int ldap_count_references(LDAP *ld, LDAPMessage *res);
+
+# Entries, attributes, values
+L  char *ldap_get_dn(LDAP *ld, LDAPMessage *entry);
+L  char *ldap_first_attribute(LDAP *ld, LDAPMessage *entry, BerElement **ber);
+L  char *ldap_next_attribute(LDAP *ld, LDAPMessage *entry, BerElement *ber);
+L  int ldap_count_attributes(LDAP *ld, LDAPMessage *entry);
+L  char **ldap_get_values(LDAP *ld, LDAPMessage *entry, const char *attr);
+L  struct berval **ldap_get_values_len(LDAP *ld, LDAPMessage *entry, const char *attr);
+L  int ldap_count_values(char **vals);
+L  int ldap_count_values_len(struct berval **vals);
+L  void ldap_value_free(char **vals);
+L  void ldap_value_free_len(struct berval **vals);
+L  int ldap_get_entry_controls(LDAP *ld, LDAPMessage *entry, LDAPControl ***sctrlsp);
+L  int ldap_get_entry_controls_np(LDAP *ld, LDAPMessage *entry, LDAPControl ***sctrlsp);
+L  void ldap_memfree(char *mem);
+L  void ldap_ber_free(BerElement *ber, int freebuf);
+L  void ldap_mods_free(LDAPMod **mods, int freemods);
+
+# DNs
+L  char **ldap_explode_dn(const char *dn, int notypes);
+L  char **ldap_explode_dn_utf8(const char *dn, int notypes);
+L  char **ldap_explode_rdn(const char *rdn, int notypes);
+L  char **ldap_explode_rdn_utf8(const char *rdn, int notypes);
+L  char **ldap_explode_dns(const char *dns);
+L  char *ldap_dn2ufn(const char *dn);
+L- char *ldap_friendly_name(char *filename, char *name, LDAPFriendlyMap **map);
+L- void ldap_free_friendlymap(LDAPFriendlyMap **map);
+
+# Updates
+L  int ldap_add(LDAP *ld, const char *dn, LDAPMod **attrs);
+L  int ldap_add_s(LDAP *ld, const char *dn, LDAPMod **attrs);
+L  int ldap_add_ext(LDAP *ld, const char *dn, LDAPMod **attrs, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_add_ext_s(LDAP *ld, const char *dn, LDAPMod **attrs, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_modify(LDAP *ld, const char *dn, LDAPMod **mods);
+L  int ldap_modify_s(LDAP *ld, const char *dn, LDAPMod **mods);
+L  int ldap_modify_ext(LDAP *ld, const char *dn, LDAPMod **mods, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_modify_ext_s(LDAP *ld, const char *dn, LDAPMod **mods, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_delete(LDAP *ld, const char *dn);
+L  int ldap_delete_s(LDAP *ld, const char *dn);
+L  int ldap_delete_ext(LDAP *ld, const char *dn, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_delete_ext_s(LDAP *ld, const char *dn, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_modrdn(LDAP *ld, const char *dn, const char *newrdn, int deleteoldrdn);
+L  int ldap_modrdn_s(LDAP *ld, const char *dn, const char *newrdn, int deleteoldrdn);
+L  int ldap_rename(LDAP *ld, const char *dn, const char *newrdn, const char *newparent, int deleteoldrdn, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_rename_s(LDAP *ld, const char *dn, const char *newrdn, const char *newparent, int deleteoldrdn, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_compare(LDAP *ld, const char *dn, const char *attr, const char *value);
+L  int ldap_compare_s(LDAP *ld, const char *dn, const char *attr, const char *value);
+L  int ldap_compare_ext(LDAP *ld, const char *dn, const char *attr, const struct berval *bvalue, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_compare_ext_s(LDAP *ld, const char *dn, const char *attr, const struct berval *bvalue, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_abandon(LDAP *ld, int msgid);
+L  int ldap_abandon_ext(LDAP *ld, int msgid, LDAPControl **sctrls, LDAPControl **cctrls);
+L  int ldap_extended_operation(LDAP *ld, const char *reqoid, const struct berval *reqdata, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L  int ldap_extended_operation_s(LDAP *ld, const char *reqoid, const struct berval *reqdata, LDAPControl **sctrls, LDAPControl **cctrls, char **retoidp, struct berval **retdatap);
+
+# Controls
+L  int ldap_create_control(const char *oid, BerElement *ber, int iscritical, LDAPControl **ctrlp);
+L  int ldap_create_page_control(LDAP *ld, unsigned long pagesize, struct berval *cookie, const char iscritical, LDAPControl **output);
+L  int ldap_parse_page_control(LDAP *ld, LDAPControl **ctrls, unsigned long *totalcount, struct berval **cookie);
+L  int ldap_create_sort_keylist(LDAPSortKey ***sortkeylist, const char *keystring);
+L  void ldap_free_sort_keylist(LDAPSortKey **sortkeylist);
+L  int ldap_create_sort_control(LDAP *ld, LDAPSortKey **keylist, const char iscritical, LDAPControl **output);
+L  int ldap_parse_sort_control(LDAP *ld, LDAPControl **ctrls, unsigned long *returncode, char **attribute);
+L  int ldap_create_proxyauth_control(LDAP *ld, char *proxydn, char iscritical, LDAPControl **ctrlp);
+L  int ldap_create_persistentsearch_control(LDAP *ld, int changetypes, int changesonly, int returnecs, char iscritical, LDAPControl **ctrlp);
+L  int ldap_parse_entrychange_control(LDAP *ld, LDAPControl **ctrls, int *changetype, char **prevdn, int *haschangenumber, long *changenumber);
+L  int ldap_create_assertion_control(LDAP *ld, char *filter, char iscritical, LDAPControl **ctrlp);
+L  int ldap_create_vlv_control(LDAP *ld, LDAPVLVInfo *vlvinfo, LDAPControl **ctrlp);
+L  int ldap_parse_vlv_control(LDAP *ld, LDAPControl **ctrls, unsigned long *targetpos, unsigned long *listcount, struct berval **context, int *errcode);
+L  int ldap_parse_pwdpolicy_response(LDAPControl **ctrls, int *warning, int *value, int *error);
+L  char *ldap_pwdpolicy_err2string(int error);
+L  void ldap_control_free(LDAPControl *ctrl);
+L  void ldap_controls_free(LDAPControl **ctrls);
+L  int ldap_copy_controls(LDAPControl ***to, LDAPControl **from);
+L  int ldap_insert_control(LDAPControl *newcontrol, LDAPControl ***ctrllist);
+L  int ldap_add_control(const char *oid, unsigned long len, char *value, int iscritical, LDAPControl ***ctrllist);
+L  int ldap_remove_control(LDAPControl *delcontrol, LDAPControl ***ctrllist, int freeit);
+L  int ldap_merge_control_lists(LDAPControl **list1, LDAPControl **list2, LDAPControl ***merged);
+L- int ldap_create_group_control(LDAP *ld, char **groups, char iscritical, LDAPControl **ctrlp);
+L- int ldap_create_group_control_from_list(LDAP *ld, char *groups, char iscritical, LDAPControl **ctrlp);
+L- int ldap_create_modify_groups_only_control(LDAP *ld, char iscritical, LDAPControl **ctrlp);
+L- int ldap_create_omit_group_referential_integrity_control(LDAP *ld, char iscritical, LDAPControl **ctrlp);
+L- int ldap_create_limit_num_values_control(LDAP *ld, int maxvalues, int maxpertype, char iscritical, LDAPControl **ctrlp);
+L- int ldap_parse_limit_num_values_response(LDAP *ld, LDAPControl **ctrls, void **response);
+L- void ldap_free_limit_num_values_response(void *response);
+L- int ldap_create_chaining_audit_control(LDAP *ld, char *data, char iscritical, LDAPControl **ctrlp);
+L- int ldap_create_return_deleted_objects_control(LDAP *ld, char iscritical, LDAPControl **ctrlp);
+L- int ldap_create_transaction_control(LDAP *ld, char *tranid, char iscritical, LDAPControl **ctrlp);
+
+# IBM's extended requests
+L- int ldap_create_account_status_request(LDAP *ld, char *dn, struct berval **request);
+L- int ldap_create_effective_pwdpolicy_request(LDAP *ld, char *dn, struct berval **request);
+L- int ldap_parse_effective_pwdpolicy_response(LDAP *ld, struct berval *response, void **policy);
+L- int ldap_create_get_file_request(LDAP *ld, char *name, struct berval **request);
+L- int ldap_create_group_eval_request(LDAP *ld, char *dn, char **attrs, struct berval **request);
+L- int ldap_create_locate_entry_request(LDAP *ld, char **dns, struct berval **request);
+L- int ldap_create_online_backup_request(LDAP *ld, char *path, struct berval **request);
+L- int ldap_create_resume_role_request(LDAP *ld, char *role, struct berval **request);
+L- int ldap_create_user_type_request(LDAP *ld, struct berval **request);
+L- int ldap_create_password_policy_bind_init_request(LDAP *ld, char *dn, struct berval **request);
+L- int ldap_create_password_policy_bind_finalize_request(LDAP *ld, char *dn, int result, struct berval **request);
+L- int ldap_create_abort_transaction_request(LDAP *ld, char *tranid, struct berval **request);
+L- int ldap_create_commit_transaction_request(LDAP *ld, char *tranid, struct berval **request);
+L- int ldap_create_prepare_transaction_request(LDAP *ld, char *tranid, struct berval **request);
+L- int ldap_start_transaction(LDAP *ld, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L- int ldap_start_transaction_s(LDAP *ld, LDAPControl **sctrls, LDAPControl **cctrls, char **tranid);
+L- int ldap_end_transaction(LDAP *ld, char *tranid, int commit, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L- int ldap_end_transaction_s(LDAP *ld, char *tranid, int commit, LDAPControl **sctrls, LDAPControl **cctrls);
+L- int ldap_prepare_transaction(LDAP *ld, char *tranid, LDAPControl **sctrls, LDAPControl **cctrls, int *msgidp);
+L- int ldap_prepare_transaction_s(LDAP *ld, char *tranid, LDAPControl **sctrls, LDAPControl **cctrls);
+L- int ldap_get_tran_id(LDAP *ld, LDAPMessage *res, char **tranid);
+
+# Server location and plug-ins
+L- int ldap_server_locate(void *request, void **hosts);
+L- void ldap_server_free_list(void *hosts);
+L- int ldap_server_conf_save(char *filename, unsigned long ttl, void *hosts);
+L- int ldap_enetwork_domain_set(char *domain);
+L- int ldap_enetwork_domain_get(char **domain);
+L- int ldap_plugin_pblock_get(void *pb, int arg, void *value);
+L- int ldap_plugin_pblock_set(void *pb, int arg, void *value);
+L- void ldap_plugin_pblock_free(void *pb);
+
+# Errors
+L  char *ldap_err2string(int err);
+L  void ldap_perror(LDAP *ld, const char *s);
+L  int ldap_get_lderrno(LDAP *ld, char **m, char **s);
+L  int ldap_set_lderrno(LDAP *ld, int e, char *m, char *s);
+L  int ldap_get_errno(LDAP *ld);
+L  int ldap_get_exterror(LDAP *ld);
+
+# URLs
+L  int ldap_is_ldap_url(const char *url);
+L  int ldap_is_ldap_url_utf8(const char *url);
+L  int ldap_url_parse(const char *url, LDAPURLDesc **ludpp);
+L  int ldap_url_parse_utf8(const char *url, LDAPURLDesc **ludpp);
+L- int ldap_url_parse_internal(const char *url, LDAPURLDesc **ludpp);
+L  void ldap_free_urldesc(LDAPURLDesc *ludp);
+
+# Code pages
+L  int ldap_set_iconv_local_codepage(int codepage);
+L  int ldap_set_iconv_local_charset(const char *charset);
+L  int ldap_get_iconv_local_codepage(void);
+L  int ldap_xlate_local_to_utf8(char *inbuf, unsigned long *inlen, char *outbuf, unsigned long *outlen);
+L  int ldap_xlate_utf8_to_local(char *inbuf, unsigned long *inlen, char *outbuf, unsigned long *outlen);
+L  int ldap_xlate_local_to_unicode(char *inbuf, unsigned long *inlen, char *outbuf, unsigned long *outlen);
+L  int ldap_xlate_unicode_to_local(char *inbuf, unsigned long *inlen, char *outbuf, unsigned long *outlen);
+L- int ldap_xlate_local_to_utf8_wrp(char *inbuf, unsigned long *inlen, char *outbuf, unsigned long *outlen);
+L  int ldap_char_size(char *p);
+L- int ldap_set_locale(const char *locale);
+L- char *ldap_get_locale(void);
+
+# LBER
+B  BerElement *ber_alloc_t(int options);
+B  BerElement *ber_init(struct berval *bv);
+B  void ber_init2(BerElement *ber, struct berval *bv, int options);
+B  int ber_flatten(BerElement *ber, struct berval **bvptr);
+B  void ber_free(BerElement *ber, int freebuf);
+B  int ber_printf(BerElement *ber, const char *fmt, ...);
+B  ber_tag_t ber_scanf(BerElement *ber, const char *fmt, ...);
+B  ber_tag_t ber_peek_tag(BerElement *ber, ber_len_t *len);
+B  ber_tag_t ber_skip_tag(BerElement *ber, ber_len_t *len);
+B  ber_tag_t ber_get_tag(BerElement *ber);
+B  ber_tag_t ber_skip_element(BerElement *ber, struct berval *bv);
+B  ber_tag_t ber_first_element(BerElement *ber, ber_len_t *len, char **last);
+B  ber_tag_t ber_next_element(BerElement *ber, ber_len_t *len, char *last);
+B  struct berval *ber_bvdup(struct berval *bv);
+B  void ber_bvfree(struct berval *bv);
+B  void ber_bvecfree(struct berval **bv);
