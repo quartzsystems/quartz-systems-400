@@ -9,6 +9,7 @@
 #![forbid(unsafe_code)]
 
 pub mod acl;
+pub mod admin;
 pub mod backend;
 pub mod config;
 pub mod ops;

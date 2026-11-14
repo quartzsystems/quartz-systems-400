@@ -197,6 +197,13 @@ impl Schema {
         self.protected.contains(oid)
     }
 
+    /// Whether the definition with this OID was added or replaced since
+    /// the schema was shipped (what `V3.modifiedschema` holds).
+    #[must_use]
+    pub fn is_modified(&self, oid: &str) -> bool {
+        self.changed.contains(oid)
+    }
+
     /// Marks definitions QS/400 relies on.
     pub fn protect<'a>(&mut self, oids: impl IntoIterator<Item = &'a str>) {
         self.protected.extend(oids.into_iter().map(str::to_string));

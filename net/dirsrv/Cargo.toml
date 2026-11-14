@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+ipc = { path = "../../work/ipc", version = "0.1.0" }
 ldap = { path = "../ldap", version = "0.1.0" }
 certs = { path = "../certs", version = "0.1.0" }
 tls = { path = "../tls", version = "0.1.0" }
