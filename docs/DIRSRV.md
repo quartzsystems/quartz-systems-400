@@ -419,16 +419,181 @@ classes and attributes of §9); and, for compatibility, every other name
 and OID the primary's schema lists, defined so that an LDIF exported
 from IBM's server loads (`tools/conformance/oracle/dirsrv/
 schema-primary.txt` has the OIDs, syntaxes and matching rules). The
-descriptions (`DESC`) are Quartz's.
+descriptions (`DESC`) are Quartz's. The code is `net/dirsrv/src/schema/`
+(the model, checking, DN keys, changes) and
+`net/dirsrv/src/backend/schema.rs` (the `cn=schema` entry).
 
-The shipped schema is QS/400's own files in
-`/QIBM/ProdData/OS400/DirSrv/etc/` (`qs.user.at`, ...), embedded in the
-build; changes made through `cn=schema` go to the instance's
-`etc/V3.modifiedschema`, as IBM's do. Schema checking is
-`ibm-slapdSchemaCheck: V3_lenient` by default (`V3` strict; `V2` is
-refused). Syntaxes and matching rules: the RFC 4517 set the shipped
-attributes use, each with its normalizer; an attribute with an unknown
-syntax compares octet by octet.
+### 6.1 The shipped files
+
+QS/400's files, in `net/dirsrv/schema/`, embedded in the build
+(`schema::shipped::FILES`) and written to
+`/QIBM/ProdData/OS400/DirSrv/etc/`. Each is lines of `attr: value`
+(RFC 4512 descriptions; `#` comments; a line that starts with a space
+continues the one before, as in LDIF), loaded in this order:
+
+| File | What |
+|---|---|
+| `qs.ldapsyntaxes` | the syntaxes QS/400 validates (§6.2) |
+| `qs.matchingrules` | the matching rules QS/400 implements (§6.2) |
+| `qs.system.at`, `qs.system.oc` | RFC 4512's operational attributes and `top`, `alias`, `subschema`, `extensibleObject`; RFC 3045, 3296 (`ref`, `referral`), 4530; IBM's directory attributes and classes QS/400 honours (ACLs, owners, password policy, audit, capabilities, `ibm-slapd*` configuration, `IBMAttributeTypes`) |
+| `qs.user.at`, `qs.user.oc` | RFC 4519, 4524, 2798, 2307, 2079 (`labeledURI`), `uidObject` |
+| `qs.os400.at`, `qs.os400.oc` | the projected backend's `os400-*` (§9) |
+| `qs.ibm.at`, `qs.ibm.oc` | every other definition of the primary's `cn=schema` (IBM's and third parties'), so IBM exports load; QS/400 defines them and gives them no behaviour |
+
+The definitions of every file come from the primary's names, OIDs,
+supertypes, syntaxes, matching rules, flags and usages, so an entry
+written for IBM's server checks the same here. The system, user and
+os400 definitions carry Quartz's `DESC`; those of `qs.ibm.*` carry none
+(IBM's were stripped and are not reproduced). Where QS/400 differs from
+the primary's definitions:
+
+- added (absent on the primary): `entryUUID` (RFC 4530, the same value
+  as `ibm-entryUuid`), `structuralObjectClass`,
+  `governingStructureRule`, the class `uidObject`;
+- `supportedControl` is `USAGE dSAOperation` (RFC 4512; the primary
+  has it as a user attribute);
+- kept as IBM has them, against the RFCs: `displayName` and
+  `userPKCS12` under IBM's OIDs (1.3.18.0.2.4.715 and .456, not RFC
+  2798's), `uid` with caseIgnoreIA5Match over Directory String, `mail`
+  as Directory String;
+- `homeFax` and `middleName` (IBM's, in RFC 4512's OID arc) are in
+  `qs.ibm.at`.
+
+**Access classes** (`IBMAttributeTypes ACCESS-CLASS`, §12): the
+primary's values are not in the facts, so QS/400's are its own:
+`critical` for `userPassword`, the `ibm-slapd*PW`/`*Pw`
+configuration passwords, `ibm-replicaKeypwd`, `passwordHistList`,
+`pwdHistory`, `os400-password`, `os400-docpwd`; `restricted` for
+`aclEntry`, `aclPropagate`, `entryOwner`, `ownerPropagate`,
+`ibm-filterAclEntry`, `ibm-filterAclInherit`; `system` for every other
+operational attribute; `normal` for every other user attribute. No
+attribute ships `sensitive`, and none ships a `LENGTH` (values are
+bounded only by a syntax's `{n}` and the store's limits).
+
+**Protected definitions**: those of `qs.system.*` and `qs.os400.*`
+cannot be deleted or replaced through `cn=schema` (53); the user and
+compatibility definitions can.
+
+### 6.2 Syntaxes and matching rules
+
+Every syntax of RFC 4517 §3.3 the shipped attributes name, the older
+ones the primary lists (Audio, the description syntaxes, Supported
+Algorithm), RFC 4530's UUID and IBM's 1.3.18.0.2.8.1 (taken as a
+Directory String) has a validator (`schema::syntax`). An attribute
+whose syntax QS/400 does not know takes any value. Boolean accepts any
+case (IBM's configuration writes `false`). Generalized Time requires
+its time zone on input; matching treats a value without one as UTC.
+
+Every matching rule the shipped attributes and the primary name is
+implemented (`schema::rule`): each has a normalizer, so equality is
+equality of normalized bytes and an ordering rule's normalized bytes
+sort as its values do (integers as sign, length and digits; times as
+`YYYYMMDDHHMMSS.nnnnnnnnnZ` in UTC). The string rules prepare values
+as RFC 4518 does, with these simplifications:
+
+- mapping: the characters of §2.2 mapped to nothing or to a space;
+- case folding: Unicode lower-casing (`char::to_lowercase`), not the
+  full case-folding table (`ß` stays `ß`);
+- no NFKC normalization: values that differ only in normalization
+  form do not match;
+- prohibited output (§2.4: private use, non-characters, U+FFFD) makes
+  the value Undefined to the rule;
+- insignificant spaces: leading and trailing dropped, inner runs one
+  space; a substring assertion's initial piece meets the value's start
+  and its final piece the value's end, its spaces kept within.
+
+Other rules: numericString drops spaces; telephoneNumber drops spaces
+and hyphens and ignores case; caseIgnoreList compares the lines of a
+postal address; objectIdentifierMatch resolves descriptors to OIDs;
+the first-component rules take a description's first OID, integer or
+string; wordMatch and keywordMatch match a word (a run of words) of the
+value. The IA5 rules apply to any UTF-8 value (IBM gives them to
+Directory String attributes). IBM's rules without an RFC:
+ibm-entryUuidMatch compares UUIDs ignoring case;
+distinguishedNameOrderingMatch orders DNs by their normalized bytes;
+presentationAddressMatch and protocolInformationMatch are
+caseIgnoreMatch. An attribute with no equality rule compares octet by
+octet.
+
+**DNs** (distinguishedNameMatch, `schema::dn`): each AVA's type
+becomes its OID and its value is normalized by the type's equality
+rule; the AVAs of an RDN sort by their bytes; the form is
+`oid=value(+oid=value)*(,...)*`, values escaped as RFC 4514 §2.4. A
+type the schema does not know keeps its lower-cased name and its value
+is compared as caseIgnoreMatch. So `cn=Foo  Bar,DC=Example, dc=COM`
+and `cn=foo bar,dc=example,dc=com` are one DN.
+
+**The store's keys** (`store::normalize::Normalizer`, §5.2):
+`attr_id` is the attribute's primary name lower-cased; `rdn_key` is the
+RDN's normalized form above, refusing unknown types and invalid values
+(34); `value_key` is the equality rule's normalized value, or for
+substrings the value prepared by the substring rule without its end
+spaces (so a matching piece's grams are always among the value's).
+
+### 6.3 Checking entries
+
+`ibm-slapdSchemaCheck: V3_lenient` by default, `V3` strict; `V2` and
+anything else are refused. Both levels check: `objectClass` present and
+every class defined (65); every attribute type defined (17) and
+options other than `;binary` refused (53: language tags, §14); values
+valid for the syntax (21); single-valued attributes (19); a value twice
+under the equality rule (20); every MUST of every class present (65);
+every user attribute allowed by some class's MUST or MAY, itself or a
+supertype of it, unless `extensibleObject` is present (65; operational
+attributes are always allowed); the RDN's values in the entry (64).
+NO-USER-MODIFICATION attributes are refused in a user's add or modify
+(19, `check_user_modification`, which the operations call).
+
+| | `V3` | `V3_lenient` |
+|---|---|---|
+| superclasses of a listed class | must be listed (`top` is implied) | implied, and stored |
+| structural classes | exactly one chain | none, one or several |
+| obsolete classes | refused | taken |
+
+The check returns the entry's full class list (listed and implied) and
+its structural class for `structuralObjectClass`.
+
+### 6.4 `cn=schema` and `V3.modifiedschema`
+
+The subschema entry (`backend::schema::entry`) holds `objectClass`
+(`top`, `subschema`, `ibmSubSchema`), `cn: schema`, `attributeTypes`,
+`objectClasses`, `ldapSyntaxes`, `matchingRules`, `matchingRuleUse`
+(each rule's attribute types: those naming it, and for equality and
+ordering rules those of its assertion syntax) and `IBMAttributeTypes`
+(every attribute type's access class, and length when it has one).
+
+A modify of `cn=schema` (the administrator's; ACLs are §12) changes
+`attributeTypes`, `objectClasses` and `IBMAttributeTypes`, all its
+changes or none, the result resolved and checked as a whole:
+
+- `add`: a new definition; an OID or name already defined is 20;
+- `replace`: each value redefines its OID's definition, or defines it;
+- `delete`: each value's OID (the value may be the whole description or
+  just `( oid )`) is removed; one still used by another definition (a
+  supertype, a superclass, a MUST or MAY) is 19, so a class goes before
+  its attributes; a delete without values is 53;
+- a description that does not parse is 21; a reference to something
+  undefined, a cycle, a wrong rule kind or no syntax is 19; a protected
+  definition, `ldapSyntaxes`, `matchingRules`, `matchingRuleUse` or any
+  other attribute of the entry is 53.
+
+What differs from the shipped schema is the instance's
+`etc/V3.modifiedschema` (`Schema::modified_text`, read back with
+`Schema::load_modified`; the service does the file I/O). Its format
+(UTF-8, the shipped files' line form):
+
+```
+# comment
+attributeTypes: ( ... )          every attribute type added or replaced
+IBMAttributeTypes: ( ... )       after its attribute type, when it has one
+objectClasses: ( ... )           every object class added or replaced
+deletedAttributeTypes: OID       every shipped attribute type deleted
+deletedObjectClasses: OID        every shipped object class deleted
+```
+
+Loading applies the deletions, then the definitions (each replacing its
+OID's or added), then resolves; a file that does not load stops the
+instance's start.
 
 ## 7. Operations, controls, extended operations
 
