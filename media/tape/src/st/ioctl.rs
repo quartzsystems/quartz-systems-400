@@ -35,6 +35,8 @@ pub enum MtOp {
     SetBlk = 20,
     /// MTSETDENSITY: set the density code.
     SetDensity = 21,
+    /// MTLOAD: load the medium (after MTOFFL, or a new cartridge).
+    Load = 30,
 }
 
 impl MtOp {
@@ -59,11 +61,12 @@ impl MtOp {
             Self::Erase => "MTERASE",
             Self::SetBlk => "MTSETBLK",
             Self::SetDensity => "MTSETDENSITY",
+            Self::Load => "MTLOAD",
         }
     }
 
     /// Every operation.
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::Fsf,
         Self::Bsf,
         Self::Fsr,
@@ -75,6 +78,7 @@ impl MtOp {
         Self::Erase,
         Self::SetBlk,
         Self::SetDensity,
+        Self::Load,
     ];
 }
 

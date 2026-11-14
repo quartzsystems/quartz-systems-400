@@ -39,6 +39,9 @@ fn st_session() {
     let big = vec![0x5a; MAX_BLOCK];
     assert!(!t.write_block(&[0x40; 80]).unwrap().early_warning);
     t.write_eof(1).unwrap();
+    // The block that reaches the early warning shows nothing; the next
+    // is refused once and written, past it.
+    assert!(!t.write_block(&big).unwrap().early_warning);
     assert!(!t.write_block(&big).unwrap().early_warning);
     assert!(t.write_block(&big).unwrap().early_warning);
     assert!(t.write_block(&big).unwrap().early_warning);

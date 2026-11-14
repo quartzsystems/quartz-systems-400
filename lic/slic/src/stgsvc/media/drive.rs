@@ -100,19 +100,27 @@ pub(crate) fn ask_volume(system: &mut System, dev: &str, req: &VolumeRequest) ->
     .is(RETRY)
 }
 
-/// A real drive's next volume: the operator puts it in and replies
-/// retry.
+/// A real drive's next volume: the finished one is unloaded, the
+/// operator puts the next in and replies retry; asked again while the
+/// drive has none.
 struct Operator<'a> {
     system: &'a mut System,
     dev: String,
 }
 
-impl<D: ?Sized> VolumeProvider<D> for Operator<'_> {
-    fn next_volume(&mut self, _: &mut D, req: &VolumeRequest) -> Result<(), TapeError> {
-        if ask_volume(self.system, &self.dev, req) {
-            Ok(())
-        } else {
-            Err(TapeError::Cancelled)
+impl<D: TapeTransport + ?Sized> VolumeProvider<D> for Operator<'_> {
+    fn next_volume(&mut self, drive: &mut D, req: &VolumeRequest) -> Result<(), TapeError> {
+        match drive.unload() {
+            Ok(()) | Err(tape::TransportError::NotLoaded) => {}
+            Err(e) => return Err(e.into()),
+        }
+        loop {
+            if !ask_volume(self.system, &self.dev, req) {
+                return Err(TapeError::Cancelled);
+            }
+            if drive.status()?.loaded {
+                return Ok(());
+            }
         }
     }
 }

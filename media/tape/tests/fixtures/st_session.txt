@@ -14,17 +14,21 @@ mtop MTSETBLK 0 -> ok
 read 262144 -> 80 hex=e5d6d3f1e3c1d7c5f0f1 pad=40
 mtop MTREW 1 -> ok
 
-# A label, a file mark, then large blocks into the early warning: the
-# first write past it fails with ENOSPC and GMT_EOT is set; the driver
-# then takes writes up to the physical end, so the block goes again.
+# A label, a file mark, then large blocks into the early warning
+# (st.rst, "EOM Behaviour When Writing"): the write that reaches it is
+# written and returns its count; the next fails with ENOSPC, writing
+# nothing; the one after goes through. Past the early warning the two
+# alternate until the physical end, where the retry fails too.
 write 80 -> 80
 mtop MTWEOF 1 -> ok
 write 262144 -> 262144
+write 262144 -> 262144
 write 262144 -> ENOSPC
-mtget -> gstat=EOT,ONLINE dsreg=0x58000000 fileno=1 blkno=1
 write 262144 -> 262144
+write 262144 -> ENOSPC
 write 262144 -> 262144
-# The physical end: ENOSPC again.
+# The physical end: VOLUME OVERFLOW, ENOSPC on the retry as well.
+write 262144 -> ENOSPC
 write 262144 -> ENOSPC
 
 # Reading back: a block returns its length, a file mark reads as 0 bytes
@@ -60,12 +64,15 @@ mtop MTSETDENSITY 88 -> ok
 mtop MTEOM 1 -> ok
 mtop MTERASE 1 -> ok
 
-# A write-protected cartridge refuses writes with EROFS.
+# A write-protected cartridge (the node fell back to read-only, as
+# EROFS refused O_RDWR at open) refuses writes with EACCES.
 mtop MTREW 1 -> ok
-write 80 -> EROFS
+write 80 -> EACCES
 mtget -> type=0x72 gstat=BOT,ONLINE,WR_PROT dsreg=0x58000000 fileno=0 blkno=0
 
-# Unload: offline, the door open, then no medium.
+# Unload: offline; the driver then answers ENOMEDIUM until MTLOAD, so
+# the next call loads first. With the drive empty MTLOAD fails (EIO).
 mtop MTOFFL 1 -> ok
+mtop MTLOAD 1 -> EIO
 mtget -> gstat=DR_OPEN dsreg=0 fileno=-1 blkno=-1
-mtop MTREW 1 -> ENOMEDIUM
+mtop MTLOAD 1 -> EIO

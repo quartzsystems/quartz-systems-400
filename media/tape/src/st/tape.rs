@@ -4,7 +4,8 @@
 
 //! [`StTransport`]: a drive through the Linux `st` driver.
 //!
-//! The driver's conventions (Documentation/scsi/st.rst) this relies on:
+//! The driver's conventions (Documentation/scsi/st.rst and
+//! drivers/scsi/st.c of Linux 6.18) this relies on:
 //!
 //! - A read returns one block's length; a read of 0 bytes is a file
 //!   mark, unless MTIOCGET then reports `GMT_EOD` (the end of data). A
@@ -12,12 +13,27 @@
 //!   set is the end of data too.
 //! - Spacing that runs into the end of data or the beginning of tape
 //!   fails with EIO; MTIOCGET's `GMT_EOD`, `GMT_BOT` and `GMT_EOF` tell which.
-//! - At the early warning a write fails with ENOSPC and MTIOCGET shows
-//!   `GMT_EOT`; the driver then accepts writes up to the physical end,
-//!   so the block is written again once and reported with the early
-//!   warning. A second ENOSPC (or EIO) is the end of the medium.
-//! - EROFS or EACCES on a write is write protection; ENOMEDIUM is no
-//!   tape.
+//! - The write that reaches the early warning is written and returns its
+//!   full count. The next write fails with ENOSPC and writes nothing; the
+//!   one after is let through, and past the early warning the two then
+//!   alternate. So an ENOSPC is retried once: written then, the block is
+//!   past the early warning; a second ENOSPC is the physical end (VOLUME
+//!   OVERFLOW, nothing written). `GMT_EOT` is only up right after a
+//!   write that saw the early warning, so it is not relied on.
+//! - Writing file marks past the early warning succeeds (and resets the
+//!   alternation); at the physical end it fails with EIO.
+//! - With asynchronous writes the early warning of a write shows on the
+//!   next call instead: a write, an MTIOCTOP or MTIOCGET then fails with
+//!   ENOSPC having done nothing. Any call is retried once on ENOSPC.
+//! - The driver writes a file mark itself before MTREW, MTOFFL, MTSEEK
+//!   and MTBSF (or on close) after writes; every write here ends with
+//!   MTWEOF, which clears that. When that mark fails (the physical end)
+//!   the motion fails, so it is tried again after MTWEOF 0.
+//! - EACCES on a write or MTWEOF is write protection (the node is open
+//!   read-only, or the cartridge is protected); EROFS is the same at
+//!   open or MTLOAD. ENOMEDIUM is no tape.
+//! - After MTOFFL the driver refuses every call with ENOMEDIUM until
+//!   MTLOAD (or a new open), so the next call after an unload loads.
 
 use std::io;
 
@@ -58,7 +74,12 @@ pub fn density_name(code: u8) -> String {
 #[derive(Debug)]
 pub struct StTransport<I> {
     io: I,
+    /// Past the early warning since the last motion.
     early_warning: bool,
+    /// Unloaded here; the next call loads.
+    unloaded: bool,
+    /// The fixed block size set here, 0 for variable.
+    block_size: u32,
 }
 
 fn errno(e: &io::Error) -> Option<i32> {
@@ -84,12 +105,18 @@ fn map(e: io::Error) -> TransportError {
     }
 }
 
+fn is(e: &io::Error, n: i32) -> bool {
+    errno(e) == Some(n)
+}
+
 impl<I: StIoctl> StTransport<I> {
     /// Over an open `/dev/nstN` (the no-rewind node).
     pub fn new(io: I) -> Self {
         Self {
             io,
             early_warning: false,
+            unloaded: false,
+            block_size: 0,
         }
     }
 
@@ -100,21 +127,57 @@ impl<I: StIoctl> StTransport<I> {
 
     /// The logical block address (MTIOCPOS).
     pub fn logical_block(&mut self) -> Result<u64, TransportError> {
-        self.io.mtpos().map_err(map)
+        self.load()?;
+        self.retried(StIoctl::mtpos).map_err(map)
+    }
+
+    /// One call, again once when it fails with ENOSPC: the early warning
+    /// of an earlier write, or the driver's refusal of every other write
+    /// past it. Both did nothing.
+    fn retried<T>(&mut self, mut f: impl FnMut(&mut I) -> io::Result<T>) -> io::Result<T> {
+        match f(&mut self.io) {
+            Err(e) if is(&e, errno::ENOSPC) => {
+                self.early_warning = true;
+                f(&mut self.io)
+            }
+            r => r,
+        }
+    }
+
+    /// MTLOAD after an unload here; EROFS is a loaded, protected volume.
+    fn load(&mut self) -> Result<(), TransportError> {
+        if !self.unloaded {
+            return Ok(());
+        }
+        match self.io.mtop(MtOp::Load, 1) {
+            Ok(()) => {}
+            Err(e) if is(&e, errno::EROFS) || is(&e, errno::EACCES) => {}
+            Err(e) if is(&e, errno::ENOMEDIUM) || is(&e, errno::EIO) => {
+                return Err(TransportError::NotLoaded);
+            }
+            Err(e) => return Err(map(e)),
+        }
+        self.unloaded = false;
+        self.early_warning = false;
+        Ok(())
     }
 
     fn gstat(&mut self) -> Result<u64, TransportError> {
-        Ok(self.io.mtget()?.gstat)
+        Ok(self.retried(StIoctl::mtget).map_err(map)?.gstat)
     }
 
     /// An operation; EIO is explained by the status bits.
     fn op(&mut self, op: MtOp, count: u32) -> Result<(), TransportError> {
+        self.load()?;
         let count = i32::try_from(count).unwrap_or(i32::MAX);
-        match self.io.mtop(op, count) {
+        match self.retried(|io| io.mtop(op, count)) {
             Ok(()) => Ok(()),
-            Err(e) if errno(&e) == Some(errno::EIO) => {
+            Err(e) if is(&e, errno::EIO) => {
+                let past = self.early_warning;
                 let g = self.gstat()?;
-                Err(if g & GMT_EOD != 0 {
+                Err(if op == MtOp::Weof && (past || g & GMT_EOT != 0) {
+                    TransportError::EndOfMedium
+                } else if g & GMT_EOD != 0 {
                     TransportError::EndOfData
                 } else if g & GMT_BOT != 0 && matches!(op, MtOp::Bsf | MtOp::Bsr) {
                     TransportError::BeginningOfTape
@@ -129,8 +192,16 @@ impl<I: StIoctl> StTransport<I> {
     }
 
     fn moved(&mut self, op: MtOp, count: u32) -> Result<(), TransportError> {
+        let mut r = self.op(op, count);
+        // After writes the driver writes a file mark before MTREW and
+        // MTOFFL, which at the physical end fails, and keeps failing.
+        // MTWEOF 0 (only a flush) ends the writing state; then again.
+        if matches!(r, Err(TransportError::Io(_))) && matches!(op, MtOp::Rew | MtOp::Offl) {
+            self.op(MtOp::Weof, 0)?;
+            r = self.op(op, count);
+        }
         self.early_warning = false;
-        self.op(op, count)
+        r
     }
 }
 
@@ -160,7 +231,12 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
         self.op(MtOp::Erase, 1)
     }
     fn unload(&mut self) -> Result<(), TransportError> {
-        self.moved(MtOp::Offl, 1)
+        if self.unloaded {
+            return Err(TransportError::NotLoaded);
+        }
+        self.moved(MtOp::Offl, 1)?;
+        self.unloaded = true;
+        Ok(())
     }
     fn set_block_size(&mut self, size: u32) -> Result<(), TransportError> {
         if size as usize > MAX_BLOCK {
@@ -169,7 +245,9 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
                 max: MAX_BLOCK,
             });
         }
-        self.op(MtOp::SetBlk, size)
+        self.op(MtOp::SetBlk, size)?;
+        self.block_size = size;
+        Ok(())
     }
     fn set_density(&mut self, density: &str) -> Result<(), TransportError> {
         let code = DENSITIES
@@ -181,13 +259,17 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
     }
 
     fn status(&mut self) -> Result<Status, TransportError> {
-        let g: MtGet = self.io.mtget().map_err(map)?;
+        match self.load() {
+            Ok(()) | Err(TransportError::NotLoaded) => {}
+            Err(e) => return Err(e),
+        }
+        let g: MtGet = self.retried(StIoctl::mtget).map_err(map)?;
         let density = u8::try_from((g.dsreg >> MT_ST_DENSITY_SHIFT) & 0xff).expect("masked");
         let as_u32 = |n: i32| u32::try_from(n).unwrap_or(0);
         Ok(Status {
             loaded: g.gstat & GMT_ONLINE != 0,
             bot: g.gstat & GMT_BOT != 0,
-            eot: g.gstat & GMT_EOT != 0,
+            eot: self.early_warning || g.gstat & GMT_EOT != 0,
             eod: g.gstat & GMT_EOD != 0,
             write_protected: g.gstat & GMT_WR_PROT != 0,
             density: density_name(density),
@@ -200,21 +282,34 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
     }
 
     fn read_block(&mut self, buf: &mut [u8]) -> Result<ReadOutcome, TransportError> {
-        let n = buf.len().min(MAX_BLOCK);
-        match self.io.read(&mut buf[..n]) {
+        self.load()?;
+        // In fixed block mode the driver fills the count with as many
+        // blocks as fit: ask for one.
+        let n = match self.block_size as usize {
+            0 => buf.len().min(MAX_BLOCK),
+            bs if bs > buf.len() => {
+                return Err(TransportError::BlockTooLarge {
+                    len: bs,
+                    max: buf.len(),
+                });
+            }
+            bs => bs,
+        };
+        match self.retried(|io| io.read(&mut buf[..n])) {
             Ok(0) => {
-                if self.gstat()? & GMT_EOD != 0 {
+                // The physical end read shows as GMT_EOT: no more data.
+                if self.gstat()? & (GMT_EOD | GMT_EOT) != 0 {
                     Ok(ReadOutcome::EndOfData)
                 } else {
                     Ok(ReadOutcome::TapeMark)
                 }
             }
             Ok(len) => Ok(ReadOutcome::Block(len)),
-            Err(e) if errno(&e) == Some(errno::ENOMEM) => {
+            Err(e) if is(&e, errno::ENOMEM) => {
                 // The driver does not say how long the block was.
                 Err(TransportError::BlockTooLarge { len: 0, max: n })
             }
-            Err(e) if errno(&e) == Some(errno::EIO) => {
+            Err(e) if is(&e, errno::EIO) => {
                 if self.gstat()? & GMT_EOD != 0 {
                     Ok(ReadOutcome::EndOfData)
                 } else {
@@ -232,36 +327,23 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
                 max: MAX_BLOCK,
             });
         }
-        let short = |n: usize| {
-            TransportError::Io(io::Error::other(format!(
-                "short write: {n} of {} bytes",
-                data.len()
-            )))
-        };
-        match self.io.write(data) {
+        if self.block_size != 0 && data.len() != self.block_size as usize {
+            return Err(TransportError::BlockSize {
+                len: data.len(),
+                size: self.block_size,
+            });
+        }
+        self.load()?;
+        match self.retried(|io| io.write(data)) {
             Ok(n) if n == data.len() => Ok(Written {
                 early_warning: self.early_warning,
             }),
-            Ok(n) => Err(short(n)),
-            Err(e) if errno(&e) == Some(errno::ENOSPC) && !self.early_warning => {
-                if self.gstat()? & GMT_EOT == 0 {
-                    return Err(TransportError::EndOfMedium);
-                }
-                self.early_warning = true;
-                match self.io.write(data) {
-                    Ok(n) if n == data.len() => Ok(Written {
-                        early_warning: true,
-                    }),
-                    Ok(n) => Err(short(n)),
-                    Err(e) if matches!(errno(&e), Some(errno::ENOSPC | errno::EIO)) => {
-                        Err(TransportError::EndOfMedium)
-                    }
-                    Err(e) => Err(map(e)),
-                }
-            }
-            Err(e) if errno(&e) == Some(errno::EIO) && self.early_warning => {
-                Err(TransportError::EndOfMedium)
-            }
+            // Part of a block went: the tape now holds a short block.
+            Ok(n) => Err(TransportError::Io(io::Error::other(format!(
+                "short write: {n} of {} bytes",
+                data.len()
+            )))),
+            Err(e) if is(&e, errno::ENOSPC) => Err(TransportError::EndOfMedium),
             Err(e) => Err(map(e)),
         }
     }

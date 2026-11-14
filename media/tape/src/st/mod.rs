@@ -4,12 +4,14 @@
 
 //! Physical tape: drives through the Linux `st` driver and media
 //! changers through `sg`. The transports are written against the ioctl
-//! traits in [`ioctl`]; `raw` (Linux only) makes the real calls.
+//! traits in [`ioctl`]; `raw` (Linux only) makes the real calls, and
+//! [`sim`] answers as the driver would, for tests.
 
 pub mod ioctl;
 #[cfg(target_os = "linux")]
 mod raw;
 mod sg;
+pub mod sim;
 mod tape;
 
 #[cfg(target_os = "linux")]
@@ -18,4 +20,5 @@ pub use sg::{
     MOVE_MEDIUM, READ_ELEMENT_STATUS, STATUS_ALLOCATION, SgChanger, move_medium_cdb,
     parse_element_status, read_element_status_cdb, sense_codes,
 };
+pub use sim::{SimCartridge, SimRecord, StSim};
 pub use tape::{DENSITIES, StTransport, density_name};

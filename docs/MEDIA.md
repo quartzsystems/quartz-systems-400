@@ -67,7 +67,10 @@ element, full or empty, with its volume tag and source slot).
 `write` on `/dev/nstN`); `SgChanger` over `SgIoctl` (SG_IO on the
 changer's `/dev/sgN`). The real calls are `media/tape/src/st/raw.rs`
 (Linux only, the crate's one `unsafe` file). The tests replay the
-hand-written transcripts in `media/tape/tests/fixtures/`.
+hand-written transcripts in `media/tape/tests/fixtures/`, and run the
+volume layer over `StSim` (`media/tape/src/st/sim.rs`), which answers as
+drivers/scsi/st.c of Linux 6.18 does over cartridges in memory
+(`media/tape/tests/st_eov.rs`, `media/medio/tests/st.rs`).
 
 How `st` results are read:
 
@@ -77,14 +80,26 @@ How `st` results are read:
 | `read` returns 0 or EIO, GMT_EOD set | end of data |
 | `read` fails ENOMEM | block longer than the buffer |
 | spacing fails EIO | GMT_EOD: end of data; GMT_BOT: beginning of tape; GMT_EOF (records): tape mark |
-| `write` fails ENOSPC, GMT_EOT set | early warning: the block is written again once and reported with the warning |
-| a second ENOSPC, or EIO after the warning | end of medium |
-| EROFS or EACCES | write protected |
+| `write` fails ENOSPC | nothing written: the block is written again once; written, it is reported with the warning |
+| ENOSPC again on that retry | end of medium (VOLUME OVERFLOW) |
+| MTIOCTOP or MTIOCGET fails ENOSPC | an asynchronous write's early warning; nothing done, done again once |
+| MTWEOF fails EIO past the warning | end of medium |
+| MTREW or MTOFFL fails EIO | the file mark the driver writes first after writes failed: MTWEOF 0, then again |
+| EACCES (write, MTWEOF), EROFS (open, MTLOAD) | write protected |
 | ENOMEDIUM | no tape |
 
-The early-warning handling assumes the driver accepts writes after the
-first ENOSPC (it does for trailer labels); the physical acceptance below
-checks it against real hardware.
+What st.c does past the early warning: the write that reaches it is
+written and returns its full count (MTIOCGET shows GMT_EOT until the
+next call); the next write fails with ENOSPC and writes nothing (GMT_EOD
+shows, as `ST_EOD_1`); the one after is let through. Writes then
+alternate until the physical end, where the drive's VOLUME OVERFLOW is
+ENOSPC too, so two in a row is the end. File marks past the early
+warning are written and end the alternation. So a block is never
+written twice, and the early warning is seen one block late. After
+MTOFFL the driver answers ENOMEDIUM until MTLOAD, so `StTransport`
+loads before the next call after its own unload; a real drive's next
+volume (the storage service's operator inquiry) unloads the full one
+first and asks again while the drive is empty.
 
 READ ELEMENT STATUS asks for all element types with primary volume tags
 (VOLTAG), from address 0, up to 65535 elements, 64 KiB of data. The
