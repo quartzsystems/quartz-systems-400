@@ -324,7 +324,7 @@ mod tests {
         assert_eq!(run("(cn:caseExactMatch:=ibmpolicies)", e), Some(false));
         assert_eq!(run("(:dn:2.5.13.2:=acme)", e), Some(true));
         assert_eq!(run("(o:dn:=acme)", e), Some(true));
-        assert_eq!(run("(cn:caseIgnoreSubstringsMatch:=ibm*s)", e), Some(true));
+        assert_eq!(run("(cn:caseIgnoreSubstringsMatch:=ibm\\2as)", e), Some(true));
         assert_eq!(run("(objectClass=*)", e), Some(true));
         assert_eq!(run("(description=*)", e), Some(false));
     }
