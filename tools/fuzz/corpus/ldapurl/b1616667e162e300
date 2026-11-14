@@ -1,0 +1,1 @@
+ldap://ldap3.example.com/o=Babs=co,c=US???(four-octe>=%5c00%5c00%500%50c00%504)

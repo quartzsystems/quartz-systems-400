@@ -1,0 +1,12 @@
+# y: noneryption: ssha512
+
+dn: cn=SSL, cn# c
+version: 1
+# 
+dn: cn=ConfslapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEnc
+ibm-slapdSecur# y: noneryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+ibm-slapdSecur# y: none

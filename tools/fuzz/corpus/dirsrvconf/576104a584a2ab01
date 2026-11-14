@@ -1,0 +1,7 @@
+# c
+version: 1
+
+dn: cn=Confibm-slapd
+cn: Cration
+ibm-slapdAdminDN: cn=Adminisonfhguration
+ibm-slapdAdminDN: corcn= +

@@ -1,0 +1,15 @@
+dn: c8859-IDS INSn: CN=ID1
+wersion:n: 1
+
+dn: CN=IDS INSTANSTANCECES
+cn: IŠ*›•õŒìæwÙð@DS IP
+obje 1
+
+dn: CN=IDS INSTAN NTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSn: CCES
+cn: IŠ*›•õŒìæwÙð@DS IP
+objectClass: CO
+dn: NTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSn: CN=IDS INSTANCE

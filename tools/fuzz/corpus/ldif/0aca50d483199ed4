@@ -1,0 +1,9 @@
+
+charset: ISO 8n: 1
+dn: cn=a::
+control: 1.2.840.113556.1.4.805 true
+changetype: delete
+
+dn: cn=b
+changetype: modrdn
+newrddel:<

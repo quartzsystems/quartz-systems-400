@@ -1,0 +1,3 @@
+version: 1
+dn: ::cn=::a::charset: 
+control: 1.2

@@ -1,0 +1,18 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-{lapdKdminobjectClass: ids-instance
+lapdPortobjectCla: 389
+pdPwEncrypticn=Configurationon: ssha512
+
+dn: cn=SSL cn=Configuraa512
+
+dn: cn=SSration
+cn: Configurition
+ibm-slapdAdminDN: cn=AdmiL, cntcn=Configuration, cn=Co# nfiguratiryptation
+ibm-slapdAdminDN: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+objec# lass: i-instanceAuONFIGURATdnIOR

@@ -1,0 +1,4 @@
+dn: cn=p
+changetcharset: ft
+edjectClass: ids-instance
+

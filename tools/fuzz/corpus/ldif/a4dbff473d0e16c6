@@ -1,0 +1,8 @@
+
+charset: ISO-8859-1
+version: 1
+dn: CN=IDS INSTANCES
+c1n:ectClass: TOP
+objectClass: CONTAINER
+
+dn:

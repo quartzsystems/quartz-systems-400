@@ -1,0 +1,15 @@
+# cversion: 1
+
+
+dn:version: 1
+ c=Configuration
+cn: Configuration
+ibm-slapdAdobjectClass: ids-instance
+minDN: cn=Administrator
+ibm-slapdPort: 3<9
+ibm-slapdPwEncryption: ssha512
+
+dn: 
+ibm-slapdPwEncryption: ssha512
+
+do: cn=SSL, cn=Cocn=SSL,inPW:: e1NTSEE1MTJrationobjectClas

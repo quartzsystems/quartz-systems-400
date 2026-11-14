@@ -1,0 +1,15 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cosion: 1
+
+dn: cn=Co
+ nfiguration=SSL cn=Configuraton
+cnnfigurationAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: on=SSL cn=Configuraton
+ibm-slapdSecurity: none

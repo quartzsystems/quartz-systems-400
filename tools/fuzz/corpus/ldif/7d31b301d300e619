@@ -1,0 +1,6 @@
+dn: cn=p
+changetype: modify
+add: mail
+mai-instanceDesc: QUSRDIR
+ids-instancs-ieLocatioetype: modin: /QIBM/UserData/OS400/DirSrv
+ids-instanceVersion: 6.1jectCla

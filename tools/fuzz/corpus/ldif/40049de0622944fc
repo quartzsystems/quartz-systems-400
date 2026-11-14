@@ -1,0 +1,4 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 true control: n: 0-instancctClaseAutostart: 1tanceDesc: QUÓRDIR
+ids-inst

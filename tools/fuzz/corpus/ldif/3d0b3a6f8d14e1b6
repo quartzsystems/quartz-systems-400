@@ -1,0 +1,10 @@
+version: 1
+dn: cn=a
+conprol: 1.2n: 0
+newsuperio.840.113556.1.4.805 true
+changetype: delete
+
+dn: cn=b
+cha\ge
+deleteoldrdn: 0
+newsuperior: dc=y

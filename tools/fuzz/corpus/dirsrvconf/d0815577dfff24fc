@@ -1,0 +1,18 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Cration
+ibm-slapdAdminDN: cn=Adminisoonfiguration
+cn: Cration
+ibm-slapdAdminDN: cn=Adminisonfinfiguration
+ibm-slapdAdmin: ConfiguratioCo
+ nfiguratin
+c: CocnnfigurationAdmindN: cn=Administrator
+ibm-swEncryption:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuraton
+ibm-slapdSecurity: none

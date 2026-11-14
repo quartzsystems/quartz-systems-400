@@ -1,0 +1,27 @@
+
+charset: ISO-8859-1
+version:
+ 
+
+dn: CN=IÑ‹¯®ÞeÆ‘AÞ€DS INSTANCES
+en: IŠ*›•õŒìæwÙð@DS INSÿANCES
+objectClass: TOP
+objectClass: CO=sio-8859-1
+version:
+ 
+
+dn: CN=IDS INSTAn:
+ 
+
+dn: CN=IDS INSTANCES
+en: IŠ*›QUSRDIR, CN=IDS INSTANCES[mÑ%7ON­ˆfâ
+cnº QUSRDIR
+ids-instanceAutostart: 1
+ids-instahceDesc: QUSRDIR
+ids-instancs-ieLoerData/OS400/DirSrv
+ids-instanceVersion: CO=sion:
+ 
+
+dn: CN=IDS INSTANCES
+en: IŠ*›QUSRDIR, C 6.1jecÿÿÿss: ids
+

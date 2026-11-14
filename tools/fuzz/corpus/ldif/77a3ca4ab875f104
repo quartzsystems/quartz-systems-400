@@ -1,0 +1,8 @@
+version: 1
+dn: trol: 1.2.840.113556.184.805 true: cn=b
+changí: m
+changetype: etype: delete
+
+dn: cn=b
+changetype: modrdn
+newrdn:

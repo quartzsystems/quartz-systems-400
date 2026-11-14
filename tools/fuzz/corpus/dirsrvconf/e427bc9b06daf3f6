@@ -1,0 +1,81 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguratin
+cn: Cosion: 1
+
+dn: cn=\o
+ nfiion: 1
+
+dn: cn=tin
+cn:guration
+cnnfiguratioon: ssha512
+
+dn: o ssha512
+
+dn: on=SSLcn=Configuibm-slapdPwEnAdmindN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryp|ion:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSLcn=Configu
+cryption: ssha::512
+
+dn: o ssha512
+
+dn: on=SSGcn=Configuibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SScn=Adminisonfiguration
+ibm-slersion: 1
+
+dn: cn=Configuration
+cn: Cration
+ibm-slapdAdminDN: cn=Adminisoonfiguration
+cn: Cration
+ibm-slapdAdminDN: cn=Adminisonfinfiguration
+ibm-slapdAdminDN: cn=Administrator
+ibmpdversion: 1
+slapd-slapdversion: 1
+slapdPort: 389
+ibm-dPwEncryp|ion:t: 389
+ibm-slapdPwslaibm-sn: 1
+
+dn: cn=Co
+ nfiguravin
+cn: Cosion: 1
+
+dn: cn=\dn:guravin
+cn: Cosion: 1
+
+dn: cn=\dn: o
+ nfiguratiocn=Configurationration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort:389
+ibm-slapdPwEncr9ption:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSL cn=CCo
+ nfiguravin
+cn: Cosion: 1
+
+dn: cn=\dn:guravin
+cn: Cosion: 1
+
+dn: cn=\dn: o
+ nfiguratiocn=Configurationration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort:389
+ibm-slapdPwEncr9ption:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuraton
+ibm-slapdSecurity: none

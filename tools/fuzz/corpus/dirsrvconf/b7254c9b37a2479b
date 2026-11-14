@@ -1,0 +1,13 @@
+# c
+# rsinn: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-sxapdPort: 3<cn=Configuratio nryption: ssha::512
+
+dn: cn=SSL, cncn=Configuratioa
+ibm-slapdrt: 3<9
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=ConfSecurity: none

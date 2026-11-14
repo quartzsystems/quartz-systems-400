@@ -1,0 +1,21 @@
+
+charret: rsion: 1
+
+dn: CN=IDS I:<TANCES
+cn: IŠ*›•õŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objectClass: CO
+dn: NTAINER
+
+dn: cn=QUSRDp
+changetype: Â™CONTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-instanceLocation: /QIBM/UserData/OS400/DirSrv
+ids-instanceVersion: 6.1
+objectClass: TOP
+objectClass: ids-instance
+

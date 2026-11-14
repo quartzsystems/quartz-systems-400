@@ -1,0 +1,14 @@
+
+charset: ISO-8859-1
+vers√eñion: 1
+
+dn: CN=IDS INSTANCES
+cn: IDS INSTANCES
+objectClass: TOP
+objectClass: Ω·Ãx3j˝CONTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-instanceLocation

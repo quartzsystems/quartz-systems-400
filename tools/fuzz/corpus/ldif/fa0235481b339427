@@ -1,0 +1,12 @@
+version: 1
+dn: cn=a
+control: 1.:m<
+ cndn: cn=a
+control: 1.:m<
+ cnn: cn=a
+control: 1.ontr:m<
+ charset: cndn: cn=a
+control: 1.:m<
+ cn=p
+c:m<
+h:cn=

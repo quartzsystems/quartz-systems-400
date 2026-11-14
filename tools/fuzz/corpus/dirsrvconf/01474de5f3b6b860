@@ -1,0 +1,15 @@
+# c
+version:01
+
+dn: cn=Configuratign
+cn: Configuration
+ibm-slapdAdminDN: 
+
+cn=AdministCÅVBŒ4‡©nW€a©;#ratorJibm-slapdPort: 389
+ibm-slapdPwEncryptiÓ¥‹ødÄon: ssha512
+
+dn: cn=SSL, cn=Configurat	z‡õÅáµ\7ï={ÍW¯½0&‡Õion
+ibm-slapdSdminDN: 
+
+cn=Administrator
+ibm-slapdPort: 389ecur# y: none

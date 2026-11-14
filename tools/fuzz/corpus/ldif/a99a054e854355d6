@@ -1,0 +1,10 @@
+dn: cn=p
+changetype: mo
+dn: cn=b
+changet556.1.4.805 true556.1.4.805 true
+changetype: d: modrdn
+
+changetype: d: modrdn
+newrdn: cn=c
+deleteoldrdn: 0
+newsuperior: dc=y

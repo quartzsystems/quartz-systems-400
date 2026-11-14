@@ -1,0 +1,7 @@
+version: 1
+dn: cn=a
+co~trol: 1.2.840.113556.1.4.805 tr.ue
+chaggetype: deletE
+
+dn: cn=b=a
+co~trol:

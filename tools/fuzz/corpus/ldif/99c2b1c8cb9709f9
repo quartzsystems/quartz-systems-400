@@ -1,0 +1,9 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 trueete
+
+dn: cn=b
+changetype: modrdo
+newrdn: cn=c
+deleteoldrdn: 0
+ne

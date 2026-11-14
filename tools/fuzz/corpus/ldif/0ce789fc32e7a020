@@ -1,0 +1,9 @@
+
+charset: 
+dn: 859-1
+version: 1
+
+dn: CN<IDS INSTANCES
+cn: I5S INSTANCES
+objectClass: T::
+objectClassn=QU

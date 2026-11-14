@@ -1,0 +1,36 @@
+dn: CN=CONFIGURATI
+ ON
+ibm-slapdAdibm-s_apddn: miibm-slanPW:: e
+
+
+
+dn: cn=S-son# c
+version: 1
+
+dn: cn=Configuralap1NTSEP1ation
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapversion: 1
+rt: 389
+ibm-slapdPwEncryption: sshafiguration# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+iion: ssha5
+
+
+
+dn: cn=S-son# c
+version: 1
+
+dn: cn=ConfiguralapdSec

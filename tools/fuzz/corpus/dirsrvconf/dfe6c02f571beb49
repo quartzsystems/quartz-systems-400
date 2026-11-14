@@ -1,0 +1,101 @@
+# rsim-slapd cn=#cn= o
+
+dn: cn="c: 1
+
+dn: cn=dmipPor512
+
+dn: cn=SSL, cn=C: sshtion
+n= gnfigersion: 1
+
+dn: cn=Configuratiion
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmiiguraZion
+cn: ConfigupPor512
+
+dn: cn=SSL, cn=C: sshtion
+iIon: ssha5
+
+
+
+dn:ha5 cn=S-soafiguration# c
+versc: Cosion: 1
+
+dn: 512
+
+dn: o sshion: 1
+
+dn: cn=Configibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+vption: ssha512
+
+dn: ca512
+dn: cn=SSL, cn=Confsha512
+
+dn: ca512
+dn:# c
+versc: Cosion: 1
+
+dn: 512
+
+dn: o sshion: 1
+
+dn: cn=Conf cn=SSL, cn=Configncr^ption: ssha5inigncryption: ssha5in
+c: Cosion: 1
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuratoncn=bm-slqpdPwEncryption: ssha512
+
+dn: cn=S\dn: o
+ nfiguration
+cnnfigurationAdmindN: cn=Administ
+ rator
+ibm-swEncryption:t: 38urationversion: 1
+# c
+version: 1
+
+dn:#cn=Configuration
+cn: Configuration
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPor512
+
+dn: cn=SSL, cn=C: sshtion
+iIon: ssha5
+
+
+
+dn:ha5 cn=S-soafiguration# c
+versc: Cosion: 1
+
+dn: 512
+
+dn: o sshion: 1
+
+dn: cn=Configibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPortdn: : 389
+ibm-slqpdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+iion: ssha5
+
+
+
+dn: cn=S-sonA# c
+version: 1
+
+dn: cn=ConfiglapdSec

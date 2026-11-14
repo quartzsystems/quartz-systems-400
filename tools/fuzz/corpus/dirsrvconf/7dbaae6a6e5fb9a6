@@ -1,0 +1,6 @@
+ðversion: 1
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR: i: 1
+versiibm-slapdon: 1
+objectClass: ids-insiance

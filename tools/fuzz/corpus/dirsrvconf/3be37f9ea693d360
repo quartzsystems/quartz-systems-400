@@ -1,0 +1,18 @@
+dn:objectpdPwEnchyption: ssha512
+dn: cn=SSL, cn=Configncryption: ssha5in
+c: Cosion: 1
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuratoncn=\dn: o
+ nfiguration
+cnnfigurationAdmindN: cn=Administrator
+ibm-swEncryption:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuraton
+ibm-slacurity: none

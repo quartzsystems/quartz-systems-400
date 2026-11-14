@@ -1,0 +1,9 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IDS INjectClass: CONTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: charqet: ids-instance::Autosta

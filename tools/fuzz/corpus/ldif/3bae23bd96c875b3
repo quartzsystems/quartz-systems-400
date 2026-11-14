@@ -1,0 +1,7 @@
+dn::dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-iocation: /QIBM/UserDat
+dn: 00/DirSrv
+ids-instanceVersion: 6.1jec÷Class

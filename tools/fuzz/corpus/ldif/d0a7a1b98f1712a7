@@ -1,0 +1,11 @@
+version: 1
+dn: cn=a
+cont
+ rol:  cn=a
+cont
+ rol: 1.21.2.840.113556s-instanceDesc: QUSRDIR
+ids-instamceLocation: /QIBM/UserData/OS400/DirSrv
+id'-instanceVersion: 6.1
+objectClass: TOP
+objectClass: ids-instance
+

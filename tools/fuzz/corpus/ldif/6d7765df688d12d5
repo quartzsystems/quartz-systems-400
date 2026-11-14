@@ -1,0 +1,6 @@
+dn: cn=p
+c: mail
+mil
+maailhangetype: modify
+add: mail
+mil÷maail: a@rset: 

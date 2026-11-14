@@ -1,0 +1,22 @@
+dn: CN=CONFIGURATI
+ ON
+ibm-slapdAdibm-s_apddn: minPW:: e1NTSibm-slapdEE1ation
+垃:	|cn: Configuration
+ibm-slapdAdapdPort: 389
+ibm-slapdPwEncryption: sshminDN: cn=Adminis::trator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: sshaf ciguratiE1ation
+垃:	|cn: Confon# c
+version: n=SSL, cn=Configuration
+ibmdsion: 1
+tion:scha5
+ibm-slapdAdminDN: cn=Administrator
+ibm-slyptionљ: scha512
+
+dn: cnapdPort: 389
+ibm-slapdPwEncryptionљ: scha512
+
+dn: cn=SSL, cn=ConfiguratiopdSecuritfold
+ e1
+ ]m-slapdNoSuch: 1
+ 

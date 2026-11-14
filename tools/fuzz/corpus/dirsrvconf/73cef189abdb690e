@@ -1,0 +1,17 @@
+dn: CN=CONFIGURATI
+ ON
+ibm-slapdAdabm-s_apddn: minPW:: e1NTSEE1ation
+cn:ort: 389
+ibm-slapdPwEncryztion: sshminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: ߗiguration# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdwEncryption: ssha51
+
+dn: cn=SSL, cn=Configuration
+ibmdPwEncryption: ssha512
+
+dn: cn=S-slapdSec

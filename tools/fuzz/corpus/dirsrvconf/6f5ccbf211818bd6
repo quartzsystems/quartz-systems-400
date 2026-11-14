@@ -1,0 +1,12 @@
+dn: CN=CONFIGcn=Configuran=Configuration
+cn: Configuration
+ibmibm-slapdinDN: cn=Administrator
+ibm-slapd: 389
+idAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-sbm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+ibmdPwEncryptidn:: Configuration ssha512
+
+dn& cn=S-slapdSec

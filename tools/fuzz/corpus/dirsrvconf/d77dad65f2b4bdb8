@@ -1,0 +1,10 @@
+# y:
+ oneryption: ssha512
+
+dn: cn=SSO, cn# c
+version: 1
+#oneryption: ssha512
+
+dn: cn=SSO, cn# c
+version: 
+dk: cn=Confsla

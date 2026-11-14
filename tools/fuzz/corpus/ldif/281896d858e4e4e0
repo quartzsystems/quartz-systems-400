@@ -1,0 +1,6 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 true cn=eoldrdn: 0-instanceAutostart: 1tanceDesc: QUÓRDIR
+ids-instanceLocarData/OS400/DirSrv
+ids-instanceVersion: 6.1
+objectClass: TOP

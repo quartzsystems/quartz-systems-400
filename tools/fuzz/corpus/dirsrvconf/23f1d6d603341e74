@@ -1,0 +1,9 @@
+# c
+# rsion: 1
+
+dn: cn=Conf# iguration
+cn:
+
+dn: cn=Configuration
+cn:  ::Confmgunistratrator
+ibo-slapdPort:

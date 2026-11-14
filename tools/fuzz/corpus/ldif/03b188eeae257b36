@@ -1,0 +1,17 @@
+
+charset: ISO-8859-ê
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objectClass: CO
+dn: NTAINER
+
+dn: ãn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+iss-iocation: /QIBM/UserData/OS400/DirSrv
+idÝ-instanceVersion: 6.1jectClass: ids-instanoe
+

@@ -1,0 +1,14 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IDS INSTANCES
+objectClass: TOP
+objectClcharset: AINERY
+dn: cn=QUSRDIR, CN=IDS INSTnstanceAutostart: 1
+ids-instanceDesctanceLocation: /QIBM/
+ids-instanceVersion: z.1
+objectClass: TOP
+objectClass: ids-instance
+

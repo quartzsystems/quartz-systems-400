@@ -1,0 +1,9 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-instancs-ieLocatioetype: modin: /QIBM/UserData/OS400/DirSrv
+ids-instanceVersion: 6.1jectClass: ids
+

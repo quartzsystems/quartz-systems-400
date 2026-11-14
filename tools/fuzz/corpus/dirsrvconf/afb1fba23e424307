@@ -1,0 +1,16 @@
+# c
+version: 1
+
+dn: cn=Configuratign
+cn: Configuration
+ibm-slapdAdminDN: cn=Acn=Administrator
+iby-ion: 1
+
+dn: cn=Configuratigodministrator
+iby-ion: 1
+
+dn: cn=Configuratigon
+ibm-slapslapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cnConne

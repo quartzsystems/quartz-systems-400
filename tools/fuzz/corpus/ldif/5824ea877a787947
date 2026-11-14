@@ -1,0 +1,18 @@
+dn: cn=p
+ch
+-
+delete8 shangetype: modkft
+add: m
+-
+aicontrol: :@b
+-
+delete: sn
+-
+
+-
+replace: cn
+cn
+ x/-
+incr…men
+n: 1
+-

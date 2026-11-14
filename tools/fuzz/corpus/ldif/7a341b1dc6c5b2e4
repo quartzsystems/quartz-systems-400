@@ -1,0 +1,13 @@
+dn: cn=p
+changetyze: modify
+add: mail
+mail: a@b
+-
+delete: ::
+-
+ce: kn
+cn: xé
+-
+increment: n
+n: 1f
+-

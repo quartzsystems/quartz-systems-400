@@ -1,0 +1,9 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: ConfiguctClass: ids-instance
+lapdPortobjectClass: ids-instance
+n: ssha512
+
+dn: cn=SSL, cn=Configurationibm-slapddSecurity: none

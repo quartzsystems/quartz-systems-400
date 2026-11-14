@@ -1,0 +1,7 @@
+dn:objectpdPwEncryption: ss12
+
+dn: cn=ha512
+
+fign ssha512
+
+dn: cn=S-slap

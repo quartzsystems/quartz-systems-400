@@ -1,0 +1,8 @@
+dn: CN=CONFIGURATION
+ibm-slapdAdsbmcryption: ssha512
+
+dn: cn=SSL cn=Configuration
+ibm-slapdSecdsbmcryption: ssha512
+
+dn: cn=SSL cn=Configuration
+ibm-slapdurity: none

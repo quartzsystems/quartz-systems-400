@@ -1,0 +1,28 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguratin
+cn: Cosion: 1
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuratoncn=\dn: o
+ nfiguration
+cnnfigurationAdmindN: cn=Administrator
+ibm-swEncryption:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSL cn=Coguraton
+ibm-slapdSecurity: none
+cn: Cosion: 9
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configurat

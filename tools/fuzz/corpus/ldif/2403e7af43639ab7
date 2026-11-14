@@ -1,0 +1,10 @@
+control:  ISO-8859-1
+versionð—fZ±TÏ: 1
+
+dn: CN=IDS INSTANCEScn: IDS INSTANCES
+objectCÑX@Ø{®<2ÍG]lass: TOP
+objectClass: CONTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCESo
+cn: QUSRDIR
+ids-instanceAutosta

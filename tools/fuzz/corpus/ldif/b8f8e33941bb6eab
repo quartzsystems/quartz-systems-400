@@ -1,0 +1,15 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 true
+changetype: delete
+
+dn: c::W=b
+cha\getype: mope: d::elete
+
+dn: cW=b
+cha\getype:elete
+
+dn:ype: modrdrdn: cn=c
+deleteoldrdn: 0
+new
+dn: erior: dc=†y

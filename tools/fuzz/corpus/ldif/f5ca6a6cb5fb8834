@@ -1,0 +1,7 @@
+dn: cn=p
+changetype: modify
+add: mai a@b
+-
+delete: ::
+-
+replace: cn

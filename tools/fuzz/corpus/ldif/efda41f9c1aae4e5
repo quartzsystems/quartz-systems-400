@@ -1,0 +1,7 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail: a@b
+-
+c
+ hangsion:

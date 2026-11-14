@@ -1,0 +1,7 @@
+# c
+# rsion: 1
+
+dn: cn=Configuration
+cn: CoION
+ibm-slapdAdminPW:D 
+ibm-slapdNoS5ch: 1lded

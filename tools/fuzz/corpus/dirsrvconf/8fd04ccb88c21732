@@ -1,0 +1,32 @@
+# cversion: 1
+
+dn: cn=Configuratign
+cn: Configuratstrator
+iby-ion: 1
+
+dn: cn=Colfiguratign
+cn: Coion
+ibm-slapdAdminDN: cn=Administrator
+iby-ion: 1
+
+dn: cn=Configuratign
+cn: Configuradn: CN=CONFIGURATI
+ ON
+ibm-slapdAdibm-s_apddn: minPW:: e1NTSEE1ation
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPyption: ort: 389
+ibm-slapdPwEncryption: sshafiguration# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdmipPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=ConfigurationibmdPw# cryption: ssha512
+
+dn: cn=S-son# c
+version: 1
+
+dn: cn=ConfiguralapdSec

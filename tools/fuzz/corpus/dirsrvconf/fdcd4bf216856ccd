@@ -1,0 +1,7 @@
+# y:
+ oneryption: ssha512
+
+dn: cn=SSL, cn# c
+version: 1
+# 
+dn: cn=ConfslapdAdminDN: cn=AdmlapdSecurity: non# e

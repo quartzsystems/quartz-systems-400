@@ -1,0 +1,8 @@
+vErsion: 1
+dn: :<cn=a
+control:
+-
+ 1.2.840.1::1355.4.805 tr6.1.4.805 true
+chanéetype: delete
+
+dn:

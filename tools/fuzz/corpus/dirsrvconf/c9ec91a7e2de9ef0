@@ -1,0 +1,4 @@
+dn: CN=CON# FIGURATION
+ibm-slapdAdminPW:: e1NEE1MTJ9eA==
+dn: slapdNoSuch: 1
+ folded

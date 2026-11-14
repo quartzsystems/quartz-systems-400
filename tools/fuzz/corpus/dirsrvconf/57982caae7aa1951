@@ -1,0 +1,8 @@
+# ccn1
+
+dn: cn=Co
+ nN: =\
+version: 1
+
+dn: cn=Co
+ nn: cn=\

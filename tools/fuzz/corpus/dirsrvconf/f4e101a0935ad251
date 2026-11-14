@@ -1,0 +1,4 @@
+dn:objectpdPwEncryption: ssha512
+dn: cn=SSL, cn=Configncryption: ssha512
+
+dn: cn=S-slap

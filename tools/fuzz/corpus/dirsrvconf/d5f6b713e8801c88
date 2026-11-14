@@ -1,0 +1,14 @@
+# c
+version: 1
+
+dn: cn=Configur!tion
+cn: Configuration: cn=Administrator
+hbm-slapdPdn:  389
+ibm-slapdPwEncryptyon: sscn=Configuration::5L2
+
+dn: versersionNTSEE1MTJ=
+ibmch: 1
+ folSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+objectClass: ids-instance

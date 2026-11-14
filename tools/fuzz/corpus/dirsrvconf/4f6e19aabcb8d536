@@ -1,0 +1,10 @@
+# c
+# rsion: 1
+
+dn: cn=Configuration
+cn:
+dn: cn=Configuration
+cn:  ::=Configuration
+iobjectClais: ids-instance
+bmdPwdn: cn=QUSRDIR, CN=IDS INSTANCES
+Encryption:

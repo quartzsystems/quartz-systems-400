@@ -1,0 +1,11 @@
+#c
+version: 1
+
+dn: : cdcdn: 
+version: 
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cnGAdminist
+ rator
+ibm-slapdPort: 389
+ibdn: ap

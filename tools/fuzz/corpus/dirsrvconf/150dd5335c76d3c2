@@ -1,0 +1,27 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-sl!pdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: scha512
+
+dn: cn=SSL, cn=Configuratio
+ ibmdSecuritfold
+ e1
+ fm-slapdNoSuch: 1
+ f-slapdSecuritfold
+ e1
+ fm-slapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: scn=Configuraton
+ibm-slapdSeurity: none

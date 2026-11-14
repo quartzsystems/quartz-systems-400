@@ -1,0 +1,9 @@
+version: 1
+dn: cn=acontrol: 1.2.840 .840 .840 cn:<
+control: 2.cn=a
+control: 11.2.cn=a
+control: 1.2.8cn=a
+control: 2.cn=a
+control: 11.2.cn=a
+control: 1.2.840.ue
+changetype: delete

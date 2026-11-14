@@ -1,0 +1,18 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@S INSTANCES
+objectClass: TOP
+objectClass: CO
+dn: NTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: «USRDIR
+ids-io
+dn: cation: /QIBM/UserData/OG400/DirSrv
+ids-instanceVersion: 6.1jectClass: ids-instance
+

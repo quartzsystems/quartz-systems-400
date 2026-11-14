@@ -1,0 +1,8 @@
+# c
+version: 1
+
+dn: cn=Configuratign
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: ssn: N9CON::# MfË

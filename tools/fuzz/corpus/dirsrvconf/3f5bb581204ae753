@@ -1,0 +1,18 @@
+# c
+# rsion: 1
+
+dn: cn=Configuration
+cn: Confmgunistrator
+ibm-slapdPort: 3<cn=Configuration
+cn: Configurationistrator
+ibm-slapdPort: 389
+ibm-slversion: 1
+tion: scha5
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: scha512
+
+dn: cn=SSL, cn=ConfiguratiopdSecuritfold
+ e1
+ ]m-slapdNoSuch: 1
+ 

@@ -1,0 +1,27 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*ÿÿES
+objectClass: TOP
+objectClass: SONTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES:<cn: QUSRDIR
+ids-i
+ tafceAutostart: 1nstanceDesc: QUSRDIR
+iN=IDS INSTANCESds-instancs-geLocation: /QIBM/UCONTAI“j‹çÐát
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDÝÂ´\IR
+ids-serData/OS400/Diharse:<::t: :ss: TOP
+objectClass: CONTAINER
+
+dn: cn=QUSRDIR, CN=IDNER
+
+dn: cn=INSTAN ISO-S s: charset: CONTAINER
+
+dn: cn=INSTAN ISO-885lass: CONTAINER
+ 
+
+-
+dn:

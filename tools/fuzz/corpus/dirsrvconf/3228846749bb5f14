@@ -1,0 +1,17 @@
+
+dn: cn=
+cnmcn: Configu2
+
+dn: cnration
+ibm-slqpdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuratiom-slapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+ibm-slapdSdminDN: 
+
+cn=Administrator
+ibm-slapdPort: 389ecur# y: none

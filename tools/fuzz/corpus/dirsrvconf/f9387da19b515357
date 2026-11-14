@@ -1,0 +1,14 @@
+#
+
+
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-m-ibm-slapdPort: 389
+idAdminDN: cn=Administratorion: 1
+
+dn: cn=Configuration
+cn: C
+ibm-slapdPort: 38guration
+ibm-slapdAdminDN: 

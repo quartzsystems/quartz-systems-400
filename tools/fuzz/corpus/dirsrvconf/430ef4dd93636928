@@ -1,0 +1,9 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: ssha512
+
+dn: cn: 

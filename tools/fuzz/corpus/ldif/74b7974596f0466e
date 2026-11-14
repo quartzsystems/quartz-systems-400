@@ -1,0 +1,6 @@
+vErsion: 1
+dn: cn=a
+control: 1.2.840.1
+-anéety::p:: delete
+
+dn:

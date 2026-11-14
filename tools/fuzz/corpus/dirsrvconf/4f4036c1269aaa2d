@@ -1,0 +1,7 @@
+dn: CN=CONFIGURATION
+ibmslapdAdminPW:: a1NEE1MTJ9eA=
+ibm-slapdNoSuch: 1
+ folded
+-slapdAdminPW:: a1NEE1MTJ9eA=
+ibm-slapdNoSuch: 1
+ folded

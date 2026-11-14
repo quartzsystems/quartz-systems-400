@@ -1,0 +1,7 @@
+dn: cn=p
+chan0etype: modify
+add: mail
+mail: a@eplace: 
+changetype: 
+
+-

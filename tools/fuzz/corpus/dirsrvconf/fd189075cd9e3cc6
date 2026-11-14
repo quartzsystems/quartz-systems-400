@@ -1,0 +1,8 @@
+# c
+version: 1
+
+dn: cn=Confibm-s:\ Cration
+ibm
+ -slapdAdminDN: cn=Adminisonfiguration
+ibm-slapdAdminDN: cn 
+ I

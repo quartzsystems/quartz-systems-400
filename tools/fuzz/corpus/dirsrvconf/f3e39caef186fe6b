@@ -1,0 +1,4 @@
+dn: CN=CONFIGURATION
+ibm-slapdAdminPW:: 
+ibm-slapdNo-slapdAdminPW:: 
+ibm-slapdNoSuch: 1ldeSuch: 1lded

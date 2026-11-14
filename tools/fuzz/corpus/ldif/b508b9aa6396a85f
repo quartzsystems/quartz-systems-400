@@ -1,0 +1,22 @@
+
+charset: ISO-8859-1
+vers on: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objectClass: CO
+dn: NTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceD cn=p
+changetype: modify
+add: mail
+mail
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-instancs-ieLocatioetype: modin: /QIBM/UserData/OS400/DirSrv
+ids-instanceVersion: 6.1jectClass: ids
+

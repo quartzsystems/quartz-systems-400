@@ -1,0 +1,7 @@
+dn: cn=p
+changetype: modify
+add: : ::
+-
+replace: cn
+cn: x
+cn: IŠ*›•

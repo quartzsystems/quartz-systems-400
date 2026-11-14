@@ -1,0 +1,7 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-{lapdAdminobjectClass: ids-instance
+lapdPortobjectClass: ids-instance

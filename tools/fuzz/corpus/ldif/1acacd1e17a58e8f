@@ -1,0 +1,9 @@
+version: 1
+dn: cn=a=control: 1.2.840.113556.184.805 true: cn=b
+changí:delete
+
+dn: cn=b
+ch5 true: cn=b
+changí: m
+changetype: etype: deangetype: modrdn
+newrdn:

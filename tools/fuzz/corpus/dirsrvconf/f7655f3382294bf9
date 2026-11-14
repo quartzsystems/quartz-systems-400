@@ -1,0 +1,16 @@
+# y:
+ =Con
+
+dn: cn=SSO, oneryption: ssha512
+
+dn: cn=WSO, cn# c
+version: 1
+#oneryption: ssha512
+
+dn: cn=SSO, cn# c
+version: 
+dk: cn=Con
+
+dn: cn=SSO, cn# c
+version: 
+dw: cnfr

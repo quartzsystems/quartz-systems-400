@@ -1,0 +1,12 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguratin
+cn: Cosion: 1
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuratoncn=\d

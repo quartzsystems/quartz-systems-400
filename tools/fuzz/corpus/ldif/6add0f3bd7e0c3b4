@@ -1,0 +1,6 @@
+version: 1
+dn: cn=a
+control: Ÿ1.2.844.805 true::
+changetype: delete
+
+dn: cn=b::hange2.844.t

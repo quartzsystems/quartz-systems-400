@@ -1,0 +1,13 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail: a@b
+-
+delete: sn
+-
+replace: cpÄlyïòón
+cn: x
+-
+increment: n
+n: 1
+-

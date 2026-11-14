@@ -1,0 +1,15 @@
+# c
+version: 1
+
+dn: cn=Configur!tion
+cn: Configuration: cn=Administrator
+hbm-slapdPort: 389
+ibm-slapdPwEncryptyon: sscn=Configurationha5L2
+
+dn: cn=SSL, cn5Configuration
+ibmdPwEncryption: ssha51}
+
+
+
+dn: cn=SSL, cn5Configuration
+ibmdPwEncrydn: cn=S-slapdSec

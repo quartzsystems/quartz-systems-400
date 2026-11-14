@@ -1,0 +1,11 @@
+# c
+# rsion:
+  1
+
+dn: cn=Confiuration
+cc
+# rsion: 1
+
+dn: cn=Confiuration
+cn:apn: Configuration
+ibm-slapdAdlinDN: cn=Administral

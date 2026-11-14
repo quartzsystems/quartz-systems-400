@@ -1,0 +1,15 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@DS INSTANCES
+objectY¢)j2Class: TOP
+objectClass: CO
+dn: NTAINER
+
+dn: cn=QUSR
+changetype: DIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostartDIR
+ids-iocation: /QIBM/UserData/OS400/DirSrvRÏÌü

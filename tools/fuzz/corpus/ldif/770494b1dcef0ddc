@@ -1,0 +1,8 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail: a@eplace: 
+changetype: 
+increment: n
+n: 1
+-

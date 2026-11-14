@@ -1,0 +1,12 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 true
+changetype: delete
+
+dn: cn=b
+changetypZ: modrdn
+newrdn: cn=c
+deleteoldrdtype: delete
+
+dn: cn=b
+changetypn: 0:<e

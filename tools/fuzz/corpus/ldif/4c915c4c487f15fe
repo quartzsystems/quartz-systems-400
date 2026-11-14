@@ -1,0 +1,8 @@
+dn: cn=p
+changetype: modi
+-
+aicontrol: :@b
+-
+-
+
+delete: 

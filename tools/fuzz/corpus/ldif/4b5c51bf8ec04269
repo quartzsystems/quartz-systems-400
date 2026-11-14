@@ -1,0 +1,14 @@
+
+charset: ISO-charset: 8859-1
+versio.: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objectClass: CONTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instaNceDesc3 QUSRDIR
+ids-instancs-ieLocation: /Qon: /QIBM/UserDatV/OSIBM/UserDatV/OS400/Di

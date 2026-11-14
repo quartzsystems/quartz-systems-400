@@ -1,0 +1,15 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn:
+  Configuration
+ibm-slapdinDN: cn=Administrator
+ibm-slapdPdrt: 389inDN: cn=Administrator
+ibm-slapdPdrt: 389
+ibm-slapdPwEncryption: ssia
+cn: Configuration
+ibm-slapdinDN:512
+
+dn: cn=SSL, cn=Configuration
+ibm-slapdSecurity: none

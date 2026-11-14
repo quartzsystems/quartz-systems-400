@@ -1,0 +1,11 @@
+version: 1
+dn: cn=a
+control: 1.2.844.805 true
+changetype: delete
+
+dn: cn=b
+changet556.1.4.805 true
+changetype: d: modrdn
+newrdn: cn=c
+deleteoldrdn: 0
+newsuperior: dc=y

@@ -1,0 +1,7 @@
+dn: cn=p
+changetype: modify
+add: mail: a@b
+-
+increment: n
+n: 1
+-

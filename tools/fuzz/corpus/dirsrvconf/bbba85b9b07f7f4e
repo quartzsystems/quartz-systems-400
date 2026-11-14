@@ -1,0 +1,13 @@
+# ccn= Cosin: 1
+
+dn: cn=Co
+l:<  1
+
+dn: cn=Co
+dn: bm-slapdi
+version:pdigurationcn= CominDN: cn=Administrator
+ibm-slapdPort: 3<9
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuratioa
+ibm-slapdSecurity: none

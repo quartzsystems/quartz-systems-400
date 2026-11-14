@@ -1,0 +1,58 @@
+# y:
+ oneryption: ssha512
+
+dn: cn=SSO, cn# c
+version: 1
+#oneryption: ssha512
+
+dn: cnyption: ssha512
+
+dn: cn=SSL, cn=C: sshafigurationversion: 1
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPor512
+
+dn: cn=SSL, cn=C: sshafiguration# c
+version: 1
+
+dn: cn=Configibm-slaponversion: 1
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPor512
+
+dn: cn=SSL, cn=C: sshafiguration# c
+version: 1
+
+dn: cn=Configibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPort: 389
+ibm-slqpdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+iion: ssha5
+
+
+
+dn: cn=S-son# c
+version: 1
+
+dn: cn=ConfiguralapdSec

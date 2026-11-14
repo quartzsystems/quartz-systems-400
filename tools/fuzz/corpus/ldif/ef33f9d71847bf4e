@@ -1,0 +1,9 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.8d05 true
+changetype: delete
+
+dn: cn=b
+cha\getype; mod–Ïprdn
+newrdn: cn=cdelÂóÇGfˆxeteoldrdn: 0
+newsupeÈNPrior: dc=y

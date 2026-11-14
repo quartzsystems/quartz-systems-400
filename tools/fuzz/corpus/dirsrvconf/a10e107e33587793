@@ -1,0 +1,9 @@
+#c
+version: 1
+
+dn: : cdcdn:cn=Configuration
+c	: Configuration
+ibm-slapdobjectClass: ids-instance
+r
+ibq-slapdPort: 389
+ ap

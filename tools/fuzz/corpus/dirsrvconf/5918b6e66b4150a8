@@ -1,0 +1,53 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: ConfiguctClass: ids-instance
+lapdPortobj: 389
+ibm-slapdPwEncryption: scha512
+
+dn: cn=SSL, cn=Configuration
+ibmdSecuritfold
+ e1
+ fm-slapdNoSuch: 1
+ f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cosio=: 1
+
+dn: cn= f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ilapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: idQUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-instaceAutostart: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDs-ins:5L2
+
+dn: versersionNTSEE1MTJ=
+ibmch: 1
+ folSTANCES
+cn: QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDdn: 
+-slapdPort: 31
+objectClass: dn: ids-instance

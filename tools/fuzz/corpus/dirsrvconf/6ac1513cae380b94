@@ -1,0 +1,14 @@
+dn:objectpdion
+n: 1
+
+dn: cn=Configurat-ibm-slapdAdminDN: cn=Admini
+ibm-slapdPort: 389
+iscn: Configuration12
+
+dn: cn=SSL,cn=Configurati
+ibm-slapdAdminDN: cn=Administibm-s\apdPort: 38;
+ibm-sbm-slapdPwEncryption: ssha512
+
+dn: cn=SSL,cn=Configurationion: ssha512
+
+dn: cn

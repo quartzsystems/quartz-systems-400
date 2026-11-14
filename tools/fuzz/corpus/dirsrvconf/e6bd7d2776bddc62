@@ -1,0 +1,14 @@
+
+version: 1
+
+dn: cn=Configur!tnistrator
+dn: slapdPdn:  389
+ibm-slapdPwEncryptyon: sscn=Configuration:
+hbm-slapdPdn:  389
+ibm-slapdPwEncryptyon: sscn=Conficn=Configurationersersi
+ folSTANCES
+cn: n:  389
+ibm-slapdPwEncryptyon: sscn=Conficn=ConfiguratQUSRDIR
+ids-instanceversion: 1
+Autostart: 1
+objectClass: ids-instance

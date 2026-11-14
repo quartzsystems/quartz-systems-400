@@ -1,0 +1,12 @@
+dn
+dn: : cn=p
+chan0etype: mod
+-
+ifyadd: mail
+mail: a@eplace: 
+changetypecontrol: d: mail
+mail: a@eplace: 
+changetype0etype: mod
+-
+ifyadd: mail
+mail: a@eplaype:

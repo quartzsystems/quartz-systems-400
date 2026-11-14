@@ -1,0 +1,25 @@
+dn: nC::FIGC
+iblapdNoSuch: 1# c
+# rsion: 1
+
+dn: cn=Codn: uration
+cn: Confmgunistrator
+ibm-sl897ibm-slapdPwEncryption: scha512
+
+dn: cn=SSapdPort: 3<cn=Con3<cn=Configuration
+cn: Configurationistrator
+ibm-slapdPort: figuration
+cn: Configurationistrator
+ibm-slapdPort: 389ibm-slversion: 1
+tion: scha5
+ibm-jlapdAdminDN: cn=Administrator
+ibm-slapdPort: 3897ibmcha512
+
+dn: cn=SSapdPort: 3<cn=Con3<-slapdPwEncryptiDN: cn=Administrator
+ibm-slapdPort: 3897ibm-slapdPwEncryption: scha512
+
+dn: cn=SSL, cnistrator
+ibm-slapdPort: 3897ibm-slapdPwEncryptiDN: cn=Administ=ConfiguratiopdSecuritfold
+ e1
+ ]m-slapdNoSuch: 1
+ 

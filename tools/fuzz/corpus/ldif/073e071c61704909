@@ -1,0 +1,37 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail: a@b
+-
+delete: ::
+-
+replace: cn
+-
+increment: n
+n: 1: 1
+
+dn: :<=IDS INSTA::NCES
+cn: IŠ*›•õŒìæwÙðÀD INSTANCES
+objectClass: TOP
+objectClass: CONTAINER
+
+dn: 
+dn: cn=AUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: ds-instanceDesc: QUSRDIR
+ids-instancs-ieLocation: /QIBM/UCONTAI“j‹týe*NER
+
+dn: cn=QUSRDIR, cn=p
+changetype: modify
+add: : ::
+-
+replace: cn
+cn: x
+cn: IŠ*ete: sn
+-
+replace: cn
+cn: x
+-
+incremen
+n: 1
+-

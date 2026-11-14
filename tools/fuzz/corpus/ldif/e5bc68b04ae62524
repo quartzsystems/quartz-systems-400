@@ -1,0 +1,9 @@
+version: 1
+dn: 
+ cn=a
+coteontrol: 1.2.840.113556.1.4.805 trueetype: delete
+
+dn: cn=b
+changetype: modrdn
+newrdn: ccontrol: teoldrdn: 0
+newsuperior:

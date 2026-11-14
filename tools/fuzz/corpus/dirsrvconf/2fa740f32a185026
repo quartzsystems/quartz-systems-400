@@ -1,0 +1,30 @@
+# c
+version: 1
+
+dn: cn=Configurationfiguration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+idAdminDN: cn=Administrator
+ibm-son: ssha512
+
+dn: o ssha512
+
+dn: on=SScn=Adminisonfiguration
+ibm-slersion: 1guration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort: 3
+
+dn: cn=Configuration
+cn: Crassha512
+
+dn: on=SScn=ASEE1ation
+垃:	|cn: Configuration
+ibm-slapdAdapdPort: 389
+ibm-slapdPwEncryption: sshminDN: cn=Adminis::trator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: sshaf ciguration# c
+version: 1
+
+dn: cn=Configuratio::ndPwEncryption: ssha512
+
+dn:!cn=S-slapdSc

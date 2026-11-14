@@ -1,0 +1,6 @@
+versersionNTSEE1MTJ=
+ibmch: 1
+ folSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+objectClass: ids-instance

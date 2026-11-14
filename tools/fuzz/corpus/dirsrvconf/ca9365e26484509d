@@ -1,0 +1,12 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrato
+ r
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL cn=Configuration
+ibm-slapdSecurity: none

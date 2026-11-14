@@ -1,0 +1,29 @@
+dn: CN=CONFIGcn=ConfigurationdAdm# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+idAdminDN: cn=Administrator
+ibm-slapdPort:versioption: ssha512
+
+dn: cn=SSL, cn=Coration
+ibm-slapdAdminDN: cn=Administrato
+ r
+ibm-ncryption: ssha512
+
+dn: cn=SSL 
+CN=C::FIGC
+iblap: cn=Administrato
+ r
+ibm-ncryption: ssha512
+
+dn: cn=SSL 
+CN=C::FIGC
+iblapdNoSuch: 1
+ fold
+ e1
+ folded
+
+

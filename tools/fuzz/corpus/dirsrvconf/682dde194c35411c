@@ -1,0 +1,18 @@
+# cversion: 1
+
+
+dn:version: 1
+ cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 3<9
+ibm-slapdPwEncryption: ssha512
+
+dn: 
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Cocn=SSL, cn=Configuratioa
+ibm-slapdrt: 3<9
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=ConfSecurity: none

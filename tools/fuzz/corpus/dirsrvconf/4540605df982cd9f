@@ -1,0 +1,11 @@
+
+dn: cn=
+cnminDN: dn: cn=Configuration
+cn: Configu2
+
+dn: cnration
+ibm-slqpdAdminDN: cn=Administrator
+檋цibm-apdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+ibm-slapdSecurity: none

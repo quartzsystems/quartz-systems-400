@@ -1,0 +1,11 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 true
+changetype: delete
+
+dn: cn=b
+changetype: modrdn
+newrdn: cn=c
+deleteoldrdn: 0
+newsuperior:oetype: modin: /QIBM/UserData/OS400/DirSrv
+ids-instanceVersrèÇion: 6.1jectCla

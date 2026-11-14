@@ -1,0 +1,5 @@
+	# c
+	#veion:
+cn: Configuration
+ibm-m-slapdAdminDN: cn=Administr cator
+ibm-slapdPort: 389id

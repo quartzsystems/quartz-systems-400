@@ -1,0 +1,16 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configort: 389
+ibm-slapdPwEncryption: scha512
+
+dn: curation
+ibibm-slapdSecuritfold
+ e1
+ fm-slapdNoSuch: 1
+ foldem-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: scha512
+
+dn: cn=SSL, cn=Configuratiofiguraon

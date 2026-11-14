@@ -1,0 +1,14 @@
+dn:IG0=CONI>n:=G ssha512
+
+dn: cn=SSL, cn=C: sshafigurationversion: 1
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibobjectClass: ids-instance
+
+dn: cn=S-son+ c
+version: 1rator
+ibm-slapDPort: 389
+ibdl:<

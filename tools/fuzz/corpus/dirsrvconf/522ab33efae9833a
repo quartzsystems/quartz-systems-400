@@ -1,0 +1,21 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguravin
+cn: Cosion: 1
+
+dn: cn=\dn:guravin
+cn: Cosion: 1
+
+dn: cn=\dn: o
+ nfiguratiocn=Configurationration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort:389
+ibm-slapdPwEncr9ption:t: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuraton
+ibm-slapdSecurity: none

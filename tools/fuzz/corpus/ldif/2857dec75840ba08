@@ -1,0 +1,16 @@
+vErsion: 1
+dn: cn=a
+controcharset: l: 1.2.840.11n: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objectClass: CO
+dn: NTASRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instancstanceAutostart: 1
+id: T::
+objectClass: CONTAINER
+
+dn: cn=QU

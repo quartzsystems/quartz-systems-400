@@ -1,0 +1,8 @@
+version: 1
+dn: cn=a
+control: l1.2.84$.113556.1.4.8:<05 true
+changetype: delete
+
+dn: cnn: cn=c
+deleteoldrdn: 0
+newsuperior: dc=y

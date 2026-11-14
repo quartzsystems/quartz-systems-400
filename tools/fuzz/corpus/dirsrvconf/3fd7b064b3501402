@@ -1,0 +1,14 @@
+
+dn: cn=
+cnmcn: Coigu2
+
+dn: cnration
+ibm-slqpdAdminDN: cn=Anfigu2
+
+dn: cnration
+ibm-slqpdAdminDN: cn=Administrator
+ibm-slapdPot: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+i::bm-slapdSecurity: none

@@ -1,0 +1,14 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Config:!cn=ha512
+
+dn: 
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Cocn=SSL, cn=configuratioa
+ibm-slapdrt: 3<9
+ibm-slapdPwn: ssha512
+
+dn: cn=SSB, cn=ConfSecurity: none

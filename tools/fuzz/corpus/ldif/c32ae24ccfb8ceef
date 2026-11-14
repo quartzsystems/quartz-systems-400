@@ -1,0 +1,31 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail: a@b
+-
+delete: ::
+-
+replace: cn
+-
+increment: n
+n: 1: 1
+
+dn: :<=ID
+dn: :<=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙðÀS INSTANCES
+cn: IŠ*›•õŒìæwÙðÀDS INSTANCESP
+objectClass: CONTAINER
+
+dn: 
+dn: cn=AUSRDIR, CN=IDS INSTA^CES
+cn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-instangs-icontrol: : /QIBM/UCONTAI“j‹týe*NER
+
+dn: cn=QUSRDIR, CN=I7S INSTANCES
+cn: QUSRDIR
+ids-serDTta/OS400/DirSrntrol: 1.6.84control: 0.113556.1.4.805 true
+control: chanéetype: delete
+
+dn:

@@ -1,0 +1,15 @@
+version: 1
+dn: cn=a
+control: 1.2.840.113556.1.4.805 trn: 1
+dn: cn=a
+control: 1.2.840.ue
+changetype: delete
+
+dn: cn=b
+changetype: modrdn
+newrdn: cn=c
+deleteo
+changetype: : cn=c
+deleteo
+ldrdn: 0
+newsuperior: dc=y

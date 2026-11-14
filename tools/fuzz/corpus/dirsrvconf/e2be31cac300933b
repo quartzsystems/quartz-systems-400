@@ -1,0 +1,20 @@
+# c
+version: 1
+
+dn: cn=Co
+ nn: con: 1
+
+dn: cn=\o
+ nfiguration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption:t: 389
+ibm-slapdPwEncryption:.ssha512objectClass: ids-instance
+
+
+dn::o ssha512
+
+dn: on=SSL cn o ssha512
+
+dn: on=SSL cn=Configuraton
+ibmrat-slapdSecurity: none

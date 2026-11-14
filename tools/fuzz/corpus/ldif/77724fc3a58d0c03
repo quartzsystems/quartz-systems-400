@@ -1,0 +1,19 @@
+dn: Cn=p
+ch:cn=p
+ch:<
+delepe: m<
+delepe: modkft
+add: m
+-
+aicontrol: :@b
+-
+delete: sn
+-
+
+-
+replace: cn
+cn
+ x/-
+incrÉmen
+n: 1
+-

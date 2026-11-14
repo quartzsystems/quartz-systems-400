@@ -1,0 +1,19 @@
+dn: cn=p
+changetype: modify
+add: mail
+mail: a@b
+-
+delete: ::
+-
+replace: cn
+cn: x
+-
+increment: n
+n: 11
+
+dn: CN=IDS INSTANCES
+cn: IDS INSTANCES
+objectClass: T::
+objectClass: CONTAINER
+
+dn: cn=QU

@@ -1,0 +1,34 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguratin
+cn: Cosion: 1
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=Sversion: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+pdPwEncryption: ssha512
+
+dn: cn=SSL cn=Configuraa512
+
+dn: cn=SSL, cntifigu2
+
+dn: cnra, cn=Configuratiryption: ssha512
+
+dn: cn=tion
+ibm-slqpdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuratiryption: ssha512
+
+dn: cn=SSL, cn=Configuratiryption: ssha512
+# n: cn=S-slapdSc

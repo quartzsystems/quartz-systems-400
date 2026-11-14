@@ -1,0 +1,63 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-sl!pdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: scha512
+
+dn: cn=SSL, cn=Configuration
+ibmdSecuritfn=Administraold
+ e1
+ fm-slapdNoSuch: 1
+ f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-instaceAutostart: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-innfiguration
+cn: Cosio=: 1
+
+dn: cn= f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ilapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: idQUSRDI::idssl-instator
+ibm-slapdPort: 389
+idAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-sbm-slapdPwEncryption: ssha512
+dn:  cn=SSL, cn=Configion
+ibmdPwEncryption: ssha512
+
+dn: cn=S-slapdSec

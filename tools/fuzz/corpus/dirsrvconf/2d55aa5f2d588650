@@ -1,0 +1,25 @@
+dn: CN=CONFIGURATION
+ibm-slapdAdminPW::FI e c
+versc: Cosion: 1
+
+dn: 512
+
+dn: o sshion: 1
+
+dn: cn=Configibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPortdn: : 389
+ibm-slqpdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+iion: ssha5
+
+
+
+dn: cn=S-sonA# c
+version: 1
+
+dn: cn=ConfiguralapdSec

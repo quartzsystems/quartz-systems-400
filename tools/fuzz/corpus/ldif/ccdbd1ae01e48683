@@ -1,0 +1,23 @@
+
+charset: ISO-8859-1
+wersion: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙð@DS IP
+objectClass: CO
+dn: NTAINER
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-instanceA: ISO-8859-1
+vers on: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•ŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objectClass: CO
+dn: NTAINER•õŒìæwÙð@DS INSTANCES
+objectClass: TOP
+objAINER
+
+dn:

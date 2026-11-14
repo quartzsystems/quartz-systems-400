@@ -1,0 +1,13 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IŠ*›•õŒìæwÙðÀDS INSTANCES
+objectClass: TOP
+objectClass:°CONTAINER
+
+dn: 
+dn: cn=AUSRDIR, CN=IDS INSTANCES
+cn: QUSRDIR
+ids-inst

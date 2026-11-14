@@ -1,0 +1,15 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Cration
+ibm-slapdAdminDN: cn=Adminisonfiguration
+ibm-slapdAdminDN: cn=Administrator
+ibmversion: 1
+-slapdPort: 389
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=Sfiguration
+ibmdPwEncryption: ssha512
+
+dn: cn=S-slapdSc

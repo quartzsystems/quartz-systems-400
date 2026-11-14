@@ -1,0 +1,14 @@
+# c
+version: 1
+
+dn: cn=#eDceAutostart: 1
+objectClass: ids-ins:5L2
+
+dn: versersiNCES
+costart: Cosion: 9
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configurat

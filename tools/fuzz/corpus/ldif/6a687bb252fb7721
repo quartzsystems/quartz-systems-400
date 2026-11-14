@@ -1,0 +1,4 @@
+version: 1
+dn: cn=acontrol: 1.2.840 cn=a
+control: 1.2.840.ue
+changetype: delete

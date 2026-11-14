@@ -1,0 +1,17 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-{lapdAdminobjectClass: ids-instance
+lapdPortobjectCla: 389
+pdPwEncryption: ssha512
+
+dn: cn=SSL cn=Configuraa512
+
+dn: cn=SSration
+cn: Configurition
+ibm-slapdAdminDN: cn=AdmiL, cntcn=Configuration, cn=Co# nfiguratiryption: n=Configuraaguratiryption: ssha512
+
+dn: cn=SSL, cn=Configuratiryption: ssha512
+# n: cn=S-slapdSc

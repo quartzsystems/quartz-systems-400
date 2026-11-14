@@ -1,0 +1,19 @@
+# c
+version: 1
+
+dn: cn=Configur!tion
+cn: Configuration: cn=Administrator
+hbm-slapdPdn:  389
+ibm-slapdPwEncryptyon: sscn=Configurationha5L2
+
+dn: cn=SSL, cn=Cwgur!tion
+cn: Configurypion: ssha512
+
+dn: 
+ibm-slapdPwEncrypvion: ssha512
+
+dn: cn=SSL, cn=Cocn=SSL,(cn=Configuratioa
+ibm-slapdrt: 3<9
+ibm-slapdPwEncryption: ssha512
+
+dn: cn=SSL, cn=ConfS

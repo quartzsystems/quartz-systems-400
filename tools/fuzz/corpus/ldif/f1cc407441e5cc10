@@ -1,0 +1,14 @@
+dn: cn=p
+changetcharset: fl
+mail:::@b
+
+changÿÿÿÿÿÿÿÿ
+-
+replace: cn
+cn: l:::@b
+
+changÿÿÿÿÿÿÿÿ
+-
+
+n: 1
+-

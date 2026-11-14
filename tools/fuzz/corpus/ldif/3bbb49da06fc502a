@@ -1,0 +1,9 @@
+dn: cn=p
+
+mail: a@b
+-
+dereplace: cpÄlyïòón::n: x
+-
+increment: n
+n: 1
+-

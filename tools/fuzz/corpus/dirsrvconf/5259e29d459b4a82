@@ -1,0 +1,14 @@
+# c
+version: 1
+
+dn: cn=Cocn=Administon
+	bm-slapdSecurity: nonerator
+ nfiguration
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administon
+	bm-slapdSecurity: nonerator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: scn=Configuraton
+	bm-slapdSecurity: none

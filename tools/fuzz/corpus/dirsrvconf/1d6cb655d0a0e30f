@@ -1,0 +1,15 @@
+# c
+version: 1
+
+dn: cn=#edceAutostart: 1
+objecersion: 1
+
+dn: cn=#edceAutostart: 1
+objectClass: ids-inssersiNCES
+costart: Cosion: 9
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configurat

@@ -1,0 +1,14 @@
+dn: cn=p
+changetype: modift
+add: m
+-
+aicontrol: :@b
+-
+delete: sn
+-
+replace: cn
+cn
+ xcharset: /-
+incr…men
+n: 1
+-

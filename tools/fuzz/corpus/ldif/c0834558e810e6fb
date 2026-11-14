@@ -1,0 +1,9 @@
+dn: cn=pM
+changetype: modify
+add: mail
+mail: a@b
+-
+delete: sn
+-
+replace: cn
+cn:< 

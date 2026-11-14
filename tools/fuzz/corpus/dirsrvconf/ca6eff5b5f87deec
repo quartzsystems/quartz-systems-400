@@ -1,0 +1,7 @@
+# c
+# rsion: 1
+
+dn: cn=Confiuration
+cn: Configuration
+ibm-slapdAdlinDN: cn=Administrator
+ibm-sl

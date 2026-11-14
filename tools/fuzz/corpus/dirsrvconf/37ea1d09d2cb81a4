@@ -1,0 +1,9 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguration
+cn= Cosion: 1
+
+dn: cn=Co
+l:< 

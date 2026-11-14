@@ -1,0 +1,8 @@
+dn: ccharset: n=p
+changetype: modify
+add: : ::
+-
+replace: cn
+cn: x
+cn: In: x
+cn: IŠ*

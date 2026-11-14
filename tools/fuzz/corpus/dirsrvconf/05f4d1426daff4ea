@@ -1,0 +1,6 @@
+dn: CN=CONFIGcn=Configuran=Configuration
+cn: Configuration
+ibm-sdn: AdminDN: cn=AdminiBtrator
+ibm-slapdPort: 389
+idAdminDN:0cn=Administrator
+ibm-slapdPort: 

@@ -1,0 +1,10 @@
+# c
+version: 1
+
+dn: cn=Configuration
+cn: ConFiguration
+ibm-{lapdAdminobjectClass: ids-instanortobjecTClass: ids-instance
+n: ssha512
+
+dn: cn=SSL, cn=Configuration
+ibm-slapdSecurity: noe

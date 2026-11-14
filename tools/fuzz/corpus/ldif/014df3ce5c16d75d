@@ -1,0 +1,12 @@
+version: 1
+dn: 
+ cn=a
+coteontrol: 1.2.840.113556.1.4.805 trueetyp&: delete
+
+dn: cn=b
+changetype: modrdn
+newrdnrData/OS400/DirSrids-instanceVersion: 6.1
+objectClass: TOP
+objectCl
+changetype: ass: ids-instance
+

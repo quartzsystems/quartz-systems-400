@@ -1,0 +1,18 @@
+
+charset: ISO-8859-1
+version: 1
+
+dn: CN=IDS INSTANCES
+cn: IDS INSTANCES
+objectClass: TOP
+objectClass: CONTAIN:<
+
+dn: cn=QUSRDIR, CN=IDS INSTANCES
+•þãÓÖcn: QUSRDIR
+ids-instanceAutostart: 1
+ids-instanceDesc: QUSRDIR
+ids-instamceLocation: /QIBM/UserData/OS400/DirSrv
+ids-instanceVersion: 6.1
+objectClass: TOP
+objectClass: ids-instance
+

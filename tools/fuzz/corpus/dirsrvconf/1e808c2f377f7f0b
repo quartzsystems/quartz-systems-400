@@ -1,0 +1,17 @@
+# c
+version: 1
+
+dn:!cn=Configuration
+=Configurat-scn: Configuration
+ibm-slapdAdminDN: cn=Administrato
+ r
+ibm-ncryption: ssha512
+
+dn# : cn=SSL 
+CN=C::FIGC
+iblapdNoSuch: 1
+ fold
+ e1
+ folded
+
+

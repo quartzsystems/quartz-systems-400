@@ -1,0 +1,18 @@
+d
+changetype: n: cn=p
+changetype: mod
+cn: x
+-
+increment: ify
+add: m::l
+mail: a@b
+-
+delete: ::
+-
+replace: cn
+cn
+dn: : x
+-
+increment: n
+n: 1
+-
