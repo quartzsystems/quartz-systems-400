@@ -13,6 +13,8 @@
 //! - [`edit`]: changes to the file's text that keep its order and
 //!   comments.
 //! - [`shipped`]: the files a system starts with.
+//! - [`settings`]: the file as the service runs it (`ops::Settings`,
+//!   the job's values, auditing, indexes).
 //! - [`error`]: what is wrong, as a `GLD` message.
 //!
 //! Both files are LDIF (`ldap::ldif`) in CCSID 1208 (the instance list
@@ -22,6 +24,7 @@ pub mod attrs;
 pub mod edit;
 pub mod error;
 pub mod instances;
+pub mod settings;
 pub mod shipped;
 pub mod slapd;
 
