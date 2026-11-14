@@ -346,6 +346,6 @@ pub static SPECS: &[ServerSpec] = &[
         start_subsystem: false,
         // The instance list's (idsinstances.ldif); QUSRDIR is shipped.
         instances: &["QUSRDIR"],
-        readiness: Readiness::Slot("the directory server (net/dirsrv)"),
+        readiness: Readiness::Built,
     },
 ];

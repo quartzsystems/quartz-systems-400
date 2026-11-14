@@ -18,6 +18,7 @@ mod small;
 mod starter;
 
 pub use builtin::{Ftp, HttpAdmin, Standard, Telnet};
+pub use dirsrv::DirSrv;
 pub use hostsvr::{HOST_DAEMONS, HostSvr};
 pub use httpsvr::{
     ACCESSWEB, ACCESSWEB_PRODUCT, DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR,

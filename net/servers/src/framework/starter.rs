@@ -31,9 +31,16 @@ impl ServerStarter for Starter<'_> {
     }
 
     fn end(&mut self, server: &str, immediate: bool) -> Result<String, String> {
-        self.fw
-            .end(self.env, &Request::new(server), immediate)
-            .map_err(|r| r.line())
+        // Every directory server instance ends, not only the default.
+        let req = if server.trim().eq_ignore_ascii_case("*DIRSRV") {
+            Request {
+                instance: super::Instance::All,
+                ..Request::new(server)
+            }
+        } else {
+            Request::new(server)
+        };
+        self.fw.end(self.env, &req, immediate).map_err(|r| r.line())
     }
 
     fn active(&mut self, server: &str) -> bool {
