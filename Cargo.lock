@@ -2215,7 +2215,10 @@ dependencies = [
  "ile",
  "ldap",
  "mi",
+ "qrpgrt",
  "release",
+ "rpgc",
+ "rpgfront",
  "tls",
  "tracing",
 ]

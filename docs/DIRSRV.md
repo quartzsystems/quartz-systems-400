@@ -1585,7 +1585,9 @@ ignored.
   `UTF8_IO`, extended operations, StartTLS, LDAPS, application IDs, DNs,
   URLs, code pages, LBER, refusals); `tests/ile.rs` (an IR program
   calling `ldap_init`, `ldap_simple_bind_s`, `ldap_search_s`, the
-  entry walk and a variadic `ber_printf`); the shipped `QSYSINC` members
+  entry walk and a variadic `ber_printf`); `tests/rpg.rs` (an ILE RPG
+  program copying `QSYSINC/QRPGLESRC(LDAP)` compiled by QS/400's compiler
+  and run: bind, search, the entry walk, `ldap_err2string`); the shipped `QSYSINC` members
   are current.
 - `cargo test -p qsh-utils --test ldap`: the nine tools against a fake
   directory (text and LDIF output, paging, sorting, persistent search,
