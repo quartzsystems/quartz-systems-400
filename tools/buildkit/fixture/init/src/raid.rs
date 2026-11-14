@@ -10,19 +10,26 @@
 //! program again), as an appliance's storage server would be; PID 1 is
 //! its caller and keeps the record of the members. So the proof can
 //! take the server away: the file system stays mounted, its requests
-//! wait in the kernel, and the next server recovers the device.
+//! wait in the kernel, and the next server recovers the device. The set
+//! keeps a write-intent map in a file, so a server killed under write
+//! load is followed by a copy of the regions being written only.
 
+use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
+use std::os::unix::fs::FileExt;
 use std::path::Path;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use blockdev::{BlockDev, LinuxBlockDev};
 use protect::UnitState;
-use protect::mirror::ResumeState;
-use protect::set::{MirrorMember, MirrorSet, ResumeJournal};
+use protect::intent::IntentStore;
+use protect::mirror::{RESUME_CHUNK, ResumeState};
+use protect::set::{Intent, MirrorMember, MirrorSet, ResumeJournal, ResyncProgress};
 use rustix::mount::{MountFlags, UnmountFlags, mount, unmount};
 use ublk::{BlockTarget, Device, Options};
 use uuid::uuid;
@@ -38,6 +45,9 @@ const BLOCK: u64 = 4096;
 const DATA: &str = "/data";
 const MOUNT: &str = "/set";
 const RESUME_MAP: &str = "/data/resume.map";
+/// QSDEMO's write-intent map: its magic and its file.
+const INTENT_MAGIC: [u8; 8] = *b"QSDEMOWI";
+const INTENT_MAP: &str = "/data/set.intent";
 
 fn text(e: impl std::fmt::Display) -> String {
     e.to_string()
@@ -66,6 +76,56 @@ impl ResumeJournal for FileJournal {
             _ => Ok(()),
         }
     }
+}
+
+/// The write-intent map in a file: QSDEMO's store for it.
+struct FileIntent;
+
+impl IntentStore for FileIntent {
+    fn read_all(&mut self) -> std::io::Result<Vec<u8>> {
+        match fs::read(INTENT_MAP) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+            r => r,
+        }
+    }
+
+    fn write(&mut self, offset: u64, bytes: &[u8]) -> std::io::Result<()> {
+        let f = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(INTENT_MAP)?;
+        f.write_all_at(bytes, offset)?;
+        f.sync_data()
+    }
+}
+
+/// The set's map: a megabyte a region, so the fixture's small set has
+/// regions enough to tell a few from all; cleared at each flush.
+fn intent(fresh: bool) -> Intent {
+    let mut i = Intent::new(INTENT_MAGIC, Box::new(FileIntent));
+    i.region_blocks = RESUME_CHUNK;
+    i.clear_delay = Duration::ZERO;
+    i.fresh = fresh;
+    i
+}
+
+/// Run the copy between active members to its end, beside the I/O.
+fn resync(set: &MirrorSet) -> Option<JoinHandle<Result<ResyncProgress, String>>> {
+    let p = set.resync_progress()?;
+    if p.complete {
+        return None;
+    }
+    let set = set.clone();
+    Some(std::thread::spawn(move || {
+        loop {
+            match set.resync_step(4).map_err(text)? {
+                Some(p) if p.complete => return Ok(p),
+                Some(_) => {}
+                None => return Err("no copy".into()),
+            }
+        }
+    }))
 }
 
 fn open_member(path: &str) -> Result<Box<dyn BlockDev>, String> {
@@ -109,7 +169,9 @@ fn serve_set(args: &[String]) -> Result<(), String> {
             },
         });
     }
-    let set = MirrorSet::open(SET, blocks, list).map_err(text)?;
+    let set =
+        MirrorSet::open_with(SET, blocks, list, Some(intent(mode == "start"))).map_err(text)?;
+    let mut copy = resync(&set);
     let target = Arc::new(BlockTarget(set.clone()));
     let mut device = Some(
         match mode.as_str() {
@@ -137,8 +199,19 @@ fn serve_set(args: &[String]) -> Result<(), String> {
                 .and_then(|n| set.detach(n).map_err(text))
                 .map(|_| String::new()),
             ["replace", n, path] => replace(&set, n, path),
+            ["resync"] => match copy.take() {
+                None => Ok("none".into()),
+                Some(h) => h
+                    .join()
+                    .map_err(|_| "the copy panicked".to_string())
+                    .and_then(|r| r)
+                    .map(|p| format!("{} {} {}", p.chunks_copied, p.chunks_dirty, p.chunks)),
+            },
             ["stop"] => {
-                let stopped = device.take().map_or(Ok(()), Device::stop).map_err(text);
+                let stopped = set
+                    .close()
+                    .map_err(text)
+                    .and_then(|()| device.take().map_or(Ok(()), Device::stop).map_err(text));
                 println!(
                     "{}",
                     stopped.map_or_else(|e| format!("ERR {e}"), |()| "OK".into())
@@ -273,6 +346,51 @@ fn image(path: &str) -> Result<(), String> {
         .map_err(|e| format!("{path}: {e}"))
 }
 
+/// Wait for a device node to appear.
+fn wait_for(node: &str) -> Result<(), String> {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !Path::new(node).exists() {
+        if Instant::now() > deadline {
+            return Err(format!("{node} did not appear"));
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    Ok(())
+}
+
+/// Files written over and over, each synced, until told to stop: what
+/// each holds last.
+struct Load {
+    stop: Arc<AtomicBool>,
+    thread: JoinHandle<Result<BTreeMap<String, u8>, String>>,
+}
+
+impl Load {
+    fn start() -> Self {
+        let stop = Arc::new(AtomicBool::new(false));
+        let flag = Arc::clone(&stop);
+        let thread = std::thread::spawn(move || {
+            let mut last = BTreeMap::new();
+            for i in 0u32.. {
+                if flag.load(Ordering::Relaxed) {
+                    break;
+                }
+                let name = format!("/set/load-{}", i % 8);
+                let seed = u8::try_from(i % 200).map_err(text)? + 3;
+                write_file(&name, &pattern(seed))?;
+                last.insert(name, seed);
+            }
+            Ok(last)
+        });
+        Self { stop, thread }
+    }
+
+    fn finish(self) -> Result<BTreeMap<String, u8>, String> {
+        self.stop.store(true, Ordering::Relaxed);
+        self.thread.join().map_err(|_| "the load panicked")?
+    }
+}
+
 /// Whether two members hold the same bytes.
 fn same(a: &str, b: &str) -> Result<bool, String> {
     let open = |p: &str| File::open(p).map_err(|e| format!("{p}: {e}"));
@@ -379,6 +497,62 @@ pub fn prove() -> Result<Vec<String>, String> {
     held.push(format!(
         "member 1 replaced and rebuilt, {done} of {of} chunks; the members are identical"
     ));
+
+    held.push(under_load(m0, m2, &blocks, &two)?);
     let _ = unmount(DATA, UnmountFlags::empty());
     Ok(held)
+}
+
+/// The set served again, both members active, files written and synced
+/// without a pause, and the server killed in the middle. The next
+/// server copies the regions that were being written, not the set.
+fn under_load(m0: &str, m2: &str, blocks: &str, two: &[u8]) -> Result<String, String> {
+    let (server, id) = Server::spawn(&["start", "-", blocks, m0, "active", m2, "active"])?;
+    let node = format!("/dev/ublkb{id}");
+    wait_for(&node)?;
+    mount_xfs(&node, MOUNT)?;
+    let load = Load::start();
+    std::thread::sleep(Duration::from_millis(1500));
+    server.kill();
+    std::thread::sleep(Duration::from_millis(300));
+    let (mut server, again) = Server::spawn(&["recover", &id, blocks, m0, "active", m2, "active"])?;
+    if again != id {
+        return Err(format!("recovered device {again}, not {id}"));
+    }
+    std::thread::sleep(Duration::from_millis(1500));
+    let last = load.finish()?;
+    let copied = server.ask("resync")?;
+    if copied == "none" {
+        return Err("the load left no region dirty".into());
+    }
+    let [copied, dirty, chunks] = copied
+        .split(' ')
+        .map(str::parse::<u64>)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| format!("the copy answered {copied:?}"))?[..]
+    else {
+        return Err(format!("the copy answered {copied:?}"));
+    };
+    if copied >= chunks {
+        return Err(format!(
+            "the copy took {copied} of {chunks} chunks: the whole set"
+        ));
+    }
+    for (name, seed) in &last {
+        if read_file(name)? != pattern(*seed) {
+            return Err(format!("{name} differs after the copy"));
+        }
+    }
+    if read_file("/set/two")? != two {
+        return Err("a file written before the load differs after the copy".into());
+    }
+    unmount(MOUNT, UnmountFlags::empty()).map_err(|e| format!("unmount {MOUNT}: {e}"))?;
+    server.stop()?;
+    if !same(m0, m2)? {
+        return Err("the members differ after the copy".into());
+    }
+    Ok(format!(
+        "server killed under write load: {copied} of {chunks} chunks copied ({dirty} dirty), {} files intact; the members are identical",
+        last.len()
+    ))
 }

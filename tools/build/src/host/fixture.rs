@@ -20,9 +20,12 @@
 //! and, in ANSI sequences, on the serial console; a mirrored set of two
 //! image files made by `protect`, served through `ublk` with an xfs of
 //! `xfsfmt` on it, a member removed, the server killed and the device
-//! recovered, the member replaced and rebuilt; a route added through
-//! `netlink` under QSDEMO's own protocol number. And its PID 1 is built
-//! without the crates those must not bring.
+//! recovered, the member replaced and rebuilt, and the server killed
+//! under write load with both members active, after which the set's
+//! write-intent map (handoff 15) has less than the whole set copied and
+//! every file reads back; a route added through `netlink` under
+//! QSDEMO's own protocol number. And its PID 1 is built without the
+//! crates those must not bring.
 //!
 //! Only committed work is seen: a git dependency is HEAD, not the
 //! working tree.
@@ -95,6 +98,14 @@ const PROOFS: &[(&str, &[&str])] = &[
     (
         "set",
         &["member 1 replaced and rebuilt", "the members are identical"],
+    ),
+    (
+        "set",
+        &[
+            "server killed under write load",
+            "chunks copied",
+            "files intact; the members are identical",
+        ],
     ),
     ("route", &["added with routing protocol 83"]),
 ];
@@ -465,7 +476,8 @@ pub fn fixture(ctx: &Ctx) -> Result<String> {
         "qsdemo built from git dependencies at {} and booted: `{want}`, powered off; \
          its ESP is `{}` and its A/B record `{}`; its panel on the framebuffer and on \
          serial, its mirrored set through ublk (a member removed, the server restarted, \
-         the member rebuilt) and its route held",
+         the member rebuilt, the server killed under load and only the dirty regions \
+         copied) and its route held",
         &rev[..rev.len().min(9)],
         String::from_utf8_lossy(ESP_LABEL).trim_end(),
         String::from_utf8_lossy(&RECORD.magic)
