@@ -142,11 +142,106 @@ impl ResultCode {
             n => Self::Other(n),
         }
     }
+
+    /// Quartz's short text for the code, as `ldap_err2string` returns.
+    /// Codes without a name share one text; the client-side codes are
+    /// [`client_text`]'s.
+    #[must_use]
+    pub const fn text(self) -> &'static str {
+        match self {
+            Self::Success => "Success",
+            Self::OperationsError => "Operations error",
+            Self::ProtocolError => "Protocol error",
+            Self::TimeLimitExceeded => "Time limit exceeded",
+            Self::SizeLimitExceeded => "Size limit exceeded",
+            Self::CompareFalse => "Compare false",
+            Self::CompareTrue => "Compare true",
+            Self::AuthMethodNotSupported => "Authentication method not supported",
+            Self::StrongerAuthRequired => "Stronger authentication required",
+            Self::Referral => "Referral",
+            Self::AdminLimitExceeded => "Administrative limit exceeded",
+            Self::UnavailableCriticalExtension => "Critical extension is unavailable",
+            Self::ConfidentialityRequired => "Confidentiality required",
+            Self::SaslBindInProgress => "SASL bind in progress",
+            Self::NoSuchAttribute => "No such attribute",
+            Self::UndefinedAttributeType => "Undefined attribute type",
+            Self::InappropriateMatching => "Inappropriate matching",
+            Self::ConstraintViolation => "Constraint violation",
+            Self::AttributeOrValueExists => "Type or value exists",
+            Self::InvalidAttributeSyntax => "Invalid syntax",
+            Self::NoSuchObject => "No such object",
+            Self::AliasProblem => "Alias problem",
+            Self::InvalidDnSyntax => "Invalid DN syntax",
+            Self::AliasDereferencingProblem => "Alias dereferencing problem",
+            Self::InappropriateAuthentication => "Inappropriate authentication",
+            Self::InvalidCredentials => "Invalid credentials",
+            Self::InsufficientAccessRights => "Insufficient access",
+            Self::Busy => "Server is busy",
+            Self::Unavailable => "Server is unavailable",
+            Self::UnwillingToPerform => "Server is unwilling to perform",
+            Self::LoopDetect => "Loop detected",
+            Self::NamingViolation => "Naming violation",
+            Self::ObjectClassViolation => "Object class violation",
+            Self::NotAllowedOnNonLeaf => "Operation not allowed on a non-leaf entry",
+            Self::NotAllowedOnRdn => "Operation not allowed on the RDN",
+            Self::EntryAlreadyExists => "Entry already exists",
+            Self::ObjectClassModsProhibited => "Object class modifications prohibited",
+            Self::AffectsMultipleDsas => "Operation affects multiple servers",
+            Self::Other(n) => match n {
+                118 => "Operation canceled",
+                119 => "No such operation",
+                120 => "Too late to cancel",
+                121 => "Cannot cancel",
+                122 => "Assertion failed",
+                123 => "Authorization denied",
+                _ => match client_text(n) {
+                    Some(t) => t,
+                    None => "Unknown result code",
+                },
+            },
+        }
+    }
+}
+
+/// The text of a client-side code (the C API's `LDAP_SERVER_DOWN` and
+/// its neighbours, 0x51 to 0x61), none for others.
+#[must_use]
+pub const fn client_text(n: u32) -> Option<&'static str> {
+    Some(match n {
+        0x51 => "Cannot reach the server",
+        0x52 => "Local error",
+        0x53 => "Cannot encode the request",
+        0x54 => "Cannot decode the response",
+        0x55 => "Timed out",
+        0x56 => "Unknown authentication method",
+        0x57 => "Bad search filter",
+        0x58 => "Canceled by the user",
+        0x59 => "Bad parameter",
+        0x5A => "Out of memory",
+        0x5B => "Cannot connect",
+        0x5C => "Not supported",
+        0x5D => "Control not found",
+        0x5E => "No results returned",
+        0x5F => "More results to return",
+        0x60 => "Client loop detected",
+        0x61 => "Referral hop limit exceeded",
+        _ => return None,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::ResultCode;
+
+    #[test]
+    fn texts() {
+        assert_eq!(ResultCode::Success.text(), "Success");
+        assert_eq!(ResultCode::from_number(0x5C).text(), "Not supported");
+        assert_eq!(ResultCode::Other(9).text(), "Unknown result code");
+        for n in 0..128 {
+            assert!(!ResultCode::from_number(n).text().is_empty());
+        }
+    }
 
     #[test]
     fn numbers_round_trip() {
