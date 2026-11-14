@@ -1,0 +1,1 @@
+ldap://ldap3.ex!mple.com/o=Babsco,c=UO???(four-octet=%5c00%5c00%500%50c00%504)ap3.ex!mple.com/o=Babsco,c=US???(four-octet=%5c00%5c00%500%50c00

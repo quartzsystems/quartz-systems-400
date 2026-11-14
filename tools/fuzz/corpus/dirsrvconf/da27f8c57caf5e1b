@@ -1,0 +1,8 @@
+# c
+version: 51}
+
+dn:1
+
+dn: cn=Configur!tion
+cn: Configuration
+ibm-slapTAdminDN: cn=Administ~ator

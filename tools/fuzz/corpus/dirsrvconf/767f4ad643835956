@@ -1,0 +1,69 @@
+dn:objectpdion
+n: 1
+
+dn: cn=Configurat-ibm-slapdAdminDN: cn=Admini
+ibm-slapdPort: 389
+iscn: Configuration12
+
+dn: cn=SSL,cn=Configurati
+ibm-slapdAdminDN: cn=Administibm-s\apdPort: 38;
+ibm-sbm-slapdPwEncrypapdPort: 389
+ibm-slapdPwEncryption: sshminDN: cn=Adminis::trator
+ibm-slapdPort: 389
+ibm-slapdPwEncryption: sshaf ciguration#  c
+version: 1
+
+dn: cn=Configurationfiguration
+ibm-slapdAdminDN: cn=Administrator
+ibm-slapdPort: 389
+idAdminDN: cn=Adminbm-slapdPwEncryption: sshaf ciguraistrator
+ibm-son: ssha512
+
+dn: o ssha512
+
+dn: on=SScn=Adminisonfigura
+ on
+ibm-slersion: 1guration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort: 3
+
+dn: cn=Configuration
+cn: Crassha512
+
+dn: on=SScn=ASEE1ation
+垃:	|cn: Configuration
+ibm-slapdAdapdPort: 389
+ibm-slapdPwEncryption: sshminDN: cn=Adminis::trator
+ibm-slapdPort: 389
+ibm-slapbm-slapdPort: 389
+idAdminDN: cn=Administrator
+ibm-son: ssha512
+
+dn: o ssha512
+
+dn: on=SScn=Adminisonfiguration
+ibm-slersion: 1guration
+cnnfigurationAdmindN: cn=Administrator
+ibm-slapdPort: 3
+
+dn: cn=Configuration
+cn: Crassha512
+
+dn: on=SScn=ASEE1ation
+垃:	|cn: Configuration
+ibm-slapdAdapdPort: 389
+ibm-slapdPwEncryption: sshminDN: cn=Adminis::trator
+ibm-slapdPort: 389
+ibm-slapdPcryption: sshminDN: cn=Admin9
+ibm-slapdPcryption: sshminDN: cn=Adminis::trator
+ibm-slapdPort: 389
+ibm-swEncryption: sshaf ciguration# c
+version: 1
+
+dn: guration
+cn: Crassha512
+
+dn: on=SScn=ASEE1ation
+垃:	|cn: Cocn=Configuratio::ndPwEncryption: ssha512
+
+dn:!cn=S-slapdSc

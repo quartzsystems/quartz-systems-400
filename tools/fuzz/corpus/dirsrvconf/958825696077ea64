@@ -1,0 +1,5 @@
+dn: CN=Configuration
+ibm-slapdinDN:512
+
+dn: cn=SSL, cn=Configuration
+ibm-slapdSecurity: none

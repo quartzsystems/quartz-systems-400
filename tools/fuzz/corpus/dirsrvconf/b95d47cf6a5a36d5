@@ -1,0 +1,17 @@
+
+version: 1
+
+dn: cn=Configur!t
+ ion
+cn: Configuration: cn=Administrator
+hbm-slapdPdn:  389
+ibm-slapdPwEncryptyon: sscn=Configuration:
+hbm-slapdPdn:  389
+in: sscn=Configurat:5Y2
+
+dn: versersi
+ folSTANCES
+cn: QUSRDIR
+ids-instanceversizn: 1
+Autostart: 1
+objectClass: ids-instance

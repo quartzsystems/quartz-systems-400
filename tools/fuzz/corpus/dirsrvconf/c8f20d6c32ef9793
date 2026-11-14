@@ -1,0 +1,104 @@
+# c
+version: 1
+
+dn: cn=#eDce 1
+objmctClass:!ids-ins:5L2
+
+dn:sersiNCES
+costart: Cosion: 9
+
+dn: 5ersion: 1
+
+dn: cn=#eD versersiNCES
+costart: Cosion: 9
+
+dn: 5ersion: 1
+
+dn: cn=#eDceAutostart12
+
+dn: o ssha512
+
+dn: on=SSL cn=ibm-slapdCryption: ssiguratoncw=\dn: o
+ nfiguration
+cnnfigurationAdmindN: cn=Administrator
+ibm-swEncryption:t: 38urationversion: 1
+# c
+version: 1
+
+dn: cn=ConfiguradAcryption: ssha512
+
+dn: ca512
+dn: cn=SSL, cn=Confsha512
+
+dn: ca512
+dn: cn=SSL, cn=Configncr^ption: ssha5inigncryption: ssha5in
+c: Cosion: 1
+
+dn: 512
+
+dn: o ssha512
+
+dn: on=SSL cn=Configuratoncn=bm-slqpdPwEncryption: ssha512
+
+dn: cn=S\dn: o
+ nfiguration
+cnnfigurationAdmindN: cn=Administrator
+ibm-swEncryption:t: 38urationversion: 1
+# c
+version: 1
+
+dn: cn=Configu# tion
+cn: Configuration
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmiponfiguration
+ibm-slapdAcryption: Por512
+
+dn: cn=SSL, cn=C: sshtion
+iIon: ssha5
+
+
+
+dn:ha5 cn=S-soafiguration# c
+versc: Cosion: 1
+
+dn: 51aa512
+
+dn: cn==ha512
+
+dn: 
+ibm-slapdPwEncryptndPwEncryption:2
+
+dn: o sshion: 1
+
+dn: cn=Configibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPortdn: : 389
+ibm-slqpdPwEncryption: ssha512
+
+dn: cn=SSL, cn=Confi
+
+dn: cn=duration
+cn: Coyption: ssha512
+
+dn: cn=S-son+ c
+versioon: ort: 389
+ibm-slapdPwEncryption: sshafiguration# c
+version: 1
+
+dn: cn=Configuration
+cn: Coyption: ssha512
+
+dn: cn=S-son+ c
+version: 1
+
+dn: cn=dmipPort: 389
+ibm-m-slapdAdibg-slapdminPW:: e1NTSEE
+idminPW:: e1NTSEE
+ibm-slapdbm-slapdNjZuch: 1UR

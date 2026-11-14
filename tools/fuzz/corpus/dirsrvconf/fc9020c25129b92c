@@ -1,0 +1,128 @@
+# c
+version: 1
+
+dn: cn=Co
+ nfiguratin
+cn: Cosibjet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-instaceAutostart: 1
+objet: 389
+ibobjectClass: ids-instance# 
+ids-instanceAutctClass: id QUSRDI::idssl-innfiguration
+cn: Cosio=: 1
+
+dn: cn= f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguraosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ilapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: idQUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-insversion: 1
+art: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+ibmversion:n
+cnnfigurationAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-instaceAutostart: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-innfiguration
+cn: Cosio=: 1
+
+dn: cn= f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguraosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ilapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: idQUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-insversion: 1
+art: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDs-ins:5L2
+
+dn: versersionNTSEE1MTJ=
+ibmch: 1
+ folSTANCES
+cn: QUSRDI::idssl-instanceAutostan=AdminiBtrator
+ibm-slapdPort: 389 nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-instaceAutostart: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-innfiguration
+cn: Cosio=: 1
+
+dn: cn= f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguraosio=: 1
+
+dn: cn=Co
+ nfiguration
+cnnfigurationAdminDN: cn=Administrator
+ilapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: idQUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-insversion: 1
+art: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDs-ins:5L2
+
+dn: versersionNTSEE1MTJ=
+ibmch: 1
+ folSTANCES
+cn: QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDdn: 
+-slapdPort: 31
+objectClass: dn: ids-instance

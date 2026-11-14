@@ -1,0 +1,14 @@
+# c
+version: 1
+
+dn: cn=Configur!tion
+cn: Configuration
+ibm-slapdAdminDN: cbm-slapdPort: 389
+ibm-slapdPwEncryption: ssha5L2
+
+dn: cn=
+ SSL, cn=Cdn: guration
+ibmdPwEcryversion: 1
+51}
+
+dn: cncn=Configuration=S-slapdSec

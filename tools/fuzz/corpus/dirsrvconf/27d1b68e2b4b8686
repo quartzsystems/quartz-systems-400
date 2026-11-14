@@ -1,0 +1,8 @@
+dn: CNKCONFIGURATI
+ ON-sl: cn=\o
+ nfigurati
+ibm-slapdSecurity:on
+cnnfigurationtor
+ibm-slapdPort: 389
+ibm-slapdPwEncryption:t: 389
+ibm-slapdPwEncryption:e

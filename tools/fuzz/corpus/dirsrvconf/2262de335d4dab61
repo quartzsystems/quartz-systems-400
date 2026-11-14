@@ -1,0 +1,14 @@
+dn:objectpdion
+n: 1
+
+dn: cn=Coqfigurat-ibm-dPort: 389
+iscn: Configuration12
+
+dn: cn=SSL,cn=Configurati
+ibm-slapdAdminDN: cn=Administibm-s\adn: rt: 38;
+ibm-sbm-4lapdPwEncryption: ssgurati
+ibm-slapdAdminDN: cn=Administibm-s\adn: ha512
+
+dn: cn=SSL,cn=Configurationion: ssha512
+
+dn: cn

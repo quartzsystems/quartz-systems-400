@@ -1,0 +1,9 @@
+# c
+versibm-slapdn: cn=Co
+ nfiguration
+cn: ConfigurationAdminDN: cn=Administrator
+ibm-slapdPort: 389
+ibm-slkpdPwEncryption: ssha512
+
+dn: on=SSL cn=Configuraton
+ibm-slapdSecurityslapdPort: 38: none

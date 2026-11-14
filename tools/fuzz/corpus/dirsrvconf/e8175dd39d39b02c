@@ -1,0 +1,7 @@
+kkkcn=Cocn=SSL, cn=configsha512
+
+dn: cn=SSL, cn=Cocn=SSL, cn=configuratioa
+ibm-slapdrt: 3<9
+ibm-slapdPwn: ssha512
+
+dn: cn=SSB, cn=ConfSecurity: none

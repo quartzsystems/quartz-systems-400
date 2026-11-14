@@ -1,0 +1,17 @@
+# c
+version: 1
+
+dn: cnd.: figuration
+cn: Configuration
+ibm-slap
+ dminDN: cy=Administrator
+ibm-slapdPort: 39
+
+
+dn: cnd.: figuration
+cn: ConfiguratioDN: cyibm-slapdPwE`cryption: ssha512
+
+dn: cn=SSL, cn=Configuration
+ibmdPwEncryption: ssha512
+
+dn: dn: PW:: e1MT-slapdNoSuch: 

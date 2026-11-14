@@ -1,0 +1,35 @@
+# c::
+version: 1
+
+dn: cn=objectClass: ids-instance
+Co
+ nsion: 1
+
+dn: 512ion: 1
+
+dn: cn=Configuration
+cn: Configuration
+ibm-slapdAcryption: ssha512
+
+dn: cn=S-son+ c
+versioa: 1
+
+dn: cn=dmipPor512
+
+dn: cn=SSL, cn=S: sshtion
+iIoo: ssha5
+
+
+
+dn:ha5 cn=S-soafiguration# c
+versionn: 1
+
+dn: cn=objectClass:# ds-instance
+Co
+ nsion: 1
+
+dn: 512i: 1
+
+dn: cn=Configibm-slapdAcryption: ssha512
+
+dn: cn=SS-

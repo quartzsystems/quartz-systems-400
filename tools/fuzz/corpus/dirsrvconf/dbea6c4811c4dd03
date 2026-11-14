@@ -1,0 +1,38 @@
+dn: CM=CONFIGURATION
+idn°: PW:: e1MT-sl fm-flapdNoSucversion: 1
+;dn: cn=Co
+ nfiguration
+cn: Cosio=: 1
+
+dn: cn= f-slapdSecuritfold
+ e1
+ fm-flapdNoSucversion: 1
+
+dn: cn=Co
+ nfiguration
+cn: Cos nfONFIGURATION
+idn°: PW:: e1MT-sl fm-fliguration
+cnnfigurationAdminDN: cn=Administrator
+ilapdPort: 389
+ibm-slapdPwElass: ids-instance
+ids-instanceAutctClass: id QUSRDI::idssd-instanceAutostart: tor
+rt: 1
+objet: 389
+ibobjectClass: ids-instance
+ids-instanceAutctClass: idQUSRDI::idssl-instanceAobjectClass: ids-instance
+ids-instaceAutostart: 1
+objet: 389
+ibobjectClass: idscn=ConfigurationnminDs-ins:5L2
+
+dn: versersionNTnstanceAutctClass6 id QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDs-ins:5L2
+
+dn: versersionNTSEE1MTJ=
+ibmch: 1
+ folSTANCES
+cn: QUSRDI::idssl-instanceAutostart: tor
+ibmversion:tion
+cnminDdn: 
+-slapdPort: 31
+objectClass: dn: ids-instance
