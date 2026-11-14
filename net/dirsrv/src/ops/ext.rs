@@ -39,13 +39,9 @@ impl Directory {
         };
         // Whoami and password modify run as the proxied identity, when
         // the control names one (RFC 4370).
-        let acting = super::controls::parse(
-            msg,
-            super::controls::Op::Extended,
-            &self.settings,
-            s.admin,
-        )
-        .and_then(|ctl| self.acting(txn, s, ctl.proxy.as_deref()));
+        let acting =
+            super::controls::parse(msg, super::controls::Op::Extended, &self.settings, s.admin)
+                .and_then(|ctl| self.acting(txn, s, ctl.proxy.as_deref()));
         let acting = match acting {
             Ok(a) => a,
             Err(e) => return Outcome::one(ext_reply(e.result(), None, None), Vec::new()),

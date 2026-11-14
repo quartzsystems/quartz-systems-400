@@ -56,7 +56,11 @@ impl Directory {
                 true,
             ),
             Place::UnderMonitor => {
-                return Err(OpError::unwilling("cn=monitor has no entries below it"));
+                return Err(OpError::new(
+                    ResultCode::NoSuchObject,
+                    "cn=monitor has no entries below it",
+                )
+                .matched(crate::backend::monitor::DN));
             }
             Place::Backend(_) | Place::Outside => {
                 let f = self.find_visible(txn, s, &d, ctl.manage)?;

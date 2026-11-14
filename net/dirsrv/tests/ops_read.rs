@@ -78,7 +78,7 @@ fn special_entries() {
         "(objectClass=*)",
         &[],
     );
-    assert_eq!(done(&r).code, ResultCode::UnwillingToPerform);
+    assert_eq!(done(&r).code, ResultCode::NoSuchObject);
     let r = t.search(&anon, "cn=changelog", Scope::Base, "(objectClass=*)", &[]);
     assert_eq!(done(&r).code, ResultCode::NoSuchObject);
 }

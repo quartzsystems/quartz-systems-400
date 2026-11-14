@@ -464,12 +464,16 @@ impl Parser<'_> {
             out.push((h << 4) | l);
             self.i += 2;
         } else {
-            // Any other character stands for itself (a special, or a
-            // multi-byte character copied whole).
-            let len = utf8_len(c);
-            let end = (self.i + len).min(self.s.len());
-            out.extend_from_slice(&self.s[self.i..end]);
-            self.i = end;
+            // Only the specials may be escaped (RFC 4514 section 3:
+            // `pair`); `\z` is not a DN, as IBM's server says too.
+            if !matches!(
+                c,
+                b'\\' | b'"' | b'+' | b',' | b';' | b'<' | b'>' | b' ' | b'#' | b'='
+            ) {
+                return Err(self.err("only a special or a hex pair may follow '\\'"));
+            }
+            out.push(c);
+            self.i += 1;
         }
         Ok(())
     }
@@ -520,15 +524,6 @@ impl Parser<'_> {
                 }
             }
         }
-    }
-}
-
-fn utf8_len(b: u8) -> usize {
-    match b {
-        0xC0..=0xDF => 2,
-        0xE0..=0xEF => 3,
-        0xF0..=0xF7 => 4,
-        _ => 1,
     }
 }
 
@@ -587,6 +582,13 @@ mod tests {
         assert_eq!(p("cn=a\\ ").0[0].0[0].value, b"a ");
         assert_eq!(p("cn=\"a, b\"").0[0].0[0].value, b"a, b");
         assert_eq!(p("OID.2.5.4.3=x").0[0].0[0].ty, "2.5.4.3");
+    }
+
+    #[test]
+    fn only_specials_and_hex_pairs_are_escaped() {
+        assert!(Dn::parse(r"cn=\zz").is_err());
+        assert_eq!(Dn::parse(r"cn=a\,b").unwrap().to_string(), r"cn=a\,b");
+        assert_eq!(Dn::parse(r"cn=\61").unwrap().to_string(), "cn=a");
     }
 
     #[test]

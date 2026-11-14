@@ -510,7 +510,14 @@ impl Directory {
                 self.push_special(&mut c, crate::backend::monitor::DN, attrs);
             }
             Place::UnderMonitor => {
-                return fail(&OpError::unwilling("cn=monitor has no entries below it"));
+                // As the primary answers (32, cn=monitor matched).
+                return fail(
+                    &OpError::new(
+                        ResultCode::NoSuchObject,
+                        "cn=monitor has no entries below it",
+                    )
+                    .matched(crate::backend::monitor::DN),
+                );
             }
             Place::Outside => return fail(&self.outside(&base)),
             Place::Backend(_) => {

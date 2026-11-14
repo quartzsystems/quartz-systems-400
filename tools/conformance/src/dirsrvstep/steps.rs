@@ -56,7 +56,8 @@ const PUB_USER: &str = "PUBUSER";
 /// Where the users agent publishes.
 const PUB_PARENT: &str = "ou=Users,cn=localhost";
 /// The parent's ACL: anyone adds, deletes and writes below it.
-const PUB_ACL: &str = "group:CN=ANYBODY:object:ad:normal:rwsc:sensitive:rwsc:critical:rwsc:system:rsc:restricted:rsc";
+const PUB_ACL: &str =
+    "group:CN=ANYBODY:object:ad:normal:rwsc:sensitive:rwsc:critical:rwsc:system:rsc:restricted:rsc";
 /// The publishing configuration.
 const PUB_CONF: &str = "/QIBM/UserData/OS400/DirSrv/publish.conf";
 
@@ -207,7 +208,9 @@ impl Suite {
         full_log(s)?;
         let none = s.command("CHGDIRSVRA DN(*ADMINDN ' ')", CMD)?;
         if !none.contains("GLD0202") {
-            return Err(format!("CHGDIRSVRA without a password: no GLD0202:\n{none}"));
+            return Err(format!(
+                "CHGDIRSVRA without a password: no GLD0202:\n{none}"
+            ));
         }
         // Started before the password is set: the administrator cannot
         // bind; CHGDIRSVRA's password takes effect at once.
@@ -297,31 +300,8 @@ impl Suite {
 
     fn dir_ldaptest_body(&self, s: &mut Session) -> Result<String, String> {
         let (p, sp) = self.dir_ensure(s)?;
-        let env = [("LDAPTEST_ADMIN_PW", ADMIN_PW)];
-        let args: Vec<String> = [
-            "127.0.0.1",
-            "--port",
-            &p.to_string(),
-            "--ldaps-port",
-            &sp.to_string(),
-            "--timeout",
-            "60",
-            "--suite",
-            "read,controls,ext,write,acl,ldif",
-            "--suffix",
-            SUFFIX,
-        ]
-        .iter()
-        .map(|a| (*a).to_string())
-        .collect();
-        let r = tool::run(&args, &env, RUN_LIMIT)?;
-        let _ = std::fs::write(self.out_dir.join("dirsrv-187-ldaptest.txt"), r.text());
-        let o = Outcome::of(&r.out);
-        if o.ok.is_empty() {
-            return Err(format!("ldaptest ran nothing:\n{}", r.text()));
-        }
-        let bad = new_failures(&o);
-        // The read-only scenarios as the primary's record has them.
+        // First, on the shipped entries: the read-only scenarios as the
+        // primary's record has them.
         let ours = self.out_dir.join("dirsrv-ldaptest-qs400.txt");
         let oracle: Vec<String> = [
             "oracle",
@@ -347,6 +327,30 @@ impl Suite {
         let dpath = self.out_dir.join("dirsrv-187-oracle.diff");
         let _ = std::fs::write(&dpath, d.join("\n") + "\n");
         let scen = d.iter().filter(|l| l.starts_with("@ ")).count();
+        let env = [("LDAPTEST_ADMIN_PW", ADMIN_PW)];
+        let args: Vec<String> = [
+            "127.0.0.1",
+            "--port",
+            &p.to_string(),
+            "--ldaps-port",
+            &sp.to_string(),
+            "--timeout",
+            "60",
+            "--suite",
+            "read,controls,ext,write,acl,ldif",
+            "--suffix",
+            SUFFIX,
+        ]
+        .iter()
+        .map(|a| (*a).to_string())
+        .collect();
+        let r = tool::run(&args, &env, RUN_LIMIT)?;
+        let _ = std::fs::write(self.out_dir.join("dirsrv-187-ldaptest.txt"), r.text());
+        let o = Outcome::of(&r.out);
+        if o.ok.is_empty() {
+            return Err(format!("ldaptest ran nothing:\n{}", r.text()));
+        }
+        let bad = new_failures(&o);
         if !bad.is_empty() {
             return Err(format!(
                 "{} scenarios failed:\n{}\n(the whole run: {})",
@@ -443,7 +447,9 @@ impl Suite {
         }
         let prf = s.command("DSPUSRPRF USRPRF(LDBAD)", CMD)?;
         if !prf.contains("*DISABLED") {
-            return Err(format!("LDBAD is not *DISABLED after 3 wrong binds:\n{prf}"));
+            return Err(format!(
+                "LDBAD is not *DISABLED after 3 wrong binds:\n{prf}"
+            ));
         }
         let pw = s.command("DSPAUDJRNE ENTTYP(PW)", CMD)?;
         if !pw.contains("LDBAD") {
@@ -451,7 +457,13 @@ impl Suite {
         }
         // QIBM_DIRSRV_ADMIN: an administrator; a plain profile is not.
         let mut a = bound(p, &profile_dn(&root, "LDADM"), pw_of("LDADM"))?;
-        let all = search(&mut a, &root, Scope::Sub, "(objectClass=os400-usrprf)", &["1.1"])?;
+        let all = search(
+            &mut a,
+            &root,
+            Scope::Sub,
+            "(objectClass=os400-usrprf)",
+            &["1.1"],
+        )?;
         if all.entries.len() < 5 {
             return Err(format!(
                 "LDADM (QIBM_DIRSRV_ADMIN) sees {} profiles",
@@ -462,7 +474,10 @@ impl Suite {
         let added = add(
             &mut a,
             &ou,
-            &[("objectClass", &["organizationalUnit"]), ("ou", &["ldadm188"])],
+            &[
+                ("objectClass", &["organizationalUnit"]),
+                ("ou", &["ldadm188"]),
+            ],
         )?;
         let deleted = delete(&mut a, &ou)?;
         if added != 0 || deleted != 0 {
@@ -472,12 +487,21 @@ impl Suite {
         let refused = add(
             &mut u,
             &ou,
-            &[("objectClass", &["organizationalUnit"]), ("ou", &["ldadm188"])],
+            &[
+                ("objectClass", &["organizationalUnit"]),
+                ("ou", &["ldadm188"]),
+            ],
         )?;
         if refused != 50 {
             return Err(format!("LDUSER's add: {refused} rather than 50"));
         }
-        let seen = search(&mut u, &root, Scope::Sub, "(objectClass=os400-usrprf)", &["1.1"])?;
+        let seen = search(
+            &mut u,
+            &root,
+            Scope::Sub,
+            "(objectClass=os400-usrprf)",
+            &["1.1"],
+        )?;
         Ok(format!(
             "ldaptest projected: {} ok ({}); LDBAD disabled after 3 wrong binds, its right password then 49, a PW entry; LDADM (QIBM_DIRSRV_ADMIN) sees {} profiles and adds under {SUFFIX}; LDUSER sees {} and its add is 50",
             o.ok.len(),
@@ -540,7 +564,9 @@ impl Suite {
             std::fs::write(&kp, k).map_err(|e| e.to_string())?;
             Some((cp, kp))
         } else {
-            return Err(format!("QSEXPCRT's file holds no certificate and key:\n{pem}"));
+            return Err(format!(
+                "QSEXPCRT's file holds no certificate and key:\n{pem}"
+            ));
         };
         clean(
             s,
@@ -549,12 +575,24 @@ impl Suite {
         )?;
         // SSLTLS and a suffix for the client's entry, through cn=configuration.
         let mut a = admin(p)?;
-        let rc = replace(&mut a, "cn=SSL, cn=Configuration", "ibm-slapdSecurity", &["SSLTLS"])?;
+        let rc = replace(
+            &mut a,
+            "cn=SSL, cn=Configuration",
+            "ibm-slapdSecurity",
+            &["SSLTLS"],
+        )?;
         if rc != 0 {
             return Err(format!("ibm-slapdSecurity: SSLTLS: {rc}"));
         }
-        let dir_dn = "cn=Directory, cn=RDBM Backends, cn=IBM Directory, cn=Schemas, cn=Configuration";
-        let sfx = search(&mut a, dir_dn, Scope::Base, "(objectClass=*)", &["ibm-slapdSuffix"])?;
+        let dir_dn =
+            "cn=Directory, cn=RDBM Backends, cn=IBM Directory, cn=Schemas, cn=Configuration";
+        let sfx = search(
+            &mut a,
+            dir_dn,
+            Scope::Base,
+            "(objectClass=*)",
+            &["ibm-slapdSuffix"],
+        )?;
         let mut suffixes: Vec<String> = sfx
             .entries
             .first()
@@ -624,7 +662,12 @@ impl Suite {
         let _ = std::fs::write(self.out_dir.join("dirsrv-189-ldaptest.txt"), r.text());
         let o = Outcome::of(&r.out);
         let bad = new_failures(&o);
-        let need = ["starttls", "ldaps", "sasl-external", "sasl-external-no-cert"];
+        let need = [
+            "starttls",
+            "ldaps",
+            "sasl-external",
+            "sasl-external-no-cert",
+        ];
         let missing: Vec<&str> = need.iter().copied().filter(|n| !o.passed(n)).collect();
         if !bad.is_empty() || !missing.is_empty() {
             return Err(format!(
@@ -694,7 +737,11 @@ impl Suite {
             let _ = write!(m, "echo \"{l}\" >> /tmp/m190.ldif; ");
         }
         ok(s, "write", &format!("rm -f /tmp/m190.ldif; {m}"))?;
-        ok(s, "ldapmodify", &format!("ldapmodify {auth} -f /tmp/m190.ldif"))?;
+        ok(
+            s,
+            "ldapmodify",
+            &format!("ldapmodify {auth} -f /tmp/m190.ldif"),
+        )?;
         ok(
             s,
             "ldapcompare (true)",
@@ -706,7 +753,9 @@ impl Suite {
             CMD,
         )?;
         if f || !no.contains("exit status 5.") {
-            return Err(format!("ldapcompare (false) did not end with status 5:\n{no}"));
+            return Err(format!(
+                "ldapcompare (false) did not end with status 5:\n{no}"
+            ));
         }
         ok(
             s,
@@ -811,7 +860,13 @@ impl Suite {
             let end = t0 + Duration::from_secs(240);
             loop {
                 let mut a = admin(p)?;
-                let r = search(&mut a, PUB_PARENT, Scope::Sub, &filter, &["cn", "publisherName"])?;
+                let r = search(
+                    &mut a,
+                    PUB_PARENT,
+                    Scope::Sub,
+                    &filter,
+                    &["cn", "publisherName"],
+                )?;
                 let _ = a.unbind();
                 let e = r.entries.first().map(|e| {
                     format!(
@@ -827,7 +882,11 @@ impl Suite {
                 if Instant::now() > end {
                     return Err(format!(
                         "{PUB_USER} {} under {PUB_PARENT} within 240 s ({:?})",
-                        if want { "not published" } else { "still published" },
+                        if want {
+                            "not published"
+                        } else {
+                            "still published"
+                        },
                         r.result
                     ));
                 }
