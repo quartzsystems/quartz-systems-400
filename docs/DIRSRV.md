@@ -215,14 +215,14 @@ the backends and the schema, and answers:
 
 | Request | What |
 |---|---|
-| 1560 `dir_open` | the job's instance: its configuration, suffixes, limits, a session ID |
-| 1561 `dir_bind` | simple bind or SASL EXTERNAL; the identity (DN, groups, admin or not) kept with the session; failures counted and audited (§9) |
-| 1562 `dir_op` | add, modify, delete, modify DN, compare, an extended operation; one store transaction each |
-| 1563 `dir_search` | a search started: candidates chosen, a cursor kept in the service |
-| 1564 `dir_next` | the next entries of a cursor (at most N or B bytes per answer, so the single-threaded service never runs one long search) |
-| 1565 `dir_close` | a cursor or a session ended |
-| 1566 `dir_watch` | persistent search: changes under a base, delivered with 1567 |
-| 1567 `dir_changes` | the changes since the last call (polled by the job's watcher thread, bounded wait) |
+| 1560 `dir_open` | a connection to the job's instance: a session ID and the settings the job runs by (ports, `ibm-slapdSecurity`, size and time limits, idle and write time-outs, the TLS application ID, the largest request); the first open by a job opens the instance (its file checked, `GLD0126`/`GLD0127`/`GLD0232`; its store made at the first) |
+| 1561 `dir_bind` | a bind request with the connection's facts (client, TLS, the client certificate's subject): simple or SASL EXTERNAL; the identity (DN, groups, administrator or not) kept with the session; committed whatever the result; failures counted and audited (§9) |
+| 1562 `dir_op` | add, modify, delete, modify DN, compare, an extended operation; one store transaction, committed when it succeeded, then its changes go to the persistent searches; `start_tls` in the answer when StartTLS succeeded |
+| 1563 `dir_search` | a search (or the next page of a paged one) and its first entries within the job's budget |
+| 1564 `dir_next` | the next entries of a cursor (at most N entries or B bytes per answer, capped at 1000 and 4 MiB, so the single-threaded service never runs one long search) |
+| 1565 `dir_close` | the search of a message ID abandoned (its cursor or persistent search), or the connection ended (unbind, close, idle time-out: the session and all it holds, and the `UB` audit entry) |
+| 1566 `dir_conns` | the job's connection counts (open, total, StartTLS, secure port), for `cn=monitor` |
+| 1567 `dir_changes` | what the session's persistent searches saw since the last call, answered at once (the job's watcher thread polls), and the searches that no longer exist |
 | 1568 `dir_admin` | `CHGDIRSVRA`, the configuration's changes, the instance list, Navigator's and QAP's questions |
 | 1569 | reserved |
 | 1570 `dirpub_config` | the publishing configuration for `QGLDPUBE` and `QGLDPUBA`: the file's text and the agents' passwords unsealed (only to `QDIRSRV`'s jobs) (§10.1) |
@@ -251,6 +251,27 @@ request names one. Until the service answers 1568 the job's sender
 
 ACL evaluation, schema checking and password policy run in the
 service, beside the data, with the session's identity.
+
+The protocol is `work/stg/src/dir.rs`. LDAP messages travel as their
+BER bytes (`ldap::msg` at both ends): a request is the message the
+client sent; each answer's `replies` are whole messages with that
+message's ID, written to the connection in order, and its `state` says
+what follows (`Done`, `More { cursor }`: ask 1564, `Paused { cursor }`:
+a page of paged results is over, `Watching { watch }`: a persistent
+search's changes come from 1567). Unbind and abandon are the job's,
+told with 1565. Only the instance's job asks (user `QDIRSRV`, job name
+the instance's; `CPF2189` otherwise), and a session answers only the
+job that opened it; refusals are `DirError` (message ID, data, text).
+The service (`stgsvc/dirsrv/serve.rs`) keeps the instance open while
+its job runs; when the job ends its sessions, cursors and persistent
+searches go, and the next start reads the configuration again. A
+change through `cn=configuration` is written to the file after the
+request (passwords hashed as `CHGDIRSVRA` keeps them) and what takes
+effect at once is applied; `serve::config_changed` does the same for a
+change made outside (`CHGDIRSVRA`, `dir_admin`). `ibm-slapdIndex`
+values (on the entry store's backend entry) are attribute names,
+comma or space separated; at each open the store gets an index for
+each and loses the configured ones no longer listed.
 
 ## 5. The entry store
 
@@ -913,11 +934,21 @@ nothing (replication is refused, §14).
 (`os400-root`), `cn=accounts` (container) and one `os400-usrprf` entry
 per profile, `os400-profile=NAME,cn=accounts,os400-sys=SYSTEM`, with
 the `os400-*` attributes the schema defines, filled from the profile.
-Group profiles are entries the same way, members listed. It is
-read-only through LDAP (`ibm-slapdOs400UsrprjRead: TRUE`; a write is 53
-unwillingToPerform), and a user sees the entries their profile may
-display (`*READ` to the profile, or `*SECADM`), anonymous users only the
-root (as the primary shows).
+Group profiles are entries the same way, members listed
+(`os400-groupmember`). The password and document password are never
+shown. It is read-only through LDAP (`ibm-slapdOs400UsrprjRead: TRUE`;
+`FALSE` stops the start with `GLD0232`; a write is 53
+unwillingToPerform). Who sees what: an administrator session and a
+profile with `*ALLOBJ` or `*SECADM` every entry; a session bound as a
+profile `cn=accounts`, itself and the profiles it has `*READ` to;
+anyone else (anonymous, a DN of the entry store) the root only, whose
+entry shows only its object classes (as the primary shows). A hidden
+entry resolves but is not given, so a search of it succeeds with no
+entries, as the primary answers anonymous users; for a session that
+does not see every profile a profile that does not exist answers the
+same, so profile names cannot be found out by asking. The profiles come
+through `backend::projected::Profiles`, which the service implements
+over `sec` (`stgsvc/dirsrv/profiles.rs`).
 
 **Binds:**
 
@@ -944,9 +975,13 @@ root (as the primary shows).
   profile's groups are its groups for access control. A profile with
   function usage `QIBM_DIRSRV_ADMIN` allowed binds as an administrator
   (IBM's administrative group of OS profiles);
-- SASL `EXTERNAL` over TLS with a client certificate: the certificate's
-  subject DN, if an entry with that DN exists (or the
-  `ibm-slapdCertMapping`-free rule: exactly the subject DN);
+- SASL `EXTERNAL` over TLS with a client certificate: the
+  certificate's subject DN is the identity only when it names something
+  the server knows: a projected DN of a profile that is enabled and has
+  a password (the profile's groups and function usage as for a simple
+  bind; no password is checked and nothing is counted), or else an
+  entry with exactly that DN (no certificate mapping); anything else is
+  49;
 - anonymous, when `ibm-slapdAllowAnon: TRUE` (the default).
 
 Refused (§14): `DIGEST-MD5`, `CRAM-MD5`, `GSSAPI` (Kerberos),
