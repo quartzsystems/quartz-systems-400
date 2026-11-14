@@ -218,7 +218,7 @@ mod tests {
                 text: "  Jane Q. Smith ".into(),
                 mail: Some("jane@example.com".into()),
             }),
-            "QS400 QSHQ400",
+            "cn=QS400 QSHQ400",
         );
         let parent = Dn::parse("ou=Users,dc=example,dc=com").unwrap();
         assert_eq!(
@@ -232,7 +232,7 @@ mod tests {
         assert_eq!(vals(&w, "sn"), ["Smith"]);
         assert_eq!(vals(&w, "uid"), ["JSMITH"]);
         assert_eq!(vals(&w, "mail"), ["jane@example.com"]);
-        assert_eq!(vals(&w, "publisherName"), ["QS400 QSHQ400"]);
+        assert_eq!(vals(&w, "publisherName"), ["cn=QS400 QSHQ400"]);
         let add = w.add_attrs();
         assert_eq!(add[0].ty, "objectClass");
         assert_eq!(add[0].vals.len(), USER_CLASSES.len());

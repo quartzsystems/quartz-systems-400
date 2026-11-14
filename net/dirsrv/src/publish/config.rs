@@ -218,10 +218,11 @@ impl AgentConfig {
     }
 }
 
-/// `QS400 ` and the system name: the publisher value by default.
+/// `cn=QS400 ` and the system name: the publisher value by default
+/// (`publisherName` has DN syntax).
 #[must_use]
 pub fn default_publisher(system: &str) -> String {
-    format!("QS400 {}", system.trim())
+    format!("cn=QS400 {}", system.trim())
 }
 
 /// The whole file.

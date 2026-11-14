@@ -57,7 +57,7 @@ fn the_example_reads() {
     assert_eq!(u.parent(), "ou=Users,dc=example,dc=com");
     assert!(u.create_parent);
     assert_eq!((u.retry, u.resync), (300, 86_400));
-    assert_eq!(u.publisher_name("QSHQ400"), "QS400 QSHQ400");
+    assert_eq!(u.publisher_name("QSHQ400"), "cn=QS400 QSHQ400");
     // The printer agent is not in the file: shipped and disabled.
     assert_eq!(c.agent(Kind::Printers), &AgentConfig::new(Kind::Printers));
 }

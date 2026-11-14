@@ -1224,7 +1224,7 @@ qs400-pubResync: 86400
 | `qs400-pubCreateParent` | add the parent and its missing ancestors | `TRUE` |
 | `qs400-pubRetry` | seconds before the first retry, 10 to 86400 | 300 |
 | `qs400-pubResync` | seconds between full resyncs, 0 for none, else 60 or more | 86400 |
-| `qs400-pubPublisher` | the `publisherName` value | `QS400 ` and the system name |
+| `qs400-pubPublisher` | the `publisherName` value | `cn=QS400 ` and the system name (`publisherName` has DN syntax, so a value of this attribute is a DN) |
 
 The agents are `cn=users,cn=publishing` and `cn=printers,cn=publishing`;
 another `cn=` under `cn=publishing`, an agent twice, an attribute this
