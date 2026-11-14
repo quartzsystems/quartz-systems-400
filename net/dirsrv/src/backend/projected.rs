@@ -139,31 +139,32 @@ enum Viewer {
     Outsider,
 }
 
-/// The projected backend over `P`.
-pub struct ProjectedBackend<P: Profiles> {
+/// The projected suffix's DNs: the root, the container, a profile's.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Names {
     suffix: Dn,
     container: Dn,
-    /// The profiles.
-    pub profiles: P,
 }
 
-impl<P: Profiles> ProjectedBackend<P> {
-    /// The backend under `suffix` (`os400-sys=NAME`).
+impl Names {
+    /// The names under `suffix` (`os400-sys=NAME`).
     ///
     /// # Errors
     /// 34 when `suffix` is not a DN.
-    pub fn new(suffix: &str, profiles: P) -> OpResult<Self> {
+    pub fn new(suffix: &str) -> OpResult<Self> {
         let suffix = Dn::parse(suffix)
             .map_err(|_| OpError::new(ResultCode::InvalidDnSyntax, format!("suffix {suffix}")))?;
         let container = suffix.child(Rdn(vec![Ava {
             ty: "cn".into(),
             value: b"accounts".to_vec(),
         }]));
-        Ok(Self {
-            suffix,
-            container,
-            profiles,
-        })
+        Ok(Self { suffix, container })
+    }
+
+    /// The suffix.
+    #[must_use]
+    pub fn suffix(&self) -> &Dn {
+        &self.suffix
     }
 
     /// The DN of profile `name`.
@@ -212,6 +213,44 @@ impl<P: Profiles> ProjectedBackend<P> {
             return Some(Named::UnderContainer);
         }
         Some(Named::Profile(name))
+    }
+}
+
+/// The projected backend over `P`.
+pub struct ProjectedBackend<P: Profiles> {
+    names: Names,
+    /// The profiles.
+    pub profiles: P,
+}
+
+impl<P: Profiles> ProjectedBackend<P> {
+    /// The backend under `suffix` (`os400-sys=NAME`).
+    ///
+    /// # Errors
+    /// 34 when `suffix` is not a DN.
+    pub fn new(suffix: &str, profiles: P) -> OpResult<Self> {
+        Ok(Self {
+            names: Names::new(suffix)?,
+            profiles,
+        })
+    }
+
+    /// Its names.
+    #[must_use]
+    pub fn names(&self) -> &Names {
+        &self.names
+    }
+
+    fn named(&self, schema: &Schema, dn: &Dn) -> Option<Named> {
+        self.names.named(schema, dn)
+    }
+
+    fn profile_of(&self, schema: &Schema, dn: &Dn) -> Option<String> {
+        self.names.profile_of(schema, dn)
+    }
+
+    fn profile_dn(&self, name: &str) -> String {
+        self.names.profile_dn(name)
     }
 
     fn viewer(&self, txn: &mut Txn<'_>, schema: &Schema, session: &Session) -> Viewer {
@@ -310,7 +349,7 @@ impl<P: Profiles> Backend for ProjectedBackend<P> {
     }
 
     fn suffixes(&self) -> Vec<Dn> {
-        vec![self.suffix.clone()]
+        vec![self.names.suffix.clone()]
     }
 
     fn read_only(&self) -> bool {
@@ -377,12 +416,12 @@ impl<P: Profiles> Backend for ProjectedBackend<P> {
     ) -> OpResult<Option<DirEntry>> {
         let viewer = self.viewer(txn, schema, session);
         let (dn, attrs) = match id {
-            ROOT => (self.suffix.to_string(), Self::root_entry()),
+            ROOT => (self.names.suffix.to_string(), Self::root_entry()),
             CONTAINER => {
                 if matches!(viewer, Viewer::Outsider) {
                     return Ok(None);
                 }
-                (self.container.to_string(), Self::container_entry())
+                (self.names.container.to_string(), Self::container_entry())
             }
             _ => {
                 let Some(name) = profile_name(id) else {

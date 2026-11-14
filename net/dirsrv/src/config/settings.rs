@@ -54,6 +54,8 @@ pub struct AuditSwitches {
     pub extop: bool,
     /// `ibm-auditFailedOPonly`: only operations that failed.
     pub failed_only: bool,
+    /// `ibm-auditUnbind`.
+    pub unbind: bool,
 }
 
 impl AuditSwitches {
@@ -166,6 +168,7 @@ fn audit(conf: &SlapdConf) -> AuditSwitches {
         moddn: flag(conf, AUDIT, "ibm-auditModifyDN", false),
         extop: flag(conf, AUDIT, "ibm-auditExtOp", false),
         failed_only: flag(conf, AUDIT, "ibm-auditFailedOPonly", true),
+        unbind: flag(conf, AUDIT, "ibm-auditUnbind", true),
     }
 }
 
