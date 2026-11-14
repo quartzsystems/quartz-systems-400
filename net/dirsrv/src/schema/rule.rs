@@ -115,7 +115,13 @@ const SUB: &str = "1.3.6.1.4.1.1466.115.121.1.58";
 
 macro_rules! rule {
     ($oid:literal, $name:literal, $syn:expr, $kind:ident, $imp:ident) => {
-        Rule { oid: $oid, name: $name, syntax: $syn, kind: Kind::$kind, imp: Imp::$imp }
+        Rule {
+            oid: $oid,
+            name: $name,
+            syntax: $syn,
+            kind: Kind::$kind,
+            imp: Imp::$imp,
+        }
     };
 }
 
@@ -126,51 +132,257 @@ const fn s(n: &'static str) -> &'static str {
 /// Every matching rule QS/400 knows. IBM's rules without an RFC
 /// equivalent are mapped to the nearest behaviour (docs/DIRSRV.md §6).
 pub const RULES: &[Rule] = &[
-    rule!("2.5.13.0", "objectIdentifierMatch", s("1.3.6.1.4.1.1466.115.121.1.38"), Equality, Oid),
-    rule!("2.5.13.1", "distinguishedNameMatch", s("1.3.6.1.4.1.1466.115.121.1.12"), Equality, Dn),
+    rule!(
+        "2.5.13.0",
+        "objectIdentifierMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.38"),
+        Equality,
+        Oid
+    ),
+    rule!(
+        "2.5.13.1",
+        "distinguishedNameMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.12"),
+        Equality,
+        Dn
+    ),
     rule!("2.5.13.2", "caseIgnoreMatch", DS, Equality, CaseIgnore),
-    rule!("2.5.13.3", "caseIgnoreOrderingMatch", DS, Ordering, CaseIgnore),
-    rule!("2.5.13.4", "caseIgnoreSubstringsMatch", SUB, Substring, CaseIgnore),
+    rule!(
+        "2.5.13.3",
+        "caseIgnoreOrderingMatch",
+        DS,
+        Ordering,
+        CaseIgnore
+    ),
+    rule!(
+        "2.5.13.4",
+        "caseIgnoreSubstringsMatch",
+        SUB,
+        Substring,
+        CaseIgnore
+    ),
     rule!("2.5.13.5", "caseExactMatch", DS, Equality, CaseExact),
-    rule!("2.5.13.6", "caseExactOrderingMatch", DS, Ordering, CaseExact),
-    rule!("2.5.13.7", "caseExactSubstringsMatch", SUB, Substring, CaseExact),
-    rule!("2.5.13.8", "numericStringMatch", s("1.3.6.1.4.1.1466.115.121.1.36"), Equality, Numeric),
-    rule!("2.5.13.9", "numericStringOrderingMatch", s("1.3.6.1.4.1.1466.115.121.1.36"), Ordering, Numeric),
-    rule!("2.5.13.10", "numericStringSubstringsMatch", SUB, Substring, Numeric),
-    rule!("2.5.13.11", "caseIgnoreListMatch", s("1.3.6.1.4.1.1466.115.121.1.41"), Equality, CaseIgnoreList),
-    rule!("2.5.13.12", "caseIgnoreListSubstringsMatch", SUB, Substring, CaseIgnoreList),
-    rule!("2.5.13.13", "booleanMatch", s("1.3.6.1.4.1.1466.115.121.1.7"), Equality, Boolean),
-    rule!("2.5.13.14", "integerMatch", s("1.3.6.1.4.1.1466.115.121.1.27"), Equality, Integer),
-    rule!("2.5.13.15", "integerOrderingMatch", s("1.3.6.1.4.1.1466.115.121.1.27"), Ordering, Integer),
-    rule!("2.5.13.16", "bitStringMatch", s("1.3.6.1.4.1.1466.115.121.1.6"), Equality, BitString),
-    rule!("2.5.13.17", "octetStringMatch", s("1.3.6.1.4.1.1466.115.121.1.40"), Equality, Octet),
-    rule!("2.5.13.18", "octetStringOrderingMatch", s("1.3.6.1.4.1.1466.115.121.1.40"), Ordering, Octet),
-    rule!("2.5.13.20", "telephoneNumberMatch", s("1.3.6.1.4.1.1466.115.121.1.50"), Equality, Telephone),
-    rule!("2.5.13.21", "telephoneNumberSubstringsMatch", SUB, Substring, Telephone),
-    rule!("2.5.13.22", "presentationAddressMatch", s("1.3.6.1.4.1.1466.115.121.1.43"), Equality, CaseIgnore),
-    rule!("2.5.13.23", "uniqueMemberMatch", s("1.3.6.1.4.1.1466.115.121.1.34"), Equality, UniqueMember),
-    rule!("2.5.13.24", "protocolInformationMatch", s("1.3.6.1.4.1.1466.115.121.1.42"), Equality, CaseIgnore),
-    rule!("2.5.13.25", "uTCTimeMatch", s("1.3.6.1.4.1.1466.115.121.1.53"), Equality, UtcTime),
-    rule!("2.5.13.27", "generalizedTimeMatch", s("1.3.6.1.4.1.1466.115.121.1.24"), Equality, GeneralizedTime),
-    rule!("2.5.13.28", "generalizedTimeOrderingMatch", s("1.3.6.1.4.1.1466.115.121.1.24"), Ordering, GeneralizedTime),
-    rule!("2.5.13.29", "integerFirstComponentMatch", s("1.3.6.1.4.1.1466.115.121.1.27"), Equality, IntegerFirst),
-    rule!("2.5.13.30", "objectIdentifierFirstComponentMatch", s("1.3.6.1.4.1.1466.115.121.1.38"), Equality, OidFirst),
-    rule!("2.5.13.31", "directoryStringFirstComponentMatch", DS, Equality, DirStringFirst),
+    rule!(
+        "2.5.13.6",
+        "caseExactOrderingMatch",
+        DS,
+        Ordering,
+        CaseExact
+    ),
+    rule!(
+        "2.5.13.7",
+        "caseExactSubstringsMatch",
+        SUB,
+        Substring,
+        CaseExact
+    ),
+    rule!(
+        "2.5.13.8",
+        "numericStringMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.36"),
+        Equality,
+        Numeric
+    ),
+    rule!(
+        "2.5.13.9",
+        "numericStringOrderingMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.36"),
+        Ordering,
+        Numeric
+    ),
+    rule!(
+        "2.5.13.10",
+        "numericStringSubstringsMatch",
+        SUB,
+        Substring,
+        Numeric
+    ),
+    rule!(
+        "2.5.13.11",
+        "caseIgnoreListMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.41"),
+        Equality,
+        CaseIgnoreList
+    ),
+    rule!(
+        "2.5.13.12",
+        "caseIgnoreListSubstringsMatch",
+        SUB,
+        Substring,
+        CaseIgnoreList
+    ),
+    rule!(
+        "2.5.13.13",
+        "booleanMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.7"),
+        Equality,
+        Boolean
+    ),
+    rule!(
+        "2.5.13.14",
+        "integerMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.27"),
+        Equality,
+        Integer
+    ),
+    rule!(
+        "2.5.13.15",
+        "integerOrderingMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.27"),
+        Ordering,
+        Integer
+    ),
+    rule!(
+        "2.5.13.16",
+        "bitStringMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.6"),
+        Equality,
+        BitString
+    ),
+    rule!(
+        "2.5.13.17",
+        "octetStringMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.40"),
+        Equality,
+        Octet
+    ),
+    rule!(
+        "2.5.13.18",
+        "octetStringOrderingMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.40"),
+        Ordering,
+        Octet
+    ),
+    rule!(
+        "2.5.13.20",
+        "telephoneNumberMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.50"),
+        Equality,
+        Telephone
+    ),
+    rule!(
+        "2.5.13.21",
+        "telephoneNumberSubstringsMatch",
+        SUB,
+        Substring,
+        Telephone
+    ),
+    rule!(
+        "2.5.13.22",
+        "presentationAddressMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.43"),
+        Equality,
+        CaseIgnore
+    ),
+    rule!(
+        "2.5.13.23",
+        "uniqueMemberMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.34"),
+        Equality,
+        UniqueMember
+    ),
+    rule!(
+        "2.5.13.24",
+        "protocolInformationMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.42"),
+        Equality,
+        CaseIgnore
+    ),
+    rule!(
+        "2.5.13.25",
+        "uTCTimeMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.53"),
+        Equality,
+        UtcTime
+    ),
+    rule!(
+        "2.5.13.27",
+        "generalizedTimeMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.24"),
+        Equality,
+        GeneralizedTime
+    ),
+    rule!(
+        "2.5.13.28",
+        "generalizedTimeOrderingMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.24"),
+        Ordering,
+        GeneralizedTime
+    ),
+    rule!(
+        "2.5.13.29",
+        "integerFirstComponentMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.27"),
+        Equality,
+        IntegerFirst
+    ),
+    rule!(
+        "2.5.13.30",
+        "objectIdentifierFirstComponentMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.38"),
+        Equality,
+        OidFirst
+    ),
+    rule!(
+        "2.5.13.31",
+        "directoryStringFirstComponentMatch",
+        DS,
+        Equality,
+        DirStringFirst
+    ),
     rule!("2.5.13.32", "wordMatch", DS, Equality, Word),
     rule!("2.5.13.33", "keywordMatch", DS, Equality, Word),
-    rule!("1.3.6.1.4.1.1466.109.114.1", "caseExactIA5Match", IA5, Equality, CaseExact),
-    rule!("1.3.6.1.4.1.1466.109.114.2", "caseIgnoreIA5Match", IA5, Equality, CaseIgnore),
-    rule!("1.3.6.1.4.1.1466.109.114.3", "caseIgnoreIA5SubstringsMatch", SUB, Substring, CaseIgnore),
-    rule!("1.3.6.1.1.16.2", "uuidMatch", s("1.3.6.1.1.16.1"), Equality, Uuid),
-    rule!("1.3.6.1.1.16.3", "uuidOrderingMatch", s("1.3.6.1.1.16.1"), Ordering, Uuid),
+    rule!(
+        "1.3.6.1.4.1.1466.109.114.1",
+        "caseExactIA5Match",
+        IA5,
+        Equality,
+        CaseExact
+    ),
+    rule!(
+        "1.3.6.1.4.1.1466.109.114.2",
+        "caseIgnoreIA5Match",
+        IA5,
+        Equality,
+        CaseIgnore
+    ),
+    rule!(
+        "1.3.6.1.4.1.1466.109.114.3",
+        "caseIgnoreIA5SubstringsMatch",
+        SUB,
+        Substring,
+        CaseIgnore
+    ),
+    rule!(
+        "1.3.6.1.1.16.2",
+        "uuidMatch",
+        s("1.3.6.1.1.16.1"),
+        Equality,
+        Uuid
+    ),
+    rule!(
+        "1.3.6.1.1.16.3",
+        "uuidOrderingMatch",
+        s("1.3.6.1.1.16.1"),
+        Ordering,
+        Uuid
+    ),
     rule!("1.3.18.0.2.22.2", "ibm-entryUuidMatch", DS, Equality, Uuid),
-    rule!("1.3.18.0.2.4.405", "distinguishedNameOrderingMatch", s("1.3.6.1.4.1.1466.115.121.1.12"), Ordering, Dn),
+    rule!(
+        "1.3.18.0.2.4.405",
+        "distinguishedNameOrderingMatch",
+        s("1.3.6.1.4.1.1466.115.121.1.12"),
+        Ordering,
+        Dn
+    ),
 ];
 
 /// The rule with this OID or name (case-insensitive).
 #[must_use]
 pub fn find(id: &str) -> Option<&'static Rule> {
-    RULES.iter().find(|r| r.oid == id || r.name.eq_ignore_ascii_case(id))
+    RULES
+        .iter()
+        .find(|r| r.oid == id || r.name.eq_ignore_ascii_case(id))
 }
 
 /// An INTEGER as a key whose bytes order as the numbers: a sign byte,
@@ -226,7 +438,10 @@ fn integer_text(v: &[u8]) -> Option<Vec<u8>> {
 fn first_component(v: &[u8]) -> Option<&str> {
     let t = std::str::from_utf8(v).ok()?.trim();
     let inner = t.strip_prefix('(')?.trim_start();
-    inner.split(|c: char| c.is_whitespace() || c == ')').next().filter(|s| !s.is_empty())
+    inner
+        .split(|c: char| c.is_whitespace() || c == ')')
+        .next()
+        .filter(|s| !s.is_empty())
 }
 
 fn oid_norm(ctx: &dyn Context, t: &str) -> Option<Vec<u8>> {
@@ -234,7 +449,11 @@ fn oid_norm(ctx: &dyn Context, t: &str) -> Option<Vec<u8>> {
     if syntax::is_numeric_oid(t) {
         Some(t.as_bytes().to_vec())
     } else if syntax::is_descr(t) {
-        Some(ctx.oid_of(t).unwrap_or_else(|| t.to_ascii_lowercase()).into_bytes())
+        Some(
+            ctx.oid_of(t)
+                .unwrap_or_else(|| t.to_ascii_lowercase())
+                .into_bytes(),
+        )
     } else {
         None
     }
@@ -254,20 +473,31 @@ impl Rule {
     pub fn normalize(&self, ctx: &dyn Context, v: &[u8]) -> Result<Vec<u8>, MatchError> {
         let bad = || self.invalid();
         Ok(match self.imp {
-            Imp::CaseIgnore | Imp::DirStringFirst | Imp::Word => prep::prepare(v, Case::Fold)?.into_bytes(),
+            Imp::CaseIgnore | Imp::DirStringFirst | Imp::Word => {
+                prep::prepare(v, Case::Fold)?.into_bytes()
+            }
             Imp::CaseExact => prep::prepare(v, Case::Exact)?.into_bytes(),
             Imp::CaseIgnoreList => {
                 let t = std::str::from_utf8(v).map_err(|_| bad())?;
-                let lines: Result<Vec<_>, _> = t.split('$').map(|l| prep::prepare(l.as_bytes(), Case::Fold)).collect();
+                let lines: Result<Vec<_>, _> = t
+                    .split('$')
+                    .map(|l| prep::prepare(l.as_bytes(), Case::Fold))
+                    .collect();
                 lines?.join("$").into_bytes()
             }
             Imp::Numeric => {
                 let t = prep::prepare(v, Case::Exact)?;
-                t.chars().filter(|c| *c != ' ').collect::<String>().into_bytes()
+                t.chars()
+                    .filter(|c| *c != ' ')
+                    .collect::<String>()
+                    .into_bytes()
             }
             Imp::Telephone => {
                 let t = prep::prepare(v, Case::Fold)?;
-                t.chars().filter(|c| *c != ' ' && *c != '-' && *c != '\u{2010}' && *c != '\u{2212}').collect::<String>().into_bytes()
+                t.chars()
+                    .filter(|c| *c != ' ' && *c != '-' && *c != '\u{2010}' && *c != '\u{2212}')
+                    .collect::<String>()
+                    .into_bytes()
             }
             Imp::Octet | Imp::BitString => v.to_vec(),
             Imp::Integer if self.kind == Kind::Ordering => integer_key(v).ok_or_else(bad)?,
@@ -281,10 +511,20 @@ impl Rule {
                     return Err(bad());
                 }
             }
-            Imp::GeneralizedTime => time::parse_generalized(v, true).ok_or_else(bad)?.canonical().into_bytes(),
-            Imp::UtcTime => time::parse_utc(v, true).ok_or_else(bad)?.canonical().into_bytes(),
-            Imp::Oid => oid_norm(ctx, std::str::from_utf8(v).map_err(|_| bad())?).ok_or_else(bad)?,
-            Imp::Dn => ctx.normalize_dn(std::str::from_utf8(v).map_err(|_| bad())?).ok_or_else(bad)?,
+            Imp::GeneralizedTime => time::parse_generalized(v, true)
+                .ok_or_else(bad)?
+                .canonical()
+                .into_bytes(),
+            Imp::UtcTime => time::parse_utc(v, true)
+                .ok_or_else(bad)?
+                .canonical()
+                .into_bytes(),
+            Imp::Oid => {
+                oid_norm(ctx, std::str::from_utf8(v).map_err(|_| bad())?).ok_or_else(bad)?
+            }
+            Imp::Dn => ctx
+                .normalize_dn(std::str::from_utf8(v).map_err(|_| bad())?)
+                .ok_or_else(bad)?,
             Imp::UniqueMember => {
                 let t = std::str::from_utf8(v).map_err(|_| bad())?;
                 let (name, bits) = syntax::split_uid(t);
@@ -295,7 +535,9 @@ impl Rule {
                 }
                 k
             }
-            Imp::IntegerFirst => integer_text(first_component(v).ok_or_else(bad)?.as_bytes()).ok_or_else(bad)?,
+            Imp::IntegerFirst => {
+                integer_text(first_component(v).ok_or_else(bad)?.as_bytes()).ok_or_else(bad)?
+            }
             Imp::OidFirst => oid_norm(ctx, first_component(v).ok_or_else(bad)?).ok_or_else(bad)?,
             Imp::Uuid => {
                 let t = std::str::from_utf8(v).map_err(|_| bad())?;
@@ -312,7 +554,8 @@ impl Rule {
     pub fn normalize_assertion(&self, ctx: &dyn Context, a: &[u8]) -> Result<Vec<u8>, MatchError> {
         match self.imp {
             Imp::IntegerFirst => integer_text(a).ok_or_else(|| self.invalid()),
-            Imp::OidFirst => oid_norm(ctx, std::str::from_utf8(a).map_err(|_| self.invalid())?).ok_or_else(|| self.invalid()),
+            Imp::OidFirst => oid_norm(ctx, std::str::from_utf8(a).map_err(|_| self.invalid())?)
+                .ok_or_else(|| self.invalid()),
             _ => self.normalize(ctx, a),
         }
     }
@@ -339,7 +582,9 @@ impl Rule {
             Imp::DirStringFirst => {
                 let t = std::str::from_utf8(value).ok()?;
                 let first = first_component(value).unwrap_or(t);
-                prep::prepare(first.trim_matches('\'').as_bytes(), Case::Fold).ok()?.into_bytes()
+                prep::prepare(first.trim_matches('\'').as_bytes(), Case::Fold)
+                    .ok()?
+                    .into_bytes()
             }
             _ => self.normalize(ctx, value).ok()?,
         };
@@ -388,7 +633,9 @@ impl Rule {
     /// A postal address's line breaks read as spaces in substrings.
     fn lines(&self, v: &[u8]) -> Vec<u8> {
         if self.imp == Imp::CaseIgnoreList {
-            v.iter().map(|&c| if c == b'$' { b' ' } else { c }).collect()
+            v.iter()
+                .map(|&c| if c == b'$' { b' ' } else { c })
+                .collect()
         } else {
             v.to_vec()
         }
@@ -416,8 +663,17 @@ impl Rule {
             Some(x) => Some(self.substring_part(x, Part::Final).ok()?),
             None => None,
         };
-        let any: Option<Vec<String>> = f.any.iter().map(|a| self.substring_part(a, Part::Any).ok()).collect();
-        Some(prep::match_parts(&target, initial.as_deref(), &any?, fin.as_deref()))
+        let any: Option<Vec<String>> = f
+            .any
+            .iter()
+            .map(|a| self.substring_part(a, Part::Any).ok())
+            .collect();
+        Some(prep::match_parts(
+            &target,
+            initial.as_deref(),
+            &any?,
+            fin.as_deref(),
+        ))
     }
 }
 
@@ -451,7 +707,10 @@ mod tests {
         assert_eq!(eq("caseExactMatch", "Foo", "foo"), Some(false));
         assert_eq!(eq("caseIgnoreIA5Match", "Admin", "ADMIN"), Some(true));
         assert_eq!(eq("caseExactIA5Match", "Admin", "ADMIN"), Some(false));
-        assert_eq!(eq("caseIgnoreListMatch", "1 Main St $ Town", "1 MAIN ST$town"), Some(true));
+        assert_eq!(
+            eq("caseIgnoreListMatch", "1 Main St $ Town", "1 MAIN ST$town"),
+            Some(true)
+        );
         assert_eq!(eq("caseIgnoreMatch", "a\u{E000}", "a"), None);
     }
 
@@ -462,32 +721,90 @@ mod tests {
         assert_eq!(eq("integerMatch", "x", "0"), None);
         assert_eq!(eq("booleanMatch", "true", "TRUE"), Some(true));
         assert_eq!(eq("numericStringMatch", "123 456", "123456"), Some(true));
-        assert_eq!(eq("telephoneNumberMatch", "+1 507-555-0100", "+15075550100"), Some(true));
+        assert_eq!(
+            eq("telephoneNumberMatch", "+1 507-555-0100", "+15075550100"),
+            Some(true)
+        );
         assert_eq!(eq("objectIdentifierMatch", "CN", "2.5.4.3"), Some(true));
-        assert_eq!(eq("objectIdentifierMatch", "2.5.4.3", "2.5.4.4"), Some(false));
-        assert_eq!(eq("generalizedTimeMatch", "20261113120000Z", "20261113130000+0100"), Some(true));
-        assert_eq!(eq("uTCTimeMatch", "2611131200Z", "261113120000Z"), Some(true));
+        assert_eq!(
+            eq("objectIdentifierMatch", "2.5.4.3", "2.5.4.4"),
+            Some(false)
+        );
+        assert_eq!(
+            eq(
+                "generalizedTimeMatch",
+                "20261113120000Z",
+                "20261113130000+0100"
+            ),
+            Some(true)
+        );
+        assert_eq!(
+            eq("uTCTimeMatch", "2611131200Z", "261113120000Z"),
+            Some(true)
+        );
         assert_eq!(eq("octetStringMatch", "Ab", "ab"), Some(false));
-        assert_eq!(eq("uuidMatch", "597AE2F6-16A6-1027-98F4-D28B5365DC14", "597ae2f6-16a6-1027-98f4-d28b5365dc14"), Some(true));
-        assert_eq!(eq("uniqueMemberMatch", "CN=A, o=X#'01'B", "cn=a,o=x#'01'B"), Some(true));
-        assert_eq!(eq("uniqueMemberMatch", "CN=A, o=X#'01'B", "cn=a,o=x"), Some(false));
-        assert_eq!(eq("integerFirstComponentMatch", "( 5 NAME 'x' )", "5"), Some(true));
-        assert_eq!(eq("objectIdentifierFirstComponentMatch", "( 2.5.4.3 NAME 'cn' )", "cn"), Some(true));
+        assert_eq!(
+            eq(
+                "uuidMatch",
+                "597AE2F6-16A6-1027-98F4-D28B5365DC14",
+                "597ae2f6-16a6-1027-98f4-d28b5365dc14"
+            ),
+            Some(true)
+        );
+        assert_eq!(
+            eq("uniqueMemberMatch", "CN=A, o=X#'01'B", "cn=a,o=x#'01'B"),
+            Some(true)
+        );
+        assert_eq!(
+            eq("uniqueMemberMatch", "CN=A, o=X#'01'B", "cn=a,o=x"),
+            Some(false)
+        );
+        assert_eq!(
+            eq("integerFirstComponentMatch", "( 5 NAME 'x' )", "5"),
+            Some(true)
+        );
+        assert_eq!(
+            eq(
+                "objectIdentifierFirstComponentMatch",
+                "( 2.5.4.3 NAME 'cn' )",
+                "cn"
+            ),
+            Some(true)
+        );
         assert_eq!(eq("wordMatch", "The quick fox", "QUICK"), Some(true));
         assert_eq!(eq("wordMatch", "The quick fox", "qui"), Some(false));
-        assert_eq!(eq("keywordMatch", "The quick brown fox", "quick brown"), Some(true));
+        assert_eq!(
+            eq("keywordMatch", "The quick brown fox", "quick brown"),
+            Some(true)
+        );
     }
 
     #[test]
     fn ordering() {
         let o = |n: &str, a: &str, b: &str| r(n).compare(&Ctx, a.as_bytes(), b.as_bytes());
         assert_eq!(o("integerOrderingMatch", "-10", "-9"), Some(Ordering::Less));
-        assert_eq!(o("integerOrderingMatch", "10", "9"), Some(Ordering::Greater));
+        assert_eq!(
+            o("integerOrderingMatch", "10", "9"),
+            Some(Ordering::Greater)
+        );
         assert_eq!(o("integerOrderingMatch", "-1", "0"), Some(Ordering::Less));
         assert_eq!(o("integerOrderingMatch", "0", "1"), Some(Ordering::Less));
-        assert_eq!(o("integerOrderingMatch", "-100", "-99"), Some(Ordering::Less));
-        assert_eq!(o("caseIgnoreOrderingMatch", "abc", "ABD"), Some(Ordering::Less));
-        assert_eq!(o("generalizedTimeOrderingMatch", "20261113120000Z", "20261113125959+0100"), Some(Ordering::Greater));
+        assert_eq!(
+            o("integerOrderingMatch", "-100", "-99"),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            o("caseIgnoreOrderingMatch", "abc", "ABD"),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            o(
+                "generalizedTimeOrderingMatch",
+                "20261113120000Z",
+                "20261113125959+0100"
+            ),
+            Some(Ordering::Greater)
+        );
     }
 
     fn sub(i: Option<&str>, any: &[&str], f: Option<&str>) -> Substrings {
@@ -501,14 +818,32 @@ mod tests {
     #[test]
     fn substrings() {
         let ci = r("caseIgnoreSubstringsMatch");
-        assert_eq!(ci.substrings(b"Barbara  Jensen", &sub(Some("bar"), &["a j"], Some("SEN"))), Some(true));
-        assert_eq!(ci.substrings(b"Barbara Jensen", &sub(Some("jen"), &[], None)), Some(false));
+        assert_eq!(
+            ci.substrings(b"Barbara  Jensen", &sub(Some("bar"), &["a j"], Some("SEN"))),
+            Some(true)
+        );
+        assert_eq!(
+            ci.substrings(b"Barbara Jensen", &sub(Some("jen"), &[], None)),
+            Some(false)
+        );
         let ce = r("caseExactSubstringsMatch");
-        assert_eq!(ce.substrings(b"Barbara", &sub(Some("bar"), &[], None)), Some(false));
+        assert_eq!(
+            ce.substrings(b"Barbara", &sub(Some("bar"), &[], None)),
+            Some(false)
+        );
         let tel = r("telephoneNumberSubstringsMatch");
-        assert_eq!(tel.substrings(b"+1 507-555-0100", &sub(None, &["5550"], None)), Some(true));
+        assert_eq!(
+            tel.substrings(b"+1 507-555-0100", &sub(None, &["5550"], None)),
+            Some(true)
+        );
         let num = r("numericStringSubstringsMatch");
-        assert_eq!(num.substrings(b"12 34 56", &sub(Some("1234"), &[], Some("56"))), Some(true));
-        assert_eq!(r("integerMatch").substrings(b"1", &sub(Some("1"), &[], None)), None);
+        assert_eq!(
+            num.substrings(b"12 34 56", &sub(Some("1234"), &[], Some("56"))),
+            Some(true)
+        );
+        assert_eq!(
+            r("integerMatch").substrings(b"1", &sub(Some("1"), &[], None)),
+            None
+        );
     }
 }

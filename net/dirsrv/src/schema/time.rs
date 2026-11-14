@@ -18,7 +18,9 @@ fn digits(s: &[u8], n: usize) -> Option<(u32, &[u8])> {
     if s.len() < n || !s[..n].iter().all(u8::is_ascii_digit) {
         return None;
     }
-    let v = s[..n].iter().fold(0u32, |a, &d| a * 10 + u32::from(d - b'0'));
+    let v = s[..n]
+        .iter()
+        .fold(0u32, |a, &d| a * 10 + u32::from(d - b'0'));
     Some((v, &s[n..]))
 }
 
@@ -62,7 +64,11 @@ fn zone(s: &[u8], lenient: bool) -> Option<i64> {
         Some(b'Z') if s.len() == 1 => Some(0),
         Some(&c @ (b'+' | b'-')) => {
             let (h, rest) = digits(&s[1..], 2)?;
-            let (m, rest) = if rest.is_empty() { (0, rest) } else { digits(rest, 2)? };
+            let (m, rest) = if rest.is_empty() {
+                (0, rest)
+            } else {
+                digits(rest, 2)?
+            };
             if !rest.is_empty() || h > 23 || m > 59 {
                 return None;
             }
@@ -77,7 +83,10 @@ fn build(y: i64, mo: u32, d: u32, sod: i64, nanos: u32, off: i64) -> Option<Inst
     if !(1..=12).contains(&mo) || d == 0 || d > days_in_month(y, mo) {
         return None;
     }
-    Some(Instant { secs: days_from_civil(y, mo, d) * 86_400 + sod - off, nanos })
+    Some(Instant {
+        secs: days_from_civil(y, mo, d) * 86_400 + sod - off,
+        nanos,
+    })
 }
 
 /// Parses a Generalized Time. `lenient` accepts a missing zone as UTC.
@@ -114,7 +123,9 @@ pub fn parse_generalized(s: &[u8], lenient: bool) -> Option<Instant> {
         let frac = &s[1..=n];
         // fraction * unit seconds, in nanoseconds; digits past 18 drop.
         let used = &frac[..frac.len().min(18)];
-        let num = used.iter().fold(0u128, |a, &c| a * 10 + u128::from(c - b'0'));
+        let num = used
+            .iter()
+            .fold(0u128, |a, &c| a * 10 + u128::from(c - b'0'));
         let den = 10u128.pow(u32::try_from(used.len()).unwrap_or(18));
         extra_nanos = num * u128::from(unit) * 1_000_000_000 / den;
         s = &s[n + 1..];
@@ -145,7 +156,14 @@ pub fn parse_utc(s: &[u8], lenient: bool) -> Option<Instant> {
     }
     let off = zone(s, lenient)?;
     let y = if yy < 50 { 2000 + yy } else { 1900 + yy };
-    build(i64::from(y), mo, d, i64::from(h * 3600 + mi * 60 + se), 0, off)
+    build(
+        i64::from(y),
+        mo,
+        d,
+        i64::from(h * 3600 + mi * 60 + se),
+        0,
+        off,
+    )
 }
 
 impl Instant {
@@ -187,7 +205,14 @@ mod tests {
 
     #[test]
     fn bad() {
-        for s in ["2026111312", "20261313120000Z", "20230229000000Z", "20261113126000Z", "2026111312.Z", "x"] {
+        for s in [
+            "2026111312",
+            "20261313120000Z",
+            "20230229000000Z",
+            "20261113126000Z",
+            "2026111312.Z",
+            "x",
+        ] {
             assert!(parse_generalized(s.as_bytes(), false).is_none(), "{s}");
         }
         assert!(parse_generalized(b"20261113120000", true).is_some());
@@ -195,8 +220,14 @@ mod tests {
 
     #[test]
     fn utc() {
-        assert_eq!(parse_utc(b"2611131200Z", false).unwrap().canonical(), "20261113120000.000000000Z");
-        assert_eq!(parse_utc(b"991231235959Z", false).unwrap().canonical(), "19991231235959.000000000Z");
+        assert_eq!(
+            parse_utc(b"2611131200Z", false).unwrap().canonical(),
+            "20261113120000.000000000Z"
+        );
+        assert_eq!(
+            parse_utc(b"991231235959Z", false).unwrap().canonical(),
+            "19991231235959.000000000Z"
+        );
     }
 
     #[test]

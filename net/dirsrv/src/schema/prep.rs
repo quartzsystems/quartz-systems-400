@@ -37,10 +37,19 @@ fn maps_to_nothing(c: char) -> bool {
 
 /// RFC 4518 §2.2: characters mapped to a space.
 fn maps_to_space(c: char) -> bool {
-    matches!(c,
-        '\t' | '\n' | '\u{0B}' | '\u{0C}' | '\r' | '\u{85}'
-        | ' ' | '\u{00A0}' | '\u{1680}' | '\u{2000}'..='\u{200A}'
-        | '\u{2028}' | '\u{2029}' | '\u{202F}' | '\u{205F}' | '\u{3000}')
+    matches!(
+        c,
+        '\t' | '\n'
+            | '\u{0B}'
+            | '\u{0C}'
+            | '\r'
+            | '\u{85}'
+            | ' '
+            | '\u{00A0}'
+            | '\u{1680}'
+            | '\u{2000}'
+            ..='\u{200A}' | '\u{2028}' | '\u{2029}' | '\u{202F}' | '\u{205F}' | '\u{3000}'
+    )
 }
 
 /// RFC 4518 §2.4: prohibited output (private use, non-characters,
@@ -220,7 +229,10 @@ mod tests {
 
     #[test]
     fn prohibited_and_bad_utf8() {
-        assert_eq!(prepare("a\u{E000}".as_bytes(), Case::Fold), Err(PrepError::Prohibited(0xE000)));
+        assert_eq!(
+            prepare("a\u{E000}".as_bytes(), Case::Fold),
+            Err(PrepError::Prohibited(0xE000))
+        );
         assert_eq!(prepare(&[0xFF], Case::Fold), Err(PrepError::NotUtf8));
     }
 

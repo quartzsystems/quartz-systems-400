@@ -70,10 +70,20 @@ pub struct Syntax {
 
 macro_rules! syn {
     ($n:literal, $desc:literal, $check:ident) => {
-        Syntax { oid: concat!("1.3.6.1.4.1.1466.115.121.1.", $n), desc: $desc, check: Check::$check, binary: false }
+        Syntax {
+            oid: concat!("1.3.6.1.4.1.1466.115.121.1.", $n),
+            desc: $desc,
+            check: Check::$check,
+            binary: false,
+        }
     };
     ($n:literal, $desc:literal, $check:ident, bin) => {
-        Syntax { oid: concat!("1.3.6.1.4.1.1466.115.121.1.", $n), desc: $desc, check: Check::$check, binary: true }
+        Syntax {
+            oid: concat!("1.3.6.1.4.1.1466.115.121.1.", $n),
+            desc: $desc,
+            check: Check::$check,
+            binary: true,
+        }
     };
 }
 
@@ -123,8 +133,18 @@ pub const SYNTAXES: &[Syntax] = &[
     syn!("53", "UTC time", UtcTime),
     syn!("54", "LDAP syntax description", Description),
     syn!("58", "Substring assertion", Any),
-    Syntax { oid: "1.3.6.1.1.16.1", desc: "UUID", check: Check::Uuid, binary: false },
-    Syntax { oid: "1.3.18.0.2.8.1", desc: "IBM directory string with an order", check: Check::Utf8, binary: false },
+    Syntax {
+        oid: "1.3.6.1.1.16.1",
+        desc: "UUID",
+        check: Check::Uuid,
+        binary: false,
+    },
+    Syntax {
+        oid: "1.3.18.0.2.8.1",
+        desc: "IBM directory string with an order",
+        check: Check::Utf8,
+        binary: false,
+    },
 ];
 
 /// The syntax with this OID.
@@ -143,7 +163,11 @@ fn printable(c: u8) -> bool {
 pub fn is_numeric_oid(s: &str) -> bool {
     !s.is_empty()
         && s.split('.').count() >= 2
-        && s.split('.').all(|p| !p.is_empty() && p.bytes().all(|c| c.is_ascii_digit()) && (p == "0" || !p.starts_with('0')))
+        && s.split('.').all(|p| {
+            !p.is_empty()
+                && p.bytes().all(|c| c.is_ascii_digit())
+                && (p == "0" || !p.starts_with('0'))
+        })
 }
 
 /// Whether `s` is a descriptor (`keystring`, RFC 4512 §1.4). IBM's
@@ -151,7 +175,10 @@ pub fn is_numeric_oid(s: &str) -> bool {
 #[must_use]
 pub fn is_descr(s: &str) -> bool {
     let b = s.as_bytes();
-    !b.is_empty() && b[0].is_ascii_alphabetic() && b.iter().all(|&c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+    !b.is_empty()
+        && b[0].is_ascii_alphabetic()
+        && b.iter()
+            .all(|&c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
 }
 
 /// Whether `v` is an INTEGER's string form.
@@ -162,10 +189,24 @@ pub fn is_integer(v: &[u8]) -> bool {
 }
 
 fn is_bitstring(v: &[u8]) -> bool {
-    v.len() >= 3 && v[0] == b'\'' && v.ends_with(b"'B") && v[1..v.len() - 2].iter().all(|&c| c == b'0' || c == b'1')
+    v.len() >= 3
+        && v[0] == b'\''
+        && v.ends_with(b"'B")
+        && v[1..v.len() - 2].iter().all(|&c| c == b'0' || c == b'1')
 }
 
-const DELIVERY: &[&str] = &["any", "mhs", "physical", "telex", "teletex", "g3fax", "g4fax", "ia5", "videotex", "telephone"];
+const DELIVERY: &[&str] = &[
+    "any",
+    "mhs",
+    "physical",
+    "telex",
+    "teletex",
+    "g3fax",
+    "g4fax",
+    "ia5",
+    "videotex",
+    "telephone",
+];
 
 impl Check {
     /// Whether `v` is a valid value. `dn` validates a DN string.
@@ -177,7 +218,9 @@ impl Check {
             Self::Utf8 => text.is_ok() && !v.is_empty(),
             Self::Ia5 => !v.is_empty() && v.is_ascii(),
             Self::Printable => !v.is_empty() && v.iter().all(|&c| printable(c)),
-            Self::Telephone => !v.is_empty() && v.iter().all(|&c| printable(c) || c == b'#' || c == b'*'),
+            Self::Telephone => {
+                !v.is_empty() && v.iter().all(|&c| printable(c) || c == b'#' || c == b'*')
+            }
             Self::Boolean => v.eq_ignore_ascii_case(b"TRUE") || v.eq_ignore_ascii_case(b"FALSE"),
             Self::Integer => is_integer(v),
             Self::BitString => is_bitstring(v),
@@ -191,9 +234,12 @@ impl Check {
             Self::Oid => text.is_ok_and(|t| is_numeric_oid(t) || is_descr(t)),
             Self::GeneralizedTime => time::parse_generalized(v, false).is_some(),
             Self::UtcTime => time::parse_utc(v, false).is_some(),
-            Self::PostalAddress => text.is_ok_and(|t| !t.is_empty() && t.split('$').all(|l| !l.is_empty())),
+            Self::PostalAddress => {
+                text.is_ok_and(|t| !t.is_empty() && t.split('$').all(|l| !l.is_empty()))
+            }
             Self::DeliveryMethod => text.is_ok_and(|t| {
-                t.split('$').all(|p| DELIVERY.contains(&p.trim().to_ascii_lowercase().as_str()))
+                t.split('$')
+                    .all(|p| DELIVERY.contains(&p.trim().to_ascii_lowercase().as_str()))
             }),
             Self::Description => text.is_ok_and(|t| {
                 let t = t.trim();
@@ -218,7 +264,13 @@ pub fn split_uid(t: &str) -> (&str, Option<&str>) {
 
 fn is_uuid(v: &[u8]) -> bool {
     v.len() == 36
-        && v.iter().enumerate().all(|(i, &c)| if matches!(i, 8 | 13 | 18 | 23) { c == b'-' } else { c.is_ascii_hexdigit() })
+        && v.iter().enumerate().all(|(i, &c)| {
+            if matches!(i, 8 | 13 | 18 | 23) {
+                c == b'-'
+            } else {
+                c.is_ascii_hexdigit()
+            }
+        })
 }
 
 #[cfg(test)]
@@ -232,19 +284,35 @@ mod tests {
     #[test]
     fn validators() {
         assert!(ok(Check::Integer, "-12") && ok(Check::Integer, "0"));
-        assert!(!ok(Check::Integer, "012") && !ok(Check::Integer, "-0") && !ok(Check::Integer, "1a"));
-        assert!(ok(Check::Boolean, "TRUE") && ok(Check::Boolean, "false") && !ok(Check::Boolean, "yes"));
+        assert!(
+            !ok(Check::Integer, "012") && !ok(Check::Integer, "-0") && !ok(Check::Integer, "1a")
+        );
+        assert!(
+            ok(Check::Boolean, "TRUE") && ok(Check::Boolean, "false") && !ok(Check::Boolean, "yes")
+        );
         assert!(ok(Check::BitString, "'0101'B") && !ok(Check::BitString, "'012'B"));
         assert!(ok(Check::Ia5, "a@b.c") && !ok(Check::Ia5, "é"));
         assert!(ok(Check::Printable, "Foo (Bar)") && !ok(Check::Printable, "a@b"));
         assert!(ok(Check::Country, "US") && !ok(Check::Country, "USA"));
         assert!(ok(Check::Numeric, "123 45") && !ok(Check::Numeric, "12-3"));
-        assert!(ok(Check::Oid, "2.5.4.3") && ok(Check::Oid, "cn") && !ok(Check::Oid, "2.05") && !ok(Check::Oid, "1cn"));
-        assert!(ok(Check::GeneralizedTime, "20261113120000Z") && !ok(Check::GeneralizedTime, "20261113"));
+        assert!(
+            ok(Check::Oid, "2.5.4.3")
+                && ok(Check::Oid, "cn")
+                && !ok(Check::Oid, "2.05")
+                && !ok(Check::Oid, "1cn")
+        );
+        assert!(
+            ok(Check::GeneralizedTime, "20261113120000Z")
+                && !ok(Check::GeneralizedTime, "20261113")
+        );
         assert!(ok(Check::NameUid, "cn=a#'01'B") && ok(Check::NameUid, "cn=a#b"));
         assert!(ok(Check::PostalAddress, "1 Main St$Town") && !ok(Check::PostalAddress, "a$$b"));
-        assert!(ok(Check::DeliveryMethod, "telephone $ mhs") && !ok(Check::DeliveryMethod, "pigeon"));
-        assert!(ok(Check::Uuid, "597ae2f6-16a6-1027-98f4-d28b5365dc14") && !ok(Check::Uuid, "597ae2f6"));
+        assert!(
+            ok(Check::DeliveryMethod, "telephone $ mhs") && !ok(Check::DeliveryMethod, "pigeon")
+        );
+        assert!(
+            ok(Check::Uuid, "597ae2f6-16a6-1027-98f4-d28b5365dc14") && !ok(Check::Uuid, "597ae2f6")
+        );
         assert!(ok(Check::Description, "( 1.2.3 NAME 'x' )"));
         assert!(!ok(Check::Utf8, ""));
     }
