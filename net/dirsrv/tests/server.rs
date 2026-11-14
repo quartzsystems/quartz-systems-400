@@ -812,7 +812,9 @@ fn continuation_references_reach_the_client() {
     assert!(got.result.is_success(), "{:?}", got.result);
     assert_eq!(
         got.references,
-        [vec!["ldap://ldaptest.invalid/ou=far,dc=example".to_string()]],
+        [vec![
+            "ldap://ldaptest.invalid/ou=far,dc=example".to_string()
+        ]],
         "{got:?}"
     );
 }
@@ -833,4 +835,20 @@ fn serve_for_ldaptest() {
         .unwrap_or(600);
     std::thread::sleep(Duration::from_secs(secs));
     drop(r);
+}
+
+/// Not a test: binds a minute, a connection each, with `net/ldap`'s client
+/// (`--nocapture` prints it).
+#[test]
+#[ignore = "a measurement, run by hand"]
+fn bind_rate() {
+    let r = start(Setup::default());
+    let n = 500;
+    let t0 = Instant::now();
+    for _ in 0..n {
+        let c = r.admin();
+        c.unbind().unwrap();
+    }
+    let per_min = f64::from(n) * 60.0 / t0.elapsed().as_secs_f64();
+    println!("binds a minute, a connection each: {per_min:.0}");
 }
