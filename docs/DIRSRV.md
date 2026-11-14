@@ -88,6 +88,10 @@ QS/400 sends, chosen by their layouts:
 | `GLD0215` | 40, `*CHAR 8` | `CHGDIRSVRA DN(*UPDATEDN)`: the instance names no update DN |
 | `GLD0224` | 40, `*CHAR *VARY` | `CHGDIRSVRA DN`: not a distinguished name |
 | `GLD0232` | 40, two `*CHAR *VARY` | a value of an honoured attribute QS/400 does not take (`ibm-slapdPwEncryption: aes256`, `ibm-slapdSchemaCheck: V2`) |
+| `GLD0246` | 40, `*CHAR 8`, two `*BIN 4` | the instance job could not listen on `ibm-slapdPort` (the instance, the port, the errno); the job ends |
+| `GLD0265` | 0, two `*CHAR 10` | the instance job ended (the instance) |
+| `GLD0268` | 40, `*CHAR 8` | the instance job could not open its instance in the service (after the service's own message) |
+| `GLD0269` | 0, `*CHAR 8`, `*CHAR 10` | the instance job started, and its ports |
 
 `QTCPMSG` gains `TCP1617` (30), `STRTCPSVR` and `ENDTCPSVR`'s dependency
 message for `INSTANCE` with `SERVER(*ALL)` (or `*AUTOSTART`).
@@ -176,12 +180,17 @@ autostart instances when `*DIRSRV` is an autostart server.
 `net/servers` registers `*DIRSRV` (`registry/table.rs`): the job
 `QUSRDIR` as `QDIRSRV` in `QSYSWRK` (another instance's job has its
 name), ports 389 and 636 (TLS), `QS400_DIRECTORY_SERVER`, readiness
-`Slot`. Until the instance job is registered, `STRTCPSVR` and
-`ENDTCPSVR` resolve `INSTANCE` against the job's instance list
-(`framework::dirsrv`, the list read by `work/qsjob/src/command/tcpsvr.rs`
-through `dirsrv::config`; `GLD0203` for an unknown name) and then answer
-as for every slot (`TCP1A04`, and for an end `TCP1A09`). `*DIRSRV` is in
-the TCP/IP server table with autostart off.
+`Built`. `framework::dirsrv::DirSrv` resolves `INSTANCE` against the
+job's instance list (read by `work/qsjob/src/command/tcpsvr.rs` through
+`dirsrv::config`; `GLD0203` for an unknown name) and starts one job per
+instance not already running (`TCP1A07` for each, `TCP1A08` for one
+running): named after the instance, user `QDIRSRV`, job description
+`QSYS/QDIRSRV`, role `DIRSRV`, request data `INSTANCE(name)`. `ENDTCPSVR`
+ends the running ones it names (`TCP1A0A`; `TCP1A09` when none runs);
+`ENDTCP` ends every one. `STRTCP` (`*AUTOSTART`) starts the instances with
+`ids-instanceAutostart: 1` only when `*DIRSRV` autostarts in the TCP/IP
+server table, where it is off as shipped. `STRTCPSVR`'s instance startup
+values (`INSTANCE`'s second element) are refused for `*DIRSRV` (§14).
 
 **Objects.** The profile `QDIRSRV` (`*USER`, no special authorities,
 password `*NONE`, UID 4294770712, `sec::profile::shipped`) and the
@@ -199,16 +208,68 @@ V1R1M0 system gets the job descriptions and library at its first
 V1R2M0 IPL and the `QSYSWRK` entries through `wm::obj::upgrade`
 (marker `QSYS/QGLDPUBE`), as NFS's entries came.
 
-**The job** (`work/qsjob/src/work/dirsrv/`): one job per instance,
-named after it, user `QDIRSRV`, job description `QSYS/QDIRSRV`, in
-`QSYSWRK`. It reads its configuration through the service, listens on
-`ibm-slapdPort` (389) and, with a certificate assigned to
-`QIBM_GLD_DIRSRV_SERVER` (QS/400's ID `QS400_DIRECTORY_SERVER`,
-`net/certs/src/apps.rs`), on `ibm-slapdSecurePort` (636); StartTLS on
-389 then works too, and without a certificate StartTLS answers 2 as
-IBM's does. A thread per connection decodes messages with `net/ldap`
-and sends each operation to the service; abandon, size and time limits
-and paging are the job's bookkeeping, the data the service's.
+**The job** (`work/qsjob/src/work/dirsrv/instance.rs` over
+`net/dirsrv::server`): one job per instance, named after it, user
+`QDIRSRV`, job description `QSYS/QDIRSRV`, in `QSYSWRK`. The loop is
+`dirsrv::server`, behind a `Service` trait of the eight requests so the
+tests run it against a directory in memory (`net/dirsrv/tests/server.rs`);
+the job's part is the link, the certificate and the job log.
+
+- *Start.* The job opens (and closes) a session to read its settings
+  (`dir_open`: ports, `ibm-slapdSecurity`, the idle and write time-outs,
+  the application ID, the message limit); a refusal is the service's
+  message and `GLD0268` in the job log, and the job ends. It listens on
+  `ibm-slapdPort` (389) on every interface; a port it cannot bind is
+  `GLD0246` and the job ends. When a certificate is assigned to
+  `QIBM_GLD_DIRSRV_SERVER` (QS/400's ID `QS400_DIRECTORY_SERVER`,
+  `net/certs/src/apps.rs`; the `*SYSTEM` store through `cert_app`, as
+  every server's) it also listens on `ibm-slapdSecurePort` (636, TLS
+  from the first byte) when `ibm-slapdSecurity` is `SSL` or `SSLTLS`, and
+  takes StartTLS on 389 when it is `TLS` or `SSLTLS`. Otherwise StartTLS
+  is protocolError (2), as IBM's server answers it without a certificate
+  (the primary: `none`, no certificate); a value asking for TLS without a
+  certificate is `TCP1A63` to `QSYSOPR` and the job log, and the job runs
+  in the clear. `GLD0269` names the ports.
+- *Connections.* A thread per connection, with a link of its own to the
+  service (`hello_thread`, as the NFS daemons' threads). Messages are cut
+  from the stream with `ldap::ber::frame_len` (16 MiB, or the
+  settings' limit) and decoded with `ldap::msg`; one that does not
+  frame or decode, or is not a request, ends the connection with a
+  notice of disconnection (protocolError). The service gets each
+  request's bytes: `dir_bind` with what the job knows of the connection
+  (client address, TLS, the TLS client certificate's subject for SASL
+  EXTERNAL), `dir_search` for a search, `dir_op` for the rest, and the
+  job writes the answer's messages as they are. A bind first closes the
+  connection's paused and persistent searches. A request the service
+  refuses is answered with other (80) and the service's text.
+- *Searches* stream: `dir_search` then `dir_next` with a budget (100
+  entries, 256 KiB) until the cursor is done, paused (paged results:
+  the client's next page is a new `dir_search`) or watching. Between
+  batches the job reads what the client sent without waiting, so an
+  abandon of the search (or an unbind) stops it at once with
+  `dir_close` of its message ID and no done; an abandon of a paused or
+  persistent search closes it the same way. Size and time limits are
+  the service's (the cursor's deadline).
+- *Persistent searches.* While a connection has any, its thread asks
+  `dir_changes` every 500 ms (at most 100 entries) between reads and
+  writes the entries, each with its entry change control when asked
+  for; a search the service ended gets a done with other (80).
+- *StartTLS* is operationsError (1) under TLS or with searches
+  outstanding; otherwise the service answers, and after the success
+  response is written the job does the handshake (bytes the client sent
+  after the request end the connection).
+- *Time-outs.* `ibm-slapdIdleTimeOut`: a connection with no request for
+  that long, and no persistent search, is closed. `ibm-slapdWriteTimeout`:
+  a write that does not finish in time ends the connection. Neither
+  sends a notice.
+- *Counts.* Open, accepted, StartTLS and secure-port connections go to
+  the service with `dir_conns` when they change (every 2 s at most), for
+  `cn=monitor`.
+- *End.* `ENDTCPSVR`, `ENDJOB` or the subsystem's end: the listeners
+  close, each connection writes a notice of disconnection (unavailable)
+  and closes its session (`dir_close`), the job waits up to 10 seconds
+  for them and logs `GLD0265`. Unbind and a closed connection close the
+  session too.
 
 **The service** (`lic/slic/src/stgsvc/dirsrv/`) holds, per instance,
 the backends and the schema, and answers:
@@ -1500,6 +1561,9 @@ ignored.
   online backup): 12 for a critical control, 2 for an extended
   operation (§7's tables say why each).
 - Pass-through authentication (`cn=Passthrough Authentication`).
+- `STRTCPSVR SERVER(*DIRSRV) INSTANCE(name values)`: instance startup
+  values are refused (`TCP1A05`; IBM's message for it was not captured);
+  `ibm-slapdSecurity: SSLOnly` is not among the values taken (§10).
 - `ibm-slapdPwEncryption` `aes128`, `aes192`, `aes256`, `md5`
   (`GLD0232`); `ibm-slapdSchemaCheck: V2` (`GLD0232`); IBM's other
   configuration attributes away from their defaults (`GLD0126`, §10).

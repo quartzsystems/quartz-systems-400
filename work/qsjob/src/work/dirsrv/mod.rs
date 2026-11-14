@@ -2,6 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The directory server's jobs (docs/DIRSRV.md §2).
+//! The directory server's jobs (docs/DIRSRV.md §2): an instance's
+//! (`instance`) and the publishing agents (`publish`).
 
+pub mod instance;
 pub mod publish;

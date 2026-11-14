@@ -39,6 +39,7 @@ pub fn framework() -> Framework {
         servers::framework::Standard::of("*DDM").expect("in the registry"),
     ));
     f.register(Box::new(servers::framework::NetSvr));
+    f.register(Box::new(servers::framework::DirSrv));
     f
 }
 
@@ -341,6 +342,21 @@ fn instance(r: &Resolved) -> Instance {
     }
 }
 
+/// `STRTCPSVR INSTANCE`'s second element, instance startup values;
+/// empty for `*NONE`.
+fn startup_values(r: &Resolved) -> String {
+    let v = match parms_of(r).get("INSTANCE") {
+        Some(Value::Elems(items)) => items.get(1).cloned().flatten().map(|v| text(&v)),
+        _ => None,
+    }
+    .unwrap_or_default();
+    if v.eq_ignore_ascii_case("*NONE") {
+        String::new()
+    } else {
+        v
+    }
+}
+
 /// The answers as the command's output; an escape when nothing went
 /// and something was refused.
 fn report(answers: Vec<(String, Result<String, servers::Refusal>)>) -> Result<String, Fail> {
@@ -372,6 +388,17 @@ pub fn strtcpsvr(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
     let fw = framework();
     let list = server_list(r);
     let inst = instance(r);
+    // A directory server instance takes no startup values here
+    // (docs/DIRSRV.md section 14).
+    if list.iter().any(|s| s == "*DIRSRV") && !startup_values(r).is_empty() {
+        return Err(Fail::new(
+            servers::msg::NOT_STARTED,
+            format!(
+                "{} *DIRSRV could not be started: instance startup values are not taken.",
+                servers::msg::NOT_STARTED
+            ),
+        ));
+    }
     let restart = parms_of(r).name("RESTART");
     let mut env = JobEnv::new(job, host);
     let mut lead = String::new();

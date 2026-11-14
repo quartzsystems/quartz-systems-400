@@ -1258,8 +1258,8 @@ vars = ["*CHAR 8"]
 [[msg]]
 id = "GLD0246"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2, &3."
+text = "Directory server instance &1 could not listen on port &2: error &3."
+help = "The instance's job ends. Another program may hold the port (ibm-slapdPort in the instance's configuration file), or the job's user may not be allowed to listen on it; the error is the system's errno."
 vars = ["*CHAR 8", "*BIN 4", "*BIN 4"]
 
 [[msg]]
@@ -1389,8 +1389,8 @@ vars = ["*CHAR 10", "*CHAR 10"]
 [[msg]]
 id = "GLD0265"
 sev = 0
-text = "Directory server information."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+text = "Directory server instance &1 ended."
+help = "The instance's job closed its listeners and its connections, each with a notice of disconnection, after ENDTCPSVR, ENDJOB or the end of its subsystem."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -1410,15 +1410,15 @@ vars = ["*CHAR 10", "*CHAR 10"]
 [[msg]]
 id = "GLD0268"
 sev = 40
-text = "Directory server error."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1."
+text = "Directory server instance &1 could not be started."
+help = "The storage service did not open the instance; the message before this one in the job log says why."
 vars = ["*CHAR 8"]
 
 [[msg]]
 id = "GLD0269"
 sev = 0
-text = "Directory server information."
-help = "QS/400 does not send this message; it keeps IBM's identifier and data. Its data: &1, &2."
+text = "Directory server instance &1 started on ports &2."
+help = "The instance's job listens on the ports shown: ibm-slapdPort, and ibm-slapdSecurePort when a certificate is assigned to QS400_DIRECTORY_SERVER and ibm-slapdSecurity is SSL or SSLTLS."
 vars = ["*CHAR 8", "*CHAR 10"]
 
 [[msg]]
