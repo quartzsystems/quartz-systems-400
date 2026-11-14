@@ -540,7 +540,7 @@ the primary's definitions:
 
 - added (absent on the primary): `entryUUID` (RFC 4530, the same value
   as `ibm-entryUuid`), `structuralObjectClass`,
-  `governingStructureRule`, the class `uidObject`;
+  `governingStructureRule`, `entryDN` (RFC 5020), the class `uidObject`;
 - `supportedControl` is `USAGE dSAOperation` (RFC 4512; the primary
   has it as a user attribute);
 - kept as IBM has them, against the RFCs: `displayName` and
@@ -688,71 +688,196 @@ instance's start.
 
 ## 7. Operations, controls, extended operations
 
-All of RFC 4511: bind, unbind, search (every filter, every scope, alias
-dereferencing per `derefAliases` and `ibm-slapdDerefAliases`, size and
-time limits min'd with the server's for non-administrators, `typesOnly`,
-`*` and `+` and `1.1`), compare, add, modify (add, delete, replace,
-increment from RFC 4525), modify DN (new RDN, delete old RDN, new
-superior, subtree moves), delete, abandon, extended. Referral objects
-(`referral` class, `ref`) answer referrals and continuation references
-(RFC 3296) unless manageDsaIT is sent; the server's default referral
-(`ibm-slapdReferral`) answers for a DN outside every suffix.
+The engine is `net/dirsrv/src/ops/` (`ops::Directory`), a library the
+service calls per request (§4); it has no job, socket or thread of its
+own.
 
-Controls (each in `supportedControl` when built):
+**The interface.** A `Directory` is one instance: its `Schema`, its
+`Settings` (§10's values, filled by `config`), its backends by suffix
+(the btree backend over the `*DIRDB` holds the user suffixes,
+`cn=localhost` and `cn=ibmpolicies`; `cn=changelog` is added when
+`ibm-slapdChangeLogMaxEntries` is set; the service adds the projected
+backend and `cn=configuration` with `add_backend`), a clock and random
+source (`Env`), and two hooks the service implements: `Identity` (binds
+of DNs it answers for: OS profiles, §9) and `Audit` (§12). Every call
+runs in a store transaction the caller begins and ends, and takes the
+connection's `Session` (anonymous, or a DN with its groups, the
+administrator flag and the must-change flag of a reset password):
 
-| OID | Control | |
+| Call | Request | What |
 |---|---|---|
-| 1.2.840.113556.1.4.319 | paged results (RFC 2696) | built |
-| 1.2.840.113556.1.4.473 / .474 | server-side sort (RFC 2891) | built |
-| 2.16.840.1.113730.3.4.2 | manageDsaIT (RFC 3296) | built |
-| 2.16.840.1.113730.3.4.3 | persistent search (draft-ietf-ldapext-psearch) | built |
-| 2.16.840.1.113730.3.4.18 | proxied authorization v2 (RFC 4370) | built |
-| 1.2.840.113556.1.4.805 | tree delete | built |
-| 1.3.6.1.1.12 | assertion (RFC 4528) | built (QS/400 addition) |
-| 1.3.6.1.1.13.1 / .2 | pre-read, post-read (RFC 4527) | built (QS/400 addition) |
-| 1.3.6.1.4.1.42.2.27.8.5.1 | password policy response | built |
-| 1.3.18.0.2.10.* | IBM's (server administration, omit group referential integrity, group authorization, limit number of attribute values, ...) | each decided in `ops`: built or refused with `unavailableCriticalExtension` when critical |
+| `Directory::new`, `seed` | `dir_open` | the instance; `seed` adds the entries of `cn=localhost` and `cn=ibmpolicies` the primary has (`oracle/dirsrv/anon-entries.ldif`) when missing |
+| `bind(txn, msg, conn)` | 1561 | the new `Session` in `Outcome::session`; `Conn` carries TLS and the client certificate's subject; commit whatever the result (policy failures are recorded) |
+| `op(txn, session, msg)` | 1562 | add, modify, delete, modify DN, compare, extended; commit when `Outcome::succeeded`, then pass `Outcome::changes` to `publish`; `start_tls` and `schema_changed` tell the job and the service what follows |
+| `search(txn, session, msg, cursors)` | 1563 | `Started::Done(replies)` or `Started::Cursor(id)` in the connection's `Cursors` |
+| `next(txn, cursors, id, budget)` | 1564 | at most `Budget { entries, bytes }`; `PageState::More`, `Done`, `Paused` (a page of paged results: the cursor waits for the next page's request, whose cookie is its number) or `Watching(w)` |
+| `Cursors::close`, `close_watch` | 1565 | an abandoned or ended search |
+| `publish(txn, changes)` | (after a commit) | changes matched against every persistent search, as each watcher may see them |
+| `changes(w, max)` | 1567 | a persistent search's queued entries, with entry change notifications when asked |
 
-Extended operations:
+Responses are `Reply { op, controls }` with `ldap::msg` operations.
 
-| OID | Operation | |
+**Operations.** All of RFC 4511: bind, search (every scope, aliases
+dereferenced per `derefAliases` within `ibm-slapdDerefAliases`, size
+and time limits min'd with the server's for non-administrators,
+`typesOnly`, `*`, `+`, `1.1` and IBM's `+ibmaci`, `+ibmentry`,
+`+ibmpwdpolicy`, `+ibmrepl` classes of `ibm-opAttrClasses`), compare,
+add, modify (add, delete, replace, increment from RFC 4525), modify DN
+(new RDN, delete old RDN, new superior: a subtree move is one key in
+the store), delete (a leaf, or a subtree with tree delete), extended.
+Unbind and abandon are the job's (the service closes the cursors).
+Referral objects (`referral`, `ref`) answer referrals with the DN
+carried into each URL and continuation references in searches (RFC
+3296) unless manageDsaIT is sent; `ibm-slapdReferral` answers for a DN
+under no suffix, noSuchObject (32) otherwise.
+
+**Search candidates** are the btree backend's (§5): an indexed
+equality, presence or substrings assertion; the smallest list of an
+`&`; the union of an `|` of indexed terms; a walk of the base's subtree
+otherwise. The operations evaluate the filter on each candidate with
+the schema's matching rules (`ops::filter`): through subtypes; an
+attribute defined without a rule takes the first rule of its syntax
+(IBM's `createTimestamp` orders without one); Undefined for an unknown
+attribute, a missing rule, or an attribute the requester may not
+search (`s`). `~=` is QS/400's approximate rule on the
+equality-normalized values: equal, a common prefix of at least four
+characters and three quarters of the shorter value, or an edit distance
+of at most a quarter of it (the primary matches `(cn~=ibmpolicy)` to
+`IBMpolicies`; IBM's algorithm is not documented). Extensible match
+runs the named rule (an ordering rule matches values below the
+assertion, a substrings rule takes `*` in the value) and `:dn:` the
+DN's AVAs: a QS/400 addition, the primary's matches nothing. `(&)` and
+`(|)` match nothing, as the primary answers (RFC 4526 is not
+advertised).
+
+**Operational attributes** stored by the server: `creatorsName`,
+`createTimestamp`, `modifiersName`, `modifyTimestamp` (IBM's form,
+`YYYYMMDDHHMMSS.ffffffZ`), `entryUUID` and `ibm-entryuuid` (one random
+version 4 UUID), `structuralObjectClass`, the implied superclasses in
+`objectClass` (`V3_lenient`, §6.3), the password policy state (§11).
+Computed when asked for: `entryDN` (RFC 5020), `hasSubordinates`,
+`numSubordinates`, `subschemaSubentry`, `aclEntry`, `aclPropagate`,
+`entryOwner`, `ownerPropagate` (the effective values when the entry has
+none of its own, as the primary shows them), `aclSource`,
+`ownerSource` (a DN or `default`), `ibm-effectiveAcl`,
+`ibm-replicationThisServerIsMaster` (TRUE), `ibm-replicationIsQuiesced`
+(FALSE).
+
+**What follows the primary** (`oracle/dirsrv/ldaptest-primary.txt`):
+a size limit is exceeded (4) only when more entries match than it
+allows; noSuchObject's matched DN is upper-cased; a one-level search of
+`""` is 53 and a subtree search of `""` searches every suffix of the
+entry store; `cn=schema` one-level is 2; `cn=monitor` one-level is 32
+and anything below it 53; a filter naming the ACL attributes
+(`aclEntry`, `entryOwner` and their kin) is 53 for anyone but an
+administrator; a compare of an attribute the schema does not define is
+16; a paged search past `ibm-slapdPagedResLmt` open on the connection
+is 53, a cookie the server did not give 53, a page size of 0 with a
+cookie ends the search; sorting with more keys than
+`ibm-slapdSortKeyLimit` is sortResult 11 and with an unknown attribute
+16 — the search fails with 12 when the control is critical and is
+answered unsorted otherwise; proxied authorization by anyone but an
+administrator is 50; a control the operation does not take is 12 when
+critical (paged results on a compare included). Deliberately not
+followed: the primary's 80 for the second paged search opened while
+one is open (the limit is what counts), and its 53 for the request
+after an abandoned persistent search (a race in IBM's server).
+
+Controls (`ops::controls`; each in `supportedControl`):
+
+| OID | Control | Operations | |
+|---|---|---|---|
+| 1.2.840.113556.1.4.319 | paged results (RFC 2696) | search | built; non-administrators only with `ibm-slapdPagedResAllowNonAdmin` |
+| 1.2.840.113556.1.4.473 / .474 | server-side sort (RFC 2891) | search | built; the least value ascending, the greatest descending, entries without one last; non-administrators only with `ibm-slapdSortSrchAllowNonAdmin` |
+| 2.16.840.1.113730.3.4.2 | manageDsaIT (RFC 3296) | all but bind and extended | built |
+| 2.16.840.1.113730.3.4.3 | persistent search | search | built when `ibm-slapdEnablePersistentSearch`, at most `ibm-slapdMaxPersistentSearches` (11 past it), entry change notifications, 10 000 queued changes per watch |
+| 2.16.840.1.113730.3.4.18 | proxied authorization v2 (RFC 4370) | all but bind and extended | built; administrators only (50 for others), `dn:` or empty identities (123 for `u:`), must be critical (2) |
+| 1.2.840.113556.1.4.805 | tree delete | delete | built; `object:d` on every entry |
+| 1.3.6.1.1.12 | assertion (RFC 4528) | all but bind and extended | built (QS/400 addition: the primary answers 12); an add's assertion is tested against the entry to be added; 122 when false |
+| 1.3.6.1.1.13.1 / .2 | pre-read, post-read (RFC 4527) | modify, delete, modify DN / add, modify, modify DN | built (QS/400 addition), with the requester's read rights |
+| 1.3.6.1.4.1.42.2.27.8.5.1 | password policy | bind, add, modify, password modify | built (§11): the response control when the request carried it |
+| 1.3.18.0.2.10.5, .8, .9, .15, .18, .21, .22, .23, .24, .25, .26, .27, .28, .30 | IBM's (transactions, server administration, omit group referential integrity, group authorization, limit number of attribute values, replication, audit) | — | not built: 12 when critical, ignored when not (RFC 4511 §4.1.11); their values are not in the facts and QS/400 does not guess IBM's encodings (§14) |
+
+Any other control: 12 when critical, ignored when not; a control the
+operation takes whose value does not decode is 2.
+
+Extended operations (`ops::ext`):
+
+| OID | Operation (`ldapexop -op`) | |
 |---|---|---|
-| 1.3.6.1.4.1.1466.20037 | StartTLS (RFC 4511 §4.14) | built |
-| 1.3.6.1.4.1.4203.1.11.3 | whoami (RFC 4532) | built (QS/400 addition) |
-| 1.3.6.1.4.1.4203.1.11.1 | password modify (RFC 3062) | built (QS/400 addition) |
-| 1.3.18.0.2.12.* | IBM's (transactions, effective password policy, account status, get attributes, user type, locate entry, online backup, log and configuration operations, replication) | each decided in `ops`; the replication ones refused (§14) |
+| 1.3.6.1.4.1.1466.20037 | StartTLS (RFC 4511 §4.14) | built: success and `Outcome::start_tls`; the job does the handshake, or answers 2 itself without a certificate, as the primary does; a value is 2 |
+| 1.3.6.1.4.1.4203.1.11.3 | whoami (RFC 4532) | built (QS/400 addition): `dn:DN`, empty for anonymous |
+| 1.3.6.1.4.1.4203.1.11.1 | password modify (RFC 3062) | built (QS/400 addition): a modify of `userPassword` under ACLs and §11; the old password checked when sent (49); one generated when no new one is |
+| 1.3.18.0.2.12.5, .6, .64 | begin, end, prepare transaction | refused: a request is one store transaction; IBM's transaction encodings are not in the facts |
+| 1.3.18.0.2.12.15, .16, .17, .19, .54, .56, .79 | `cascrepl`, `controlrepl`, `controlqueue`, `quiesce`, `repltopology`, `controlreplerr`, `resumerole` | refused: replication (§14) |
+| 1.3.18.0.2.12.20, .22, .24 | `clearlog`, `readlog`, `getlogsize` | refused: QS/400's logs are the job log and `QAUDJRN` |
+| 1.3.18.0.2.12.28 | `readconfig` | refused: configuration takes effect as §10 says |
+| 1.3.18.0.2.12.35, .44 | `unbind` (end a connection), `stopserver` | refused: connections and the job are `ENDTCPSVR`'s |
+| 1.3.18.0.2.12.40 | dynamic trace | refused: `TRCTCPAPP` |
+| 1.3.18.0.2.12.73 | `onlineBackup` | refused: `SAVLIB QUSRDIRDB` is the backup (§5) |
+| 1.3.18.0.2.12.30, .37, .46, .50, .58, .75, .80 | DN normalization, `getusertype`, `getattributes`, `evaluategroups`, `acctstatus`, `effectpwdpolicy`, `locateEntry` | refused: their request and response values are not in the facts; QS/400 does not invent encodings under IBM's OIDs (the password policy response control and `+ibmpwdpolicy` give account status) |
 
-Anything not built answers as IBM's server does to an unknown request:
-protocolError (2), "unsupported extended operation".
+Anything not built answers as IBM's server does an unknown request:
+protocolError (2), "unsupported extended operation" in QS/400's own
+words.
 
-**The root DSE** QS/400 answers: `namingContexts` (as configured,
-upper-cased as IBM writes them), `subschemaSubentry: cn=schema`,
-`supportedLDAPVersion` 2 and 3 (version 2 binds accepted, as IBM's),
+**The root DSE** (`ops::rootdse`) answers, as on the primary, as user
+attributes (no list and `*` return them all, `+` none):
+`namingContexts` (`CN=SCHEMA`, `CN=LOCALHOST`, `CN=IBMPOLICIES`, the
+user suffixes, `cn=changelog` when on and the projected suffix,
+upper-cased as IBM writes them; not `cn=configuration`),
+`subschemaSubentry: cn=schema`, `supportedLDAPVersion` 2 and 3,
 `supportedControl`, `supportedExtension`, `supportedSASLMechanisms`
-(`EXTERNAL` only), `vendorName: Quartz Systems`, `vendorVersion` the
-release (`V1R2M0`), `ibmdirectoryversion: 6.1` (the IBM level whose
-behaviour QS/400 follows, which IBM's tools test), `ibm-serverId`,
+(`EXTERNAL` only), `vendorName: Quartz Systems`, `vendorVersion` (the
+release), `ibmdirectoryversion: 6.1`, `ibm-serverId`,
 `ibm-slapdServerInstanceName`, `ibm-slapdServerBackend: QS400`,
-`ibm-osregistrycontext`, `ibm-osregistrytype`, `security`, `port`,
-`ibm-slapdSizeLimit`, `ibm-slapdTimeLimit`, `ibm-slapdDerefAliases`,
-`ibm-supportedacimechanisms`, `ibm-opAttrClasses`,
-`ibm-slapdisconfigurationmode`. `cn=monitor` gives the counters IBM's
-does that QS/400 keeps; the rest are absent, not zero.
+`ibm-osregistrycontext`, `ibm-osregistrytype`, `ibm-ldapservicename`,
+`security`, `port`, `ibm-slapdSizeLimit`, `ibm-slapdTimeLimit`,
+`ibm-slapdDerefAliases`, `ibm-supportedacimechanisms`
+(1.3.18.0.2.26.2), `ibm-opAttrClasses`, `ibm-slapdisconfigurationmode`.
+`tests/ops_read.rs` diffs the attribute names with `rootdse.ldif`; the
+primary's `ibm-sasldigestrealmname` and `ibm-supportedAuditVersion` are
+absent (§15).
 
 ## 8. Backends
 
+The operations reach entries through `backend::Backend`: a backend
+holds suffixes, resolves a DN to an ID (and the deepest existing entry
+above it), gives an entry, its parent and its children's count, lists
+search candidates in pages (`Scan`, resumable across calls and
+transactions), and adds, replaces, renames and deletes. Access control,
+schema checks, operational attributes and filters are the operations'.
+A backend may hide an entry from a session: it resolves the DN but
+gives no entry and leaves it out of its candidates, and the search
+succeeds with no entries (the projected backend answers anonymous
+users so, as the primary does). `read_only` backends refuse writes
+(53); `admin_only` ones answer 50 to anyone else.
+
 - `btree` (`backend/btree`): the user suffixes, `cn=localhost` and
-  `cn=ibmpolicies`, over the entry store of §5.
-- `config` (`backend/config`): `cn=configuration`, a view of the
-  instance's `ibmslapd.conf`; the administrator reads and changes it
-  (writes go to the file and take effect as §10 says). Others get 50.
-- `schema` (`backend/schema`): `cn=schema`.
-- `monitor` (`backend/monitor`): `cn=monitor`, read-only.
+  `cn=ibmpolicies`, over the entry store of §5, candidates from its
+  indexes; with the change log on it appends a `ChangeRec` in the same
+  transaction as every change.
+- `config` (`backend/config`): `cn=configuration`. The interface only:
+  the service implements `ConfigSource` (the file's entries; a modify
+  written to the file at once) and adds `ConfigBackend` with
+  `add_backend`. Administrators only; others get 50, as on the primary.
+- `schema` (`backend/schema`): `cn=schema`, answered by the operations
+  (base and subtree; one-level is 2); its modify is the
+  administrator's.
+- `monitor` (`backend/monitor`): `cn=monitor`, one read-only entry from
+  `Counters` (operations requested and completed by kind, entries sent,
+  persistent searches, the connection counts the job reports, the start
+  and current time as Generalized Time). The caches, work queues,
+  transactions and event notification of IBM's entry are absent, not
+  zero.
 - `changelog` (`backend/changelog`): `cn=changelog` when
   `ibm-slapdChangeLogMaxEntries` is set (QS/400's addition; IBM 6.1 on
-  IBM i has it only with replication): one `changeLogEntry` per change
-  (draft-good-ldap-changelog), numbered, trimmed to the size.
-- `projected` (`backend/projected`): §9.
+  IBM i has it only with replication), read-only:
+  `changeNumber=N,cn=changelog` per change (draft-good-ldap-changelog:
+  `changeNumber`, `targetDN`, `changeType`, `changeTime`, `changes` as
+  LDIF without `userPassword` values, `newRdn`, `deleteOldRdn`,
+  `newSuperior`, `ibm-changeInitiatorsName`), trimmed to the size.
+- `projected` (`backend/projected`): §9, the service's.
 
 ## 9. Users: the administrator, the projected backend, binds
 
@@ -1000,46 +1125,108 @@ the same code when its names are settled from the header (`NEEDS-CODY`
 
 ## 11. Passwords
 
-- Storage schemes in `userPassword`: `{SSHA512}`, `{SSHA256}`, `{SSHA}`,
-  `{SHA}` (verify only), `{CRYPT}` with `$6$`, `$5$` and `$1$` (verify
-  only for `$1$`), and clear text only when `ibm-slapdPwEncryption: none`
-  (refused by default: an add or replace of a clear value is hashed with
-  the configured scheme). Values come back as stored, to the
-  administrator only (`userPassword` is critical-class, §12).
-- Password policy: IBM's `cn=pwdpolicy,cn=ibmpolicies` global policy and
-  `ibm-pwdPolicy`/`ibm-pwdIndividualPolicyDN`/`ibm-pwdGroupPolicyDN`
-  individual and group policies (draft-behera-ldap-password-policy as
-  IBM applies it): minimum length, quality, history, minimum and maximum
-  age, expiry warning, grace logins, lockout after failures and its
-  duration, must change after reset, safe modify; the response control.
-  Off unless `ibm-slapdConfigPwdPolicyOn: TRUE`, as IBM ships it.
+`net/dirsrv/src/pwd/`.
+
+- **Storage schemes** in `userPassword` (`pwd::scheme`): `{SSHA512}`,
+  `{SSHA256}`, `{SSHA}` (the digest of password and salt, then the
+  8-byte salt, base64), `{SHA}` (verify only), `{CRYPT}` with `$6$`
+  and `$5$` (Drepper's SHA-crypt, `rounds=` honoured) and `$1$` (MD5
+  crypt, verify only); a value with no known tag is clear text. A value
+  added or replaced in clear is hashed with `ibm-slapdPwEncryption`
+  (`ssha512` by default; `crypt` writes `$6$`; `none` stores it clear);
+  a value already tagged is stored as given (IBM exports load). Values
+  come back as stored, to those with read on the critical class (the
+  administrator and owners, §12). The administrator's password is
+  `ibm-slapdAdminPW` under the same schemes; unset, its binds are 49.
+- **Password policy** (`pwd::policy`, draft-behera-ldap-password-policy
+  as IBM applies it): IBM's global policy `cn=pwdpolicy,cn=ibmpolicies`
+  (seeded off, `ibm-pwdPolicy: false`, as the primary has it), and,
+  when that entry has `ibm-pwdGroupAndIndividualEnabled: TRUE`, group
+  policies (`ibm-pwdGroupPolicyDN` on a static group of the user: the
+  strictest of them, setting by setting) and an individual policy
+  (`ibm-pwdIndividualPolicyDN` on the user's entry), each overlaying
+  the one before; the policy is in force when the result's
+  `ibm-pwdPolicy` is TRUE. `ibm-slapdConfigPwdPolicyOn` governs the
+  administrator's own policy (`cn=pwdPolicy Admin`, §10), not this one.
+  Honoured: `pwdMinLength`, `pwdCheckSyntax` (0, 1 clear values only, 2
+  refusing pre-hashed ones), IBM's `passwordMinAlphaChars`,
+  `passwordMinOtherChars`, `passwordMaxRepeatedChars`,
+  `passwordMinDiffChars`, `pwdInHistory` (`pwdHistory` in the draft's
+  `time#syntax#length#value` form), `pwdMinAge`, `pwdMaxAge`,
+  `pwdExpireWarning`, `pwdGraceLoginLimit`, `pwdLockout`,
+  `pwdMaxFailure`, `pwdFailureCountInterval`, `pwdLockoutDuration` (0:
+  until an administrator removes `pwdAccountLockedTime`),
+  `ibm-pwdAccountLocked`, `pwdMustChange` (an administrator's or
+  another user's change sets `pwdReset`; the next bind succeeds with
+  `changeAfterReset` and the session may only change its own password,
+  53 otherwise), `pwdAllowUserChange`, `pwdSafeModify` (the old value
+  deleted in the same modify). The quality rules do not bind the
+  administrator. A bind's failures, lockout and grace logins are
+  recorded in the entry (the caller commits a failed bind too). The
+  response control (`1.3.6.1.4.1.42.2.27.8.5.1`) answers binds,
+  modifies and password modify when the request carried it; a refused
+  change is 19 (50 for `passwordModNotAllowed` and
+  `mustSupplyOldPassword`).
 
 ## 12. Access control and auditing
 
 IBM's model (non-filtered ACLs, `ibm-supportedacimechanisms`
-1.3.18.0.2.26.2), evaluated in the service:
+1.3.18.0.2.26.2), `net/dirsrv/src/acl/` (the values and their
+evaluation) and `ops/access.rs` (what is in force on an entry),
+evaluated in the service:
 
-- `entryOwner` (`access-id:DN`, `group:DN`, `role:DN`) and
-  `ownerPropagate`; owners have every right on the entry and below.
-  Inherited from the nearest ancestor with an explicit owner
-  (`ownerSource` names it); the default owner is the administrator.
-- `aclEntry` values `[access-id:|group:|role:]DN:` + object rights
-  (`object:a` add children, `object:d` delete) and attribute-class
-  rights (`normal:rsc`, `sensitive:rwsc`, `critical:...`,
-  `system:...`, `restricted:...`, `at.NAME:grant:rwsc` and `deny:`),
-  `aclPropagate`; `aclSource` and `ibm-effectiveAcl` computed. Pseudo
-  DNs `cn=anybody`, `cn=authenticated`, `cn=this`. Deny wins over grant
-  at the same level; the most specific level wins.
-- The default ACL on a new suffix: `group:cn=anybody:normal:rsc`
-  (read, search, compare of normal attributes), as IBM's.
-- Filter-based ACLs (`ibm-filterAclEntry`, mechanism 1.3.18.0.2.26.4)
-  are refused on write (53) and listed in §14; the root DSE lists only
-  the mechanisms built.
+- **Owners**: `entryOwner` values `[access-id:|group:|role:]DN`, and
+  `ownerPropagate`. Owners have every right on the entry and below.
+  An entry's owners are its own, or those of the nearest ancestor whose
+  owners propagate (`ownerSource` names it), or the administrator
+  (`ownerSource: default`).
+- **ACLs**: `aclEntry` values `[access-id:|group:|role:]DN` followed by
+  `:target:[grant:|deny:]permissions`, any number: `object` with `a`
+  (add children) and `d` (delete), an access class (`normal`,
+  `sensitive`, `critical`, `system`, `restricted`, §6.1) or `at.NAME`
+  with `r` `w` `s` `c`; no keyword is a grant; a DN with no type is an
+  `access-id`. `aclPropagate: FALSE` keeps an entry's ACL to itself:
+  its children inherit from the next ancestor up. An entry's ACL
+  replaces what it would inherit (no merging), as IBM's does.
+  `ibm-effectiveAcl` prints the ACL in force in one canonical order
+  (object, restricted, system, critical, sensitive, normal, `at.`);
+  `aclSource` names its entry or `default`.
+- **Pseudo DNs**: `cn=anybody` (everyone), `cn=authenticated` (every
+  bound identity), `cn=this` (the entry, bound as itself).
+- **Evaluation**: the administrator (and a session the `Identity` hook
+  marks administrative) and the owners have every right. Otherwise each
+  right is decided by level: the requester's own DN first
+  (`access-id`, and `cn=this`), then its groups and roles (static
+  groups found at bind: `groupOfNames`, `groupOfUniqueNames`,
+  `accessGroup`, `accessRole` listing the DN in `member` or
+  `uniqueMember`; plus the groups the `Identity` hook reports;
+  `cn=authenticated`; `cn=anybody`). Within a level an `at.NAME` right
+  counts before its class and a deny before a grant; the first level
+  and target that says anything decides; nothing said is no right.
+  `acl::eval`'s matrix test covers each case.
+- **The default ACL** where no entry sets one is the primary's:
+  `group:CN=ANYBODY:normal:rsc:system:rsc:restricted:rsc`.
+- **Rights per operation**: search returns attributes with `r` and
+  evaluates filter assertions with `s` (Undefined without); compare
+  needs `c`; add `object:a` on the parent (a suffix's root, the
+  administrator); delete `object:d` on the entry (each entry, for a tree
+  delete); modify `w` on each attribute changed; modify DN `w` on the
+  old and new RDN's attributes and, with a new superior, `object:a`
+  there and `object:d` on the entry. A user may always change its own
+  `userPassword` unless the policy says `pwdAllowUserChange: FALSE`.
+  `aclEntry` and `entryOwner` are restricted-class (owners write them);
+  their values are parsed on write (21 for a malformed one).
+- Filter-based ACLs (`ibm-filterAclEntry`, `ibm-filterAclInherit`,
+  mechanism 1.3.18.0.2.26.4) are refused on write (53) and listed in
+  §14; the root DSE lists only the mechanism built.
 
-Auditing goes to `QAUDJRN` (entry type `DI`, directory service, with
-IBM's subtype letters where IBM documents them) when `ibm-audit: true`
-and the operation's switch is on; `PW` for failed profile binds as
-§9. `QSSECCHK` learns three checks: anonymous binds allowed, simple
+**Auditing**: every bind, search, compare, add, modify, delete, modify
+DN and extended operation reaches the `Audit` hook (`ops::AuditEvent`:
+the operation, the DN it named, the session's DN, the result code). The
+service writes them to `QAUDJRN` (entry type `DI`, directory service,
+with IBM's subtype letters where IBM documents them) when `ibm-audit:
+true` and the operation's switch is on; `PW` for failed profile binds
+as §9. `QSSECCHK` learns three checks: anonymous binds allowed, simple
 binds accepted without TLS on 389 (`ibm-slapdSecurity: none`), an
 administrator password unset or one of the well-known defaults.
 
@@ -1088,6 +1275,11 @@ ignored.
   extended operations): a later handoff. `*UPDATEDN` is kept but unused.
 - SASL `DIGEST-MD5`, `CRAM-MD5`, `GSSAPI`, `OS400-PRFTKN`; Kerberos.
 - Filter-based ACLs (`ibm-filterAclEntry`).
+- IBM's controls `1.3.18.0.2.10.*` and extended operations
+  `1.3.18.0.2.12.*` (transactions, log, configuration, connection and
+  server operations, the account and policy queries, group evaluation,
+  online backup): 12 for a critical control, 2 for an extended
+  operation (§7's tables say why each).
 - Pass-through authentication (`cn=Passthrough Authentication`).
 - `ibm-slapdPwEncryption` `aes128`, `aes192`, `aes256`, `md5`
   (`GLD0232`); `ibm-slapdSchemaCheck: V2` (`GLD0232`); IBM's other
@@ -1108,6 +1300,21 @@ ignored.
 - Auditing goes to `QAUDJRN` rather than `audit.log`.
 - The default password scheme is `ssha512`.
 - QS/400 ships a `QRPGLESRC(LDAP)` copy member.
+- An entry's DN is its RDN as written under its parent's DN as written
+  (`CN=REPLICATION,cn=localhost`; IBM keeps each entry's DN as it was
+  added: `CN=REPLICATION,CN=LOCALHOST`).
+- Extensible match runs the rule named (the primary's matches nothing);
+  `~=` is QS/400's approximate rule (§7).
+- `entryDN` is answered; every entry has `entryUUID` and
+  `ibm-entryuuid` (the primary's suffix entries lack the latter);
+  `ibm-capabilitiessubentry` is not answered (QS/400 has no
+  `cn=ibm-capabilities` entries).
+- The root DSE has no `ibm-sasldigestrealmname` (no DIGEST-MD5) and
+  no `ibm-supportedAuditVersion` (auditing is `QAUDJRN`'s); its
+  `ibm-supportedacimechanisms` is 1.3.18.0.2.26.2 alone, its
+  `supportedSASLMechanisms` `EXTERNAL`.
+- `cn=monitor` has the counters QS/400 keeps (§8), its times as
+  Generalized Time.
 
 ## 16. Tests and performance
 
@@ -1119,6 +1326,19 @@ ignored.
   point, and `tests/client.rs` (the client against a fake server on the
   loopback: binds, the asynchronous face, paging, sorting, referrals,
   timeouts, a notice of disconnection, LDAPS and `StartTLS`).
+- `cargo test -p dirsrv`: the schemes against `openssl passwd` answers,
+  the policy's rules, the ACL matrix (`acl::eval`), filters, and over a
+  store in memory (`tests/harness`) `ops_read.rs` (scopes, filters,
+  attribute selection, limits, budgets, paging, sorting, compare,
+  controls, the root DSE against `rootdse.ldif`), `ops_write.rs` (add,
+  modify, delete, tree delete, modify DN and subtree moves, read
+  controls, referrals, aliases, binds and schemes, extended operations,
+  proxied authorization, the change log, persistent search, read-only,
+  `cn=schema`, `cn=monitor`, the policy response) and `ops_access.rs`
+  (inherited ACLs and owners, restricted attributes, passwords, policy
+  quality, history, reset, expiry, grace, group and individual
+  policies, the identity, audit and configuration hooks, a hiding
+  backend).
 
 ## 17. NEEDS-CODY
 
