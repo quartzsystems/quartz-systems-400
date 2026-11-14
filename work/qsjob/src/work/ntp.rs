@@ -33,6 +33,12 @@ pub const ADJUSTER: &str = "QIBM_OS400_SNTP";
 /// How long one server may take to answer.
 const TIMEOUT: Duration = Duration::from_secs(2);
 const PGM: &str = "QTOTNTP";
+/// The bag key Navigator's Sync now sets (a request token).
+pub const SYNC_REQ: &str = "SYNCREQ";
+/// The bag key naming the last request a poll answered.
+pub const SYNC_DONE: &str = "SYNCDONE";
+/// How often the job looks for a Sync now request.
+const SYNC_CHECK: Duration = Duration::from_secs(2);
 
 /// What the threads tell the job.
 enum Event {
@@ -202,9 +208,13 @@ fn report(link: &Shared, a: &NtpAttrs, p: &Polled, may_adjust: bool, quiet: &mut
 
 /// Keep the poll's outcome in the `*NTP` bag for Navigator: `LASTSYNC`
 /// as `seconds offset-µs`, `LASTFAIL` the reason the last poll did not
-/// synchronize (blank when it did).
-fn record(link: &Shared, p: &Polled, may_adjust: bool) {
+/// synchronize (blank when it did), `SYNCDONE` the Sync now request
+/// the poll answered.
+fn record(link: &Shared, p: &Polled, may_adjust: bool, answered: Option<String>) {
     let mut bag = Vec::new();
+    if let Some(token) = answered {
+        bag.push((SYNC_DONE.into(), token));
+    }
     match p {
         Polled::Sample {
             sample,
@@ -308,9 +318,32 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let mut next = Instant::now();
     let mut in_flight = false;
     let mut quiet = false;
+    // A Sync now request seen, and the one the poll in flight answers.
+    let token = |link: &Shared| {
+        let bag = netsvc::bag(link, "*NTP");
+        bag.into_iter()
+            .find(|(k, _)| k == SYNC_REQ)
+            .map(|(_, v)| v)
+            .unwrap_or_default()
+    };
+    let mut seen = token(link);
+    let mut asked: Option<String> = None;
+    let mut in_flight_for: Option<String> = None;
+    let mut checked = Instant::now();
     loop {
         if ender.ended(link, Duration::from_millis(500)) {
             break;
+        }
+        if client && checked.elapsed() >= SYNC_CHECK {
+            checked = Instant::now();
+            let t = token(link);
+            if t != seen {
+                seen.clone_from(&t);
+                asked = Some(t);
+                if !in_flight {
+                    next = Instant::now();
+                }
+            }
         }
         while let Ok(ev) = rx.try_recv() {
             let a = NtpAttrs::from_bag(&netsvc::bag(link, "*NTP"));
@@ -318,7 +351,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
                 Event::Polled(p) => {
                     in_flight = false;
                     report(link, &a, &p, may_adjust == Some(true), &mut quiet);
-                    record(link, &p, may_adjust == Some(true));
+                    record(link, &p, may_adjust == Some(true), in_flight_for.take());
                     next = Instant::now() + Duration::from_secs(u64::from(a.pollitv.max(1)) * 60);
                 }
                 Event::Served(peer, answered) => netsvc::joblog(
@@ -337,12 +370,16 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             // servers the client waits for CHGNTPA RMTSYS.
             let a = NtpAttrs::from_bag(&netsvc::bag(link, "*NTP"));
             if a.rmtsys.is_empty() {
+                if let Some(t) = asked.take() {
+                    record(link, &Polled::Failed(Vec::new()), true, Some(t));
+                }
                 next = Instant::now() + Duration::from_secs(60);
                 continue;
             }
             let adjust = *may_adjust.get_or_insert_with(|| claim(link));
             dispatch(link, &a, adjust, &up, &tx);
             in_flight = true;
+            in_flight_for = asked.take();
         }
     }
     if let Some(r) = running {

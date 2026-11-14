@@ -10,6 +10,8 @@
 //! with `hw_cfgds` by resource; time from the date and time values,
 //! `CHGNTPA`'s attributes (`tcp Servers`) and the `QTOTNTP` job.
 
+use std::time::{Duration, Instant};
+
 use hwrsrc::Kind;
 use hwrsrc::view;
 use navigator::env::config::{Allowed, Asp, Config, DiskUnit, Disks, Resource, SysVal, Time};
@@ -22,6 +24,8 @@ use sysval::{Catalog, Entry, Group, Kind as SvKind};
 use super::Link;
 use super::parse;
 use super::perf::{panel, val};
+use crate::work::netsvc::now_micros;
+use crate::work::ntp::{SYNC_DONE, SYNC_REQ};
 use crate::work::web::bridge::Main;
 
 /// What `QTIMADJ` names while the SNTP client adjusts the clock.
@@ -386,6 +390,35 @@ impl Config for LiveConfig {
 
     fn time(&self, user: &str) -> Time {
         self.link.read(user, |m| time(m))
+    }
+
+    fn sync_now(&self, user: &str) -> bool {
+        let token = now_micros().to_string();
+        let set = token.clone();
+        let asked = self.link.read(user, move |m| {
+            let op = TcpOp::SetServer {
+                server: "*NTP".into(),
+                autostart: None,
+                bag: vec![(SYNC_REQ.to_string(), set)],
+            };
+            !matches!(m.ask(|l| l.tcp(op)), TcpReply::Failed { .. })
+        });
+        if !asked {
+            return false;
+        }
+        // The job looks every two seconds; a poll takes two per server.
+        let until = Instant::now() + Duration::from_secs(10);
+        while Instant::now() < until {
+            std::thread::sleep(Duration::from_millis(500));
+            let t = token.clone();
+            let done = self.link.read(user, move |m| {
+                ntp_bag(m).iter().any(|(k, v)| k == SYNC_DONE && *v == t)
+            });
+            if done {
+                return true;
+            }
+        }
+        false
     }
 
     fn run(&self, user: &str, command: &str) -> Result<Message, Message> {

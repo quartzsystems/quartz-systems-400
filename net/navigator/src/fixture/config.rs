@@ -1000,6 +1000,11 @@ impl Config for FixtureConfig {
         }
     }
 
+    fn sync_now(&self, _user: &str) -> bool {
+        self.ran.lock().expect("ran").push("SYNC NOW".to_string());
+        true
+    }
+
     fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
         self.ran.lock().expect("ran").push(command.to_string());
         let (name, p) = parse(command);

@@ -4,7 +4,8 @@
 
 //! `/time`: the time zone, date and time formats, time adjustment and
 //! the NTP client. Apply runs `CHGSYSVAL` for each value changed and
-//! `CHGNTPA RMTSYS()` for the servers.
+//! `CHGNTPA RMTSYS()` for the servers; Sync now has the NTP client
+//! poll at once.
 
 use qsweb::html::esc;
 use qsweb::http::Response;
@@ -93,8 +94,13 @@ pub fn page(rq: &Rq<'_>) -> Response {
             return rq.redirect("/home");
         }
         let back = if f.has("ok") { "/home" } else { "/time" };
-        let (cmds, ntp) = commands(&t, &f);
-        if ntp {
+        let sync = f.has("sync");
+        let (cmds, ntp) = if sync {
+            (Vec::new(), false)
+        } else {
+            commands(&t, &f)
+        };
+        if ntp || sync {
             let target = Target::obj("QSYS", "CHGNTPA", "*CMD");
             if let Err(r) = rq.require(
                 Need::IoSysCfg,
@@ -104,6 +110,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
             ) {
                 return r;
             }
+        }
+        if sync {
+            // The page shows the poll's outcome, or the one before.
+            rq.env().config.sync_now(rq.user());
+            return rq.redirect("/time");
         }
         let mut last = None;
         for c in &cmds {
@@ -175,15 +186,16 @@ pub fn page(rq: &Rq<'_>) -> Response {
             ],
         },
     ];
-    let body = props(
-        &rq.ctx,
-        &groups,
-        &[
-            Button::new("apply", "Apply"),
-            Button::new("ok", "OK"),
-            Button::new("cancel", "Cancel"),
-        ],
-    );
+    let mut buttons = vec![
+        Button::new("apply", "Apply"),
+        Button::new("ok", "OK"),
+        Button::new("cancel", "Cancel"),
+    ];
+    // Sync now asks the running client for a poll.
+    if t.ntp_active && !t.ntp_servers.is_empty() {
+        buttons.push(Button::new("sync", "Sync now"));
+    }
+    let body = props(&rq.ctx, &groups, &buttons);
     super::page(
         rq,
         &["Time management"],

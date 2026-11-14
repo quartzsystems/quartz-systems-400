@@ -223,6 +223,9 @@ pub trait Config: Send + Sync {
     fn resources(&self, user: &str) -> Vec<Resource>;
     /// The date and time values and the NTP client's state.
     fn time(&self, user: &str) -> Time;
+    /// Sync now: ask the NTP client to poll at once and wait a few
+    /// seconds for it; whether the poll finished in that time.
+    fn sync_now(&self, user: &str) -> bool;
     /// Run CL command `command` as `user`: its completion message, or
     /// the message it failed with.
     fn run(&self, user: &str, command: &str) -> Result<Message, Message>;

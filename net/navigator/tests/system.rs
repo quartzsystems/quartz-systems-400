@@ -139,7 +139,15 @@ fn hardware_resources() {
 #[test]
 fn time_management() {
     let mut b = Browser::signed_on();
-    assert_golden(&ok(&mut b, "/time"), "nav/time-management.html", &[]);
+    // Sync now is ours, after the approved page's buttons.
+    assert_golden(
+        &ok(&mut b, "/time"),
+        "nav/time-management.html",
+        &[(
+            "value=\"Cancel\"></div>",
+            "value=\"Cancel\"><input type=\"submit\" name=\"sync\" value=\"Sync now\"></div>",
+        )],
+    );
     let r = b.post(
         "/time",
         &[
@@ -165,6 +173,11 @@ fn time_management() {
         t.contains("<option selected>QN0600CST3</option>") && t.contains("10.0.10.1, 10.0.10.2"),
         "{t}"
     );
+    // Sync now asks the client for a poll and changes nothing else.
+    assert!(t.contains("name=\"sync\" value=\"Sync now\""), "{t}");
+    let r = b.post("/time", &[("ntp", "ignored"), ("sync", "Sync now")]);
+    assert_eq!(r.header("Location"), Some("/qs400/navigator/time"));
+    assert_eq!(config_ran(&b).last().map(String::as_str), Some("SYNC NOW"));
 }
 
 #[test]
