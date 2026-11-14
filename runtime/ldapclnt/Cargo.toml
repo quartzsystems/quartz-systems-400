@@ -1,0 +1,15 @@
+[package]
+name = "ldapclnt"
+description = "QS/400 QGLDCLNT: the LDAP client API as ILE bound procedures over the ldap client (docs/DIRSRV.md section 13)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ldap = { path = "../../net/ldap", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

@@ -47,6 +47,7 @@ members = [
     "runtime/ile",
     "runtime/sysapi",
     "runtime/sqlcli",
+    "runtime/ldapclnt",
     "runtime/msgf",
     # Work management: jobs, spooling, process messages.
     "work/wm",
@@ -135,6 +136,8 @@ members = [
     "net/qapd",
     "net/xdrgen",
     "net/nfs",
+    "net/ldap",
+    "net/dirsrv",
     # Save and restore: the save stream, the engine.
     "save/savfmt",
     "save/saverst",

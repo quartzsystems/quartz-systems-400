@@ -1,0 +1,15 @@
+[package]
+name = "dirsrv"
+description = "QS/400 Directory Server: schema, the entry store, access control, backends, operations, passwords, configuration, publishing (docs/DIRSRV.md)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ldap = { path = "../ldap", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true
