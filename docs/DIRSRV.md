@@ -80,7 +80,6 @@ Quartz's):
 
 | ID | Severity, data | When |
 |---|---|---|
-| `GLD010B` | 0, `*CHAR 10` | the publishing agents `QGLDPUBE` and `QGLDPUBA` end at once (publishing is not built yet) |
 | `GLD0122` | 40, `*CHAR 8` | a request that needs the instance's job (`dir_conns`; `dir_admin`'s counters and entry access): the instance is not active |
 | `GLD0123` | 0, `*CHAR 8` | `CHGDIRSVRA` changed the instance (completion) |
 | `GLD0126` | 40, two `*CHAR *VARY` | an attribute (`name: value`) or entry of `ibmslapd.conf` QS/400 does not honour, not at IBM's default (§10), and the file |
@@ -215,8 +214,7 @@ V1R2M0 adds the job descriptions `QSYS/QDIRSRV` (the instance jobs),
 `QSYSWRK` the autostart job entries `QGLDPUBE` and `QGLDPUBA` and the
 routing entries 2140 and 2141 that run programs `QGLDPUBE` and
 `QGLDPUBA` (the sequence numbers are QS/400's: the primary's were not
-captured), which log `GLD010B` and end (publishing is not built yet,
-§10.1); and the library `QUSRDIRDB` (blank text, as the primary's),
+captured), the publishing agents (§10.1); and the library `QUSRDIRDB` (blank text, as the primary's),
 made at each IPL when missing (`lic/slic/src/stgsvc/dirconf.rs`). A
 V1R1M0 system gets the job descriptions and library at its first
 V1R2M0 IPL and the `QSYSWRK` entries through `wm::obj::upgrade`
@@ -1779,6 +1777,42 @@ ignored.
   `ldapdiff`, StartTLS and LDAPS, the refusals).
 - `cargo test -p osobjects --test create`: `QSYSINC` and its members at
   the first IPL, nothing made the second time.
+- `cargo test -p dirsrv --test server`: `serve_for_ldaptest` (ignored)
+  keeps the connection loop over a directory in memory up for
+  `ldaptest ... --suffix o=Acme` (password `secret`): the quickest way to
+  run the whole client against the server without QEMU.
+
+**QEMU steps** (`tools/conformance/src/dirsrvstep/`, on the main guest
+after step 107; `cargo run -p conformance -- --only
+193,186,187,188,189,190,191,192`):
+
+| Step | What it proves |
+|---|---|
+| 193 | `QSSECCHK` on the shipped `QUSRDIR`: the three `DIRSRV` warnings (anonymous binds, no TLS, no administrator password); runs first |
+| 186 | `CHGDIRSVRA DN(*ADMINDN ' ')` is `GLD0202`; `STRTCPSVR SERVER(*DIRSRV)`: `QUSRDIR` as `QDIRSRV` in `QSYSWRK`, 389 listening (`NETSTAT_INFO`), the root DSE's instance, `GLD0269`; the administrator refused (49) until `CHGDIRSVRA DN(*ADMINDN pw)`, then bound at once; `ENDTCPSVR` ends it (`GLD0265`, 389 closed); started again |
+| 187 | `ldaptest oracle` on the shipped entries, diffed with the primary's record (the differences are §15's); then `ldaptest` suites read, controls, ext, write, acl and ldif under `cn=localhost` from the host: 61 scenarios pass (`sasl-external` is 189's) |
+| 188 | profiles made for it: `ldaptest` projected (bind, a `*DISABLED` profile 49, read-only 53, the administrator's view); three wrong passwords disable a profile under `QMAXSIGN` 3 and `QMAXSGNACN` 2 (its right password then 49), a `PW` entry; a profile with `QIBM_DIRSRV_ADMIN` sees every profile and writes as an administrator, a plain one sees itself and is refused (50) |
+| 189 | a certificate assigned to `QS400_DIRECTORY_SERVER`, `ibm-slapdSecurity: SSLTLS` and a suffix `o=qs400test` through `cn=configuration`; after a restart `ldaptest` ext: StartTLS on 389, LDAPS on 636, SASL `EXTERNAL` with a client certificate the local CA issued (`CN=ldext,O=qs400test`, an entry's DN), `EXTERNAL` without one 48 |
+| 190 | in the guest's QSH: `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapcompare` (status 0 and 5), `ldapmodrdn`, `ldapexop -op whoami`, `ldapdelete`; an IR program bound to `QGLDCLNT` (`ldap_init`, `ldap_simple_bind_s`, `ldap_search_s`, `ldap_count_entries`, `ldap_compare_s`) |
+| 191 | `publish.conf` enabling the users agent (anonymous, under a parent whose ACL lets anyone write): `CRTUSRPRF` appears under `ou=Users,cn=localhost` within a resync, `DLTUSRPRF` removes it |
+| 192 | an entry survives `ENDTCPSVR`/`STRTCPSVR` and an IPL; `SAVLIB QUSRDIRDB` (the save file holds the `*DIRDB`), the entry deleted, `RSTLIB` brings it back; `RCLSTG *CHECK` finds no problem |
+| 194 | `ldaptest bench`: binds a minute and a paged search (below) |
+| 10 | (the install suite) the slip install from V1R1M0 then 186's checks on the upgraded system: the shipped files, `QDIRSRV`, its job descriptions, `QUSRDIRDB`, the `*DIRDB` made at the first start |
+
+What the steps found and fixed (DS-14): `CHGDIRSVRA` never reached a
+running instance (`cpp/dircmd.rs` now calls `serve::config_changed`);
+the entry store lost its index root when a modify replaced a value
+(delete and insert of the same count moved the root but did not save
+it, and the next write freed a page twice: every write failed after
+`ldaptest`'s `assertion-write`); proxied authorization was refused on
+whoami and password modify, and a bound user's attempt answered 50
+rather than 123; a DN escape of a non-special (`cn=\zz`) was taken; a
+base search below `cn=monitor` answered 53 where one-level should be
+32; the LDAP client could not resolve `localhost` in a job (no
+`/etc/hosts`: RFC 6761's loopback now); the default `publisherName`
+(`QS400 SYSTEM`) was not a DN, so every published entry was refused
+(21); and `ldaptest`'s searches dropped continuation references (ldap3's
+`search` filters them).
 
 ## 17. NEEDS-CODY
 
@@ -1807,4 +1841,28 @@ own:
 
 ## 18. Acceptance
 
-(The table lands with the work.)
+| Deliverable | State | Proof |
+|---|---|---|
+| The protocol crate: BER, messages, DNs, filters, controls, extended operations, LDIF, URLs, schema descriptions, the client (§3) | proven | `cargo test -p ldap`; every QEMU step's traffic; fuzz targets `ldapber` `ldapmsg` `ldapfilter` `ldapdn` `ldif` `ldapschema` `ldapurl` |
+| The instance job: `QUSRDIR` as `QDIRSRV` in `QSYSWRK`, 389 and 636, `GLD0269`/`GLD0265`, `STRTCPSVR`/`ENDTCPSVR SERVER(*DIRSRV)` (§4) | proven | step 186; `cargo test -p dirsrv --test server` |
+| `CHGDIRSVRA` (§2.2), taking effect at once on a running instance | proven | step 186; `cargo test -p sys-cpps --test dirsrv_prompts` |
+| The entry store `*DIRDB` in `QUSRDIRDB`: persistence, IPL, save and restore, `RCLSTG` (§5) | proven | step 192; `cargo test -p dirsrv --test store --test save` |
+| Schema, `cn=schema` (§6) | proven | step 187 (`schema-read`, diffed with the primary) |
+| Operations, controls, extended operations (§7) | proven | step 187 (61 `ldaptest` scenarios) |
+| The root DSE, `cn=monitor`, `cn=configuration` (§8, §10) | proven | steps 187, 189 (`ibm-slapdSecurity` and a suffix changed through `cn=configuration`) |
+| The projected backend and profile binds, `*DISABLED`, `QMAXSIGN`/`QMAXSGNACN`, `PW` audit entries, `QIBM_DIRSRV_ADMIN` (§9) | proven | step 188 |
+| Passwords and the password policy (§11) | proven | step 187 (`password-modify`, `bind-errors`); `cargo test -p dirsrv --test ops_access` |
+| ACLs and owners (§12) | proven | step 187 (acl suite) |
+| `DI` audit entries (§12) | built | `cargo test -p sec`; the values are NEEDS-CODY item 5 |
+| `QSSECCHK`'s directory checks (§12) | proven | steps 193 and 107 |
+| TLS: LDAPS, StartTLS, SASL `EXTERNAL` with a client certificate (§4, §9) | proven | step 189 |
+| `QGLDCLNT` and the `QSYSINC` members (§13) | proven | step 190 (an ILE program in the guest); `cargo test -p ldapclnt` (IR and RPG programs) |
+| The QSH tools (§13) | proven | step 190 (seven of the nine in the guest); `cargo test -p qsh-utils --test ldap` (all nine) |
+| Publishing: `QGLDPUBE` users (§10.1) | proven | step 191 |
+| Publishing: `QGLDPUBA` printers (§10.1) | built | `cargo test -p dirsrv --test publish` |
+| Publishing's configuration through Navigator, QAP and `dir_admin`, the sealed password (§10.1) | built, not served | `BLOCKED(rel)`: the service does not answer request 1568 yet, so Navigator's and QAP's Directory server pages are refused live; `cargo test -p navigator --test dirsrv`, `-p qapd --test dirsrv` over `MemAdmin` |
+| `tools/ldaptest`, independent of the server, and its oracle record (§13) | proven | steps 187-189; `cargo test --manifest-path tools/ldaptest/Cargo.toml` |
+| The differences from the primary (§15) | proven | step 187's diff (`dirsrv-187-oracle.diff`) |
+| Performance: 10 000 binds a minute, a paged search of 1 000 000 entries (§16) | measured | step 194 (below) |
+| The slip install from V1R1M0 brings the directory server | see §16 | install step 10 |
+| Apache Directory Studio, the primary's administrator view, publishing to and from the primary | NEEDS-CODY | §17 |
