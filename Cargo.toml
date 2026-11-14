@@ -4,7 +4,7 @@ resolver = "3"
 # tools/smbtest has its own lockfile: its client crate (smb, through sspi) pins
 # curve25519-dalek 5.0.0-rc.1, which cannot share one with tools/build.
 # tools/nfstest too: its client crates are kept apart from the server's graph.
-exclude = ["net/smb-server", "tools/smbtest", "tools/nfstest"]
+exclude = ["net/smb-server", "tools/smbtest", "tools/nfstest", "tools/ldaptest"]
 members = [
     # Host tools: the build orchestrator and the conformance harness.
     "tools/build",

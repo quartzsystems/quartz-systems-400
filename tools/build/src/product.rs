@@ -89,6 +89,11 @@ pub fn qs400() -> Result<Product> {
                 manifest: "tools/nfstest/Cargo.toml",
                 ignore: &[],
             },
+            Standalone {
+                // The LDAP test client: its own lockfile, no server crate at all.
+                manifest: "tools/ldaptest/Cargo.toml",
+                ignore: &[],
+            },
         ],
         notices: Some(Notices {
             file: NOTICES_FILE,
