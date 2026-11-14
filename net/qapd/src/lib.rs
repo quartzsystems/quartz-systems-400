@@ -31,6 +31,8 @@
 //!   `QZLS*` APIs.
 //! - [`nfs`]: the `Nfs` service (version 11, draft) over the NFS
 //!   commands and the storage service's tables.
+//! - [`dirsrv`]: the `Dirsrv` service (version 12, draft) over the
+//!   directory server's administration interface.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
@@ -39,6 +41,7 @@
 
 pub mod debug;
 pub mod develop;
+pub mod dirsrv;
 pub mod files;
 pub mod frames;
 pub mod host;

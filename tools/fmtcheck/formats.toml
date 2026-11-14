@@ -294,6 +294,15 @@ doc = "docs/QAP.md"
 version = ["work/qap-proto/src/lib.rs::VERSION"]
 files = ["work/qap-proto/src/ops/nfs.rs"]
 
+# Version 12's Dirsrv service: a draft until QS/400 ships it.
+[[format]]
+name = "qap-dirsrv"
+frozen_at = "V1R1M0"
+draft = true
+doc = "docs/QAP.md"
+version = ["work/qap-proto/src/lib.rs::VERSION"]
+files = ["work/qap-proto/src/ops/dirsrv.rs"]
+
 [[format]]
 name = "host-servers"
 frozen_at = "V1R1M0"

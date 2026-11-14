@@ -516,6 +516,13 @@ pub trait ThreadHost {
     fn nfs(&mut self) -> Option<&mut dyn crate::nfs::NfsHost> {
         None
     }
+
+    /// The directory server's administration (version 12); `None` for a
+    /// host without it, whose `Dirsrv` operations answer `Error` with
+    /// [`crate::manage::NO_MANAGE`].
+    fn dirsrv(&mut self) -> Option<&dyn dirsrv::admin::DirAdmin> {
+        None
+    }
 }
 
 /// The message of a `Messages` operation a host without message queues

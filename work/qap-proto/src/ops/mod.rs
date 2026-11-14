@@ -9,6 +9,7 @@ pub mod command;
 pub mod connection;
 pub mod debug;
 pub mod develop;
+pub mod dirsrv;
 pub mod ifs;
 pub mod jobs;
 pub mod manage;
@@ -261,11 +262,59 @@ pub enum Op {
     GetNfsOptions,
     /// `Nfs` 13: change the NFS options (version 11).
     SetNfsOptions,
+    /// `Dirsrv` 1: the instances (version 12).
+    ListDirInstances,
+    /// `Dirsrv` 2: whether an instance starts automatically (version 12).
+    SetDirAutostart,
+    /// `Dirsrv` 3: start an instance (version 12).
+    StartDirInstance,
+    /// `Dirsrv` 4: end an instance (version 12).
+    EndDirInstance,
+    /// `Dirsrv` 5: end and start an instance (version 12).
+    RestartDirInstance,
+    /// `Dirsrv` 6: an instance's properties (version 12).
+    GetDirProperties,
+    /// `Dirsrv` 7: change an instance's properties (version 12).
+    SetDirProperties,
+    /// `Dirsrv` 8: an instance's suffixes (version 12).
+    ListDirSuffixes,
+    /// `Dirsrv` 9: add a user suffix (version 12).
+    AddDirSuffix,
+    /// `Dirsrv` 10: remove a user suffix (version 12).
+    RemoveDirSuffix,
+    /// `Dirsrv` 11: an instance's indexes (version 12).
+    ListDirIndexes,
+    /// `Dirsrv` 12: add or change an index (version 12).
+    PutDirIndex,
+    /// `Dirsrv` 13: remove an index (version 12).
+    RemoveDirIndex,
+    /// `Dirsrv` 14: the administrator and the update DN (version 12).
+    GetDirAdmin,
+    /// `Dirsrv` 15: change the administrator or a password (version 12).
+    SetDirAdmin,
+    /// `Dirsrv` 16: schema definitions (version 12).
+    ListDirSchema,
+    /// `Dirsrv` 17: add a schema definition (version 12).
+    AddDirSchema,
+    /// `Dirsrv` 18: remove a schema definition (version 12).
+    RemoveDirSchema,
+    /// `Dirsrv` 19: an entry's access control (version 12).
+    GetDirAccess,
+    /// `Dirsrv` 20: change an entry's access control (version 12).
+    SetDirAccess,
+    /// `Dirsrv` 21: the publishing agents (version 12).
+    GetPublishing,
+    /// `Dirsrv` 22: change a publishing agent (version 12).
+    SetPublishing,
+    /// `Dirsrv` 23: the publishing agents' status (version 12).
+    GetPublishingStatus,
+    /// `Dirsrv` 24: an instance's counters (version 12).
+    GetDirCounters,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 117] = [
+    pub const ALL: [Op; 141] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -383,6 +432,30 @@ impl Op {
         Op::Unmount,
         Op::GetNfsOptions,
         Op::SetNfsOptions,
+        Op::ListDirInstances,
+        Op::SetDirAutostart,
+        Op::StartDirInstance,
+        Op::EndDirInstance,
+        Op::RestartDirInstance,
+        Op::GetDirProperties,
+        Op::SetDirProperties,
+        Op::ListDirSuffixes,
+        Op::AddDirSuffix,
+        Op::RemoveDirSuffix,
+        Op::ListDirIndexes,
+        Op::PutDirIndex,
+        Op::RemoveDirIndex,
+        Op::GetDirAdmin,
+        Op::SetDirAdmin,
+        Op::ListDirSchema,
+        Op::AddDirSchema,
+        Op::RemoveDirSchema,
+        Op::GetDirAccess,
+        Op::SetDirAccess,
+        Op::GetPublishing,
+        Op::SetPublishing,
+        Op::GetPublishingStatus,
+        Op::GetDirCounters,
     ];
 
     /// Its service and code.
@@ -507,6 +580,30 @@ impl Op {
             Op::Unmount => (Service::Nfs, 11),
             Op::GetNfsOptions => (Service::Nfs, 12),
             Op::SetNfsOptions => (Service::Nfs, 13),
+            Op::ListDirInstances => (Service::Dirsrv, 1),
+            Op::SetDirAutostart => (Service::Dirsrv, 2),
+            Op::StartDirInstance => (Service::Dirsrv, 3),
+            Op::EndDirInstance => (Service::Dirsrv, 4),
+            Op::RestartDirInstance => (Service::Dirsrv, 5),
+            Op::GetDirProperties => (Service::Dirsrv, 6),
+            Op::SetDirProperties => (Service::Dirsrv, 7),
+            Op::ListDirSuffixes => (Service::Dirsrv, 8),
+            Op::AddDirSuffix => (Service::Dirsrv, 9),
+            Op::RemoveDirSuffix => (Service::Dirsrv, 10),
+            Op::ListDirIndexes => (Service::Dirsrv, 11),
+            Op::PutDirIndex => (Service::Dirsrv, 12),
+            Op::RemoveDirIndex => (Service::Dirsrv, 13),
+            Op::GetDirAdmin => (Service::Dirsrv, 14),
+            Op::SetDirAdmin => (Service::Dirsrv, 15),
+            Op::ListDirSchema => (Service::Dirsrv, 16),
+            Op::AddDirSchema => (Service::Dirsrv, 17),
+            Op::RemoveDirSchema => (Service::Dirsrv, 18),
+            Op::GetDirAccess => (Service::Dirsrv, 19),
+            Op::SetDirAccess => (Service::Dirsrv, 20),
+            Op::GetPublishing => (Service::Dirsrv, 21),
+            Op::SetPublishing => (Service::Dirsrv, 22),
+            Op::GetPublishingStatus => (Service::Dirsrv, 23),
+            Op::GetDirCounters => (Service::Dirsrv, 24),
         }
     }
 
@@ -632,6 +729,30 @@ impl Op {
             | Op::Unmount
             | Op::GetNfsOptions
             | Op::SetNfsOptions => 11,
+            Op::ListDirInstances
+            | Op::SetDirAutostart
+            | Op::StartDirInstance
+            | Op::EndDirInstance
+            | Op::RestartDirInstance
+            | Op::GetDirProperties
+            | Op::SetDirProperties
+            | Op::ListDirSuffixes
+            | Op::AddDirSuffix
+            | Op::RemoveDirSuffix
+            | Op::ListDirIndexes
+            | Op::PutDirIndex
+            | Op::RemoveDirIndex
+            | Op::GetDirAdmin
+            | Op::SetDirAdmin
+            | Op::ListDirSchema
+            | Op::AddDirSchema
+            | Op::RemoveDirSchema
+            | Op::GetDirAccess
+            | Op::SetDirAccess
+            | Op::GetPublishing
+            | Op::SetPublishing
+            | Op::GetPublishingStatus
+            | Op::GetDirCounters => 12,
         }
     }
 

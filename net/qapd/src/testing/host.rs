@@ -1104,6 +1104,10 @@ impl ThreadHost for MemThread {
     fn nfs(&mut self) -> Option<&mut dyn crate::nfs::NfsHost> {
         Some(self)
     }
+
+    fn dirsrv(&mut self) -> Option<&dyn dirsrv::admin::DirAdmin> {
+        Some(&self.sys.dirsrv)
+    }
 }
 
 impl MemThread {

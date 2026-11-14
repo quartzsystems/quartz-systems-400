@@ -392,7 +392,7 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 **Exit point.** Every `Manage` request passes the exit point `QS400_QAP_MGMT`, format `QAPX0100`, before it runs, as the host servers' requests pass theirs:
 
 - registered at the first IPL with the shipped points (`WRKREGINF`); no deregistration, change allowed, at most one program, as the host servers' points;
-- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT` (`*QAPNETSVR` for the `NetServer` service, version 10; `*QAPNFS` for `Nfs`, version 11), format CHAR(8) `QAPX0100`, operation BINARY(4) (the op code within its service), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
+- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT` (`*QAPNETSVR` for the `NetServer` service, version 10; `*QAPNFS` for `Nfs`, version 11; `*QAPDIRSRV` for `Dirsrv`, version 12), format CHAR(8) `QAPX0100`, operation BINARY(4) (the op code within its service), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
 - a refusal is `NotAuthorized` with `TCP1A5E` naming the program, audited `GR` (`F`, the function refused), and the operation does nothing; a program that cannot be called or ends in an exception refuses, as for the host servers. A point with no program allows everything.
 
 **Audit journal.** Beside the `AF` and `GR` entries above, the entries are the commands' own: `SV` for a system value changed (old and new value, as `CHGSYSVAL` writes it), and the job entries the subsystem and power commands write with `*JOBDTA` and `*SYSMGT` auditing. QAP adds no entry type and no entry of its own.
@@ -678,6 +678,71 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 - The exit request's target is the path (`*ALL` for `ListExports`, `/etc/exports` for `ExportAll`), the daemon type (`*ALL` when none), the mounted-over directory, or blank; its detail the options list of a `PutExport`, or `host:path` of a `MountNfs`.
 - No event: a client that follows the daemons asks again.
 
+### Service 14 `Dirsrv`: directory server administration (version 12, draft)
+
+**Draft until QS/400 ships it.** Version 12 is what a client needs to administer the directory server (docs/DIRSRV.md): its instances, their properties, suffixes, indexes, administrator, schema and entry access, the publishing agents and the counters of `cn=monitor`. Nothing in versions 1 to 11 changes; a peer that negotiates 11 or less never sees `Dirsrv`.
+
+Every operation runs as the signed-on profile, concurrently on the connection's secondary threads (never in the lane), through the storage service's directory administration (`dirsrv::admin::DirAdmin`, request 1568 `dir_admin`), the same interface Navigator's Directory server pages use: it checks the authority (`*IOSYSCFG` to read; `*ALLOBJ` and `*IOSYSCFG` to change, as `CHGDIRSVRA`; `*IOSYSCFG` to start or end an instance), validates and words the refusal. Every request passes the exit point `QS400_QAP_MGMT` first, with server `*QAPDIRSRV` and the operation's code below.
+
+- `InstanceState` enum: `Stopped` 0, `Starting` 1, `Running` 2, `Ending` 3. `Instance` = { `name` String, `description` String, `autostart` flag, `state` InstanceState, `job` Option of JobId, `port` u16, `secure_port` u16, `security` String (`none`, `SSL`, `TLS`, `SSLTLS`), `certificate` Option of String (the label assigned to `QS400_DIRECTORY_SERVER`), `version` String, `since` i64 }. `InstanceRef` = { `instance` String } (case ignored).
+- `DirProperties` = { `port` u16, `secure_port` u16, `security` String, `size_limit` u32, `time_limit` u32, `idle_timeout` u32, `write_timeout` u32, `allow_anonymous` flag, `deref_aliases` String, `schema_check` String, `password_encryption` String, `read_only` flag, `log_options` String, `audit` flag, `persistent_search` flag, `max_persistent_searches` u32, `paged_for_all` flag, `paged_limit` u32, `sorted_for_all` flag, `sort_key_limit` u32, `changelog_max` u32 (0: no change log), `password_policy` flag, `profiles_read_only` flag, `referrals` list of String }: the honoured attributes of `ibmslapd.conf` (docs/DIRSRV.md §10), in that order of `dirsrv::admin::conf::PROPERTIES`.
+- `SuffixKind` enum: `User` 0, `Local` 1 (`cn=localhost`, `cn=ibmpolicies`), `Projected` 2, `Schema` 3, `Config` 4. `Suffix` = { `dn` String, `kind` SuffixKind, `entries` Option of u64 }. `DnRef` = { `instance` String, `dn` String }.
+- `DirIndex` = { `attribute` String, `presence` flag, `equality` flag, `substring` flag, `always` flag (ignored in requests) }. `DirIndexRef` = { `instance` String, `attribute` String }.
+- `DirAdmin` = { `dn` String, `password_set` flag, `update_dn` Option of String }. `AdminTarget` enum: `Password` 0 (`*ADMINDN`), `NewDn` 1, `UpdatePassword` 2 (`*UPDATEDN`).
+- `SchemaKind` enum: `AttributeType` 0, `ObjectClass` 1. `SchemaDefinition` = { `kind` SchemaKind, `oid` String, `names` list of String, `description` String, `superior` list of String, `syntax` String, `single_value` flag, `access_class` String, `class_kind` String, `must` list of String, `may` list of String, `added` flag, `protected` flag, `text` String (the RFC 4512 description) }.
+- `EntryAccess` = { `dn` String, `own_acl` flag, `acl` list of String, `acl_propagate` flag, `acl_source` String, `own_owners` flag, `owners` list of String, `owner_propagate` flag, `owner_source` String } (the sources are ignored in requests; `default` when nothing above sets one).
+- `AgentKind` enum: `Users` 0, `Printers` 1. `PublishAgent` = { `kind` AgentKind, `enabled` flag, `server` String (empty: this system's default instance), `port` u16, `tls` flag, `bind_dn` String, `password_set` flag (ignored in requests), `parent_dn` String }. `AgentStatus` = { `kind` AgentKind, `job` Option of JobId, `active` flag, `published` u64, `failed` u64, `last` i64, `message_id` Option of String, `message_text` String }.
+- `DirCounters` = { `started` i64, `connections` u32, `total_connections` u64, `operations_started` u64, `operations_completed` u64, `binds` u64, `searches` u64, `compares` u64, `adds` u64, `modifies` u64, `deletes` u64, `modify_dns` u64, `extended` u64, `abandons` u64, `entries_sent` u64, `persistent_searches` u32 }.
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| Dirsrv | 1 `ListDirInstances` | — | `instances` list of `Instance` (the instance list's order) | no |
+| Dirsrv | 2 `SetDirAutostart` | `instance` String, `autostart` flag | — | no |
+| Dirsrv | 3 `StartDirInstance` | `InstanceRef` | — | no |
+| Dirsrv | 4 `EndDirInstance` | `InstanceRef` | — | no |
+| Dirsrv | 5 `RestartDirInstance` | `InstanceRef` | — | no |
+| Dirsrv | 6 `GetDirProperties` | `InstanceRef` | `DirProperties` | no |
+| Dirsrv | 7 `SetDirProperties` | `instance` String, `properties` DirProperties (whole) | `attributes` list of String (those written) | no |
+| Dirsrv | 8 `ListDirSuffixes` | `InstanceRef` | `suffixes` list of `Suffix` | no |
+| Dirsrv | 9 `AddDirSuffix` | `DnRef` | — | no |
+| Dirsrv | 10 `RemoveDirSuffix` | `DnRef` | — | no |
+| Dirsrv | 11 `ListDirIndexes` | `InstanceRef` | `indexes` list of `DirIndex` (the six always there first) | no |
+| Dirsrv | 12 `PutDirIndex` | `instance` String, `index` DirIndex | — | no |
+| Dirsrv | 13 `RemoveDirIndex` | `DirIndexRef` | — | no |
+| Dirsrv | 14 `GetDirAdmin` | `InstanceRef` | `DirAdmin` | no |
+| Dirsrv | 15 `SetDirAdmin` | `instance` String, `target` AdminTarget, `dn` String (for `NewDn`), `password` String | — | no |
+| Dirsrv | 16 `ListDirSchema` | `instance` String, `kind` SchemaKind, `contains` String, `added_only` flag, `start` u32, `max` u32 | `total` u32, `definitions` list of `SchemaDefinition` (by primary name) | no |
+| Dirsrv | 17 `AddDirSchema` | `instance` String, `kind` SchemaKind, `description` String | — | no |
+| Dirsrv | 18 `RemoveDirSchema` | `instance` String, `kind` SchemaKind, `id` String (a name or the OID) | — | no |
+| Dirsrv | 19 `GetDirAccess` | `DnRef` | `EntryAccess` | no |
+| Dirsrv | 20 `SetDirAccess` | `instance` String, `access` EntryAccess | — | no |
+| Dirsrv | 21 `GetPublishing` | — | `agents` list of `PublishAgent` | no |
+| Dirsrv | 22 `SetPublishing` | `agent` PublishAgent, `password` Option of String (none keeps it; empty removes it) | — | no |
+| Dirsrv | 23 `GetPublishingStatus` | — | `agents` list of `AgentStatus` | no |
+| Dirsrv | 24 `GetDirCounters` | `InstanceRef` | `DirCounters` | no |
+
+| Op | Stands for | Statuses |
+| --- | --- | --- |
+| every operation | the authority | `NotAuthorized` (`CPF222E` naming the special authority missing) |
+| `ListDirInstances`, `SetDirAutostart` | `idsinstances.ldif` | `Ok`; `NotFound` (`GLD0201`); `Error` (`GLD0127`) |
+| `StartDirInstance`, `EndDirInstance`, `RestartDirInstance` | `STRTCPSVR`/`ENDTCPSVR SERVER(*DIRSRV) INSTANCE()` | `Ok`; `NotFound` (`GLD0203`); `Error` (`GLD0126`, `GLD0232`: the configuration stops the start) |
+| `GetDirProperties`, `SetDirProperties` | the instance's `ibmslapd.conf`, changed in place | `Ok`; `NotFound` (`GLD0201`); `Error` (`GLD0232`: a value not taken, nothing written) |
+| `ListDirSuffixes`, `AddDirSuffix`, `RemoveDirSuffix` | `ibm-slapdSuffix` of the backends | `Ok`; `Exists` (`CPF9898`, already a suffix); `NotFound`; `Error` (`GLD0224`; `CPF9898`: overlapping, or not a user suffix) |
+| `ListDirIndexes`, `PutDirIndex`, `RemoveDirIndex` | `ibm-slapdIndex` (docs/DIRSRV.md §10) | `Ok`; `NotFound` (`CPF9898`: no such attribute type or index); `Error` (`CPF9898`: always indexed) |
+| `GetDirAdmin`, `SetDirAdmin` | `CHGDIRSVRA DN()` | `Ok`; `Error` (`GLD0202`, `GLD0224`, `GLD0215`) |
+| `ListDirSchema`, `AddDirSchema`, `RemoveDirSchema` | `cn=schema` and `V3.modifiedschema` | `Ok`; `Exists` (`CPF9898`); `NotFound` (`CPF9898`); `Error` (`CPF9898` with the schema's reason: a description that does not parse, protected, in use) |
+| `GetDirAccess`, `SetDirAccess` | the entry's `aclEntry`, `aclPropagate`, `entryOwner`, `ownerPropagate` | `Ok`; `NotFound` (`CPF9898`: no such entry); `Error` (`CPF9898`: a value that is not valid) |
+| `GetPublishing`, `SetPublishing`, `GetPublishingStatus` | `publish.conf` (docs/DIRSRV.md §10.1) and the agents' jobs | `Ok`; `Error` (`GLD0224`; `CPF9898`) |
+| `GetDirCounters` | `cn=monitor` | `Ok`; `NotFound` (`GLD0201`); `Error` (`CPF9898`: the instance is not active) |
+
+**Rules.**
+
+- Messages are `QGLDMSG`'s where the configuration has one, else `CPF9898` with Quartz's text as its one value.
+- `SetDirProperties` takes the properties whole, as `GetDirProperties` gave them: only those that differ are written; a value one of them does not take refuses the whole request. The file changes at once; the instance uses it at its next start, except the limits and logging.
+- Passwords (`SetDirAdmin`, `SetPublishing`) are kept as `{SSHA512}` and never answered; replies say only whether one is set.
+- The exit request's target is the instance's name (`*ALL` for `ListDirInstances` and the publishing reads, `USERS` or `PRINTERS` for `SetPublishing`); its detail the DN, attribute, schema description or search text the request names, `*ADMINDN`, the new DN or `*UPDATEDN` for `SetDirAdmin`, `AUTOSTART(0|1)`.
+- No event: a client that follows an instance's state asks again.
+
 ### `SignOn` additions (version 2)
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
@@ -782,6 +847,10 @@ Version 10 is `NetServer` (service 12) operations 1 `ListShares` to 13 `EndServe
 ### Version 11 (draft)
 
 Version 11 is `Nfs` (service 13) operations 1 `ListExports` to 13 `SetNfsOptions`, with the types and rules above. It introduces no status and no event. A version 1 to 10 peer never receives the `Nfs` service or any of its bodies, and its requests for them get `InvalidRequest`; `Hello` lists service 13 only at version 11 and above. The server accepts versions 1 to 11 and picks the highest both sides support. Until QS/400 ships version 11 its operations and bodies may still change.
+
+### Version 12 (draft)
+
+Version 12 is `Dirsrv` (service 14) operations 1 `ListDirInstances` to 24 `GetDirCounters`, with the types and rules above. It introduces no status and no event: every status these operations answer exists in an earlier version (`Exists` is version 5's). A version 1 to 11 peer never receives the `Dirsrv` service or any of its bodies, and its requests for them get `InvalidRequest`; `Hello` lists service 14 only at version 12 and above. The server accepts versions 1 to 12 and picks the highest both sides support. Until QS/400 ships version 12 its operations and bodies may still change.
 
 ## Open questions
 
@@ -1625,6 +1694,30 @@ Version 11, as built on 2026-11-13 (draft; decisions made in the build, for Cody
   runs the five commands on them as `SECOFR` (`*IOSYSCFG`) or refuses
   with `CPFA1B8`; `net/qapd/tests/nfs.rs` runs each operation, the
   authority refusals, the exit point and version 10 without the
+  service.
+
+Version 12, as built on 2026-11-14 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 12 (`VERSION` 12, the `qap` lock bumped with
+  it, `ops/dirsrv.rs` the draft format `qap-dirsrv`). `Dirsrv` is a
+  version of its own for the reason `NetServer` and `Nfs` were: the
+  frozen `kinds.rs` and `ops/mod.rs` change with every new service.
+  The operation names carry `Dir` (`ListDirIndexes`, `AddDirSuffix`)
+  where `Develop` or `Sql` already has the plain name, as `Op` is one
+  enumeration.
+- `net/qapd/src/dirsrv.rs` holds the service over the host's
+  `dirsrv::admin::DirAdmin` (`ThreadHost::dirsrv`): the conversions
+  both ways and the statuses of the interface's refusal kinds
+  (`status_of`). The interface is the one Navigator's pages use; QAP
+  has no host trait of its own for it.
+- The job's host (`work/qsjob/src/work/qap/host.rs`) answers with
+  `stg::diradmin::Remote` over `NotBuilt`, which refuses every request
+  (`CPF9898`) until the storage service answers request 1568
+  `dir_admin` (`BLOCKED(rel)`); then the sender is the thread's link.
+- The test system (`qapd::testing`) is `dirsrv::admin::MemAdmin`'s
+  sample, with `SECOFR` alone holding `*ALLOBJ` and `*IOSYSCFG`;
+  `net/qapd/tests/dirsrv.rs` runs each group of operations, the
+  authority refusals, the exit point and version 11 without the
   service.
 
 ## Frozen at V1R1M0

@@ -741,6 +741,13 @@ impl ThreadHost for JobThread {
         Some(self)
     }
 
+    fn dirsrv(&mut self) -> Option<&dyn dirsrv::admin::DirAdmin> {
+        // The storage service's dir_admin, once built (stg::diradmin).
+        static DIR: stg::diradmin::Remote<stg::diradmin::NotBuilt> =
+            stg::diradmin::Remote(stg::diradmin::NotBuilt);
+        Some(&DIR)
+    }
+
     fn power_down(&mut self, req: &PowerDown) -> Result<(), Refusal> {
         manage::power_down_allowed(&self.cx(), req)?;
         let r = self.link().with(|l| l.qap_mgmt_power(req.clone()));

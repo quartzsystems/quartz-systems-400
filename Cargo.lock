@@ -2937,6 +2937,7 @@ name = "qapd"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "dirsrv",
  "ifs",
  "ifscmd",
  "ipc",

@@ -57,6 +57,8 @@
 //!   shares, two sessions and a disabled user, as the signed-on profile;
 //! - NFS ([`nfs`], version 11, draft): the export table, daemons, mounts
 //!   and options, changed by the NFS commands as the signed-on profile;
+//! - the directory server ([`System::dirsrv`], version 12, draft): the
+//!   administration interface's sample in memory;
 //! - the ends a client must meet: the server ending ([`System::end`]:
 //!   every connection gets `ServerEnding` and the [`Listener`] refuses
 //!   connects until [`System::restart`]), an operator ending one job, a
@@ -212,6 +214,9 @@ pub struct System {
     pub netsvr: Mutex<netserver::NetServer>,
     /// NFS's tables and commands ([`nfs`]).
     pub nfs: Mutex<nfs::Nfs>,
+    /// The directory server, in memory (`dirsrv::admin::MemAdmin`'s
+    /// sample; `SECOFR` alone has `*ALLOBJ` and `*IOSYSCFG`).
+    pub dirsrv: dirsrv::admin::MemAdmin,
     /// The commands running, by job, while they run.
     running: Mutex<HashMap<u32, String>>,
     started: Condvar,
@@ -281,6 +286,11 @@ impl System {
             debug: debug::Debugs::default(),
             netsvr: Mutex::new(netserver::shipped()),
             nfs: Mutex::new(nfs::shipped()),
+            dirsrv: dirsrv::admin::MemAdmin::new(
+                "TESTSYS",
+                EPOCH,
+                Box::new(|u, s| u == "SECOFR" && matches!(s, "*ALLOBJ" | "*IOSYSCFG")),
+            ),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
             sockets: Mutex::new(HashMap::new()),

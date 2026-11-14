@@ -59,6 +59,9 @@ pub enum Service {
     NetServer,
     /// NFS: exports, daemons, mounts, options (version 11, draft).
     Nfs,
+    /// The directory server: instances, properties, schema, access,
+    /// publishing (version 12, draft).
+    Dirsrv,
 }
 
 wire_enum!(Service {
@@ -76,11 +79,12 @@ wire_enum!(Service {
     11 => Debug,
     12 => NetServer,
     13 => Nfs,
+    14 => Dirsrv,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 14] = [
+    pub const ALL: [Service; 15] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
@@ -95,6 +99,7 @@ impl Service {
         Service::Debug,
         Service::NetServer,
         Service::Nfs,
+        Service::Dirsrv,
     ];
 
     /// The protocol version that defines it.
@@ -112,6 +117,7 @@ impl Service {
             Service::Debug => 9,
             Service::NetServer => 10,
             Service::Nfs => 11,
+            Service::Dirsrv => 12,
         }
     }
 
