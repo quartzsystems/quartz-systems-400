@@ -485,6 +485,15 @@ files = [
     "net/dirsrv/src/store/record.rs",
 ]
 
+# The publishing agents' configuration, /QIBM/UserData/OS400/DirSrv/
+# publish.conf (docs/DIRSRV.md 10.1).
+[[format]]
+name = "dirsrv-publish"
+frozen_at = "V1R2M0"
+doc = "docs/DIRSRV.md"
+version = ["net/dirsrv/src/publish/config.rs::FORMAT_VERSION"]
+files = ["net/dirsrv/src/publish/config.rs"]
+
 # --- Oracle fixtures (no credentials; the account is `{user}`) ---
 
 [[format]]

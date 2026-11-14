@@ -966,7 +966,8 @@ per name wins), the DNs it published, the connection, the status.
   `qs400-pubResync` seconds, after a change of the configuration)
   searches the parent's subtree for `publisherName=<ours>`, adds or
   modifies every wanted entry, and deletes the published entries whose
-  profile or device is gone.
+  profile or device is gone. Entries left under a parent the
+  configuration no longer names are not looked for again.
 - An entry is found by its key (`uid` or `printer-name`) and the
   publisher value. A found entry is renamed (modify DN, old RDN
   deleted) when its DN no longer matches, then modified (the managed

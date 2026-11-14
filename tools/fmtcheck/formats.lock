@@ -19,6 +19,11 @@ frozen_at = "V1R2M0"
 version = "1"
 hash = "1ea38f80a45554ddb94315a6e0093d5e136c2338f75aee8044cbb655e9b18047"
 
+[format.dirsrv-publish]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "ccf895f8b1d98468a0054b1d994d1fadcbfdc4b0af60aaa9ebe1db5df9a67b68"
+
 [format.host-servers]
 frozen_at = "V1R1M0"
 version = "1"
