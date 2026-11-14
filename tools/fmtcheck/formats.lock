@@ -117,7 +117,7 @@ hash = "24633796b2257e2e58f5bdb045b2381c43681f776c9320c92f2a66b84fb632de"
 [format.qap-dirsrv]
 frozen_at = "V1R1M0"
 version = "12"
-hash = "eb8a97b781c7c3336c9679b42085f85c03683cb4fcc31ffbc982d671c6f206b3"
+hash = "400bacc59254688e378ffeadb725666411005bb5f13205fdd39748c58199e9ab"
 
 [format.qap-netserver]
 frozen_at = "V1R1M0"
