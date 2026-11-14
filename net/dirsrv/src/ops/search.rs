@@ -107,6 +107,7 @@ struct SortKey {
 pub(crate) struct Cursor {
     session: Session,
     filter: Filter,
+    scan_filter: Filter,
     want: Wanted,
     types_only: bool,
     manage: bool,
@@ -353,6 +354,14 @@ impl Directory {
         let mut c = Cursor {
             session: acting.clone(),
             filter: req.filter.clone(),
+            scan_filter: if deref & 2 != 0 {
+                Filter::Or(vec![
+                    req.filter.clone(),
+                    Filter::Equality("objectClass".into(), b"alias".to_vec()),
+                ])
+            } else {
+                req.filter.clone()
+            },
             want: Wanted::from_list(&req.attrs),
             types_only: req.types_only,
             manage: ctl.manage,
@@ -661,7 +670,7 @@ impl Directory {
                         &c.session,
                         base,
                         scope,
-                        &c.filter,
+                        &c.scan_filter,
                         &mut c.scan,
                         128,
                     )?;

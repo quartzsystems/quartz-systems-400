@@ -24,21 +24,20 @@ mod common;
 /// 2026-11-13 12:00:00 UTC.
 pub const T0: u64 = 1_794_571_200_000_000;
 
-pub struct Clock(pub Arc<AtomicU64>);
+pub struct Clock(pub Arc<AtomicU64>, pub AtomicU64);
 
 impl Env for Clock {
     fn now_micros(&self) -> u64 {
         self.0.load(Ordering::SeqCst)
     }
     fn random(&self, buf: &mut [u8]) {
-        let mut x = self.0.load(Ordering::SeqCst) | 1;
+        let mut x = self.1.fetch_add(0x9e37_79b9, Ordering::SeqCst) | 1;
         for b in buf.iter_mut() {
             x ^= x << 13;
             x ^= x >> 7;
             x ^= x << 17;
             *b = x.to_le_bytes()[0];
         }
-        self.0.fetch_add(1, Ordering::SeqCst);
     }
 }
 
@@ -75,7 +74,7 @@ impl T {
         let admin_dn = Dn::parse(&s.admin_dn).unwrap();
         let admin = Session::admin(&schema, &admin_dn);
         let mut t = sys.store.begin().unwrap();
-        let mut dir = Directory::new(&mut t, sys.db, schema, s, Box::new(Clock(clock.clone()))).unwrap();
+        let mut dir = Directory::new(&mut t, sys.db, schema, s, Box::new(Clock(clock.clone(), AtomicU64::new(7)))).unwrap();
         dir.seed(&mut t).unwrap();
         t.commit().unwrap();
         let mut me = Self {
@@ -86,7 +85,9 @@ impl T {
             cursors: Cursors::default(),
         };
         let a = me.admin.clone();
+        let ro = std::mem::replace(&mut me.dir.settings.read_only, false);
         me.add_ok(&a, "o=Acme", &[text("objectClass", &["organization"]), text("o", &["Acme"])]);
+        me.dir.settings.read_only = ro;
         me
     }
 

@@ -73,6 +73,13 @@ impl Directory {
     /// # Errors
     /// The add's failure.
     pub fn seed(&mut self, txn: &mut Txn<'_>) -> OpResult<()> {
+        let ro = std::mem::replace(&mut self.settings.read_only, false);
+        let r = self.seed_entries(txn);
+        self.settings.read_only = ro;
+        r
+    }
+
+    fn seed_entries(&mut self, txn: &mut Txn<'_>) -> OpResult<()> {
         let admin: Session = self.sys.clone();
         for (dn, attrs) in entries() {
             if self.sys_entry(txn, dn)?.is_some() {

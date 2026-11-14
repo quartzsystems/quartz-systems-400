@@ -325,7 +325,9 @@ pub fn on_bind(pol: &Policy, st: &State, now: u64, password_ok: bool) -> BindVer
             .filter(|&f| window == 0 || now < f.saturating_add(window))
             .filter(|_| st.locked.is_none())
             .collect();
-        fails.push(now);
+        // Each failure its own time, though two come in one microsecond.
+        let at = fails.iter().max().map_or(now, |l| now.max(l + 1));
+        fails.push(at);
         let max = Policy::n(p.max_failure);
         v.mods.retain(|m| !m.attr.ty.eq_ignore_ascii_case("pwdFailureTime"));
         v.mods.push(replace(
