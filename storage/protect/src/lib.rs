@@ -12,6 +12,8 @@
 //!   its progress map.
 //! - [`parity`]: RAID 5 and RAID 6 sets with their partial-parity log,
 //!   the repair at open, synchronization and rebuild.
+//! - [`intent`]: the write-intent bitmap of a mirrored set, so that an
+//!   unclean stop copies only the regions being written.
 //! - [`spare`]: which hot spare takes a failed member's place.
 //! - [`set`]: a protected set as one block device, for a caller with no
 //!   pool of its own: [`set::MirrorSet`] and [`set::ParitySet`].
@@ -26,6 +28,7 @@
 #![deny(missing_docs)]
 
 mod bytes;
+pub mod intent;
 pub mod mirror;
 pub mod parity;
 pub mod set;

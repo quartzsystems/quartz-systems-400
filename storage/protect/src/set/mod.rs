@@ -9,10 +9,12 @@
 //! caller knows which devices make the set and records each member's
 //! identity and state where it keeps its own state: it gives them to
 //! `open`, reads them back from `members` whenever an event says one
-//! changed, and keeps the resume map through a [`ResumeJournal`]. A
-//! caller that wants a label on each disk puts the set over a
-//! [`Window`] that leaves the label's blocks out.
+//! changed, and keeps the resume map through a [`ResumeJournal`] and a
+//! mirrored set's write-intent map through an [`Intent`]. A caller that
+//! wants a label on each disk puts the set over a [`Window`] that leaves
+//! the label's blocks out.
 
+mod intent;
 mod mirror;
 mod parity;
 mod window;
@@ -22,7 +24,8 @@ use std::io;
 use blockdev::BlockError;
 
 use crate::mirror::ResumeState;
-pub use mirror::{MemberInfo, MirrorMember, MirrorSet, Resume};
+pub use intent::{Intent, IntentStats};
+pub use mirror::{MemberInfo, MirrorMember, MirrorSet, Resume, ResyncProgress};
 pub use parity::{ParityMember, ParityMemberInfo, ParityProgress, ParitySet, ParityWork};
 pub use window::Window;
 
@@ -35,6 +38,9 @@ pub enum SetError {
     /// The resume map could not be kept.
     #[error("resume map: {0}")]
     Journal(#[source] io::Error),
+    /// The write-intent map could not be read or kept.
+    #[error("write-intent map: {0}")]
+    Intent(#[source] io::Error),
     /// The members given do not make a set that can run.
     #[error("the set cannot run: {0}")]
     Unusable(String),
