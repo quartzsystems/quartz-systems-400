@@ -25,7 +25,7 @@ fn want(out: &str, what: &str, words: &[&str]) -> Result<(), String> {
 }
 
 /// The report's lines of one status.
-fn status_lines<'a>(out: &'a str, status: &str) -> Vec<&'a str> {
+pub(crate) fn status_lines<'a>(out: &'a str, status: &str) -> Vec<&'a str> {
     out.lines()
         .filter(|l| {
             l.split_whitespace().nth(2) == Some(status) || l.contains(&format!(" {status} "))

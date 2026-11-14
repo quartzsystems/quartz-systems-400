@@ -127,6 +127,8 @@ pub struct Suite {
     pub(crate) tn_port: std::cell::Cell<Option<u16>>,
     /// What the NFS steps on the main guest set up (`nfsstep`).
     pub(crate) nfs: std::cell::RefCell<crate::nfsstep::State>,
+    /// What the directory server steps set up (`dirsrvstep`).
+    pub(crate) dir: std::cell::RefCell<crate::dirsrvstep::State>,
 }
 
 // The steps share one signature so `step` can take them as fn pointers.
@@ -204,6 +206,7 @@ impl Suite {
             only: None,
             tn_port: std::cell::Cell::new(None),
             nfs: std::cell::RefCell::default(),
+            dir: std::cell::RefCell::default(),
         })
     }
 
@@ -745,6 +748,25 @@ impl Suite {
         reports.push(self.step(&mut s, "105 phase 12 leftovers", Self::leftovers)?);
         reports.push(self.step(&mut s, "106 Collection Services", Self::collection_services)?);
         reports.push(self.step(&mut s, "107 security check", Self::security_check)?);
+        // The directory server: 193 first, on the shipped instance; 192
+        // has an IPL in its middle.
+        reports.push(self.step(&mut s, "193 directory server QSSECCHK", Self::dir_secchk)?);
+        reports.push(self.step(&mut s, "186 directory server start", Self::dir_start)?);
+        reports.push(self.step(&mut s, "187 directory server ldaptest", Self::dir_ldaptest)?);
+        reports.push(self.step(
+            &mut s,
+            "188 directory server projected backend",
+            Self::dir_projected,
+        )?);
+        reports.push(self.step(&mut s, "189 directory server TLS", Self::dir_tls)?);
+        reports.push(self.step(
+            &mut s,
+            "190 directory server QSH tools and QGLDCLNT",
+            Self::dir_guest_tools,
+        )?);
+        reports.push(self.step(&mut s, "191 directory server publishing", Self::dir_publish)?);
+        reports.push(self.step(&mut s, "192 directory server persistence", Self::dir_persist)?);
+        reports.push(self.step(&mut s, "194 directory server bench", Self::dir_bench)?);
         reports.push(self.step(&mut s, "108 job accounting", Self::job_accounting)?);
         reports.push(self.step(&mut s, "140 storage thresholds", Self::storage_limits)?);
         reports.push(self.step(&mut s, "120 INSLNG", Self::install_language)?);

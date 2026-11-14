@@ -739,6 +739,8 @@ impl Suite {
                 detail.push_str(&self.netserver_after_upgrade(&mut s, &old)?);
                 detail.push_str("; ");
                 detail.push_str(&nfs_after_upgrade(&mut s)?);
+                detail.push_str("; ");
+                detail.push_str(&self.dir_after_upgrade(&mut s)?);
             }
             let sig = signatures_clean(&mut s)?;
             let last = tr

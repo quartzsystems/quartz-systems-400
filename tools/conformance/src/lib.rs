@@ -23,6 +23,7 @@ pub mod compdiag;
 mod console;
 pub mod db;
 mod ddmstep;
+mod dirsrvstep;
 #[cfg(unix)]
 mod display;
 mod dspcmds;

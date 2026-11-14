@@ -54,6 +54,7 @@ uim = { path = "../../ui/uim", version = "0.1.0" }
 dspf = { path = "../../ui/dspf", version = "0.1.0" }
 tn5250-driver = { path = "../tn5250-driver", version = "0.1.0" }
 ddm = { path = "../../net/ddm", version = "0.1.0" }
+ldap = { path = "../../net/ldap", version = "0.1.0" }
 drdar = { path = "../../net/drdar", version = "0.1.0" }
 rpg-oracle = { path = "../rpg-oracle", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
