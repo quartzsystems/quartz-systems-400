@@ -1157,7 +1157,13 @@ dependencies = [
 name = "dirsrv"
 version = "0.1.0"
 dependencies = [
+ "blockdev",
  "ldap",
+ "qsname",
+ "saverst",
+ "savfmt",
+ "sha2 0.11.0",
+ "store",
  "thiserror 2.0.21",
  "tracing",
 ]

@@ -6,7 +6,7 @@
 //! values as matching rules see them. `schema` implements it; tests use
 //! [`AsciiFold`].
 
-use ldap::{ResultCode, Rdn};
+use ldap::{Rdn, ResultCode};
 
 /// Which matching rule a value is normalized under.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

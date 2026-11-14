@@ -474,6 +474,17 @@ files = [
     "net/netsvrcfg/src/file/shr.rs",
 ]
 
+# A directory server instance's entry store, *DIRDB (docs/DIRSRV.md 5.2).
+[[format]]
+name = "dirdb"
+frozen_at = "V1R2M0"
+doc = "docs/DIRSRV.md"
+version = ["net/dirsrv/src/store/format.rs::DIRDB_VERSION"]
+files = [
+    "net/dirsrv/src/store/format.rs",
+    "net/dirsrv/src/store/record.rs",
+]
+
 # --- Oracle fixtures (no credentials; the account is `{user}`) ---
 
 [[format]]

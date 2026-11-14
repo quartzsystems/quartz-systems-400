@@ -213,7 +213,9 @@ them as `storage/store/tests/spec.rs` does.
 Conventions are `STORE_FORMAT.md` §0's: integers in the attribute area
 and in records are little-endian, integers in tree keys big-endian so
 that byte order is key order. Text (RDNs, DNs, attribute descriptions)
-is UTF-8. `DIRDB_VERSION` (`net/dirsrv/src/store/format.rs`) is 1.
+is UTF-8. Frozen at V1R2M0 (`tools/fmtcheck/formats.toml`, format
+`dirdb`, the files `net/dirsrv/src/store/format.rs` and `record.rs`);
+the version is `DIRDB_VERSION`, 1.
 
 **Limits.** A tree key is fixed size per tree (`STORE_FORMAT.md` §3);
 the names and index trees use 128 bytes, so a long normalized RDN or
