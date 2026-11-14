@@ -9,11 +9,13 @@
 //! caller knows which devices make the set and records each member's
 //! identity and state where it keeps its own state: it gives them to
 //! `open`, reads them back from `members` whenever an event says one
-//! changed, and keeps the resume map through a [`ResumeJournal`] and a
-//! mirrored set's write-intent map through an [`Intent`]. A caller that
-//! wants a label on each disk puts the set over a [`Window`] that leaves
-//! the label's blocks out.
+//! changed, and keeps the resume map through a [`ResumeJournal`], a
+//! mirrored set's write-intent map through an [`Intent`] and a parity
+//! set's maps of members out of service through a [`ParityIntent`]. A
+//! caller that wants a label on each disk puts the set over a
+//! [`Window`] that leaves the label's blocks out.
 
+mod away;
 mod intent;
 mod mirror;
 mod parity;
@@ -24,6 +26,7 @@ use std::io;
 use blockdev::BlockError;
 
 use crate::mirror::ResumeState;
+pub use away::ParityIntent;
 pub use intent::{Intent, IntentStats};
 pub use mirror::{MemberInfo, MirrorMember, MirrorSet, Resume, ResyncProgress};
 pub use parity::{ParityMember, ParityMemberInfo, ParityProgress, ParitySet, ParityWork};

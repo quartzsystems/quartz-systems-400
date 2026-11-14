@@ -6,12 +6,16 @@
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
-use blockdev::{BLOCK_SIZE, BlockDev, check_range};
+use blockdev::{BLOCK_SIZE, BlockDev, BlockError, check_range};
 use tracing::{info, warn};
 
 use crate::PAGE_SIZE;
-use crate::parity::{Engine, EngineEvent, Format, Geometry, Health, Level, MAX_MEMBERS, Member};
-use crate::set::{SetError, SetEvent};
+use crate::intent::IntentMap;
+use crate::parity::{
+    Engine, EngineEvent, Format, Geometry, Health, Level, MAX_MEMBERS, Member, ppl,
+};
+use crate::set::away::{self, Kept, ParityIntent, Watch};
+use crate::set::{SetError, SetEvent, no_member};
 use crate::spare::{self, Spare};
 
 /// One member, as the caller recorded it.
@@ -64,6 +68,57 @@ pub struct ParitySet {
     /// Rows of each member.
     rows: u64,
     events: Arc<Mutex<Vec<SetEvent>>>,
+    /// The maps of members out of service, when the set keeps them.
+    away: Option<Arc<Mutex<Watch>>>,
+}
+
+/// The regions of the stripes the partial-parity slots of `devs` name:
+/// what may have been in flight when the set stopped.
+fn in_flight(
+    fmt: &Format,
+    id: [u8; 16],
+    geo: &Geometry,
+    devs: &[Option<Box<dyn BlockDev>>],
+    rb: u64,
+) -> IntentMap {
+    let mut map = Watch::scratch(id, geo.blocks, rb);
+    for (m, dev) in devs.iter().enumerate() {
+        let Some(dev) = dev.as_deref() else {
+            continue;
+        };
+        let ident = ppl::Ident {
+            magic: fmt.ppl_magic,
+            state_magic: fmt.state_magic,
+            asp_uuid: id,
+            set: 1,
+            level: geo.level,
+            members: u8::try_from(geo.n).expect("at most 18"),
+            member: u8::try_from(m).expect("at most 18"),
+            blocks: geo.blocks,
+        };
+        for i in 0..2 {
+            let at = geo.slot(i);
+            let mut head = vec![0u8; PAGE_SIZE];
+            if dev.read(at, &mut head).is_err() {
+                continue;
+            }
+            let Some((_, count)) = ppl::header(&ident, &head) else {
+                continue;
+            };
+            let mut bytes = vec![0u8; ppl::pages_for(count) * PAGE_SIZE];
+            if dev.read(at, &mut bytes).is_err() {
+                continue;
+            }
+            if let Some((_, entries)) = ppl::decode(&ident, &bytes) {
+                for e in entries {
+                    if e.stripe < geo.stripes() {
+                        map.set(geo.block_of(e.stripe) / rb);
+                    }
+                }
+            }
+        }
+    }
+    map
 }
 
 impl ParitySet {
@@ -91,6 +146,19 @@ impl ParitySet {
         head: u64,
         devs: Vec<([u8; 16], Box<dyn BlockDev>)>,
     ) -> Result<Self, SetError> {
+        Self::create_with(fmt, id, level, head, devs, None)
+    }
+
+    /// [`create`](Self::create), keeping a map for each member out of
+    /// service as [`open_with`](Self::open_with) does.
+    pub fn create_with(
+        fmt: Format,
+        id: [u8; 16],
+        level: Level,
+        head: u64,
+        devs: Vec<([u8; 16], Box<dyn BlockDev>)>,
+        intent: Option<ParityIntent>,
+    ) -> Result<Self, SetError> {
         let smallest = devs.iter().map(|(_, d)| d.blocks()).min().unwrap_or(0);
         let geo = Self::plan(level, devs.len(), smallest, head)?;
         let members = devs
@@ -101,7 +169,7 @@ impl ParitySet {
                 dev: Some(dev),
             })
             .collect();
-        Self::open(fmt, id, geo, members, Some(0))
+        Self::open_with(fmt, id, geo, members, Some(0), intent)
     }
 
     /// A set as the caller recorded it: its layout, its members and the
@@ -117,15 +185,41 @@ impl ParitySet {
         members: Vec<ParityMember>,
         sync: Option<u64>,
     ) -> Result<Self, SetError> {
-        if members.len() != geo.n {
+        Self::open_with(fmt, id, geo, members, sync, None)
+    }
+
+    /// [`open`](Self::open), and with an intent, a map kept for each
+    /// member that has a store while it is out of service: from the
+    /// moment it fails or leaves, never cleared until it is in step
+    /// again. A member back with its map is rebuilt in the map's
+    /// regions only (from the first block, whatever mark was recorded);
+    /// one with no valid map, or replaced by another disk, is rebuilt
+    /// whole. A member recorded in step and missing now, that the others
+    /// did not record failed, gets a map of what was in flight.
+    pub fn open_with(
+        fmt: Format,
+        id: [u8; 16],
+        geo: Geometry,
+        members: Vec<ParityMember>,
+        sync: Option<u64>,
+        mut intent: Option<ParityIntent>,
+    ) -> Result<Self, SetError> {
+        let n = members.len();
+        if n != geo.n {
             return Err(SetError::Unusable(format!(
-                "{} members for a layout of {}",
-                members.len(),
+                "{n} members for a layout of {}",
                 geo.n
             )));
         }
+        if intent.as_ref().is_some_and(|i| i.region_blocks == 0) {
+            return Err(SetError::Unusable("a region of no blocks".into()));
+        }
         let mut events = Vec::new();
-        let mut engine_members = Vec::with_capacity(members.len());
+        let mut kept = Vec::new();
+        let mut recorded = Vec::with_capacity(n);
+        let mut healths = Vec::with_capacity(n);
+        let mut devs = Vec::with_capacity(n);
+        let mut uuids = Vec::with_capacity(n);
         for (i, m) in members.into_iter().enumerate() {
             if let Some(d) = &m.dev
                 && d.blocks() <= geo.end()
@@ -135,33 +229,34 @@ impl ParitySet {
                     format!("{} blocks, the layout needs {}", d.blocks(), geo.end() + 1),
                 ));
             }
-            let health = match (m.health, m.dev.is_some()) {
-                (Health::Ok, true) => Health::Ok,
-                (Health::Ok, false) => {
-                    if sync.is_some() {
-                        return Err(SetError::refused(
-                            i,
-                            "missing while the set is synchronizing",
-                        ));
-                    }
-                    events.push(SetEvent::Missing { member: i });
-                    Health::Failed
-                }
-                (Health::Rebuilding(mark), true) => Health::Rebuilding(mark),
-                (Health::Failed, true) => {
-                    events.push(SetEvent::Stale { member: i });
-                    Health::Rebuilding(0)
-                }
-                (Health::Rebuilding(_) | Health::Failed, false) => Health::Failed,
-            };
-            let pages = m.dev.as_deref().map_or(0, BlockDev::blocks);
-            engine_members.push(Member {
-                unit_uuid: m.uuid,
-                dev: m.dev,
-                health,
-                pages,
-            });
+            if let Some(pi) = &mut intent {
+                let store = pi.away.get_mut(i).and_then(Option::take);
+                kept.push(
+                    Watch::read_kept(pi.magic, id, m.uuid, geo.blocks, pi.region_blocks, store)
+                        .map_err(SetError::Intent)?,
+                );
+            }
+            let mapped = kept.get(i).is_some_and(Kept::has_map);
+            let health = Self::opening_health(i, &m, mapped, sync.is_some(), &mut events)?;
+            recorded.push(m.health);
+            healths.push(health);
+            uuids.push(m.uuid);
+            devs.push(m.dev);
         }
+        let watch = intent.map(|pi| {
+            let flight = in_flight(&fmt, id, &geo, &devs, pi.region_blocks);
+            Arc::new(Mutex::new(Watch::new(
+                pi.magic,
+                id,
+                geo.blocks,
+                pi.region_blocks,
+                kept,
+                uuids.clone(),
+                healths.clone(),
+                flight,
+            )))
+        });
+        let engine_members = Self::engine_members(devs, &uuids, &healths, watch.as_ref());
         let mut engine = Engine::new(fmt, id, 1, geo, engine_members, sync);
         // A member that failed after the caller's last record is
         // recorded on the others.
@@ -171,6 +266,9 @@ impl ParitySet {
                 m.health = Health::Rebuilding(0);
                 events.push(SetEvent::Stale { member: i });
             }
+        }
+        if let Some(w) = &watch {
+            Self::missing_maps(&engine, &mut away::lock(w), &recorded, failed);
         }
         let unknown = engine
             .members
@@ -189,16 +287,105 @@ impl ParitySet {
         if events.iter().any(|e| matches!(e, SetEvent::Missing { .. })) {
             engine.record_failed();
         }
-        Ok(Self {
+        let set = Self {
             engine: Arc::new(Mutex::new(engine)),
             geo,
             rows: geo.rows_end() - geo.head,
             events: Arc::new(Mutex::new(events)),
+            away: watch,
+        };
+        if let Some(w) = &set.away {
+            set.settle(&set.lock());
+            // The repair made what was in flight consistent.
+            away::lock(w).flushed();
+        }
+        Ok(set)
+    }
+
+    /// What member `i` as recorded is at open, before the others' record
+    /// is read; `mapped` when its map is kept.
+    fn opening_health(
+        i: usize,
+        m: &ParityMember,
+        mapped: bool,
+        syncing: bool,
+        events: &mut Vec<SetEvent>,
+    ) -> Result<Health, SetError> {
+        Ok(match (m.health, m.dev.is_some()) {
+            (Health::Ok, true) => Health::Ok,
+            (Health::Ok, false) => {
+                if syncing {
+                    return Err(SetError::refused(
+                        i,
+                        "missing while the set is synchronizing",
+                    ));
+                }
+                events.push(SetEvent::Missing { member: i });
+                Health::Failed
+            }
+            // With a map, a rebuild starts again over the map: the
+            // member may have failed again after the mark was recorded.
+            (Health::Rebuilding(mark), true) if mapped && mark > 0 => {
+                events.push(SetEvent::Stale { member: i });
+                Health::Rebuilding(0)
+            }
+            (Health::Rebuilding(mark), true) => Health::Rebuilding(mark),
+            (Health::Failed, true) => {
+                events.push(SetEvent::Stale { member: i });
+                Health::Rebuilding(0)
+            }
+            (Health::Rebuilding(_) | Health::Failed, false) => Health::Failed,
         })
+    }
+
+    /// The engine's members, each device under the watch when there is one.
+    fn engine_members(
+        devs: Vec<Option<Box<dyn BlockDev>>>,
+        uuids: &[[u8; 16]],
+        healths: &[Health],
+        watch: Option<&Arc<Mutex<Watch>>>,
+    ) -> Vec<Member> {
+        let mut out = Vec::with_capacity(devs.len());
+        for (i, dev) in devs.into_iter().enumerate() {
+            let pages = dev.as_deref().map_or(0, BlockDev::blocks);
+            let dev = match watch {
+                Some(w) => dev.map(|d| Watch::wrap(w, i, d)),
+                None => dev,
+            };
+            out.push(Member {
+                unit_uuid: uuids[i],
+                dev,
+                health: healths[i],
+                pages,
+            });
+        }
+        out
+    }
+
+    /// At open, once the others' record is read: a member recorded in
+    /// step and missing now, that the others did not record failed, was
+    /// in step when the set last stopped but for what was in flight.
+    fn missing_maps(engine: &Engine, g: &mut Watch, recorded: &[Health], failed: u32) {
+        for (i, m) in engine.members.iter().enumerate() {
+            g.health[i] = m.health;
+        }
+        for (i, m) in engine.members.iter().enumerate() {
+            if m.dev.is_none() && recorded[i] == Health::Ok && failed & (1 << i) == 0 {
+                g.left(i);
+            }
+        }
     }
 
     fn lock(&self) -> MutexGuard<'_, Engine> {
         self.engine.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// After the engine ran: each member's map follows its health.
+    fn settle(&self, e: &Engine) {
+        if let Some(w) = &self.away {
+            let health: Vec<Health> = e.members.iter().map(|m| m.health).collect();
+            away::lock(w).settle(&health);
+        }
     }
 
     /// The layout, which the caller records.
@@ -219,6 +406,17 @@ impl ParitySet {
                 attached: m.dev.is_some(),
             })
             .collect()
+    }
+
+    /// The regions of the map kept for `member` while it is out of
+    /// service or being rebuilt from it; `None` when none is.
+    #[must_use]
+    pub fn away_regions(&self, member: usize) -> Option<Vec<u64>> {
+        let w = self.away.as_ref()?;
+        if member >= self.geo.n {
+            return None;
+        }
+        away::lock(w).regions(member)
     }
 
     /// Events since the last call.
@@ -251,16 +449,28 @@ impl ParitySet {
 
     /// Run up to `budget` blocks of the work that is due; `None` when
     /// there is none. The caller records the members and the mark as it
-    /// goes, and again when a piece of work completes.
+    /// goes, and again when a piece of work completes. A member rebuilt
+    /// from its map skips the blocks outside it, so its mark jumps.
     pub fn step(&self, budget: u64) -> Result<Option<ParityProgress>, SetError> {
         let Some(work) = self.work() else {
             return Ok(None);
         };
         let mut e = self.lock();
-        let work = match work {
-            ParityWork::Sync(_) => ParityWork::Sync(e.sync_step(budget)?),
-            ParityWork::Rebuild(m, _) => ParityWork::Rebuild(m, e.rebuild_step(m, budget)?),
+        let mapped = match (&self.away, work) {
+            (Some(w), ParityWork::Rebuild(m, _)) => away::lock(w).keeping(m),
+            _ => false,
         };
+        let r = match work {
+            ParityWork::Sync(_) => e.sync_step(budget).map(ParityWork::Sync),
+            ParityWork::Rebuild(m, _) if mapped => self
+                .mapped_step(&mut e, m, budget)
+                .map(|d| ParityWork::Rebuild(m, d)),
+            ParityWork::Rebuild(m, _) => {
+                e.rebuild_step(m, budget).map(|d| ParityWork::Rebuild(m, d))
+            }
+        };
+        self.settle(&e);
+        let work = r?;
         let (ParityWork::Sync(done) | ParityWork::Rebuild(_, done)) = work;
         let complete = done >= self.geo.blocks;
         if complete {
@@ -271,6 +481,48 @@ impl ParitySet {
             blocks: self.geo.blocks,
             complete,
         }))
+    }
+
+    /// Rebuild up to `budget` blocks of `member` in its map's regions
+    /// from its mark; the blocks between are in step. Returns the mark.
+    fn mapped_step(&self, e: &mut Engine, member: usize, budget: u64) -> Result<u64, BlockError> {
+        let w = self.away.as_ref().expect("maps kept");
+        let Health::Rebuilding(mark) = e.members[member].health else {
+            return Ok(self.geo.blocks);
+        };
+        // Its old slots name stripes it was not in step for; the engine
+        // zeroes them at mark 0, and the mark is about to pass 0.
+        if !away::lock(w).zeroed[member] {
+            e.flush()?;
+            let dev = e.members[member]
+                .dev
+                .as_deref()
+                .ok_or_else(|| no_member("rebuild", 0))?;
+            let zero = vec![0u8; PAGE_SIZE];
+            for i in 0..2 {
+                dev.write(self.geo.slot(i), &zero)?;
+            }
+            dev.flush()?;
+            away::lock(w).zeroed[member] = true;
+        }
+        let next = away::lock(w).next_blocks(member, mark);
+        let Some((start, stop)) = next else {
+            return Ok(Self::rebuilt(e, member, self.geo.blocks));
+        };
+        e.members[member].health = Health::Rebuilding(start);
+        let end = e.rebuild_step(member, budget.max(1).min(stop - start))?;
+        let more = away::lock(w).next_blocks(member, end).is_some();
+        if end < self.geo.blocks && !more {
+            return Ok(Self::rebuilt(e, member, self.geo.blocks));
+        }
+        Ok(end)
+    }
+
+    /// A member rebuilt from its map is in step, which the others record.
+    fn rebuilt(e: &mut Engine, member: usize, blocks: u64) -> u64 {
+        e.members[member].health = Health::Ok;
+        e.record_failed();
+        blocks
     }
 
     /// The synchronization mark: `None` when the parity is computed.
@@ -285,7 +537,21 @@ impl ParitySet {
         if member >= self.geo.n {
             return Err(SetError::refused(member, "no such member"));
         }
-        Ok(self.lock().remove_member(member)?)
+        let mut e = self.lock();
+        let Some(w) = &self.away else {
+            return Ok(e.remove_member(member)?);
+        };
+        let flushed = e.flush();
+        self.settle(&e);
+        flushed?;
+        away::lock(w).flushed();
+        if e.members[member].health != Health::Failed {
+            away::lock(w).left(member);
+        }
+        let out = e.remove_member(member);
+        self.settle(&e);
+        let watched = out?;
+        Ok(watched.and_then(|_| away::lock(w).take_dev(member)))
     }
 
     /// Put a device in the place of a failed member; it is rebuilt by
@@ -310,12 +576,20 @@ impl ParitySet {
                 format!("{pages} blocks, the layout needs {}", self.geo.end() + 1),
             ));
         }
+        let dev = match &self.away {
+            Some(w) => {
+                away::lock(w).replaced(member, uuid);
+                Watch::wrap(w, member, dev)
+            }
+            None => dev,
+        };
         let m = &mut e.members[member];
         m.dev = Some(dev);
         m.health = Health::Rebuilding(0);
         m.unit_uuid = uuid;
         m.pages = pages;
         info!("parity set: member {member} replaced; rebuilding");
+        self.settle(&e);
         Ok(())
     }
 
@@ -349,7 +623,10 @@ impl ParitySet {
 
     /// Stripes whose parity does not match their data.
     pub fn verify(&self) -> Result<Vec<u64>, SetError> {
-        Ok(self.lock().verify()?)
+        let mut e = self.lock();
+        let r = e.verify();
+        self.settle(&e);
+        Ok(r?)
     }
 
     /// The member and its block that hold block `lba` of the set.
@@ -358,6 +635,22 @@ impl ParitySet {
             usize::try_from(lba / self.rows).expect("few members"),
             self.geo.head + lba % self.rows,
         )
+    }
+
+    /// The regions blocks `lba..lba + count` of the set touch: a run,
+    /// first and last, for each member's rows they cross.
+    fn regions_of(&self, lba: u64, count: u64, rb: u64) -> Vec<(u64, u64)> {
+        let w = self.geo.w() as u64;
+        let mut out = Vec::new();
+        let (mut at, end) = (lba, lba + count);
+        while at < end {
+            let stop = end.min((at / self.rows + 1) * self.rows);
+            let first = (at % self.rows) / w;
+            let last = ((stop - 1) % self.rows) / w;
+            out.push((first / rb, last / rb));
+            at = stop;
+        }
+        out
     }
 }
 
@@ -373,24 +666,54 @@ impl BlockDev for ParitySet {
     fn read(&self, lba: u64, buf: &mut [u8]) -> blockdev::Result<()> {
         let count = check_range(self.blocks(), lba, buf.len())?;
         let mut e = self.lock();
+        let mut r = Ok(());
         for (i, chunk) in (0..count).zip(buf.chunks_mut(PAGE_SIZE)) {
             let (member, at) = self.locate(lba + i);
-            chunk.copy_from_slice(&e.read_page(member, at)?);
+            match e.read_page(member, at) {
+                Ok(p) => chunk.copy_from_slice(&p),
+                Err(x) => {
+                    r = Err(x);
+                    break;
+                }
+            }
         }
-        Ok(())
+        self.settle(&e);
+        r
     }
 
     fn write(&self, lba: u64, buf: &[u8]) -> blockdev::Result<()> {
         let count = check_range(self.blocks(), lba, buf.len())?;
         let mut e = self.lock();
+        if let Some(w) = &self.away {
+            let mut g = away::lock(w);
+            let regions = self.regions_of(lba, count, g.region_blocks());
+            g.begin(&regions).map_err(|source| BlockError::Io {
+                op: "write-intent",
+                lba,
+                source,
+            })?;
+        }
+        let mut r = Ok(());
         for (i, chunk) in (0..count).zip(buf.chunks(PAGE_SIZE)) {
             let (member, at) = self.locate(lba + i);
-            e.write_page(member, at, chunk)?;
+            if let Err(x) = e.write_page(member, at, chunk) {
+                r = Err(x);
+                break;
+            }
         }
-        Ok(())
+        self.settle(&e);
+        r
     }
 
     fn flush(&self) -> blockdev::Result<()> {
-        self.lock().flush()
+        let mut e = self.lock();
+        let r = e.flush();
+        self.settle(&e);
+        if r.is_ok()
+            && let Some(w) = &self.away
+        {
+            away::lock(w).flushed();
+        }
+        r
     }
 }

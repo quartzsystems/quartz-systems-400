@@ -7,6 +7,8 @@
 
 #![allow(dead_code)]
 
+pub mod parity;
+
 use std::sync::Arc;
 use std::time::Duration;
 

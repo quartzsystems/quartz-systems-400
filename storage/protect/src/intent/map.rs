@@ -192,6 +192,26 @@ impl IntentMap {
             })
     }
 
+    /// The first region set at or after `from`. Bytes with nothing set
+    /// are passed over whole.
+    #[must_use]
+    pub fn next_set(&self, from: u64) -> Option<u64> {
+        if from >= self.regions {
+            return None;
+        }
+        let (start, _) = Self::at(from);
+        let mut mask = 0xFFu8 << (from % 8);
+        for (i, b) in self.bits.iter().enumerate().skip(start) {
+            let v = b & mask;
+            mask = 0xFF;
+            if v != 0 {
+                let r = i as u64 * 8 + u64::from(v.trailing_zeros());
+                return (r < self.regions).then_some(r);
+            }
+        }
+        None
+    }
+
     /// Regions set.
     #[must_use]
     pub fn count(&self) -> u64 {
@@ -285,6 +305,19 @@ mod tests {
         m.set(24);
         assert_eq!(m.dirty().collect::<Vec<_>>(), [3, 17, 24]);
         assert_eq!(m.count(), 3);
+        let next: Vec<_> = [0, 3, 4, 17, 18, 24, 25].map(|r| m.next_set(r)).into();
+        assert_eq!(
+            next,
+            [
+                Some(3),
+                Some(3),
+                Some(17),
+                Some(17),
+                Some(24),
+                Some(24),
+                None
+            ]
+        );
         let bytes = m.encode(MAGIC);
         assert_eq!(bytes.len(), HEADER_LEN + 4);
         assert_eq!(IntentMap::decode(MAGIC, &bytes).unwrap(), m);
