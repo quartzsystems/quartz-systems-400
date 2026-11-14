@@ -46,7 +46,32 @@ fn identifier_like(s: &str) -> bool {
     let dotted = t.contains('.')
         && !t.ends_with('.')
         && t.chars().all(|c| c.is_alphanumeric() || "._-".contains(c));
-    lowerish || path || camel || dotted || t.contains('_')
+    lowerish || path || camel || dotted || t.contains('_') || ldap_name(t) || rdn_sequence(t)
+}
+
+/// An LDAP attribute type in lower camel case with hyphens
+/// (`ibm-slapdAdminPW`, `os400-storageUsed`): lower case first, ASCII
+/// letters, digits and `-` only, an upper case letter after.
+fn ldap_name(t: &str) -> bool {
+    t.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+        && t.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        && t.chars().any(|c| c.is_ascii_uppercase())
+}
+
+/// A distinguished name of the RFC 4514 shape without spaces,
+/// `type=value[,type=value]` (`os400-sys=SYSTEM`): each type an
+/// attribute name in lower case first or a dotted OID, each value not
+/// empty. A key's label (`F3=Exit`) or an option's (`5=Display`) is
+/// display text, not a DN.
+fn rdn_sequence(t: &str) -> bool {
+    t.split(',').all(|rdn| {
+        rdn.split_once('=').is_some_and(|(ty, v)| {
+            let name = ty.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+                && ty.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+            let oid = ty.contains('.') && ty.chars().all(|c| c.is_ascii_digit() || c == '.');
+            (name || oid) && !v.is_empty() && !v.contains('=')
+        })
+    })
 }
 
 /// Whether `s` is prose: a word of two letters or more with a lower
@@ -87,6 +112,19 @@ mod tests {
             "Y",
             "{e}",
             "QUIHDWRSC",
+            "ibm-slapdAdminPW",
+            "ibm-slapdMasterPW",
+            "ibm-slapdServerId",
+            "ibm-slapdSchemaAdditions",
+            "ibm-slapdIndex",
+            "os400-storageUsed",
+            "os400-invalidSignonCount",
+            "os400-previousSignon",
+            "os400-passwordLastChanged",
+            "os400-sys=SYSTEM",
+            "cn=Administrator",
+            "ou=Users,o=Acme",
+            "2.5.4.3=Ann",
         ] {
             assert!(!is_prose(s), "{s}");
         }
@@ -100,6 +138,20 @@ mod tests {
             "Opt  Resource",
             "not found",
             "Ethernet Port",
+            // Not the LDAP shapes: spaces, punctuation, an empty value.
+            "Use TLS",
+            "The port must be 1 to 65535.",
+            "Instance {key} is not open.",
+            "cn=Master Server",
+            "Entry=Not found",
+            "F3=Exit",
+            "F12=Cancel",
+            "5=Display",
+            "Y=Yes",
+            "notFound!",
+            "doesNot work",
+            "Value=",
+            "A value, Another=thing",
         ] {
             assert!(is_prose(s), "{s}");
         }
