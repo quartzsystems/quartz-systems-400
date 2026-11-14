@@ -3,3 +3,8 @@
 // root directory of this project.
 
 //! The schema model, syntaxes and matching rules (docs/DIRSRV.md §6).
+
+pub mod prep;
+pub mod rule;
+pub mod syntax;
+pub mod time;
