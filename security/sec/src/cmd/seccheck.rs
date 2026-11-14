@@ -779,7 +779,7 @@ mod tests {
             security: "none".into(),
             ..DirFacts::default()
         };
-        let r = dirsrv(&[shipped.clone()]);
+        let r = dirsrv(std::slice::from_ref(&shipped));
         assert_eq!(r.len(), 3);
         assert!(r.iter().all(|x| x.status == Status::Warn));
         let bad = DirFacts {

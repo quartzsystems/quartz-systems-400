@@ -279,6 +279,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::many_single_char_names)]
     fn entries_round_trip_and_select() {
         let f = DiFields {
             instance: "QUSRDIR".into(),
