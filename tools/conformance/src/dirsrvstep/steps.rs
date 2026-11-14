@@ -537,11 +537,17 @@ impl Suite {
             &["TCP1C08"],
             slow,
         )?;
-        // The client's certificate, its subject an entry's DN.
+        // The client's certificate, its subject an entry's DN, issued by the
+        // local CA (which *SYSTEM then trusts): a server takes no
+        // self-signed client certificate.
+        let _ = s.command(
+            "QSCRTCRTS KEYSTORE(*LCLCA) PASSWORD('lclca189pw') CN('Step 189 CA')",
+            slow,
+        )?;
         want(
             s,
             &format!(
-                "QSCRTCRT LABEL({CLIENT_LABEL}) CN('ldext') ORG('qs400test') USAGE(*CLIENT) TEXT('Step 189 client')"
+                "QSCRTCRT LABEL({CLIENT_LABEL}) CN('ldext') ORG('qs400test') USAGE(*CLIENT) SIGNER(*LCLCA) LCLCAPWD('lclca189pw') TEXT('Step 189 client')"
             ),
             &["TCP1C02", "TCP1C14"],
             slow,
