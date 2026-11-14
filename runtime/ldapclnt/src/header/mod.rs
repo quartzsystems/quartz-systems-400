@@ -169,12 +169,10 @@ fn defines(out: &mut String, hdr: Hdr) {
         let value = match *name {
             "LDAP_OPT_ON" | "LDAP_OPT_OFF" => format!("((void *) {n})"),
             _ if *n < 0 => format!("({n})"),
-            _ if *name == "LDAP_AUTH_SASL"
-                || *name == "LDAP_AUTH_SIMPLE"
-                || name.starts_with("LDAP_RES_")
-                || name.starts_with("LDAP_SSL_")
-                || name.starts_with("LBER_")
-                || (*n > 0x50 && name.starts_with("LDAP_") && !name.starts_with("LDAP_OPT")) =>
+            // Tags read better in hex.
+            _ if ["LDAP_AUTH_", "LDAP_RES_", "LDAP_MOD_BVALUES", "LBER_"]
+                .iter()
+                .any(|p| name.starts_with(p)) =>
             {
                 format!("0x{n:02X}")
             }
@@ -556,6 +554,38 @@ mod tests {
                 assert!(l.len() <= WIDTH, "{m} line {}: {} chars", n + 1, l.len());
                 assert!(l.chars().all(ccsid::is_representable), "{m} line {}", n + 1);
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod shipped {
+    use super::members;
+
+    /// The copies `lic/osobjects` ships are what the table generates;
+    /// `QS400_UPDATE_QSYSINC=1` rewrites them.
+    #[test]
+    fn the_shipped_members_are_current() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../lic/osobjects/shipped/qsysinc");
+        let update = std::env::var_os("QS400_UPDATE_QSYSINC").is_some();
+        for (file, member, _, srctype, text) in members() {
+            let ext = if srctype == "C" { "h" } else { "rpgle" };
+            let path = dir.join(file).join(format!("{member}.{ext}"));
+            if update {
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(&path, &text).unwrap();
+                continue;
+            }
+            let got = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+                .replace("\r\n", "\n");
+            assert_eq!(
+                got,
+                text,
+                "{} is stale: QS400_UPDATE_QSYSINC=1",
+                path.display()
+            );
         }
     }
 }

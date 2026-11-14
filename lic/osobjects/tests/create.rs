@@ -102,6 +102,27 @@ fn every_piece_is_made_once() {
             .unwrap()
             .is_some()
     );
+    // The LDAP client's include members.
+    let inc = l
+        .lookup(&mut t, types::LIB, Name::parse("QSYSINC").unwrap())
+        .unwrap()
+        .unwrap();
+    for (file, member, srctype, _, text) in osobjects::qsysinc::MEMBERS {
+        let f = Library::load(&mut t, inc)
+            .unwrap()
+            .lookup(&mut t, types::FILE, Name::parse(file).unwrap())
+            .unwrap()
+            .unwrap();
+        let m = db::source::read_member(
+            &mut t,
+            f,
+            qsname::MemberSpec::Name(Name::parse(member).unwrap()),
+        )
+        .unwrap();
+        assert_eq!(m.srctype, *srctype);
+        assert_eq!(m.records.len(), text.lines().count(), "{file}({member})");
+        assert_eq!(m.records[0].2, text.lines().next().unwrap().trim_end());
+    }
     let (lib, n) = osobjects::nls::install_language(&mut t, qsys, &stamp, 2931, false).unwrap();
     assert_eq!((lib.as_str(), n), ("QSYS2931", 5));
     assert_eq!(

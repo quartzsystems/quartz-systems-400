@@ -8,7 +8,11 @@
 //! options, extended operations, TLS, DNs, URLs, code pages, LBER and
 //! the refusals.
 
-#![allow(clippy::too_many_lines, clippy::many_single_char_names, clippy::similar_names)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::similar_names
+)]
 
 mod common;
 

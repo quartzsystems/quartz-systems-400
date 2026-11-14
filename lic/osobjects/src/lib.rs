@@ -19,6 +19,7 @@ pub mod nls;
 pub mod notices;
 pub mod products;
 pub mod qstrup;
+pub mod qsysinc;
 pub mod timzon;
 pub mod ui;
 pub mod wscst;
@@ -62,7 +63,7 @@ pub struct Report {
 /// descriptions, the primary
 /// language library (`QSYS2924`), panel groups
 /// and menus, the Collection Services model files, the registration
-/// facility, the commands and `QSTRUP`.
+/// facility, the commands, `QSTRUP` and the `QSYSINC` include members.
 /// Objects that exist are left alone (a changed command definition is
 /// replaced, as at every IPL), but for the shipped message descriptions
 /// and subsystem entries an older release's objects lack, which are
@@ -128,6 +129,10 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
     match qstrup::install(txn, qsys, stamp) {
         Ok(made) => r.made += usize::from(made),
         Err(e) => r.problems.push(format!("QSYS/QSTRUP: {e}")),
+    }
+    match qsysinc::install(txn, qsys, stamp) {
+        Ok(made) => r.made += made,
+        Err(e) => r.problems.push(format!("QSYSINC: {e}")),
     }
     Ok(r)
 }

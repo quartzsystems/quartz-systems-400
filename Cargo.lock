@@ -2603,6 +2603,7 @@ dependencies = [
  "ccsid",
  "cl",
  "cmd",
+ "db",
  "dspf",
  "ile",
  "ipc",
