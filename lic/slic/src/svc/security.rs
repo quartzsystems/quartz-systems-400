@@ -385,7 +385,7 @@ fn dirsrv_facts(system: &mut System) -> Vec<sec::cmd::seccheck::DirFacts> {
                 // A value with no {scheme} is a clear password.
                 let is = |w: &str| {
                     if stored.starts_with('{') {
-                        dirsrv::pwd::verify(w.as_bytes(), stored)
+                        dirsrv::pwd::verify(stored.as_bytes(), w.as_bytes())
                     } else {
                         stored == w
                     }
