@@ -2656,6 +2656,24 @@ impl Service for Served<'_> {
         super::nfs::api::call(self.system, &me, &api, &parms)
     }
 
+    // --- directory publishing (1570-1572; stgsvc/dirsrv/publish.rs)
+    fn dirpub_config(&mut self) -> Result<stg::dirpub::PubConfig, String> {
+        super::dirsrv::publish::config(self.system, &self.ctx.job)
+    }
+
+    fn dirpub_events(
+        &mut self,
+        agent: String,
+        since: stg::dirpub::PubCursor,
+        status: stg::dirpub::PubStatus,
+    ) -> Result<stg::dirpub::PubChanges, String> {
+        super::dirsrv::publish::events(self.system, &self.ctx.job, &agent, since, status)
+    }
+
+    fn dirpub_list(&mut self, agent: String) -> Result<stg::dirpub::PubListing, String> {
+        super::dirsrv::publish::list(self.system, &self.ctx.job, &agent)
+    }
+
     fn service_op(&mut self, op: String, args: Vec<String>) -> Result<Vec<String>, String> {
         self.system.current_job = self.ctx.job.number;
         super::svcop::run(self.system, &self.ctx.job, &op, &args)

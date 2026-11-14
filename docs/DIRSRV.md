@@ -864,7 +864,8 @@ IBM's publishing agents (`QGLDPUBE`, `QGLDPUBA`, always running in
 the user agent publishes users, the printer agent shared printers.
 QS/400 has the same two jobs: `QGLDPUBE` publishes users, `QGLDPUBA`
 printers. The logic is `net/dirsrv/src/publish/` (`config`, `map`,
-`publisher`, `runner`), the jobs `work/qsjob/src/work/dirsrv/publish.rs`,
+`publisher`, `runner`, `source`), the jobs `work/qsjob/src/work/dirsrv/publish.rs`
+(role `DIRPUB`; the job's name picks the agent, a turn every 10 seconds),
 the service's side `lic/slic/src/stgsvc/dirsrv/publish.rs`.
 
 **The configuration** is `/QIBM/UserData/OS400/DirSrv/publish.conf`
@@ -942,7 +943,8 @@ The entry is `cn=CN,PARENT`. When that DN is held by an entry that is
 not this profile's (another profile with the same text, or anyone
 else's), it is `cn=CN+uid=NAME,PARENT`.
 
-**Printers.** Every printer device description with an output queue is
+**Printers.** Every printer device description with an output queue, but
+the virtual printers of display sessions and the capture device, is
 one entry, objectClass `top`, `printerService`, `printerIPP`,
 `publisher`, named `printer-name=DEVICE,PARENT`: `printer-name` the
 device, `printer-location` the device's text (left out when blank),

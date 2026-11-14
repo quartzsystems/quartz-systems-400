@@ -82,6 +82,7 @@ pub fn run() -> ! {
         "FTPSESS" => crate::work::ftp::session(ctl, &link, &start),
         "QAP" => crate::work::qap::listener::run(ctl, &link, &start),
         crate::work::netsvr::ROLE => crate::work::netsvr::server::role(ctl, &link, &start),
+        crate::work::dirsrv::publish::ROLE => crate::work::dirsrv::publish::run(ctl, &link, &start),
         "QAPCNN" => crate::work::qap::conn::run(ctl, &link, &start),
         crate::qsh::child::ROLE => crate::qsh::child::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),

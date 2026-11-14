@@ -23,6 +23,7 @@ pub(crate) mod ddm;
 pub(crate) mod devices;
 mod dfu;
 pub(crate) mod dirconf;
+pub(crate) mod dirsrv;
 pub(crate) mod dumps;
 pub(crate) mod exec;
 pub(crate) mod fmt;

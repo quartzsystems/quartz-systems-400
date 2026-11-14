@@ -1045,6 +1045,15 @@ ipc::rpc! {
     /// `QZNFRTVE` or `QZNFNFSO` over its parameters' bytes: the answer's
     /// bytes, or the message ID and its data for the error code.
     1541 => fn nfs_api / NfsApi (api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)>;
+    // --- directory publishing (1570-1572; crate::dirpub, stgsvc/dirsrv/publish.rs)
+    /// `publish.conf` for `QGLDPUBE` and `QGLDPUBA`, the agents'
+    /// passwords unsealed: only to jobs running as `QDIRSRV`.
+    1570 => fn dirpub_config / DirpubConfig () -> Result<crate::dirpub::PubConfig, String>;
+    /// Agent `agent`'s changes after `since`, or a resync; `status` is
+    /// the agent's, kept for Navigator and QAP.
+    1571 => fn dirpub_events / DirpubEvents (agent: String, since: crate::dirpub::PubCursor, status: crate::dirpub::PubStatus) -> Result<crate::dirpub::PubChanges, String>;
+    /// Every object agent `agent` publishes, and the cursor of the list.
+    1572 => fn dirpub_list / DirpubList (agent: String) -> Result<crate::dirpub::PubListing, String>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

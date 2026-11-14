@@ -11,6 +11,7 @@ pub mod cgroup;
 pub mod chgpwd;
 pub mod consdev;
 pub mod ddm;
+pub mod dirsrv;
 pub mod ftp;
 pub mod hostsvr;
 pub mod httpadm;

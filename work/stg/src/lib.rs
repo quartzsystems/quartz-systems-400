@@ -16,6 +16,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod dirpub;
 pub mod ifs;
 mod link;
 pub mod netsvr;
