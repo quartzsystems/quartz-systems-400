@@ -333,9 +333,11 @@ storage/      the object store and the names and code pages it holds
                 the digests of the units' bytes
   protect/      disk protection over BlockDev units, no store: state.rs UnitState, src/mirror/
                 (I/O over the halves, the resume copy and its map), src/parity/ (engine,
-                geometry, gf, ppl: RAID 5/6 with partial parity), spare.rs, src/set/ a set as
-                one block device (MirrorSet, ParitySet, Window); labels and records are the
-                caller's (docs/BUILDKIT.md section 10)
+                geometry, gf, ppl: RAID 5/6 with partial parity), spare.rs, src/intent/ a mirrored
+                set's write-intent map (IntentMap and its bytes, IntentStore, copy_next the copy
+                with a cursor), src/set/ a set as one block device (MirrorSet with an Intent,
+                ParitySet, Window); labels and records are the caller's (docs/BUILDKIT.md
+                sections 10 and 11); tests/intent_cut.rs the power cut at every step
   qsname/       object, library and member name rules; 10-byte CP037 Name
   ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv/ the
                 CCSID conversions (tables from cp/*.csv, double-byte cp/*.dbcs and the

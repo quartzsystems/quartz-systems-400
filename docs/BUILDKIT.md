@@ -321,6 +321,123 @@ what names its owner from the caller; section 10 has the detail.
 | `ublk` | a kernel block device served by a process | the device behind it (a `Target`, or any `BlockDev`); whether it outlives its server |
 | `netlink` | rtnetlink, sock_diag, nftables, sysctl | the routing protocol number of its routes, the name of its nftables table |
 
+### Sets for a storage pool (handoff 15)
+
+QS/VS builds its storage pools on `protect`'s sets. Three questions its
+pools depend on, answered from the code as it is; one change came of
+them (the copy with a cursor, under 3).
+
+**1. Does the partial-parity log bound the repair at open to what was
+in flight?** Yes, on RAID 5 and RAID 6, with and without a failed
+member.
+
+- Every write to a row of a protected stripe is held until a flush and
+  made in epochs of at most `PPL_ENTRIES` (126) stripes
+  (`Engine::flush`, `epoch`). An epoch writes and flushes its partial
+  parity on each stripe's parity members (P, and Q on RAID 6) before
+  any of its data or parity pages is written.
+- At open, `ParitySet::open` runs `Engine::recover`: it reads the two
+  slot headers of each member that takes writes, takes each one's
+  newest valid slot, and repairs only the stripes those slots name
+  (`repair` reads one stripe and writes its parity). A member's newest
+  slot may be older than the last epoch when it held no parity in it,
+  so the bound is members × 126 stripes: at the most, 18 members, 2,268
+  stripes, about 160 MiB read, whatever the size of the set. Nothing
+  else at open reads the data.
+- With a failed member: its slots are not read, but each entry is on
+  every parity member of its stripe, so on RAID 6 the other copy is
+  read; a RAID 5 stripe whose parity member failed has no parity to
+  repair. A failed member's page that the epoch did not write is
+  computed from the entry's partial parity (`gf::solve` over its P and
+  Q). The store's `tests/parity.rs` cuts an epoch after its data and
+  opens with every unit, and without one.
+
+What reads more than what was in flight:
+
+- **A stale member is rebuilt whole.** A member recorded failed that is
+  back, or that the others' state pages record failed after the
+  caller's record (`recorded_failures`), opens `Rebuilding(0)`: every
+  other member is read for it. Bounding that takes what the mirrored
+  set now has (section 11): a map per member kept from the moment it
+  failed, set before each write while it is away, and a rebuild of the
+  stripes in its dirty regions only.
+- **A synchronization mark behind** is taken from the caller's record,
+  so the stripes between it and the engine's mark at the cut are
+  computed again: bounded by how often the caller records the mark. A
+  new set's synchronization reads everything once, as it must.
+
+One case is bounded but not exact. When a member had failed before the
+cut, an interrupted epoch wrote a page of that member (its content is in
+the parity only), and another data page of the stripe landed while the
+parity did not, the repair computes the failed member's page from the
+parity on disk and the new data: neither its old nor its new content.
+The entry holds the parity of the pages not written, not the content
+of a written page whose member cannot take it. The page was not
+acknowledged (no flush returned). Closing it: the entry also carries the
+new content of such a page, one more page an entry and only while a
+member is failed, and the repair writes it back into the parity.
+
+**2. Can a set grow?** No, neither kind.
+
+- `MirrorSet`: the size is fixed when it opens. `replace` and
+  `take_spare` accept a larger device and the set keeps its size; no
+  call adds a member. Growing would be modest work: a further member is
+  one pushed `Resuming` and resumed; a larger size, once every member
+  has it, needs the new tail made the same on each member (copied or
+  zeroed, else a block never written reads differently from each), the
+  resume and intent maps sized again, `ublk::Device::resize` (the IFS
+  volume already grows that way) and the file system's grow
+  (`XFS_IOC_FSGROWFSDATA`, which `ublk`'s `sys.rs` issues).
+- `ParitySet`: the `Geometry` (level, members, blocks, head) is made
+  once by `plan` and kept "whatever the size of a member replaced
+  since"; a larger replacement's extra pages are not used. Each member
+  holds its rows, then the parity pages, then the two log slots and the
+  state page, and the set presents the members' rows end to end
+  (`locate`), so more blocks or another member moves data and parity:
+  a reshape, with a progress mark and a backup of the window being
+  moved, which the crate does not have.
+
+So a pool's size is fixed when it is made, unless QS/VS asks for
+mirrored growth.
+
+**3. Large sets.** No limit binds below what follows; memory does not
+grow with the set except where said.
+
+| Where | Limit |
+|---|---|
+| `protect`, mirrored | blocks are `u64` (4 KiB); members up to 65,535 (`u16` unit numbers in `Halves`) |
+| `protect`, parity | 18 members (`MAX_MEMBERS`: `u32` failure masks, `u8` member numbers); blocks `u64`; 126 stripes an epoch; up to 4,096 pages (16 MiB) held between flushes; synchronization and rebuild buffers grow with the step's budget, not the set |
+| `ublk` | size in 512-byte sectors, `u64`; one queue of 32 tags, 512 KiB a request (`DEPTH`, `MAX_IO`): throughput, not size |
+| `xfsfmt` | formats at most 64 TiB (`MAX_BYTES`: 1 TiB allocation groups, 64 of them). A larger pool is formatted at 64 TiB or less and grown by the kernel's xfs, which has no such limit, or the constant is raised after testing a larger layout |
+
+Memory per TiB of a mirrored set:
+
+| What | Per TiB | When |
+|---|---|---|
+| the intent map's bits, 16 MiB regions | 8 KiB (65,536 regions) | always, with a map |
+| a dirty region's counters | about 50 bytes each | only regions set |
+| a resume's or a copy's chunk map | 128 KiB (one bit a MiB) | while one runs |
+
+Two costs grew with the size of a set before this handoff, and one
+still does:
+
+- `copy_step` looked at every chunk from the first on each call, and
+  `ResumeState::complete` and `percent` count every chunk: a resume one
+  chunk at a time was quadratic in the set's size: for one TiB, a
+  million chunks, about 10^12 bit tests, tens of minutes of processor
+  time; for 16 TiB, 256 times that. `intent::copy_next` does the
+  same copy (the same reads, writes, flushes and saves, in the same
+  order; a test compares them) with a cursor and a count of what is
+  left; `MirrorSet` uses it for resumes and for the copy after an
+  unclean stop. The store keeps `copy_step`, unchanged: its sets are
+  the disks of one machine, and changing it would change `slic`.
+- Still: a resume saves the whole chunk map through `ResumeJournal`
+  every 16 chunks, 128 KiB a TiB each time: about 13% more writes than
+  the copy itself at 16 TiB, half as much again at 64 TiB. A journal
+  for a large set keeps the bytes it last wrote and writes only those
+  that changed (a few bytes a save); the trait gives it the whole map,
+  so this is the caller's choice and needs no change here.
+
 ## 6. Crates another repository takes
 
 `build fixture` builds all fifteen as git dependencies, and its PID 1
@@ -340,7 +457,7 @@ appliance should know of each:
 | `console` | product-neutral (section 10). With `default-features = false` it is the screen, the editor, the font, the keyboards, the SRC display and the two displays, and depends on nothing else of this repository; the default feature `session` adds the sign-on display and the 5250 terminal, with `tn5250` and `ccsid` |
 | `scrkit` | product-neutral: `ui` and `panel` over `console` |
 | `svcusers` | product-neutral: `UserDb`, `Privilege`, `UserStore` and `FileStore`; `ipc` with the feature `wire` |
-| `protect` | product-neutral: over `blockdev` only. It writes no label of its own (section 10) |
+| `protect` | product-neutral: over `blockdev` only. It writes no label of its own (section 10); a mirrored set's write-intent map is kept where the caller says (section 11) |
 | `ublk` | product-neutral: `Device`, `Target`, `BlockTarget`, `Options` |
 | `netlink` | product-neutral: nothing of this repository under it |
 | `svctools` | QS/400's: the DST and installer screens, over `scrkit`, `svcusers`, `console`, `licpart`, `release` and `hwqual`. An appliance takes the three neutral ones, not this |
@@ -703,3 +820,211 @@ One commit of crate code came after the fixture's last boot:
 count does not grow. The fixture does not use it; `console`'s tests
 cover it. The fixture was not booted again on it: the build host's disk
 filled during that run.
+
+## 11. Handoff 15: the write-intent bitmap of a mirrored set
+
+A mirrored set that lost power copied a whole member again, because
+nothing recorded which regions were being written (QS/VS
+`docs/OPEN_QUESTIONS.md` item 19). `set::MirrorSet` now keeps a
+write-intent map when the caller asks for one. QS/400 does not: `store`
+uses `Halves`, `copy_step` and `ResumeState` and never `MirrorSet`, no
+file `slic` links was changed, and the units of an ASP are the same
+bytes. The three answers QS/VS asked for are in section 5.
+
+### The map
+
+`MirrorSet::open_with(id, blocks, members, Some(intent))` keeps it;
+`open` is `open_with(.., None)` and behaves as before. An `Intent` is:
+
+| Field | What | Default |
+|---|---|---|
+| `magic` | eight bytes of the caller's, first in the kept bytes | (the caller's) |
+| `region_blocks` | blocks a region, a multiple of the 1 MiB resume chunk | 4,096 (16 MiB) |
+| `clear_delay` | how long a region stays set after its last write | 5 s |
+| `fresh` | a new set, its members alike: the map is written clean; otherwise it is read, and one missing or not this set's (another magic, version, set, size or region) takes every region as dirty | `false` |
+| `store` | where the map is kept: `intent::IntentStore`, two calls, `read_all` and `write(offset, bytes)` durable when it returns | (the caller's) |
+| `away` | for each member, a store for a map of its own while it is out of service (below) | none |
+
+The crate still writes no label. The bytes are the caller's to keep
+where it keeps the set's metadata; `intent::IntentMap` is the map in
+memory and its versioned form, which the caller may use:
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 8 | magic, the caller's |
+| 8 | 4 | version, 1 |
+| 12 | 4 | kind: 0 none, 1 the set's map, 2 a member's map from when it left in step, 3 a member's map from when it left while resuming |
+| 16 | 8 | blocks a region |
+| 24 | 8 | regions |
+| 32 | 16 | the set's identity |
+| 48 | 16 | the member's identity (zeros for the set's map) |
+| 64 | regions / 8, rounded up | one bit a region, region 0 the low bit of the first byte |
+
+A bit is changed in place: setting or clearing it writes the bytes that
+hold it and nothing else. `intent::HEADER_LAYOUT` is the table, and a
+test holds them to each other. The form is not under QS/400's format
+freeze (`tools/fmtcheck`), since QS/400 writes none; it carries its
+version.
+
+### Writes, flushes, clearing
+
+- **A write** into a region whose bit is clear sets the bit and writes
+  it durably (one `IntentStore::write` of the byte, under the set's map
+  lock) before the write goes to any member. If that write fails, so
+  does the set's write, and no member has seen it. A write into a
+  region already set costs nothing more than a count. A write that
+  touches two regions sets both in one store write.
+- **A flush** sent to the members takes an epoch first; when it has
+  reached every member that takes writes, each region whose writes all
+  ended before that epoch and none since may be cleared.
+- **Clearing is lazy and batched.** At each flush (and at `sweep`, for a
+  caller's timer when the set goes quiet), the regions that may be
+  cleared and have had no write for `clear_delay` are cleared together
+  in one store write. A region written again within the delay keeps
+  its bit: a steady workload sets each region it works in once and
+  pays nothing more; the test `a_region_written_again_and_again_is_set_once`
+  makes one store write for a hundred writes and flushes. A clear that
+  fails leaves the bits set in memory and the whole map is written
+  again before the next bit is set.
+- **`close`** flushes and clears every bit that can be: the map of a
+  set stopped cleanly has no region set.
+
+So the price of the map is one durable write of the caller's store for
+the first write into a region that has been quiet for the delay, and
+one for each batch of regions cleared; nothing on the read path, except
+during a copy (below).
+
+### After an unclean stop
+
+The map is read at open; its set regions may differ between the
+active members. With two or more active members, `resync_step(budget)`
+copies those regions, a chunk at a time, from the first active member
+to the others: the resume's copy (`intent::copy_next` over the same
+`ResumeState` map, with every chunk of a clean region marked done), and
+like a resume it holds the members' lock for one chunk, so the caller's
+I/O goes on between chunks. Until a region is copied, its reads are
+served by the first active member only, so a block reads the same
+whichever member would have served it. A region is taken as in step
+once its chunks are copied and flushed; its bit is then cleared as any
+other, and until then it stays set, so a further power loss copies it
+again. `resync_progress` gives the chunks copied, the chunks dirty at
+open and the chunks in the set. A target that fails is taken out of
+service and the copy goes on; a source that fails is taken out and the
+next active member is read.
+
+### A member out of service
+
+A member that stops taking writes (suspended, detached, failed) while
+the set has a store for it in `Intent::away` gets a map of its own:
+the set's bits at that moment, then every region set while it is away,
+never cleared. When it comes back (`resume`, after `reattach` with the
+same disk, or at a later open with its device and its record
+`Missing`, `NotOperational` or `Suspended`), the resume copies only the
+chunks of that map's regions, and the map is given up (kind 0) once the
+member is active. A member that left while resuming has a map of kind 3:
+the resume's own map, if the journal kept it, copies those regions
+again; without it, a full copy. A resume the journal kept after an
+unclean stop also copies again the regions the set's map had at open.
+A member with no store, a store that held no valid map, or a map that
+could not be written, comes back by a full copy, as before. `replace`
+(another disk) gives the member's map up.
+
+### Proof
+
+`storage/protect/tests/intent_cut.rs` runs a scenario of writes and
+flushes over two members (writes into clean and dirty regions, across a
+boundary, a region written again after its bit was cleared) with a
+count of durable steps (each member's writes and flushes and each store
+write) shared by the members and the store, and cuts the power at
+every step: 51 steps, each with members that cache writes until a
+flush and with members that write through. Two cuts each: the devices
+fail from then on and the set sees it (it takes a member out, which
+the caller records), or the process dies where it stands (the device
+panics; the caller's record still has both members active). After each
+cut the caches are dropped, the set is opened again from the map as
+kept, the copy runs, and a member the set took out is resumed. Each
+time: the members are identical, every block holds what the last
+acknowledged flush made durable or a value written since, the copy read
+the first member once per chunk it copied and never the whole set.
+Of the deaths, 17 left the members apart with both still recorded
+active, and the copy alone mended each (92 copies in all, none of the
+whole set); of the failures, 17 left them apart and the resumes of the
+member taken out mended them (34 resumes). Two changes to the code fail it: a write
+that does not set its bit, and a bit cleared before the flush passed.
+
+`storage/protect/tests/intent.rs`: only the dirty regions are copied,
+the target is not read and reads of a dirty region come from the
+source until it is copied; one store write for a hundred writes into a
+region, both regions of a write across a boundary in one, all bits
+cleared at `close` in one; a write whose bit cannot be kept is refused
+before any member sees it; no map kept (or another set's) means every
+region; a copy cut short by a further power loss goes on with the
+regions it had not copied; members suspended, detached and failed come
+back from their own maps (four chunks for two regions), a member with
+no map by a full copy; a resume the journal kept copies again what was
+written after the stop. `intent::copy_next` does what `copy_step`
+does, call for call, over maps with chunks done here and there and
+budgets of 1 to 100.
+
+**The fixture.** QSDEMO's PID 1 keeps its set's map in a file
+(`/data/set.intent`, magic `QSDEMOWI`, 1 MiB regions so that its 96 MiB
+set has regions enough to tell a few from all, cleared at each flush),
+written with `pwrite` and `fdatasync` (`FileIntent`). After its earlier
+proofs it serves the set again with both members active, writes and
+syncs 1 MiB files without a pause, kills the server in the middle of
+it, and starts the next one on the same device (`Device::recover`),
+which opens the set from the map and runs the copy beside the I/O. The
+proof fails unless some region was dirty, the copy took fewer chunks
+than the set has, every file reads back as last written (and a file
+written before the load too), and the two member files are identical
+once the set is stopped. `build fixture` asserts its line ("server
+killed under write load: C of 96 chunks copied (D dirty), N files
+intact; the members are identical") and passed at `dbc7e52a0`. The
+step keeps the console in memory, so C, D and N of that run are not
+recorded here.
+
+### Baseline and what was proven
+
+Section 0 at `73437f304`, `QS400_BUILD_ID=buildkit-baseline`:
+
+| Artifact | SHA-256, before and after |
+|---|---|
+| `initramfs.cpio` | `b3acae8b634d25535a78d3d7a668116980217434bc0c17061c231171aef35967` |
+| `initramfs-media.cpio` | `a60b32bb3efe52d7b9d87246c0a7f0c60be0576ae6e0384c6f0cbb1151b4141e` |
+| `uki-a` | `07413abbacd85481c16455a88214085c3b24a55304e67414644deed850aca9fe` |
+| `uki-b` | `cc661cb6f9c3d95684ec3922255e76cd0d13aeb98b3525de44a1e1f5628702d1` |
+| `uki-d` | `4710df49ad0e8fc8af66d66d7ca327c4ce239a0049be06925d47a7dadd6aa5d0` |
+| disk image | `dbae024e15d735df1a3bb18ed92671a06c9060891e2a0e7f1c77468454f1ff7a` |
+| ISO | `ddc6cd3c612deb8b8aefc4767f1dab38d15a01edb8cd92e77e96c3e074539e34` |
+| `manifest.json`, `git_rev` masked | `5ae5750595d6c7b7e032544063b6ee15ddafcdf166a587c2f112167d6fef360a` |
+
+The final tree's `build all` (`dbc7e52a0`) gives the same eight, `slic`
+and `qsjob` included: unlike handoffs 13 and 14, no proof over the
+baseline's userland was needed. The `store` suite gives the same 159
+results before and after, `tests/sets_bytes.rs` among them. `build
+fixture` passed at the baseline and on the final tree.
+
+The first build after the change did not give them: `initramfs.cpio`
+and what holds it differed, through `slic` alone (same size, 6 MB of
+bytes moved). Built twice with its symbols, the two `slic` binaries had
+the same 25,913 functions but one: `core::slice::sort` for `u64`, which
+`sql` instantiates, was now `protect`'s instance, because the map's
+open built a `BTreeSet<u64>` with `collect` (which sorts); under fat
+LTO the instance linked moved, and the code after it. The map builds
+its sets by inserting now (`dbc7e52a0`), and the two `slic` binaries
+are byte for byte the same. What `slic` never calls can still change
+it, through a generic of the standard library it shares with a crate
+`slic` does call.
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Section 0 hashes and the `store` suite identical before and after | the eight hashes identical for the final tree's own `build all`; the `store` suite's 159 results identical |
+| 2 | The fault-injection tests pass | `tests/intent_cut.rs` (51 steps, two cuts, cached and write-through members) and `tests/intent.rs`, with `intent::copy_next`'s test against `copy_step`; two broken versions of the map fail them |
+| 3 | `build fixture` passes its new assertion | at `dbc7e52a0` |
+| 4 | Section 2's three answers are in this document | section 5, "Sets for a storage pool" |
+| 5 | The neutrality test still passes | `cargo test -p buildkit --test neutral`: four tests; `protect` names no product |
+
+`tools/fmtcheck` reports every format the same with no version bump;
+`Cargo.lock` did not change, so `deny` and the notices are as they were.
