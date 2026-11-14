@@ -89,6 +89,7 @@ certs = { path = "../../net/certs", version = "0.1.0" }
 netsvrcfg = { path = "../../net/netsvrcfg", version = "0.1.0" }
 nfs = { path = "../../net/nfs", version = "0.1.0" }
 dirsrv = { path = "../../net/dirsrv", version = "0.1.0" }
+ldap = { path = "../../net/ldap", version = "0.1.0" }
 httpadmin = { path = "../../net/httpadmin", version = "0.1.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]

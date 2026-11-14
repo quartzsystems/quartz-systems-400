@@ -3909,6 +3909,7 @@ dependencies = [
  "instmedia",
  "ipc",
  "jrn",
+ "ldap",
  "libc",
  "licpart",
  "licpgm",
