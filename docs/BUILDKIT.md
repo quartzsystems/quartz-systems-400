@@ -1369,3 +1369,82 @@ Nothing QS/VS calls changed: `MirrorSet` (`open_with`, `resync_step`,
 One addition can break a caller: `Options::reflink` is a new public
 field, so a struct literal `xfsfmt::Options { .. }` without `..` must
 name it. Code built on `Options::new` (all of QS/400's) does not change.
+
+## 13. Handoff 17: the partition service channel
+
+QS/VS gives each partition two virtio-console ports, a service channel
+and a console port. QS/400 now speaks the partition scope of QSI on
+both; the record of the protocol and of both sides is `docs/QSID.md`.
+
+| Item | Done | Where |
+|---|---|---|
+| 1. The protocol | yes: frames, versions and capabilities, both ports' messages, a peer's grid, a fuzz target; `ipc` alone under it | `lic/qsipart` |
+| 2. `qsid` in a partition | yes: started before the first code; hello, codes, state; `power_down`, panel 21, ping, the clock; a `B1` code then a halt | `lic/guestagent/src/qsid/`, `lic/slic/src/procs/qsid.rs` |
+| 3. The console on the console port | yes: `QsiDisplay`, the keys back, `ConsoleMode::Partition` | `lic/console/src/qsi.rs`, `lic/licpart`, `lic/slic/src/ipl/display.rs` |
+| 4. Proof | yes: QEMU steps 195 to 198, the fixture | `tools/conformance/src/partition.rs`, `tools/buildkit/fixture/init/src/panel.rs` |
+| 5. Docs | yes | `docs/QSID.md`, `docs/QUALIFIED_HARDWARE.md`, this section, `CLAUDE.md`, the release notes |
+
+### What QS/VS pins
+
+`qsipart` at the commit that carries this section. It takes `ipc` and
+`thiserror`; `tools/buildkit/tests/neutral.rs` holds it to that
+(`the_partition_protocol_takes_ipc_alone`) and lists it among the crates
+an appliance takes. The fixture's PID 1 builds against it from git and
+draws its panel through `console::qsi::QsiDisplay` over a port in
+memory, its peer's `Grid` checked against the screen.
+
+Detection is `hwqual::checks::qsvs`: the SMBIOS manufacturer `Quartz
+Systems` and product `QS/VS`, the FADT's hypervisor vendor `QUARTZVS`,
+or the OEM IDs of every ACPI table. QS/VS must give at least one of
+them; the QEMU steps use the SMBIOS line.
+
+### Acceptance
+
+| # | What | Result |
+|---|---|---|
+| 1 | hashes and goldens outside a partition | the goldens unchanged; `instload` identical; `slic` and `qsjob` change, by the crates they link (below) |
+| 2 | the protocol suite | `cargo test -p qsipart` passes |
+| 3 | the console suite | `cargo test -p console` passes, the Linux service tests too |
+| 4 | neutrality, the fixture | `cargo test -p buildkit --test neutral` passes; `cargo run -p build -- fixture` passes |
+| 5 | the fuzz target for 60 s | 267,778 runs, 300 in the corpus, 363 edges, no finding |
+| 6 | `QSID.md` describes every message | sections 4 and 5, each kind with its fields |
+
+The userland built twice in one directory with one build ID
+(`QS400_BUILD_ID=h17cmp`), at `a9d5c8a4f` and after. A build's bytes
+depend on its directory, so the two must share one:
+
+| Binary | Before | After |
+|---|---|---|
+| `slic` | 49,333,288 bytes, `f2836b03148eae0b` | 49,407,784 bytes, `99a52428588debab` |
+| `qsjob` | 41,769,512 bytes, `a6b0ac190afdf1ac` | 41,769,576 bytes, `bac751e06cfb237d` |
+| `instload` | 586,040 bytes, `276b03e2120e9ed3` | the same |
+
+`qsjob` links `console`, `licpart` and `svctools`. Built with those
+three as at `a9d5c8a4f` and the rest of the handoff in place, it is the
+old binary byte for byte, so its 64 bytes are theirs: the third console
+mode, the console's interrupt and resume, and the console mode panel
+refusing an option it does not show. Outside a partition none of them
+runs. `slic` grows by the daemon, its start and the partition's paths.
+The kernel and its configuration did not change.
+
+QEMU, steps 1, 2, 114 to 117 and 141 (outside a partition) and 195 to
+198 (in one) pass; what each partition step shows is `docs/QSID.md`
+section 10.
+
+### Two things found on the way
+
+- **The first hello.** The daemon said hello before `slic` had sent it
+  any state, so a peer attached at the start was told an empty system
+  name. `slic` now sends the state right after it starts the daemon,
+  the daemon waits up to five seconds for it, and a hello goes again
+  whenever its facts change (the system's name, release, serial, slot,
+  IPL type or keylock).
+- **A panel request during the IPL.** Queued, it would have run when
+  the IPL ended. The daemon refuses function 21 itself before the IPL is
+  complete and at a normal keylock; `slic` is asked only when it can
+  show DST.
+
+The fixture's mirrored set under load failed once ("the load left no
+region dirty") and passed on the next run: its check depends on the
+load being in flight when the server is killed, and nothing in this
+handoff touched it.

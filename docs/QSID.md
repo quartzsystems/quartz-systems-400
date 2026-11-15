@@ -338,3 +338,52 @@ what each may ask, a hello that names the peer, and requests a
 partition's hypervisor does not need (the hardware, the history of
 reference codes). A transport that is a stream keeps the frame header;
 one with messages of its own may carry the bodies alone.
+
+## 10. Proof
+
+**The protocol.** `cargo test -p qsipart`: every message encoded and
+decoded both ways, older and newer peers (unknown kinds, trailing
+fields), hostile bodies and frames, frames fed in pieces and after junk,
+the bounds (a body of 32,760 bytes, one more refused, a flood without a
+frame held to the reader's buffer), the widest display in one frame,
+and a peer's `Grid` kept equal to the screen through a frame and
+updates. The fuzz target `qsipart`
+(`cargo run -p build -- fuzz --target qsipart --secs 60`): 267,778 runs,
+300 inputs in the corpus, 363 edges, no finding.
+
+**The daemon and the console.** `cargo test -p guestagent` (the
+`Service` against a `Host` in memory: hello, code and state on each
+connection, hello again when its facts change, `power_down` once, the
+panel's checks and ten seconds without an answer, ping, time and junk),
+`cargo test -p console` (`QsiDisplay`: a whole frame on attach, then
+changes, nothing without a peer; the keys as the keyboard gives them;
+DST over the session and back), `cargo test -p licpart -p svctools -p
+hwqual`.
+
+**Under QEMU.** `tools/conformance/src/partition.rs`, a guest of its
+own with the two ports on sockets and the SMBIOS identity of QS/VS,
+the disk copied from the main guest's:
+
+| Step | What it shows |
+|---|---|
+| 195 service channel | the hello with the system's name, release and serial; every code from `C1001000`, the IPL's in order; the states `ipl` then `complete`; the addresses; `ping` answered; QSHWQUAL names both ports |
+| 196 console | the SRC display's codes on the port; the sign-on display as its golden; signed on and `DSPLIBL` run by keys from the port; detached and attached again to a whole frame equal to the screen |
+| 197 panel 21 | refused at a normal keylock; a manual IPL from the console port (IPL Options as its golden); 21 accepted, DST's sign-on and main menu as their goldens, a second 21 refused, the session back after F3 |
+| 198 power down and halt | `power_down` with a delay of 10: the codes, `ending` then `down`, off; a `B1` code (the storage service killed), `down`, the guest still running ten seconds later |
+
+All four pass, with steps 1, 2, 114 to 117 and 141 outside a partition.
+`cargo run -p build -- fixture` passes with its panel drawn as cells on
+a console port in memory, the crate taken from git as another
+repository takes it.
+
+**Outside a partition.** Nothing starts and nothing is sent: no port,
+no SMBIOS identity, no `qsid`. The screens' goldens (`console`, `uim`,
+`dspf`, `svctools`, `tools/conformance/golden/`) did not change.
+Built in one directory with one build ID, before (`a9d5c8a4f`) and
+after: `instload` is byte for byte as before; `slic` grows by 74,496
+bytes (the daemon, its role and its checks); `qsjob` by 64. `qsjob`
+links `console`, `licpart` and `svctools`, which gained the console
+port's display, the third mode and the panel's refusal of an option it
+does not show; with those three crates as before, the rest of the
+handoff in place, `qsjob` is byte for byte the old one. BUILDKIT.md
+section 13 has the hashes.
