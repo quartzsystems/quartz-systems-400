@@ -1029,7 +1029,206 @@ it, through a generic of the standard library it shares with a crate
 `tools/fmtcheck` reports every format the same with no version bump;
 `Cargo.lock` did not change, so `deny` and the notices are as they were.
 
-## 12. Handoff 16: a parity set's maps of members out of service
+## 12. Handoff 16: what QS/VS Phase 5 needs
+
+QS/VS finished its Phase 5 (storage pools, virtual disks, virtual
+optical and tape, IPL source D) pinned at `0fc8afa50`. Four things it
+found belong here; all four are done.
+
+| Item | Done | Where |
+|---|---|---|
+| 1. `NR_CPUS` to 512 | yes, alone (no kernel bump is planned) | `kernel/config/qs400.config` |
+| 2. Reflink in `xfsfmt` | yes, by option, off by default | `ifs/xfsfmt`, `docs/IFS.md` "Disk format" |
+| 3. Tape past the early warning | yes, against `st.c`; the drive checks are listed below | `media/tape`, `lic/slic/src/stgsvc/media/drive.rs`, `docs/MEDIA.md` |
+| 4. A returning parity member rebuilt from a map | yes, by option | `storage/protect/src/set/` |
+
+### 1. NR_CPUS 512
+
+`CONFIG_NR_CPUS=512` in its own commit, without a bump of
+`kernel/VERSION` (6.18.55 stays). 512 is the most x86_64 takes without
+`MAXSMP` and off-stack CPU masks (`NR_CPUS_RANGE_END`); the resolved
+`.config` has `NR_CPUS=512`, `MAXSMP` not set. Measured in WSL (KVM,
+12 host threads), the same tree built twice:
+
+| | `NR_CPUS=64` | `NR_CPUS=512` |
+|---|---|---|
+| `bzImage` | 12,801,024 bytes | 12,796,928 bytes |
+| `uki-a` / `uki-d` (media) | 32,416,768 / 13,046,784 | 32,416,768 / 13,042,688 |
+| `vmlinux` text, data, bss | 37,811,647, 10,321,093, 2,711,552 | 37,866,622, 10,342,361, 2,662,400 |
+| QEMU start to slic's first SRC, `-kernel`, 4 vCPUs (median of 10) | 2.73 s | 2.78 s |
+| the same, 12 vCPUs | 2.86 s | 2.86 s |
+| step 4, restart to the prompt | 15.3 to 17.7 s (3 runs) | 16.7 s |
+| processors at `-smp 96` (`hw`) | 64 (PN01 to PN64) | 96 (PN01 to PN96) |
+
+The kernel grows 55 KB of text and 21 KB of data; compressed, nothing
+(the tables `NR_CPUS` sizes are zeros in the image, and the per-CPU
+areas are allocated at boot for the processors present). Boot time is the same within the noise (a few runs of each
+took 5 s, both kernels alike). 512 costs nothing noticeable. QS/VS sets
+the same value in its `qsvs.config` at the pin that carries this.
+
+### 2. Reflink in xfsfmt
+
+`Options::reflink` (`false` from `Options::new`) adds the reverse-mapping
+and reference-count btrees and sets the RMAPBT and REFLINK ro-compat
+bits. With it off the bytes are those of before: `tests/identity.rs`
+holds a CRC-64 of eleven whole images made by `297771eec` (64 MiB to 64
+TiB, 512 and 4096 sectors, zeroed or not, fixed AG sizes), and the ten
+standard images of `verify.sh` have the same SHA-256 before and after.
+With it on, the images match `mkfs.xfs -m rmapbt=1,reflink=1` (6.18)
+byte for byte at 64 MiB (both sector sizes), 200 MiB, 1 GiB and sixteen
+AGs, except where they already differed (secondary superblocks, inode
+times and generations). What changes per AG, the root inode (128) and
+the log's minimum are in `docs/IFS.md`, "Disk format".
+
+Acceptance, as root in WSL (kernel 6.18.33, the pin is 6.18.55):
+`tools/conformance/xfs/verify.sh check` over 22 images (64 MiB, 512
+MiB, 1 GiB, 20 GiB, an odd size, sixteen AGs, one AG; both sector sizes;
+reflink on and off): `xfs_repair -n` clean before and after a mount
+that creates, fills, links, renames and deletes; on the reflink ones
+`cp --reflink=always` and an `xfs_io reflink` of a range, `fiemap`
+showing the extents shared (flag 0x2000), a write to the copy leaving
+the original's SHA-256 as it was and its own extent no longer shared,
+sharing kept across a remount; no kernel messages. `verify.sh big` does
+the same at 1 TiB and 64 TiB (sparse files on tmpfs, since ext4 stops
+at 16 TiB). The output stays deterministic: a function of the size and
+the options alone.
+
+**What it costs.** On disk, four blocks an AG (two btree roots, two
+more free-list blocks): 16 KiB an AG. At mount the kernel reserves room
+for the two btrees to grow to their worst case, and that shows as used:
+
+| Size | Free (statfs), reflink off | Free, reflink on | Cost |
+|---|---|---|---|
+| 20 GiB | | | 379 MiB (1.85%) |
+| 1 TiB | 268,022,265 blocks | 263,150,076 blocks | 18.6 GiB (1.82%) |
+| 64 TiB | 17,162,479,900 blocks | 16,850,643,106 blocks | 1,190 GiB, 18.6 GiB a TiB |
+
+So about 18.6 GiB a TiB, reserved, not written: the btrees take it as
+files share and unshare extents.
+
+**64 TiB stays** (`MAX_BYTES`: 64 AGs of 1 TiB). Reflink does not
+change it, and the 64 TiB images mount, clone and repair clean.
+
+Two things found on the way:
+
+- **One AG.** With `ag_blocks` set, a device shorter than two AGs gets
+  one AG, and the log in it overlapped the first inode chunk: a
+  filesystem that could not mount. Fixed: the free list and the chunk
+  now follow the log, as `mkfs.xfs --unsupported -d agcount=1` places
+  them (equal byte for byte, reflink on and off). Only that layout's
+  bytes changed. Such a filesystem has no secondary superblock, so
+  `xfs_repair` needs `-o force_geometry` until it grows to two AGs.
+  `slic`'s IFS volume always has several AGs.
+- **AGs of 2^28 blocks.** From 4 TiB up, xfsfmt makes AGs of exactly
+  2^28 blocks (1 TiB); mkfs.xfs 6.18 makes at most 2^28 - 1. The kernel
+  and `xfs_repair` take them; they are left so, since changing them
+  would change the bytes of existing callers.
+
+### 3. Tape past the early warning
+
+Read against Linux 6.18.55's `drivers/scsi/st.c` and
+`Documentation/scsi/st.rst`, QS/400's path past the early warning was
+wrong in a way that would have failed every save across volumes on a
+real drive. What `st` does there, now in `docs/MEDIA.md` as a table:
+
+- The write that reaches the early warning succeeds with its whole
+  count. The next write fails `ENOSPC` with nothing written, the one
+  after it succeeds, and so on alternately. `GMT_EOT` is set only after
+  a write that saw the warning; after the refused one `MTIOCGET` shows
+  `GMT_EOD`, not `GMT_EOT`.
+- At the physical end (VOLUME OVERFLOW) a write fails `ENOSPC` with
+  nothing written, and again when tried once more.
+- With asynchronous writes (variable blocks, no direct I/O) the warning
+  comes on the next call, which may be `MTWEOF` or `MTIOCGET`: it fails
+  `ENOSPC` and does nothing.
+- `MTWEOF` past the warning succeeds; at the physical end it fails
+  `EIO`. After writes, `st` writes a filemark itself before `MTREW`,
+  `MTOFFL`, `MTSEEK`, `MTBSF` and at close.
+- Write protection is `EROFS` at an `O_RDWR` open or at `MTLOAD`, and
+  `EACCES` for a write on a node opened read-only. After `MTOFFL` every
+  call answers `ENOMEDIUM` until `MTLOAD` or a new open.
+
+What was wrong, and is fixed:
+
+1. The code took the warning to be a failed write with `GMT_EOT`, and
+   so ended the volume at once.
+2. Every refused write past the warning was taken as the end of the
+   medium; EOV2 always falls on one, so the volume switch never
+   worked. Now a call that fails `ENOSPC` is done again once: success
+   is a block past the warning, a second `ENOSPC` the end. No block is
+   written twice.
+3. `MTWEOF` and `MTIOCGET` failing `ENOSPC` after an asynchronous write
+   get the same one retry; `MTWEOF` failing `EIO` past the warning is
+   the end of the medium.
+4. Nothing loaded the next cartridge: the transport now sends `MTLOAD`
+   after its own unload (`EROFS` there: loaded but protected, which the
+   writer refuses), and the drive's provider in `slic` unloads the full
+   cartridge, asks the operator, and asks again while the drive is
+   empty.
+5. A rewind or unload whose automatic filemark fails at the end is
+   tried again after `MTWEOF 0` (a flush).
+6. Fixed blocks: a read asks for one block, a write must be one block.
+
+The trailer is `TM EOV1 EOV2 TM TM` (IBM: two tapemarks after the
+trailer labels at end of volume), as before; the next volume has VOL1,
+HDR1 with the section number one more, and the data goes on. Reading
+joins the volumes at EOV1 and the next HDR1.
+
+`tape::st::sim::StSim` is a model of `st` (its state machine and
+return codes over cartridges in memory: variable and fixed blocks,
+asynchronous writes, the automatic filemark, protection, unload and
+load, short counts in fixed mode). `media/tape/tests/st_eov.rs` checks
+the model against `st.rst`, each block written once past the warning
+(variable, asynchronous, fixed, read back), filemarks past the warning
+and at the end, protection at open and at load, a labeled file across
+two and three cartridges record for record (HDR1 numbering, the
+continuation, EOV and EOF block counts, the joined data, read back by
+volume list and by `*MOUNTED`), a cancelled request, a protected next
+cartridge and the wrong one. `media/medio/tests/st.rs` saves and
+restores through `medio` across two and three cartridges and one
+cartridge short. The replay fixture `st_session.txt`, written by hand,
+had `st` wrong and is corrected.
+
+**For QS/VS's Phase 10, on its drive.** What only a drive settles:
+
+1. Variable blocks into the warning, no filemark between: n, `ENOSPC`,
+   n, `ENOSPC`. The drive must report EOM (NO SENSE, 00/02, residue 0)
+   on the crossing write and every write after.
+2. On to the physical end: `ENOSPC` twice in a row (VOLUME OVERFLOW,
+   sense key 0Dh, EOM, residue the whole block), nothing written.
+3. `MTWEOF` past the warning succeeds and clears `GMT_EOT`; at the end
+   it fails `EIO`.
+4. The AWSTAPE file write-protected: `open(O_RDWR)` fails `EROFS`, a
+   read-only open works with `GMT_WR_PROT`, a write gets `EACCES`.
+5. `MTOFFL`, another AWSTAPE file, `MTLOAD` on the same node: succeeds,
+   file and block numbers back to 0; `MTLOAD` with no cartridge fails,
+   then `ENOMEDIUM`; `MTLOAD` of a protected one on an `O_RDWR` node
+   gives `EROFS`.
+6. Reading back across the warning reports no EOM; a filemark reads 0
+   with `GMT_EOF`; end of data reads 0 right after a filemark, else
+   `EIO`, with `GMT_EOD`.
+7. Spacing: `MTFSF` past end of data `EIO` with `GMT_EOD`; `MTBSF` past
+   BOT `EIO` with `GMT_BOT`; `MTFSR` into a filemark `EIO` with
+   `GMT_EOF`; `MTEOM` gives `GMT_EOD`.
+8. Whether 64 KiB blocks go by direct I/O or asynchronously; 1 and 3
+   both ways (`MTSETDRVBUFFER MT_ST_ASYNC_WRITES`, `try_direct_io=0`),
+   where the warning shows on the next `MTWEOF` or `MTIOCGET`.
+9. Room past the warning for one 64 KiB block and `TM EOV1 EOV2 TM TM`,
+   plus a full driver buffer with buffered writes.
+10. INZTAP, SAVLIB over two and three AWSTAPE volumes answering the
+    next-volume inquiry (and once replying before loading: asked
+    again), RSTLIB, compare; ENDOPT(*UNLOAD) and a fresh open after.
+11. After an end-of-medium failure, `MTREW` works (the `MTWEOF 0`
+    path).
+12. Not used by QS/400, only to see `st` is sane: `MTIOCPOS` (only
+    `StTransport::logical_block`, which nothing calls), `MTSEEK` (never
+    sent), `MTSETDENSITY` 0x58 (`*ULTRIUM5`), block size 0 as variable.
+
+The model leaves out fixed-mode buffered writes losing data at the end
+(`st` returns `EIO`: an I/O error here), read-ahead, partitions,
+setmarks, and a short count in variable mode (an error here).
+
+### 4. A parity set's maps of members out of service
 
 A RAID 5 or RAID 6 member recorded failed that came back opened
 `Rebuilding(0)`, and every other member was read for it (section 5).
@@ -1038,7 +1237,7 @@ A RAID 5 or RAID 6 member recorded failed that came back opened
 not: `store` drives `parity::Engine` and never `ParitySet`, and no file
 under `parity/` changed.
 
-### The map
+#### The map
 
 `ParitySet::open_with(.., Some(intent))` and `create_with` keep them;
 `open` and `create` are the same calls with `None` and behave as
@@ -1056,7 +1255,7 @@ QS/VS pool disk keeps its member's map beside its label: one bit a
 region and 64 bytes of header: 4 KiB of bits for a set of four 512 GiB
 members at the default region.
 
-### Its life
+#### Its life
 
 - **Leaving.** When a member's device fails I/O, the set writes the
   member's map before the engine goes on without it: every member's
@@ -1088,7 +1287,7 @@ any member sees it. A map the set could not give up is kept and set as
 before, a superset. A caller that opens a set with maps after opening it
 without must give the maps up first: they would miss those writes.
 
-### What it does not change
+#### What it does not change
 
 - **RAID 5, a member failing during its own rebuild.** The engine cannot
   lose a member being rebuilt in RAID 5 (`can_lose` counts it), so the
@@ -1101,10 +1300,10 @@ without must give the maps up first: they would miss those writes.
   over the map.
 - **QS/400.** The new code is in `set/` and `intent::IntentMap::next_set`,
   which `store` does not call; it builds no `BTreeSet` and sorts
-  nothing (the lesson of section 11). `slic` was not rebuilt to compare
-  its bytes for this handoff.
+  nothing (the lesson of section 11). `slic` changes in this handoff
+  anyway (item 3), so its bytes were not compared.
 
-### Proof
+#### Proof
 
 `storage/protect/tests/parity_intent_cut.rs` runs a scenario of writes
 and flushes: member 1 fails in a flush with writes held for it, writes
@@ -1148,3 +1347,23 @@ map given up, and the replacement failing part way gets a map from its
 mark; no map kept means a full rebuild; a map that cannot be kept is
 given up or the write refused; a member missing at open gets a map of
 what was in flight, kept across opens while it stays away.
+
+### Signatures
+
+Nothing QS/VS calls changed: `MirrorSet` (`open_with`, `resync_step`,
+`resume_step`, `sweep`, `close`, `take_spare`, `replace`,
+`drain_events`, `members`), `ParitySet` (`create`, `open`, `step`,
+`work`, `sync`, `take_spare`, `replace`, `geometry`, `drain_events`,
+`members`), `intent` (`IntentMap`, `IntentStore`, `MapKind`,
+`HEADER_LAYOUT`, the version) and `xfsfmt::format` are as at
+`0fc8afa50`. Added:
+
+| Crate | Addition |
+|---|---|
+| `protect` | `set::ParityIntent { magic, region_blocks, away }` and `ParityIntent::new`; `ParitySet::open_with(.., Option<ParityIntent>)`, `ParitySet::create_with(.., Option<ParityIntent>)`, `ParitySet::away_regions(member)`; `IntentMap::next_set(from)` |
+| `xfsfmt` | the field `Options::reflink`; `Geometry::reflink`, `Geometry::for_features(bytes, sector_size, ag_blocks, reflink)`, `agfl_count`, `agfl_blocks(agno)`, `reflink_roots`, `rmap_records(agno)`; `RmapOwner` |
+| `tape` | `MtOp::Load` (so `MtOp::ALL` is `[MtOp; 12]`); the module `st::sim` (`StSim`, `SimCartridge`, `SimRecord`, `MARK_LEN`); `StTransport::unload` when already unloaded is `NotLoaded` |
+
+One addition can break a caller: `Options::reflink` is a new public
+field, so a struct literal `xfsfmt::Options { .. }` without `..` must
+name it. Code built on `Options::new` (all of QS/400's) does not change.
