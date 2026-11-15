@@ -138,3 +138,39 @@ fn reflink_four_k_sectors_match_mkfs() {
     assert_eq!(g.root_ino(), 128);
     assert_eq!(g.rmap_records(1)[0], (0, 4, RmapOwner::Fs));
 }
+
+#[test]
+fn one_ag_matches_mkfs() {
+    // mkfs.xfs 6.18 --unsupported -d agcount=1 on 64 MiB: the log in
+    // AG 0, then the free list, then the inode chunk.
+    let one =
+        |sect, reflink| Geometry::for_features(64 * MIB, sect, Some(16_384), reflink).unwrap();
+    let g = one(512, false);
+    assert_eq!((g.ag_count, g.log_ag, g.log_start()), (1, 0, 5));
+    assert_eq!(g.agfl_blocks(0), 2565..2569);
+    assert_eq!(g.root_ino(), 20576);
+    assert_eq!(g.free_extents(0), vec![(2569, 3), (2580, 13804)]);
+    assert_eq!(g.fdblocks(), 13811);
+    let g = one(4096, false);
+    assert_eq!(
+        (g.log_start(), g.root_ino(), g.fdblocks()),
+        (8, 20576, 13808)
+    );
+    assert_eq!(g.free_extents(0), vec![(2580, 13804)]);
+    let g = one(512, true);
+    assert_eq!(
+        (g.log_start(), g.root_ino(), g.fdblocks()),
+        (7, 28800, 12785)
+    );
+    assert_eq!(g.free_extents(0), vec![(3597, 3), (3608, 12776)]);
+    let r = g.rmap_records(0);
+    assert_eq!(
+        r[5..],
+        [
+            (7, 3584, RmapOwner::Log),
+            (3591, 6, RmapOwner::Ag),
+            (3600, 8, RmapOwner::Inodes)
+        ]
+    );
+    assert_eq!(one(4096, true).root_ino(), 28800);
+}

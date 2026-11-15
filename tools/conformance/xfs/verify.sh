@@ -42,8 +42,11 @@ fail=0
 bad() { echo "FAIL $1: $2"; fail=1; }
 
 repair() {
-    local out
-    out=$(xfs_repair -n -f "$1" 2>&1)
+    local out geo=
+    # One AG has no secondary superblock to check the geometry against;
+    # xfs_repair wants that said.
+    [ "$(xfs_db -r -c 'sb 0' -c 'p agcount' "$1" 2>/dev/null)" = "agcount = 1" ] && geo="-o force_geometry"
+    out=$(xfs_repair -n -f $geo "$1" 2>&1)
     local rc=$?
     # Phase banners and the image-file notice only; any other line is
     # a finding.

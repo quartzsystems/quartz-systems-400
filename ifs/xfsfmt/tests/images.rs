@@ -69,9 +69,12 @@ fn write_images() {
             }
         }
     }
-    // A fixed AG size: sixteen AGs.
+    // Fixed AG sizes: sixteen AGs, and one (the log in AG 0).
     for sector_size in [512u32, 4096] {
         write(&dir, "16ag", 1029 * MIB, sector_size, Some(16_384), true);
+        for reflink in [false, true] {
+            write(&dir, "1ag", 100 * MIB, sector_size, Some(16_384), reflink);
+        }
     }
 }
 

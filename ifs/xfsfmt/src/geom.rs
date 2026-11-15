@@ -181,16 +181,20 @@ impl Geometry {
             .expect("at most 1 GiB")
             .min(room);
 
+        // With one AG the log is in AG 0 and the free list and the
+        // inode chunk follow it, as mkfs and xfs_repair place them.
+        let log_ag = ag_count / 2;
+        let before_chunk = prealloc + agfl + if log_ag == 0 { log_blocks } else { 0 };
         Ok(Self {
             sector_size,
             dblocks,
             ag_count,
             ag_blocks,
             ag_blk_log,
-            log_ag: ag_count / 2,
+            log_ag,
             log_agbno: prealloc,
             log_blocks,
-            chunk_agbno: (prealloc + agfl).next_multiple_of(INO_ALIGN),
+            chunk_agbno: before_chunk.next_multiple_of(INO_ALIGN),
             reflink,
         })
     }
