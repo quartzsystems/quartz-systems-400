@@ -96,6 +96,10 @@ pub struct Paired {
     pub name: String,
 }
 
+/// The exchange's version: its labels, transcript and messages. A
+/// change to any of them is a new version.
+pub const VERSION: u16 = 1;
+
 /// The confirmation labels: one per side, so neither is the other's.
 const LABEL_A: &[u8] = b"qsi pairing 1 console";
 const LABEL_B: &[u8] = b"qsi pairing 1 managed";

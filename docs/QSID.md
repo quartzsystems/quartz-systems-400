@@ -329,6 +329,12 @@ keys, System Request and Attention are what they are at a keyboard.
 
 ## 9. Later: the TCP transport
 
+QSI over TCP is `docs/QSI.md` (handoff 18): its messages, session and
+trust rules are written, in `lic/qsi`, `lic/qsisess` and `lic/qsitrust`,
+and QS/VS listens with them; what a standalone QS/400's listener will
+add is that document's section 11. What follows is what this scope
+said of it before.
+
 QS/MC will speak QSI to a standalone QS/400 over TCP; none of that is
 here. What it will take from this: the frames, the messages and the
 capability exchange as they are. What it needs besides: a listener and

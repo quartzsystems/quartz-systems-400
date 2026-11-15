@@ -578,3 +578,57 @@ doc = "docs/QSID.md"
 draft = true
 version = ["lic/licpart/src/channel.rs::LAYOUT"]
 files = ["lic/licpart/src/channel.rs"]
+
+# QSI's messages (docs/QSI.md): the hello and every family's bodies,
+# which QS/VS and QS/MC pin. A draft until they ship against it. A new
+# operation, event, trailing field or enumeration value is additive; a
+# change to a known body takes a family's next version (its own
+# capability bit) or bumps VERSION.
+[[format]]
+name = "qsi"
+frozen_at = "V1R2M0"
+doc = "docs/QSI.md"
+draft = true
+version = ["lic/qsi/src/lib.rs::VERSION"]
+files = [
+    "lic/qsi/src/lib.rs",
+    "lic/qsi/src/hello.rs",
+    "lic/qsi/src/message.rs",
+    "lic/qsi/src/base.rs",
+    "lic/qsi/src/pair.rs",
+    "lic/qsi/src/host/model.rs",
+    "lic/qsi/src/host/host.rs",
+    "lic/qsi/src/host/partitions.rs",
+    "lic/qsi/src/host/partition.rs",
+    "lic/qsi/src/host/profiles.rs",
+    "lic/qsi/src/host/panel.rs",
+    "lic/qsi/src/host/refcodes.rs",
+    "lic/qsi/src/host/dumps.rs",
+    "lic/qsi/src/host/console.rs",
+    "lic/qsi/src/host/vres.rs",
+]
+
+# QSI's session frames and envelopes (docs/QSI.md section 4): a draft
+# until QS/VS and QS/MC ship against it.
+[[format]]
+name = "qsi-session"
+frozen_at = "V1R2M0"
+doc = "docs/QSI.md"
+draft = true
+version = ["lic/qsi/src/lib.rs::VERSION"]
+files = [
+    "lic/qsisess/src/wire/kind.rs",
+    "lic/qsisess/src/wire/mod.rs",
+    "lic/qsisess/src/wire/parts.rs",
+    "lic/qsisess/src/message.rs",
+]
+
+# QSI's pairing exchange (docs/QSI.md section 3): its labels and
+# transcript, a draft until QS/VS and QS/MC ship against it.
+[[format]]
+name = "qsi-pairing"
+frozen_at = "V1R2M0"
+doc = "docs/QSI.md"
+draft = true
+version = ["lic/qsitrust/src/pair/mod.rs::VERSION"]
+files = ["lic/qsitrust/src/pair/mod.rs"]

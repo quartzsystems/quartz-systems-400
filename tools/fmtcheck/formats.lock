@@ -144,10 +144,25 @@ frozen_at = "V1R1M0"
 version = "12"
 hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 
+[format.qsi]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "fc7ae4278d67c6c5bad4849d96a4a6cd3206c1d8094d4b0752e968b81fd71660"
+
+[format.qsi-pairing]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "c85d1240541ac9175a8186f1483d37be65b9583183a1a318ab4837235aeb6bab"
+
 [format.qsi-partition]
 frozen_at = "V1R2M0"
 version = "1"
 hash = "5cff1dd4fad85da37841101bf0cf1c0d566b389caa46e5738a6e110edd7b9937"
+
+[format.qsi-session]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "7f3adf3b8c0cfc30b4cdb88cbbdbe1360136fd22b8bab15022877e9181d9eede"
 
 [format.save]
 frozen_at = "V1R1M0"

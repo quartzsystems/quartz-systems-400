@@ -281,6 +281,14 @@ screens and the bytes on its disks are as they were.
 hypervisor (`QSID.md`): its reference codes as they are posted, its
 state, a controlled power down, control panel function 21 at a manual
 keylock, and the console as a full screen on a console port.
+The system says in its LIC record that it has the channel (TLV
+`0x010C`), so the hypervisor need not wait for one an older system lacks.
+
+**QSI**, the protocol a management console speaks to what it manages
+(`QSI.md`), is three neutral crates QS/VS and QS/MC pin: its messages
+(`lic/qsi`), its session (`lic/qsisess`) and its trust rules, mutual
+TLS 1.3 with pinned certificates and pairing by one-time password
+(`lic/qsitrust`). QS/400 runs no QSI listener yet.
 
 **Fixes since V1R1M0**
 

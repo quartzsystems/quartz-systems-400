@@ -441,8 +441,10 @@ still does:
 
 ## 6. Crates another repository takes
 
-`build fixture` builds all sixteen as git dependencies, and its PID 1
-runs `console`, `scrkit`, `protect`, `ublk`, `netlink` and `qsipart`. What an
+`build fixture` builds all nineteen as git dependencies, and its PID 1
+runs `console`, `scrkit`, `protect`, `ublk`, `netlink`, `qsipart`, and
+`qsi`, `qsisess` and `qsitrust` (a pairing over TLS and an `identify`).
+What an
 appliance should know of each:
 
 | Crate | As it is |
@@ -462,6 +464,9 @@ appliance should know of each:
 | `ublk` | product-neutral: `Device`, `Target`, `BlockTarget`, `Options` |
 | `netlink` | product-neutral: nothing of this repository under it |
 | `qsipart` | product-neutral: the partition service channel's protocol (`docs/QSID.md`), both ports' frames and messages, the console's cells, a peer's `Grid`; `ipc` alone of this repository under it (`neutral.rs`), a fuzz target (`qsipart`). QS/VS pins it |
+| `qsi` | product-neutral: QSI's messages (`docs/QSI.md`): the hello, the families with their versions and capability bits, every request, reply and event, `qsi::any` by number, `qsi::samples`; `ipc` and `qsipart` of this repository under it (`neutral.rs`). QS/VS and QS/MC pin it |
+| `qsisess` | product-neutral: QSI's session as a state machine over any byte stream (handshake, requests with replies, events with a replay log, streams with credit, keep-alive, limits); no sockets, no TLS; `ipc`, `qsipart` and `qsi` under it; three fuzz targets (`qsisess-frames`, `-handshake`, `-streams`) |
+| `qsitrust` | product-neutral: QSI's trust rules: mutual TLS 1.3 over graviola with pinned self-signed Ed25519 certificates (QS/VS's identity, byte for byte), and pairing by SPAKE2 bound to both certificates and the connection; keeps no state (`Pins`, `pair::Guard` are the caller's); nothing of this repository under it |
 | `svctools` | QS/400's: the DST and installer screens, over `scrkit`, `svcusers`, `console`, `licpart`, `release` and `hwqual`. An appliance takes the three neutral ones, not this |
 
 They build from outside because cargo resolves a git dependency's
