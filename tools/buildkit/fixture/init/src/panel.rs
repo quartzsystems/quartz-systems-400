@@ -103,6 +103,15 @@ pub fn prove(banner: &str) -> Result<String, String> {
     let mode = con.describe();
     let dark = lit()?;
     con.add_display(Box::new(AnsiDisplay::new(std::io::stdout())));
+    // And as cells on a console port, as a partition's console is sent.
+    let port = Port::default();
+    let link = console::qsi::Link::new();
+    link.attached();
+    con.add_display(Box::new(console::qsi::QsiDisplay::new(
+        port.clone(),
+        link,
+        "memory",
+    )));
     let (tx, rx) = mpsc::channel();
     let (input_tx, inputs) = mpsc::channel();
     std::thread::spawn(move || con.run(&rx, input_tx));
@@ -125,6 +134,10 @@ pub fn prove(banner: &str) -> Result<String, String> {
     let shown = dump(&tx)?;
     if !shown.contains(TITLE) || !shown.contains("System:  QSDEMO1") {
         return Err(format!("the panel is not shown:\n{shown}"));
+    }
+    let cells = port.grid()?;
+    if !cells.contains(TITLE) || !cells.contains("System:  QSDEMO1") {
+        return Err(format!("the console port's cells are not the panel:\n{cells}"));
     }
     let drawn = lit()?;
     if drawn <= dark {
@@ -162,8 +175,42 @@ pub fn prove(banner: &str) -> Result<String, String> {
         return Err(format!("the keys ended the panel with {end:?}"));
     }
     Ok(format!(
-        "`{TITLE}` on the framebuffer ({mode}; {drawn} bytes lit) and on the serial \
-         terminal; a terminal's keys ended it with {:?}",
+        "`{TITLE}` on the framebuffer ({mode}; {drawn} bytes lit), on the serial \
+         terminal and as cells on a console port; a terminal's keys ended it with {:?}",
         Done::Storage
     ))
+}
+
+/// A console port in memory: what the display wrote, read back as the
+/// hypervisor reads it.
+#[derive(Clone, Default)]
+struct Port(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+
+impl std::io::Write for Port {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0
+            .lock()
+            .map_err(|_| std::io::Error::other("poisoned"))?
+            .extend_from_slice(buf);
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+impl Port {
+    /// Every frame and update so far applied to a grid: its text.
+    fn grid(&self) -> Result<String, String> {
+        let bytes = self.0.lock().map_err(|_| "poisoned")?.clone();
+        let mut r = qsipart::Reader::new();
+        r.push(&bytes);
+        let mut grid = qsipart::console::Grid::default();
+        for f in r.frames() {
+            if let Some(m) = qsipart::console::FromSystem::decode(&f).map_err(|e| e.to_string())? {
+                grid.apply(&m).map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(grid.text())
+    }
 }

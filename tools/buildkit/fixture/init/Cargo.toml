@@ -17,6 +17,7 @@ ublk.workspace = true
 blockdev.workspace = true
 xfsfmt.workspace = true
 netlink.workspace = true
+qsipart.workspace = true
 uuid = "1.23.3"
 rustix = { version = "1.1.6", features = ["fs", "mount", "system"] }
 

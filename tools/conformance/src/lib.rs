@@ -65,6 +65,8 @@ mod nettools;
 mod nfsstep;
 mod nlsstep;
 pub mod ossnet;
+#[cfg(unix)]
+mod partition;
 mod perfstep;
 mod phase2;
 mod phase5;

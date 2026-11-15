@@ -72,6 +72,10 @@ pub struct Launch {
     /// A virtio-serial port named `org.qemu.guest_agent.0` on this Unix
     /// socket (QEMU the server), as libvirt and Proxmox give a guest agent.
     pub guest_agent: Option<PathBuf>,
+    /// A partition of QS/VS as its hypervisor dresses it: SMBIOS naming
+    /// QS/VS, and a virtio-console device with the service port and the
+    /// console port on these two Unix sockets (QEMU the server).
+    pub partition: Option<(PathBuf, PathBuf)>,
     /// A TPM 2.0 (`tpm-crb`) over this swtpm control socket.
     pub tpm: Option<PathBuf>,
     /// A USB stick (an xHCI controller and `usb-storage`) with this image.
@@ -337,6 +341,32 @@ fn extras(l: &Launch, a: &mut Vec<OsString>) {
                 "virtserialport,chardev=qga0,name=org.qemu.guest_agent.0",
             ]
             .iter()
+            .map(OsString::from),
+        );
+    }
+    if let Some((service, console)) = &l.partition {
+        a.push(OsString::from("-chardev"));
+        a.push(join("socket,id=qsisvc,server=on,wait=off,path=", service));
+        a.push(OsString::from("-chardev"));
+        a.push(join("socket,id=qsicon,server=on,wait=off,path=", console));
+        a.extend(
+            [
+                "-device".to_string(),
+                "virtio-serial-pci,id=qsivs".to_string(),
+                "-device".to_string(),
+                format!(
+                    "virtserialport,bus=qsivs.0,chardev=qsisvc,name={}",
+                    qsipart::SERVICE_PORT
+                ),
+                "-device".to_string(),
+                format!(
+                    "virtserialport,bus=qsivs.0,chardev=qsicon,name={}",
+                    qsipart::CONSOLE_PORT
+                ),
+                "-smbios".to_string(),
+                "type=1,manufacturer=Quartz Systems,product=QS/VS".to_string(),
+            ]
+            .into_iter()
             .map(OsString::from),
         );
     }

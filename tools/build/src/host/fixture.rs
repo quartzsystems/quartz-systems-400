@@ -74,6 +74,7 @@ const PROOFS: &[(&str, &[&str])] = &[
         &[
             "on the framebuffer",
             "on the serial terminal",
+            "as cells on a console port",
             "ended it with Storage",
         ],
     ),

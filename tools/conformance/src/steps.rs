@@ -189,6 +189,7 @@ impl Suite {
                 scsi: false,
                 tftp: None,
                 guest_agent: None,
+                partition: None,
                 tpm: None,
                 usb_stick: None,
                 sata_disks: Vec::new(),
@@ -765,7 +766,11 @@ impl Suite {
             Self::dir_guest_tools,
         )?);
         reports.push(self.step(&mut s, "191 directory server publishing", Self::dir_publish)?);
-        reports.push(self.step(&mut s, "192 directory server persistence", Self::dir_persist)?);
+        reports.push(self.step(
+            &mut s,
+            "192 directory server persistence",
+            Self::dir_persist,
+        )?);
         reports.push(self.step(&mut s, "194 directory server bench", Self::dir_bench)?);
         reports.push(self.step(&mut s, "108 job accounting", Self::job_accounting)?);
         reports.push(self.step(&mut s, "140 storage thresholds", Self::storage_limits)?);
@@ -810,6 +815,8 @@ impl Suite {
         reports.extend(self.hw_name_steps()?);
         #[cfg(unix)]
         reports.extend(self.guest_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.partition_steps()?);
         #[cfg(unix)]
         reports.extend(self.two_guest_steps()?);
         reports.extend(self.nfs_pair_steps()?);

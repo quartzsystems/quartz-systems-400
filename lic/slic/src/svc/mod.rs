@@ -105,16 +105,27 @@ fn vrtout(dev: &str, path: &str) -> String {
 
 /// `dbgkill JOB(name|number)`: the debug hook that kills a job's
 /// process as a crash would (`SIGKILL`), for the harness to see the
-/// storage service clean up after it.
+/// storage service clean up after it. `JOB(*STG)` kills the storage
+/// service itself: the terminal code `B1001060` and a halt.
 fn dbgkill(system: &mut System, line: &str) -> String {
     let p = wm::cmd::Params::parse(line);
     let Ok(want) = p.pos_or(0, "JOB") else {
-        return "dbgkill JOB(name|number)\n".into();
+        return "dbgkill JOB(name|number|*STG)\n".into();
     };
     let want = want.to_ascii_uppercase();
     let Some(stg) = system.procs.stg.as_mut() else {
         return "the storage service is not running\n".into();
     };
+    if want == "*STG" {
+        let pid = stg.pid;
+        return match rustix::process::Pid::from_raw(i32::try_from(pid).unwrap_or(0))
+            .map(|p| rustix::process::kill_process(p, rustix::process::Signal::KILL))
+        {
+            Some(Ok(())) => format!("The storage service ({pid}) killed.\n"),
+            Some(Err(e)) => format!("dbgkill: {e}\n"),
+            None => "dbgkill: no process\n".into(),
+        };
+    }
     let jobs = stg::Client::active_jobs(stg).unwrap_or_default();
     let Some(j) = jobs
         .iter()
