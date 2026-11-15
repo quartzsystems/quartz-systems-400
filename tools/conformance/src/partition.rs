@@ -510,8 +510,11 @@ impl Suite {
         peers(|p| {
             let c = &mut p.con;
             let text = c.wait_text("Sign On", self.boot_timeout)?;
-            // The sign-on display's first ten rows, as step 2 holds them.
-            golden("signon", "sign-on", &text, &[], 10).map_err(|e| format!("{e}\n{text}"))?;
+            // The sign-on display's first ten rows, as step 2 holds them; at
+            // QPWDLVL 2 or 3 (set by an earlier step) the long password form.
+            let long = text.lines().nth(9).is_some_and(|l| l.contains("Program/procedure"));
+            let name = if long { "sign-on-pwdlvl2" } else { "sign-on" };
+            golden("signon", name, &text, &[], 12).map_err(|e| format!("{e}\n{text}"))?;
             let (srcs, kinds) = {
                 let seen = lock(&c.seen);
                 (seen.srcs.clone(), seen.kinds.clone())
