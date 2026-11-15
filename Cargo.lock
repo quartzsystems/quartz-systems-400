@@ -3076,6 +3076,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "qsi"
+version = "0.1.0"
+dependencies = [
+ "ipc",
+ "qsipart",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "qsipart"
 version = "0.1.0"
 dependencies = [

@@ -1,0 +1,15 @@
+[package]
+name = "qsi"
+description = "QSI, the protocol a management console speaks to what it manages: the hello, the families, their messages, versions and capabilities"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+qsipart = { path = "../qsipart", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true
