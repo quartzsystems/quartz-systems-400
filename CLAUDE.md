@@ -28,6 +28,7 @@ kernel is the only inherited component; every process above it is ours.
 | V1R2M0 | NFS: the server (versions 3, 4.0, 4.1, MOUNT, NLM, NSM, the binder) and the client (`MOUNT TYPE(*NFS)`) over ONC RPC with XDR generated from descriptions (`net/xdrgen`, `net/nfs`), the daemon jobs in `QSYSWRK`, `EXPORTFS` and `/etc/exports`, remote mounts in the IFS (`ifs::remote`), file IDs by xfs handle (`ifs/fhandle`), `QZNFRTVE`/`QZNFNFSO`, `QSYS2.NFS_EXPORT_INFO` and `MOUNTED_FS_INFO`, Navigator and QAP; `tools/nfstest` | `NFS.md`, `RELEASE_NOTES_V1R2M0.md` |
 | V1R2M0 | Directory Server: an LDAPv3 server in the base OS (`net/ldap` the protocol and client, `net/dirsrv` the server's logic), entries in a `*DIRDB` store in `QUSRDIRDB`, the instance job `QUSRDIR` in `QSYSWRK` (`STRTCPSVR SERVER(*DIRSRV)`), `CHGDIRSVRA`, IBM's ACLs, password policy, the projected user profiles (`os400-sys=`), TLS and SASL EXTERNAL, publishing (`QGLDPUBE`/`QGLDPUBA`), `QGLDCLNT` with QS/400's `QSYSINC` members, the QSH `ldap*` tools, `QSSECCHK` and `DI` audit entries, Navigator and QAP; `tools/ldaptest` | `DIRSRV.md`, `DIRSRV_GUIDE.md`, `RELEASE_NOTES_V1R2M0.md` |
 | V1R2M0 | The partition service channel (handoff 17): under QS/VS, `qsid` serves the service port (reference codes as posted, the state, power down, panel function 21, ping, the clock) and the console goes to the console port as cells with its keys back; the protocol `lic/qsipart`, neutral, pinned by QS/VS; `licpart::ConsoleMode::Partition`; QEMU steps 195 to 198 | `QSID.md`, `BUILDKIT.md` §13 |
+| V1R2M0 | QSI (handoff 18): the protocol a management console speaks to what it manages, three neutral crates QS/VS and QS/MC pin: `lic/qsi` the hello, the families (base, pair, and a QS/VS host's nine) with versions and capability bits, `lic/qsisess` the session over any byte stream (requests, events with a replay log, streams with credit, keep-alive, limits), `lic/qsitrust` mutual TLS 1.3 with pinned Ed25519 certificates and pairing by SPAKE2; the LIC record's TLV `0x010C` (the service channel a system has); no QSI listener in QS/400 yet | `QSI.md`, `BUILDKIT.md` §14 |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -248,6 +249,15 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
                 src/qsid/ the partition service channel's daemon under QS/VS (/init qsid,
                 docs/QSID.md): serve.rs the protocol over a Host, linux.rs the port and the
                 channel from slic; slic's side lic/slic/src/procs/qsid.rs
+  qsi/          QSI's messages, neutral (ipc and qsipart; QS/VS and QS/MC pin it, docs/QSI.md):
+                hello.rs, message.rs the Family/Message traits and messages!, base.rs, pair.rs,
+                src/host/ a QS/VS host's nine families, any.rs by number, samples.rs every message
+  qsisess/      QSI's session as a state machine over any byte stream, neutral: wire/ the frames
+                and parts, session/ (hello, requests, events, streams, close), log.rs the event
+                log, loopback.rs two sessions in memory, fuzzing/; tests/tls.rs pairing over TLS
+  qsitrust/     QSI's trust rules, neutral (nothing of this repository): cert/ identities
+                (QS/VS's bytes), tls/ the pinned verifiers and configurations, pair/ SPAKE2
+                pairing and the one-time password
   qsipart/      the partition service channel's protocol, neutral (ipc only; QS/VS pins it):
                 frame.rs the checked frames and the reader, service.rs the service port's
                 messages, console.rs the console port's cells, frames, updates and keys and a
@@ -684,7 +694,7 @@ docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKU
               NAVIGATOR_HANDOFF.md, NETSERVER.md, NET_OPEN_QUESTIONS.md, NFS.md, PERF.md, PHASE0.md,
               PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
               PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md,
-              PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QSID.md, QUALIFIED_HARDWARE.md,
+              PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QSI.md, QSID.md, QUALIFIED_HARDWARE.md,
               RECOVERY.md, RELEASE_NOTES_V1R1M0.md, RELEASE_NOTES_V1R2M0.md, RPG.md, RPG3.md,
               RPG_OPEN_QUESTIONS.md, SAVE_FORMAT.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, SERVERS.md, SERVICE.md, SQL.md, SSHD.md,
@@ -718,6 +728,8 @@ cargo test -p hwrsrc              # the hardware resource table, trees, hotplug 
 cargo test -p hwqual -p guestagent   # QSHWQUAL's checks and report; the guest agent's protocol
 cargo test -p qsipart -p guestagent -p console   # the partition service channel: protocol, qsid, the console port
 cargo run -p conformance -- --only 195,196,197,198   # a partition of QS/VS: the service channel, the console port, panel 21, power down and halt
+cargo test -p qsi -p qsisess -p qsitrust   # QSI: every family's message, the session in memory, TLS and pairing on loopback (wrong password, replay, relay)
+cargo run -p build -- fuzz --target qsisess-frames --secs 60   # also qsisess-handshake, qsisess-streams
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
