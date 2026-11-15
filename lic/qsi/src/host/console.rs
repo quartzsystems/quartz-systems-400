@@ -6,8 +6,10 @@
 //! ID. [`Attach`]'s reply opens a stream both ways: the host sends
 //! [`Out`] (a whole frame first, then each update, as `qsipart`'s
 //! console port has them, or the serial port's bytes), the console
-//! sends [`In`] (keys, a refresh, bytes for the serial port). Each
-//! piece of the stream's data is one value, encoded. One viewer at a
+//! sends [`In`] (keys, a refresh, bytes for the serial port). The
+//! stream is bytes without boundaries (credit may split a send), so
+//! each value goes in a frame of `qsipart`'s, kind [`PIECE`]: write
+//! [`Out::piece`] / [`In::piece`], read with [`Pieces`]. One viewer at a
 //! time: a second attach is refused unless it takes over, and the one
 //! it displaces is sent [`Out::Ended`] and its stream closed. A
 //! [`Screen`] is the whole frame alone, without a stream.
@@ -160,10 +162,62 @@ impl Wire for In {
     }
 }
 
-/// The longest piece of serial bytes either side sends at once.
-pub const MAX_SERIAL: usize = 64 * 1024;
+/// The longest piece of serial bytes either side sends at once: a
+/// piece is one frame.
+pub const MAX_SERIAL: usize = 16 * 1024;
+
+/// The frame kind of a piece on a console's stream.
+pub const PIECE: u16 = 0x0401;
+
+fn frame_of<T: Wire>(value: &T) -> Result<Vec<u8>, crate::Error> {
+    qsipart::frame::encode(PIECE, &ipc::encode(value)).map_err(|_| crate::Error::Invalid {
+        family: family::CONSOLE,
+        op: op::ATTACH,
+        why: "a piece longer than a frame",
+    })
+}
+
+/// Pieces out of a console stream's bytes, in whatever pieces they
+/// arrive; a frame of another kind is passed over.
+#[derive(Debug, Default)]
+pub struct Pieces {
+    reader: qsipart::frame::Reader,
+}
+
+impl Pieces {
+    /// Bytes from the stream.
+    pub fn push(&mut self, bytes: &[u8]) {
+        self.reader.push(bytes);
+    }
+
+    /// The next whole piece's body, for [`Out::decode`] or
+    /// [`In::decode`]; `None` until one is in.
+    pub fn next_piece(&mut self) -> Option<Vec<u8>> {
+        while let Some(f) = self.reader.next_frame() {
+            if f.kind == PIECE {
+                return Some(f.body);
+            }
+        }
+        None
+    }
+
+    /// Bytes passed over as junk: on a stream inside TLS, a reason to
+    /// reset it.
+    #[must_use]
+    pub fn skipped(&self) -> u64 {
+        self.reader.skipped()
+    }
+}
 
 impl Out {
+    /// The value framed for the stream.
+    ///
+    /// # Errors
+    /// It is longer than a frame holds.
+    pub fn piece(&self) -> Result<Vec<u8>, crate::Error> {
+        frame_of(self)
+    }
+
     /// A piece of the stream, read leniently.
     pub fn decode(piece: &[u8]) -> Result<Self, crate::Error> {
         crate::message::body(family::CONSOLE, op::ATTACH, piece)
@@ -175,13 +229,21 @@ impl Out {
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
             Self::Frame(f) if f.check().is_err() => Err("a frame that does not check"),
-            Self::Serial(b) if b.len() > MAX_SERIAL => Err("more than 64 KiB of serial bytes"),
+            Self::Serial(b) if b.len() > MAX_SERIAL => Err("more than 16 KiB of serial bytes"),
             _ => Ok(()),
         }
     }
 }
 
 impl In {
+    /// The value framed for the stream.
+    ///
+    /// # Errors
+    /// It is longer than a frame holds.
+    pub fn piece(&self) -> Result<Vec<u8>, crate::Error> {
+        frame_of(self)
+    }
+
     /// A piece of the stream, read leniently.
     pub fn decode(piece: &[u8]) -> Result<Self, crate::Error> {
         crate::message::body(family::CONSOLE, op::ATTACH, piece)
@@ -190,7 +252,7 @@ impl In {
     /// The checks a receiver makes: serial bytes within [`MAX_SERIAL`].
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
-            Self::Bytes(b) if b.len() > MAX_SERIAL => Err("more than 64 KiB of serial bytes"),
+            Self::Bytes(b) if b.len() > MAX_SERIAL => Err("more than 16 KiB of serial bytes"),
             _ => Ok(()),
         }
     }

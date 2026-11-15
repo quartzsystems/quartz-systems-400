@@ -338,3 +338,37 @@ fn the_console_streams_round_trip() {
             .is_err()
     );
 }
+
+#[test]
+fn console_pieces_survive_any_split() {
+    let outs = samples::console_out();
+    let mut stream = Vec::new();
+    for o in &outs {
+        stream.extend(o.piece().unwrap());
+    }
+    // The largest serial piece and the widest frame fit one frame each.
+    assert!(
+        console::Out::Serial(vec![0; console::MAX_SERIAL])
+            .piece()
+            .is_ok()
+    );
+    for size in [1, 2, 7, 1000, stream.len()] {
+        let mut p = console::Pieces::default();
+        let mut got = Vec::new();
+        for chunk in stream.chunks(size) {
+            p.push(chunk);
+            while let Some(body) = p.next_piece() {
+                got.push(console::Out::decode(&body).unwrap());
+            }
+        }
+        assert_eq!(got, outs);
+        assert_eq!(p.skipped(), 0);
+    }
+    let key = console::In::Refresh.piece().unwrap();
+    let mut p = console::Pieces::default();
+    p.push(&key);
+    assert_eq!(
+        console::In::decode(&p.next_piece().unwrap()).unwrap(),
+        console::In::Refresh
+    );
+}

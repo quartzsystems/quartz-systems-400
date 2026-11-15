@@ -30,7 +30,7 @@ dispatches), refused with `QSI0002` before the host acts:
 | a list a console sends | 256 items |
 | a shut down's delay, base's power down's delay | 99999 seconds |
 | a panel function | 1 to 99 |
-| serial bytes in one piece of a console stream | 64 KiB |
+| serial bytes in one piece of a console stream | 16 KiB (a piece is one frame) |
 
 The host's own rules (a name's form, memory in blocks) are the host's to
 refuse with its own messages.
@@ -187,7 +187,7 @@ which need manual is the host's (`docs/PANEL.md` in QS/VS). No events.
 | `0x0001` | `Attach` {`id`, `take_over`} | `Attached` {`serial`}: **opens a stream** both ways |
 | `0x0002` | `Screen` {`id`} | `Capture` {`serial`, `frame`: `qsipart::console::Frame` or none, `text`, a line a row} |
 
-On the stream each piece of data is one value. From the host, `Out`:
+The stream is bytes without boundaries, so each value goes in a frame of `qsipart`'s header, kind `0x0401` (`console::PIECE`), read back with `console::Pieces`; a frame of another kind is passed over. From the host, `Out`:
 `1` `Frame` (`qsipart::console::Frame`: the first after attaching, and
 when the system sends one), `2` `Update` (`qsipart::console::Update`),
 `3` `Serial` (bytes, when the profile's console is serial), `4` `Ended`
