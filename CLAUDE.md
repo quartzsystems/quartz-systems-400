@@ -282,7 +282,7 @@ save/         save and restore (docs/SAVE_FORMAT.md)
                 (OUTPUT(*OUTFILE) in QSRSAV and QSRRST)
 media/        save media (docs/MEDIA.md)
   tape/         TapeTransport and Changer, VirtualTape and VirtualLibrary, Linux st/sg
-                (src/st/, raw.rs the one unsafe file), IBM standard labels (src/label/),
+                (src/st/, raw.rs the one unsafe file, sim.rs a model of st.c for tests), IBM standard labels (src/label/),
                 src/volume/ INZTAP, CHKTAP, DUPTAP, DSPTAP, FileWriter/FileReader across
                 volumes, src/device/ TAPnn naming and the *TAPMLB cartridge model
   optical/      ISO 9660 with Joliet and Rock Ridge (src/iso/), the hybrid install image,
@@ -336,8 +336,8 @@ storage/      the object store and the names and code pages it holds
                 geometry, gf, ppl: RAID 5/6 with partial parity), spare.rs, src/intent/ a mirrored
                 set's write-intent map (IntentMap and its bytes, IntentStore, copy_next the copy
                 with a cursor), src/set/ a set as one block device (MirrorSet with an Intent,
-                ParitySet, Window); labels and records are the caller's (docs/BUILDKIT.md
-                sections 10 and 11); tests/intent_cut.rs the power cut at every step
+                ParitySet with maps of members away, Window); labels and records are the caller's (docs/BUILDKIT.md
+                sections 10 to 12); tests/intent_cut.rs and parity_intent_cut.rs the power cut at every step
   qsname/       object, library and member name rules; 10-byte CP037 Name
   ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv/ the
                 CCSID conversions (tables from cp/*.csv, double-byte cp/*.dbcs and the
@@ -534,7 +534,7 @@ ifs/          the integrated file system
                 src/remote/ a mount whose file system is elsewhere (RemoteFs, the cache, the
                 queue and its worker threads, request tokens, mem.rs a remote in memory);
                 tests/linux-xfs.sh runs the LinuxBackend tests as root
-  xfsfmt/       a pure-Rust mkfs for the XFS v5 root (docs/IFS.md "Disk format")
+  xfsfmt/       a pure-Rust mkfs for the XFS v5 root, reflink by option (docs/IFS.md "Disk format")
   fhandle/      the kernel's file handles behind a safe API (handle_at, open_by): src/raw.rs
                 the two system calls, the only unsafe; LinuxBackend opens file IDs by them
   qsyslib/      the IFS over the store, for the service: view.rs /QSYS.LIB (StoreQsys),
