@@ -1,6 +1,6 @@
 [package]
 name = "qsdemo-init"
-description = "QSDEMO's PID 1: its release, its A/B record, a panel, a protected set, a route; then it powers off"
+description = "QSDEMO's PID 1: its release, its A/B record, a panel, a protected set, a route, QSI paired; then it powers off"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -18,6 +18,10 @@ blockdev.workspace = true
 xfsfmt.workspace = true
 netlink.workspace = true
 qsipart.workspace = true
+qsi.workspace = true
+qsisess.workspace = true
+qsitrust.workspace = true
+rustls = { version = "0.23.46", default-features = false, features = ["std"] }
 uuid = "1.23.3"
 rustix = { version = "1.1.6", features = ["fs", "mount", "system"] }
 

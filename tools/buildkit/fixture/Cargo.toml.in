@@ -34,6 +34,10 @@ ublk = { git = "@REPO@", rev = "@REV@" }
 netlink = { git = "@REPO@", rev = "@REV@" }
 # The partition service channel's protocol (handoff 17).
 qsipart = { git = "@REPO@", rev = "@REV@" }
+# QSI: its messages, session and trust rules (handoff 18).
+qsi = { git = "@REPO@", rev = "@REV@" }
+qsisess = { git = "@REPO@", rev = "@REV@" }
+qsitrust = { git = "@REPO@", rev = "@REV@" }
 
 # What the pipeline's userland check asks of the image's binaries:
 # static (the musl target) and stripped.

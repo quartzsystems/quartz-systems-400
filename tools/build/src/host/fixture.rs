@@ -109,6 +109,7 @@ const PROOFS: &[(&str, &[&str])] = &[
         ],
     ),
     ("route", &["added with routing protocol 83"]),
+    ("qsi", &["paired over TLS 1.3", "identify answered pinned by QSDEMO"]),
 ];
 /// Crates of this repository the fixture's PID 1 must not be built
 /// with: the neutral crates it takes bring none of them.

@@ -7,11 +7,13 @@
 //! appliance takes from QS/400 beside the pipeline: a panel of the
 //! screen kit on the framebuffer and the serial terminal ([`panel`]), a
 //! mirrored set served through ublk with an xfs on it ([`raid`]), a
-//! route under its own protocol number ([`net`]). Each prints
+//! route under its own protocol number ([`net`]), and QSI paired and
+//! answered over TLS ([`mgmt`]). Each prints
 //! `QSDEMO <what>: ...` when it held and `QSDEMO <what> FAILED: ...`
 //! when it did not, and the system powers off. The kernel has the
 //! console open as our standard output.
 
+mod mgmt;
 mod net;
 mod panel;
 mod raid;
@@ -104,6 +106,7 @@ fn main() {
     report("panel", panel::prove(&banner).map(|l| vec![l]));
     report("set", raid::prove());
     report("route", net::prove().map(|l| vec![l]));
+    report("qsi", mgmt::prove());
     let _ = std::io::stdout().flush();
     rustix::fs::sync();
     let _ = reboot(RebootCommand::PowerOff);
