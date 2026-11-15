@@ -28,6 +28,7 @@ members = [
     "lic/hwrsrc",
     "lic/guestagent",
     "lic/qsipart",
+    "lic/qsitrust",
     "lic/hwqual",
     "lic/instload",
     # Object store and the names and code pages it holds.
