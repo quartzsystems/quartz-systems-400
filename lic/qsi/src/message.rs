@@ -77,6 +77,7 @@ macro_rules! messages {
     ($(#[$m:meta])* pub enum $t:ident : $fam:expr => { $($(#[$vm:meta])* $op:literal => $v:ident($ty:ty)),* $(,)? }) => {
         $(#[$m])*
         #[derive(Clone, Debug, PartialEq)]
+        #[allow(clippy::large_enum_variant)] // a message is passed whole, once
         pub enum $t {
             $($(#[$vm])* $v($ty),)*
         }

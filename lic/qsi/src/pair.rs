@@ -89,6 +89,23 @@ messages! {
     pub enum Event: family::PAIR => {}
 }
 
+/// The longest SPAKE2 message or confirmation.
+pub const MAX_BYTES: usize = 256;
+
+impl Request {
+    /// The protocol's bounds.
+    pub fn check(&self) -> Result<(), &'static str> {
+        match self {
+            Self::Start(s) if s.spake.len() > MAX_BYTES => Err("a SPAKE2 message over 256 bytes"),
+            Self::Start(s) if s.name.len() > crate::hello::MAX_NAME => {
+                Err("a name longer than 256 bytes")
+            }
+            Self::Confirm(c) if c.confirm.len() > MAX_BYTES => Err("a confirmation over 256 bytes"),
+            _ => Ok(()),
+        }
+    }
+}
+
 /// The pairing family.
 #[derive(Debug)]
 pub struct Pair;

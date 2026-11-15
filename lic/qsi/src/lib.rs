@@ -7,7 +7,7 @@
 //! crate is its messages: the [`Hello`] each side says first, the
 //! families of operations with their versions and capability bits
 //! ([`family`], [`caps`]), and every family's requests, replies and
-//! events ([`base`], [`pair`] and the host's). The session that carries
+//! events ([`base`], [`pair`], [`host`]). The session that carries
 //! them is `qsisess`, the trust rules `qsitrust`. Its partition scope,
 //! the channel between a partition and its hypervisor, is `qsipart`,
 //! whose frames QSI's session keeps.
@@ -27,9 +27,11 @@ pub mod any;
 pub mod base;
 mod error;
 mod hello;
+pub mod host;
 pub mod message;
 pub mod msgid;
 pub mod pair;
+pub mod samples;
 
 pub use error::Error;
 pub use hello::{Agreed, Hello, PeerKind};

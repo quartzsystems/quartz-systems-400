@@ -33,12 +33,19 @@ open_enum! {
 }
 
 open_enum! {
-    /// The keylock, as the system read it at its IPL.
+    /// The keylock: as a system read it at its IPL, or a partition's
+    /// position on its host.
     Keylock {
         /// Normal.
         Normal = 1,
         /// Manual.
         Manual = 2,
+        /// Auto: unattended, remote and timed IPLs allowed (a host's
+        /// partitions have it).
+        Auto = 3,
+        /// Secure: unattended, the panel locked (a host's partitions
+        /// have it).
+        Secure = 4,
     }
 }
 
@@ -301,6 +308,19 @@ messages! {
         0x0002 => State(State),
         /// What it says of itself changed.
         0x0003 => Identity(Identity),
+    }
+}
+
+/// The longest delay of a controlled power down, seconds.
+pub const MAX_DELAY: u32 = 99_999;
+
+impl Request {
+    /// The protocol's bounds.
+    pub fn check(&self) -> Result<(), &'static str> {
+        match self {
+            Self::Power(p) if p.delay > MAX_DELAY => Err("a delay over 99999 seconds"),
+            _ => Ok(()),
+        }
     }
 }
 

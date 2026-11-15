@@ -6,6 +6,7 @@
 //! session hands up once it has a request, a reply or an event's
 //! numbers and body.
 
+use crate::host::{console, dumps, host, panel, partition, partitions, profiles, refcodes, vres};
 use crate::{Error, Message, base, pair};
 
 /// Write the three enumerations over every family.
@@ -13,24 +14,37 @@ macro_rules! any {
     ($($(#[$m:meta])* $v:ident => $module:ident),* $(,)?) => {
         /// A request of any family.
         #[derive(Clone, Debug, PartialEq)]
+        #[allow(clippy::large_enum_variant)] // a message is passed whole, once
         pub enum AnyRequest {
             $($(#[$m])* $v($module::Request),)*
         }
 
         /// A reply of any family.
         #[derive(Clone, Debug, PartialEq)]
+        #[allow(clippy::large_enum_variant)] // a message is passed whole, once
         pub enum AnyReply {
             $($(#[$m])* $v($module::Reply),)*
         }
 
         /// An event of any family.
         #[derive(Clone, Debug, PartialEq)]
+        #[allow(clippy::large_enum_variant)] // a message is passed whole, once
         pub enum AnyEvent {
             $($(#[$m])* $v($module::Event),)*
         }
 
         /// The families this crate knows, by number.
         pub const FAMILIES: &[u16] = &[$(<$module::Request as Message>::FAMILY),*];
+
+        impl AnyRequest {
+            /// The protocol's bounds: what a receiver refuses with
+            /// [`crate::msgid::BAD`] before it acts.
+            pub fn check(&self) -> Result<(), &'static str> {
+                match self {
+                    $(Self::$v(m) => m.check(),)*
+                }
+            }
+        }
 
         any!(@impl AnyRequest, Request, $($v => $module),*);
         any!(@impl AnyReply, Reply, $($v => $module),*);
@@ -84,4 +98,22 @@ any! {
     Base => base,
     /// Pairing.
     Pair => pair,
+    /// A host's resources and hardware.
+    Host => host,
+    /// A host's partitions, read.
+    Partitions => partitions,
+    /// One partition, changed.
+    Partition => partition,
+    /// Partition profiles.
+    Profiles => profiles,
+    /// A partition's control panel.
+    Panel => panel,
+    /// A partition's reference codes.
+    Refcodes => refcodes,
+    /// A partition's dumps.
+    Dumps => dumps,
+    /// A partition's console.
+    Console => console,
+    /// Virtual resources.
+    Vres => vres,
 }
