@@ -15,7 +15,7 @@ use std::sync::Arc;
 use rustls::crypto::CryptoProvider;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer, ServerName};
 use rustls::server::NoServerSessionStorage;
-use rustls::{ClientConfig, CommonState, Connection, ServerConfig};
+use rustls::{ClientConfig, CommonState, ConnectionCommon, ServerConfig};
 
 pub use verify::Pins;
 
@@ -138,7 +138,7 @@ pub fn peer(conn: &CommonState, pins: &dyn Pins) -> Option<Peer> {
 /// # Errors
 /// [`Error::Tls`] when the connection is not yet established or has no
 /// peer certificate.
-pub fn binding(conn: &Connection, mine: &Identity) -> Result<Binding, Error> {
+pub fn binding<D>(conn: &ConnectionCommon<D>, mine: &Identity) -> Result<Binding, Error> {
     let peer = conn
         .peer_certificates()
         .and_then(|c| c.first())

@@ -117,8 +117,14 @@ fn ed25519_pinned_both_ways_completes_tls13() {
         host.fingerprint()
     );
     // Both ends export the same binding, mirrored.
-    let a = tls::binding(&client, &console).unwrap();
-    let b = tls::binding(&server, &host).unwrap();
+    let Connection::Client(cc) = &client else {
+        unreachable!()
+    };
+    let a = tls::binding(cc, &console).unwrap();
+    let Connection::Server(sc) = &server else {
+        unreachable!()
+    };
+    let b = tls::binding(sc, &host).unwrap();
     assert_eq!((a.mine, a.peer, a.exporter), (b.peer, b.mine, b.exporter));
 }
 

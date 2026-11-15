@@ -3100,6 +3100,8 @@ dependencies = [
  "ipc",
  "qsi",
  "qsipart",
+ "qsitrust",
+ "rustls",
  "thiserror 2.0.21",
 ]
 

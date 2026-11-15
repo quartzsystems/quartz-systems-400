@@ -14,3 +14,7 @@ thiserror.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+qsitrust = { path = "../qsitrust", version = "0.1.0" }
+rustls = { version = "0.23.46", default-features = false, features = ["std"] }
