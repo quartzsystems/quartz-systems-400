@@ -139,6 +139,11 @@ frozen_at = "V1R1M0"
 version = "12"
 hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 
+[format.qsi-partition]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "441d3c0565270b3ec764f0a8d6b2e1adeaab313c6ddd3b2f4e841f00181f4988"
+
 [format.save]
 frozen_at = "V1R1M0"
 version = "2"

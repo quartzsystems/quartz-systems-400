@@ -722,6 +722,17 @@ pub const TARGETS: &[Target] = &[
         ],
         max_len: 8192,
     },
+    Target {
+        name: "qsipart",
+        what: "the partition service channel: frames in pieces, both ports' messages both ways, console updates on a grid",
+        run: qsipart::fuzzing::frames,
+        seeds: &[
+            b"\x07QI\x04\x01\x04\x00\xff\xfe\x01\x00\x00\x00",
+            b"\x3cQI\x03\x03\x00\x00\xfc\xfcQI\x02\x03\x01\x00\xfc\xfc\x01",
+        ],
+        dict: &[b"QI", b"\x02\x01", b"\x02\x02", b"\x03\x02", b"\x02\x03", b"\x01\x01", b"\x02\x01\x00\x00", b"\xff\xff"],
+        max_len: 65536,
+    },
 ];
 
 /// The target named `name`.

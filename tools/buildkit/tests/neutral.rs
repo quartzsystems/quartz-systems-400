@@ -6,7 +6,8 @@
 //! depends on no operating-system crate, and its code names no product.
 //! The same holds for the crates an appliance takes beside it (handoff
 //! 14): the console, the screen kit, the service tools user IDs, disk
-//! protection, the ublk server and the netlink client.
+//! protection, the ublk server, the netlink client and (handoff 17)
+//! the partition service channel's protocol.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -80,6 +81,7 @@ const APPLIANCE: &[(&str, &str)] = &[
     ("protect", "storage/protect"),
     ("ublk", "lic/ublk"),
     ("netlink", "net/netlink"),
+    ("qsipart", "lic/qsipart"),
 ];
 
 /// What none of them may reach: QS/400's identity, its LIC record, its
@@ -136,6 +138,36 @@ fn the_appliance_crates_reach_no_product_crate() {
     let kit = tree("scrkit", &[]);
     for not in ["tn5250", "ccsid", "svcusers", "protect"] {
         assert!(!kit.iter().any(|n| n == not), "scrkit reaches {not}");
+    }
+}
+
+/// The partition service channel's protocol is the one crate both a
+/// system and its hypervisor build: of this repository it takes `ipc`
+/// alone (handoff 17).
+#[test]
+fn the_partition_protocol_takes_ipc_alone() {
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    for more in [&[][..], &["--target", "x86_64-unknown-linux-musl"]] {
+        let out = Command::new(&cargo)
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .args(["tree", "-p", "qsipart", "--locked", "-e", "normal,build"])
+            .args(["--prefix", "none", "--format", "{p}"])
+            .args(more)
+            .output()
+            .expect("cargo tree runs");
+        assert!(out.status.success());
+        let text = String::from_utf8_lossy(&out.stdout);
+        for line in text.lines() {
+            let Some(name) = line.split_whitespace().next() else {
+                continue;
+            };
+            if line.contains(" (/") || line.contains(":\\") {
+                assert!(
+                    ["qsipart", "ipc"].contains(&name),
+                    "qsipart reaches {name}, a crate of this repository ({more:?})"
+                );
+            }
+        }
     }
 }
 
