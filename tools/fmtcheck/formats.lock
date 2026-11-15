@@ -142,7 +142,7 @@ hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 [format.qsi-partition]
 frozen_at = "V1R2M0"
 version = "1"
-hash = "441d3c0565270b3ec764f0a8d6b2e1adeaab313c6ddd3b2f4e841f00181f4988"
+hash = "5cff1dd4fad85da37841101bf0cf1c0d566b389caa46e5738a6e110edd7b9937"
 
 [format.save]
 frozen_at = "V1R1M0"
