@@ -39,6 +39,9 @@ pub const BAD_FRAME: &str = "QSI0109";
 pub const CLOSING: &str = "QSI0110";
 /// The peer speaks no version this side does.
 pub const NO_VERSION: &str = "QSI0111";
+/// The peer is not what this side talks to: a console to a console, or
+/// a managed system to a managed system.
+pub const WRONG_PEER: &str = "QSI0112";
 
 /// No pairing password is out, it has expired, or its attempts are
 /// spent.
