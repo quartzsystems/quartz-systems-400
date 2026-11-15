@@ -3093,6 +3093,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "qsisess"
+version = "0.1.0"
+dependencies = [
+ "ipc",
+ "qsi",
+ "qsipart",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "qsitrust"
 version = "0.1.0"
 dependencies = [

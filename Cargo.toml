@@ -29,6 +29,7 @@ members = [
     "lic/guestagent",
     "lic/qsipart",
     "lic/qsi",
+    "lic/qsisess",
     "lic/qsitrust",
     "lic/hwqual",
     "lic/instload",
