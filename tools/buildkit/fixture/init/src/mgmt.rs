@@ -240,12 +240,21 @@ fn connect(
         0,
     )
     .map_err(|e| e.to_string())?;
-    Ok(End {
+    let mut end = End {
         sess,
         io: tls,
         t0: Instant::now(),
         gone: false,
-    })
+    };
+    // Nothing may be asked before the managed side's hello.
+    let stop = Instant::now() + DEADLINE;
+    while !end.sess.is_open() {
+        if end.gone || Instant::now() > stop {
+            return Err("no hello from the managed side".into());
+        }
+        let _ = end.step();
+    }
+    Ok(end)
 }
 
 /// Pair, reconnect pinned, identify.
