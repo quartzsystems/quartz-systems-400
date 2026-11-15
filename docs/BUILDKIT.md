@@ -1453,3 +1453,59 @@ The fixture's mirrored set under load failed once ("the load left no
 region dirty") and passed on the next run: its check depends on the
 load being in flight when the server is killed, and nothing in this
 handoff touched it.
+
+## 14. Handoff 18: QSI's crates
+
+QSI, the protocol a management console speaks to what it manages, is
+three crates both QS/VS and QS/MC pin (`docs/QSI.md`):
+
+| Crate | What | Of this repository under it |
+|---|---|---|
+| `qsi` | the hello, the families (base, pair, a QS/VS host's nine), their versions, capability bits and messages | `ipc`, `qsipart` |
+| `qsisess` | the session as a state machine over any byte stream | `ipc`, `qsipart`, `qsi` |
+| `qsitrust` | mutual TLS 1.3 with pinned Ed25519 certificates over graviola, and pairing by SPAKE2 | nothing |
+
+`neutral.rs` holds each to that list (`the_protocol_crates_take_only_their_own`,
+which replaced the test of `qsipart` alone) and to naming no product.
+`build fixture` takes all three from git and its PID 1 pairs a console
+with a managed side and asks `identify` (two `QSDEMO qsi:` lines). The
+fixture's QEMU now runs with the host's processor (`-cpu host`, `max`
+under TCG): graviola needs AVX2, ADX, AES and PCLMULQDQ, which QEMU's
+default model lacks, and panics without them. A QS/VS host or console
+that runs QSI needs such a processor too.
+
+Also in the handoff, for QS/VS: TLV `0x010C` in the LIC record, the
+service channel a system has (`docs/QSID.md` section 11), so the
+hypervisor need not wait for a channel a system lacks (QS/VS's open
+question 38). It is the one change to what QS/400 does.
+
+### What changed in QS/400's artifacts
+
+Built in one directory with one build ID, the base `5ce33f14b` and the
+end of the handoff:
+
+| Binary | Base | After |
+|---|---|---|
+| `slic` | 49,407,784 `2f4f7e96…` | 49,414,696 `1b12d318…` |
+| `qsjob` | 41,769,576 `2354c7ef…` | the same |
+| `instload` | 586,040 `276b03e2…` | the same |
+
+`slic` grows for two reasons, each shown by putting its files back:
+with `lic/osobjects/shipped/NOTICES.txt` from the base it is 49,408,744
+bytes (`5c08e373…`), so 5,952 bytes are the notices of `spake2` and the
+three crates it brings (the notices are made from the whole
+`Cargo.lock` and compiled into `osobjects`), and with `slic`'s two IPL
+files (`ipl/lic.rs`, `ipl/install.rs`) from the base as well it is the
+base's binary byte for byte, so the other 960 are the TLV's write. The
+shipped `NOTICES.txt` itself is the other artifact that changed. The
+screens' goldens (`svctools`, `console`, and the others' crates were
+not touched) pass unchanged, and `fmtcheck` is green: the TLV and QSI's
+three formats are drafts (`lic-service-channel`, `qsi`, `qsi-session`,
+`qsi-pairing`) until QS/VS and QS/MC ship against them.
+
+The fixture passed whole at `183b8ec84`. Of the six runs before it, the
+QSI lines held in every one at the revisions that print them, and the
+mirrored set's check under load ("the load left no region dirty",
+section 13) failed in four: it needs a write in flight when the server
+is killed, and the host's processor may finish more of the load in its
+1.5 seconds. Nothing in this handoff touched the set.

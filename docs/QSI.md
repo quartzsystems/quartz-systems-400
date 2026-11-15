@@ -803,3 +803,64 @@ these three crates unchanged. What it adds:
 - **What each console may ask.** The request's user is a name for the
   log and grants nothing; what a console may do is the managed side's
   rule, by its pin.
+
+## 12. Proof
+
+**The messages.** `cargo test -p qsi`: every sample of every family
+(`qsi::samples`, every operation and event of base, pair and the nine
+host families) encoded and decoded by number, and again with a later
+version's bytes after it; an unknown operation or family is `None`, a
+truncated or damaged body an error and never a panic, an enumeration
+value a later version adds is kept; every request in bounds and each
+bound refused; the console stream's pieces split anywhere.
+
+**The session, in memory.** `cargo test -p qsisess`: the handshake
+both ways; unequal peers (version 2 to 1, capabilities intersected, a
+family the other lacks refused `QSI0003`); every message of every
+family through a console session and a host session in pieces of 1,
+13 and 4096 bytes (`tests/samples.rs`: 60 exchanges and every event);
+refusals with every message and their help; events fresh, then
+replayed after a reconnect exactly as missed, and "read everything
+again" when the log no longer reaches; three streams at once with one
+stalled while the others and the requests complete; each limit refused
+by name (requests, streams, a 600 KB message each way in parts, too
+long, a user too long, no credit, a stream never opened, keep-alive
+and its timeout, a clean close, a hello out of order, junk); an
+unpinned console answered only for pairing.
+
+**Over real TLS on loopback.** `cargo test -p qsitrust` and
+`qsisess`'s `tests/tls.rs`: rustls with graviola completes TLS 1.3
+both ways with self-signed Ed25519 certificates; our certificate and
+key are byte for byte the ones QS/VS's `base/identity` writes for the
+same inputs, and QS/VS's own bytes complete the handshake; a
+certificate not pinned is refused at either end; a console pairs,
+connects again pinned and is answered `identify`; before the pin
+`identify` is `QSI0101`; a wrong password, a replayed exchange (the
+same start and confirmation on a new connection) and an exchange
+relayed through a third certificate (a relay that terminates TLS with
+its own certificate on each leg, passes every message through and knows
+the password) all end in `QSI0202` with nothing pinned; once the
+password is retired, a console nobody pinned gets no session.
+
+**From outside.** `cargo run -p build -- fixture`: the fixture's PID 1
+takes the three crates as git dependencies, makes two identities,
+pairs a console with a managed side over TLS on a socket pair, connects
+again pinned and asks `identify`. graviola needs a processor with AVX2,
+ADX, AES and PCLMULQDQ (x86-64-v3 and the crypto extensions): QEMU's
+default model has none of them, so the fixture's guest now runs with
+the host's processor, as the conformance harness's always has.
+
+**Fuzzing.** `cargo run -p build -- fuzz --target T --secs 60`, no
+finding in any:
+
+| Target | Runs | Corpus | Edges |
+|---|---|---|---|
+| `qsisess-frames` | 286,190 | 416 | 914 |
+| `qsisess-handshake` | 289,207 | 319 | 605 |
+| `qsisess-streams` | 180,150 | 825 | 1,219 |
+
+**Neutral.** `tools/buildkit/tests/neutral.rs`: `qsi` reaches `ipc` and
+`qsipart` of this repository, `qsisess` those and `qsi`, `qsitrust`
+nothing (for the host and the musl target), and none names the product.
+`cargo deny` passes; `spake2` 0.4 brings `curve25519-dalek` 4.1.3,
+`fiat-crypto`, `hkdf` 0.12, all MIT or Apache-2.0, no C.
