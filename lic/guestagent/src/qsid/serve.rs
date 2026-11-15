@@ -168,6 +168,16 @@ impl<H: Host> Service<H> {
         Some(f)
     }
 
+    /// Take `slic`'s new state; the hello again when what it says
+    /// changed (the keylock and the serial number once the LIC record is
+    /// read, the system name once the system values are).
+    fn adopt(&mut self, status: &str) -> Option<Vec<u8>> {
+        let before = self.hello();
+        self.status = Status::parse(status);
+        let now = self.hello();
+        (now != before).then(|| frame(&now))
+    }
+
     /// A peer connected: the hello, the current code, the state.
     pub fn connect(&mut self) -> Vec<Vec<u8>> {
         self.connected = true;
@@ -193,12 +203,12 @@ impl<H: Host> Service<H> {
         let mut out = Vec::new();
         match n {
             Notice::Posted { status } => {
-                self.status = Status::parse(&status);
+                out.extend(self.adopt(&status));
                 out.extend(self.refcode(false));
                 out.extend(self.state_if_changed());
             }
             Notice::Changed { status } => {
-                self.status = Status::parse(&status);
+                out.extend(self.adopt(&status));
                 out.extend(self.state_if_changed());
             }
             Notice::Answer { id, refusal } => {

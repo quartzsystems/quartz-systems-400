@@ -84,6 +84,8 @@ pub fn start(system: &mut System, tx: &Sender<Event>) {
                 flushed,
                 token: 0,
             });
+            // Its first hello needs the state before any code is posted.
+            changed(system);
         }
         Err(e) => system
             .out

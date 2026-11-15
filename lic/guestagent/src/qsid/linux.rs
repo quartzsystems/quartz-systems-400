@@ -132,10 +132,22 @@ pub fn run() -> ! {
         eprintln!("qsid: no channel from slic");
         std::process::exit(1);
     };
-    let (Ok(asks), Ok(notices)) = (chan.try_clone(), chan.try_clone()) else {
+    let (Ok(asks), Ok(mut notices)) = (chan.try_clone(), chan.try_clone()) else {
         eprintln!("qsid: channel not usable");
         std::process::exit(1);
     };
+    // slic's state first, so the first hello says something: it sends
+    // it as it starts the daemon. Started again later, the file has it.
+    let mut status = Status::parse(&std::fs::read_to_string(status::PATH).unwrap_or_default());
+    if status.system.is_empty() {
+        let _ = notices.set_timeout(Some(Duration::from_secs(5)));
+        if let Ok(Notice::Changed { status: s } | Notice::Posted { status: s }) =
+            notices.recv::<Notice>()
+        {
+            status = Status::parse(&s);
+        }
+        let _ = notices.set_timeout(None);
+    }
     let file = match open_port() {
         Ok(f) => f,
         Err(e) => {
@@ -143,7 +155,6 @@ pub fn run() -> ! {
             std::process::exit(1);
         }
     };
-    let status = Status::parse(&std::fs::read_to_string(status::PATH).unwrap_or_default());
     let svc = Service::new(LinuxHost { chan }, status);
     let port = Port {
         file,
