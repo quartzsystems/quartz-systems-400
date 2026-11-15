@@ -483,6 +483,28 @@ mod tests {
         assert_eq!(got.len(), 3);
     }
 
+    #[test]
+    fn hello_again_when_its_facts_change() {
+        // Started before slic's first notice: an empty hello.
+        let mut s = Service::new(Mem::default(), Status::default());
+        let got = decode(&s.connect());
+        assert!(matches!(&got[0], FromSystem::Hello(h) if h.system.is_empty()));
+        let got = decode(&s.notice(Notice::Changed {
+            status: status("ipl", "C1001000", "normal"),
+        }));
+        assert!(matches!(&got[0], FromSystem::Hello(h) if h.system == "QSHQ400" && h.keylock == Keylock::Normal));
+        // The same facts: no second hello.
+        let got = decode(&s.notice(Notice::Posted {
+            status: status("ipl", "C1001010", "normal"),
+        }));
+        assert!(!got.iter().any(|m| matches!(m, FromSystem::Hello(_))));
+        // The keylock turned: hello again.
+        let got = decode(&s.notice(Notice::Changed {
+            status: status("ipl", "C1001010", "manual"),
+        }));
+        assert!(matches!(&got[0], FromSystem::Hello(h) if h.keylock == Keylock::Manual));
+    }
+
     fn ask(s: &mut Service<Mem>, m: &ToSystem) -> Vec<FromSystem> {
         decode(&s.input(&m.encode().unwrap()))
     }
