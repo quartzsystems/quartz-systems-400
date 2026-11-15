@@ -62,7 +62,7 @@ What it checks, and the limits (QS/400's own):
 | Storage controllers | each `DCnn` with its driver bound and a type QS/400 knows (`HARDWARE_NOTES.md`) | a controller of type `QD00` (a class with no table entry) | a PCI controller no driver took |
 | Disk units | each `DDnnn` | a RAID volume (a PERC or MegaRAID virtual disk; the line names the controller, `DCnn` and its description: put it in HBA mode); a disk too small for a load source; only one disk (no mirroring) | no disk at all |
 | Network | each Ethernet port with link | a port without link; no port | |
-| Guest agent | the `org.qemu.guest_agent.0` channel, under a hypervisor | under a hypervisor, no channel | |
+| Guest agent | the `org.qemu.guest_agent.0` channel, under a hypervisor; under QS/VS, the service channel `systems.quartz.qsvs.service.0` (and the console port `systems.quartz.qsvs.console.0`, when there) | under a hypervisor, no channel; under QS/VS, no service channel | |
 | Console | the serial port; the firmware's framebuffer (name, size, depth) | no framebuffer (serial only) | neither a serial port nor a framebuffer |
 
 The report's head names the machine (DMI vendor and product), the
@@ -109,6 +109,19 @@ QEMU and libvirt: `-chardev socket,path=/run/qga.sock,server=on,wait=off,id=qga0
 (libvirt: a `<channel type='unix'>` with `<target type='virtio'
 name='org.qemu.guest_agent.0'/>`). Proxmox: VM Options, QEMU Guest Agent,
 Enabled.
+
+**Under QS/VS** the guest agent is not started: the partition service
+channel takes its place (`docs/QSID.md`). `slic` starts `qsid` (`/init
+qsid`) before the first reference code when the system is a partition
+of QS/VS (`hwqual::checks::qsvs`) and the port
+`systems.quartz.qsvs.service.0` is there; it reports the same facts as
+the agent (the state file, netlink) in `qsipart`'s protocol, and the
+console is sent over `systems.quartz.qsvs.console.0` when the LIC
+record's console mode is the partition's (3). Both ports are
+communications resources like the agent's channel; `QSHWQUAL` names
+them as the partition's service channel and console port, and warns
+when a partition has no service channel. QEMU dresses a guest that way
+for steps 195 to 198 (`tools/conformance/src/partition.rs`).
 
 ## Tested here: QEMU/KVM
 

@@ -314,12 +314,13 @@ what names its owner from the caller; section 10 has the detail.
 
 | Crate | What it is | From its caller |
 |---|---|---|
-| `console` | the 24x80 screen with 5250 attributes, the field editor, the font, evdev keyboards, the SRC display and application screens, on the framebuffer and on a serial terminal | its `Identity` (the banner: product, release, build; the code after which a sign-on may show), the system name, the command-line key of the scale |
+| `console` | the 24x80 screen with 5250 attributes, the field editor, the font, evdev keyboards, the SRC display and application screens, on the framebuffer, on a serial terminal and as cells on a partition's console port | its `Identity` (the banner: product, release, build; the code after which a sign-on may show), the system name, the command-line key of the scale |
 | `scrkit` | the screen builders and the panel stack | every title, the system name, the function key line, the messages; the environment its panels ask and the outcome they end with |
 | `svcusers` | service tools user IDs: salted hashes, privileges, lockout | the users it ships with, and where they are kept (`UserStore`) |
 | `protect` | mirrored and parity protection, resynchronization, hot spares, over `BlockDev` units; a set as one `BlockDev` | what identifies a member and records its state; the resume map's keeper; the on-disk constants of its sets |
 | `ublk` | a kernel block device served by a process | the device behind it (a `Target`, or any `BlockDev`); whether it outlives its server |
 | `netlink` | rtnetlink, sock_diag, nftables, sysctl | the routing protocol number of its routes, the name of its nftables table |
+| `qsipart` | the partition service channel's protocol (handoff 17): frames, the service port's and the console port's messages, a peer's grid; `ipc` alone of this repository under it, which `neutral.rs` holds it to | nothing: the port names and the protocol are the partition scope of QSI, both sides' |
 
 ### Sets for a storage pool (handoff 15)
 
@@ -440,8 +441,8 @@ still does:
 
 ## 6. Crates another repository takes
 
-`build fixture` builds all fifteen as git dependencies, and its PID 1
-runs `console`, `scrkit`, `protect`, `ublk` and `netlink`. What an
+`build fixture` builds all sixteen as git dependencies, and its PID 1
+runs `console`, `scrkit`, `protect`, `ublk`, `netlink` and `qsipart`. What an
 appliance should know of each:
 
 | Crate | As it is |
@@ -454,12 +455,13 @@ appliance should know of each:
 | `ipc` | neutral: the wire codec, frames, `rpc!`, Unix socket channels |
 | `abrec` | product-neutral: the two-copy A/B record with its header, sequence, CRC and slot selection (`AbPart`, `encode`/`decode`, `newest`/`target`). The magic, the format version, the partition's GPT type and the slot size come from the caller's `Spec`; the payload is opaque bytes. The fixture's PID 1 uses it with its own |
 | `licpart` | QS/400's record over `abrec`: the magic `QS400LIC`, the LIC partition's type GUID, the IPL state in the payload (slots, keylock, the IPL system values, the install answers) and the resume record `QS400RSJ` beside the copies. An appliance takes `abrec`, not this |
-| `console` | product-neutral (section 10). With `default-features = false` it is the screen, the editor, the font, the keyboards, the SRC display and the two displays, and depends on nothing else of this repository; the default feature `session` adds the sign-on display and the 5250 terminal, with `tn5250` and `ccsid` |
+| `console` | product-neutral (section 10). With `default-features = false` it is the screen, the editor, the font, the keyboards, the SRC display and the three displays (the framebuffer, `ansi`, and `qsi`, the grid as cells on a partition's console port, section 13), and depends on `qsipart` and `ipc` only of this repository; the default feature `session` adds the sign-on display and the 5250 terminal, with `tn5250` and `ccsid` |
 | `scrkit` | product-neutral: `ui` and `panel` over `console` |
 | `svcusers` | product-neutral: `UserDb`, `Privilege`, `UserStore` and `FileStore`; `ipc` with the feature `wire` |
 | `protect` | product-neutral: over `blockdev` only. It writes no label of its own (section 10); a mirrored set's write-intent map is kept where the caller says (section 11) |
 | `ublk` | product-neutral: `Device`, `Target`, `BlockTarget`, `Options` |
 | `netlink` | product-neutral: nothing of this repository under it |
+| `qsipart` | product-neutral: the partition service channel's protocol (`docs/QSID.md`), both ports' frames and messages, the console's cells, a peer's `Grid`; `ipc` alone of this repository under it (`neutral.rs`), a fuzz target (`qsipart`). QS/VS pins it |
 | `svctools` | QS/400's: the DST and installer screens, over `scrkit`, `svcusers`, `console`, `licpart`, `release` and `hwqual`. An appliance takes the three neutral ones, not this |
 
 They build from outside because cargo resolves a git dependency's

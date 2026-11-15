@@ -84,7 +84,11 @@ until QS/VS ships against it; frozen then.
 
 On each connection of the peer the system sends, in this order,
 `hello`, the current `refcode` (with `current` set) and `state`. Then
-each reference code as it is posted and each change of state. The
+each reference code as it is posted, each change of state, and the
+`hello` again whenever what it says changes: at the start of an IPL the
+system knows its release and slot, and learns the keylock and the
+serial number when it reads the LIC record and the system name when it
+loads the system values. The
 peer sends its `peer_hello` and its requests whenever it likes; each
 request carries an `id` that its answer repeats. Requests are answered
 in the order they come.
@@ -200,3 +204,137 @@ everything above the keyboard is the same whichever way a key came:
 | 7 | Insert | 17 | Roll Down (Page Up) |
 | 8 | Delete | 18 | Roll Up (Page Down) |
 | 9 | F1 to F24 | | |
+
+## 6. The system's side of the service port: `qsid`
+
+**Started.** `slic` starts the daemon (`/init qsid`, the code in
+`lic/guestagent/src/qsid/`) when the system is a partition of QS/VS
+(`hwqual::checks::qsvs`: the SMBIOS identity, the FADT's hypervisor
+vendor `QUARTZVS`, or the OEM IDs of every ACPI table) and the service
+port is there; elsewhere nothing starts and nothing changes. It starts
+right after `slic` mounts `/sys`, `/dev` and `/run`, before the first
+code is posted, so the first code the hypervisor gets is `C1001000`
+(IPL started). None comes before it: until those mounts PID 1 has no
+sysfs to find the port by name and no `/run` for the state file, and
+what runs before PID 1 is the kernel, whose messages go to the serial
+port. Nothing inside `slic` writes to the port, then: the daemon is
+there for every code. The QEMU guest agent is not started under QS/VS.
+
+**Facts.** The daemon's facts are the guest agent's: the state `slic`
+keeps for it (`guestagent::status`, `/run/qs400/status`). In a
+partition three keys are added to that file (outside one it is written
+as before): `src_time`, `serial` (`QSRLNBR`, or what the LIC record and
+the firmware give before the system values are loaded) and `fix_level`.
+`slic` pushes the state to the daemon with each code it posts, on the
+daemon's standard input (an `ipc` channel, `guestagent::qsid::Notice`),
+so no code is lost between two reads of the file; the daemon reads the
+file only when it starts. The addresses come from netlink once the IPL
+is complete. The fix level is the latest cumulative package
+(`Cyyddd110`) whose PTFs are all on the system, read by `slic` at IPL
+while the store is still its own: a change by an immediate PTF shows at
+the next IPL.
+
+**The port.** The daemon opens the port without blocking. A
+virtio-console port polls `POLLHUP` while the hypervisor's side is
+closed, and takes a write whole or not at all; frames wait in a queue
+(1,024 at most) while the peer is slow and are dropped when it goes
+away. A peer closing and opening the port again (the hypervisor's
+service restarting) is not an error: the daemon says `hello` again,
+then the current code and the state.
+
+**`power_down`** asks `slic` for `PWRDWNSYS` as the guest agent and a
+job do (the request file `/run/qs400/pwrdwn` with `OPTION`, `DELAY`,
+`RESTART`, then `SIGUSR1`). It is refused before the IPL is complete
+(`QSI0010`) and while a power down is under way (`QSI0011`). The codes
+of the power down follow (`D1001000` to `D1001090`), the state goes to
+`ending`, and after `D1001090` to `down`; `slic` waits up to three
+seconds for the daemon to write that before the power off or restart.
+
+**`panel` 21.** What QS/400 had: dedicated service tools at an attended
+or manual IPL (option 3 of `IPL or Install the System`), after an
+abnormal end at an attended IPL, and when a disk unit is missing; on a
+running system only the serial service console (its commands, not the
+DST screens) and SST through `STRSST` in a job. Added: function 21 on a
+running system. The daemon refuses it at a normal keylock (`QSI0021`,
+the keylock as the IPL read it) and before the IPL is complete
+(`QSI0022`); otherwise it asks `slic` (`Ask::Dst`), which answers
+`ack`, shows DST on the console over the console's 5250 session
+(`console::Command::Interrupt` and `Resume`: the session's records keep
+its terminal current behind DST), and gives the console back to the
+session when DST ends. While DST shows, what its screens do not take
+(the jobs' messages, signals) waits and is handled after it, and a
+second function 21 is refused (`QSI0022`). DST's option 1 (perform an
+IPL) restarts the system, as at an IPL. `slic` not answering within ten
+seconds is a refusal too.
+
+**A terminal code.** A `B1` code (`System::fatal`, `slic`'s panic) is
+posted as any code is, then the state `down`, and `slic` waits up to
+three seconds for the daemon to write both; then the system halts
+without powering off, so the hypervisor can keep the partition's memory
+for a dump. A panic reaches the daemon through a copy of the channel
+the panic hook holds.
+
+**The clock.** When the system's clock was never set (before 2020: no
+RTC) and the peer has `TIME`, the daemon sends `time_request` after the
+peer's hello and sets the clock from the `time` that comes back;
+otherwise a `time` is only logged with the difference.
+
+**`QSHWQUAL`** names the ports as the partition's service channel and
+console port, passes them as the agent's channel is passed, and warns
+under QS/VS when the service channel is missing.
+
+## 7. The system's side of the console port
+
+**The mode.** `licpart::ConsoleMode` has a third value, `Partition`
+(the byte 3 in TLV `0x0105`), written by the hypervisor at activation
+like the other two. DST's `Select DST console mode` does not offer it:
+its panel takes only the options it shows, and an operator cannot
+choose a port the hypervisor did not give. The record's format is
+unchanged: the TLV is one byte, and `lic/licpart/src/console.rs` is not
+among the files `tools/fmtcheck` holds frozen, so the additive value
+needs no version.
+
+**The display.** In that mode `slic` opens no framebuffer and reads no
+keyboards; it gives the console a third display,
+`console::qsi::QsiDisplay`, over the console port opened without
+blocking, and a reader thread for the port. Everything the console
+shows goes this way, because it all goes through the console: the IPL's
+SRC display (with its code in the frame's `src`), the IPL menu, IPL
+Options and the other attended IPL screens, DST, the installer, the
+sign-on display and the console's 5250 session. Screens are still
+echoed on the serial port. Without the port the console is reported
+missing (`A6005008`) and the IPL goes on.
+
+**Peers.** The system sees one peer; one viewer at a time is the
+hypervisor's concern. A peer that attaches (the port's `POLLHUP`
+clears) or asks gets the hello and a whole frame; while none is
+attached nothing is sent and nothing is kept, and the console runs as
+before. A frame the port would not take (a slow peer) is dropped and
+the next draw is a whole frame. Keys from the port are given to the
+console as the keyboard path's keys after its mapping
+(`console::Command::Virtual`), so sign-on, field editing, the session's
+keys, System Request and Attention are what they are at a keyboard.
+
+## 8. Whose is what
+
+| The hypervisor's | The system's |
+|---|---|
+| the virtio-console device and its two ports, from the kernel's first instruction | finding them by name in sysfs, without udev |
+| SMBIOS or ACPI tables that name QS/VS | knowing it is a partition |
+| the console mode in the LIC record, at activation | honouring it at the IPL |
+| one viewer of the console at a time, and what it shows to whom | sending the grid to whoever has the port's other side |
+| keeping the memory of a halted partition for a dump | halting without powering off after a terminal code |
+| its own clock, when the system asks | asking only when it never had one |
+| restarting its side of the ports | saying hello again |
+
+## 9. Later: the TCP transport
+
+QS/MC will speak QSI to a standalone QS/400 over TCP; none of that is
+here. What it will take from this: the frames, the messages and the
+capability exchange as they are. What it needs besides: a listener and
+its port, TLS with the pairing of a QS/MC to a system (keys exchanged
+once, then mutual authentication), more than one peer at a time and
+what each may ask, a hello that names the peer, and requests a
+partition's hypervisor does not need (the hardware, the history of
+reference codes). A transport that is a stream keeps the frame header;
+one with messages of its own may carry the bodies alone.

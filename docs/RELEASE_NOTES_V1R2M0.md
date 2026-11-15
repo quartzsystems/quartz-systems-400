@@ -277,6 +277,11 @@ IDs (`lic/svcusers`), mirrored and parity protection
 with no QS/400 in them, which the same repositories take; QS/400's
 screens and the bytes on its disks are as they were.
 
+**In a partition of QS/VS** the system has a service channel to the
+hypervisor (`QSID.md`): its reference codes as they are posted, its
+state, a controlled power down, control panel function 21 at a manual
+keylock, and the console as a full screen on a console port.
+
 **Fixes since V1R1M0**
 
 - `ENDJOB`, `HLDJOB` and `RLSJOB` of a batch job a subsystem had just

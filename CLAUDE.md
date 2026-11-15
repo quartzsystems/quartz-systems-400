@@ -27,6 +27,7 @@ kernel is the only inherited component; every process above it is ours.
 | V1R2M0 | NetServer: SMB 2.0.2 to 3.1.1 file and print serving over the IFS (the vendored `net/smb-server` with QS/400's patches, `net/netserver`, `net/netsvrcfg`, `security/ntlm`), `QZLSSERVER`/`QZLSFILE`, the `QZLS*` APIs, Navigator and QAP, system-wide leases and change notify, point and print; `tools/smbtest` | `NETSERVER.md`, `RELEASE_NOTES_V1R2M0.md` |
 | V1R2M0 | NFS: the server (versions 3, 4.0, 4.1, MOUNT, NLM, NSM, the binder) and the client (`MOUNT TYPE(*NFS)`) over ONC RPC with XDR generated from descriptions (`net/xdrgen`, `net/nfs`), the daemon jobs in `QSYSWRK`, `EXPORTFS` and `/etc/exports`, remote mounts in the IFS (`ifs::remote`), file IDs by xfs handle (`ifs/fhandle`), `QZNFRTVE`/`QZNFNFSO`, `QSYS2.NFS_EXPORT_INFO` and `MOUNTED_FS_INFO`, Navigator and QAP; `tools/nfstest` | `NFS.md`, `RELEASE_NOTES_V1R2M0.md` |
 | V1R2M0 | Directory Server: an LDAPv3 server in the base OS (`net/ldap` the protocol and client, `net/dirsrv` the server's logic), entries in a `*DIRDB` store in `QUSRDIRDB`, the instance job `QUSRDIR` in `QSYSWRK` (`STRTCPSVR SERVER(*DIRSRV)`), `CHGDIRSVRA`, IBM's ACLs, password policy, the projected user profiles (`os400-sys=`), TLS and SASL EXTERNAL, publishing (`QGLDPUBE`/`QGLDPUBA`), `QGLDCLNT` with QS/400's `QSYSINC` members, the QSH `ldap*` tools, `QSSECCHK` and `DI` audit entries, Navigator and QAP; `tools/ldaptest` | `DIRSRV.md`, `DIRSRV_GUIDE.md`, `RELEASE_NOTES_V1R2M0.md` |
+| V1R2M0 | The partition service channel (handoff 17): under QS/VS, `qsid` serves the service port (reference codes as posted, the state, power down, panel function 21, ping, the clock) and the console goes to the console port as cells with its keys back; the protocol `lic/qsipart`, neutral, pinned by QS/VS; `licpart::ConsoleMode::Partition`; QEMU steps 195 to 198 | `QSID.md`, `BUILDKIT.md` §13 |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -243,7 +244,14 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
                 lic/svctools/src/install/hwqual.rs, the command lic/slic/src/cpp/hwcmd.rs
   guestagent/   the guest agent (/init qsga): the QEMU guest agent protocol (framer.rs, agent.rs)
                 over virtio-serial and vsock, facts.rs, status.rs (/run/qs400/status, which slic
-                writes at each SRC), port.rs, linux.rs; slic's side lic/slic/src/procs/guest.rs
+                writes at each SRC), port.rs, linux.rs; slic's side lic/slic/src/procs/guest.rs.
+                src/qsid/ the partition service channel's daemon under QS/VS (/init qsid,
+                docs/QSID.md): serve.rs the protocol over a Host, linux.rs the port and the
+                channel from slic; slic's side lic/slic/src/procs/qsid.rs
+  qsipart/      the partition service channel's protocol, neutral (ipc only; QS/VS pins it):
+                frame.rs the checked frames and the reader, service.rs the service port's
+                messages, console.rs the console port's cells, frames, updates and keys and a
+                peer's Grid, fuzzing.rs; console's side is lic/console/src/qsi.rs
   blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
   osobjects/    the OS objects of QS00SS1 *BASE (message files, work management objects,
                 display files, panel groups and menus, regfac, commands, QSTRUP from
@@ -676,7 +684,7 @@ docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKU
               NAVIGATOR_HANDOFF.md, NETSERVER.md, NET_OPEN_QUESTIONS.md, NFS.md, PERF.md, PHASE0.md,
               PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
               PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md,
-              PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QUALIFIED_HARDWARE.md,
+              PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QSID.md, QUALIFIED_HARDWARE.md,
               RECOVERY.md, RELEASE_NOTES_V1R1M0.md, RELEASE_NOTES_V1R2M0.md, RPG.md, RPG3.md,
               RPG_OPEN_QUESTIONS.md, SAVE_FORMAT.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, SERVERS.md, SERVICE.md, SQL.md, SSHD.md,
@@ -708,6 +716,8 @@ cargo test -p tape -p optical -p imgclg   # tape, optical, image catalogs
 cargo test -p ptf -p prb          # PTFs, the problem log
 cargo test -p hwrsrc              # the hardware resource table, trees, hotplug merge, protocol
 cargo test -p hwqual -p guestagent   # QSHWQUAL's checks and report; the guest agent's protocol
+cargo test -p qsipart -p guestagent -p console   # the partition service channel: protocol, qsid, the console port
+cargo run -p conformance -- --only 195,196,197,198   # a partition of QS/VS: the service channel, the console port, panel 21, power down and halt
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
