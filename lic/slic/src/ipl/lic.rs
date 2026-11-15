@@ -107,13 +107,7 @@ pub fn attach(system: &mut System) -> Result<(), &'static src::Src> {
         system.emit(&src::PREV_ABNORMAL);
     }
 
-    // The key that seals the certificate stores' stashes: made once.
-    if let Err(e) = certs::stash::ensure_key_slot(&mut record, crate::ipl::system::now_unix()) {
-        system.out.serial(&format!(
-            "slic: certificate stash key: {e}
-"
-        ));
-    }
+    keep_tlvs(system, &mut record);
     record.header.ipl_in_progress = true;
     record.header.last_ipl_type = system.ipl_type();
     record.header.last_ipl_mode = system.mode;
@@ -125,6 +119,31 @@ pub fn attach(system: &mut System) -> Result<(), &'static src::Src> {
     }
     system.lic = Some((part, record));
     Ok(())
+}
+
+/// What each IPL keeps in the record before it is marked in progress.
+fn keep_tlvs(system: &mut System, record: &mut licpart::Record) {
+    // The key that seals the certificate stores' stashes: made once.
+    if let Err(e) = certs::stash::ensure_key_slot(record, crate::ipl::system::now_unix()) {
+        system.out.serial(&format!(
+            "slic: certificate stash key: {e}
+"
+        ));
+    }
+    if let Err(e) = service_channel().store(record) {
+        system.out.serial(&format!("slic: LIC channel: {e}\n"));
+    }
+}
+
+/// The partition service channel this system has, as the record says it
+/// for a hypervisor (`licpart::channel`).
+#[must_use]
+pub fn service_channel() -> licpart::ServiceChannel {
+    licpart::ServiceChannel {
+        version: qsipart::VERSION,
+        service: qsipart::caps::SERVICE_V1,
+        console: qsipart::caps::CONSOLE_V1,
+    }
 }
 
 /// C6001090 bookkeeping: clear in-progress, remember the good slot, append

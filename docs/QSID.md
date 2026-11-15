@@ -387,3 +387,27 @@ port's display, the third mode and the panel's refusal of an option it
 does not show; with those three crates as before, the rest of the
 handoff in place, `qsjob` is byte for byte the old one. BUILDKIT.md
 section 13 has the hashes.
+
+## 11. Saying so in the LIC record
+
+Nothing in a partition says beforehand whether its system has a service
+channel, so QS/VS waited after the kernel was entered for a hello that
+an older system never sends (QS/VS `docs/OPEN_QUESTIONS.md` item 38).
+The system now says it in its LIC record, which the hypervisor reads
+before it enters the kernel: TLV `0x010C` (`licpart::channel`,
+`ServiceChannel`), written at install and at each IPL (with the record
+write that marks the IPL in progress), outside a partition too, since
+it says what the system has, not where it runs. A record without it is
+a system with no channel; the hypervisor need not wait.
+
+| Bytes | Field |
+|---|---|
+| 0 | layout (`u8`, 1) |
+| 1-2 | `version` (`u16`): the channel protocol's highest, `qsipart::VERSION` |
+| 3-10 | `service` (`u64`): its capabilities on the service port, `qsipart::caps::SERVICE_V1` |
+| 11-18 | `console` (`u64`): its capabilities on the console port, `qsipart::caps::CONSOLE_V1` |
+
+All little-endian. A reader takes the fields it knows and passes over
+what a later layout adds after them; a layout byte of 0, or fewer than
+19 bytes, reads as no channel. The format freeze holds `channel.rs` as
+the draft `lic-service-channel` until QS/VS ships against it.

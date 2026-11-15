@@ -661,6 +661,9 @@ impl Env<'_> {
                 .set_tlv(tag, mode.to_vec())
                 .map_err(fail("Installing the Licensed Internal Code"))?;
         }
+        crate::ipl::lic::service_channel()
+            .store(&mut record)
+            .map_err(fail("Installing the Licensed Internal Code"))?;
         keep_answers(&mut record, auto)?;
         record.header.install_stage = stage;
         record.header.auto_install = auto && stage == 1;

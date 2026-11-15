@@ -17,6 +17,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod channel;
 pub mod console;
 mod error;
 mod format;
@@ -25,6 +26,7 @@ pub mod iplsrc;
 mod locate;
 mod part;
 
+pub use channel::{ServiceChannel, TAG_SERVICE_CHANNEL};
 pub use console::{ConsoleMode, TAG_CONSOLE_MODE};
 pub use error::LicError;
 pub use format::header::{Header, IplMode, IplType, Slot};

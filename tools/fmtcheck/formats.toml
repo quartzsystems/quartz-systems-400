@@ -566,3 +566,15 @@ files = [
     "lic/qsipart/src/service.rs",
     "lic/qsipart/src/console.rs",
 ]
+
+# The partition service channel a system says it has, LIC record TLV
+# 0x010C (docs/QSID.md section 11), which QS/VS reads before it enters
+# the kernel: a draft until QS/VS ships against it. A field after the
+# known ones is additive; a change to a known one bumps LAYOUT.
+[[format]]
+name = "lic-service-channel"
+frozen_at = "V1R2M0"
+doc = "docs/QSID.md"
+draft = true
+version = ["lic/licpart/src/channel.rs::LAYOUT"]
+files = ["lic/licpart/src/channel.rs"]
