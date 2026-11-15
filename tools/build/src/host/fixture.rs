@@ -206,6 +206,9 @@ fn boot(disk: &Path) -> Result<Vec<String>> {
         // framebuffer is what the fixture's panel is drawn on.
         .args(["-vga", "std", "-display", "none", "-serial", "stdio"])
         .args(["-accel", if kvm { "kvm" } else { "tcg" }])
+        // graviola (QSI's TLS) needs AVX2, ADX, AES and PCLMULQDQ: the
+        // default model has none of them.
+        .args(["-cpu", if kvm { "host" } else { "max" }])
         .arg("-drive")
         .arg(format!(
             "if=pflash,format=raw,readonly=on,file={}",
