@@ -48,6 +48,7 @@ nfs = { path = "../../net/nfs", version = "0.1.0" }
 ldap = { path = "../../net/ldap", version = "0.1.0" }
 dirsrv = { path = "../../net/dirsrv", version = "0.1.0" }
 qsipart = { path = "../../lic/qsipart", version = "0.1.0" }
+qsisess = { path = "../../lic/qsisess", version = "0.1.0" }
 
 [lints]
 workspace = true

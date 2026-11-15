@@ -733,6 +733,30 @@ pub const TARGETS: &[Target] = &[
         dict: &[b"QI", b"\x02\x01", b"\x02\x02", b"\x03\x02", b"\x02\x03", b"\x01\x01", b"\x02\x01\x00\x00", b"\xff\xff"],
         max_len: 65536,
     },
+    Target {
+        name: "qsisess-frames",
+        what: "QSI's session: frames in pieces into a console and a managed session after the hello, every envelope and qsi::any",
+        run: qsisess::fuzzing::frames,
+        seeds: qsisess::fuzzing::FRAMES_SEEDS,
+        dict: qsisess::fuzzing::DICT,
+        max_len: 131_072,
+    },
+    Target {
+        name: "qsisess-handshake",
+        what: "QSI's session: bytes from the first one on, the hello and what may follow it",
+        run: qsisess::fuzzing::handshake,
+        seeds: qsisess::fuzzing::HANDSHAKE_SEEDS,
+        dict: qsisess::fuzzing::DICT,
+        max_len: 8192,
+    },
+    Target {
+        name: "qsisess-streams",
+        what: "QSI's session: scripts of stream operations on two connected sessions, raw frames injected, credit checked",
+        run: qsisess::fuzzing::streams,
+        seeds: qsisess::fuzzing::STREAMS_SEEDS,
+        dict: &[],
+        max_len: 4096,
+    },
 ];
 
 /// The target named `name`.
