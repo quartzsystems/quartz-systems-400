@@ -6,8 +6,9 @@
 //! depends on no operating-system crate, and its code names no product.
 //! The same holds for the crates an appliance takes beside it (handoff
 //! 14): the console, the screen kit, the service tools user IDs, disk
-//! protection, the ublk server, the netlink client and (handoff 17)
-//! the partition service channel's protocol.
+//! protection, the ublk server, the netlink client, (handoff 17) the
+//! partition service channel's protocol and (handoff 18) QSI's
+//! messages, session and trust rules.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -82,6 +83,9 @@ const APPLIANCE: &[(&str, &str)] = &[
     ("ublk", "lic/ublk"),
     ("netlink", "net/netlink"),
     ("qsipart", "lic/qsipart"),
+    ("qsi", "lic/qsi"),
+    ("qsisess", "lic/qsisess"),
+    ("qsitrust", "lic/qsitrust"),
 ];
 
 /// What none of them may reach: QS/400's identity, its LIC record, its
@@ -141,31 +145,41 @@ fn the_appliance_crates_reach_no_product_crate() {
     }
 }
 
-/// The partition service channel's protocol is the one crate both a
-/// system and its hypervisor build: of this repository it takes `ipc`
-/// alone (handoff 17).
+/// The crates of this repository each protocol crate may reach: the
+/// partition service channel's takes `ipc` alone (handoff 17); QSI's
+/// messages add `qsipart`, its session `qsi`, and its trust rules take
+/// nothing of this repository (handoff 18).
+const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
+    ("qsipart", &["qsipart", "ipc"]),
+    ("qsi", &["qsi", "qsipart", "ipc"]),
+    ("qsisess", &["qsisess", "qsi", "qsipart", "ipc"]),
+    ("qsitrust", &["qsitrust"]),
+];
+
 #[test]
-fn the_partition_protocol_takes_ipc_alone() {
+fn the_protocol_crates_take_only_their_own() {
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    for more in [&[][..], &["--target", "x86_64-unknown-linux-musl"]] {
-        let out = Command::new(&cargo)
-            .current_dir(env!("CARGO_MANIFEST_DIR"))
-            .args(["tree", "-p", "qsipart", "--locked", "-e", "normal,build"])
-            .args(["--prefix", "none", "--format", "{p}"])
-            .args(more)
-            .output()
-            .expect("cargo tree runs");
-        assert!(out.status.success());
-        let text = String::from_utf8_lossy(&out.stdout);
-        for line in text.lines() {
-            let Some(name) = line.split_whitespace().next() else {
-                continue;
-            };
-            if line.contains(" (/") || line.contains(":\\") {
-                assert!(
-                    ["qsipart", "ipc"].contains(&name),
-                    "qsipart reaches {name}, a crate of this repository ({more:?})"
-                );
+    for (package, allowed) in PROTOCOL_CRATES {
+        for more in [&[][..], &["--target", "x86_64-unknown-linux-musl"]] {
+            let out = Command::new(&cargo)
+                .current_dir(env!("CARGO_MANIFEST_DIR"))
+                .args(["tree", "-p", package, "--locked", "-e", "normal,build"])
+                .args(["--prefix", "none", "--format", "{p}"])
+                .args(more)
+                .output()
+                .expect("cargo tree runs");
+            assert!(out.status.success(), "cargo tree -p {package}");
+            let text = String::from_utf8_lossy(&out.stdout);
+            for line in text.lines() {
+                let Some(name) = line.split_whitespace().next() else {
+                    continue;
+                };
+                if line.contains(" (/") || line.contains(":\\") {
+                    assert!(
+                        allowed.contains(&name),
+                        "{package} reaches {name}, a crate of this repository ({more:?})"
+                    );
+                }
             }
         }
     }
