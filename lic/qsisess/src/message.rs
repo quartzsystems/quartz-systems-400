@@ -57,6 +57,56 @@ impl Request {
     }
 }
 
+/// The most messages a refusal carries after its first.
+pub const MAX_ALSO: usize = 16;
+/// The longest help text of a message, bytes.
+pub const MAX_HELP: usize = 4096;
+/// The longest message identifier, bytes.
+pub const MAX_MSGID: usize = 16;
+
+/// One message of a refusal.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Note {
+    /// The message identifier.
+    pub msgid: String,
+    /// Its text.
+    pub text: String,
+    /// Its help text; empty when none.
+    pub help: String,
+}
+wire_struct!(Note { msgid, text, help });
+
+impl Note {
+    /// A message without help.
+    #[must_use]
+    pub fn new(msgid: &str, text: &str) -> Self {
+        Self {
+            msgid: msgid.into(),
+            text: text.into(),
+            help: String::new(),
+        }
+    }
+
+    /// Whether it is within the bounds: [`MAX_MSGID`],
+    /// [`crate::wire::MAX_TEXT`], [`MAX_HELP`].
+    #[must_use]
+    pub fn fits(&self) -> bool {
+        self.msgid.len() <= MAX_MSGID
+            && self.text.len() <= crate::wire::MAX_TEXT
+            && self.help.len() <= MAX_HELP
+    }
+
+    /// Cut to the bounds.
+    #[must_use]
+    pub fn clipped(&self) -> Self {
+        Self {
+            msgid: crate::wire::clip(&self.msgid, MAX_MSGID),
+            text: crate::wire::clip(&self.text, crate::wire::MAX_TEXT),
+            help: crate::wire::clip(&self.help, MAX_HELP),
+        }
+    }
+}
+
 /// What a request came to: a result or a refusal.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
@@ -65,18 +115,56 @@ pub enum Outcome {
         /// The body.
         body: Vec<u8>,
     },
-    /// Refused.
+    /// Refused with every message that applies: the first is the main
+    /// one (what a console shows first), `also` the rest in order.
     Refused {
-        /// The message identifier.
+        /// The main message's identifier.
         msgid: String,
         /// Its text.
         text: String,
+        /// Its help text; empty when none.
+        help: String,
+        /// The other messages, at most [`MAX_ALSO`].
+        also: Vec<Note>,
     },
 }
 wire_enum!(Outcome {
     0 => Result { body },
-    1 => Refused { msgid, text },
+    1 => Refused { msgid, text, help, also },
 });
+
+impl Outcome {
+    /// A refusal with one message and no help.
+    #[must_use]
+    pub fn refused(msgid: &str, text: &str) -> Self {
+        Self::Refused {
+            msgid: msgid.into(),
+            text: text.into(),
+            help: String::new(),
+            also: Vec::new(),
+        }
+    }
+
+    /// Whether a refusal is within its bounds; a result always is.
+    #[must_use]
+    pub fn fits(&self) -> bool {
+        match self {
+            Self::Result { .. } => true,
+            Self::Refused {
+                msgid,
+                text,
+                help,
+                also,
+            } => {
+                msgid.len() <= MAX_MSGID
+                    && text.len() <= crate::wire::MAX_TEXT
+                    && help.len() <= MAX_HELP
+                    && also.len() <= MAX_ALSO
+                    && also.iter().all(Note::fits)
+            }
+        }
+    }
+}
 
 /// A reply: the managed side answers.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -105,8 +193,29 @@ impl Reply {
     #[must_use]
     pub fn refusal(&self) -> Option<(&str, &str)> {
         match &self.outcome {
-            Outcome::Refused { msgid, text } => Some((msgid, text)),
+            Outcome::Refused { msgid, text, .. } => Some((msgid, text)),
             Outcome::Result { .. } => None,
+        }
+    }
+
+    /// Every message of a refusal, the main one first; empty for a
+    /// result.
+    #[must_use]
+    pub fn notes(&self) -> Vec<Note> {
+        match &self.outcome {
+            Outcome::Refused {
+                msgid,
+                text,
+                help,
+                also,
+            } => std::iter::once(Note {
+                msgid: msgid.clone(),
+                text: text.clone(),
+                help: help.clone(),
+            })
+            .chain(also.iter().cloned())
+            .collect(),
+            Outcome::Result { .. } => Vec::new(),
         }
     }
 
@@ -183,7 +292,8 @@ pub enum Incoming {
     Reply(Reply),
     /// An event (the console).
     Event(Event),
-    /// Data on a stream. Grant credit as it is consumed
+    /// Data on a stream: the next bytes of a byte stream, not one whole
+    /// send (boundaries are not kept). Grant credit as it is consumed
     /// ([`crate::Session::grant`]).
     Data {
         /// The stream.

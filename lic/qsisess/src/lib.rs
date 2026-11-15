@@ -31,5 +31,5 @@ pub mod wire;
 pub use error::Error;
 pub use limits::Limits;
 pub use log::EventLog;
-pub use message::{Event, Incoming, Outcome, Reply, Request};
+pub use message::{Event, Incoming, MAX_ALSO, MAX_HELP, MAX_MSGID, Note, Outcome, Reply, Request};
 pub use session::{Role, Session, StreamId};

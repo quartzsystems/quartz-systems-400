@@ -13,7 +13,7 @@ use qsi::{Message, caps, family, msgid};
 
 use super::{Role, Session, Stream, StreamId};
 use crate::wire::{self, MAX_TEXT, kind};
-use crate::{Error, Incoming, Outcome, Reply, Request};
+use crate::{Error, Incoming, MAX_ALSO, MAX_MSGID, Note, Outcome, Reply, Request};
 
 impl Session {
     /// Send a request; its number. `user` is the console's user who
@@ -118,9 +118,30 @@ impl Session {
     /// # Errors
     /// Closed; no such request outstanding.
     pub fn refuse(&mut self, id: u32, msgid: &str, text: &str) -> Result<(), Error> {
+        let outcome = Outcome::refused(&wire::clip(msgid, MAX_MSGID), &wire::clip(text, MAX_TEXT));
+        self.answer(id, None, outcome)
+    }
+
+    /// Refuse request `id` with every message that applies: `main`
+    /// first (what a console shows first), then `also` in order, each
+    /// with its help. Texts are cut to their bounds.
+    ///
+    /// # Errors
+    /// Closed; no such request outstanding; more than [`MAX_ALSO`]
+    /// messages after the first.
+    pub fn refuse_with(&mut self, id: u32, main: &Note, also: &[Note]) -> Result<(), Error> {
+        if also.len() > MAX_ALSO {
+            return Err(Error::TooManyMessages {
+                len: also.len(),
+                limit: MAX_ALSO,
+            });
+        }
+        let main = main.clipped();
         let outcome = Outcome::Refused {
-            msgid: wire::clip(msgid, 16),
-            text: wire::clip(text, MAX_TEXT),
+            msgid: main.msgid,
+            text: main.text,
+            help: main.help,
+            also: also.iter().map(Note::clipped).collect(),
         };
         self.answer(id, None, outcome)
     }
@@ -213,10 +234,10 @@ impl Session {
         if let Err(e) = self.check_len(env.len()) {
             self.send_reply(&Reply {
                 stream: None,
-                outcome: Outcome::Refused {
-                    msgid: msgid::TOO_LONG.into(),
-                    text: format!("a reply of {} bytes is longer than the limit", env.len()),
-                },
+                outcome: Outcome::refused(
+                    msgid::TOO_LONG,
+                    &format!("a reply of {} bytes is longer than the limit", env.len()),
+                ),
                 ..reply
             });
             return Err(e);
@@ -239,10 +260,7 @@ impl Session {
             family: r.family,
             op: r.op,
             stream: None,
-            outcome: Outcome::Refused {
-                msgid: id.into(),
-                text: text.into(),
-            },
+            outcome: Outcome::refused(id, text),
         });
     }
 
@@ -295,6 +313,9 @@ impl Session {
         let Some(r) = wire::read::<Reply>(env) else {
             return self.fail(msgid::BAD_FRAME, "a reply that does not read");
         };
+        if !r.outcome.fits() {
+            return self.fail(msgid::TOO_LONG, "a refusal beyond its bounds");
+        }
         if self.pending.get(&r.id) != Some(&(r.family, r.op)) {
             return self.fail(msgid::OUT_OF_ORDER, "a reply to no request outstanding");
         }

@@ -52,6 +52,14 @@ pub enum Error {
         /// The limit.
         limit: usize,
     },
+    /// A refusal with more messages than the limit.
+    #[error("a refusal of {len} messages after the first; the limit is {limit}")]
+    TooManyMessages {
+        /// How many.
+        len: usize,
+        /// The limit.
+        limit: usize,
+    },
     /// A user name longer than the limit.
     #[error("a user name of {len} bytes is longer than the limit of {limit}")]
     UserTooLong {
@@ -94,7 +102,9 @@ impl Error {
             Self::NotPinned => msgid::NOT_PINNED,
             Self::TooManyRequests { .. } => msgid::TOO_MANY_REQUESTS,
             Self::TooManyStreams { .. } => msgid::TOO_MANY_STREAMS,
-            Self::TooLong { .. } | Self::UserTooLong { .. } => msgid::TOO_LONG,
+            Self::TooLong { .. } | Self::UserTooLong { .. } | Self::TooManyMessages { .. } => {
+                msgid::TOO_LONG
+            }
             Self::NoStream(_) | Self::StreamClosed(_) => msgid::NO_STREAM,
         }
     }

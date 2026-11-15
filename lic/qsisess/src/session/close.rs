@@ -76,10 +76,7 @@ impl Session {
                     family,
                     op,
                     stream: None,
-                    outcome: Outcome::Refused {
-                        msgid: id.clone(),
-                        text: format!("the session closed: {text}"),
-                    },
+                    outcome: Outcome::refused(&id, &format!("the session closed: {text}")),
                 }));
             }
         }

@@ -255,3 +255,64 @@ fn unknown_operations_and_families() {
     assert_eq!(refused(&l.at_console, fam).as_deref(), Some(msgid::UNKNOWN));
     assert_eq!(refused(&l.at_console, bad).as_deref(), Some(msgid::BAD));
 }
+
+#[test]
+fn refusals_with_every_message() {
+    use qsisess::{Error, MAX_ALSO, Note, Outcome, Reply};
+    let mut l = Loopback::new(true);
+    let id = l
+        .console
+        .request_msg("U", &base::Request::Identify(Empty))
+        .unwrap();
+    l.pump();
+    let main = Note {
+        msgid: "QSI0301".into(),
+        text: "the partition is busy".into(),
+        help: "wait for it to end".into(),
+    };
+    let also = vec![
+        Note::new("QSI0302", "a dump is running"),
+        Note::new("QSI0303", "x"),
+    ];
+    let many = vec![Note::new("QSI0302", "y"); MAX_ALSO + 1];
+    assert!(matches!(
+        l.managed.refuse_with(id, &main, &many),
+        Err(Error::TooManyMessages { .. })
+    ));
+    l.managed.refuse_with(id, &main, &also).unwrap();
+    l.pump();
+    let r = l.take_reply(id).unwrap();
+    assert_eq!(r.refusal(), Some(("QSI0301", "the partition is busy")));
+    let mut want = vec![main];
+    want.extend(also);
+    assert_eq!(r.notes(), want);
+
+    // A peer's refusal beyond the bounds closes the console's session.
+    let id = l
+        .console
+        .request_msg("U", &base::Request::Identify(Empty))
+        .unwrap();
+    let bad = Reply {
+        id,
+        family: family::BASE,
+        op: base::op::IDENTIFY,
+        stream: None,
+        outcome: Outcome::Refused {
+            msgid: "QSI0301".into(),
+            text: String::new(),
+            help: String::new(),
+            also: many,
+        },
+    };
+    let frames = qsisess::wire::message_frames(qsisess::wire::kind::REPLY, &ipc::encode(&bad));
+    l.console.feed(&frames, 0);
+    assert!(l.console.is_closed());
+    assert_eq!(
+        refused(
+            &std::iter::from_fn(|| l.console.poll()).collect::<Vec<_>>(),
+            id
+        )
+        .as_deref(),
+        Some(msgid::TOO_LONG)
+    );
+}

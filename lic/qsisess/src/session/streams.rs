@@ -8,6 +8,11 @@
 //! opens and more as its caller consumes; data beyond the credit resets
 //! the stream (`QSI0105`). Close ends one direction; reset aborts both.
 //!
+//! A stream is a byte stream: the boundaries of what was sent are not
+//! kept (credit may split a send, frames may split it again), so what
+//! a stream carries frames itself (a console stream carries `qsipart`
+//! frames, which are self-delimiting).
+//!
 //! A number at or below the highest seen that is not open is a stream
 //! just closed or reset; frames for it still in flight are passed over.
 //! A number above it was never opened: the stream is reset `QSI0106`.
@@ -23,7 +28,8 @@ const DATA_ROOM: usize = qsipart::frame::MAX_BODY - 4;
 
 impl Session {
     /// Send on `stream` as much of `bytes` as the credit allows; how
-    /// much was taken. The rest waits for [`Incoming::Writable`].
+    /// much was taken. The rest waits for [`Incoming::Writable`]. The
+    /// peer gets bytes, not this send as one piece.
     ///
     /// # Errors
     /// Closed; the stream not open; this direction closed.
