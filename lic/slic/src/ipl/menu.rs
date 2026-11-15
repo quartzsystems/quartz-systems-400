@@ -58,7 +58,27 @@ pub fn show(system: &mut System, screen: Screen) {
 /// `None` when the event source is gone.
 pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
     loop {
-        match rx.recv() {
+        let event = rx.recv();
+        // Function 21's service tools run over a complete system: what
+        // they do not take waits for the run loop.
+        if system.panel_dst
+            && let Ok(e) = &event
+            && !matches!(e, Event::Console(_) | Event::Line(_) | Event::Qsid(_))
+        {
+            system.deferred.extend(event.ok());
+            continue;
+        }
+        match event {
+            Ok(Event::Qsid(guestagent::qsid::Ask::Dst { id })) => {
+                use guestagent::qsid::text;
+                let t = if system.complete {
+                    text::DST_ACTIVE
+                } else {
+                    text::DST_IPL
+                };
+                let busy = qsipart::service::msgid::DST_BUSY;
+                crate::procs::qsid::answer(system, id, Some((busy, t)));
+            }
             Ok(Event::Console(Input::Enter(fields))) => return Some(Answer::Enter(fields)),
             Ok(Event::Console(Input::Function(n, _))) => return Some(Answer::Function(n)),
             Ok(Event::Line(line)) => {
@@ -83,7 +103,8 @@ pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
                 | Event::ConsoleJob(_)
                 | Event::ConsoleGone(_)
                 | Event::ConsoleLinkGone
-                | Event::ConsoleLinkDown(_),
+                | Event::ConsoleLinkDown(_)
+                | Event::Qsid(guestagent::qsid::Ask::Flushed { .. }),
             ) => {}
             Err(_) => return None,
         }

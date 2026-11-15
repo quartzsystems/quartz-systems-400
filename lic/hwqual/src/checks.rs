@@ -434,6 +434,10 @@ fn network(t: &Table, hypervisor: &str) -> Vec<Check> {
     for c in &channels {
         let what = if c.location == AGENT_PORT {
             "the guest agent's channel"
+        } else if c.location == qsipart::SERVICE_PORT {
+            "the partition's service channel"
+        } else if c.location == qsipart::CONSOLE_PORT {
+            "the partition's console port"
         } else {
             "a hypervisor channel"
         };
@@ -444,7 +448,21 @@ fn network(t: &Table, hypervisor: &str) -> Vec<Check> {
             format!("{}: {what}.", c.description),
         ));
     }
-    if !hypervisor.is_empty() && !channels.iter().any(|c| c.location == AGENT_PORT) {
+    // Under QS/VS the service channel is the agent: the QEMU guest
+    // agent is not started there.
+    if hypervisor == QSVS {
+        if !channels.iter().any(|c| c.location == qsipart::SERVICE_PORT) {
+            v.push(Check::new(
+                Grade::Warn,
+                "AGENT",
+                "",
+                format!(
+                    "No service channel: QS/VS gives a partition the port {} for its reference codes, state and power down.",
+                    qsipart::SERVICE_PORT
+                ),
+            ));
+        }
+    } else if !hypervisor.is_empty() && !channels.iter().any(|c| c.location == AGENT_PORT) {
         v.push(Check::new(
             Grade::Warn,
             "AGENT",

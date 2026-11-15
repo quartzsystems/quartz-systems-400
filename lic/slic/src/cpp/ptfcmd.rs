@@ -130,6 +130,23 @@ pub(crate) fn load_groups(system: &mut System) -> Result<ptf::grpdb::GroupDb, St
     space_text(system, GROUPS).map(|t| ptf::grpdb::GroupDb::decode(&t))
 }
 
+/// The cumulative fix level: the latest cumulative package
+/// (`Cyyddd110`) whose PTFs are all on the system; empty when none is.
+pub(crate) fn fix_level(system: &mut System) -> String {
+    let (Ok(db), Ok(groups)) = (load_db(system), load_groups(system)) else {
+        return String::new();
+    };
+    let cumulative =
+        |n: &str| n.len() == 9 && n.starts_with('C') && n[1..].bytes().all(|b| b.is_ascii_digit());
+    groups
+        .rows(&db, &trusted_keys())
+        .into_iter()
+        .filter(|r| cumulative(&r.name) && r.status == ptf::group::GroupStatus::Installed)
+        .map(|r| r.name)
+        .max()
+        .unwrap_or_default()
+}
+
 /// Keep the PTF groups.
 pub(super) fn store_groups(system: &mut System, g: &ptf::grpdb::GroupDb) -> Result<(), String> {
     store_space_text(system, GROUPS, "PTF groups", &g.encode())

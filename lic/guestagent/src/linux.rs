@@ -159,12 +159,20 @@ impl Guest for LinuxGuest {
                 }
             ));
         }
-        let restart = u8::from(how == Stop::Restart);
-        std::fs::write(POWER_REQUEST, format!("0 {DELAY} {restart} 0\n"))
-            .map_err(|e| e.to_string())?;
-        rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)
-            .map_err(|e| e.to_string())
+        request_power_down(false, DELAY, how == Stop::Restart)
     }
+}
+
+/// Ask `slic` for `PWRDWNSYS` as a job's asks it: the options in the
+/// request file, then `SIGUSR1`.
+///
+/// # Errors
+/// The file could not be written or the signal sent.
+pub fn request_power_down(immediate: bool, delay: u32, restart: bool) -> Result<(), String> {
+    let (i, r) = (u8::from(immediate), u8::from(restart));
+    std::fs::write(POWER_REQUEST, format!("{i} {delay} {r} 0\n")).map_err(|e| e.to_string())?;
+    rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)
+        .map_err(|e| e.to_string())
 }
 
 /// The agent both channels share.

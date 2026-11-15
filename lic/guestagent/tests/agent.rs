@@ -30,6 +30,7 @@ impl Guest for Mem {
             src: "C9002A00".into(),
             src_text: "IPL complete".into(),
             ipl_time: 1_793_000_000,
+            ..Status::default()
         }
     }
     fn kernel(&mut self) -> Kernel {

@@ -151,6 +151,20 @@ pub struct System {
     pub procs: crate::procs::Procs,
     /// The event channel.
     pub events: Option<Rc<Receiver<Event>>>,
+    /// A partition of QS/VS (`procs::qsid`), known before the first code.
+    pub qsvs: bool,
+    /// Halted after a terminal code, or ended for a power off: the state
+    /// the partition service channel last says.
+    pub halted: bool,
+    /// The cumulative PTF level, read at IPL for the partition service
+    /// channel; empty elsewhere.
+    pub fix_level: String,
+    /// The service tools are on the console for control panel function
+    /// 21: the events they do not take wait in `deferred`.
+    pub panel_dst: bool,
+    /// Events that came while function 21's service tools ran, for the
+    /// run loop.
+    pub deferred: std::collections::VecDeque<Event>,
 }
 
 impl System {
@@ -225,6 +239,11 @@ impl System {
             audit_full_told: false,
             audit_lic: Vec::new(),
             svc_user: None,
+            qsvs: false,
+            halted: false,
+            fix_level: String::new(),
+            panel_dst: false,
+            deferred: std::collections::VecDeque::new(),
         }
     }
 
@@ -273,6 +292,7 @@ impl System {
             text: src.text.to_string(),
         });
         self.write_status(Some(src));
+        crate::procs::qsid::posted(self, src);
         // Each code stays up long enough to be read.
         if !self.pace.is_zero() {
             std::thread::sleep(self.pace);
@@ -282,15 +302,25 @@ impl System {
     /// Rewrite the state file the guest agent reads (`guestagent::status`):
     /// `src` is the code just shown, else the last one logged.
     pub fn write_status(&self, src: Option<&Src>) {
+        let _ = std::fs::write(guestagent::status::PATH, self.status(src).render());
+    }
+
+    /// The state the guest agent and the partition service channel
+    /// report: `src` is the code just shown, else the last one logged.
+    /// The serial number, the fix level and the code's time are kept in
+    /// a partition only.
+    pub fn status(&self, src: Option<&Src>) -> guestagent::status::Status {
         let last = src.or_else(|| self.log.entries().last().map(|e| e.src));
-        let state = if last.is_some_and(|s| s.phase == crate::src::Phase::PowerDown) {
+        let state = if self.halted {
+            "down"
+        } else if last.is_some_and(|s| s.phase == crate::src::Phase::PowerDown) {
             "ending"
         } else if self.complete {
             "complete"
         } else {
             "ipl"
         };
-        let s = guestagent::status::Status {
+        let mut s = guestagent::status::Status {
             system: self.system_name(),
             release: release::RELEASE.to_string(),
             state: state.into(),
@@ -300,8 +330,31 @@ impl System {
             src: last.map(|s| s.code.to_string()).unwrap_or_default(),
             src_text: last.map(|s| s.text.to_string()).unwrap_or_default(),
             ipl_time: self.start_time,
+            ..guestagent::status::Status::default()
         };
-        let _ = std::fs::write(guestagent::status::PATH, s.render());
+        if self.qsvs {
+            // Asked for as each code is posted.
+            s.src_time = now_ms();
+            s.serial = self.serial_number();
+            s.fix_level.clone_from(&self.fix_level);
+        }
+        s
+    }
+
+    /// `QSRLNBR` as loaded, else as the LIC record and the firmware give
+    /// it before the system values are loaded.
+    pub fn serial_number(&self) -> String {
+        let from = |v: &SysVals| v.get("QSRLNBR").ok().map(|v| v.text().trim().to_string());
+        if let Some(s) = self.sysvals.as_ref().and_then(from) {
+            return s;
+        }
+        let host = crate::ipl::sysvals::host_info();
+        self.lic
+            .as_ref()
+            .and_then(|(_, r)| SysVals::from_record(r, &host).ok())
+            .and_then(|v| from(&v))
+            .or(host.serial)
+            .unwrap_or_default()
     }
 
     /// Send a command to the console thread, if there is one.
@@ -324,6 +377,12 @@ impl System {
         self.emit(src);
         lic::fail(self, src);
         self.out.both("slic: IPL halted\n");
+        // In a partition the terminal code reaches the hypervisor first;
+        // the system halts without powering off, so its memory can be
+        // kept for a dump.
+        self.halted = true;
+        crate::procs::qsid::changed(self);
+        crate::procs::qsid::flush(self);
         park()
     }
 }
@@ -333,4 +392,11 @@ pub fn now_unix() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_secs())
+}
+
+/// Milliseconds since the Unix epoch, 0 if the clock is before it.
+pub fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }

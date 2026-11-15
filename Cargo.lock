@@ -729,6 +729,7 @@ name = "console"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "qsipart",
  "rustix",
  "thiserror 2.0.21",
  "tn5250",
@@ -1599,8 +1600,10 @@ dependencies = [
 name = "guestagent"
 version = "0.1.0"
 dependencies = [
+ "ipc",
  "netlink",
  "nettools",
+ "qsipart",
  "release",
  "rustix",
  "serde_json",
@@ -1776,6 +1779,7 @@ dependencies = [
  "diskimg",
  "fatfs",
  "hwrsrc",
+ "qsipart",
  "release",
 ]
 
@@ -3943,6 +3947,7 @@ dependencies = [
  "qapd",
  "qdecimal",
  "qir",
+ "qsipart",
  "qsname",
  "qsyslib",
  "regfac",

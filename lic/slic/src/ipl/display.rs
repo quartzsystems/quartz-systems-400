@@ -27,17 +27,35 @@ pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
         banner: release::banner(),
         ready_code: src::IPL_COMPLETE.code.to_string(),
     };
-    let (con, status) = console::Console::open_scaled(
+    let (mut con, status) = console::Console::open_scaled(
         identity,
         mode == ConsoleMode::Local,
         system.boot.console_scale,
     );
-    system.out.serial(&format!(
-        "slic: display: {} ({})\n",
-        con.describe(),
-        mode.text()
-    ));
     let (tx, rx) = mpsc::channel();
+    // A partition's console is its console port: the grid as cells, the
+    // keys back as the keyboard gives them.
+    let mut status = status.map_err(|e| e.to_string());
+    let mut shown = con.describe();
+    if mode == ConsoleMode::Partition {
+        let sys = std::path::Path::new("/sys");
+        let dev = std::path::Path::new("/dev");
+        match console::qsi::open(sys, dev, qsipart::CONSOLE_PORT) {
+            Some((out, input, path)) => {
+                let link = console::qsi::Link::new();
+                let d = console::qsi::QsiDisplay::new(out, std::sync::Arc::clone(&link), &path);
+                shown = console::Display::describe(&d);
+                con.add_display(Box::new(d));
+                console::qsi::spawn_reader(input, link, tx.clone());
+            }
+            None => {
+                status = Err(format!("no console port {}", qsipart::CONSOLE_PORT));
+            }
+        }
+    }
+    system
+        .out
+        .serial(&format!("slic: display: {shown} ({})\n", mode.text()));
     let (input_tx, input_rx) = mpsc::channel::<console::Input>();
     thread::spawn(move || con.run(&rx, input_tx));
     thread::spawn(move || {

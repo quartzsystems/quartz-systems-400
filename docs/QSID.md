@@ -111,6 +111,10 @@ in the order they come.
 | `0x0104` | `ping` | `id u32` |
 | `0x0105` | `time` | `unix_ns i64`: the hypervisor's clock |
 
+Every kind of the peer's (`0x01nn`) but `peer_hello` and `time` is a
+request whose body starts with its `id u32`, a later version's kinds
+too: a system that does not know one refuses it by that `id`.
+
 ### Refusals
 
 | Message | When |

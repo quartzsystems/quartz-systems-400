@@ -32,6 +32,12 @@ pub struct Status {
     pub src_text: String,
     /// When the IPL started, Unix seconds.
     pub ipl_time: u64,
+    /// When the last SRC was posted, Unix milliseconds; 0 when not kept.
+    pub src_time: u64,
+    /// The serial number; kept for the partition service channel only.
+    pub serial: String,
+    /// The cumulative PTF level, once known; for the channel only.
+    pub fix_level: String,
 }
 
 impl Status {
@@ -52,6 +58,17 @@ impl Status {
         line("src", &self.src);
         line("src_text", &self.src_text);
         line("ipl_time", &self.ipl_time.to_string());
+        // Kept only when set: a system outside a partition writes the
+        // file as before.
+        if self.src_time != 0 {
+            line("src_time", &self.src_time.to_string());
+        }
+        if !self.serial.is_empty() {
+            line("serial", &self.serial);
+        }
+        if !self.fix_level.is_empty() {
+            line("fix_level", &self.fix_level);
+        }
         s
     }
 
@@ -74,6 +91,9 @@ impl Status {
                 "src" => s.src = v,
                 "src_text" => s.src_text = v,
                 "ipl_time" => s.ipl_time = v.parse().unwrap_or(0),
+                "src_time" => s.src_time = v.parse().unwrap_or(0),
+                "serial" => s.serial = v,
+                "fix_level" => s.fix_level = v,
                 _ => {}
             }
         }
@@ -97,7 +117,20 @@ mod tests {
             src: "C9002A00".into(),
             src_text: "IPL complete\nnext".into(),
             ipl_time: 1_793_000_000,
+            ..Status::default()
         };
+        assert!(!s.render().contains("serial"));
+        let more = Status {
+            src_time: 1_793_000_000_123,
+            serial: "10ABCDE".into(),
+            fix_level: "C6318110".into(),
+            ..s.clone()
+        };
+        let back_more = Status::parse(&more.render());
+        assert_eq!(
+            (back_more.src_time, back_more.serial, back_more.fix_level),
+            (more.src_time, more.serial, more.fix_level)
+        );
         let back = Status::parse(&s.render());
         assert_eq!(back.src_text, "IPL complete next");
         assert_eq!(

@@ -10,6 +10,7 @@
 pub mod console;
 pub mod guest;
 pub mod hwr;
+pub mod qsid;
 pub mod spawn;
 pub mod stg;
 pub mod svcjob;
@@ -22,6 +23,8 @@ pub struct Procs {
     pub hwr: Option<hwr::HwrProc>,
     /// The guest agent, under a hypervisor that offers it a channel.
     pub guest: Option<guest::GuestProc>,
+    /// The partition service channel's daemon, under QS/VS.
+    pub qsid: Option<qsid::QsidProc>,
     /// The storage service.
     pub stg: Option<stg::StgProc>,
     /// The service console job.

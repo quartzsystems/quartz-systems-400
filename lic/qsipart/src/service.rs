@@ -409,13 +409,14 @@ impl ToSystem {
     }
 
     /// The `id` of a request, read from what can be read of its body:
-    /// for a refusal of one that does not decode.
+    /// for a refusal of one that does not decode or is of a kind this
+    /// version does not know. Every kind of the peer's (`0x01nn`) but
+    /// `peer_hello` and `time`, a later version's too, starts with it.
     #[must_use]
     pub fn request_id(f: &Frame) -> u32 {
         match f.kind {
-            kind::POWER_DOWN | kind::PANEL | kind::PING => {
-                u32::get(&mut ipc::Dec::new(&f.body)).unwrap_or(0)
-            }
+            kind::PEER_HELLO | kind::TIME => 0,
+            k if k & 0xFF00 == 0x0100 => u32::get(&mut ipc::Dec::new(&f.body)).unwrap_or(0),
             _ => 0,
         }
     }

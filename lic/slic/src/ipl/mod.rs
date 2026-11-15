@@ -59,6 +59,8 @@ pub enum Event {
     ConsoleLinkDown(String),
     /// Something from the local console's keyboard.
     Console(::console::Input),
+    /// The partition service channel's daemon asks for something.
+    Qsid(guestagent::qsid::Ask),
 }
 
 /// Run as PID 1. Never returns.
@@ -73,6 +75,11 @@ pub fn run() -> ! {
     let mounted = mounts::mount_all();
 
     let mut system = System::new(console::Outputs::open(), cmdline::Boot::read());
+    let (tx, rx) = mpsc::channel();
+    // In a partition the service channel's daemon starts now, so the
+    // first code it sends the hypervisor is the first one posted.
+    system.qsvs = procs::qsid::is_partition();
+    procs::qsid::start(&mut system, &tx);
     system.emit(&src::IPL_STARTED);
     system.out.both(&format!("{}\n", release::banner()));
     if !files {
@@ -110,7 +117,6 @@ pub fn run() -> ! {
         ));
     }
 
-    let (tx, rx) = mpsc::channel();
     let rx = std::rc::Rc::new(rx);
     system.events = Some(std::rc::Rc::clone(&rx));
     spawn_signal_thread(tx.clone());
@@ -552,6 +558,11 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     // mounted here, before the service starts, so the service has it.
     ifs::prepare(system, installed);
     ifs::mount(system, installed);
+    // The partition service channel reports the fix level; read while
+    // the store is still this process's.
+    if system.procs.qsid.is_some() {
+        system.fix_level = crate::cpp::ptfcmd::fix_level(system);
+    }
     // The storage service takes the store over; from here on the jobs
     // and the console reach it through the service.
     if system.storage.is_some()
@@ -822,6 +833,7 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
         procs::console::gone(system, pid, tx);
         procs::hwr::reaped(system, pid);
         procs::guest::reaped(system, pid);
+        procs::qsid::reaped(system, pid, tx);
         if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
             system.procs.svcjob = None;
             system
@@ -846,7 +858,12 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         } else {
             Duration::from_secs(5)
         };
-        match rx.recv_timeout(wait) {
+        // What came while function 21's service tools ran goes first.
+        let next = match system.deferred.pop_front() {
+            Some(e) => Ok(e),
+            None => rx.recv_timeout(wait),
+        };
+        match next {
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 storage::tick(system);
             }
@@ -857,7 +874,11 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
             Ok(Event::Signal(s)) if s == libc_sigusr1() => power::requested(system),
             // SIGTERM and SIGINT are ignored by PID 1; the reaper restarts
             // a job whose channel closed.
-            Ok(Event::Signal(_) | Event::JobGone) => {}
+            Ok(
+                Event::Signal(_)
+                | Event::JobGone
+                | Event::Qsid(guestagent::qsid::Ask::Flushed { .. }),
+            ) => {}
             Ok(Event::Line(line)) => {
                 if system.svc_user.is_some() {
                     console_line(system, &line);
@@ -877,8 +898,41 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                     .out
                     .serial(&format!("slic: console: no session yet: {e}\n"));
             }
-            Err(_) => park(),
+            Ok(Event::Qsid(guestagent::qsid::Ask::Dst { id })) => panel_dst(system, rx, id),
+            Err(mpsc::RecvTimeoutError::Disconnected) => park(),
         }
+    }
+}
+
+/// Control panel function 21 from the hypervisor: dedicated service
+/// tools on the console, as the IPL menu offers them at a manual IPL.
+/// The console's session waits behind them and comes back after; what
+/// the service tools' screens do not take waits for the run loop.
+fn panel_dst(system: &mut System, rx: &mpsc::Receiver<Event>, id: u32) {
+    use guestagent::qsid::text;
+    use qsipart::service::msgid;
+    if system.mode != IplMode::Manual {
+        procs::qsid::answer(system, id, Some((msgid::NOT_MANUAL, text::NOT_MANUAL)));
+        return;
+    }
+    if !system.complete {
+        procs::qsid::answer(system, id, Some((msgid::DST_BUSY, text::DST_IPL)));
+        return;
+    }
+    procs::qsid::answer(system, id, None);
+    system
+        .out
+        .serial("slic: control panel function 21: service tools on the console\n");
+    system.show(::console::Command::Interrupt);
+    system.panel_dst = true;
+    let outcome = dst::run(system, rx);
+    system.panel_dst = false;
+    system.show(::console::Command::Resume);
+    system.out.serial(&format!(
+        "slic: function 21's service tools ended: {outcome:?}\n"
+    ));
+    if outcome == dst::Outcome::PerformIpl {
+        power::down(system, true);
     }
 }
 
@@ -906,6 +960,7 @@ fn install_panic_hook() {
     panic::set_hook(Box::new(|info| {
         let text = format!("{}slic panic: {info}\n", src::PANIC.line());
         console::emergency(&text);
+        procs::qsid::emergency(&src::PANIC);
         park()
     }));
 }

@@ -414,6 +414,53 @@ fn smbios_tables_naming_qsvs_answer_too() {
 }
 
 #[test]
+fn under_qsvs_the_service_channel_is_the_agents_line() {
+    let (dir, roots) = tree("qsvs-channel");
+    put(&roots.proc.join("cpuinfo"), FLAGGED);
+    put(
+        &roots.sys.join("class/dmi/id/sys_vendor"),
+        "Quartz Systems\n",
+    );
+    put(&roots.sys.join("class/dmi/id/product_name"), "QS/VS\n");
+    // The QEMU guest's table has the guest agent's port, not QS/VS's.
+    let r = hwqual::checks::all(&qemu_table(1), &roots, 0);
+    assert_eq!(grade(&r, "AGENT"), Grade::Warn);
+    assert!(
+        r.text().contains("systems.quartz.qsvs.service.0"),
+        "{}",
+        r.text()
+    );
+    let mut t = qemu_table(1);
+    t.resources.retain(|r| r.kind != Kind::Channel);
+    for (name, port) in [
+        ("CMN03", "systems.quartz.qsvs.service.0"),
+        ("CMN04", "systems.quartz.qsvs.console.0"),
+    ] {
+        t.resources.push(res(
+            name,
+            Kind::Channel,
+            port,
+            &format!("virtual channel {port} (vport1p1)"),
+            None,
+            "",
+        ));
+    }
+    let r = hwqual::checks::all(&t, &roots, 0);
+    assert_eq!(grade(&r, "CMN03"), Grade::Pass);
+    assert_eq!(grade(&r, "CMN04"), Grade::Pass);
+    let text = r.text();
+    assert!(text.contains("the partition's service channel"), "{text}");
+    assert!(text.contains("the partition's console port"), "{text}");
+    assert!(
+        r.checks
+            .iter()
+            .flat_map(|(_, c)| c)
+            .all(|c| c.resource != "AGENT")
+    );
+    let _ = fs::remove_dir_all(dir);
+}
+
+#[test]
 fn another_hypervisor_without_firmware_still_fails() {
     // Tables of someone else, one of them with QS/VS's IDs by chance.
     let (dir, roots) = tree("not-qsvs");

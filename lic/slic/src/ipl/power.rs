@@ -93,6 +93,11 @@ pub fn down_ending(
         system.out.serial(&format!("slic: unmount {target}: {e}\n"));
     }
     system.emit(&src::PWRDWN_COMPLETE);
+    // In a partition the hypervisor hears the system is down before it
+    // goes.
+    system.halted = true;
+    crate::procs::qsid::changed(system);
+    crate::procs::qsid::flush(system);
     let e = power::reboot_now(restart);
     system.out.serial(&format!("slic: reboot: {e}\n"));
     park()

@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 hwrsrc = { path = "../hwrsrc", version = "0.1.0" }
+qsipart = { path = "../qsipart", version = "0.1.0" }
 diskimg = { path = "../diskimg", version = "0.1.0" }
 release = { path = "../release", version = "0.1.0" }
 fatfs = { version = "0.3.6", default-features = false, features = ["std", "alloc"] }

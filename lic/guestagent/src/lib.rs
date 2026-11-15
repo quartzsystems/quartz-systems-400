@@ -18,6 +18,8 @@
 //! - [`port`]: finding the agent's virtio-serial port in sysfs.
 //! - [`ups`]: the power supply's state the host reports.
 //! - `linux`: the guest itself and the serve loop (`/init qsga`).
+//! - [`qsid`]: under QS/VS, the partition service channel's daemon
+//!   (`/init qsid`) in the agent's place, over the same facts.
 
 #![forbid(unsafe_code)]
 
@@ -25,6 +27,7 @@ pub mod agent;
 pub mod facts;
 pub mod framer;
 pub mod port;
+pub mod qsid;
 pub mod status;
 pub mod ups;
 

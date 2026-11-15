@@ -23,6 +23,10 @@ pub struct GuestProc {
 
 /// Start the agent if there is a channel for it.
 pub fn start(system: &mut System) {
+    // Under QS/VS the partition service channel takes its place.
+    if system.qsvs {
+        return;
+    }
     let sys = Path::new("/sys");
     let port = guestagent::port::find(sys, guestagent::PORT_NAME);
     let vsock = guestagent::port::vsock(sys);

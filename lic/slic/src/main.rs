@@ -38,6 +38,7 @@ fn main() {
         Some("qsstg") => stgsvc::run(),
         Some("qshwr") => hwsvc::run(),
         Some("qsga") => guestagent::linux::run(),
+        Some("qsid") => guestagent::qsid::linux::run(),
         _ => {}
     }
     ipl::run()
