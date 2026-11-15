@@ -164,3 +164,51 @@ fn a_key_from_qsvs_identity_files_loads() {
     assert_eq!(back.fingerprint(), host.fingerprint());
     tls::server_config(&back, set(&[], false)).unwrap();
 }
+
+/// The certificate and key QS/VS's `base/identity` makes for the key of
+/// seed `[7; 32]`, host `vs-01`, serial `M525400123456`, at
+/// 2026-11-12 13:05:00 UTC, numbered `[0xff; 16]` (its own test's
+/// values), printed by that code at cebf3d2.
+const QSVS_CERT: &[&str] = &[
+    "3082012f3081e2a00302010202107fffffffffffffffffffffffffffffff3005",
+    "06032b65703028310e300c06035504030c0576732d3031311630140603550405",
+    "130d4d3532353430303132333435363020170d3236313131323133303530305a",
+    "180f39393939313233313233353935395a3028310e300c06035504030c057673",
+    "2d3031311630140603550405130d4d353235343030313233343536302a300506",
+    "032b6570032100ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b9242",
+    "1eea691446d22ca320301e300c0603551d130101ff04023000300e0603551d0f",
+    "0101ff040403020780300506032b657003410017b4c4bcb87d4bc1000f25a416",
+    "a940d2d01cb13fcccbd8a71adb826b234d81cd13fad34d55ce0246e7d990d0c2",
+    "8c1d760ee9eaee6e7ee8a9684593962144320a",
+];
+
+/// Its key file's DER, PKCS #8.
+const QSVS_KEY: &[&str] = &[
+    "302e020100300506032b65700422042007070707070707070707070707070707",
+    "07070707070707070707070707070707",
+];
+
+fn unhex(parts: &[&str]) -> Vec<u8> {
+    let s: String = parts.concat();
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+        .collect()
+}
+
+#[test]
+fn the_certificate_is_byte_for_byte_the_one_qsvs_makes() {
+    let (host, _) = ids();
+    assert_eq!(host.cert, unhex(QSVS_CERT));
+    assert_eq!(host.key, unhex(QSVS_KEY));
+    // And QS/VS's own bytes complete the handshake.
+    let qsvs = Identity::new(unhex(QSVS_CERT), unhex(QSVS_KEY)).unwrap();
+    let (_, console) = ids();
+    let (_, _, r) = connect(
+        &qsvs,
+        set(&[console.fingerprint()], false),
+        &console,
+        set(&[qsvs.fingerprint()], false),
+    );
+    r.unwrap();
+}
