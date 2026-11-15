@@ -2,10 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The console mode: the local console (the display and its keyboard)
-//! or the serial console, kept in the record (TLV [`TAG_CONSOLE_MODE`])
-//! and honoured at the next IPL. A hypervisor that IPLs the system in a
-//! partition writes it before the IPL.
+//! The console mode: the local console (the display and its keyboard),
+//! the serial console, or a partition's console port, kept in the
+//! record (TLV [`TAG_CONSOLE_MODE`]) and honoured at the next IPL. A
+//! hypervisor that IPLs the system in a partition writes it before the
+//! IPL; the third value is only ever its.
 
 use crate::error::LicError;
 use crate::format::Record;
@@ -21,15 +22,20 @@ pub enum ConsoleMode {
     Local,
     /// The serial port alone: screens as text, keys as typed lines.
     Serial,
+    /// A partition's console port: the grid as cells and the keys back
+    /// (`qsipart::console`); screens are echoed on serial.
+    Partition,
 }
 
 impl ConsoleMode {
-    /// The byte in the record (1 local, 2 serial), also DST's option.
+    /// The byte in the record (1 local, 2 serial, 3 a partition's
+    /// console port), also DST's option for the first two.
     #[must_use]
     pub fn as_u8(self) -> u8 {
         match self {
             Self::Local => 1,
             Self::Serial => 2,
+            Self::Partition => 3,
         }
     }
 
@@ -39,6 +45,7 @@ impl ConsoleMode {
         match b {
             1 => Some(Self::Local),
             2 => Some(Self::Serial),
+            3 => Some(Self::Partition),
             _ => None,
         }
     }
@@ -76,7 +83,11 @@ mod tests {
 
     #[test]
     fn modes_round_trip() {
-        for m in [ConsoleMode::Local, ConsoleMode::Serial] {
+        for m in [
+            ConsoleMode::Local,
+            ConsoleMode::Serial,
+            ConsoleMode::Partition,
+        ] {
             assert_eq!(ConsoleMode::decode(&m.encode()), Some(m));
         }
         assert_eq!(ConsoleMode::decode(&[]), None);
@@ -92,5 +103,7 @@ mod tests {
         ConsoleMode::Local.store(&mut r).unwrap();
         assert_eq!(r.tlv(0x0105), Some(&[1u8][..]));
         assert_eq!(ConsoleMode::of(&r), Some(ConsoleMode::Local));
+        ConsoleMode::Partition.store(&mut r).unwrap();
+        assert_eq!(r.tlv(0x0105), Some(&[3u8][..]));
     }
 }

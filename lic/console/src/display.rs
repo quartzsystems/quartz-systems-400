@@ -22,4 +22,24 @@ pub trait Display: Send {
     fn check_mode(&mut self) -> bool {
         false
     }
+
+    /// Draw the grid with what the console knows beside its cells, for
+    /// a display that shows more than the cells; the others draw them.
+    fn draw_view(&mut self, cells: &dyn Cells, view: &View) -> io::Result<()> {
+        let _ = view;
+        self.draw(cells)
+    }
+}
+
+/// What the console knows beside its cells.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct View {
+    /// The SRC display's code and text, when that is what shows.
+    pub src: Option<(String, String)>,
+    /// Input inhibited.
+    pub inhibited: bool,
+    /// Insert mode.
+    pub insert: bool,
+    /// The console is a 5250 session's terminal.
+    pub session: bool,
 }

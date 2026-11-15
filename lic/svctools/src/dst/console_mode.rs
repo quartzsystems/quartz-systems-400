@@ -27,6 +27,7 @@ impl ModeText for ConsoleMode {
         match self {
             Self::Local => "Local console (display and keyboard)",
             Self::Serial => "Serial console (ttyS0)",
+            Self::Partition => "Partition console port",
         }
     }
 }
@@ -77,7 +78,12 @@ impl Panel for SelectConsoleMode {
     }
 
     fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {
-        let Some(mode) = selection(fields).and_then(ConsoleMode::from_u8) else {
+        // Only the options shown: the partition's mode is the
+        // hypervisor's to set.
+        let Some(mode) = selection(fields)
+            .filter(|n| OPTIONS.iter().any(|(o, _)| o == n))
+            .and_then(ConsoleMode::from_u8)
+        else {
             return Flow::Error(INVALID_SELECTION.into());
         };
         match env.set_console_mode(mode) {
@@ -106,6 +112,10 @@ mod tests {
         assert!(r.screen(&mut env).dump().contains("Local console"));
         assert_eq!(r.enter(&["x".to_string()], &mut env), None);
         assert!(r.screen(&mut env).dump().contains(INVALID_SELECTION));
+        // The partition's mode is not an option here.
+        assert_eq!(r.enter(&["3".to_string()], &mut env), None);
+        assert!(r.screen(&mut env).dump().contains(INVALID_SELECTION));
+        assert_eq!(env.console_mode, ConsoleMode::Local);
         r.enter(&["2".to_string()], &mut env);
         assert_eq!(env.console_mode, ConsoleMode::Serial);
         assert_eq!(env.actions, vec!["console Serial"]);

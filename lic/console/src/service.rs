@@ -10,7 +10,7 @@
 
 use std::sync::mpsc::{Receiver, Sender};
 
-use crate::display::Display;
+use crate::display::{Display, View};
 use crate::editor::{self, Outcome};
 use crate::fb::{FbError, Framebuffer};
 use crate::keyboard::KeyEvent;
@@ -88,6 +88,14 @@ pub enum Command {
     /// The session ended: the console's own screens again.
     #[cfg(feature = "session")]
     Detach,
+    /// The console's own screens take over from its session for a
+    /// while (service tools on a running system): the session's records
+    /// keep its terminal current without showing it.
+    Interrupt,
+    /// The session's screen again after [`Command::Interrupt`].
+    Resume,
+    /// Draw again: a display asked for a whole frame.
+    Redraw,
 }
 
 /// What the console reports back to its caller.
@@ -140,6 +148,8 @@ pub struct Console {
     /// A sign-on asked for before that, shown when it comes.
     #[cfg(feature = "session")]
     pending: Option<Command>,
+    /// The session waits behind the console's own screens.
+    interrupted: bool,
 }
 
 impl Console {
@@ -195,6 +205,7 @@ impl Console {
             complete: false,
             #[cfg(feature = "session")]
             pending: None,
+            interrupted: false,
         }
     }
 
@@ -324,7 +335,10 @@ impl Console {
                     return;
                 };
                 t.apply(&rec);
-                self.screen = t.screen();
+                // Behind the console's own screens: kept, not shown.
+                if !self.interrupted {
+                    self.screen = t.screen();
+                }
             }
             Command::Describe(reply) => {
                 // A mode change shows at once.
@@ -336,8 +350,35 @@ impl Console {
             }
             #[cfg(feature = "session")]
             Command::Detach => self.detach(),
+            cmd @ (Command::Interrupt | Command::Resume | Command::Redraw) => {
+                if !self.over_session(&cmd) {
+                    return;
+                }
+            }
         }
         self.redraw();
+    }
+
+    /// The console's own screens over its session, the session again, a
+    /// plain redraw. Whether to draw.
+    fn over_session(&mut self, cmd: &Command) -> bool {
+        match cmd {
+            Command::Interrupt => {
+                self.interrupted = true;
+                return false;
+            }
+            Command::Resume => {
+                self.interrupted = false;
+                #[cfg(feature = "session")]
+                if let Some(t) = &self.term {
+                    self.kind = Kind::Terminal;
+                    self.locked = false;
+                    self.screen = t.screen();
+                }
+            }
+            _ => {}
+        }
+        true
     }
 
     /// The grid as text: the terminal's while attached.
@@ -493,8 +534,33 @@ impl Console {
         if let Some(r) = self.renderer.as_mut() {
             let _ = r.draw(&self.screen);
         }
+        if self.displays.is_empty() {
+            return;
+        }
+        let view = self.view();
         for d in &mut self.displays {
-            let _ = d.draw(&self.screen);
+            let _ = d.draw_view(&self.screen, &view);
+        }
+    }
+
+    /// What shows beside the cells.
+    fn view(&self) -> View {
+        #[cfg(feature = "session")]
+        let (session, term_locked) = match &self.term {
+            Some(t) if self.kind == Kind::Terminal => (true, t.locked()),
+            _ => (false, false),
+        };
+        #[cfg(not(feature = "session"))]
+        let (session, term_locked) = (false, false);
+        View {
+            src: if self.kind == Kind::Src {
+                self.recent.last().cloned()
+            } else {
+                None
+            },
+            inhibited: self.locked || term_locked,
+            insert: self.screen.insert,
+            session,
         }
     }
 }
@@ -613,6 +679,33 @@ mod tests {
         }));
         assert!(!c.locked());
         assert!(c.screen().dump().lines().nth(22).unwrap().trim().is_empty());
+    }
+
+    #[test]
+    #[cfg(feature = "session")]
+    fn service_tools_over_a_session_and_back() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let (link, records) = std::sync::mpsc::channel();
+        let mut c = console();
+        c.out = Some(tx);
+        complete(&mut c);
+        c.handle(Command::Attach(link));
+        assert!(c.attached());
+        c.handle(Command::Interrupt);
+        let mut s = Screen::new();
+        s.put(1, 1, "Dedicated Service Tools", Attr::WHITE);
+        s.field(5, 10, 10, false);
+        c.handle(Command::ShowScreen(s));
+        assert!(!c.attached());
+        assert!(c.dump().contains("Dedicated Service Tools"));
+        // Keys are the service tools' now, not the session's.
+        c.handle(Command::Virtual(Key::Char('1')));
+        c.handle(Command::Virtual(Key::Enter));
+        assert_eq!(rx.try_recv(), Ok(Input::Enter(vec!["1".into()])));
+        assert!(records.try_recv().is_err());
+        c.handle(Command::Resume);
+        assert!(c.attached());
+        assert!(!c.dump().contains("Dedicated Service Tools"));
     }
 
     #[test]

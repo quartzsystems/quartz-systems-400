@@ -5,7 +5,8 @@
 //! The local console: a 24×80 cell grid with 5250 attributes, scaled to
 //! the Linux framebuffer with a Quartz-drawn 9×16 font, or drawn on a
 //! serial terminal with ANSI sequences ([`ansi`]); both are a
-//! [`Display`]. The SRC display, evdev keyboards and 5250 field
+//! [`Display`], or sent as cells over a partition's console port
+//! ([`qsi`]). The SRC display, evdev keyboards and 5250 field
 //! editing. What names a product on a screen comes from the caller
 //! ([`Identity`]).
 //!
@@ -22,6 +23,7 @@ pub mod editor;
 pub mod font;
 pub mod keyboard;
 pub mod palette;
+pub mod qsi;
 pub mod scale;
 pub mod screen;
 pub mod screens;
@@ -38,7 +40,7 @@ mod service;
 #[cfg(target_os = "linux")]
 pub use service::{Command, Console, INHIBITED, Identity, Input};
 
-pub use display::Display;
+pub use display::{Display, View};
 pub use keyboard::map::Key;
 pub use scale::Scale;
 pub use screen::{Attr, COLS, Cell, Color, Field, ROWS, Screen};
