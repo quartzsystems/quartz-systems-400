@@ -475,8 +475,8 @@ pub fn fixture(ctx: &Ctx) -> Result<String> {
     fs::remove_file(&booted)?;
     let line = format!(
         "qsdemo built from git dependencies at {} and booted: `{want}`, powered off; \
-         its ESP is `{}` and its A/B record `{}`; its panel on the framebuffer and on \
-         serial, its mirrored set through ublk (a member removed, the server restarted, \
+         its ESP is `{}` and its A/B record `{}`; its panel on the framebuffer, on \
+         serial and on a console port, its mirrored set through ublk (a member removed, the server restarted, \
          the member rebuilt, the server killed under load and only the dirty regions \
          copied) and its route held",
         &rev[..rev.len().min(9)],
