@@ -7,7 +7,8 @@
 //! crate is its messages: the [`Hello`] each side says first, the
 //! families of operations with their versions and capability bits
 //! ([`family`], [`caps`]), and every family's requests, replies and
-//! events ([`base`], [`pair`], [`host`]). The session that carries
+//! events ([`base`], [`pair`], [`service`], [`update`], [`host`]). The
+//! session that carries
 //! them is `qsisess`, the trust rules `qsitrust`. Its partition scope,
 //! the channel between a partition and its hypervisor, is `qsipart`,
 //! whose frames QSI's session keeps.
@@ -32,6 +33,8 @@ pub mod message;
 pub mod msgid;
 pub mod pair;
 pub mod samples;
+pub mod service;
+pub mod update;
 
 pub use error::Error;
 pub use hello::{Agreed, Hello, PeerKind};
@@ -47,6 +50,10 @@ pub mod family {
     pub const BASE: u16 = 0x0001;
     /// Pairing: the one thing a peer not yet pinned may do.
     pub const PAIR: u16 = 0x0002;
+    /// A managed system's problems.
+    pub const SERVICE: u16 = 0x0003;
+    /// Code update of a managed system whose code is in two slots.
+    pub const UPDATE: u16 = 0x0004;
     /// A virtual server host: processors, memory, pools, hardware.
     pub const HOST: u16 = 0x0010;
     /// The host's partitions, read.
@@ -76,6 +83,13 @@ pub mod caps {
     pub const BASE: u64 = 1 << 0;
     /// [`super::family::PAIR`] version 1.
     pub const PAIR: u64 = 1 << 1;
+    /// [`super::family::SERVICE`] version 1.
+    pub const SERVICE: u64 = 1 << 2;
+    /// [`super::family::UPDATE`] version 1.
+    pub const UPDATE: u64 = 1 << 3;
+    /// The system's own dumps: base's operations `0x0010` to `0x0013`
+    /// and its events `0x0010` and `0x0011` ([`crate::base::TakeDump`]).
+    pub const SYSTEM_DUMPS: u64 = 1 << 4;
     /// [`super::family::HOST`] version 1.
     pub const HOST: u64 = 1 << 8;
     /// [`super::family::PARTITIONS`] version 1.
@@ -108,6 +122,9 @@ pub mod caps {
         | DUMPS
         | CONSOLE
         | VRES;
+    /// Problems, code update and the system's own dumps, which a
+    /// managed system says beside the rest of what it answers.
+    pub const SERVICING: u64 = SERVICE | UPDATE | SYSTEM_DUMPS;
 
     /// The capability of a family's version 1, by the family's number;
     /// 0 for a family this crate does not know.
@@ -117,6 +134,8 @@ pub mod caps {
         match family {
             f::BASE => BASE,
             f::PAIR => PAIR,
+            f::SERVICE => SERVICE,
+            f::UPDATE => UPDATE,
             f::HOST => HOST,
             f::PARTITIONS => PARTITIONS,
             f::PARTITION => PARTITION,
@@ -127,6 +146,28 @@ pub mod caps {
             f::CONSOLE => CONSOLE,
             f::VRES => VRES,
             _ => 0,
+        }
+    }
+
+    /// Every capability a request of `family` and `op` needs: its
+    /// family's, and the bit of an operation added behind one of its
+    /// own. 0 for a family this crate does not know.
+    #[must_use]
+    pub fn of_request(family: u16, op: u16) -> u64 {
+        match family {
+            super::family::BASE if crate::base::op::is_dump(op) => BASE | SYSTEM_DUMPS,
+            _ => of(family),
+        }
+    }
+
+    /// Every capability an event of `family` and `op` needs, as
+    /// [`of_request`]: a session sends an event only to a peer that
+    /// agreed on all of it.
+    #[must_use]
+    pub fn of_event(family: u16, op: u16) -> u64 {
+        match family {
+            super::family::BASE if crate::base::event::is_dump(op) => BASE | SYSTEM_DUMPS,
+            _ => of(family),
         }
     }
 }

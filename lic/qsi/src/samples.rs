@@ -9,7 +9,7 @@
 use qsipart::console::{Cell, Frame, Key, Run, Shape, SrcShown, Status as Cursor, Update};
 
 use crate::any::{AnyEvent, AnyReply, AnyRequest};
-use crate::base::{self, Keylock, PowerAction, PowerState, Refcode, Replay};
+use crate::base::{self, DumpKind, Keylock, PowerAction, PowerState, Refcode, Replay};
 use crate::hello::PeerKind;
 use crate::host::model::{
     AutoStart, Boot, Channel, ConsoleMode, Current, Definition, Environment, EthernetAdapter,
@@ -18,7 +18,7 @@ use crate::host::model::{
 };
 use crate::host::{console, dumps, host, panel, partition, partitions, profiles, refcodes, vres};
 use crate::message::Empty;
-use crate::pair;
+use crate::{pair, service, update};
 
 /// Every request with a reply to it, in family and operation order.
 #[must_use]
@@ -26,6 +26,8 @@ pub fn exchanges() -> Vec<(AnyRequest, AnyReply)> {
     let mut out = Vec::new();
     out.extend(base_exchanges());
     out.extend(pair_exchanges());
+    out.extend(service_exchanges());
+    out.extend(update_exchanges());
     out.extend(host_exchanges());
     out.extend(partitions_exchanges());
     out.extend(partition_exchanges());
@@ -43,6 +45,8 @@ pub fn exchanges() -> Vec<(AnyRequest, AnyReply)> {
 pub fn events() -> Vec<AnyEvent> {
     let mut out = Vec::new();
     out.extend(base_events());
+    out.extend(service_events());
+    out.extend(update_events());
     out.extend(host_events());
     out.extend(partitions_events());
     out.extend(profiles_events());
@@ -499,7 +503,43 @@ fn base_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 zone: s("America/New_York"),
             }),
         ),
+        w(Q::Dumps(Empty), P::Dumps(vec![system_dump()])),
+        w(
+            Q::TakeDump(base::TakeDump {
+                kind: DumpKind::ServiceData,
+                kind_name: String::new(),
+            }),
+            P::TakeDump(base::DumpBegun {
+                name: s("SVC-1794700000"),
+            }),
+        ),
+        w(
+            Q::DeleteDump(base::DeleteDump {
+                name: s("SVC-1794600000"),
+            }),
+            P::DeleteDump(Empty),
+        ),
+        w(
+            Q::DownloadDump(base::DownloadDump {
+                name: s("SVC-1794700000"),
+            }),
+            P::DownloadDump(base::DumpDownloading {
+                name: s("SVC-1794700000"),
+                bytes: 41_943_040,
+            }),
+        ),
     ]
+}
+
+fn system_dump() -> base::SystemDump {
+    base::SystemDump {
+        name: s("SVC-1794700000"),
+        kind: DumpKind::ServiceData,
+        kind_name: s("service data"),
+        bytes: 41_943_040,
+        time: T,
+        by: s("QSMC01 OPERATOR"),
+    }
 }
 
 fn base_events() -> Vec<AnyEvent> {
@@ -525,9 +565,277 @@ fn base_events() -> Vec<AnyEvent> {
             model: String::new(),
             build: s("cebf3d2"),
         }),
+        E::DumpTaken(base::DumpTaken {
+            name: s("SVC-1794700000"),
+            dump: Some(system_dump()),
+            error: None,
+            time: T,
+        }),
+        E::DumpRemoved(base::DumpRemoved {
+            name: s("SVC-1794600000"),
+            time: T,
+        }),
     ]
     .into_iter()
     .map(AnyEvent::Base)
+    .collect()
+}
+
+fn source_partition() -> service::Source {
+    service::Source {
+        kind: service::SourceKind::Partition,
+        id: 3,
+        name: s("PROD"),
+    }
+}
+
+fn problem_summary() -> service::Summary {
+    service::Summary {
+        number: 27,
+        status: service::ProblemStatus::Open,
+        first_seen: T - 600,
+        last_seen: T,
+        count: 4,
+        refcode: refcode(415, "A2007020", "Pool unit failed: POOL1 unit 2"),
+        source: service::Source {
+            kind: service::SourceKind::System,
+            id: 0,
+            name: s("VS01"),
+        },
+        description: s("A unit of storage pool POOL1 failed"),
+        msgid: s("QVS3101"),
+        holds: true,
+        closed_by: String::new(),
+        closed_at: 0,
+    }
+}
+
+fn service_exchanges() -> Vec<(AnyRequest, AnyReply)> {
+    use service::{Reply as P, Request as Q};
+    let w = |q, p| (AnyRequest::Service(q), AnyReply::Service(p));
+    let closed = service::Summary {
+        status: service::ProblemStatus::Closed,
+        holds: false,
+        closed_by: s("OPERATOR"),
+        closed_at: T + 60,
+        source: source_partition(),
+        ..problem_summary()
+    };
+    vec![
+        w(
+            Q::List(service::List {
+                filter: service::Filter {
+                    status: Some(service::ProblemStatus::Open),
+                    source: None,
+                    since: Some(T - 86_400),
+                },
+                before: None,
+                limit: 2,
+            }),
+            P::List(service::Page {
+                problems: vec![problem_summary(), closed.clone()],
+                more: Some(26),
+            }),
+        ),
+        w(
+            Q::Get(service::Get { number: 27 }),
+            P::Get(service::Problem {
+                summary: problem_summary(),
+                resources: vec![
+                    service::Resource {
+                        kind: service::ResourceKind::StoragePool,
+                        name: s("POOL1"),
+                        location: String::new(),
+                        serial: String::new(),
+                    },
+                    service::Resource {
+                        kind: service::ResourceKind::DiskUnit,
+                        name: s("2"),
+                        location: s("SM-2-SLOT-2-N1"),
+                        serial: s("S4EVNX0N912345"),
+                    },
+                ],
+                log: vec![
+                    service::Line {
+                        time: T - 600,
+                        text: s("Unit 2 taken out of service: 12 write errors"),
+                    },
+                    service::Line {
+                        time: T,
+                        text: s("Seen again at IPL"),
+                    },
+                ],
+            }),
+        ),
+        w(
+            Q::Close(service::Close {
+                number: 27,
+                anyway: true,
+            }),
+            P::Close(closed),
+        ),
+    ]
+}
+
+fn service_events() -> Vec<AnyEvent> {
+    use service::Event as E;
+    let at = |problem| service::Noticed { problem, time: T };
+    let cleared = service::Summary {
+        holds: false,
+        ..problem_summary()
+    };
+    let closed = service::Summary {
+        status: service::ProblemStatus::Closed,
+        closed_by: s("OPERATOR"),
+        closed_at: T,
+        ..cleared.clone()
+    };
+    vec![
+        E::Opened(at(service::Summary {
+            count: 1,
+            ..problem_summary()
+        })),
+        E::Seen(at(problem_summary())),
+        E::Cleared(at(cleared)),
+        E::Closed(at(closed)),
+    ]
+    .into_iter()
+    .map(AnyEvent::Service)
+    .collect()
+}
+
+fn update_image() -> update::Image {
+    update::Image {
+        product: s("VIRTUAL SERVER"),
+        release: s("V1R1M0"),
+        build: s("5d1e0a2"),
+        fixes: vec![s("VS00012"), s("VS00013")],
+        bytes: 96_468_992,
+    }
+}
+
+fn update_exchanges() -> Vec<(AnyRequest, AnyReply)> {
+    use update::{Reply as P, Request as Q};
+    let w = |q, p| (AnyRequest::Update(q), AnyReply::Update(p));
+    let slot = |name: &str, running: bool| update::Slot {
+        name: s(name),
+        release: s("V1R0M0"),
+        build: s("19c7be0"),
+        fixes: if running {
+            vec![s("VS00011")]
+        } else {
+            Vec::new()
+        },
+        running,
+        default: running,
+        last: if running {
+            update::Attempt::Confirmed
+        } else {
+            update::Attempt::RolledBack
+        },
+        reason: if running {
+            String::new()
+        } else {
+            s("did not confirm within 3 attempts")
+        },
+        time: T - 86_400,
+    };
+    vec![
+        w(
+            Q::Status(Empty),
+            P::Status(update::Status {
+                slots: vec![slot("A", true), slot("B", false)],
+                staged: Some(update::StagedImage {
+                    name: s("V1R1M0"),
+                    bytes: 96_468_992,
+                    verification: update::Verification::Verified,
+                    image: Some(update_image()),
+                    error: None,
+                    time: T,
+                }),
+                installing: Some(update::Progress {
+                    slot: s("B"),
+                    percent: 40,
+                    time: T,
+                }),
+            }),
+        ),
+        w(
+            Q::Stage(update::Stage {
+                name: s("V1R1M0"),
+                bytes: 96_468_992,
+                allow_older: false,
+            }),
+            P::Stage(update::Staging {
+                name: s("V1R1M0"),
+                bytes: 96_468_992,
+            }),
+        ),
+        w(Q::Discard(Empty), P::Discard(Empty)),
+        w(
+            Q::Install(Empty),
+            P::Install(update::Target { slot: s("B") }),
+        ),
+        w(
+            Q::Activate(update::Activate {
+                partitions: update::Partitions::ShutDown,
+                timeout: 900,
+            }),
+            P::Activate(Empty),
+        ),
+        w(Q::Cancel(Empty), P::Cancel(Empty)),
+    ]
+}
+
+fn update_events() -> Vec<AnyEvent> {
+    use update::Event as E;
+    vec![
+        E::Staged(update::Staged {
+            name: s("V1R1M0"),
+            bytes: 96_468_992,
+            error: None,
+            time: T,
+        }),
+        E::Verified(update::Verified {
+            name: s("V1R1M0"),
+            image: None,
+            error: Some(Note {
+                msgid: s(update::msgid::BAD_SIGNATURE),
+                text: s("V1R1M0 is not signed by a key this host trusts."),
+                help: String::new(),
+            }),
+            time: T,
+        }),
+        E::Installing(update::Progress {
+            slot: s("B"),
+            percent: 60,
+            time: T,
+        }),
+        E::Installed(update::Installed {
+            slot: s("B"),
+            image: Some(update_image()),
+            error: None,
+            time: T,
+        }),
+        E::Activating(update::Activating {
+            slot: s("B"),
+            time: T,
+        }),
+        E::Confirmed(update::Confirmed {
+            slot: s("B"),
+            release: s("V1R1M0"),
+            build: s("5d1e0a2"),
+            time: T,
+        }),
+        E::RolledBack(update::RolledBack {
+            slot: s("B"),
+            reason: s("the slot did not confirm"),
+            code: s("A2001035"),
+            time: T,
+        }),
+    ]
+    .into_iter()
+    .map(AnyEvent::Update)
     .collect()
 }
 

@@ -7,7 +7,7 @@
 //! numbers and body.
 
 use crate::host::{console, dumps, host, panel, partition, partitions, profiles, refcodes, vres};
-use crate::{Error, Message, base, pair};
+use crate::{Error, Message, base, pair, service, update};
 
 /// Write the three enumerations over every family.
 macro_rules! any {
@@ -98,6 +98,10 @@ any! {
     Base => base,
     /// Pairing.
     Pair => pair,
+    /// A managed system's problems.
+    Service => service,
+    /// Code update.
+    Update => update,
     /// A host's resources and hardware.
     Host => host,
     /// A host's partitions, read.

@@ -6,6 +6,9 @@
 //! host or a standalone system. Who it is ([`Identify`]), its state
 //! ([`GetState`]), power ([`Power`]), its reference code history
 //! ([`Refcodes`]), events ([`Subscribe`]) and its clock ([`GetTime`]).
+//! Behind a capability bit of their own ([`crate::caps::SYSTEM_DUMPS`]),
+//! the system's own dumps: list, take, delete and download
+//! ([`TakeDump`]).
 //!
 //! Every identifier a console shows (a state's words, a reference code,
 //! its text) is the managed side's, passed through as it gives it.
@@ -13,6 +16,7 @@
 use ipc::wire_struct;
 
 use crate::hello::PeerKind;
+use crate::host::model::{Note, check_name};
 use crate::message::Empty;
 use crate::{Family, family, messages, open_enum};
 
@@ -231,6 +235,123 @@ wire_struct!(Time {
     zone
 });
 
+open_enum! {
+    /// What a system's own dump holds.
+    DumpKind {
+        /// The system's service data: its logs, state and history.
+        ServiceData = 1,
+        /// A kind the managed side names in `kind_name`.
+        System = 2,
+    }
+}
+
+/// Ask for the system's own dumps.
+pub type ListDumps = Empty;
+
+/// One of the system's own dumps.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SystemDump {
+    /// Its name.
+    pub name: String,
+    /// What it holds.
+    pub kind: DumpKind,
+    /// The managed side's name for its kind; may be empty for service
+    /// data.
+    pub kind_name: String,
+    /// Its size, bytes.
+    pub bytes: u64,
+    /// When it was taken, seconds since the epoch.
+    pub time: u64,
+    /// What asked for it, in the managed side's words (a console's
+    /// user, a reference code, the operator).
+    pub by: String,
+}
+wire_struct!(SystemDump {
+    name,
+    kind,
+    kind_name,
+    bytes,
+    time,
+    by
+});
+
+/// Take a dump now. The answer is its name; it is written in the
+/// background and [`DumpTaken`] says when.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TakeDump {
+    /// What it is to hold.
+    pub kind: DumpKind,
+    /// The managed side's name for a [`DumpKind::System`] kind; empty
+    /// otherwise.
+    pub kind_name: String,
+}
+wire_struct!(TakeDump { kind, kind_name });
+
+/// The name a dump being taken has.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DumpBegun {
+    /// The dump's name.
+    pub name: String,
+}
+wire_struct!(DumpBegun { name });
+
+/// Delete one of the system's dumps.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeleteDump {
+    /// The dump.
+    pub name: String,
+}
+wire_struct!(DeleteDump { name });
+
+/// Download one of the system's dumps: the reply opens a stream of its
+/// bytes, managed side to console, which ends after the last.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DownloadDump {
+    /// The dump.
+    pub name: String,
+}
+wire_struct!(DownloadDump { name });
+
+/// A download's stream is open: this many bytes follow on it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DumpDownloading {
+    /// The dump.
+    pub name: String,
+    /// Its size, bytes.
+    pub bytes: u64,
+}
+wire_struct!(DumpDownloading { name, bytes });
+
+/// A dump was written, or could not be.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DumpTaken {
+    /// The dump's name.
+    pub name: String,
+    /// The dump; `None` when it was not written.
+    pub dump: Option<SystemDump>,
+    /// Why it was not written; `None` when it was.
+    pub error: Option<Note>,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(DumpTaken {
+    name,
+    dump,
+    error,
+    time
+});
+
+/// A dump was removed: deleted, or put out for the managed side's
+/// limits.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DumpRemoved {
+    /// The dump's name.
+    pub name: String,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(DumpRemoved { name, time });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::Identify`].
@@ -247,6 +368,21 @@ pub mod op {
     pub const UNSUBSCRIBE: u16 = 0x0006;
     /// [`super::GetTime`].
     pub const TIME: u16 = 0x0007;
+    /// [`super::ListDumps`] ([`crate::caps::SYSTEM_DUMPS`]).
+    pub const DUMPS: u16 = 0x0010;
+    /// [`super::TakeDump`] ([`crate::caps::SYSTEM_DUMPS`]).
+    pub const TAKE_DUMP: u16 = 0x0011;
+    /// [`super::DeleteDump`] ([`crate::caps::SYSTEM_DUMPS`]).
+    pub const DELETE_DUMP: u16 = 0x0012;
+    /// [`super::DownloadDump`] ([`crate::caps::SYSTEM_DUMPS`]).
+    pub const DOWNLOAD_DUMP: u16 = 0x0013;
+
+    /// Whether `op` is one of the system's dumps, which need
+    /// [`crate::caps::SYSTEM_DUMPS`].
+    #[must_use]
+    pub fn is_dump(op: u16) -> bool {
+        (DUMPS..=DOWNLOAD_DUMP).contains(&op)
+    }
 }
 
 /// Event numbers.
@@ -257,6 +393,28 @@ pub mod event {
     pub const STATE: u16 = 0x0002;
     /// What [`super::Identity`] says changed.
     pub const IDENTITY: u16 = 0x0003;
+    /// [`super::DumpTaken`] ([`crate::caps::SYSTEM_DUMPS`]).
+    pub const DUMP_TAKEN: u16 = 0x0010;
+    /// [`super::DumpRemoved`] ([`crate::caps::SYSTEM_DUMPS`]).
+    pub const DUMP_REMOVED: u16 = 0x0011;
+
+    /// Whether `op` is an event of the system's dumps, which needs
+    /// [`crate::caps::SYSTEM_DUMPS`].
+    #[must_use]
+    pub fn is_dump(op: u16) -> bool {
+        (DUMP_TAKEN..=DUMP_REMOVED).contains(&op)
+    }
+}
+
+/// The refusals of the system's dumps (`QSI1201` to `QSI1249`).
+pub mod msgid {
+    /// No dump of that name, from a managed side with no identifier of
+    /// its own.
+    pub const NO_DUMP: &str = "QSI1201";
+    /// A dump is being taken already: one at a time.
+    pub const TAKING: &str = "QSI1202";
+    /// A kind of dump this system does not take.
+    pub const NO_KIND: &str = "QSI1203";
 }
 
 messages! {
@@ -276,6 +434,14 @@ messages! {
         0x0006 => Unsubscribe(Unsubscribe),
         /// The clock.
         0x0007 => Time(GetTime),
+        /// The system's own dumps.
+        0x0010 => Dumps(ListDumps),
+        /// Take one now.
+        0x0011 => TakeDump(TakeDump),
+        /// Delete one.
+        0x0012 => DeleteDump(DeleteDump),
+        /// Download one.
+        0x0013 => DownloadDump(DownloadDump),
     }
 }
 
@@ -296,6 +462,14 @@ messages! {
         0x0006 => Unsubscribe(Empty),
         /// The clock.
         0x0007 => Time(Time),
+        /// The dumps, oldest first.
+        0x0010 => Dumps(Vec<SystemDump>),
+        /// Begun.
+        0x0011 => TakeDump(DumpBegun),
+        /// Deleted.
+        0x0012 => DeleteDump(Empty),
+        /// The stream is open.
+        0x0013 => DownloadDump(DumpDownloading),
     }
 }
 
@@ -308,6 +482,10 @@ messages! {
         0x0002 => State(State),
         /// What it says of itself changed.
         0x0003 => Identity(Identity),
+        /// A dump was written, or could not be.
+        0x0010 => DumpTaken(DumpTaken),
+        /// A dump was removed.
+        0x0011 => DumpRemoved(DumpRemoved),
     }
 }
 
@@ -319,6 +497,10 @@ impl Request {
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
             Self::Power(p) if p.delay > MAX_DELAY => Err("a delay over 99999 seconds"),
+            Self::TakeDump(t) => check_name(&t.kind_name),
+            Self::DeleteDump(DeleteDump { name }) | Self::DownloadDump(DownloadDump { name }) => {
+                check_name(name)
+            }
             _ => Ok(()),
         }
     }

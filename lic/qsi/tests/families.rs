@@ -12,7 +12,7 @@ use qsi::any::{AnyEvent, AnyReply, AnyRequest, FAMILIES};
 use qsi::host::{
     console, dumps, host, model, panel, partition, partitions, profiles, refcodes, vres,
 };
-use qsi::{Family, Message, base, caps, pair, samples};
+use qsi::{Family, Message, base, caps, pair, samples, service, update};
 
 /// A family's number, capability and operations.
 struct Ops {
@@ -41,6 +41,8 @@ fn every_family() -> Vec<Ops> {
     vec![
         ops::<base::Base>(),
         ops::<pair::Pair>(),
+        ops::<service::Service>(),
+        ops::<update::Update>(),
         ops::<host::HostFamily>(),
         ops::<partitions::Partitions>(),
         ops::<partition::Partition>(),
@@ -157,13 +159,38 @@ fn the_families_and_their_capabilities() {
     assert_eq!(ids, FAMILIES);
     for f in &families {
         assert_eq!(caps::of(f.id), f.cap);
-        assert_eq!(caps::HOST_V1 & f.cap, f.cap);
+        assert_eq!((caps::HOST_V1 | caps::SERVICING) & f.cap, f.cap);
     }
     let all = families.iter().fold(0, |a, f| {
         assert_eq!(a & f.cap, 0, "two families share a bit");
         a | f.cap
     });
-    assert_eq!(all, caps::HOST_V1);
+    assert_eq!(all & caps::SYSTEM_DUMPS, 0, "the dumps' bit is no family's");
+    assert_eq!(all | caps::SYSTEM_DUMPS, caps::HOST_V1 | caps::SERVICING);
+    // HOST_V1 is what it was: the new bits are beside it.
+    assert_eq!(caps::HOST_V1 & caps::SERVICING, 0);
+    assert_eq!(caps::HOST_V1, 0x1_ff03);
+}
+
+#[test]
+fn what_each_message_needs() {
+    for (q, p) in samples::exchanges() {
+        let need = caps::of_request(q.family(), q.op());
+        assert_eq!(need & caps::of(q.family()), caps::of(q.family()));
+        let dump = q.family() == qsi::family::BASE && base::op::is_dump(q.op());
+        assert_eq!(need & caps::SYSTEM_DUMPS != 0, dump, "{q:?}");
+        assert_eq!(caps::of_request(p.family(), p.op()), need);
+    }
+    for e in samples::events() {
+        let need = caps::of_event(e.family(), e.op());
+        let dump = e.family() == qsi::family::BASE && base::event::is_dump(e.op());
+        assert_eq!(need & caps::SYSTEM_DUMPS != 0, dump, "{e:?}");
+    }
+    // Base's version 1 operations need base alone.
+    for op in 1..=7 {
+        assert_eq!(caps::of_request(qsi::family::BASE, op), caps::BASE);
+    }
+    assert_eq!(caps::of_request(0x7777, 1), 0);
 }
 
 #[test]
@@ -251,6 +278,20 @@ fn an_unknown_enumeration_value_is_kept() {
         assert_eq!(qsi::base::Keylock::from_u8(b).as_u8(), b);
     }
     assert_eq!(qsi::base::Keylock::from_u8(4), qsi::base::Keylock::Secure);
+    for b in 0..=u8::MAX {
+        assert_eq!(service::ResourceKind::from_u8(b).as_u8(), b);
+        assert_eq!(update::Attempt::from_u8(b).as_u8(), b);
+        assert_eq!(base::DumpKind::from_u8(b).as_u8(), b);
+    }
+    // A resource of a kind a later version adds is kept.
+    let r = service::Resource {
+        kind: service::ResourceKind::Other(40),
+        name: "X".into(),
+        location: String::new(),
+        serial: String::new(),
+    };
+    let back: service::Resource = ipc::decode(&ipc::encode(&r)).unwrap();
+    assert_eq!(back, r);
 }
 
 #[test]
@@ -283,12 +324,35 @@ fn the_samples_are_in_bounds_and_out_of_bounds_is_refused() {
         })),
         AnyRequest::Vres(vres::Request::ImageRename(vres::ImageRename {
             name: "A".into(),
-            to: long,
+            to: long.clone(),
         })),
         AnyRequest::Base(base::Request::Power(base::Power {
             action: base::PowerAction::Off,
             immediate: false,
             delay: 100_000,
+        })),
+        AnyRequest::Base(base::Request::DeleteDump(base::DeleteDump { name: long })),
+        AnyRequest::Service(service::Request::Get(service::Get { number: 0 })),
+        AnyRequest::Service(service::Request::List(service::List {
+            filter: service::Filter {
+                source: Some(service::Source {
+                    kind: service::SourceKind::Partition,
+                    id: 1000,
+                    name: String::new(),
+                }),
+                ..service::Filter::default()
+            },
+            before: None,
+            limit: 10,
+        })),
+        AnyRequest::Update(update::Request::Stage(update::Stage {
+            name: "EMPTY".into(),
+            bytes: 0,
+            allow_older: false,
+        })),
+        AnyRequest::Update(update::Request::Activate(update::Activate {
+            partitions: update::Partitions::ShutDown,
+            timeout: 100_000,
         })),
     ];
     for q in bad {
