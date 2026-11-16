@@ -85,6 +85,10 @@ pub enum Error {
     /// This side has closed its direction of the stream.
     #[error("stream {0} is closed this way")]
     StreamClosed(u32),
+    /// The events a log is taken up with are not numbered one after
+    /// another up to the one before its next number.
+    #[error("the events taken up: {0}")]
+    BadResume(&'static str),
 }
 
 impl Error {
@@ -97,7 +101,8 @@ impl Error {
             Self::BadHello(_)
             | Self::WrongRole(_)
             | Self::WrongReply { .. }
-            | Self::NoRequest(_) => msgid::BAD,
+            | Self::NoRequest(_)
+            | Self::BadResume(_) => msgid::BAD,
             Self::NotAgreed { .. } => msgid::NOT_AGREED,
             Self::NotPinned => msgid::NOT_PINNED,
             Self::TooManyRequests { .. } => msgid::TOO_MANY_REQUESTS,

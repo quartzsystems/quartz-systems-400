@@ -187,3 +187,61 @@ fn unsubscribe_stops_them() {
     l.pump();
     assert!(seen(&mut l).is_empty());
 }
+
+#[test]
+fn a_resumed_log_numbers_on_and_replays_what_it_was_given() {
+    // A managed side kept events 41 to 45 and had numbered up to 45.
+    let limits = Limits::default();
+    let kept: Vec<qsisess::Event> = (41..=45)
+        .map(|seq: u64| qsisess::Event {
+            seq,
+            family: qsi::family::BASE,
+            op: base::event::STATE,
+            body: seq.to_le_bytes().to_vec(),
+        })
+        .collect();
+    let mut log = EventLog::resume(&limits, 46, kept.clone()).unwrap();
+    assert_eq!((log.first(), log.next(), log.len()), (41, 46, 5));
+    // A console that saw 42 before the restart is given 43 to 45 as
+    // they were, then the new ones from 46: no placeholder, no gap.
+    let mut l = Loopback::new(true);
+    let s = subscribe(&mut l, &log, Some(42));
+    assert_eq!(
+        s,
+        Subscribed {
+            replay: Replay::Resumed,
+            replayed: 3,
+            next: 46
+        }
+    );
+    push(&mut log, 2);
+    l.managed.publish(&log).unwrap();
+    l.pump();
+    let got: Vec<qsisess::Event> = l
+        .at_console
+        .iter()
+        .filter_map(|i| match i {
+            Incoming::Event(e) => Some(e.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(&got[..3], &kept[2..]);
+    assert_eq!(
+        got.iter().map(|e| e.seq).collect::<Vec<_>>(),
+        vec![43, 44, 45, 46, 47]
+    );
+    // One older than what was kept reads again; so does one newer than
+    // anything numbered.
+    let mut l = Loopback::new(true);
+    assert_eq!(
+        subscribe(&mut l, &log, Some(39)).replay,
+        Replay::ReadAgain
+    );
+    let mut l = Loopback::new(true);
+    assert_eq!(subscribe(&mut l, &log, Some(90)).replay, Replay::ReadAgain);
+    // Taken up with nothing kept: empty, numbering on.
+    let mut empty = EventLog::resume(&limits, 1000, Vec::new()).unwrap();
+    assert!(empty.is_empty());
+    assert_eq!(empty.first(), 1000);
+    assert_eq!(empty.push(1, 1, Vec::new()).unwrap(), 1000);
+}
