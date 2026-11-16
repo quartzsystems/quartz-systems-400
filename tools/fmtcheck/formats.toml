@@ -596,6 +596,8 @@ files = [
     "lic/qsi/src/message.rs",
     "lic/qsi/src/base.rs",
     "lic/qsi/src/pair.rs",
+    "lic/qsi/src/service.rs",
+    "lic/qsi/src/update.rs",
     "lic/qsi/src/host/model.rs",
     "lic/qsi/src/host/host.rs",
     "lic/qsi/src/host/partitions.rs",
