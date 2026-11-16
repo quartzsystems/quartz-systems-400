@@ -208,6 +208,24 @@ given exactly what it missed, or told to read everything again. A
 session that falls further behind than the log keeps sees a gap in the
 numbers, and subscribes again.
 
+A session sends only the events of what the two sides agreed on
+(`qsi::caps::of_event`): an event of a family, or of a group of
+operations behind a bit of its own, that the console lacks is passed
+over for it, and `Subscribed`'s `replayed` counts only what it is
+sent. The numbers are the log's, one sequence for every family, so a
+console that lacks a family the managed side publishes sees its
+numbers skip; such a console tells a loss from a skip by subscribing
+again with the last number it saw (`Resumed` means nothing was lost).
+
+A managed side started again takes its log up where it was with
+`EventLog::resume(limits, next, events)`: the events it kept, oldest
+first, numbered one after another up to `next - 1`, after which it
+numbers on from `next`. The bounds keep the newest of them, as pushing
+them would; events with a gap, out of order or not ending at `next - 1`
+are refused (`Error::BadResume`). A console that reconnects is resumed
+from them exactly as before the restart, with nothing in place of the
+events the log no longer has (QS/VS's open question 42).
+
 ### Streams
 
 A request that opens a stream (a console, a dump's download, a media
@@ -248,6 +266,9 @@ operation it does not know (`QSI0001`).
 |---|---|---|
 | base | `0x0001` | 0 |
 | pair | `0x0002` | 1 |
+| service | `0x0003` | 2 |
+| update | `0x0004` | 3 |
+| base's system dumps (operations `0x0010` to `0x0013`, events `0x0010` and `0x0011`) | `0x0001` | 4 |
 | host | `0x0010` | 8 |
 | partitions | `0x0011` | 9 |
 | partition | `0x0012` | 10 |
@@ -259,7 +280,17 @@ operation it does not know (`QSI0001`).
 | vres | `0x0018` | 16 |
 
 A console and a standalone system say `caps::MANAGED` (base and pair);
-a QS/VS host says `caps::HOST_V1`, every family above.
+a QS/VS host says `caps::HOST_V1`, base, pair and the nine host
+families. `caps::SERVICING` is bits 2 to 4 (problems, code update and
+the system's own dumps), said beside the rest by a managed side that
+answers them and by a console that asks them; `HOST_V1` is unchanged.
+
+A bit need not be a whole family: base's version 1 gained the system's
+own dumps as operations behind bit 4, so what a request needs is
+`caps::of_request(family, op)` (the family's bit, and bit 4 for those
+operations) and what an event needs `caps::of_event(family, op)`. The
+session checks a request against them at both ends (`QSI0003`) and
+sends an event only to a console that has all of it (section 4).
 
 ## 6. Limits
 
@@ -282,8 +313,10 @@ The families' own bounds (`check()` on each request) are in section 7.
 
 ## 7. The families
 
-`qsi::base` and `qsi::pair` are answered by any managed system; the
-nine host families by a QS/VS host. Each is a `Family` with three
+`qsi::base` and `qsi::pair` are answered by any managed system;
+`qsi::service` and `qsi::update`, and base's system dumps, by any
+managed system that has them (a QS/VS host from its next phase; a
+standalone system later); the nine host families by a QS/VS host. Each is a `Family` with three
 enumerations (`Request`, `Reply`, `Event`) written by `messages!`;
 `qsi::any` holds them all by number, and `qsi::samples` has one value
 of every message, which the tests send through two sessions.
@@ -307,6 +340,31 @@ to 9 in hexadecimal where the code has them), `text`, `time_ms u64`
 `0x0002` `State` (the state changed), `0x0003` `Identity` (what it
 says of itself changed).
 
+#### The system's own dumps (bit 4, `caps::SYSTEM_DUMPS`)
+
+A managed system's dumps of itself, beside a host's dumps of its
+partitions (the dumps family): a QS/VS host's service data, or a
+standalone system's own. Operations and events of base, each needing
+bit 4 as well as base's.
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0010` | `Dumps` (empty) | `Vec<SystemDump>` oldest first: `name`, `kind` (open `DumpKind`: `ServiceData` 1, the system's service data; `System` 2, a kind the managed side names), `kind_name` (the managed side's word for the kind), `bytes`, `time` (s), `by` (what asked for it, the managed side's words) |
+| `0x0011` | `TakeDump` {`kind`, `kind_name` (for `System`; empty otherwise)} | `DumpBegun` {`name`}: written in the background |
+| `0x0012` | `DeleteDump` {`name`} | empty |
+| `0x0013` | `DownloadDump` {`name`} | `DumpDownloading` {`name`, `bytes`}: **opens a stream**, managed side to console, of the dump's `bytes` bytes, ending after the last |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0010` | `DumpTaken` {`name`, `dump` or none, `error` (a `Note`) or none, `time`} | a dump was written, or could not be |
+| `0x0011` | `DumpRemoved` {`name`, `time`} | a dump was deleted, or put out for the managed side's limits |
+
+Bounds: a name and a kind's name, 64 bytes. Refusals of its own:
+`QSI1201` `NO_DUMP` (no dump of that name, from a side with no
+identifier of its own), `QSI1202` `TAKING` (one is being taken: one at
+a time), `QSI1203` `NO_KIND` (a kind this system does not take). What a
+dump holds and its format are the managed side's.
+
 ### pair (`0x0002`)
 
 | Op | Request | Reply |
@@ -317,6 +375,105 @@ says of itself changed).
 No events. Refusals: `QSI0201` (no password out, expired, attempts
 spent), `QSI0202` (did not confirm), `QSI0203` (already paired),
 `QSI0204` (a confirmation without a start). Section 3 is the exchange.
+
+### service (`0x0003`, bit 2)
+
+A managed system's **problems**. A problem is something a person should
+look at: one record per condition, not per reference code posted. The
+managed side opens one when a condition begins, counts it each time the
+condition is seen again, notes when it clears, and keeps it until a
+person closes it. Its number is the managed system's, ascending and
+never reused. The guided text for a reference code is not QSI's: it is
+the console's.
+
+| Type | Fields |
+|---|---|
+| `ProblemStatus` (open) | `Open` 1, `Closed` 2 |
+| `Source` | `kind` (open `SourceKind`: `System` 1, the managed system itself; `Partition` 2), `id` (the partition's, 0 for the system), `name` |
+| `Resource` | `kind` (open `ResourceKind`: `DiskUnit` 1, `StoragePool` 2, `VirtualDisk` 3, `NetworkInterface` 4, `VirtualSwitch` 5, `Partition` 6, `CodeSlot` 7 (a slot of the system's own code), `System` 8), `name`, `location` (its location code), `serial`: each empty where it has none |
+| `Line` | `time` (s), `text`: a line of the analysis log |
+| `Summary` | `number u64`, `status`, `first_seen`, `last_seen` (s), `count u32`, `refcode` (base's `Refcode`: the code as last posted for it, with its words), `source`, `description` (one line), `msgid` (the managed side's identifier for it), `holds` (the condition still holds), `closed_by` (empty while open), `closed_at` (s, 0 while open) |
+| `Problem` | `summary`, `resources`, `log` (oldest first) |
+| `Filter` | `status`, `source` (matched by kind and ID; the name is not compared), `since` (last seen at or after, s): each an option, every one set must match |
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0001` | `List` {`filter`, `before` (problems numbered below it; none from the newest), `limit u32`} | `Page` {`problems`: `Vec<Summary>` newest first, `more`: the next page's `before`} |
+| `0x0002` | `Get` {`number`} | `Problem` |
+| `0x0003` | `Close` {`number`, `anyway`} | `Summary` as closed. Who closed it is the request's user. Refused while the condition holds unless `anyway` (`QSI1001`) |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0001` | `Opened` (`Noticed` {`problem`: `Summary`, `time`}) | a problem was opened |
+| `0x0002` | `Seen` (`Noticed`) | an open problem's condition was seen again: its `count` and `last_seen` |
+| `0x0003` | `Cleared` (`Noticed`) | its condition no longer holds; it stays open until closed |
+| `0x0004` | `Closed` (`Noticed`) | it was closed |
+
+Bounds: a source's ID 0 to 999, its name 64 bytes; problem 0 is none.
+Refusals of its own: `QSI1001` `STILL_HOLDS` (a close while the
+condition holds, without `anyway`), `QSI1002` `NO_PROBLEM` (no problem
+of that number, from a side with no identifier of its own), `QSI1003`
+`CLOSED` (closed already).
+
+### update (`0x0004`, bit 3)
+
+**Code update** of a managed system whose own code is in two slots, as a
+QS/VS host's is. One image is staged at a time: it is uploaded on a
+stream and verified by the managed side, installed to the slot that is
+not running and marked pending, then activated by a restart into it,
+after which the slot either confirms or the system rolls back to the
+other. Nothing running is disturbed before the activation.
+
+| Type | Fields |
+|---|---|
+| `Image` | `product`, `release`, `build`, `fixes` (the fixes it names), `bytes`: what an update image is, in the managed side's forms |
+| `Slot` | `name` (`A`, `B`), `release`, `build`, `fixes`, `running`, `default`, `last` (open `Attempt`: `Never` 1, `Pending` 2, `Confirmed` 3, `RolledBack` 4: how its last activation ended), `reason` (why it rolled back), `time` (s) |
+| `StagedImage` | `name`, `bytes`, `verification` (open: `Receiving` 1, `Verifying` 2, `Verified` 3, `Refused` 4), `image` (once verified), `error` (a `Note`, when refused), `time` |
+| `Progress` | `slot`, `percent u8`, `time` |
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0001` | `Status` (empty) | `Status` {`slots` (A, then B), `staged` (an option), `installing` (an option: a `Progress`)} |
+| `0x0002` | `Stage` {`name`, `bytes`, `allow_older`} | `Staging` {`name`, `bytes`}: **opens a stream**, console to managed side, of exactly `bytes` bytes. How it ended is the `Staged` event, then `Verified` |
+| `0x0003` | `Discard` (empty) | empty: what is staged is thrown away |
+| `0x0004` | `Install` (empty) | `Target` {`slot`}: the staged, verified image is being written to the slot that is not running; progress follows as events |
+| `0x0005` | `Activate` {`partitions` (open `Partitions`: `Refuse` 1, refuse while any runs, the default; `ShutDown` 2, shut each down through its operating system first), `timeout` (s, each shut down's, at most 99999)} | empty: the restart was begun |
+| `0x0006` | `Cancel` (empty) | empty: the pending slot is pending no more |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0001` | `Staged` {`name`, `bytes` (received), `error` or none, `time`} | the upload ended: whole and being verified, or why not (`QSI1109`, `QSI1110`) |
+| `0x0002` | `Verified` {`name`, `image` or none, `error` or none, `time`} | the image was verified, or refused by name (`QSI1101` to `QSI1105`) |
+| `0x0003` | `Installing` (`Progress`) | an install's progress |
+| `0x0004` | `Installed` {`slot`, `image` or none, `error` or none, `time`} | the slot is written and pending, or the install failed |
+| `0x0005` | `Activating` {`slot`, `time`} | the restart into the pending slot begins |
+| `0x0006` | `Confirmed` {`slot`, `release`, `build`, `time`} | after the restart: the slot started and confirmed; it runs and is the default |
+| `0x0007` | `RolledBack` {`slot`, `reason`, `code` (the reference code that says why, where there is one), `time`} | after the restart: the slot did not confirm and the system went back |
+
+`Confirmed` and `RolledBack` are pushed by the system after the restart,
+so a console sees them when it reconnects and resumes its events (the
+log is taken up with `EventLog::resume`, section 4).
+
+Bounds: a stage's name 64 bytes, its size more than 0; an activation's
+timeout 99999 seconds. Refusals of its own (a managed side with
+identifiers of its own gives them after these):
+
+| Identifier | Name | When |
+|---|---|---|
+| `QSI1101` | `BAD_SIGNATURE` | the image is not signed by a key this system trusts |
+| `QSI1102` | `DAMAGED` | it does not read, or a hash is wrong |
+| `QSI1103` | `WRONG_PRODUCT` | it is for another product |
+| `QSI1104` | `OLDER` | it is older than what runs and the stage did not allow it |
+| `QSI1105` | `NO_STATE` | this system's own state (its slots, its record) cannot be read |
+| `QSI1106` | `NOTHING_STAGED` | a discard or install with nothing staged |
+| `QSI1107` | `STAGED` | a stage while one is staged: discard it first |
+| `QSI1108` | `NOT_VERIFIED` | an install of an image not verified |
+| `QSI1109` | `UPLOAD_LONG` | more bytes than the stage named: the stream is reset |
+| `QSI1110` | `UPLOAD_CUT` | fewer: nothing is kept |
+| `QSI1111` | `BUSY` | an install or an activation is under way |
+| `QSI1112` | `NOTHING_PENDING` | an activation or cancel with no slot pending |
+| `QSI1113` | `PARTITIONS_RUN` | partitions run and the activation said to refuse |
+| `QSI1114` | `PENDING` | an install while a slot is pending: activate or cancel it first |
 Every body is an `ipc::Wire` value read leniently: fields a later
 version adds go at the end and are passed over. A one-byte enumeration
 marked *open* keeps a value it does not know as `Other(n)`. Field names
@@ -353,6 +510,9 @@ refuse with its own messages.
 |---|---|---|---|---|
 | base | `0x0001` | 1 | `BASE` | 0 |
 | pair | `0x0002` | 1 | `PAIR` | 1 |
+| service | `0x0003` | 1 | `SERVICE` | 2 |
+| update | `0x0004` | 1 | `UPDATE` | 3 |
+| base's system dumps | `0x0001` | 1 | `SYSTEM_DUMPS` | 4 |
 | host | `0x0010` | 1 | `HOST` | 8 |
 | partitions | `0x0011` | 1 | `PARTITIONS` | 9 |
 | partition | `0x0012` | 1 | `PARTITION` | 10 |
@@ -363,8 +523,9 @@ refuse with its own messages.
 | console | `0x0017` | 1 | `CONSOLE` | 15 |
 | vres | `0x0018` | 1 | `VRES` | 16 |
 
-A QS/VS host says `caps::HOST_V1`, every bit above. A later version of
-a family has a bit of its own.
+A QS/VS host says `caps::HOST_V1`, bits 0, 1 and 8 to 16, and with its
+next phase `caps::SERVICING` (bits 2 to 4) beside it. A later version
+of a family has a bit of its own.
 
 ### Shared types (`host::model`)
 
@@ -576,23 +737,30 @@ host's identifiers (`QVSnnnn`); these are for what QSI itself refuses.
 
 ### Left for later versions
 
-Each will be a new capability bit (a new family, or a family's version
+Code update, problems and a system's own dumps, left here before, are
+the update and service families and base's bit 4 above. What is still
+left will be a new capability bit (a new family, or a family's version
 2):
 
-- code update of the host (its PTFs, its A/B slots);
-- serviceable events (the host's problems and their analysis);
-- a host's own dumps (as against a partition's);
 - physical I/O: giving a host's device to a partition (a profile carries
-  `physical_io` already, so it reads whole);
-- changing the host's settings, storage pools, switches, uplinks and the
-  switches' limits from a console (made at the host in version 1);
-- changing a running partition's resources (QS/VS has none yet).
+  `physical_io` already, so it reads whole).
+
+Kept at the host by decision rather than waiting on a version: changing
+the host's settings, storage pools, switches, uplinks and the switches'
+limits (section 8), and changing a running partition's resources, which
+QS/VS does not do.
 
 ## 8. The mapping: QS/VS's local protocols
 
 Every request of `part/partd/src/proto.rs` (34), `stg/poold/src/proto.rs`
 (26) and `net/vswitchd/src/proto.rs` (17), by its name there, at QS/VS
 commit `cebf3d2`: 77 requests, 53 with a QSI message and 24 with none.
+
+The service and update families and base's system dumps have no rows
+here: the local protocols they will be translated to (the host's problem
+log, its update service, its service data) do not exist yet in QS/VS.
+Their mapping is QS/VS's to complete in its own documents
+(`docs/QSISERVER.md` there) once those protocols exist.
 
 ### partd: 34 requests, 32 mapped, 2 none
 
@@ -773,6 +941,9 @@ gives them. QSI's own (`qsi::msgid`, and each family's `msgid`):
 | `QSI0101` to `QSI0112` | the session: `0101` not pinned, `0102` too many requests, `0103` too many streams, `0104` too long, `0105` no credit, `0106` no such stream, `0107` timed out, `0108` out of order, `0109` a bad frame, `0110` closing, `0111` no common version, `0112` the wrong kind of peer |
 | `QSI0201` to `QSI0204` | pairing (section 7, pair) |
 | `QSI0301` to `QSI0999` | the host families, a range each (section 7, "The families' message identifiers") |
+| `QSI1001` to `QSI1099` | service: `1001` the condition still holds, `1002` no such problem, `1003` closed already |
+| `QSI1101` to `QSI1199` | update: `1101` to `1105` an image refused by name (signature, damaged, product, older, this system's state), `1106` to `1114` the steps out of order or busy (section 7, update) |
+| `QSI1201` to `QSI1249` | base's system dumps: `1201` no such dump, `1202` one is being taken, `1203` a kind not taken |
 
 ## 11. Later: a standalone QS/400's listener
 
@@ -799,7 +970,10 @@ these three crates unchanged. What it adds:
   `time`), and later families of its own for what a standalone system
   is (its jobs, its messages), each with its capability bit; a QS/VS
   host's families are not a standalone system's to answer, and their
-  bits stay clear in its hello.
+  bits stay clear in its hello. Service, update and the system's dumps
+  (bits 2 to 4) fit a standalone system as well: its problem log
+  (`service/prb`), its LIC's A/B slots and PTFs, its system dumps
+  (`sysdump`); each is the listener's to answer, or to leave clear.
 - **What each console may ask.** The request's user is a name for the
   log and grants nothing; what a console may do is the managed side's
   rule, by its pin.
@@ -807,18 +981,29 @@ these three crates unchanged. What it adds:
 ## 12. Proof
 
 **The messages.** `cargo test -p qsi`: every sample of every family
-(`qsi::samples`, every operation and event of base, pair and the nine
-host families) encoded and decoded by number, and again with a later
+(`qsi::samples`, every operation and event of base with its system
+dumps, pair, service, update and the nine host families) encoded and
+decoded by number, and again with a later
 version's bytes after it; an unknown operation or family is `None`, a
 truncated or damaged body an error and never a panic, an enumeration
 value a later version adds is kept; every request in bounds and each
-bound refused; the console stream's pieces split anywhere.
+bound refused; the console stream's pieces split anywhere; each
+message's capabilities (`of_request`, `of_event`: bit 4 for base's
+dumps alone, `HOST_V1` as it was).
 
 **The session, in memory.** `cargo test -p qsisess`: the handshake
 both ways; unequal peers (version 2 to 1, capabilities intersected, a
 family the other lacks refused `QSI0003`); every message of every
 family through a console session and a host session in pieces of 1,
-13 and 4096 bytes (`tests/samples.rs`: 60 exchanges and every event);
+13 and 4096 bytes (`tests/samples.rs`: 73 exchanges and every event);
+peers of different ages (`tests/caps.rs`: a console never asks an older
+managed side the 13 new requests, a managed side refuses them `QSI0003`
+from a console that sends them anyway, an older console is sent none
+of the 13 new events and a newer one all, its replay counts only what
+it is sent, and a host with problems alone is asked problems alone); a
+log taken up with `EventLog::resume` numbering on and replaying what it
+was given, and refusing events with a gap, out of order or not ending
+before its next number;
 refusals with every message and their help; events fresh, then
 replayed after a reconnect exactly as missed, and "read everything
 again" when the log no longer reaches; three streams at once with one
@@ -858,6 +1043,17 @@ finding in any:
 | `qsisess-frames` | 286,190 | 416 | 914 |
 | `qsisess-handshake` | 289,207 | 319 | 605 |
 | `qsisess-streams` | 180,150 | 825 | 1,219 |
+
+With service, update and the system's dumps (handoff 19; the loopback
+hellos now say `caps::SERVICING`, and the frames corpus gained a seed of
+each of the 13 new requests and 13 new events), again 60 seconds each,
+no finding:
+
+| Target | Runs | Corpus | Edges |
+|---|---|---|---|
+| `qsisess-frames` | 294,069 | 734 | 1,480 |
+| `qsisess-handshake` | 294,709 | 433 | 608 |
+| `qsisess-streams` | 169,523 | 950 | 1,222 |
 
 **Neutral.** `tools/buildkit/tests/neutral.rs`: `qsi` reaches `ipc` and
 `qsipart` of this repository, `qsisess` those and `qsi`, `qsitrust`

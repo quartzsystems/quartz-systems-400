@@ -288,7 +288,9 @@ The system says in its LIC record that it has the channel (TLV
 (`QSI.md`), is three neutral crates QS/VS and QS/MC pin: its messages
 (`lic/qsi`), its session (`lic/qsisess`) and its trust rules, mutual
 TLS 1.3 with pinned certificates and pairing by one-time password
-(`lic/qsitrust`). QS/400 runs no QSI listener yet.
+(`lic/qsitrust`). QS/400 runs no QSI listener yet. QSI also carries a
+managed system's problems, code update of its A/B slots and its own
+dumps, each behind a capability bit of its own.
 
 **Fixes since V1R1M0**
 

@@ -1509,3 +1509,37 @@ mirrored set's check under load ("the load left no region dirty",
 section 13) failed in four: it needs a write in flight when the server
 is killed, and the host's processor may finish more of the load in its
 1.5 seconds. Nothing in this handoff touched the set.
+
+## 15. Handoff 19: QSI's servicing
+
+QS/VS's next phase serves problems, code update of the host and the
+host's own dumps, and QS/MC's Service Management pages are their client.
+The messages are in `lic/qsi` and the one thing QS/VS's server waited for
+is in `lic/qsisess` (`docs/QSI.md` sections 4, 5, 7 and 10):
+
+| What | Where | Capability |
+|---|---|---|
+| `EventLog::resume(limits, next, events)`: a log taken up after a restart numbers on, with no placeholders (QS/VS's open question 42) | `qsisess::EventLog` | none |
+| problems: list, get, close; opened, seen again, cleared, closed | `qsi::service`, family `0x0003` | bit 2, `SERVICE` |
+| code update: status, stage (an upload stream), discard, install, activate, cancel; staged, verified, progress, installed, activating, confirmed or rolled back | `qsi::update`, family `0x0004` | bit 3, `UPDATE` |
+| the system's own dumps: list, take, delete, download (a stream); taken, removed | `qsi::base`, operations `0x0010` to `0x0013`, events `0x0010` and `0x0011` | bit 4, `SYSTEM_DUMPS` |
+
+`caps::SERVICING` is the three bits; `caps::HOST_V1` is unchanged. Since
+base's dumps are operations of a family that every peer has, the session
+now checks a request against `caps::of_request(family, op)` at both ends
+and sends an event only to a console that has `caps::of_event(family,
+op)`: an older console is never asked or sent what it lacks, and its
+event numbers skip what it is not sent. No listener is added to QS/400.
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Artifact hashes and existing goldens identical | `Cargo.lock` unchanged, and nothing QS/400 ships depends on `qsi` or `qsisess` (only the host fuzzer does). Built in one directory with one build ID at the base `30e18c2e5` and at `bea634071`: `slic` 49,414,696 `6f738864…`, `qsjob` 41,769,576 `d4458189…`, `instload` 586,040 `276b03e2…`, the same at both. No golden's crate was touched |
+| 2 | `EventLog::resume` tested | `log::tests::resumed_from_what_was_kept` (the bounds, a push after, every refusal); `tests/events.rs` `a_resumed_log_numbers_on_and_replays_what_it_was_given` through two sessions |
+| 3 | Every new message round-trips; a peer without a bit is never sent its family | `qsi`'s `tests/families.rs` (every sample, bounds, open values, `what_each_message_needs`); `qsisess`'s `tests/samples.rs` (73 exchanges, every event, in pieces) and `tests/caps.rs` (both directions of age, raw requests refused `QSI0003`, events filtered and replays counted) |
+| 4 | Neutral; the fixture builds; fuzz 60 s clean | `neutral.rs` passes; `build fixture` passed whole at `bea634071` (its first run there passed both `QSDEMO qsi:` lines and failed only the mirrored set's check under load, the flake of section 14); the three `qsisess` targets ran 60 s each with no finding (`docs/QSI.md` section 12) |
+| 5 | `docs/QSI.md` describes the three message by message | section 7 (base's system dumps, service, update), sections 5 and 10 (bits, identifiers), section 8 (the mapping is QS/VS's to complete), "left for later" down to physical I/O |
+
+`fmtcheck` is green: the `qsi` draft format now lists `service.rs` and
+`update.rs` and its lock was updated (a draft needs no version bump).
