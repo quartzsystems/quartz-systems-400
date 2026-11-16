@@ -37,7 +37,8 @@ impl Session {
             Some(s) if s < next && s.saturating_add(1) >= log.first() => (Replay::Resumed, s + 1),
             Some(_) => (Replay::ReadAgain, next),
         };
-        let replayed = u32::try_from(next - from).unwrap_or(u32::MAX);
+        let replayed = log.from(from).filter(|e| self.may_send(e)).count();
+        let replayed = u32::try_from(replayed).unwrap_or(u32::MAX);
         let answer = base::Reply::Subscribe(Subscribed {
             replay,
             replayed,
@@ -60,9 +61,11 @@ impl Session {
     }
 
     /// Send the events of `log` this session has not been sent; how
-    /// many. Nothing when not subscribed. A session that fell behind
-    /// the log's reach skips to its oldest; the console sees the gap in
-    /// the numbers and subscribes again.
+    /// many. Nothing when not subscribed. Only the events of what the
+    /// two agreed on go ([`qsi::caps::of_event`]): the numbers are the
+    /// log's, so a console that did not agree on every family the
+    /// managed side has sees them skip. A session that fell behind the
+    /// log's reach skips to its oldest.
     ///
     /// # Errors
     /// The session is closed.
@@ -76,14 +79,24 @@ impl Session {
         };
         let mut sent = 0;
         for e in log.from(cursor) {
+            cursor = e.seq + 1;
+            if !self.may_send(e) {
+                continue;
+            }
             // The log bounds an event below the message limit.
             self.out
                 .extend(wire::message_frames(kind::EVENT, &ipc::encode(e)));
-            cursor = e.seq + 1;
             sent += 1;
         }
         self.cursor = Some(cursor.max(log.next()));
         Ok(sent)
+    }
+
+    /// Whether the peer agreed on what `e` needs. An event of a family
+    /// this crate does not know is the caller's, and goes.
+    fn may_send(&self, e: &Event) -> bool {
+        let need = qsi::caps::of_event(e.family, e.op);
+        need == 0 || self.agreed().is_some_and(|a| a.has(need))
     }
 
     pub(super) fn on_event(&mut self, env: &[u8]) {

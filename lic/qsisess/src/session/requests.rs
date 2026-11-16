@@ -36,7 +36,7 @@ impl Session {
         if !self.pinned && family != family::PAIR {
             return Err(Error::NotPinned);
         }
-        let cap = caps::of(family);
+        let cap = caps::of_request(family, op);
         if cap != 0 && !agreed.has(cap) {
             return Err(Error::NotAgreed { family });
         }
@@ -275,7 +275,7 @@ impl Session {
             return self.fail(msgid::OUT_OF_ORDER, "a request number already outstanding");
         }
         let agreed = self.agreed().map_or(0, |a| a.caps);
-        let cap = caps::of(r.family);
+        let cap = caps::of_request(r.family, r.op);
         if r.user.len() > self.limits.max_user {
             self.refuse_here(
                 &r,

@@ -76,7 +76,9 @@ impl EventLog {
             log.push(e.family, e.op, e.body)?;
         }
         if expect.is_some_and(|x| x != next) {
-            return Err(Error::BadResume("the last event is not the one before the next"));
+            return Err(Error::BadResume(
+                "the last event is not the one before the next",
+            ));
         }
         log.next = next;
         Ok(log)
@@ -234,12 +236,12 @@ mod tests {
         assert!(bad(5, &[2, 3]), "not ending before the next");
         assert!(bad(3, &[2, 3]), "one at the next number");
         assert!(!bad(4, &[2, 3]));
-        let long = Event {
+        let oversized = Event {
             body: vec![0; limits.message()],
             ..ev(1)
         };
         assert!(matches!(
-            EventLog::resume(&limits, 2, [long]),
+            EventLog::resume(&limits, 2, [oversized]),
             Err(Error::TooLong { .. })
         ));
     }

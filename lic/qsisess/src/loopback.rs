@@ -16,7 +16,7 @@ use crate::{Error, Incoming, Limits, Role, Session};
 pub fn console_hello() -> Hello {
     Hello {
         version: qsi::VERSION,
-        caps: caps::HOST_V1,
+        caps: caps::HOST_V1 | caps::SERVICING,
         kind: PeerKind::Console,
         name: "MC01".into(),
         release: "V1R1M0".into(),
@@ -29,7 +29,7 @@ pub fn console_hello() -> Hello {
 pub fn host_hello() -> Hello {
     Hello {
         version: qsi::VERSION,
-        caps: caps::HOST_V1,
+        caps: caps::HOST_V1 | caps::SERVICING,
         kind: PeerKind::Host,
         name: "VS01".into(),
         release: "V1R2M0".into(),

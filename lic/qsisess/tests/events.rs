@@ -233,10 +233,7 @@ fn a_resumed_log_numbers_on_and_replays_what_it_was_given() {
     // One older than what was kept reads again; so does one newer than
     // anything numbered.
     let mut l = Loopback::new(true);
-    assert_eq!(
-        subscribe(&mut l, &log, Some(39)).replay,
-        Replay::ReadAgain
-    );
+    assert_eq!(subscribe(&mut l, &log, Some(39)).replay, Replay::ReadAgain);
     let mut l = Loopback::new(true);
     assert_eq!(subscribe(&mut l, &log, Some(90)).replay, Replay::ReadAgain);
     // Taken up with nothing kept: empty, numbering on.
