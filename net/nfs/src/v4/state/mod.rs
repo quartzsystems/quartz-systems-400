@@ -299,6 +299,22 @@ pub struct Grace {
     pub reclaimers: Vec<(Vec<u8>, u32)>,
 }
 
+/// A client waiting for a lock (`CB_NOTIFY_LOCK`).
+#[derive(Debug, Clone)]
+pub struct LockWait {
+    /// The client.
+    pub client: u64,
+    /// The file.
+    pub fh: FileHandle,
+    /// The lock owner's bytes.
+    pub owner: Vec<u8>,
+    /// When it was refused.
+    pub since: Instant,
+}
+
+/// Lock waits kept at most.
+pub const MAX_LOCK_WAITS: usize = 4096;
+
 /// Everything.
 #[derive(Debug)]
 pub struct Tables {
@@ -324,6 +340,10 @@ pub struct Tables {
     pub to_probe: Vec<u64>,
     /// Open stateids closed, and their owners (4.0 retransmissions).
     pub closed: HashMap<u64, OwnerKey>,
+    /// 4.1 clients refused a blocking lock, told when a lock goes.
+    pub lock_waits: Vec<LockWait>,
+    /// `CB_NOTIFY_LOCK`s to send.
+    pub to_notify: Vec<LockWait>,
     next: u64,
     next_sub: u64,
 }
@@ -344,10 +364,43 @@ impl Tables {
             to_recall: Vec::new(),
             to_probe: Vec::new(),
             closed: HashMap::new(),
+            lock_waits: Vec::new(),
+            to_notify: Vec::new(),
             next: 1,
             // The start in the sub-owners keeps two jobs' apart.
             next_sub: SUB_BASE | (u64::from(boot & 0xffff) << 32) | 1,
         }
+    }
+
+    /// A 4.1 client was refused a blocking lock (`READW_LT`,
+    /// `WRITEW_LT`): it is told when a lock on the file goes.
+    pub fn wait_lock(&mut self, client: u64, fh: FileHandle, owner: &[u8], now: Instant) {
+        self.lock_waits
+            .retain(|w| !(w.client == client && w.fh.fid == fh.fid && w.owner == owner));
+        if self.lock_waits.len() >= MAX_LOCK_WAITS {
+            self.lock_waits.remove(0);
+        }
+        self.lock_waits.push(LockWait {
+            client,
+            fh,
+            owner: owner.to_vec(),
+            since: now,
+        });
+    }
+
+    /// The lock a client waited for was had.
+    pub fn lock_got(&mut self, client: u64, fh: &FileHandle, owner: &[u8]) {
+        self.lock_waits
+            .retain(|w| !(w.client == client && w.fh.fid == fh.fid && w.owner == owner));
+    }
+
+    /// A lock on `fh` went: every client waiting on it is told once.
+    pub fn lock_freed(&mut self, fh: &FileHandle) {
+        let (go, keep): (Vec<LockWait>, Vec<LockWait>) = std::mem::take(&mut self.lock_waits)
+            .into_iter()
+            .partition(|w| w.fh.fid == fh.fid);
+        self.lock_waits = keep;
+        self.to_notify.extend(go);
     }
 
     /// A new number.

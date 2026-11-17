@@ -7,15 +7,15 @@
 //! [`TcpConnector`] over [`crate::rpc::RpcClient`]), probed with
 //! `CB_NULL`; 4.1's backchannel on the session's own connection
 //! ([`crate::rpc::back::BackChannel`]) with `CB_SEQUENCE`. Both send
-//! `CB_COMPOUND(CB_RECALL)`.
+//! `CB_COMPOUND(CB_RECALL)`; 4.1 also `CB_NOTIFY_LOCK`.
 
 use std::time::Duration;
 
 use crate::rpc::{ClientConfig, Credential, Proto, RpcClient, RpcError};
 use crate::rpcb::uaddr::from_uaddr;
 use crate::types::nfs4::{
-    CB_COMPOUND4args, CB_COMPOUND4res, CB_RECALL4args, CB_SEQUENCE4args, nfs_cb_argop4, nfs_fh4,
-    nfsstat4, sessionid4, stateid4, utf8string,
+    CB_COMPOUND4args, CB_COMPOUND4res, CB_NOTIFY_LOCK4args, CB_RECALL4args, CB_SEQUENCE4args,
+    lock_owner4, nfs_cb_argop4, nfs_fh4, nfsstat4, sessionid4, stateid4, utf8string,
 };
 use crate::xdr::{self};
 
@@ -124,6 +124,44 @@ pub fn recall_args(
         tag: utf8string(Vec::new()),
         minorversion: minor,
         callback_ident: ident,
+        argarray: ops,
+    })
+}
+
+/// 4.1 `CB_COMPOUND` arguments telling the lock owner `owner` of client
+/// `clientid` that a lock on `fh` went (`CB_NOTIFY_LOCK`).
+///
+/// # Errors
+///
+/// Encoding's (never with a valid handle).
+pub fn notify_lock_args(
+    session: sessionid4,
+    seq: u32,
+    fh: &[u8],
+    clientid: u64,
+    owner: &[u8],
+) -> xdr::Result<Vec<u8>> {
+    let ops = vec![
+        nfs_cb_argop4::OP_CB_SEQUENCE(CB_SEQUENCE4args {
+            csa_sessionid: session,
+            csa_sequenceid: seq,
+            csa_slotid: 0,
+            csa_highest_slotid: 0,
+            csa_cachethis: false,
+            csa_referring_call_lists: Vec::new(),
+        }),
+        nfs_cb_argop4::OP_CB_NOTIFY_LOCK(CB_NOTIFY_LOCK4args {
+            cnla_fh: nfs_fh4(fh.to_vec()),
+            cnla_lock_owner: lock_owner4 {
+                clientid,
+                owner: owner.to_vec(),
+            },
+        }),
+    ];
+    xdr::to_bytes(&CB_COMPOUND4args {
+        tag: utf8string(Vec::new()),
+        minorversion: 1,
+        callback_ident: 0,
         argarray: ops,
     })
 }

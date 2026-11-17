@@ -278,6 +278,7 @@ impl Server {
     /// Takes client `id` and all its state away.
     pub(crate) fn drop_client(&self, t: &mut Tables, id: u64, why: Gone) -> Cleanup {
         let mut c = Cleanup::default();
+        let mut freed = Vec::new();
         let sids: Vec<u64> = t
             .sids
             .values()
@@ -289,7 +290,11 @@ impl Server {
                 match sid.kind {
                     Kind::Open(o) => c.closes.push(o.fd),
                     Kind::Deleg(d) => c.leases.push(d.tag),
-                    Kind::Lock(_) => {}
+                    Kind::Lock(l) => {
+                        if !l.ranges.is_empty() {
+                            freed.push(sid.fh);
+                        }
+                    }
                 }
                 t.gone.insert(s, (why, id));
             }
@@ -305,6 +310,11 @@ impl Server {
         t.open_owners.retain(|k, _| k.0 != id);
         t.sessions.retain(|_, s| s.client != id);
         t.to_recall.retain(|s| t.sids.contains_key(s));
+        t.lock_waits.retain(|w| w.client != id);
+        t.to_notify.retain(|w| w.client != id);
+        for fh in &freed {
+            t.lock_freed(fh);
+        }
         if let Some(cl) = t.clients.remove(&id)
             && cl.recorded
         {
@@ -491,6 +501,10 @@ impl Server {
         });
         let recalls = std::mem::take(&mut t.to_recall);
         let probes = std::mem::take(&mut t.to_probe);
+        // A client that did not ask again within two leases waits no more.
+        t.lock_waits
+            .retain(|w| now.saturating_duration_since(w.since) <= lease * 2);
+        let notes = std::mem::take(&mut t.to_notify);
         drop(t);
         all.run(vfs);
         if let Some(me) = self.me.upgrade() {
@@ -501,6 +515,14 @@ impl Server {
             for id in probes {
                 let s = Arc::clone(&me);
                 std::thread::spawn(move || s.probe(id));
+            }
+            if !notes.is_empty() {
+                let s = Arc::clone(&me);
+                std::thread::spawn(move || {
+                    for w in notes {
+                        s.send_notify(&w);
+                    }
+                });
             }
         }
     }
@@ -598,6 +620,38 @@ impl Server {
             && let Some(r) = &mut d.recall
         {
             r.sent = true;
+        }
+    }
+
+    /// Sends `CB_NOTIFY_LOCK` to a 4.1 client waiting for a lock, on its
+    /// session's backchannel; nothing when it has none (it polls).
+    pub(crate) fn send_notify(&self, w: &super::state::LockWait) {
+        let via = {
+            let mut t = self.t();
+            let Some(c) = t.clients.get(&w.client) else {
+                return;
+            };
+            if c.minor == 0 {
+                return;
+            }
+            let sessions = c.sessions.clone();
+            sessions.iter().find_map(|sid| {
+                let s = t.sessions.get_mut(sid)?;
+                let b = s.back_conn.as_ref().filter(|b| b.is_open())?.clone();
+                let cred = s.cb_sec.clone()?;
+                s.cb_seq = s.cb_seq.wrapping_add(1);
+                Some((b, s.id, s.cb_seq, s.cb_prog, cred))
+            })
+        };
+        let Some((b, session, seq, prog, cred)) = via else {
+            return;
+        };
+        let ok = cb::notify_lock_args(session, seq, &w.fh.to_bytes(), w.client, &w.owner)
+            .ok()
+            .and_then(|a| b.call(prog, 1, 1, &cred, &a, self.cfg.cb_timeout).ok())
+            .is_some_and(|r| cb::reply_status(&r).is_ok());
+        if !ok {
+            tracing::debug!(client = w.client, "CB_NOTIFY_LOCK not answered");
         }
     }
 

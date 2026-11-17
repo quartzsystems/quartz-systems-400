@@ -8,7 +8,10 @@
 //! through the open's own descriptor: they conflict with other clients,
 //! NLM's clients and local jobs, and upgrade, downgrade and split as
 //! POSIX locks do. Blocking types (`READW_LT`, `WRITEW_LT`) are answered
-//! at once: `NFS4ERR_DENIED`, and the client polls.
+//! at once: `NFS4ERR_DENIED`, and the client polls; a 4.1 client is also
+//! told by `CB_NOTIFY_LOCK` when a lock this server held on the file goes
+//! (`LOCKU`, `CLOSE`, a client dropped), so it need not wait for its next
+//! poll. Locks of local jobs and NLM clients going are not seen here.
 
 use super::{R, Seq, SeqGo, vs};
 use crate::server::vfs::{Conflict, LockKind, LockOutcome};
@@ -275,13 +278,25 @@ impl Cx<'_> {
         }
         match out {
             LockOutcome::Granted => {}
-            LockOutcome::Denied(c) => return Err(Denied::By(self.denied(&c))),
+            LockOutcome::Denied(c) => {
+                if self.minor >= 1
+                    && matches!(
+                        a.locktype,
+                        nfs_lock_type4::READW_LT | nfs_lock_type4::WRITEW_LT
+                    )
+                {
+                    // Told by `CB_NOTIFY_LOCK` when a lock on the file goes.
+                    self.srv.t().wait_lock(key.0, h, &key.1, self.now);
+                }
+                return Err(Denied::By(self.denied(&c)));
+            }
             LockOutcome::Queued(tok) => {
                 let _ = self.vfs.cancel_wait(tok);
                 return Err(nfsstat4::NFS4ERR_DELAY.into());
             }
         }
         let mut t = self.srv.t();
+        t.lock_got(key.0, &h, &key.1);
         let id = if let Some(id) = lsid {
             id
         } else {
@@ -429,6 +444,7 @@ impl Cx<'_> {
             .unlock_open(&r, &h, fd, sub, a.offset, vlen)
             .map_err(vs)?;
         let mut t = self.srv.t();
+        t.lock_freed(&h);
         let x = t.sids.get_mut(&id).ok_or(nfsstat4::NFS4ERR_BAD_STATEID)?;
         if let Kind::Lock(l) = &mut x.kind {
             sub_range(&mut l.ranges, a.offset, end);

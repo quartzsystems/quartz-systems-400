@@ -25,14 +25,14 @@ use crate::types::nfs4::{
     CLOSE4args, CLOSE4res, FATTR4_TIME_ACCESS, FATTR4_TIME_MODIFY, OPEN_CONFIRM4args,
     OPEN_CONFIRM4res, OPEN_CONFIRM4resok, OPEN_DOWNGRADE4args, OPEN_DOWNGRADE4res,
     OPEN_DOWNGRADE4resok, OPEN4_RESULT_CONFIRM, OPEN4_RESULT_LOCKTYPE_POSIX,
-    OPEN4_SHARE_ACCESS_WANT_ANY_DELEG, OPEN4_SHARE_ACCESS_WANT_CANCEL,
-    OPEN4_SHARE_ACCESS_WANT_DELEG_MASK, OPEN4_SHARE_ACCESS_WANT_NO_DELEG,
-    OPEN4_SHARE_ACCESS_WANT_PUSH_DELEG_WHEN_UNCONTENDED, OPEN4_SHARE_ACCESS_WANT_READ_DELEG,
-    OPEN4_SHARE_ACCESS_WANT_SIGNAL_DELEG_WHEN_RESRC_AVAIL, OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG,
-    OPEN4_SHARE_ACCESS_WRITE, OPEN4args, OPEN4res, OPEN4resok, change_info4, createhow4,
-    nfs_resop4, nfsace4, nfsstat4, open_claim4, open_delegation_type4, open_delegation4,
-    open_none_delegation4, open_read_delegation4, openflag4, stateid4, utf8string,
-    why_no_delegation4,
+    OPEN4_RESULT_MAY_NOTIFY_LOCK, OPEN4_SHARE_ACCESS_WANT_ANY_DELEG,
+    OPEN4_SHARE_ACCESS_WANT_CANCEL, OPEN4_SHARE_ACCESS_WANT_DELEG_MASK,
+    OPEN4_SHARE_ACCESS_WANT_NO_DELEG, OPEN4_SHARE_ACCESS_WANT_PUSH_DELEG_WHEN_UNCONTENDED,
+    OPEN4_SHARE_ACCESS_WANT_READ_DELEG, OPEN4_SHARE_ACCESS_WANT_SIGNAL_DELEG_WHEN_RESRC_AVAIL,
+    OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG, OPEN4_SHARE_ACCESS_WRITE, OPEN4args, OPEN4res, OPEN4resok,
+    change_info4, createhow4, nfs_resop4, nfsace4, nfsstat4, open_claim4, open_delegation_type4,
+    open_delegation4, open_none_delegation4, open_read_delegation4, openflag4, stateid4,
+    utf8string, why_no_delegation4,
 };
 use crate::v4::Fh;
 use crate::v4::attr::set::decode_set;
@@ -261,6 +261,10 @@ impl Cx<'_> {
         self.set_cur(Fh::Real(r, h));
         self.cur_sid = Some(st.clone());
         let mut rflags = OPEN4_RESULT_LOCKTYPE_POSIX;
+        if self.minor >= 1 {
+            // Blocking locks refused are told when a lock goes.
+            rflags |= OPEN4_RESULT_MAY_NOTIFY_LOCK;
+        }
         if confirm {
             rflags |= OPEN4_RESULT_CONFIRM;
         }
@@ -768,6 +772,9 @@ impl Cx<'_> {
         let _ = self.vfs.close(o.fd);
         let mut t = self.srv.t();
         t.sids.remove(&id);
+        if !locks.is_empty() {
+            t.lock_freed(h);
+        }
         if t.closed.len() > 4096 {
             t.closed.clear();
         }

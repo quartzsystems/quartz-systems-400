@@ -150,10 +150,7 @@ impl<C: IfsClient> IfsVfs<C> {
             let mut entries = Vec::with_capacity(all.len());
             for (c, name, ino) in all {
                 let node = if plus {
-                    stats
-                        .next()
-                        .and_then(Result::ok)
-                        .map(|s| node_of(r, &s))
+                    stats.next().and_then(Result::ok).map(|s| node_of(r, &s))
                 } else {
                     None
                 };

@@ -49,6 +49,8 @@ struct Conn {
     xid: u32,
     /// The callbacks it answered: (sequence ID, recalled stateid).
     got: Vec<(u32, t::stateid4)>,
+    /// The lock owners `CB_NOTIFY_LOCK` named.
+    notified: Vec<Vec<u8>>,
 }
 
 impl Conn {
@@ -59,6 +61,7 @@ impl Conn {
             s,
             xid: 1,
             got: Vec::new(),
+            notified: Vec::new(),
         }
     }
 
@@ -92,6 +95,12 @@ impl Conn {
                     self.got.push((seq, r.stateid));
                     res.push(nfs_cb_resop4::OP_CB_RECALL(CB_RECALL4res {
                         status: nfsstat4::NFS4_OK,
+                    }));
+                }
+                nfs_cb_argop4::OP_CB_NOTIFY_LOCK(n) => {
+                    self.notified.push(n.cnla_lock_owner.owner);
+                    res.push(nfs_cb_resop4::OP_CB_NOTIFY_LOCK(t::CB_NOTIFY_LOCK4res {
+                        cnlr_status: nfsstat4::NFS4_OK,
                     }));
                 }
                 o => panic!("{o:?}"),
@@ -270,6 +279,172 @@ fn version_three_and_the_four_one_backchannel() {
             ]);
             assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
             assert_eq!(e.srv.delegations(), 0);
+        };
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(body));
+        stop.store(true, Ordering::SeqCst);
+        if let Err(p) = r {
+            std::panic::resume_unwind(p);
+        }
+    });
+}
+
+/// A session on `c`: its ID and client ID (`back`: its backchannel too).
+fn session(c: &mut Conn, name: &str, back: bool) -> ([u8; 16], u64) {
+    let r = c.compound(vec![exchange_id(name, [2; 8], 0)]);
+    let nfs_resop4::OP_EXCHANGE_ID(t::EXCHANGE_ID4res::NFS4_OK(ex)) = &r.resarray[0] else {
+        panic!("{r:?}")
+    };
+    let flags = if back {
+        CREATE_SESSION4_FLAG_CONN_BACK_CHAN
+    } else {
+        0
+    };
+    let r = c.compound(vec![create_session(
+        ex.eir_clientid,
+        ex.eir_sequenceid,
+        flags,
+    )]);
+    let nfs_resop4::OP_CREATE_SESSION(t::CREATE_SESSION4res::NFS4_OK(cs)) = &r.resarray[0] else {
+        panic!("{r:?}")
+    };
+    (cs.csr_sessionid, ex.eir_clientid)
+}
+
+fn sequence(sid: [u8; 16], n: u32) -> nfs_argop4 {
+    nfs_argop4::OP_SEQUENCE(t::SEQUENCE4args {
+        sa_sessionid: sid,
+        sa_sequenceid: n,
+        sa_slotid: 0,
+        sa_highest_slotid: 0,
+        sa_cachethis: false,
+    })
+}
+
+/// `LOCK` of the whole file by a new lock owner of the open `open`.
+fn lock(kind: t::nfs_lock_type4, open: &t::stateid4, clientid: u64, owner: &[u8]) -> nfs_argop4 {
+    nfs_argop4::OP_LOCK(t::LOCK4args {
+        locktype: kind,
+        reclaim: false,
+        offset: 0,
+        length: u64::MAX,
+        locker: t::locker4::TRUE(t::open_to_lock_owner4 {
+            open_seqid: 0,
+            open_stateid: open.clone(),
+            lock_seqid: 0,
+            lock_owner: t::lock_owner4 {
+                clientid,
+                owner: owner.to_vec(),
+            },
+        }),
+    })
+}
+
+/// A 4.1 client refused a blocking lock is told by `CB_NOTIFY_LOCK` on
+/// its backchannel when the holder's lock goes; its opens say so.
+#[test]
+fn a_refused_blocking_lock_is_notified() {
+    let w = World::new();
+    let x = w.export(1, "/home/x");
+    w.put(x);
+    w.write_file("/home/x/f", b"data");
+    w.job(9).chmod("/home/x/f", 0o666).unwrap();
+    let e = Env::new(w);
+    let tcp = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = tcp.local_addr().unwrap();
+    let stop = AtomicBool::new(false);
+    let ready = AtomicUsize::new(0);
+    let on_ready = || {
+        ready.fetch_add(1, Ordering::SeqCst);
+    };
+    std::thread::scope(|sc| {
+        let (w, srv, stop) = (&e.w, &e.srv, &stop);
+        sc.spawn(|| {
+            run::nfsd4(
+                Common {
+                    listeners: Listeners {
+                        tcp: Some(tcp),
+                        udp: None,
+                    },
+                    binder: None,
+                    stop,
+                    ready: Some(&on_ready),
+                },
+                srv,
+                || w.vfs(),
+                || Box::new(ClientNews(w.job(1))) as Box<dyn NewsSource>,
+            )
+            .unwrap();
+        });
+        let body = || {
+            let end = Instant::now() + Duration::from_secs(10);
+            while ready.load(Ordering::SeqCst) == 0 {
+                assert!(Instant::now() < end);
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            let open = |c: &mut Conn, sid, n, clientid| {
+                let r = c.compound(vec![
+                    sequence(sid, n),
+                    rootfh(),
+                    lookup("home"),
+                    lookup("x"),
+                    srv4_common::open_args(
+                        0,
+                        t::state_owner4 {
+                            clientid,
+                            owner: b"o".to_vec(),
+                        },
+                        "f",
+                        false,
+                        3,
+                        0,
+                    ),
+                    getfh(),
+                ]);
+                assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
+                (srv4_common::opened(&r), srv4_common::fh_of(&r))
+            };
+            let mut holder = Conn::new(addr);
+            let (hs, hc) = session(&mut holder, "holder", false);
+            let mut waiter = Conn::new(addr);
+            let (ws, wc) = session(&mut waiter, "waiter", true);
+            let (ho, fh) = open(&mut holder, hs, 1, hc);
+            let (wo, _) = open(&mut waiter, ws, 1, wc);
+            assert_ne!(wo.rflags & t::OPEN4_RESULT_MAY_NOTIFY_LOCK, 0);
+            let r = holder.compound(vec![
+                sequence(hs, 2),
+                srv4_common::putfh(&fh),
+                lock(t::nfs_lock_type4::WRITE_LT, &ho.stateid, hc, b"h"),
+            ]);
+            assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
+            let nfs_resop4::OP_LOCK(t::LOCK4res::NFS4_OK(held)) = &r.resarray[2] else {
+                panic!("{r:?}")
+            };
+            let r = waiter.compound(vec![
+                sequence(ws, 2),
+                srv4_common::putfh(&fh),
+                lock(t::nfs_lock_type4::WRITEW_LT, &wo.stateid, wc, b"w"),
+            ]);
+            assert_eq!(r.status, nfsstat4::NFS4ERR_DENIED, "{r:?}");
+            let r = holder.compound(vec![
+                sequence(hs, 3),
+                srv4_common::putfh(&fh),
+                nfs_argop4::OP_LOCKU(t::LOCKU4args {
+                    locktype: t::nfs_lock_type4::WRITE_LT,
+                    seqid: 0,
+                    lock_stateid: held.lock_stateid.clone(),
+                    offset: 0,
+                    length: u64::MAX,
+                }),
+            ]);
+            assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
+            waiter.serve_one();
+            assert_eq!(waiter.notified, vec![b"w".to_vec()]);
+            let r = waiter.compound(vec![
+                sequence(ws, 3),
+                srv4_common::putfh(&fh),
+                lock(t::nfs_lock_type4::WRITEW_LT, &wo.stateid, wc, b"w"),
+            ]);
+            assert_eq!(r.status, nfsstat4::NFS4_OK, "{r:?}");
         };
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(body));
         stop.store(true, Ordering::SeqCst);
