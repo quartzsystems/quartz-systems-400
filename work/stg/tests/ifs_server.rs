@@ -18,7 +18,7 @@ use ifs::backend::mem::MemBackend;
 use ifs::client::{Caller, IfsClient};
 use ifs::lock::range::RangeKind;
 use ifs::ops::audit::FileId;
-use ifs::ops::flags::{F_SETLK, O_CREAT, O_RDWR, O_WRONLY, SEEK_SET, W_OK};
+use ifs::ops::flags::{F_SETLK, O_CREAT, O_RDWR, O_WRONLY, R_OK, SEEK_SET, W_OK};
 use ifs::ops::{Attr, AttrId, Config, Ctx, Ifs, OpenArgs, Owner};
 use qsyslib::env::EnvCache;
 use qsyslib::{JournalAudit, MemAccess, StoreAccess, StoreEnv, StoreQsys};
@@ -310,6 +310,15 @@ fn handles_and_waiting_locks_over_the_link() {
     let (n, after) = anon.pwrite_stat(fd, b"hello", 2, Some(false)).unwrap();
     assert_eq!((n, after.map(|a| a.size)), (5, Some(7)));
     assert_eq!(anon.pread(fd, 7, 0).unwrap(), b"\0\0hello");
+    // A directory page's attributes and every mode of ACCESS: one
+    // request each, each answer in its place.
+    let st = anon
+        .stat_many(&["/home/d/f".into(), "/home/d/none".into()], false)
+        .unwrap();
+    assert_eq!(st[0].as_ref().map(|s| s.size), Ok(7));
+    assert_eq!(st[1].as_ref().map(|_| ()), Err(&Errno::ENOENT));
+    let acc = anon.access_many("/home/d/f", &[R_OK, W_OK]).unwrap();
+    assert_eq!(acc, vec![Ok(()), Ok(())]);
     let (fd2, _) = job.open_by_id(id, OpenArgs::new(O_RDWR)).unwrap();
     // The other job locks it; the server's client waits in the service.
     let ofd = other.open("/home/d/f", OpenArgs::new(O_RDWR)).unwrap();
