@@ -24,6 +24,7 @@ ile = { path = "../../runtime/ile", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
 sqlcli = { path = "../../runtime/sqlcli", version = "0.1.0" }
 ldapclnt = { path = "../../runtime/ldapclnt", version = "0.1.0" }
+ldap = { path = "../../net/ldap", version = "0.1.0" }
 regfac = { path = "../../net/regfac", version = "0.1.0" }
 hostserver = { path = "../../net/hostserver", version = "0.1.0" }
 hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }

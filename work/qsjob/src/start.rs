@@ -58,6 +58,7 @@ pub fn run() -> ! {
         Ok(Err(e)) => end(&mut ctl, &format!("storage service: {e}")),
         Err(e) => end(&mut ctl, &format!("storage service: {e}")),
     }
+    crate::work::dirsrv::names::install(start.number);
     let _ = ctl.send(&FromJob::Ready {
         pid: std::process::id(),
     });

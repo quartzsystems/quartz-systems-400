@@ -436,6 +436,26 @@ fn bind_search_and_operations() {
 }
 
 #[test]
+fn names_from_the_system_before_the_c_library() {
+    ldap::client::set_names(Box::new(|h: &str| {
+        if h.eq_ignore_ascii_case("dirhost.qs400test") {
+            vec![std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)]
+        } else {
+            Vec::new()
+        }
+    }));
+    let (addr, _) = start();
+    let mut c = Client::connect("DIRHOST.qs400test.", addr.port(), opts()).unwrap();
+    assert!(
+        c.simple_bind("cn=a", b"secret")
+            .unwrap()
+            .result
+            .is_success()
+    );
+    c.unbind().unwrap();
+}
+
+#[test]
 fn asynchronous_by_message_id() {
     let (addr, seen) = start();
     let mut c = connect(addr, opts());

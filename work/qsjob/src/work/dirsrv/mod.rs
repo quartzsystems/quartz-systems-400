@@ -3,7 +3,9 @@
 // root directory of this project.
 
 //! The directory server's jobs (docs/DIRSRV.md §2): an instance's
-//! (`instance`) and the publishing agents (`publish`).
+//! (`instance`) and the publishing agents (`publish`); and how every
+//! job's LDAP clients name hosts (`names`).
 
 pub mod instance;
+pub mod names;
 pub mod publish;

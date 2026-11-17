@@ -3147,6 +3147,7 @@ dependencies = [
  "ile",
  "ipc",
  "isql",
+ "ldap",
  "ldapclnt",
  "libc",
  "lpd",

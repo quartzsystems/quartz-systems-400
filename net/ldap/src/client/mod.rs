@@ -17,8 +17,8 @@ mod stream;
 
 use std::collections::{HashSet, VecDeque};
 use std::io::{self, Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
-use std::sync::Arc;
+use std::net::{IpAddr, TcpStream, ToSocketAddrs};
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
 use tls::rustls::ClientConfig;
@@ -159,8 +159,21 @@ impl std::fmt::Debug for Client {
     }
 }
 
+/// How the system names hosts: a name's addresses, none when it does not know it.
+pub type Names = dyn Fn(&str) -> Vec<IpAddr> + Send + Sync;
+
+static NAMES: OnceLock<Box<Names>> = OnceLock::new();
+
+/// Name hosts with `names` (a job: the host table and name servers of
+/// `CFGTCP`, which the C library's resolver knows nothing of) before the
+/// C library. The first call wins.
+pub fn set_names(names: Box<Names>) {
+    let _ = NAMES.set(names);
+}
+
 /// The addresses of `host`: `localhost` is the loopback whatever the
-/// resolver says (RFC 6761 §6.3; a job has no `/etc/hosts`).
+/// resolver says (RFC 6761 §6.3; a job has no `/etc/hosts`); an address
+/// is itself; a name goes to [`set_names`]'s, then the C library.
 fn addresses(host: &str, port: u16) -> Result<Vec<std::net::SocketAddr>> {
     let h = host.trim_end_matches('.');
     if h.eq_ignore_ascii_case("localhost") {
@@ -168,6 +181,17 @@ fn addresses(host: &str, port: u16) -> Result<Vec<std::net::SocketAddr>> {
             (std::net::Ipv4Addr::LOCALHOST, port).into(),
             (std::net::Ipv6Addr::LOCALHOST, port).into(),
         ]);
+    }
+    let literal = host.trim_start_matches('[').trim_end_matches(']');
+    if let Ok(ip) = literal.parse::<IpAddr>() {
+        return Ok(vec![(ip, port).into()]);
+    }
+    if let Some(names) = NAMES.get() {
+        let found: Vec<std::net::SocketAddr> =
+            names(h).into_iter().map(|ip| (ip, port).into()).collect();
+        if !found.is_empty() {
+            return Ok(found);
+        }
     }
     Ok((host, port).to_socket_addrs()?.collect())
 }
