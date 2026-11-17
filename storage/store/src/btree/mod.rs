@@ -192,6 +192,149 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         old.map(|b| V::from_bytes(&b)).transpose()
     }
 
+    /// Insert or replace every item, in one descent per node touched
+    /// rather than one per key. Returns how many keys were new.
+    pub fn insert_many(&mut self, p: &mut dyn Pager, items: &[(K, V)]) -> Result<usize> {
+        let mut sorted: Vec<(K, Vec<u8>)> = Vec::with_capacity(items.len());
+        for (k, v) in items {
+            let bytes = v.to_bytes();
+            if bytes.len() > MAX_VALUE_LEN {
+                return Err(StoreError::ValueTooLong { len: bytes.len() });
+            }
+            sorted.push((k.clone(), bytes));
+        }
+        // The last of equal keys wins, as one insert after another.
+        sorted.reverse();
+        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+        sorted.dedup_by(|later, kept| later.0 == kept.0);
+        if sorted.is_empty() {
+            return Ok(0);
+        }
+        let (mut pieces, new) = match self.root {
+            None => {
+                let n = sorted.len();
+                let pieces = Self::pieces(Node::Leaf(sorted), self.key_len);
+                let mut out = Vec::with_capacity(pieces.len());
+                for (sep, node) in pieces {
+                    out.push((sep, self.store(p, &node)?));
+                }
+                (out, n)
+            }
+            Some(root) => self.insert_many_in(p, root, sorted)?,
+        };
+        // A root that split grows the tree until one node holds it.
+        while pieces.len() > 1 {
+            let mut it = pieces.into_iter();
+            let (_, first) = it.next().expect("two or more");
+            let entries: Vec<(K, PageNo)> = it
+                .map(|(sep, pno)| (sep.expect("a separator after the first"), pno))
+                .collect();
+            let node = Node::Internal { first, entries };
+            pieces = Vec::new();
+            for (sep, n) in Self::pieces(node, self.key_len) {
+                pieces.push((sep, self.store(p, &n)?));
+            }
+        }
+        self.root = Some(pieces[0].1);
+        Ok(new)
+    }
+
+    /// `node` as nodes that fit, in order, each after the first with the
+    /// separator before it.
+    fn pieces(node: Node<K>, key_len: usize) -> Vec<(Option<K>, Node<K>)> {
+        if node.fits(key_len) || node.count() < 2 {
+            return vec![(None, node)];
+        }
+        let mut left = node;
+        let (up, right) = left.split(key_len);
+        let sep = match up {
+            Some(k) => k,
+            None => right.first_key().expect("right half non-empty").clone(),
+        };
+        let mut out = Self::pieces(left, key_len);
+        let mut rest = Self::pieces(right, key_len);
+        rest[0].0 = Some(sep);
+        out.extend(rest);
+        out
+    }
+
+    /// Insert sorted, distinct `items` below `pno`: the pages that now
+    /// hold that subtree (each after the first with its separator), and
+    /// how many keys were new.
+    fn insert_many_in(
+        &self,
+        p: &mut dyn Pager,
+        pno: PageNo,
+        items: Vec<(K, Vec<u8>)>,
+    ) -> Result<(Vec<(Option<K>, PageNo)>, usize)> {
+        let (node, new) = match self.load(p, pno)? {
+            Node::Leaf(entries) => {
+                let mut merged = Vec::with_capacity(entries.len() + items.len());
+                let mut new = 0;
+                let mut old = entries.into_iter().peekable();
+                for (k, v) in items {
+                    while let Some(e) = old.next_if(|(ok, _)| *ok < k) {
+                        merged.push(e);
+                    }
+                    if old.next_if(|(ok, _)| *ok == k).is_none() {
+                        new += 1;
+                    }
+                    merged.push((k, v));
+                }
+                merged.extend(old);
+                (Node::Leaf(merged), new)
+            }
+            Node::Internal { first, entries } => {
+                // Each child with the items that go below it.
+                let mut groups: Vec<(usize, Vec<(K, Vec<u8>)>)> = Vec::new();
+                for (k, v) in items {
+                    let i = child_index(&entries, &k);
+                    match groups.last_mut() {
+                        Some((at, g)) if *at == i => g.push((k, v)),
+                        _ => groups.push((i, vec![(k, v)])),
+                    }
+                }
+                let mut children: Vec<PageNo> = std::iter::once(first)
+                    .chain(entries.iter().map(|(_, c)| *c))
+                    .collect();
+                let mut seps: Vec<Option<K>> = std::iter::once(None)
+                    .chain(entries.into_iter().map(|(k, _)| Some(k)))
+                    .collect();
+                let mut new = 0;
+                // From the right, so the indexes before stay put.
+                for (i, g) in groups.into_iter().rev() {
+                    let (pieces, n) = self.insert_many_in(p, children[i], g)?;
+                    new += n;
+                    let mut it = pieces.into_iter();
+                    let (_, head) = it.next().expect("one piece at least");
+                    children[i] = head;
+                    for (j, (sep, pno)) in it.enumerate() {
+                        children.insert(i + 1 + j, pno);
+                        seps.insert(i + 1 + j, sep);
+                    }
+                }
+                let first = children[0];
+                let entries = seps
+                    .into_iter()
+                    .zip(children)
+                    .skip(1)
+                    .map(|(s, c)| (s.expect("a separator after the first"), c))
+                    .collect();
+                (Node::Internal { first, entries }, new)
+            }
+        };
+        let mut out = Vec::new();
+        for (j, (sep, n)) in Self::pieces(node, self.key_len).into_iter().enumerate() {
+            let at = if j == 0 {
+                self.rewrite(p, pno, &n)?
+            } else {
+                self.store(p, &n)?
+            };
+            out.push((sep, at));
+        }
+        Ok((out, new))
+    }
+
     /// Remove `key`. Returns the value it had.
     pub fn delete(&mut self, p: &mut dyn Pager, key: &K) -> Result<Option<V>> {
         let Some(root) = self.root else {
@@ -712,6 +855,49 @@ mod tests {
         t.free_all(&mut p).unwrap();
         p.commit().unwrap();
         assert_eq!(p.in_use(), 0);
+    }
+
+    #[test]
+    fn insert_many_matches_inserts() {
+        let mut p = MemPager::new(16384);
+        let mut one: BTree<u64, Vec<u8>> = BTree::new(ObjectId::NONE);
+        let mut many: BTree<u64, Vec<u8>> = BTree::new(ObjectId::NONE);
+        let val = |i: u64| vec![u8::try_from(i % 251).unwrap(); usize::try_from(i % 90).unwrap()];
+        let mut seed = 7u64;
+        for round in 0..40u64 {
+            // Batches of every size, keys scattered and repeated, some
+            // replacing earlier values; a batch's last value of a key wins.
+            let n = [0, 1, 3, 40, 700, 2500][usize::try_from(round % 6).unwrap()];
+            let mut batch = Vec::new();
+            for _ in 0..n {
+                seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+                let k = (seed >> 33) % 20_000;
+                batch.push((k, val(seed >> 40)));
+            }
+            let mut fresh = 0;
+            for (k, v) in &batch {
+                if one.insert(&mut p, *k, v).unwrap().is_none() {
+                    fresh += 1;
+                }
+            }
+            assert_eq!(many.insert_many(&mut p, &batch).unwrap(), fresh, "round {round}");
+            p.commit().unwrap();
+        }
+        let a: Vec<_> = one.entries(&mut p).unwrap().map(Result::unwrap).collect();
+        let b: Vec<_> = many.entries(&mut p).unwrap().map(Result::unwrap).collect();
+        assert_eq!(a, b);
+        for (k, v) in &a {
+            assert_eq!(many.get(&mut p, k).unwrap().as_ref(), Some(v));
+        }
+        // Deletes run over the tree the batches made.
+        for (k, _) in &a {
+            assert!(many.delete(&mut p, k).unwrap().is_some());
+            p.commit().unwrap();
+        }
+        assert!(many.is_empty());
+        one.free_all(&mut p).unwrap();
+        p.commit().unwrap();
+        assert_eq!(p.in_use(), 0, "every page is accounted for");
     }
 
     #[test]
