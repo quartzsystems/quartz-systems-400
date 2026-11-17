@@ -278,16 +278,23 @@ operation it does not know (`QSI0001`).
 | dumps | `0x0016` | 14 |
 | console | `0x0017` | 15 |
 | vres | `0x0018` | 16 |
+| physical I/O: host's operation `0x0010` and events `0x0010` to `0x0014`, vres's operation `0x0034` and event `0x000A` | `0x0010`, `0x0018` | 17 |
+| partition version 2: operation `0x0007` and the family's events | `0x0012` | 18 |
 
 A console and a standalone system say `caps::MANAGED` (base and pair);
 a QS/VS host says `caps::HOST_V1`, base, pair and the nine host
 families. `caps::SERVICING` is bits 2 to 4 (problems, code update and
 the system's own dumps), said beside the rest by a managed side that
-answers them and by a console that asks them; `HOST_V1` is unchanged.
+answers them and by a console that asks them; `caps::PHYSICAL_IO`
+(bit 17) and `caps::PARTITION_V2` (bit 18) likewise. `HOST_V1` is
+unchanged.
 
 A bit need not be a whole family: base's version 1 gained the system's
-own dumps as operations behind bit 4, so what a request needs is
-`caps::of_request(family, op)` (the family's bit, and bit 4 for those
+own dumps as operations behind bit 4, the host and vres families gained
+physical I/O behind bit 17 (one bit for both, as one feature of the
+host), and the partition family's version 2 is its operation `0x0007`
+and its events behind bit 18. So what a request needs is
+`caps::of_request(family, op)` (the family's bit, and the bit of those
 operations) and what an event needs `caps::of_event(family, op)`. The
 session checks a request against them at both ends (`QSI0003`) and
 sends an event only to a console that has all of it (section 4).
@@ -316,7 +323,8 @@ The families' own bounds (`check()` on each request) are in section 7.
 `qsi::base` and `qsi::pair` are answered by any managed system;
 `qsi::service` and `qsi::update`, and base's system dumps, by any
 managed system that has them (a QS/VS host from its next phase; a
-standalone system later); the nine host families by a QS/VS host. Each is a `Family` with three
+standalone system later); the nine host families by a QS/VS host,
+with physical I/O and partition version 2 from its phase after that. Each is a `Family` with three
 enumerations (`Request`, `Reply`, `Event`) written by `messages!`;
 `qsi::any` holds them all by number, and `qsi::samples` has one value
 of every message, which the tests send through two sessions.
@@ -516,16 +524,22 @@ refuse with its own messages.
 | host | `0x0010` | 1 | `HOST` | 8 |
 | partitions | `0x0011` | 1 | `PARTITIONS` | 9 |
 | partition | `0x0012` | 1 | `PARTITION` | 10 |
+| partition | `0x0012` | 2 | `PARTITION_V2` | 18 |
 | profiles | `0x0013` | 1 | `PROFILES` | 11 |
 | panel | `0x0014` | 1 | `PANEL` | 12 |
 | refcodes | `0x0015` | 1 | `REFCODES` | 13 |
 | dumps | `0x0016` | 1 | `DUMPS` | 14 |
 | console | `0x0017` | 1 | `CONSOLE` | 15 |
 | vres | `0x0018` | 1 | `VRES` | 16 |
+| host's and vres's physical I/O | `0x0010`, `0x0018` | 1 | `PHYSICAL_IO` | 17 |
 
 A QS/VS host says `caps::HOST_V1`, bits 0, 1 and 8 to 16, and with its
-next phase `caps::SERVICING` (bits 2 to 4) beside it. A later version
-of a family has a bit of its own.
+next phase `caps::SERVICING` (bits 2 to 4) beside it, then
+`PHYSICAL_IO` and `PARTITION_V2` (bits 17 and 18). A later version of a
+family has a bit of its own. A family's version 2 keeps every message
+of its version 1 unchanged, so a side with bit 10 and not bit 18 speaks
+the partition family as before; `partition::Partition::VERSION` is the
+highest this crate speaks, 2.
 
 ### Shared types (`host::model`)
 
@@ -548,8 +562,8 @@ of a family has a bit of its own.
 | `Lun`, `ScsiAdapter` | `lun`, `backing` (`POOL/NAME`), `serial`; `slot`, `luns` |
 | `Boot` | `source`, `ipl_type`, `console` |
 | `EthernetAdapter` | `slot`, `switch`, `vlan`, `tagged`, `mac`, `required` |
-| `MediaDevice` | `slot`, `media` (an image or volume name) |
-| `PhysicalIo` | `location`, `required` (carried so a profile reads whole; managed in a later version) |
+| `MediaDevice` | `slot`, `media` (an image or volume name; for a tape device, a physical drive as `@` and its location code: `MediaDevice::drive`, `tape_source`, bit 17) |
+| `PhysicalIo` | `location`, `required`: a device of the host given at activation with its isolation group (bit 17, "Physical I/O" below) |
 | `Profile` | `name`, `processors`, `memory`, `boot`, `scsi`, `ethernet`, `optical`, `tape`, `physical_io` |
 | `Current` | `mode`, `cores` (dedicated), `pool`, `units` (hundredths), `virtuals`, `capped`, `weight`, `memory_mib`: QS/VS's `resource::Current` flattened, so a later mode is an open value, not an unknown tag |
 | `Channel` | `up`, `none`, `responding`, `kept`, `system`, `release`, `fix_level`, `addresses` (`address/prefix`), `version`, `caps` (the partition scope's, `qsipart::caps`) |
@@ -568,6 +582,55 @@ of a family has a bit of its own.
 | `0x0001` | `Host` | the resources changed: an activation, an end, a processor pool made, changed or deleted |
 | `0x0002` | `ItemChanged` {`location`, `item` or none when gone, `time`} | an item's owner or carrier changed, or it came or went |
 
+#### Physical I/O (bit 17, `caps::PHYSICAL_IO`)
+
+A host's PCI functions given to partitions whole. The host's operator
+**releases** a device for partitions at the host, and takes it back
+there: QSI reads that and does not change it. A profile's `physical_io`
+names released devices by location code; an activation gives each to
+the partition with the rest of its isolation group (the devices the
+host's IOMMU cannot tell apart, which go together or not at all), and
+the partition's end gives them back, each reset. Operations and events
+of the host family, each needing bit 17 as well as the family's.
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0010` | `Devices` (empty) | `Vec<Device>` by location code |
+
+| Type | Fields |
+|---|---|
+| `Device` | `location`, `address` (the PCI address), `class u32` (class code: base class, subclass, interface), `vendor u16`, `device u16`, `description` (the host's words), `released`, `assignable` (it can be given now), `blocked` (an option: why not), `group u32` (its isolation group's number), `with` (the other devices of its group, by location code), `holder` (an option: who holds it) |
+| `Blocked` | `reason` (open `Blocker`: `HostUses` 1, `NotReleased` 2, `GroupNotReleased` 3, a device of its group is not released; `NoReset` 4; `NoRemapping` 5, the host has no interrupt remapping), `note` (the host's message) |
+| `DeviceHolder` | `partition`, `name` (the partition's), `profile` (activated with) |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0010` | `Released` (`DeviceChanged` {`location`, `device` or none, `time`}) | a device was released at the host |
+| `0x0011` | `TakenBack` (`DeviceChanged`) | a device was taken back at the host |
+| `0x0012` | `Assigned` (`DeviceHeld` {`location`, `holder`, `time`}) | a device was given to a partition at its activation |
+| `0x0013` | `Returned` (`DeviceHeld`) | a device was given back at the partition's end |
+| `0x0014` | `ResetFailed` {`location`, `partition` (0 for none), `note`, `time`} | a device did not reset when it was given or given back |
+
+A host item's `owner` (`Partition` 5) and its `ItemChanged` event say
+the same of the device as before; these say what physical I/O needs
+beside it.
+
+A profile's `physical_io` is the profiles family's as it was (the same
+`Profile`, the same put): with bit 17 the host acts on it, where before
+it kept such a profile and refused its activation. What QSI checks is
+the protocol's (a location 256 bytes at most); the rest is the host's,
+refused by name, the host's own identifiers after these:
+
+| Identifier | Name (`host::physio::`) | When |
+|---|---|---|
+| `QSI1301` | `UNKNOWN_LOCATION` | a put or activation names a location no device of the host has |
+| `QSI1302` | `NOT_RELEASED` | an activation names a device not released |
+| `QSI1303` | `HELD` | another partition holds the device, or the tape drive |
+| `QSI1304` | `GROUP_SPLIT` | the device's isolation group is not wholly given to this partition: the profile names some of it and not the rest |
+| `QSI1305` | `NOT_ASSIGNABLE` | it cannot be given now for another reason (the host uses it, no reset, no interrupt remapping); the device's own note follows |
+| `QSI1306` | `NOT_A_DRIVE` | a tape device names a location that is not a tape drive (vres below) |
+| `QSI1307` | `NOT_VIRTUAL` | a load or unload of a slot that is a physical drive |
+
 ### partitions (`0x0011`)
 
 | Op | Request | Reply |
@@ -579,7 +642,7 @@ of a family has a bit of its own.
 | Event | Body | When |
 |---|---|---|
 | `0x0001` | `StateChanged` {`id`, `name`, `state`, `time`} | a state changed |
-| `0x0002` | `ResourcesChanged` {`id`, `name`, `current`, `time`} | resources given at an activation or given back at an end |
+| `0x0002` | `ResourcesChanged` {`id`, `name`, `current`, `time`} | resources given at an activation or given back at an end, or a running partition's entitlement changed (partition version 2) |
 | `0x0003` | `Defined` {`id`, `name`, `exists`, `time`} | created, changed or deleted |
 | `0x0004` | `ChannelChanged` {`id`, `name`, `channel`, `time`} | the service channel came or went, stopped or started answering, or the system reported a change |
 
@@ -594,7 +657,41 @@ of a family has a bit of its own.
 | `0x0005` | `ShutDown` {`id`, `kind` (open `ShutdownKind`: `Delayed` 1, `System` 2, `Immediate` 3), `delay` (s, 0 to 99999), `restart`} | empty: accepted by the system, or the VMM asked |
 | `0x0006` | `Restart` {`id`}: immediate, activated again with the profile it had | empty |
 
-No events: what follows comes as the partitions and refcodes families'.
+Version 1 has no events: what follows comes as the partitions and
+refcodes families'.
+
+#### Version 2 (bit 18, `caps::PARTITION_V2`): a running partition's entitlement
+
+A running shared-processor partition's entitlement changes without an
+activation. Its virtual processors, a dedicated partition's processors
+and every partition's memory still change only at activation: QS/VS
+gives a partition its memory as huge pages mapped once, and its virtual
+CPUs once.
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0007` | `Entitlement` {`id`, `units` (an option: processing units, hundredths of a core), `sharing` (an option: `Capped` or `Uncapped`), `weight` (an option: the uncapped weight, 0 to 255)}: what is none stays | `Current`: what it holds now |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0001` | `EntitlementChanged` {`id`, `name`, `before` and `current` (`Current`), `by` (the request's user), `time`} | the entitlement was changed |
+
+The change shows in `Current` (partitions `List` and `Get`, the reply),
+and the partitions family's `ResourcesChanged` follows it too, so a
+console without bit 18 still sees what the partition holds. Bounds: at
+least one of the three, a weight of 255 at most (`QSI0002`). A
+capped partition's weight is 0 in `Current`, as at activation; a
+change to uncapped without a weight takes its profile's, 128 when the
+profile has none. Refusals, the host's own identifiers after these:
+
+| Identifier | Name (`partition::entitlement::`) | When |
+|---|---|---|
+| `QSI1401` | `NOT_RUNNING` | the partition is not running |
+| `QSI1402` | `DEDICATED` | it has dedicated processors |
+| `QSI1403` | `OUTSIDE_PROFILE` | the units are outside its profile's minimum and maximum units |
+| `QSI1404` | `VIRTUALS` | the units are below what its virtual processors need (0.05 each) or above their worth (1.00 each) |
+| `QSI1405` | `POOL_SHORT` | its pool has not that much left: the pool's available units and what it holds now together |
+| `QSI0361` | `NO_SUCH_VALUE` | a `sharing` this host does not have |
 
 ### profiles (`0x0013`)
 
@@ -687,13 +784,14 @@ host's `QVS2314`). Frames are checked with `qsipart`'s checks
 | `0x0021` | `ImageRename` {`name`, `to`} | empty |
 | `0x0022` | `ImageDelete` {`name`} | empty |
 | `0x0023` | `ImageUpload` {`name`, `bytes`} | `Uploading` {`name`, `bytes`}: **opens a stream**, console to host, of exactly `bytes` bytes; how it ended is the `Upload` event (more is `QSI0701`, fewer `QSI0702`, a refused image the host's message) |
-| `0x0024` | `Drives` {`id`}: a running partition | `Vec<Drive>`: `slot`, `kind` (open: `Optical` 1, `Tape` 2), `name` (the medium, empty for none), `prevented` |
+| `0x0024` | `Drives` {`id`}: a running partition | `Vec<Drive>`: `slot`, `kind` (open: `Optical` 1, `Tape` 2, `PhysicalTape` 3), `name` (the medium, empty for none; a physical drive's location code), `prevented` |
 | `0x0025` | `Load` {`id`, `slot`, `name`}: load an image, or mount a tape volume | empty |
 | `0x0026` | `Unload` {`id`, `slot`, `forced`}: unload, or unmount | `Unloaded` {`name`} |
 | `0x0030` | `Volumes` (empty) | `Vec<Volume>`: `name`, `identifier`, `capacity_mib`, `used` (bytes), `protected`, `holder` |
 | `0x0031` | `VolumeCreate` {`name`, `identifier`, `mib`} | `Volume` |
 | `0x0032` | `VolumeDelete` {`name`} | empty |
 | `0x0033` | `VolumeProtect` {`name`, `on`} | empty |
+| `0x0034` | `TapeDrives` (empty), bit 17 | `Vec<TapeDrive>`: `location`, `vendor`, `product`, `serial`, `released`, `loaded` (a cartridge is in it), `holder` (the partition and its tape device's slot; partition 0 for none) |
 | `0x0040` | `Switches` (empty) | `Vec<Switch>`: `name`, `id`, `vlans`, `mtu`, `uplink`: `Uplink` {`interfaces` (location codes), `bond` (open: `ActiveBackup` 1, `Lacp` 2), `native_vlan`} or none, `uplink_state` (host's words), `members`: `Member` {`location`, `name`, `carrier`, `speed_mbps`}, `ports`, `failure` |
 | `0x0041` | `Ports` {`switch`, empty for every one} | `Vec<Port>`: `partition`, `slot`, `switch`, `vlan`, `tagged`, `mac`, `link`, `counters`: `Counters` {`sent_bytes`, `sent_packets`, `sent_dropped`, `received_bytes`, `received_packets`, `received_dropped`} |
 | `0x0042` | `Fdb` {`switch`} | `Vec<FdbRow>`: `mac`, `vlan`, `port`, `partition`, `slot`, `origin` |
@@ -706,6 +804,17 @@ host's `QVS2314`). Frames are checked with `qsipart`'s checks
 Storage pools and switches are read only: they are made at the host.
 Shared processor pools are read in the host family's `Host`.
 
+**Physical tape drives** (bit 17, physical I/O's). The host's own tape
+drives are listed by `TapeDrives`, read only: a drive is released at
+the host like any device. A profile's tape device names either a volume
+of the media library, as before, or a physical drive by location code:
+its `media` is `@` and the code (`@SPCIE-SLOT-4-T0.0.3.0`;
+`MediaDevice::drive` writes it, `tape_source` reads it). One partition
+holds a drive at a time (`QSI1303`); a location that is not a tape
+drive is `QSI1306`. A running partition's `Drives` shows that slot as
+`PhysicalTape` 3, its `name` the location code; its cartridge is
+changed by hand, so `Load` and `Unload` of it are `QSI1307`.
+
 | Event | Body | When |
 |---|---|---|
 | `0x0001` | `PoolChanged` {`name`, `pool` or none, `time`} | a storage pool's state, work or allocation changed |
@@ -717,6 +826,7 @@ Shared processor pools are read in the host family's `Host`.
 | `0x0007` | `SwitchChanged` {`name`, `switch` or none, `time`} | a switch was made, changed or deleted |
 | `0x0008` | `UplinkChanged` {`switch`, `location`, `carrier`, `state`, `time`} | an uplink interface lost or regained carrier |
 | `0x0009` | `PortChanged` {`partition`, `slot`, `switch`, `open`, `time`} | a partition's port opened or closed |
+| `0x000A` | `TapeDriveChanged` {`location`, `drive` or none, `time`}, bit 17 | a physical tape drive was released or taken back, held or given back, a cartridge loaded or taken out; or it came or went |
 
 ### The families' message identifiers
 
@@ -734,21 +844,29 @@ host's identifiers (`QVSnnnn`); these are for what QSI itself refuses.
 | `QSI0550`-`QSI0599` | dumps | none |
 | `QSI0601`-`QSI0699` | console | none |
 | `QSI0701`-`QSI0999` | vres | `QSI0701` `UPLOAD_LONG`, `QSI0702` `UPLOAD_CUT` |
+| `QSI1301`-`QSI1349` | physical I/O, host and vres (bit 17) | `QSI1301` to `QSI1307` (`host::physio`, above) |
+| `QSI1401`-`QSI1449` | partition version 2 (bit 18) | `QSI1401` to `QSI1405` (`partition::entitlement`, above) |
 
 ### Left for later versions
 
 Code update, problems and a system's own dumps, left here before, are
-the update and service families and base's bit 4 above. What is still
-left will be a new capability bit (a new family, or a family's version
-2):
+the update and service families and base's bit 4 above; physical I/O,
+left here before too, is bit 17, and a running partition's entitlement
+is the partition family's version 2. What is still left will be a new
+capability bit (a new family, or a family's later version):
 
-- physical I/O: giving a host's device to a partition (a profile carries
-  `physical_io` already, so it reads whole).
+- releasing a device for partitions, and taking it back, from a console:
+  it is done at the host, where its isolation group and what the host
+  uses are seen;
+- changing a running partition's virtual processors, dedicated
+  processors or memory: QS/VS gives them once, at activation.
 
 Kept at the host by decision rather than waiting on a version: changing
 the host's settings, storage pools, switches, uplinks and the switches'
-limits (section 8), and changing a running partition's resources, which
-QS/VS does not do.
+limits (section 8). A running partition's resources other than its
+entitlement do not change: QS/VS changes a running shared partition's
+processing units, capped or uncapped and weight (partition version 2),
+and nothing else.
 
 ## 8. The mapping: QS/VS's local protocols
 
@@ -760,7 +878,11 @@ The service and update families and base's system dumps have no rows
 here: the local protocols they will be translated to (the host's problem
 log, its update service, its service data) do not exist yet in QS/VS.
 Their mapping is QS/VS's to complete in its own documents
-(`docs/QSISERVER.md` there) once those protocols exist.
+(`docs/QSISERVER.md` there) once those protocols exist. The same holds
+for physical I/O (bit 17) and partition version 2 (bit 18): partd has
+no request for a host's devices, its physical tape drives or a running
+partition's entitlement at `cebf3d2`, and they are mapped there with
+the phase that adds them.
 
 ### partd: 34 requests, 32 mapped, 2 none
 
@@ -903,6 +1025,29 @@ a switch's bridge (`SwitchStatus.bridge`), a port's tap
   are partd's, and the handoff names it.
 - **The console stream** carries the serial port's bytes too: a profile
   whose console is serial has no frames.
+- **A physical tape drive in a profile** is `@` and its location code in
+  the tape device's `media`, not a field of its own: `MediaDevice` is in
+  a list and `Profile` is in the middle of `Put` and `Revised`, so a
+  field after the known ones would not be passed over, and a new field
+  would take a profiles version 2. No library name (a letter first, then
+  letters, digits, `-` and `_`) and no location code has `@`, and a
+  console without bit 17 keeps the text and puts it back unchanged.
+- **Physical I/O is one bit for two families**: the host's devices and
+  vres's tape drives are one feature of a host, released at the host
+  the same way, so a console has both or neither.
+- **A device's list is an operation of its own** (`Devices`), not
+  fields after the known ones of the hardware `Item`: an item is in a
+  list, where fields after it would not be passed over.
+- **A physical drive in `Drives`** is `PhysicalTape` 3, a new value of
+  an open enumeration, which a console without bit 17 keeps as
+  `Other(3)`.
+- **The entitlement is the partition family's version 2**, as the
+  handoff asks: its own bit, its operation after version 1's, and the
+  family's first event. The partitions family's `ResourcesChanged`
+  follows each change as well, so every console's `Current` is right.
+- **The entitlement's refusals** have a range of their own
+  (`QSI1401`-`QSI1449`) beside the partition family's, as base's dumps
+  have theirs; physical I/O's are `QSI1301`-`QSI1349`.
 
 ### Found in QS/VS that the handoff did not foresee
 
@@ -944,6 +1089,8 @@ gives them. QSI's own (`qsi::msgid`, and each family's `msgid`):
 | `QSI1001` to `QSI1099` | service: `1001` the condition still holds, `1002` no such problem, `1003` closed already |
 | `QSI1101` to `QSI1199` | update: `1101` to `1105` an image refused by name (signature, damaged, product, older, this system's state), `1106` to `1114` the steps out of order or busy (section 7, update) |
 | `QSI1201` to `QSI1249` | base's system dumps: `1201` no such dump, `1202` one is being taken, `1203` a kind not taken |
+| `QSI1301` to `QSI1349` | physical I/O: `1301` no such location, `1302` not released, `1303` held by another partition, `1304` its group split, `1305` not assignable now, `1306` not a tape drive, `1307` a physical drive's slot loaded or unloaded |
+| `QSI1401` to `QSI1449` | a running partition's entitlement: `1401` not running, `1402` dedicated, `1403` outside its profile, `1404` not what its virtual processors need, `1405` the pool has not that much |
 
 ## 11. Later: a standalone QS/400's listener
 
@@ -989,18 +1136,23 @@ truncated or damaged body an error and never a panic, an enumeration
 value a later version adds is kept; every request in bounds and each
 bound refused; the console stream's pieces split anywhere; each
 message's capabilities (`of_request`, `of_event`: bit 4 for base's
-dumps alone, `HOST_V1` as it was).
+dumps alone, bit 17 for the host's devices and vres's tape drives
+alone, bit 18 for the entitlement alone, `HOST_V1` as it was); a tape
+device that is a volume, a physical drive or empty, and a drive's
+location bounded as a text.
 
 **The session, in memory.** `cargo test -p qsisess`: the handshake
 both ways; unequal peers (version 2 to 1, capabilities intersected, a
 family the other lacks refused `QSI0003`); every message of every
 family through a console session and a host session in pieces of 1,
-13 and 4096 bytes (`tests/samples.rs`: 73 exchanges and every event);
+13 and 4096 bytes (`tests/samples.rs`: 76 exchanges and every event);
 peers of different ages (`tests/caps.rs`: a console never asks an older
-managed side the 13 new requests, a managed side refuses them `QSI0003`
-from a console that sends them anyway, an older console is sent none
-of the 13 new events and a newer one all, its replay counts only what
-it is sent, and a host with problems alone is asked problems alone); a
+managed side the 16 new requests of bits 2 to 4, 17 and 18, a managed
+side refuses them `QSI0003` from a console that sends them anyway, an
+older console is sent none of the 20 new events and a newer one all,
+its replay counts only what it is sent; and each of the five bits
+alone, at the host or at the console, lets through its own requests
+and events and none of the others'); a
 log taken up with `EventLog::resume` numbering on and replaying what it
 was given, and refusing events with a gap, out of order or not ending
 before its next number;
@@ -1054,6 +1206,17 @@ no finding:
 | `qsisess-frames` | 294,069 | 734 | 1,480 |
 | `qsisess-handshake` | 294,709 | 433 | 608 |
 | `qsisess-streams` | 169,523 | 950 | 1,222 |
+
+With physical I/O and partition version 2 (handoff 20; the loopback
+hellos also say bits 17 and 18, and the frames corpus gained a seed of
+each of the 3 new requests and 7 new events), again 60 seconds each, no
+finding:
+
+| Target | Runs | Corpus | Edges |
+|---|---|---|---|
+| `qsisess-frames` | 296,895 | 820 | 1,805 |
+| `qsisess-handshake` | 300,085 | 447 | 608 |
+| `qsisess-streams` | 186,675 | 958 | 1,219 |
 
 **Neutral.** `tools/buildkit/tests/neutral.rs`: `qsi` reaches `ipc` and
 `qsipart` of this repository, `qsisess` those and `qsi`, `qsitrust`

@@ -30,6 +30,7 @@ kernel is the only inherited component; every process above it is ours.
 | V1R2M0 | The partition service channel (handoff 17): under QS/VS, `qsid` serves the service port (reference codes as posted, the state, power down, panel function 21, ping, the clock) and the console goes to the console port as cells with its keys back; the protocol `lic/qsipart`, neutral, pinned by QS/VS; `licpart::ConsoleMode::Partition`; QEMU steps 195 to 198 | `QSID.md`, `BUILDKIT.md` §13 |
 | V1R2M0 | QSI (handoff 18): the protocol a management console speaks to what it manages, three neutral crates QS/VS and QS/MC pin: `lic/qsi` the hello, the families (base, pair, and a QS/VS host's nine) with versions and capability bits, `lic/qsisess` the session over any byte stream (requests, events with a replay log, streams with credit, keep-alive, limits), `lic/qsitrust` mutual TLS 1.3 with pinned Ed25519 certificates and pairing by SPAKE2; the LIC record's TLV `0x010C` (the service channel a system has); no QSI listener in QS/400 yet | `QSI.md`, `BUILDKIT.md` §14 |
 | V1R2M0 | QSI's servicing (handoff 19): the `service` family (a managed system's problems: list, get, close; opened, seen, cleared, closed), `update` (code update of A/B slots: status, stage on a stream, discard, install, activate, cancel; staged, verified, progress, installed, activating, confirmed or rolled back) and base's own dumps behind bit 4 (`caps::SERVICING`, bits 2 to 4); capabilities checked by operation and events sent only where agreed; `EventLog::resume`, a log that numbers on after a restart | `QSI.md` §4, §7, §10, `BUILDKIT.md` §15 |
+| V1R2M0 | QSI's physical I/O and entitlement (handoff 20): a host's devices for physical I/O (released, assignable or why, the isolation group, the holder; released, taken back, assigned, returned, reset failed) and its physical tape drives in `vres` (a profile's tape device names a volume or `@` and a drive's location code) behind bit 17 (`caps::PHYSICAL_IO`); the partition family's version 2, a running shared partition's units, capping and weight, behind bit 18 (`caps::PARTITION_V2`); refusals `QSI13nn` and `QSI14nn` | `QSI.md` §5, §7, §9, §10, `BUILDKIT.md` §16 |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -253,7 +254,8 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   qsi/          QSI's messages, neutral (ipc and qsipart; QS/VS and QS/MC pin it, docs/QSI.md):
                 hello.rs, message.rs the Family/Message traits and messages!, base.rs (with the
                 system's own dumps), pair.rs, service.rs problems, update.rs code update,
-                src/host/ a QS/VS host's nine families, any.rs by number, samples.rs every message
+                src/host/ a QS/VS host's nine families (host.rs and vres.rs with physical I/O, bit
+                17; partition.rs version 2, bit 18), any.rs by number, samples.rs every message
   qsisess/      QSI's session as a state machine over any byte stream, neutral: wire/ the frames
                 and parts, session/ (hello, requests, events, streams, close), log.rs the event
                 log (resume: taken up after a restart), loopback.rs two sessions in memory,

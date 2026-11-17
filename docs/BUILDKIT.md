@@ -1543,3 +1543,32 @@ event numbers skip what it is not sent. No listener is added to QS/400.
 
 `fmtcheck` is green: the `qsi` draft format now lists `service.rs` and
 `update.rs` and its lock was updated (a draft needs no version bump).
+
+## 16. Handoff 20: QSI's physical I/O and a running partition's entitlement
+
+QS/VS's next phase gives a host's devices to partitions, passes a
+physical tape drive through, and changes a running shared partition's
+entitlement. The messages are in `lic/qsi` (`docs/QSI.md` sections 5,
+7, 9 and 10); `lic/qsisess` is unchanged but for its tests' hellos:
+
+| What | Where | Capability |
+|---|---|---|
+| a host's devices: released, assignable or why not, the isolation group, the holder; released, taken back, assigned, returned, reset failed; a profile's `physical_io` acted on, refusals `QSI1301` to `QSI1307` | `qsi::host`, operation `0x0010`, events `0x0010` to `0x0014`; `host::physio` | bit 17, `PHYSICAL_IO` |
+| the host's physical tape drives (read only), a profile's tape device naming one as `@` and its location code, `PhysicalTape` 3 in a partition's `Drives` | `qsi::vres`, operation `0x0034`, event `0x000A`; `model::MediaDevice::drive`, `tape_source` | bit 17 |
+| a running shared partition's units, capping and weight; the change in `Current`, as `EntitlementChanged` and as partitions' `ResourcesChanged`; refusals `QSI1401` to `QSI1405` | `qsi::host::partition` version 2, operation `0x0007`, event `0x0001` | bit 18, `PARTITION_V2` |
+
+`caps::HOST_V1` and `caps::SERVICING` are unchanged. Virtual
+processors, dedicated processors and memory still change only at
+activation. No listener is added to QS/400.
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Artifact hashes and existing goldens identical | `Cargo.lock` unchanged, and nothing QS/400 ships depends on `qsi` or `qsisess`. Built in one directory with one build ID at the base `39105ca27` and at `1f9b50aa2`: `slic` 49,414,696 `5ee963fc…`, `qsjob` 41,769,576 `d6d0e444…`, `instload` 586,040 `276b03e2…`, the same at both. No golden's crate was touched |
+| 2 | Every new message round-trips; a peer without a bit is never sent it | `qsi`'s `tests/families.rs` (every sample, the bounds of the entitlement and of a drive's location, `Blocker` and `DriveKind` open, `what_each_message_needs` by bit, a tape device as volume, drive or empty); `qsisess`'s `tests/samples.rs` (76 exchanges, every event, in pieces) and `tests/caps.rs` (16 new requests and 20 new events across both ages, raw requests refused `QSI0003`, and `each_bit_alone`: each of bits 2, 3, 4, 17 and 18 alone at either end lets through its own and none of the others') |
+| 3 | Neutral; the fixture builds; fuzz 60 s clean | `neutral.rs` passes; `build fixture` passed whole at `1f9b50aa2` on its first run; the three `qsisess` targets ran 60 s each with no finding (`docs/QSI.md` section 12) |
+| 4 | `docs/QSI.md` describes the three message by message | section 7 (the host's physical I/O, vres's physical tape drives, partition version 2), sections 5 and 10 (bits, identifiers), section 8 (the mapping is QS/VS's to complete), section 9 (the decisions), "left for later" brought up to date |
+
+`fmtcheck` is green: the `qsi` draft's lock was updated (a draft needs
+no version bump; no file was added).
