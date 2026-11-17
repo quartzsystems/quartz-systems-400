@@ -355,7 +355,10 @@ impl Suite {
         // QS400_NETSVR_COPY sizes it otherwise (`512M`), to find a limit.
         let size = std::env::var("QS400_NETSVR_COPY").unwrap_or_else(|_| "1G".into());
         let mark = s.log.len();
-        let out = smbtest(port, &["--only", "copy,cleanup", "--copy-bytes", &size]);
+        let out = smbtest(
+            port,
+            &["--only", "copy,small-files,cleanup", "--copy-bytes", &size],
+        );
         // The service's stall lines (`stgsvc/stall.rs`) from the copy, read
         // in with a command and shown with the result.
         let ifs = s.command("svc.ifs", CMD).unwrap_or_default();
@@ -379,9 +382,16 @@ impl Suite {
         let rin = detail(&out, "copy", "in: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
         let rout =
             detail(&out, "copy", "out: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
+        // Small files, one request at a time: milliseconds per operation.
+        let small: Vec<&str> = ["make: ", "list: ", "open: ", "delete: "]
+            .iter()
+            .map(|p| detail(&out, "small-files", p).unwrap_or("?"))
+            .collect();
         let slow = stalls.iter().filter(|l| l.contains("slow request")).count();
         Ok(format!(
-            "{size} in {rin}, out {rout}; {slow} slow service request(s)"
+            "{size} in {rin}, out {rout}; small files make {}, list {}, open {}, delete {}; \
+             {slow} slow service request(s)",
+            small[0], small[1], small[2], small[3]
         ))
     }
 }

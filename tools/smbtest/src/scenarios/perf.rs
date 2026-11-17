@@ -2,14 +2,16 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Reads and writes at the negotiated maximum, and the timed copy.
+//! Reads and writes at the negotiated maximum, the timed copy, and small
+//! files timed one operation at a time.
 
 use std::time::Instant;
 
 use futures_util::{StreamExt, stream};
 use smb::{ReadAt, WriteAt};
 
-use super::scratch::remove;
+use super::files::put;
+use super::scratch::{list, remove};
 use super::{Lines, Scratch};
 use crate::conn::{Share, base_config};
 use crate::error::check;
@@ -149,6 +151,62 @@ pub async fn copy(t: &Target, sc: &Scratch) -> Lines {
         format!("request: {} bytes, {WINDOW} in flight", w.min(r)),
         format!("in: {} ({win:.2}s)", mbps(t.copy_bytes, win)),
         format!("out: {} ({rin:.2}s)", mbps(t.copy_bytes, rin)),
+    ])
+}
+
+/// Files the `small-files` scenario makes.
+const SMALL_FILES: usize = 200;
+/// Listings of their directory it times.
+const LISTINGS: usize = 5;
+
+/// Milliseconds per operation.
+fn per_op(secs: f64, ops: usize) -> String {
+    #[allow(clippy::cast_precision_loss)]
+    let ms = secs * 1e3 / ops.max(1) as f64;
+    format!("{ms:.2} ms")
+}
+
+/// Small files one request after another: each made (CREATE, a 4 KiB
+/// WRITE, CLOSE), the directory listed, each opened for its size and
+/// closed, each deleted; the time per operation of each.
+pub async fn small_files(t: &Target, sc: &Scratch) -> Lines {
+    let s = Share::connect(t, base_config(t)).await?;
+    let dir = sc.file("small");
+    s.create_dir(&dir).await?;
+    let data = body(4096);
+    let name = |i: usize| format!("{dir}\\file{i:04}.txt");
+    let start = Instant::now();
+    for i in 0..SMALL_FILES {
+        put(&s, &name(i), &data).await?;
+    }
+    let make = start.elapsed().as_secs_f64();
+    let start = Instant::now();
+    for _ in 0..LISTINGS {
+        let n = list(&s, &dir).await?.len();
+        check(n == SMALL_FILES, || format!("listed {n} of {SMALL_FILES}"))?;
+    }
+    let listing = start.elapsed().as_secs_f64();
+    let start = Instant::now();
+    for i in 0..SMALL_FILES {
+        let f = s.open_file(&name(i), false).await?;
+        let len = smb::GetLen::get_len(&f).await?;
+        check(len == 4096, || format!("{}: {len} bytes", name(i)))?;
+        f.close().await?;
+    }
+    let open = start.elapsed().as_secs_f64();
+    let start = Instant::now();
+    for i in 0..SMALL_FILES {
+        remove(&s, &name(i)).await?;
+    }
+    let delete = start.elapsed().as_secs_f64();
+    remove(&s, &dir).await?;
+    s.close().await?;
+    Ok(vec![
+        format!("files: {SMALL_FILES} of 4096 bytes"),
+        format!("make: {} each", per_op(make, SMALL_FILES)),
+        format!("list: {} each", per_op(listing, LISTINGS)),
+        format!("open: {} each", per_op(open, SMALL_FILES)),
+        format!("delete: {} each", per_op(delete, SMALL_FILES)),
     ])
 }
 

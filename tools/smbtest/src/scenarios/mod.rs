@@ -50,6 +50,7 @@ pub fn names() -> Vec<String> {
             "change-notify-two-machines",
             "large-io",
             "copy",
+            "small-files",
             "cleanup",
         ]
         .map(str::to_string),
@@ -230,6 +231,14 @@ pub async fn run_all(t: &Target) -> Report {
             "copy",
             Duration::from_secs(3600),
             Box::pin(perf::copy(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "small-files",
+            Duration::from_secs(600),
+            Box::pin(perf::small_files(t, &scratch)),
         )
         .await;
     }
