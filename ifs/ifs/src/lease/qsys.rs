@@ -76,14 +76,21 @@ pub fn changed(leases: &Leases, by: Owner, node: &QsysNode, what: &QsysChange) -
             if member {
                 leases.note(by, &path, &ChangeKind::Removed, false);
             } else {
+                // A library's members too.
+                defer::whole(|| leases.gate_below(by, &path, Trigger::Handle))?;
                 leases.note_rmdir(by, &path);
             }
         }
         QsysChange::Renamed { from } => {
+            let old = path_of(from);
             if member {
                 defer::whole(|| leases.gate(by, qsys_key(from), Trigger::Handle))?;
+            } else {
+                // A file or library renamed or moved: the members below.
+                defer::whole(|| leases.gate_below(by, &old, Trigger::Handle))?;
             }
-            leases.note_rename(by, &path_of(from), &path, !member);
+            leases.moved(&old, &path);
+            leases.note_rename(by, &old, &path, !member);
         }
     }
     Ok(())

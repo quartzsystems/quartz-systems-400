@@ -462,7 +462,11 @@ impl<B: Backend> Ifs<B> {
         if moving_dir && ndir.comps.starts_with(&src.comps) {
             return Err(Errno::EINVAL);
         }
-        if !moving_dir {
+        if moving_dir {
+            // What other owners lease below it gives up handle caching.
+            self.leases
+                .gate_below(cx.owner, &src.path(), Trigger::Handle)?;
+        } else {
             self.leases
                 .gate(cx.owner, src.node.key(), Trigger::Handle)?;
         }
@@ -539,6 +543,7 @@ impl<B: Backend> Ifs<B> {
                 o.path = format!("{new_text}/{t}");
             }
         }
+        self.leases.moved(&old_text, &new_text);
         self.leases
             .note_rename(cx.owner, &old_text, &new_text, moving_dir);
         cx.audit_always(

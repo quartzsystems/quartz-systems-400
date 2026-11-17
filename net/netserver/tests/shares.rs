@@ -1051,6 +1051,46 @@ async fn a_plain_ifs_writer_breaks_a_lease() {
     assert_eq!(c1.read(r.file_id, 0, 6).await.unwrap(), b"plain!");
 }
 
+/// Another job renaming the directory above a leased file breaks its
+/// handle caching and waits for the client to give it back; the client's
+/// open then still reads the file under the new name.
+#[tokio::test(flavor = "multi_thread")]
+async fn renaming_a_directory_above_a_lease_breaks_it() {
+    const RW: u32 = RWH & !smbc::lease::LEASE_HANDLE_CACHING;
+    let fs = Fs::new();
+    let me = fs.client("ALICE");
+    me.mkdir("/pub/dir", 0o777).unwrap();
+    let fd = me
+        .open(
+            "/pub/dir/h.txt",
+            OpenArgs::new(O_CREAT | O_RDWR).mode(0o666),
+        )
+        .unwrap();
+    me.write(fd, b"inside").unwrap();
+    me.close(fd).unwrap();
+    me.release();
+    let a = job_as(&fs, "ALICE", true);
+    let mut c1 = alice(a.addr, "PUB").await;
+    let r = leased_open(&mut c1, "dir\\h.txt", [3; 16], RWH, false).await;
+    assert_eq!(granted(&r), RWH);
+    let f = fs.clone();
+    let renamer = std::thread::spawn(move || {
+        let me = f.client("ALICE");
+        let r = me.rename("/pub/dir", "/pub/moved", ifs::ops::RenameMode::Keep);
+        me.release();
+        r
+    });
+    let n = c1
+        .next_break(BREAK_WAIT)
+        .await
+        .expect("a break for the rename above it");
+    assert_eq!((n.current_lease_state, n.new_lease_state), (RWH, RW));
+    assert_eq!(c1.ack([3; 16], RW).await, STATUS_SUCCESS);
+    assert_eq!(renamer.join().unwrap(), Ok(()));
+    assert_eq!(c1.read(r.file_id, 0, 6).await.unwrap(), b"inside");
+    c1.close(r.file_id).await;
+}
+
 /// While another job has the file open a lease caches no writes.
 #[tokio::test(flavor = "multi_thread")]
 async fn a_lease_caches_no_writes_while_another_job_has_the_file_open() {

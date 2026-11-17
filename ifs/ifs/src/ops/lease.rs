@@ -66,7 +66,12 @@ impl<B: Backend> Ifs<B> {
                 Held::Range(_) => others.locked = true,
             }
         }
-        Ok(self.leases.grant(cx.owner, obj, tag, key, want, others))
+        let granted = self.leases.grant(cx.owner, obj, tag, key, want, others);
+        if granted != 0 {
+            // Where it is, so a change to a directory above it reaches it.
+            self.leases.place(obj, &r.path());
+        }
+        Ok(granted)
     }
 
     /// The caller holds `leases` (and no others) on the file it calls

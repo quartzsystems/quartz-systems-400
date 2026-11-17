@@ -17,7 +17,7 @@ use ifs::Errno;
 use ifs::lease::defer::deferring;
 use ifs::lease::notify::{ChangeKind, DirEvent};
 use ifs::lease::qsys::{QsysChange, changed};
-use ifs::lease::state::{H, R, RWH};
+use ifs::lease::state::{H, R, RWH, W};
 use ifs::ops::{Attr, AttrId, Owner};
 use ifs::resolve::qsys_key;
 use ifs::vfs::qsys::QsysNode;
@@ -112,4 +112,52 @@ fn a_watch_hears_one_modified_for_many_records() {
             ev("HELLO.MBR", ChangeKind::Removed),
         ]
     );
+}
+
+/// A library renamed or deleted, a file moved: the leases of the members
+/// below give up handle caching, without waiting.
+#[test]
+fn a_library_or_file_changed_above_a_member_breaks_its_lease() {
+    let s = sys();
+    let p = user("QSECOFR");
+    let a = s.cx(&p, 1);
+    let id = s
+        .ifs
+        .get_attrs(&a, HELLO, &[AttrId::FileId], true)
+        .unwrap()
+        .into_iter()
+        .find_map(|x| match x {
+            Attr::FileId(id) => Some(id),
+            _ => None,
+        })
+        .unwrap();
+    let l = s.ifs.leases();
+    let grant = || s.ifs.lease_grant(&a, HELLO, id, 5, [1; 32], RWH).unwrap();
+    let lib = |n: &str| QsysNode::Lib(n.into());
+    let file = |l: &str| QsysNode::Obj(l.into(), "QCLSRC".into(), "*FILE".into());
+    let cases = [
+        (lib("QGPL2"), QsysChange::Renamed { from: lib("QGPL") }),
+        (file("QUSRSYS"), QsysChange::Renamed { from: file("QGPL") }),
+        (
+            lib("QGPL"),
+            QsysChange::Removing {
+                members: Vec::new(),
+            },
+        ),
+    ];
+    for (node, what) in cases {
+        assert_eq!(grant(), RWH, "{what:?}");
+        let (r, d) = deferring(true, || changed(l, DB, &node, &what));
+        assert_eq!((r, d), (Ok(()), None), "{what:?}");
+        let news = s.ifs.lease_orders(&a, Duration::ZERO).unwrap();
+        assert_eq!(news.breaks, vec![(5, R | W)], "{what:?}");
+        l.report(Owner(1), 5, &[([1; 32], R | W)]);
+        // The table follows the rename; put it back for the next case.
+        if let QsysChange::Renamed { from } = &what {
+            l.moved(
+                &ifs::vfs::qsys::path_of(&node),
+                &ifs::vfs::qsys::path_of(from),
+            );
+        }
+    }
 }

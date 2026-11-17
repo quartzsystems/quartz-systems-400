@@ -286,3 +286,78 @@ fn a_local_caller_waits_for_the_holders_report() {
     poller.join().unwrap();
     assert_eq!(writer.pread(wfd, 100, 0).unwrap(), b"cached!");
 }
+
+/// A directory renamed above a leased file breaks its handle caching and
+/// waits, as a rename of the file does; the lease follows it, so a second
+/// rename above it is heard too.
+#[test]
+fn renaming_a_directory_above_a_lease_breaks_it() {
+    let s = sys();
+    let p = user("QSECOFR");
+    let a = s.cx(&p, 1);
+    let b = s.cx(&p, 2);
+    s.ifs.mkdir(&a, "/tmp/d", 0o777).unwrap();
+    s.ifs.mkdir(&a, "/tmp/d/e", 0o777).unwrap();
+    s.put(&a, "/tmp/d/e/f", b"data");
+    let id = file_id(&s, &a, "/tmp/d/e/f");
+    assert_eq!(
+        s.ifs
+            .lease_grant(&a, "/tmp/d/e/f", id, 5, KEY, RWH)
+            .unwrap(),
+        RWH
+    );
+    // Its own owner's rename breaks nothing.
+    s.ifs
+        .rename(&a, "/tmp/d", "/tmp/d2", RenameMode::Keep)
+        .unwrap();
+    assert!(
+        s.ifs
+            .lease_orders(&a, Duration::ZERO)
+            .unwrap()
+            .breaks
+            .is_empty()
+    );
+    // Another owner's waits for the holder.
+    let op = || s.ifs.rename(&b, "/tmp/d2", "/tmp/d3", RenameMode::Keep);
+    let (r, d) = deferring(true, op);
+    assert_eq!(r, Err(Errno::EAGAIN));
+    let d = d.expect("a deferral");
+    assert_eq!(s.get(&a, "/tmp/d2/e/f"), b"data", "not renamed yet");
+    assert_eq!(
+        s.ifs.lease_orders(&a, Duration::ZERO).unwrap().breaks,
+        [(5, R | W)]
+    );
+    s.ifs.lease_report(&a, 5, &[(KEY, R | W)]);
+    assert!(s.ifs.leases().ready(&d));
+    assert_eq!(deferring(true, op), (Ok(()), None));
+    // A library renamed or a file moved: the same through the store's
+    // watcher, without waiting (`lease::qsys`); here a directory deeper.
+    assert_eq!(
+        s.ifs
+            .lease_grant(&a, "/tmp/d3/e/f", id, 5, KEY, RWH)
+            .unwrap(),
+        RWH
+    );
+    let (r, d) = deferring(false, || {
+        s.ifs.rename(&b, "/tmp/d3/e", "/tmp/d3/g", RenameMode::Keep)
+    });
+    assert_eq!((r, d), (Ok(()), None));
+    assert_eq!(
+        s.ifs.lease_orders(&a, Duration::ZERO).unwrap().breaks,
+        [(5, R | W)]
+    );
+    // Siblings with the same prefix are not below it.
+    s.ifs.lease_report(&a, 5, &[(KEY, R | W)]);
+    s.ifs.mkdir(&a, "/tmp/d3x", 0o777).unwrap();
+    s.ifs
+        .rename(&b, "/tmp/d3x", "/tmp/d4", RenameMode::Keep)
+        .unwrap();
+    assert!(
+        s.ifs
+            .lease_orders(&a, Duration::ZERO)
+            .unwrap()
+            .breaks
+            .is_empty()
+    );
+    s.ifs.release_owner(Owner(2));
+}

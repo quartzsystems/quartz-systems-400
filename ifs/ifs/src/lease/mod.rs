@@ -77,6 +77,9 @@ struct Inner {
     woken: std::collections::HashSet<Owner>,
     /// Queued byte-range locks granted since the owner's last poll.
     granted: HashMap<Owner, Vec<u64>>,
+    /// The canonical path of each object leased, where a holder last
+    /// reserved a lease on it: a directory above it renamed reaches it.
+    paths: HashMap<ObjKey, String>,
 }
 
 /// Every owner's leases on the file system's objects.
@@ -201,6 +204,58 @@ impl Leases {
         }
     }
 
+    /// `owner` is about to do `trigger` to the directory at the canonical
+    /// `dir` (a rename, a move, a removal): every other owner's lease on an
+    /// object below it is ordered broken as [`Leases::gate`] orders, all at
+    /// once, and the operation defers on the first still breaking (MS-FSA
+    /// 2.1.5.15.12: a directory renamed breaks the handle caching of what
+    /// is open below it).
+    ///
+    /// # Errors
+    ///
+    /// `EAGAIN` as [`Leases::gate`].
+    pub fn gate_below(&self, owner: Owner, dir: &str, trigger: Trigger) -> Result<()> {
+        let keys: Vec<ObjKey> = {
+            let g = self.lock();
+            if g.paths.is_empty() {
+                return Ok(());
+            }
+            g.paths
+                .iter()
+                .filter(|(_, p)| below(p, dir))
+                .map(|(k, _)| *k)
+                .collect()
+        };
+        for k in &keys {
+            defer::whole(|| self.gate(owner, *k, trigger))?;
+        }
+        for k in &keys {
+            self.gate(owner, *k, trigger)?;
+        }
+        Ok(())
+    }
+
+    /// `obj`, which some owner leases, is at the canonical `path`.
+    pub fn place(&self, obj: ObjKey, path: &str) {
+        let mut g = self.lock();
+        if g.files.contains_key(&obj) {
+            g.paths.insert(obj, path.to_owned());
+        }
+    }
+
+    /// What was at the canonical `from` is at `to` now, and what was below
+    /// it below `to`.
+    pub fn moved(&self, from: &str, to: &str) {
+        let mut g = self.lock();
+        for p in g.paths.values_mut() {
+            if p == from {
+                to.clone_into(p);
+            } else if below(p, from) {
+                *p = format!("{to}{}", &p[from.trim_end_matches('/').len()..]);
+            }
+        }
+    }
+
     /// `owner` asks for a lease `key` in state `want` on `obj`, which it
     /// calls `tag`: the best state other owners allow, recorded before
     /// the holder grants it. Write caching needs no other owner to have
@@ -217,7 +272,9 @@ impl Leases {
     ) -> u8 {
         let want = requested(want);
         let mut g = self.lock();
-        let Inner { files, tags, .. } = &mut *g;
+        let Inner {
+            files, tags, paths, ..
+        } = &mut *g;
         let list = files.entry(obj).or_default();
         let theirs: Vec<u8> = list
             .iter()
@@ -242,6 +299,7 @@ impl Leases {
         }
         if list.is_empty() {
             files.remove(&obj);
+            paths.remove(&obj);
         } else {
             tags.insert((owner, tag), obj);
         }
@@ -254,7 +312,9 @@ impl Leases {
     /// granted). A file `owner` never reserved a lease on is ignored.
     pub fn report(&self, owner: Owner, tag: u64, leases: &[(LeaseKey, u8)]) {
         let mut g = self.lock();
-        let Inner { files, tags, .. } = &mut *g;
+        let Inner {
+            files, tags, paths, ..
+        } = &mut *g;
         let Some(obj) = tags.get(&(owner, tag)).copied() else {
             return;
         };
@@ -293,6 +353,7 @@ impl Leases {
         }
         if list.is_empty() {
             files.remove(&obj);
+            paths.remove(&obj);
         }
         drop(g);
         self.changed.notify_all();
@@ -401,6 +462,8 @@ impl Leases {
             !list.is_empty()
         });
         g.tags.retain(|(o, _), _| *o != owner);
+        let Inner { files, paths, .. } = &mut *g;
+        paths.retain(|k, _| files.contains_key(k));
         g.orders.remove(&owner);
         g.granted.remove(&owner);
         g.watches.release_owner(owner);
@@ -483,6 +546,12 @@ impl Leases {
             .map(|l| l.iter().map(|h| (h.owner, h.key, h.state)).collect())
             .unwrap_or_default()
     }
+}
+
+/// Whether the canonical `path` lies below the directory `dir`.
+fn below(path: &str, dir: &str) -> bool {
+    let d = dir.trim_end_matches('/');
+    path.len() > d.len() + 1 && path.starts_with(d) && path.as_bytes()[d.len()] == b'/'
 }
 
 /// Queue `keep` for the holder `owner` of `tag`, lowering one queued.
