@@ -22,9 +22,7 @@ use ifs::lock::range::RangeKind;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{F_SETLK, O_RDONLY, O_SHARE_RDWR, SEEK_SET};
 use ifs::ops::{Attr, AttrId, OpenArgs, Stat};
-use smb_server::{
-    DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult,
-};
+use smb_server::{DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
 
 use super::info::{ATTRS, WANTED, attr_changes, file_info, nanos, smb_error};
 use super::lease::LeaseLink;

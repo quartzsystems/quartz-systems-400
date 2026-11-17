@@ -38,9 +38,11 @@ pub trait Datagrams {
     fn local_ip(&self, peer: Ipv4Addr) -> Option<Ipv4Addr>;
 }
 
-/// UDP 137 on every interface, broadcasting to 255.255.255.255.
+/// A UDP port (137, or 138 for the datagram service) on every interface,
+/// broadcasting to 255.255.255.255 on the same port.
 pub struct Udp {
     sock: UdpSocket,
+    port: u16,
 }
 
 impl Udp {
@@ -52,7 +54,7 @@ impl Udp {
     pub fn bind(port: u16) -> io::Result<Self> {
         let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, port))?;
         sock.set_broadcast(true)?;
-        Ok(Self { sock })
+        Ok(Self { sock, port })
     }
 }
 
@@ -84,7 +86,7 @@ impl Datagrams for Udp {
     }
 
     fn broadcast(&self) -> SocketAddrV4 {
-        SocketAddrV4::new(Ipv4Addr::BROADCAST, PORT)
+        SocketAddrV4::new(Ipv4Addr::BROADCAST, self.port)
     }
 
     fn local_ip(&self, peer: Ipv4Addr) -> Option<Ipv4Addr> {

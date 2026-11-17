@@ -46,8 +46,7 @@ use ifs::ops::flags::{
 use ifs::ops::{Attr, OpenArgs, RenameMode, Stat};
 use smb_server::{
     BackendCapabilities, FileInfo, Handle, OpenAction, OpenIntent, OpenOptions, ShareBackend,
-    SmbError,
-    SmbPath, SmbResult, VolumeInfo,
+    SmbError, SmbPath, SmbResult, VolumeInfo,
 };
 
 use handle::Fd;
@@ -220,11 +219,7 @@ fn found(
     } else {
         xlate_of(path, ccsid_in(attrs), conv)
     };
-    (
-        id_in(attrs),
-        xlate,
-        file_info(leaf(path, root), st, attrs),
-    )
+    (id_in(attrs), xlate, file_info(leaf(path, root), st, attrs))
 }
 
 /// Make the file or directory `path` does not name yet: the make, then

@@ -177,8 +177,11 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
         let mut last = std::time::Instant::now();
         loop {
             // A release is seen within a tenth of a second, so the routes go
-            // at once; the report runs once a second.
-            std::thread::sleep(Duration::from_millis(100));
+            // at once; the report runs once a second. A routed connection
+            // is served the moment it comes.
+            if let Ok(stream) = rx.recv_timeout(Duration::from_millis(100)) {
+                serve(&ns, stream);
+            }
             while let Ok(stream) = rx.try_recv() {
                 serve(&ns, stream);
             }

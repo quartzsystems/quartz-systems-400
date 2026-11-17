@@ -13,10 +13,8 @@
 //!   queries and node status requests, defence, refresh and release.
 //! - [`udp`]: the loop over a [`udp::Datagrams`] and UDP 137 itself.
 //!
-//! The datagram service on UDP 138 is not built: file serving does not use
-//! it, only browsing (the browse list, master browser elections) does,
-//! and browsing is refused (`docs/NETSERVER.md` section 10). There is no
-//! WINS client: names are registered by broadcast only.
+//! The datagram service on UDP 138 is [`crate::nbdgm`]. There is no WINS
+//! client: names are registered by broadcast only.
 
 pub mod packet;
 pub mod service;

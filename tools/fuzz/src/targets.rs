@@ -272,6 +272,37 @@ fn nbss(data: &[u8]) {
     let _ = netserver::route::guid_in(data);
 }
 
+fn nbdgm(data: &[u8]) {
+    use netserver::nbdgm::packet::{Announcement, parse_mailslot};
+    use netserver::nbdgm::{AnnounceConfig, Announcer, Datagram};
+    use std::net::{Ipv4Addr, SocketAddrV4};
+    use std::time::{Duration, Instant};
+    if let Ok(d) = Datagram::parse(data) {
+        let _ = Datagram::parse(&d.encode());
+        if let Ok((_, frame)) = parse_mailslot(&d.data) {
+            let _ = Announcement::parse(frame).map(|a| a.encode());
+        }
+    }
+    let _ = parse_mailslot(data);
+    // An announcer that has started hears the datagram.
+    let me = Ipv4Addr::new(10, 0, 2, 15);
+    let mut a = Announcer::new(AnnounceConfig {
+        server: "QSTEST".into(),
+        workgroup: "WORKGROUP".into(),
+        comment: "Quartz".into(),
+        printing: true,
+        interval: Duration::from_mins(12),
+    });
+    let now = Instant::now();
+    let _ = a.start(now, me);
+    a.handle(
+        now,
+        SocketAddrV4::new(Ipv4Addr::new(10, 0, 2, 2), 138),
+        data,
+    );
+    let _ = a.tick(now + Duration::from_secs(31), me);
+}
+
 fn nbns(data: &[u8]) {
     use netserver::nbns::{NameConfig, NameService, Packet};
     use std::net::{Ipv4Addr, SocketAddrV4};
@@ -527,6 +558,17 @@ pub const TARGETS: &[Target] = &[
         seeds: &[b"\x81\x00\x00\x44\x20CACACACACACACACACACACACACACACAAA\x00\x20EEEFEFEFEFEFEFEFEFEFEFEFEFEFEFAA\x00", b"\x85\x00\x00\x00"],
         dict: &[b"\x81", b"\x85", b"\x20", b"\xfeSMB", b"\x24\x00"],
         max_len: 4096,
+    },
+    Target {
+        name: "nbdgm",
+        what: "NetBIOS datagrams, the mailslot writes in them and the host announcer's answers",
+        run: nbdgm,
+        seeds: &[
+            b"\x12\x02\x00\x09\x0a\x00\x02\x02\x00\x8a\x00\x9e\x00\x00\x20ENEBFDFEEFFCCACACACACACACACACAAA\x00\x20FHEPFCELEHFCEPFFFACACACACACACAAA\x00\xffSMB\x25\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x56\x00\x04\x00\x56\x00\x03\x00\x01\x00\x01\x00\x02\x00\x15\x00\\MAILSLOT\\BROWSE\x00\x02\x00M\x00",
+            b"\x11\x02\x00\x01\x0a\x00\x02\x0f\x00\x8a\x00\x44\x00\x00",
+        ],
+        dict: &[b"\xffSMB\x25", b"\\MAILSLOT\\BROWSE\x00", b"\x01\x00\x01\x00\x02\x00", b"\x55\xaa", b"\x20"],
+        max_len: 1500,
     },
     Target {
         name: "nbns",

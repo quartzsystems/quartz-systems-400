@@ -13,6 +13,8 @@
 //! - [`server`]: [`NetServer`], one job's server.
 //! - [`nbss`]: the `NetBIOS` session request on port 139.
 //! - [`nbns`]: the `NetBIOS` name service on UDP 137.
+//! - [`nbdgm`]: the `NetBIOS` datagram service on UDP 138 (host
+//!   announcements).
 //! - [`route`]: the `ClientGuid` of a new connection, for routing
 //!   reconnects.
 //!
@@ -26,6 +28,7 @@
 #![deny(missing_docs)]
 
 pub mod ifs;
+pub mod nbdgm;
 pub mod nbns;
 pub mod nbss;
 pub mod print;
