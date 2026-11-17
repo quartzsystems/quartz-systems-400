@@ -11,7 +11,7 @@
 //! clamps what it reads and takes.
 
 use ifs::backend::Nanos;
-use ifs::client::{CHUNK, Caller, IfsClient, WalkEntry};
+use ifs::client::{CHUNK, Caller, DirListing, IfsClient, WalkEntry};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::lock::{LockInfo, ObjKey};
 use ifs::meta::reclaim::Report;
@@ -367,6 +367,15 @@ pub enum IfsOp {
         off: u64,
         sync: Option<bool>,
     },
+    StatAttrs {
+        path: String,
+        ids: Vec<AttrId>,
+        follow: bool,
+    },
+    ReadDirStat {
+        path: String,
+        ids: Vec<AttrId>,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -456,6 +465,8 @@ wire_enum!(IfsOp {
     84 => RemotePost { fs, id, r },
     85 => StatByIdAccess { id, amode },
     86 => PWriteStat { fd, data, off, sync },
+    87 => StatAttrs { path, ids, follow },
+    88 => ReadDirStat { path, ids },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -548,6 +559,12 @@ pub enum IfsReply {
     Wrote {
         r: Result<(u64, Option<Stat>)>,
     },
+    StatAttrs {
+        r: Result<(Stat, Vec<Attr>)>,
+    },
+    Listing {
+        r: Result<DirListing>,
+    },
 }
 
 wire_enum!(IfsReply {
@@ -579,6 +596,8 @@ wire_enum!(IfsReply {
     81 => Helper { r },
     82 => Checked { r },
     83 => Wrote { r },
+    84 => StatAttrs { r },
+    85 => Listing { r },
 });
 
 /// The answer `Err(EUNKNOWN)` for a reply of the wrong shape.
@@ -873,6 +892,12 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         } => R::Wrote {
             r: c.pwrite_stat(fd, &data[..data.len().min(CHUNK)], off, sync)
                 .map(|(n, s)| (n as u64, s)),
+        },
+        IfsOp::StatAttrs { path, ids, follow } => R::StatAttrs {
+            r: c.stat_attrs(&path, &ids, follow),
+        },
+        IfsOp::ReadDirStat { path, ids } => R::Listing {
+            r: c.read_dir_stat(&path, &ids),
         },
     }
 }

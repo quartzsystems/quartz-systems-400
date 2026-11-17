@@ -5,6 +5,12 @@
 //! One open of a file or directory: an IFS descriptor for a file's data
 //! (opened at CREATE when the open has data access, else on first use),
 //! and the object's file ID, which finds it again after a rename.
+//!
+//! Each call is as few requests to the storage service as it can be: a
+//! stat checks the object is still at the path opened and answers in the
+//! same request ([`locate_stat`]); a listing is one request
+//! (`read_dir_stat`); the attributes the open read answer the CREATE's
+//! own stat ([`IfsHandle::primed`]).
 
 use std::sync::{Arc, Mutex, PoisonError};
 
@@ -13,12 +19,14 @@ use bytes::Bytes;
 use ifs::Errno;
 use ifs::client::{CHUNK, IfsClient};
 use ifs::lock::range::RangeKind;
-use ifs::ops::OpenArgs;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{F_SETLK, O_RDONLY, O_SHARE_RDWR, SEEK_SET};
-use smb_server::{DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
+use ifs::ops::{Attr, AttrId, OpenArgs, Stat};
+use smb_server::{
+    DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult,
+};
 
-use super::info::{attr_changes, file_info, nanos, smb_error, stat_path};
+use super::info::{ATTRS, WANTED, attr_changes, file_info, nanos, smb_error};
 use super::lease::LeaseLink;
 use super::pattern::matches;
 use super::short;
@@ -48,6 +56,14 @@ pub struct IfsHandle {
     pub(super) reserved: Mutex<Vec<[u8; 32]>>,
     /// Its data converted as text, by its share ([`super::text`]).
     pub(super) xlate: Option<Arc<Xlate>>,
+    /// What the open read of it, for the first `stat` when nothing else
+    /// came first (the CREATE's own); any other call drops it.
+    pub(super) primed: Mutex<Option<FileInfo>>,
+}
+
+/// Whether `st` is the object `id`.
+fn is(id: FileId, st: &Stat) -> bool {
+    st.ino == id.ino && st.dev == id.fs && (id.generation == 0 || st.ino_gen == id.generation)
 }
 
 /// Where the object is now: the path opened while it still names the
@@ -57,17 +73,45 @@ pub(super) fn locate(c: &dyn IfsClient, id: Option<FileId>, path: &str) -> Strin
     let Some(id) = id else {
         return path.to_owned();
     };
-    let same = |st: &ifs::ops::Stat| {
-        st.ino == id.ino && st.dev == id.fs && (id.generation == 0 || st.ino_gen == id.generation)
-    };
-    if c.stat(path, false).is_ok_and(|st| same(&st)) {
+    if c.stat(path, false).is_ok_and(|st| is(id, &st)) {
         return path.to_owned();
     }
     c.path_from_file_id(id).unwrap_or_else(|_| path.to_owned())
 }
 
+/// Where the object is now, its `stat()` (following a last symbolic
+/// link) and its attributes `ids`: one request while the path opened
+/// still names the object; else found by file ID as [`locate`] finds it.
+///
+/// # Errors
+///
+/// The stat's.
+pub(super) fn locate_stat(
+    c: &dyn IfsClient,
+    id: Option<FileId>,
+    path: &str,
+    ids: &[AttrId],
+) -> ifs::Result<(String, Stat, Vec<Attr>)> {
+    let first = c.stat_attrs(path, ids, true);
+    let Some(id) = id else {
+        return first.map(|(s, a)| (path.to_owned(), s, a));
+    };
+    if let Ok((st, _)) = &first
+        && is(id, st)
+    {
+        return first.map(|(s, a)| (path.to_owned(), s, a));
+    }
+    match c.path_from_file_id(id) {
+        Ok(p) if p != path => {
+            let (s, a) = c.stat_attrs(&p, ids, true)?;
+            Ok((p, s, a))
+        }
+        _ => first.map(|(s, a)| (path.to_owned(), s, a)),
+    }
+}
+
 /// The last component of `path`, or empty for the share root.
-fn leaf<'a>(path: &'a str, root: &str) -> &'a str {
+pub(super) fn leaf<'a>(path: &'a str, root: &str) -> &'a str {
     if path == root {
         ""
     } else {
@@ -85,6 +129,22 @@ impl IfsHandle {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .clone()
+    }
+
+    /// The object was found at `p`: later calls start there.
+    fn found(&self, p: String) {
+        let mut cur = self.path.lock().unwrap_or_else(PoisonError::into_inner);
+        if *cur != p {
+            *cur = p;
+        }
+    }
+
+    /// Another call came first: the open's attributes are no longer news.
+    fn unprime(&self) {
+        self.primed
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
     }
 
     /// The descriptor, opened for reading now if there is none.
@@ -121,13 +181,15 @@ impl IfsHandle {
 #[async_trait]
 impl Handle for IfsHandle {
     async fn read(&self, offset: u64, len: u32) -> SmbResult<Bytes> {
+        self.unprime();
         let Fd { fd, .. } = self.fd().await?;
-        let data = err(self
+        let mut data = err(self
             .io
             .call(move |c| {
                 let want = usize::try_from(len).unwrap_or(usize::MAX);
-                let mut out = Vec::new();
-                while out.len() < want {
+                // One request for a read of a chunk or less; its bytes kept.
+                let mut out = c.pread(fd, want.min(CHUNK), offset)?;
+                while !out.is_empty() && out.len() < want {
                     let chunk =
                         c.pread(fd, (want - out.len()).min(CHUNK), offset + out.len() as u64)?;
                     if chunk.is_empty() {
@@ -138,7 +200,6 @@ impl Handle for IfsHandle {
                 Ok(out)
             })
             .await)?;
-        let mut data = data;
         if let Some(x) = &self.xlate {
             x.to_client(&mut data);
         }
@@ -150,6 +211,7 @@ impl Handle for IfsHandle {
     }
 
     async fn write_owned(&self, offset: u64, mut data: Vec<u8>) -> SmbResult<u32> {
+        self.unprime();
         let Fd { fd, write } = self.fd().await?;
         if !write {
             return Err(SmbError::AccessDenied);
@@ -175,6 +237,7 @@ impl Handle for IfsHandle {
     }
 
     async fn flush(&self) -> SmbResult<()> {
+        self.unprime();
         let fd = *self.fd.lock().unwrap_or_else(PoisonError::into_inner);
         match fd {
             Some(Fd { fd, write: true }) => err(self.io.call(move |c| c.fsync(fd, false)).await),
@@ -183,50 +246,70 @@ impl Handle for IfsHandle {
     }
 
     async fn stat(&self) -> SmbResult<FileInfo> {
+        let primed = self
+            .primed
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
+        if let Some(info) = primed {
+            return Ok(info);
+        }
         let (id, path, root) = (self.id, self.path(), self.root.clone());
-        err(self
+        let (p, info) = err(self
             .io
             .call(move |c| {
-                let p = locate(c, id, &path);
-                let (st, attrs) = stat_path(c, &p)?;
-                Ok(file_info(leaf(&p, &root), &st, &attrs))
+                let (p, st, attrs) = locate_stat(c, id, &path, WANTED)?;
+                let info = file_info(leaf(&p, &root), &st, &attrs);
+                Ok((p, info))
             })
-            .await)
+            .await)?;
+        self.found(p);
+        Ok(info)
     }
 
     async fn set_times(&self, times: FileTimes) -> SmbResult<()> {
+        self.unprime();
         if times.last_access_time.is_none() && times.last_write_time.is_none() {
             // The IFS keeps creation and change times itself.
             return Ok(());
         }
         let (id, path) = (self.id, self.path());
-        err(self
+        let p = err(self
             .io
             .call(move |c| {
-                let p = locate(c, id, &path);
-                let st = c.stat(&p, true)?;
+                let (p, st, _) = locate_stat(c, id, &path, &[])?;
                 let a = times.last_access_time.map_or(st.atime, nanos);
                 let m = times.last_write_time.map_or(st.mtime, nanos);
-                c.utime(&p, Some((a, m)))
+                c.utime(&p, Some((a, m)))?;
+                Ok(p)
             })
-            .await)
+            .await)?;
+        self.found(p);
+        Ok(())
     }
 
     async fn set_attributes(&self, attributes: u32) -> SmbResult<()> {
+        self.unprime();
         let (id, path, dir) = (self.id, self.path(), self.is_dir);
-        err(self
+        let p = err(self
             .io
             .call(move |c| {
-                let p = locate(c, id, &path);
+                let (p, _, have) = locate_stat(c, id, &path, ATTRS)?;
+                // Only what differs is set.
                 for a in attr_changes(attributes, dir) {
-                    c.set_attr(&p, &a, true)?;
+                    if !have.contains(&a) {
+                        c.set_attr(&p, &a, true)?;
+                    }
                 }
-                Ok(())
+                Ok(p)
             })
-            .await)
+            .await)?;
+        self.found(p);
+        Ok(())
     }
 
     async fn truncate(&self, len: u64) -> SmbResult<()> {
+        self.unprime();
         let Fd { fd, write } = self.fd().await?;
         if !write {
             return Err(SmbError::AccessDenied);
@@ -235,43 +318,54 @@ impl Handle for IfsHandle {
     }
 
     async fn list_dir(&self, pattern: Option<&str>) -> SmbResult<Vec<DirEntry>> {
+        self.unprime();
         if !self.is_dir {
             return Err(SmbError::NotADirectory);
         }
         let (id, path) = (self.id, self.path());
         let pattern = pattern.map(str::to_owned);
-        err(self
+        let (p, out) = err(self
             .io
             .call(move |c| {
-                let p = locate(c, id, &path);
-                let (ents, cs) = short::entries(c, &p)?;
-                let shorts = short::of(&ents, cs);
+                // The directory, its entries and their attributes: one
+                // request while the directory is where it was opened.
+                let mut p = path;
+                let mut l = c.read_dir_stat(&p, WANTED)?;
+                if let Some(id) = id
+                    && !is(id, &l.dir)
+                    && let Ok(q) = c.path_from_file_id(id)
+                    && q != p
+                {
+                    l = c.read_dir_stat(&q, WANTED)?;
+                    p = q;
+                }
+                let ents: Vec<_> = l.entries.iter().map(|e| e.ent.clone()).collect();
+                let shorts = short::of(&ents, l.case_sensitive);
                 let mut out = Vec::new();
-                for (e, short) in ents.into_iter().zip(shorts) {
+                for (e, short) in l.entries.into_iter().zip(shorts) {
                     // A pattern matches the name or the short name.
                     if pattern.as_deref().is_some_and(|pat| {
-                        !matches(pat, &e.name) && !short.as_deref().is_some_and(|s| matches(pat, s))
+                        !matches(pat, &e.ent.name)
+                            && !short.as_deref().is_some_and(|s| matches(pat, s))
                     }) {
                         continue;
                     }
-                    let full = if p.ends_with('/') {
-                        format!("{p}{}", e.name)
-                    } else {
-                        format!("{p}/{}", e.name)
-                    };
                     // An entry gone or unreadable since the listing is left out.
-                    if let Ok((st, attrs)) = stat_path(c, &full) {
-                        let mut info = file_info(&e.name, &st, &attrs);
+                    if let Some((st, attrs)) = e.stat {
+                        let mut info = file_info(&e.ent.name, &st, &attrs);
                         info.short_name = short;
                         out.push(DirEntry { info });
                     }
                 }
-                Ok(out)
+                Ok((p, out))
             })
-            .await)
+            .await)?;
+        self.found(p);
+        Ok(out)
     }
 
     async fn short_name(&self) -> SmbResult<Option<String>> {
+        self.unprime();
         let (id, path, root) = (self.id, self.path(), self.root.clone());
         err(self
             .io
@@ -292,14 +386,21 @@ impl Handle for IfsHandle {
     }
 
     async fn link_count(&self) -> SmbResult<u32> {
+        self.unprime();
         let (id, path) = (self.id, self.path());
-        err(self
+        let (p, n) = err(self
             .io
-            .call(move |c| Ok(c.stat(&locate(c, id, &path), true)?.nlink))
-            .await)
+            .call(move |c| {
+                let (p, st, _) = locate_stat(c, id, &path, &[])?;
+                Ok((p, st.nlink))
+            })
+            .await)?;
+        self.found(p);
+        Ok(n)
     }
 
     async fn dir_is_empty(&self) -> SmbResult<bool> {
+        self.unprime();
         let (id, path) = (self.id, self.path());
         err(self
             .io
@@ -312,6 +413,7 @@ impl Handle for IfsHandle {
     }
 
     async fn lock_range(&self, offset: u64, len: u64, exclusive: bool) -> SmbResult<()> {
+        self.unprime();
         let (Ok(start), Ok(len)) = (i64::try_from(offset), i64::try_from(len)) else {
             // Past what the IFS can lock: the server's own table holds it.
             return Ok(());
@@ -350,6 +452,7 @@ impl Handle for IfsHandle {
     }
 
     async fn watch(&self) -> SmbResult<Option<Box<dyn DirWatch>>> {
+        self.unprime();
         let Some(link) = self.leases.as_ref().filter(|l| self.is_dir && l.is_on()) else {
             return Ok(None);
         };
@@ -368,6 +471,7 @@ impl Handle for IfsHandle {
     }
 
     async fn unlock_range(&self, offset: u64, len: u64) -> SmbResult<()> {
+        self.unprime();
         let (Ok(start), Ok(len)) = (i64::try_from(offset), i64::try_from(len)) else {
             return Ok(());
         };

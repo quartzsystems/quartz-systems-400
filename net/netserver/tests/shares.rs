@@ -10,6 +10,8 @@
 
 #[path = "shares/members.rs"]
 mod members;
+#[path = "shares/requests.rs"]
+mod requests;
 mod smbc;
 
 use std::net::{SocketAddr, TcpListener};

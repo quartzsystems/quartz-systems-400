@@ -19,7 +19,7 @@ use ifs::client::{Caller, IfsClient};
 use ifs::lock::range::RangeKind;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{F_SETLK, O_CREAT, O_RDWR, O_WRONLY, SEEK_SET, W_OK};
-use ifs::ops::{Config, Ctx, Ifs, OpenArgs, Owner};
+use ifs::ops::{Attr, AttrId, Config, Ctx, Ifs, OpenArgs, Owner};
 use qsyslib::env::EnvCache;
 use qsyslib::{JournalAudit, MemAccess, StoreAccess, StoreEnv, StoreQsys};
 use sec::auth::principal::Principal;
@@ -287,6 +287,22 @@ fn handles_and_waiting_locks_over_the_link() {
     far.ifs.forget_ids();
     let (p, s) = anon.stat_by_id(id).unwrap();
     assert_eq!((p.as_str(), s.ino), ("/home/d/f", id.ino));
+    // A file server's stat and listing, one request each.
+    let (s, attrs) = anon
+        .stat_attrs("/home/d/f", &[AttrId::FileId, AttrId::Ccsid], true)
+        .unwrap();
+    assert_eq!(s.ino, id.ino);
+    assert!(attrs.contains(&Attr::FileId(id)), "{attrs:?}");
+    assert_eq!(
+        anon.stat_attrs("/home/d/none", &[AttrId::FileId], true),
+        Err(Errno::ENOENT)
+    );
+    let l = anon.read_dir_stat("/home/d", &[AttrId::FileId]).unwrap();
+    assert_eq!(l.entries.len(), 1);
+    assert_eq!(l.entries[0].ent.name, "f");
+    let (fs, fa) = l.entries[0].stat.clone().unwrap();
+    assert_eq!((fs.ino, fa), (id.ino, vec![Attr::FileId(id)]));
+    assert!(!l.case_sensitive);
     // A file server's write in two requests: the handle with the
     // caller's access, then the data, its sync and the attributes after.
     let (p, _, acc) = anon.stat_by_id_access(id, W_OK).unwrap();

@@ -24,7 +24,7 @@ use crate::ops::{
 };
 use crate::resolve::NodeType;
 
-use super::WalkEntry;
+use super::{DirListing, DirStatEntry, WalkEntry};
 
 fn bad<T>(what: &'static str, tag: u8) -> Result<T, WireError> {
     Err(WireError::Tag { what, tag })
@@ -205,6 +205,12 @@ wire_struct!(CopyOpts {
 });
 wire_struct!(WalkOpts { follow, one_fs });
 wire_struct!(WalkEntry { path, stat });
+wire_struct!(DirStatEntry { ent, stat });
+wire_struct!(DirListing {
+    dir,
+    case_sensitive,
+    entries
+});
 wire_struct!(UdfsInfo {
     path,
     case_sensitive,

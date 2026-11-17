@@ -126,13 +126,17 @@ impl LeaseLink {
         let granted = self
             .io
             .call(move |c| {
-                c.lease_grant(
-                    &super::handle::locate(c, Some(id), &path),
-                    id,
-                    tag,
-                    key,
-                    want,
-                )
+                // The table checks the path still names the file: one
+                // request, and another to find it only when nothing was
+                // granted and it moved.
+                let got = c.lease_grant(&path, id, tag, key, want)?;
+                if got != 0 {
+                    return Ok(got);
+                }
+                match super::handle::locate(c, Some(id), &path) {
+                    p if p == path => Ok(0),
+                    p => c.lease_grant(&p, id, tag, key, want),
+                }
             })
             .await;
         u32::from(granted.unwrap_or(0))

@@ -46,6 +46,28 @@ pub struct WalkEntry {
     pub stat: Result<Stat>,
 }
 
+/// One entry of a directory listed with its attributes
+/// ([`IfsClient::read_dir_stat`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DirStatEntry {
+    /// The entry.
+    pub ent: DirEnt,
+    /// Its `stat()` and the attributes asked for; `None` when it went or
+    /// cannot be read since the listing.
+    pub stat: Option<(Stat, Vec<Attr>)>,
+}
+
+/// A directory listed with its own attributes and each entry's.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DirListing {
+    /// The directory's own `stat()`.
+    pub dir: Stat,
+    /// Whether its file system tells case apart.
+    pub case_sensitive: bool,
+    /// Its entries without `.` and `..`.
+    pub entries: Vec<DirStatEntry>,
+}
+
 /// The IFS as a job sees it. Descriptors are the service's numbers;
 /// `read` and `pread` answer at most `max` bytes (and never more than
 /// [`CHUNK`]), an empty answer being end of file; `readdir` answers up
@@ -328,6 +350,38 @@ pub trait IfsClient {
             self.fsync(fd, d)?;
         }
         Ok((done, self.fstat(fd).ok()))
+    }
+    /// `stat()` of `path` and its attributes `ids` (none when they cannot
+    /// be read: the object's type lacks them). One request.
+    fn stat_attrs(&self, path: &str, ids: &[AttrId], follow: bool) -> Result<(Stat, Vec<Attr>)> {
+        let st = self.stat(path, follow)?;
+        let attrs = self.get_attrs(path, ids, follow).unwrap_or_default();
+        Ok((st, attrs))
+    }
+    /// The directory `path` with its own `stat()`, whether its file system
+    /// tells case apart, and each entry with [`IfsClient::stat_attrs`]
+    /// (following a last symbolic link): what a file server lists. One
+    /// request.
+    fn read_dir_stat(&self, path: &str, ids: &[AttrId]) -> Result<DirListing> {
+        let dir = self.stat(path, true)?;
+        let mut ents = self.read_dir(path)?;
+        ents.retain(|e| e.name != "." && e.name != "..");
+        let case_sensitive = self.statvfs(path).is_ok_and(|s| s.case_sensitive);
+        let base = path.trim_end_matches('/');
+        let entries = ents
+            .into_iter()
+            .map(|ent| {
+                let stat = self
+                    .stat_attrs(&format!("{base}/{}", ent.name), ids, true)
+                    .ok();
+                DirStatEntry { ent, stat }
+            })
+            .collect();
+        Ok(DirListing {
+            dir,
+            case_sensitive,
+            entries,
+        })
     }
 }
 
@@ -911,6 +965,8 @@ macro_rules! every_method {
         fn remote_post(fs: u32, id: u64, r: &crate::remote::HelperResult) -> Result<()>;
         fn stat_by_id_access(id: FileId, amode: i32) -> Result<(String, Stat, Result<()>)>;
         fn pwrite_stat(fd: i32, data: &[u8], off: u64, sync: Option<bool>) -> Result<(usize, Option<Stat>)>;
+        fn stat_attrs(path: &str, ids: &[AttrId], follow: bool) -> Result<(Stat, Vec<Attr>)>;
+        fn read_dir_stat(path: &str, ids: &[AttrId]) -> Result<DirListing>;
     } };
 }
 
@@ -965,6 +1021,34 @@ impl IfsClient for Unavailable {
 
     fn as_caller(&self, _: &Caller) -> Result<Box<dyn IfsClient + '_>> {
         Err(self.0)
+    }
+}
+
+/// An [`IfsClient`] that counts its calls: the requests a job's link to
+/// the service would send. For tests that pin how many requests an
+/// operation costs.
+pub struct Counted<C> {
+    /// The client called.
+    pub inner: C,
+    /// Calls so far.
+    pub calls: Arc<std::sync::atomic::AtomicU64>,
+}
+
+macro_rules! counted {
+    ($( fn $name:ident ( $($a:ident : $t:ty),* ) -> $r:ty; )*) => {
+        $( fn $name(&self, $($a: $t),*) -> $r {
+            self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.inner.$name($($a),*)
+        } )*
+    };
+}
+
+impl<C: IfsClient> IfsClient for Counted<C> {
+    every_method!(counted);
+
+    fn as_caller(&self, who: &Caller) -> Result<Box<dyn IfsClient + '_>> {
+        self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.inner.as_caller(who)
     }
 }
 

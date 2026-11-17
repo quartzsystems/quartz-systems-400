@@ -55,6 +55,24 @@ pub fn nanos(ft: u64) -> Nanos {
     (i64::try_from(ft).unwrap_or(i64::MAX) - EPOCH_DIFF).saturating_mul(100)
 }
 
+/// The DOS attributes, as the IFS keeps them.
+pub const ATTRS: &[AttrId] = &[
+    AttrId::PcReadOnly,
+    AttrId::PcHidden,
+    AttrId::PcSystem,
+    AttrId::PcArchive,
+];
+
+/// What an open reads: a [`FileInfo`]'s attributes and the CCSID.
+pub const OPENED: &[AttrId] = &[
+    AttrId::PcReadOnly,
+    AttrId::PcHidden,
+    AttrId::PcSystem,
+    AttrId::PcArchive,
+    AttrId::FileId,
+    AttrId::Ccsid,
+];
+
 /// The IFS attributes a [`FileInfo`] needs.
 pub const WANTED: &[AttrId] = &[
     AttrId::PcReadOnly,
@@ -106,9 +124,7 @@ pub fn file_info(name: &str, st: &Stat, attrs: &[Attr]) -> FileInfo {
 ///
 /// The stat's.
 pub fn stat_path(c: &dyn IfsClient, path: &str) -> ifs::Result<(Stat, Vec<Attr>)> {
-    let st = c.stat(path, true)?;
-    let attrs = c.get_attrs(path, WANTED, true).unwrap_or_default();
-    Ok((st, attrs))
+    c.stat_attrs(path, WANTED, true)
 }
 
 /// The attribute changes that make the IFS's match `attributes`.

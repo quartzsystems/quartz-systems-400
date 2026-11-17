@@ -10,7 +10,7 @@
 
 use ifs::Result;
 use ifs::backend::Nanos;
-use ifs::client::{CHUNK, Caller, IfsClient, WalkEntry};
+use ifs::client::{CHUNK, Caller, DirListing, IfsClient, WalkEntry};
 use ifs::lease::{LeaseKey, News};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::lock::{LockInfo, ObjKey};
@@ -651,5 +651,24 @@ impl IfsClient for RemoteIfs {
             Wrote
         )
         .map(|(n, s)| (usize::try_from(n).unwrap_or(usize::MAX), s))
+    }
+    fn stat_attrs(&self, path: &str, ids: &[AttrId], follow: bool) -> Result<(Stat, Vec<Attr>)> {
+        reply_as!(
+            self.call(IfsOp::StatAttrs {
+                path: path.into(),
+                ids: ids.to_vec(),
+                follow
+            }),
+            StatAttrs
+        )
+    }
+    fn read_dir_stat(&self, path: &str, ids: &[AttrId]) -> Result<DirListing> {
+        reply_as!(
+            self.call(IfsOp::ReadDirStat {
+                path: path.into(),
+                ids: ids.to_vec()
+            }),
+            Listing
+        )
     }
 }
