@@ -10,8 +10,16 @@
 //! names with one number stay on one page ([`DirPage`] never ends
 //! between them). The cookie verifier is the directory's file ID
 //! hashed: a cookie from another directory's page is `BadCookie`.
+//!
+//! The listing in cookie order is kept for the next page ([`Lists`]),
+//! for the same caller while the directory's attributes are the same,
+//! so a directory is read once however many pages it takes; a plus
+//! page's attributes are one request ([`IfsClient::stat_many`]).
 
-use ifs::client::IfsClient;
+use std::time::{Duration, Instant};
+
+use ifs::client::{Caller, IfsClient};
+use ifs::ops::Stat;
 use ifs::ops::audit::FileId;
 
 use super::attr::{attr_of, is_dir};
@@ -21,7 +29,56 @@ use crate::server::handle::FileHandle;
 use crate::server::text;
 use crate::server::vfs::{DirEntry, DirPage, Req};
 
-/// The cookie of an entry named `name`.
+/// Listings kept at most.
+const KEPT: usize = 4;
+/// How long one is kept.
+const LIFE: Duration = Duration::from_secs(5);
+
+/// A directory's entries in cookie order: cookie, name, file number.
+type Ents = Vec<(u64, String, u64)>;
+
+/// One listing kept.
+struct Kept {
+    fid: FileId,
+    who: Caller,
+    /// The directory's attributes it was read under.
+    seen: (u64, i64, i64),
+    at: Instant,
+    ents: Ents,
+}
+
+/// The listings kept between pages.
+#[derive(Default)]
+pub(crate) struct Lists(Vec<Kept>);
+
+impl Lists {
+    fn get(&self, fid: FileId, who: &Caller, seen: (u64, i64, i64)) -> Option<&Ents> {
+        self.0
+            .iter()
+            .find(|k| k.fid == fid && &k.who == who && k.seen == seen && k.at.elapsed() < LIFE)
+            .map(|k| &k.ents)
+    }
+
+    fn put(&mut self, fid: FileId, who: &Caller, seen: (u64, i64, i64), ents: Ents) {
+        self.0.retain(|k| k.fid != fid || &k.who != who);
+        if self.0.len() >= KEPT {
+            self.0.remove(0);
+        }
+        self.0.push(Kept {
+            fid,
+            who: who.clone(),
+            seen,
+            at: Instant::now(),
+            ents,
+        });
+    }
+}
+
+/// What a directory's listing is good for.
+fn seen_of(st: &Stat) -> (u64, i64, i64) {
+    (st.change, st.mtime, st.ctime)
+}
+
 #[must_use]
 pub fn cookie_of(name: &str) -> u64 {
     let h = name.bytes().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
@@ -30,7 +87,6 @@ pub fn cookie_of(name: &str) -> u64 {
     (h >> 2) + 3
 }
 
-/// The cookie verifier of a directory.
 #[must_use]
 pub fn verf_of(fid: FileId) -> [u8; 8] {
     let h = fid
@@ -61,25 +117,42 @@ impl<C: IfsClient> IfsVfs<C> {
             if !is_dir(&st) {
                 return Err(Fail::V(VfsError::NotDir));
             }
-            let mut all: Vec<(u64, String, u64)> =
-                a.c.read_dir(&path)?
-                    .into_iter()
-                    .map(|e| (cookie_of(&e.name), e.name, e.ino))
-                    .filter(|(c, _, _)| *c > cookie)
-                    .collect();
-            all.sort();
-            let mut n = all.len().min(max.max(1));
-            // Never end a page between two entries of one cookie.
-            while n < all.len() && n > 0 && all[n].0 == all[n - 1].0 {
-                n += 1;
-            }
-            let eof = n >= all.len();
-            all.truncate(n);
+            let seen = seen_of(&st);
+            // The first page reads the directory again.
+            let kept = if cookie == 0 {
+                None
+            } else {
+                self.lists
+                    .borrow()
+                    .get(dir.fid, a.who, seen)
+                    .map(|e| page_of(e, cookie, max))
+            };
+            let (all, eof) = if let Some(p) = kept {
+                p
+            } else {
+                let mut ents: Ents =
+                    a.c.read_dir(&path)?
+                        .into_iter()
+                        .map(|e| (cookie_of(&e.name), e.name, e.ino))
+                        .collect();
+                ents.sort();
+                let p = page_of(&ents, cookie, max);
+                self.lists.borrow_mut().put(dir.fid, a.who, seen, ents);
+                p
+            };
+            let stats = if plus && !all.is_empty() {
+                let paths: Vec<String> = all.iter().map(|(_, n, _)| join(&path, n)).collect();
+                a.c.stat_many(&paths, false)?
+            } else {
+                Vec::new()
+            };
+            let mut stats = stats.into_iter();
             let mut entries = Vec::with_capacity(all.len());
             for (c, name, ino) in all {
                 let node = if plus {
-                    a.c.stat(&join(&path, &name), false)
-                        .ok()
+                    stats
+                        .next()
+                        .and_then(Result::ok)
                         .map(|s| node_of(r, &s))
                 } else {
                     None
@@ -98,5 +171,40 @@ impl<C: IfsClient> IfsVfs<C> {
                 dir: Some(attr_of(r, &st)),
             })
         })
+    }
+}
+
+/// The entries above `cookie`, at most `max` (more to keep two of one
+/// cookie together), and whether they reach the end.
+fn page_of(ents: &Ents, cookie: u64, max: usize) -> (Ents, bool) {
+    let from = ents.partition_point(|(c, _, _)| *c <= cookie);
+    let rest = &ents[from..];
+    let mut n = rest.len().min(max.max(1));
+    // Never end a page between two entries of one cookie.
+    while n < rest.len() && n > 0 && rest[n].0 == rest[n - 1].0 {
+        n += 1;
+    }
+    (rest[..n].to_vec(), n >= rest.len())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pages_follow_the_cookies() {
+        let ents: Ents = vec![
+            (5, "a".into(), 1),
+            (7, "b".into(), 2),
+            (7, "c".into(), 3),
+            (9, "d".into(), 4),
+        ];
+        assert_eq!(page_of(&ents, 0, 1).0.len(), 1);
+        let (p, eof) = page_of(&ents, 5, 1);
+        assert_eq!(p.len(), 2, "two of one cookie on one page");
+        assert!(!eof);
+        let (p, eof) = page_of(&ents, 7, 10);
+        assert_eq!((p.len(), eof), (1, true));
+        assert!(page_of(&ents, 9, 10).0.is_empty());
     }
 }

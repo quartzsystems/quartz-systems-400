@@ -671,4 +671,17 @@ impl IfsClient for RemoteIfs {
             Listing
         )
     }
+    fn stat_many(&self, paths: &[String], follow: bool) -> Result<Vec<Result<Stat>>> {
+        let paths = paths[..paths.len().min(ifs::client::STAT_MANY)].to_vec();
+        reply_as!(self.call(IfsOp::StatMany { paths, follow }), Stats)
+    }
+    fn access_many(&self, path: &str, modes: &[i32]) -> Result<Vec<Result<()>>> {
+        reply_as!(
+            self.call(IfsOp::AccessMany {
+                path: path.into(),
+                modes: modes.to_vec()
+            }),
+            Results
+        )
+    }
 }

@@ -111,21 +111,30 @@ impl<C: IfsClient> IfsVfs<C> {
         self.run(r, |a| {
             let (path, st) = self.locate(a, r, fh)?;
             let dir = is_dir(&st);
-            let ok = |m: i32| a.c.access(&path, m).is_ok();
-            let mut got = 0;
-            if want & ACCESS3_READ != 0 && ok(R_OK) {
-                got |= ACCESS3_READ;
-            }
             let x = if dir { ACCESS3_LOOKUP } else { ACCESS3_EXECUTE };
-            if want & x != 0 && ok(X_OK) {
-                got |= x;
-            }
             let mut wbits = ACCESS3_MODIFY | ACCESS3_EXTEND;
             if dir {
                 wbits |= ACCESS3_DELETE;
             }
-            if w && want & wbits != 0 && ok(W_OK) {
-                got |= want & wbits;
+            // Every mode asked in one request.
+            let asks: Vec<(i32, u32)> = [
+                (want & ACCESS3_READ != 0, R_OK, ACCESS3_READ),
+                (want & x != 0, X_OK, x),
+                (w && want & wbits != 0, W_OK, want & wbits),
+            ]
+            .into_iter()
+            .filter(|(asked, _, _)| *asked)
+            .map(|(_, m, bits)| (m, bits))
+            .collect();
+            let mut got = 0;
+            if !asks.is_empty() {
+                let modes: Vec<i32> = asks.iter().map(|(m, _)| *m).collect();
+                let answers = a.c.access_many(&path, &modes)?;
+                for ((_, bits), ok) in asks.iter().zip(answers) {
+                    if ok.is_ok() {
+                        got |= bits;
+                    }
+                }
             }
             Ok((got, Some(attr_of(r, &st))))
         })

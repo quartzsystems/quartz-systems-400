@@ -376,6 +376,14 @@ pub enum IfsOp {
         path: String,
         ids: Vec<AttrId>,
     },
+    StatMany {
+        paths: Vec<String>,
+        follow: bool,
+    },
+    AccessMany {
+        path: String,
+        modes: Vec<i32>,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -467,6 +475,8 @@ wire_enum!(IfsOp {
     86 => PWriteStat { fd, data, off, sync },
     87 => StatAttrs { path, ids, follow },
     88 => ReadDirStat { path, ids },
+    89 => StatMany { paths, follow },
+    90 => AccessMany { path, modes },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -565,6 +575,12 @@ pub enum IfsReply {
     Listing {
         r: Result<DirListing>,
     },
+    Stats {
+        r: Result<Vec<Result<Stat>>>,
+    },
+    Results {
+        r: Result<Vec<Result<()>>>,
+    },
 }
 
 wire_enum!(IfsReply {
@@ -598,6 +614,8 @@ wire_enum!(IfsReply {
     83 => Wrote { r },
     84 => StatAttrs { r },
     85 => Listing { r },
+    86 => Stats { r },
+    87 => Results { r },
 });
 
 /// The answer `Err(EUNKNOWN)` for a reply of the wrong shape.
@@ -898,6 +916,12 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         },
         IfsOp::ReadDirStat { path, ids } => R::Listing {
             r: c.read_dir_stat(&path, &ids),
+        },
+        IfsOp::StatMany { paths, follow } => R::Stats {
+            r: c.stat_many(&paths, follow),
+        },
+        IfsOp::AccessMany { path, modes } => R::Results {
+            r: c.access_many(&path, &modes),
         },
     }
 }

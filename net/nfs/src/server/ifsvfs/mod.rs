@@ -104,6 +104,8 @@ pub struct IfsVfs<C: IfsClient> {
     instance: Arc<Instance>,
     fds: Arc<jobfds::Member>,
     roots: RefCell<HashMap<u32, (FileId, String)>>,
+    /// Directory listings kept between pages.
+    lists: RefCell<dir::Lists>,
     /// Kept descriptors hold leases.
     leases: bool,
 }
@@ -128,6 +130,7 @@ impl<C: IfsClient> IfsVfs<C> {
             instance,
             fds,
             roots: RefCell::new(HashMap::new()),
+            lists: RefCell::default(),
             leases: cfg.leases,
         }
     }

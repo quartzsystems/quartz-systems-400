@@ -37,6 +37,9 @@ use crate::ops::{
 /// Most bytes one read or write moves.
 pub const CHUNK: usize = 1 << 20;
 
+/// Most paths one [`IfsClient::stat_many`] looks at.
+pub const STAT_MANY: usize = 1024;
+
 /// One object a walk visited.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WalkEntry {
@@ -382,6 +385,21 @@ pub trait IfsClient {
             case_sensitive,
             entries,
         })
+    }
+    /// `stat()` of each of `paths` (`follow`: through a last symbolic
+    /// link), each answer in its place (at most [`STAT_MANY`]): one
+    /// request.
+    fn stat_many(&self, paths: &[String], follow: bool) -> Result<Vec<Result<Stat>>> {
+        Ok(paths
+            .iter()
+            .take(STAT_MANY)
+            .map(|p| self.stat(p, follow))
+            .collect())
+    }
+    /// `access()` of `path` for each of `modes`, each answer in its place:
+    /// one request.
+    fn access_many(&self, path: &str, modes: &[i32]) -> Result<Vec<Result<()>>> {
+        Ok(modes.iter().map(|m| self.access(path, *m)).collect())
     }
 }
 
@@ -967,6 +985,8 @@ macro_rules! every_method {
         fn pwrite_stat(fd: i32, data: &[u8], off: u64, sync: Option<bool>) -> Result<(usize, Option<Stat>)>;
         fn stat_attrs(path: &str, ids: &[AttrId], follow: bool) -> Result<(Stat, Vec<Attr>)>;
         fn read_dir_stat(path: &str, ids: &[AttrId]) -> Result<DirListing>;
+        fn stat_many(paths: &[String], follow: bool) -> Result<Vec<Result<Stat>>>;
+        fn access_many(path: &str, modes: &[i32]) -> Result<Vec<Result<()>>>;
     } };
 }
 
