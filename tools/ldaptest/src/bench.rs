@@ -26,6 +26,17 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
         dn.as_str()
     };
     let n = c.t.binds.max(1);
+    // Connections alone, no LDAP: what the network and the accept cost.
+    let addr = format!("{}:{}", c.t.host, c.t.port);
+    let started = Instant::now();
+    for _ in 0..n {
+        let s = std::net::TcpStream::connect(&addr)?;
+        let _ = s.shutdown(std::net::Shutdown::Both);
+    }
+    out.push(format!(
+        "connections: {n} opened and closed, no LDAP, {:.0} a minute",
+        per_minute(n, started)
+    ));
     let started = Instant::now();
     for _ in 0..n {
         let mut x = Conn::open(&c.t, Tls::None)?;
