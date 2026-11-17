@@ -9,18 +9,21 @@
 //! as one of requests 1560-1567. [`Service`] is those eight requests as
 //! the loop sees them; the job implements it over its `stg` link, the
 //! tests over a [`crate::ops::Directory`] in memory. [`Links`] makes one
-//! per connection thread.
+//! per worker thread.
 //!
 //! - [`frame`]: LDAP messages cut from a byte stream.
 //! - [`conn`]: one connection: TLS, `StartTLS`, binds, operations,
 //!   searches streamed with a budget, abandon, persistent searches,
 //!   idle and write time-outs, the notice of disconnection.
 //! - [`listen`]: the listeners on `ibm-slapdPort` and
-//!   `ibm-slapdSecurePort`, a thread per connection, the counts.
+//!   `ibm-slapdSecurePort`, the counts.
+//! - [`pool`]: the workers that serve the connections, each with a link
+//!   kept across them.
 
 pub mod conn;
 pub mod frame;
 pub mod listen;
+pub mod pool;
 mod reply;
 
 use std::sync::atomic::{AtomicU64, Ordering};

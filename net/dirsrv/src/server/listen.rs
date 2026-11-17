@@ -7,9 +7,8 @@
 //! and `ibm-slapdSecurity` is `SSL` or `SSLTLS`; `StartTLS` works on the
 //! port in the clear when it has one and the value is `TLS` or `SSLTLS`
 //! (otherwise it is refused with protocolError, as IBM's server refuses
-//! it without a certificate). Each connection gets a thread and a
-//! service link of its own; the counts go to the service when they
-//! change.
+//! it without a certificate). Each connection goes to a worker of
+//! [`super::pool`]; the counts go to the service when they change.
 
 use std::io;
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
@@ -18,11 +17,11 @@ use std::sync::{Arc, mpsc};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use ldap::ResultCode;
 use tls::rustls::ServerConfig;
 
-use super::conn::{Connection, Setup};
-use super::{Counters, Counts, JobSettings, Links, Service, reply};
+use super::conn::Setup;
+use super::pool::Pool;
+use super::{Counters, Counts, JobSettings, Links, Service};
 
 /// How often the accept loop looks for connections and the end.
 const ACCEPT_TICK: Duration = Duration::from_millis(50);
@@ -180,7 +179,7 @@ fn accept_loop<L: Links>(
     let mut reporter = links.link().ok();
     let mut sent = Counts::default();
     let mut last_report = Instant::now();
-    let mut threads: Vec<JoinHandle<()>> = Vec::new();
+    let mut pool = Pool::new(Arc::clone(links), Arc::clone(stop));
     let start_tls = if l.start_tls { l.tls.clone() } else { None };
     // A blocking accept on each listener, on a thread of its own, so a
     // connection is taken at once (a poll every tick made each wait up
@@ -213,19 +212,11 @@ fn accept_loop<L: Links>(
                     stop: Arc::clone(stop),
                     counters: Arc::clone(counters),
                 };
-                let links = Arc::clone(links);
-                let t = std::thread::Builder::new()
-                    .name("ldap-conn".into())
-                    .spawn(move || connection(&*links, s, setup));
-                match t {
-                    Ok(t) => threads.push(t),
-                    Err(e) => tracing::warn!("LDAP: no thread for a connection: {e}"),
-                }
+                pool.serve((s, setup));
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
         }
-        threads.retain(|t| !t.is_finished());
         if last_report.elapsed() >= REPORT {
             last_report = Instant::now();
             report(&mut reporter, instance, counters, &mut sent);
@@ -247,9 +238,7 @@ fn accept_loop<L: Links>(
         let _ = t.join();
     }
     // The connections see the flag within a tick.
-    for t in threads {
-        let _ = t.join();
-    }
+    pool.join();
     report(&mut reporter, instance, counters, &mut sent);
 }
 
@@ -290,25 +279,6 @@ fn report<S: Service>(
         match r.conns(instance, now) {
             Ok(()) => *sent = now,
             Err(e) => tracing::debug!("LDAP: counts: {e}"),
-        }
-    }
-}
-
-fn connection<L: Links>(links: &L, s: TcpStream, setup: Setup) {
-    let _ = s.set_nonblocking(false);
-    match links.link() {
-        Ok(svc) => {
-            let end = Connection::serve(svc, s, setup);
-            tracing::debug!("LDAP connection ended: {end:?}");
-        }
-        Err(e) => {
-            use std::io::Write as _;
-            tracing::warn!("LDAP: no link to the storage service: {e}");
-            let mut s = s;
-            let _ = s.write_all(&reply::notice(
-                ResultCode::Unavailable,
-                "The directory server cannot reach its data.",
-            ));
         }
     }
 }

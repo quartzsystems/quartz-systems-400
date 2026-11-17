@@ -150,14 +150,20 @@ pub struct Connection<S: Service> {
 impl<S: Service> Connection<S> {
     /// Serve `stream` until it ends; why it ended.
     pub fn serve(svc: S, stream: TcpStream, setup: Setup) -> End {
-        let counters = Arc::clone(&setup.counters);
-        counters.opened(setup.ssl.is_some());
-        let end = Self::run(svc, stream, setup);
-        counters.closed();
-        end
+        Self::serve_with(svc, stream, setup).0
     }
 
-    fn run(mut svc: S, stream: TcpStream, setup: Setup) -> End {
+    /// Serve `stream` until it ends; why it ended, and the service back
+    /// for the next connection.
+    pub fn serve_with(svc: S, stream: TcpStream, setup: Setup) -> (End, S) {
+        let counters = Arc::clone(&setup.counters);
+        counters.opened(setup.ssl.is_some());
+        let r = Self::run(svc, stream, setup);
+        counters.closed();
+        r
+    }
+
+    fn run(mut svc: S, stream: TcpStream, setup: Setup) -> (End, S) {
         let client = stream
             .peer_addr()
             .map(|a| a.to_string())
@@ -178,7 +184,7 @@ impl<S: Service> Connection<S> {
                 }
                 Err(e) => {
                     tracing::debug!("LDAP {}: TLS handshake: {e}", info.client);
-                    return End::Closed;
+                    return (End::Closed, svc);
                 }
             }
         } else {
@@ -190,7 +196,7 @@ impl<S: Service> Connection<S> {
                 tracing::warn!("LDAP {}: open: {e}", info.client);
                 let mut io = io;
                 let _ = io.write_all(&reply::notice(ResultCode::Unavailable, &e.text));
-                return End::Broken;
+                return (End::Broken, svc);
             }
         };
         let settings = opened.settings;
@@ -217,7 +223,7 @@ impl<S: Service> Connection<S> {
         };
         let end = c.main();
         c.finish(end);
-        end
+        (end, c.svc)
     }
 
     fn main(&mut self) -> End {

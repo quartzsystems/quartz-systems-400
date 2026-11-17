@@ -6,7 +6,7 @@
 //! `QSYSWRK`; docs/DIRSRV.md §4 "The job"): the settings from the
 //! storage service, the certificate assigned to
 //! `QS400_DIRECTORY_SERVER`, the listeners, and `dirsrv::server`'s
-//! connection loop with a link of its own per connection thread. It
+//! connection loop with a link of its own per worker thread. It
 //! ends when `ENDTCPSVR`, `ENDJOB` or its subsystem says so: the
 //! listeners close and every connection gets the notice of
 //! disconnection.
@@ -179,7 +179,8 @@ impl Service for JobLink {
     }
 }
 
-/// A link per thread, each the job's own (`hello_thread`).
+/// A link per worker thread, each the job's own (`hello_thread`), kept
+/// across the connections the worker serves.
 struct JobLinks {
     number: u32,
     pid: u32,

@@ -17,6 +17,7 @@ mod harness;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, TcpStream};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -264,6 +265,8 @@ type Call = Box<dyn FnOnce(&mut Fake) + Send>;
 /// The fake service on its own thread.
 struct FakeLinks {
     tx: Mutex<Sender<Call>>,
+    /// Links made.
+    made: Arc<AtomicUsize>,
 }
 
 /// One thread's link: every request runs on the service's thread.
@@ -318,6 +321,7 @@ impl Service for FakeLink {
 impl Links for FakeLinks {
     type S = FakeLink;
     fn link(&self) -> Result<FakeLink, String> {
+        self.made.fetch_add(1, Ordering::SeqCst);
         Ok(FakeLink {
             tx: self.tx.lock().unwrap().clone(),
         })
@@ -354,6 +358,7 @@ struct Running {
     port: u16,
     secure: Option<u16>,
     counts: Arc<Mutex<Vec<Counts>>>,
+    links: Arc<AtomicUsize>,
 }
 
 impl Running {
@@ -417,7 +422,11 @@ fn start(setup: Setup) -> Running {
             call(&mut fake);
         }
     });
-    let links = Arc::new(FakeLinks { tx: Mutex::new(tx) });
+    let made = Arc::new(AtomicUsize::new(0));
+    let links = Arc::new(FakeLinks {
+        tx: Mutex::new(tx),
+        made: Arc::clone(&made),
+    });
     let (l, failed) =
         Listeners::bind(IpAddr::V4(Ipv4Addr::LOCALHOST), &setup.settings, setup.tls).unwrap();
     assert!(failed.is_none());
@@ -428,6 +437,7 @@ fn start(setup: Setup) -> Running {
         port,
         secure,
         counts,
+        links: made,
     }
 }
 
@@ -710,6 +720,18 @@ fn a_bad_message_gets_a_notice() {
     let got = read_until(&mut s, 0);
     let n = ldap::ext::as_notice_of_disconnection(got.last().unwrap()).unwrap();
     assert_eq!(n.code, ResultCode::ProtocolError);
+}
+
+#[test]
+fn workers_keep_their_links_across_connections() {
+    let r = start(Setup::default());
+    for _ in 0..50 {
+        let c = r.admin();
+        c.unbind().unwrap();
+    }
+    // The reporter's, and one per worker: never one per connection.
+    let made = r.links.load(Ordering::SeqCst);
+    assert!(made <= 1 + dirsrv::server::pool::KEEP + 2, "{made} links");
 }
 
 #[test]
