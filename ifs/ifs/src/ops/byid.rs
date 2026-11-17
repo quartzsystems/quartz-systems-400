@@ -199,30 +199,47 @@ impl<B: Backend> Ifs<B> {
     /// Walk a backend file system for the object `id.ino`, remembering
     /// every path passed; its canonical path if found where it resolves.
     fn walk_for(&self, base: &str, at: &[String], id: FileId) -> Option<String> {
+        // Only directories are read: an entry's number and type come with
+        // the listing, so no object is looked at on its own.
+        let st = self.b.stat(base).ok()?;
+        let top = crate::path::to_text(at);
+        if st.ino == id.ino && self.verify(&top, id.fs, id.ino).is_some() {
+            return Some(top);
+        }
+        if st.kind != Kind::Dir {
+            return None;
+        }
         let mut stack = vec![(base.to_string(), at.to_vec())];
         while let Some((rel, comps)) = stack.pop() {
-            let Ok(st) = self.b.stat(&rel) else { continue };
-            let p = crate::path::to_text(&comps);
-            if st.ino == id.ino {
-                // Under a mount point the path reaches the mount instead.
-                if self.verify(&p, id.fs, id.ino).is_some() {
-                    return Some(p);
-                }
-            } else {
-                self.ids
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .note(id.fs, st.ino, &p);
-            }
-            if st.kind == Kind::Dir
-                && let Ok(mut ents) = self.b.readdir(&rel)
+            let Ok(mut ents) = self.b.readdir(&rel) else {
+                continue;
+            };
+            ents.sort_by(|a, b| b.name.cmp(&a.name));
+            let mut found = None;
             {
-                ents.sort_by(|a, b| b.name.cmp(&a.name));
+                let mut ids = self
+                    .ids
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 for e in ents {
                     let mut c = comps.clone();
                     c.push(e.name.clone());
-                    stack.push((backend::join(&rel, &e.name), c));
+                    let p = crate::path::to_text(&c);
+                    if e.ino == id.ino {
+                        found = Some(p.clone());
+                    } else {
+                        ids.note(id.fs, e.ino, &p);
+                    }
+                    if e.kind == Kind::Dir {
+                        stack.push((backend::join(&rel, &e.name), c));
+                    }
                 }
+            }
+            // Under a mount point the path reaches the mount instead.
+            if let Some(p) = found
+                && self.verify(&p, id.fs, id.ino).is_some()
+            {
+                return Some(p);
             }
         }
         None
