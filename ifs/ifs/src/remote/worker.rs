@@ -523,7 +523,7 @@ fn flush(core: &Core, h: &RHandle, cred: &Cred, ok: &mut bool) -> RResult<()> {
     } else {
         Stable::Unstable
     };
-    let until = Instant::now() + GOING_WAIT;
+    let until = Instant::now() + GOING_WAIT.max(core.info.slow_after + Duration::from_secs(5));
     for _ in 0..8 {
         wait_going(core, h, until);
         let ks: Vec<u64> = core

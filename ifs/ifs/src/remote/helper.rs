@@ -21,7 +21,9 @@ use super::work::Work;
 use super::worker;
 use crate::errno::{Errno, Result};
 
-/// How long a helper may keep work.
+/// How long a helper may keep work at least: a call the server is slow to
+/// answer (a sync that waits for the host) is not sent again by the
+/// mount meanwhile, until the mount's `slow_after` (its major timeout).
 pub const LEND: Duration = Duration::from_secs(30);
 
 /// What a helper is asked to do.
@@ -104,8 +106,7 @@ impl RemoteMount {
             let bs = core.bs();
             let (off, data) = if op == HelperOp::Write {
                 drop(q);
-                let Some((off, data, epoch)) =
-                    worker::snapshot(core, &h, block, &core.stats.lent)
+                let Some((off, data, epoch)) = worker::snapshot(core, &h, block, &core.stats.lent)
                 else {
                     // Written meanwhile: nothing to lend.
                     let mut q = core.queue();
@@ -115,12 +116,26 @@ impl RemoteMount {
                     continue;
                 };
                 q = core.queue();
-                q.lent.insert(id, (t, w.clone(), Instant::now() + LEND));
+                q.lent.insert(
+                    id,
+                    (
+                        t,
+                        w.clone(),
+                        Instant::now() + LEND.max(core.info.slow_after),
+                    ),
+                );
                 q.gens.insert(id, epoch);
                 (off, data)
             } else {
                 Stats::add(&core.stats.read);
-                q.lent.insert(id, (t, w.clone(), Instant::now() + LEND));
+                q.lent.insert(
+                    id,
+                    (
+                        t,
+                        w.clone(),
+                        Instant::now() + LEND.max(core.info.slow_after),
+                    ),
+                );
                 (block * bs, Vec::new())
             };
             let (uid, gid, gids) = cred_of(&cred);

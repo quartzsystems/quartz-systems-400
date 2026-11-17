@@ -804,7 +804,7 @@ impl RemoteMount {
 
     /// Too much waits to be written: every block waiting goes out at
     /// once, over all the workers (identical work is queued once), and
-    /// the ticket of the last is what a write waits for; data only sent
+    /// the ticket of the middle one is what a write waits for; data only sent
     /// unstable waits for its commit.
     fn write_back(&self, c: MutexGuard<'_, Cache>, cred: &Cred) -> u64 {
         let waiting: Vec<(RHandle, u64)> = c
@@ -825,15 +825,19 @@ impl RemoteMount {
                 token: None,
             });
         }
-        let mut last = 0;
-        for (h, block) in waiting {
-            last = self.push(Work::WriteBlock {
-                h,
-                cred: cred.clone(),
-                block,
-            });
-        }
-        last
+        let tickets: Vec<u64> = waiting
+            .into_iter()
+            .map(|(h, block)| {
+                self.push(Work::WriteBlock {
+                    h,
+                    cred: cred.clone(),
+                    block,
+                })
+            })
+            .collect();
+        // The writer goes on once half has gone, so the workers always have
+        // blocks to send while it fills the cache again.
+        tickets[tickets.len() / 2]
     }
 
     /// Whether `h` has data not yet on the server, or a write-back
