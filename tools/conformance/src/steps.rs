@@ -771,6 +771,11 @@ impl Suite {
             "192 directory server persistence",
             Self::dir_persist,
         )?);
+        reports.push(self.step(
+            &mut s,
+            "199 directory server Navigator and QAP",
+            Self::dir_admin_pages,
+        )?);
         reports.push(self.step(&mut s, "194 directory server bench", Self::dir_bench)?);
         reports.push(self.step(&mut s, "108 job accounting", Self::job_accounting)?);
         reports.push(self.step(&mut s, "140 storage thresholds", Self::storage_limits)?);

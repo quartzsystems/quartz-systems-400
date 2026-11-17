@@ -17,11 +17,13 @@
 //! | 191 | publishing: the users agent enabled in `publish.conf`, a `CRTUSRPRF` appears and a `DLTUSRPRF` disappears |
 //! | 192 | persistence across `ENDTCPSVR`/`STRTCPSVR` and an IPL, `SAVLIB`/`RSTLIB` of `QUSRDIRDB`, `RCLSTG` |
 //! | 194 | `ldaptest bench`: binds a minute and a paged search (numbers to `DIRSRV.md` §16) |
+//! | 199 | Navigator's directory server pages and an index added and removed through them; QAP's `Dirsrv` as `QSECOFR` and `QAPTEST` |
 //!
 //! The harness's own setup and checks over the forwarded ports use
 //! `net/ldap`'s client; what is under test from the outside is
 //! `ldaptest`, which shares no code with the server.
 
+mod admin;
 mod prog;
 mod steps;
 mod tool;
@@ -94,7 +96,11 @@ pub(crate) fn want(
 }
 
 /// `QSH CMD(script)`: its output and whether it ended with status 0.
-pub(crate) fn qsh(s: &mut Session, script: &str, limit: Duration) -> Result<(bool, String), String> {
+pub(crate) fn qsh(
+    s: &mut Session,
+    script: &str,
+    limit: Duration,
+) -> Result<(bool, String), String> {
     debug_assert!(!script.contains('\''));
     let out = s.command(&format!("QSH CMD('{script}')"), limit)?;
     Ok((out.contains("exit status 0."), out))
@@ -229,14 +235,24 @@ pub(crate) fn job_gone(s: &mut Session, name: &str) -> Result<(), String> {
 /// `STRTCPSVR SERVER(*DIRSRV)`: started (`TCP1A07`) or running already
 /// (`TCP1A08`), the job active.
 pub(crate) fn start(s: &mut Session) -> Result<String, String> {
-    let out = want(s, "STRTCPSVR SERVER(*DIRSRV)", &["TCP1A07", "TCP1A08"], SLOW)?;
+    let out = want(
+        s,
+        "STRTCPSVR SERVER(*DIRSRV)",
+        &["TCP1A07", "TCP1A08"],
+        SLOW,
+    )?;
     job_line(s, INSTANCE)?;
     Ok(out)
 }
 
 /// `ENDTCPSVR SERVER(*DIRSRV)`, the job gone.
 pub(crate) fn end(s: &mut Session) -> Result<String, String> {
-    let out = want(s, "ENDTCPSVR SERVER(*DIRSRV)", &["TCP1A0A", "TCP1A09"], SLOW)?;
+    let out = want(
+        s,
+        "ENDTCPSVR SERVER(*DIRSRV)",
+        &["TCP1A0A", "TCP1A09"],
+        SLOW,
+    )?;
     job_gone(s, INSTANCE)?;
     Ok(out)
 }

@@ -26,7 +26,7 @@ use crate::tcp::{GUEST, forward_port};
 /// The product's URLs.
 const PREFIX: &str = "/qs400/navigator";
 
-fn nav(
+pub(crate) fn nav(
     port: u16,
     method: &str,
     path: &str,
@@ -40,7 +40,7 @@ fn nav(
 const QUERY: &str = "SELECT * FROM QSYS2.SYSTABLES FETCH FIRST 5 ROWS ONLY";
 
 /// The form field every POST carries (`name="csrf" value="..."`).
-fn csrf_in(body: &str) -> Option<String> {
+pub(crate) fn csrf_in(body: &str) -> Option<String> {
     let at = body.find("name=\"csrf\" value=\"")? + "name=\"csrf\" value=\"".len();
     let end = body[at..].find('"')?;
     Some(body[at..at + end].to_string())

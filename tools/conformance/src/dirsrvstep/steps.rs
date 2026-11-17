@@ -103,7 +103,7 @@ fn pem_blocks(text: &str, kind: &str) -> Vec<String> {
 impl Suite {
     /// The administrator's password, the instance and the forwards,
     /// unless an earlier step made them: the host ports of 389 and 636.
-    fn dir_ensure(&self, s: &mut Session) -> Result<(u16, u16), String> {
+    pub(super) fn dir_ensure(&self, s: &mut Session) -> Result<(u16, u16), String> {
         {
             let st = self.dir.borrow();
             if st.started
@@ -152,7 +152,7 @@ impl Suite {
     }
 
     /// A step's result, with the guest's state written out when it failed.
-    fn dir_checked(
+    pub(super) fn dir_checked(
         &self,
         s: &mut Session,
         step: &str,

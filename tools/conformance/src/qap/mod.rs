@@ -41,6 +41,9 @@
 //! `develop.rs`. Step 161, `Compile` of `qap/COMPILE42.rpgle`: one
 //! `RNF7416` at line 42.
 //!
+//! Step 199 (with Navigator's pages, `dirsrvstep`), the `Dirsrv` service
+//! as `QSECOFR` and `QAPTEST`: see `dirsrv.rs`.
+//!
 //! Step 93, the `Messages` service and the spool watches as `QAPTEST`
 //! and `QAPTEST2`: see `messages.rs`.
 //!
@@ -50,6 +53,7 @@
 mod client;
 mod debug;
 mod develop;
+mod dirsrv;
 mod ifs;
 mod manage;
 mod messages;
@@ -455,6 +459,21 @@ impl Suite {
         let r = manage::run(&mut a, &mut sec)
             .and_then(|m| Ok(format!("{m}; {}", manage::exclusions(&mut a, &mut sec)?)))
             .map_err(|e| format!("MANAGE: {e}"));
+        let _ = a.call(Op::SignOff, &());
+        let _ = sec.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
+    /// Step 199's QAP half: `Dirsrv` through the real jobs (`dirsrv.rs`),
+    /// the directory server running.
+    pub(crate) fn qap_dirsrv(&self, s: &mut Session) -> Result<String, String> {
+        let mut srv = setup(self, s)?;
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let mut sec = srv.open()?;
+        sec.sign_on("QSECOFR", crate::phase5::SECOFR_PASSWORD)?;
+        let r = dirsrv::run(&mut a, &mut sec).map_err(|e| format!("DIRSRV: {e}"));
         let _ = a.call(Op::SignOff, &());
         let _ = sec.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
