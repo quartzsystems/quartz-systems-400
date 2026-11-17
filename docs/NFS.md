@@ -690,7 +690,7 @@ disk immediately"), and `COMMIT` are synced before the answer; an
 file at the size or on a short read. `ACCESS` asks `access()` as the
 caller for each bit (`LOOKUP` on directories, `EXECUTE` on files,
 `DELETE` on directories only; none of the changing bits on a
-read-only export). `JUKEBOX` is never answered.
+read-only export), every mode in one request (`access_many`). `JUKEBOX` is never answered.
 
 `READDIR`/`READDIRPLUS`: from cookie 0 the page starts with `.`
 (cookie 1) and `..` (cookie 2); then the file system's entries in
@@ -703,6 +703,12 @@ directory's verifier is `BAD_COOKIE` (a zero verifier is taken).
 Pages are cut to `count` (`READDIR`), or to `dircount` bytes of names
 and `maxcount` in all (`READDIRPLUS`), as XDR encodes them; a page
 that holds no entry is `TOOSMALL`.
+A directory is read once for all its pages: the listing in cookie order
+is kept for the next page (four directories per thread, five seconds)
+while the caller and the directory's change value and times are the same,
+and a `READDIRPLUS` page's attributes are one request (`stat_many`).
+Before, each page read the whole directory again and stat'ed each entry
+in a request of its own.
 
 The duplicate request cache keeps `SETATTR`, `CREATE`, `MKDIR`,
 `SYMLINK`, `MKNOD`, `REMOVE`, `RMDIR`, `RENAME`, `LINK`
@@ -1149,7 +1155,9 @@ path), `v4_nfsroot` (`NFSROOT=`, default `/`), `v4_root` (`ROOT`),
   file not in its cache since the IPL (an xfs handle names no parent),
   or an object with an old generation, falls back to the paths the
   service remembers (65536) and then a walk of its file system that
-  remembers what it passes (`docs/IFS.md`, "File IDs"). `/QSYS.LIB`
+  remembers what it passes (`docs/IFS.md`, "File IDs"); the walk reads
+directories only (an entry's number and type come with its listing),
+never an object on its own. `/QSYS.LIB`
   resolves by the hashes of library, object and member, level by level,
   a collision refused (`EBADFID`). A handle whose
   object is gone, whose generation differs, or whose file system is no
@@ -1780,7 +1788,11 @@ next step).
 version 4 (`CPFA1BB`); `RPCSEC_GSS`; delegations (never asked,
 returned when given); pNFS (`EXCHGID4_FLAG_USE_NON_PNFS`); NFSv4.2;
 device nodes and sockets by `mknod` (`ENOTSUP`); blocking lock
-requests (the IFS's `F_SETLKW` polls, 7.4).
+requests (the IFS's `F_SETLKW` polls, 7.4). It offers no backchannel, so a
+server's `CB_NOTIFY_LOCK` does not reach it: the IFS's locks on a remote
+object have no wait to wake (`F_SETLKW` answers `EAGAIN` while it would
+wait and the job asks again), and a backchannel would also have to
+answer recalls of the delegations it never asks for.
 
 Mounts last until the next IPL, as IBM's do. To have them back, put
 `MOUNT` in the startup program (`QSTRUP`).
@@ -1962,7 +1974,7 @@ Nothing is accepted and ignored. What is not done is refused as below.
 | NFSv4.1 state protection `SP4_MACH_CRED` / `SP4_SSV`; `SET_SSV` | `EXCHANGE_ID`: `NFS4ERR_INVAL` / `NFS4ERR_ENCR_ALG_UNSUPP`; `SET_SSV`: `NFS4ERR_INVAL` |
 | Persistent sessions, RDMA (`CREATE_SESSION4_FLAG_PERSIST`, `CONN_RDMA`, `bctsa_use_conn_in_rdma_mode`) | not granted: cleared in the reply |
 | `CLAIM_DELEGATE_PREV`, `CLAIM_DELEG_PREV_FH`, `DELEGPURGE` (delegations do not outlive a client's restart) | `NFS4ERR_NOTSUPP` |
-| NFSv4 blocking locks (`READW_LT`, `WRITEW_LT`) | answered at once (`NFS4ERR_DENIED`); no `CB_NOTIFY_LOCK` |
+| NFSv4 blocking locks (`READW_LT`, `WRITEW_LT`) as queued requests | answered at once (`NFS4ERR_DENIED`); a 4.1 client with a backchannel is sent `CB_NOTIFY_LOCK` when a lock this server holds on the file goes (`LOCKU`, `CLOSE`, a client dropped; its opens say `OPEN4_RESULT_MAY_NOTIFY_LOCK`), not when a local job's or an NLM client's lock goes, so clients still poll as RFC 8881 lets them |
 | NFSv4 mandatory locking on `READ`/`WRITE` | locks are advisory, as the IFS's |
 | NFSv4.1 operations in a 4.0 compound | `OP_ILLEGAL` (`NFS4ERR_OP_ILLEGAL`), as RFC 7530 has it |
 | 4.0's `SETCLIENTID`, `SETCLIENTID_CONFIRM`, `RENEW`, `OPEN_CONFIRM`, `RELEASE_LOCKOWNER` in a 4.1 compound | `NFS4ERR_NOTSUPP` |
