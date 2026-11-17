@@ -118,13 +118,15 @@ with IBM i NetServer:
   their change notifications. That includes `/QSYS.LIB` members, files
   and libraries changed through the database and the object commands
   (record I/O, SQL, `CLRPFM`, SEU, `ADDPFM`, `RMVM`, `RNMM`, `DLTF`,
-  `CLRLIB`); a job's open for update waits for clients to give back
-  cached writes.
+  `CLRLIB`), and a directory, file or library renamed, moved or deleted
+  above a leased file or member; a job's open for update waits for
+  clients to give back cached writes.
 - Files get Windows-style 8.3 short names (`XXHHHH~1.EXT`, made from the
   file's number, so they stay the same): in listings, in alternate-name
   queries, and to open files by.
 - With "allow NetBIOS" on, the server registers and answers for its
-  NetBIOS names on UDP 137.
+  NetBIOS names on UDP 137 and announces itself to the workgroup's master
+  browser on UDP 138 every browse interval.
 - File shares over the IFS (`/QSYS.LIB` too), with text conversion by
   CCSID for the extensions a share lists and a maximum number of users.
   Print shares spool to an output queue as the user (a spooled file of
@@ -346,10 +348,13 @@ Each has its own handoff document for a later release.
 
 ## Known limits
 
-NetServer's are in `NETSERVER.md` §10. The main ones: the NetBIOS
-datagram service (UDP 138) and browsing are not built (clients connect by
-name or address); renaming a file or library above a leased member breaks
-no lease.
+NetServer's are in `NETSERVER.md` §10. The main ones: the server
+announces itself to the workgroup's master browser (UDP 138) but is no
+browser itself, and serves no browse list (that needs SMB1); modern
+clients, which no longer browse, connect by name or address. A file
+renamed, moved or deleted under a client's open in another job breaks
+handle caching but is not refused while the client keeps it open (the
+IFS allows it; Windows refuses it within one job).
 
 NFS's are in `NFS.md` §10 and §7. The main ones: a file not used
 since the IPL is found from its handle by one walk of its file system;

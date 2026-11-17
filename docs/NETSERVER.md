@@ -96,13 +96,19 @@ reason 6 with the error number, when the configuration cannot be read
 `CPIB683` reason 7, and ends. With NetBIOS allowed it also holds the
 server's NetBIOS names on UDP 137 on a thread of its own (`nbns::serve`
 over `nbns::Udp`, section 9; a bind failure is logged and 445 and 139
-are served without it) and releases them when it ends; UDP 138 is not
-served (section 10). Each TCP port has a thread blocked in `accept`, so a
-connection is taken the moment it arrives (the loop polled every 50 ms
-before, up to 50 ms on every new connection); at the end the job sets
-its stop flag and wakes each thread with a connection of its own to
-`127.0.0.1`, as the TCP servers' listeners do (`net/servers/src/listen.rs`).
-Each accepted connection goes through the descriptor relay
+are served without it) and releases them when it ends, and announces
+the server to the workgroup's master browser on UDP 138 on another
+(`nbdgm::serve`, section 9). Each TCP port has a thread blocked in
+`accept`, so a connection is taken the moment it arrives (the loop polled
+every 50 ms before, up to 50 ms on every new connection); at the end the
+job sets its stop flag and wakes each thread with a connection of its own
+to `127.0.0.1`, as the TCP servers' listeners do
+(`net/servers/src/listen.rs`). Each accepted connection is read on a
+thread of its own as far as routing needs (the session request on 139,
+the first NEGOTIATE peeked) and handed to the port's routing thread, so
+a client slow to send them holds up no other (before, one waited for up
+to 2 seconds, or 10 on 139, in the accept loop, and every connection
+behind it with it). Each connection then goes through the descriptor relay
 (`net/sockets` `relay`), as `QRWTLSTN` hands DDM connections to
 `QRWTSRVR`: to the job the routing table names (below), otherwise to the
 `QZLSFILE` pool. `NETSTAT` and `QSYS2.NETSTAT_INFO` show 445 (and 139)
@@ -774,9 +780,20 @@ number):
 
 A job that waits for another job's break holds its own IFS calls (one IFS
 thread per job), so two jobs whose clients break each other's leases at
-the same moment resolve at the 35-second timeout. A rename of a
-directory above a leased file breaks no lease (the handle finds its file
-by file ID).
+the same moment resolve at the 35-second timeout.
+
+A directory renamed or moved above a leased file (`Leases::gate_below`)
+breaks handle caching on every lease below it and waits as a rename of
+the file does (MS-FSA 2.1.5.15.12): the table keeps where each leased
+object is (its canonical path at the last grant, moved with each rename
+above it). A library renamed or deleted, or a file renamed or moved,
+through the database or the object commands, does the same for the
+members below it without waiting ("Members changed through the database"
+below). The handle still finds its file by file ID afterwards. Within one
+job the library refuses to rename a directory with something open below
+it once handle caching is given back, as Windows does; across jobs the
+IFS lets the rename go once the break is done, as it does for any other
+job.
 
 ### Members changed through the database (built: `storage/store/src/obj/watch.rs`, `ifs/ifs/src/lease/qsys.rs`, `ifs/qsyslib/src/notice.rs`)
 
@@ -887,9 +904,32 @@ map to `open()` flags: `FILE_OPEN` an existing object,
 `FILE_OVERWRITE(_IF)` `O_TRUNC`; directories are `mkdir()` (mode 777
 under the umask), files `O_INHERITMODE` (data authorities from the
 directory, as IBM NetServer does). Reads and writes move at most 1 MiB
-per IFS call. Listings are `read_dir` filtered by the search pattern
-([MS-FSA] 2.1.4.4: `*`, `?`, `<`, `>`, `"`, without regard to case) and a
-stat of each entry. Volume information is `statvfs()` of the share root.
+per IFS call. Listings are filtered by the search pattern ([MS-FSA]
+2.1.4.4: `*`, `?`, `<`, `>`, `"`, without regard to case). Volume
+information is `statvfs()` of the share root.
+
+Every IFS call is a request to the storage service, which answers every
+job on one thread, so the backend makes as few as it can
+(`tests/shares/requests.rs` pins them):
+
+| Operation | Requests | Before |
+|---|---|---|
+| CREATE of a new file with a lease | 5: the name looked up, the `open()`, its attributes, the lease reserved, the lease reported | 9 |
+| CREATE of an existing file (or directory) | 2: looked up with its attributes (`stat_attrs`), the `open()` (none for a directory or an attribute-only open) | 6 (5) |
+| READ, WRITE (up to 1 MiB) | 1 | 1 |
+| CLOSE | 1, and the lease report when it held one | the same |
+| QUERY_INFO (standard) | 2: the stat with its attributes, the link count | 5 |
+| A listing of 51 files | 2: the directory's stat, then its entries with theirs (`read_dir_stat`) | 108 (two per entry) |
+
+The calls behind them: `IfsClient::stat_attrs` (a `stat()` with the
+attributes asked for) and `read_dir_stat` (a directory's own `stat()`,
+its case rule and each entry with `stat_attrs`), each one request (`stg`
+`IfsOp` 87 and 88). A handle checks it still names its object from the
+stat it asks for anyway (its file ID), and looks the file ID up (a walk)
+only when it does not, keeping the path it finds. The CREATE's own stat
+is answered from what the open read (not after a truncating open). A
+lease is reserved by path without looking first; only a grant of nothing
+looks the file up again. DOS attributes are set only where they differ.
 Errors map as: `ENOENT` not found (path not found when the directory is
 missing too), `EACCES`/`EPERM`/`EROFS`/`EROOBJ` access denied, `EEXIST`
 collision, `ENOTEMPTY` not empty, `EBUSY`/`EAGAIN` sharing violation,
@@ -1127,6 +1167,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | Durable handles | v1 and v2 with a handle-caching lease; reconnects routed back to the job (section 3) |
 | 8.3 short names | made from file numbers (section 6): listings (FileBoth and FileIdBothDirectoryInformation), FileAlternateNameInformation, search patterns and opens by short name (a library patch); not settable |
 | NetBIOS name service | UDP 137 when NetBIOS is allowed, as a B node (RFC 1001 15, RFC 1002 4.2 and 5.1.1; `net/netserver/src/nbns/`): the server name `<00>` and `<20>` (unique) and the workgroup `<00>` (group, when the domain is set and not the server name) claimed with three broadcast registration requests 250 ms apart and an overwrite demand, TTL 302 400 s (`DEFAULT_TTL`); positive answers to name queries for them (unicast and broadcast, to the sender), a negative answer (`NAM_ERR`) to a unicast query for another name, none to a broadcast one; node status for `*` or a held name (the held names, active, statistics zero); another node's registration of a held unique name refused (`ACT_ERR`); a name another node objects to or demands is dropped; a refresh request broadcast at half the TTL (a B node has no name server; this re-asserts the names); release requests when `QZLSSERVER` ends. No WINS (point-to-point) registration, no scope |
+| NetBIOS datagram service | UDP 138 when NetBIOS is allowed, as a B node (RFC 1002 4.4; `net/netserver/src/nbdgm/`), for host announcements ([MS-BRWS] 2.2.1): a direct group datagram from `SERVER<00>` to `WORKGROUP<1D>` (the local master browser) carrying a mailslot write to `\MAILSLOT\BROWSE` ([MS-MAIL] 2.2, `SMB_COM_TRANSACTION`), with the server name, the server text as comment, the type `SV_TYPE_WORKSTATION`, `SERVER`, `SERVER_NT` and `PRINTQ_SERVER` when a print share exists, version 6.1, browser version 15.1; sent at the start, then after 1, 2, 4 and 8 minutes, then every browse interval attribute (720 000 ms by default; 0 sends none, and so does an empty domain), its periodicity the wait to the next; an `AnnouncementRequest` brings the next one within a random 30 seconds; a last one with type 0 when `QZLSSERVER` ends. Fragments, other datagrams and other mailslots are ignored |
 | Resilient and persistent handles, multichannel, RDMA, DFS, compression | refused (section 10) |
 | Change notify | yes, for every change in the directory (and below it with `SMB2_WATCH_TREE`) through any job or the service (section 6, "Change notify across jobs") |
 | Server-side copy | COPYCHUNK and COPYCHUNK_WRITE, done by reads and writes in the job; no block cloning |
@@ -1164,7 +1205,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | Setting a short name (FileShortNameInformation) | short names are made from file numbers, not stored (section 6) | `STATUS_NOT_SUPPORTED` |
 | `wkssvc` and other named pipes | not built | `STATUS_OBJECT_NAME_NOT_FOUND` on the pipe |
 | `srvsvc` over NDR64 | the library binds NDR 2.0 only (Windows binds NDR 2.0) | the NDR64 context is rejected in the bind ack |
-| The NetBIOS datagram service (UDP 138): browsing, host announcements, master browser elections | file serving does not use it; network browsing is the only user | nothing on 138; the server is not in Network Neighborhood lists, and clients name it (by NetBIOS name through UDP 137, by DNS name or address) |
+| Being a browser on UDP 138: master browser elections, backup lists, a browse list | a browse list is served over SMB1 (RAP `NetServerEnum2` on `\PIPE\LANMAN`), which is refused | the server takes no part in elections and answers no `GetBackupListRequest`; it announces itself to the workgroup's master browser (section 9), so it is in the lists of networks that still have one; Windows 10 and later no longer browse, and name it (by NetBIOS name through UDP 137, by DNS name or address) |
 | Text conversion with mixed data (`2`), a share text CCSID that is not single-byte | a conversion that changes a file's length cannot keep sizes and offsets coherent (section 6, text conversion) | `QZLSADFS`/`QZLSCHFS` `CPFB68A` reason 10 |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
@@ -1221,6 +1262,26 @@ anything only if IBM checks the length first), and IBM's checks of
   only and no step turns NetBIOS on (it needs the attribute changed and
   the server restarted); the loopback test runs the same loop over a
   real socket.
+- `cargo test -p netserver --test nbdgm`: the datagram service over
+  loopback UDP: the first announcement's names, address, server and
+  periodicity, a browser's `AnnouncementRequest` answered, the last
+  announcement with type 0; `cargo test -p netserver --lib nbdgm`: the
+  datagram header against RFC 1002 4.4.1, the mailslot write's offsets
+  ([MS-MAIL] 2.2), the `HostAnnouncement` layout, fragments and other
+  messages ignored, the schedule (1, 2, 4, 8, then 12 minutes, a short
+  interval capping the first, none without an interval or a domain), a
+  request answered within 30 seconds, the goodbye. No QEMU step, as for
+  the name service.
+- `cargo test -p netserver --test shares requests_per_operation`: the
+  requests to the storage service per CREATE, WRITE, CLOSE, QUERY_INFO,
+  READ and listing (section 6, "Backend"), counted on the job's IFS
+  client (`ifs::client::Counted`); `renaming_a_directory_above_a_lease_breaks_it`:
+  a plain IFS rename of the directory above a client's lease waits for
+  its handle caching; `cargo test -p ifs --test leases
+  renaming_a_directory`, `--test qsys_changes
+  a_library_or_file_changed`: the same in the table, a deeper rename,
+  a sibling with the same prefix left alone, a library renamed or
+  deleted and a file moved.
 - `cd net/smb-server; cargo test --test qs400_short_names --lib
   short_name`: the short-name patch over a connection (both listing
   classes, the alternate name and its overflow, an open by short name)
@@ -1298,7 +1359,9 @@ anything only if IBM checks the length first), and IBM's checks of
   driver manifests.
 - Fuzz targets: the SMB2 header and commands, NTLMSSP, SPNEGO, the
   NetBIOS session service (`nbss`) and name service (`nbns`: the packet
-  parser and a name service holding its names), DCE/RPC, the spoolss request
+  parser and a name service holding its names), datagram service
+  (`nbdgm`: datagrams, mailslot writes, an announcer hearing them),
+  DCE/RPC, the spoolss request
   decoder (`smb_server::fuzzing::spoolss_request`).
 - `NEEDS-CODY`: Windows 11, macOS and a Linux kernel client map a share,
   open and save with Notepad, Word and Excel, print to a print share; a
@@ -1548,6 +1611,9 @@ oracle change the rules forbid.
 | Fuzz targets: NetBIOS session service, the library's parsers, spoolss | `tools/fuzz` targets `nbss`, `smb`; `smb_server::fuzzing::spoolss_request` | built |
 | 8.3 short names | `cargo test -p netserver --test shares short_names`; library `--test qs400_short_names` | built |
 | NetBIOS name service (UDP 137) | `cargo test -p netserver --test nbns`, `--lib nbns`; fuzz target `nbns` | built (loopback; no QEMU step) |
+| NetBIOS datagram service (UDP 138): host announcements | `cargo test -p netserver --test nbdgm`, `--lib nbdgm`; fuzz target `nbdgm` | built (loopback; no QEMU step) |
+| A rename above a lease breaks it | `cargo test -p ifs --test leases --test qsys_changes`, `cargo test -p netserver --test shares renaming` | built |
+| Requests per operation | `cargo test -p netserver --test shares requests_per_operation` | built |
 | Leases and change notify for `/QSYS.LIB` members changed through the database and the object commands; no write caching while a member is open for update | `cargo test -p ifs --test qsys_changes`, `-p qsyslib --test notice`, `-p netserver --test shares members`; QEMU 167 (member watch) | built |
 | Leases across jobs and a writer outside SMB, byte-range locks across jobs (advisory), durable reconnect into the same job, against the running system | QEMU 170 (`smbprobe`) | built |
 | Print share CREATE/WRITE and spoolss point and print into the profile's `QPRTJOB`; `print$` | QEMU 170 (`WRKSPLF SELECT(user)`, `DSPSPLF`) | built; Windows 11 `NEEDS-CODY` |
