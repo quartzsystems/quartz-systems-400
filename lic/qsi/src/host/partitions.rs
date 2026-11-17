@@ -159,7 +159,8 @@ wire_struct!(StateChanged {
 });
 
 /// What a partition holds changed: given at an activation, given back
-/// at an end.
+/// at an end, or its entitlement changed while it runs (the partition
+/// family's version 2).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResourcesChanged {
     /// The partition.

@@ -11,8 +11,9 @@
 //!
 //! Operation numbers go by area: storage pools from `0x0001`, virtual
 //! disks from `0x0010`, the media library and a partition's drives from
-//! `0x0020`, tape volumes from `0x0030`, switches from `0x0040`, shared
-//! processor pools from `0x0050`.
+//! `0x0020`, tape volumes from `0x0030` (and the host's physical tape
+//! drives, `0x0034`, behind [`crate::caps::PHYSICAL_IO`]), switches from
+//! `0x0040`, shared processor pools from `0x0050`.
 
 use ipc::wire_struct;
 
@@ -281,6 +282,10 @@ open_enum! {
         Optical = 1,
         /// A tape drive.
         Tape = 2,
+        /// A physical tape drive of the host
+        /// ([`crate::caps::PHYSICAL_IO`]): its `name` is its location
+        /// code, and its cartridge is changed by hand.
+        PhysicalTape = 3,
     }
 }
 
@@ -344,6 +349,59 @@ pub struct Unloaded {
     pub name: String,
 }
 wire_struct!(Unloaded { name });
+
+// The host's physical tape drives ([`crate::caps::PHYSICAL_IO`]).
+
+/// Ask for the host's physical tape drives.
+pub type TapeDrives = Empty;
+
+/// A physical tape drive of the host. Read only: it is released at the
+/// host like any device, and a profile's tape device names it by
+/// location code ([`super::model::MediaDevice::drive`]).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TapeDrive {
+    /// Its location code.
+    pub location: String,
+    /// Its vendor, as the drive says it.
+    pub vendor: String,
+    /// Its product.
+    pub product: String,
+    /// Its serial number.
+    pub serial: String,
+    /// The host has released it for partitions.
+    pub released: bool,
+    /// A cartridge is loaded.
+    pub loaded: bool,
+    /// The partition that holds it, and the tape device's slot; one at
+    /// a time.
+    pub holder: Holder,
+}
+wire_struct!(TapeDrive {
+    location,
+    vendor,
+    product,
+    serial,
+    released,
+    loaded,
+    holder
+});
+
+/// A physical tape drive changed: released, taken back, held, given
+/// back, a cartridge loaded or taken out; or it came or went.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TapeDriveChanged {
+    /// Its location code.
+    pub location: String,
+    /// It now; `None` when it is gone.
+    pub drive: Option<TapeDrive>,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(TapeDriveChanged {
+    location,
+    drive,
+    time
+});
 
 // Tape volumes.
 
@@ -861,6 +919,8 @@ pub mod op {
     pub const VOLUME_DELETE: u16 = 0x0032;
     /// [`super::VolumeProtect`].
     pub const VOLUME_PROTECT: u16 = 0x0033;
+    /// [`super::TapeDrives`] ([`crate::caps::PHYSICAL_IO`]).
+    pub const TAPE_DRIVES: u16 = 0x0034;
     /// [`super::Switches`].
     pub const SWITCHES: u16 = 0x0040;
     /// [`super::Ports`].
@@ -877,6 +937,13 @@ pub mod op {
     pub const PROC_POOL_CHANGE: u16 = 0x0051;
     /// [`super::ProcPoolDelete`].
     pub const PROC_POOL_DELETE: u16 = 0x0052;
+
+    /// Whether `op` is physical I/O's, which needs
+    /// [`crate::caps::PHYSICAL_IO`].
+    #[must_use]
+    pub fn is_physical_io(op: u16) -> bool {
+        op == TAPE_DRIVES
+    }
 }
 
 /// Event numbers.
@@ -899,6 +966,15 @@ pub mod event {
     pub const UPLINK: u16 = 0x0008;
     /// [`super::PortChanged`].
     pub const PORT: u16 = 0x0009;
+    /// [`super::TapeDriveChanged`] ([`crate::caps::PHYSICAL_IO`]).
+    pub const TAPE_DRIVE: u16 = 0x000A;
+
+    /// Whether `op` is an event of physical I/O, which needs
+    /// [`crate::caps::PHYSICAL_IO`].
+    #[must_use]
+    pub fn is_physical_io(op: u16) -> bool {
+        op == TAPE_DRIVE
+    }
 }
 
 /// The family's own refusals (`QSI0701` to `QSI0999`).
@@ -946,6 +1022,8 @@ messages! {
         0x0032 => VolumeDelete(VolumeDelete),
         /// Set or clear its write protection.
         0x0033 => VolumeProtect(VolumeProtect),
+        /// The host's physical tape drives.
+        0x0034 => TapeDrives(TapeDrives),
         /// Every switch.
         0x0040 => Switches(Switches),
         /// The partitions' ports.
@@ -1002,6 +1080,8 @@ messages! {
         0x0032 => VolumeDelete(Empty),
         /// Set.
         0x0033 => VolumeProtect(Empty),
+        /// The drives.
+        0x0034 => TapeDrives(Vec<TapeDrive>),
         /// The switches.
         0x0040 => Switches(Vec<Switch>),
         /// The ports.
@@ -1042,6 +1122,8 @@ messages! {
         0x0008 => Uplink(UplinkChanged),
         /// A port opened or closed.
         0x0009 => Port(PortChanged),
+        /// A physical tape drive changed.
+        0x000A => TapeDrive(TapeDriveChanged),
     }
 }
 
@@ -1052,6 +1134,7 @@ impl Request {
             Self::Pools(_)
             | Self::Images(_)
             | Self::Volumes(_)
+            | Self::TapeDrives(_)
             | Self::Switches(_)
             | Self::Vlans(_)
             | Self::Limits(_) => Ok(()),

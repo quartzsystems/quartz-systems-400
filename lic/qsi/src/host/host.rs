@@ -7,10 +7,15 @@
 //! the host reserve and its settings, and its hardware by location code
 //! with what owns each item. Read only: the host's own settings are
 //! changed at the host in version 1.
+//!
+//! Behind [`crate::caps::PHYSICAL_IO`]: the host's devices as physical
+//! I/O sees them (released, assignable or why not, the isolation group,
+//! who holds each), and their events. A device is released at the host;
+//! a profile's `physical_io` gives it to a partition at activation.
 
 use ipc::wire_struct;
 
-use super::model::PartitionId;
+use super::model::{Note, PartitionId};
 use crate::message::Empty;
 use crate::{Family, family, messages, open_enum};
 
@@ -252,6 +257,151 @@ wire_struct!(Hardware {
     items
 });
 
+// Physical I/O ([`crate::caps::PHYSICAL_IO`]).
+
+open_enum! {
+    /// Why a device cannot be given to a partition now.
+    Blocker {
+        /// The host uses it: its load source, a pool's disk, a switch's
+        /// uplink, its management interface.
+        HostUses = 1,
+        /// It is not released for partitions.
+        NotReleased = 2,
+        /// It shares its isolation group with a device not released.
+        GroupNotReleased = 3,
+        /// It cannot be reset, so it cannot be handed on clean.
+        NoReset = 4,
+        /// The host has no interrupt remapping.
+        NoRemapping = 5,
+    }
+}
+
+/// Why a device cannot be given now, with the host's message.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Blocked {
+    /// The reason.
+    pub reason: Blocker,
+    /// The host's message for it.
+    pub note: Note,
+}
+wire_struct!(Blocked { reason, note });
+
+/// The partition that holds a device, and the profile it was activated
+/// with.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DeviceHolder {
+    /// The partition.
+    pub partition: PartitionId,
+    /// Its name.
+    pub name: String,
+    /// The profile.
+    pub profile: String,
+}
+wire_struct!(DeviceHolder {
+    partition,
+    name,
+    profile
+});
+
+/// A PCI function of the host, as physical I/O sees it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Device {
+    /// Its location code.
+    pub location: String,
+    /// Its PCI address (`0000:41:00.0`).
+    pub address: String,
+    /// Its class code: base class, subclass and interface, 24 bits.
+    pub class: u32,
+    /// Its vendor identifier.
+    pub vendor: u16,
+    /// Its device identifier.
+    pub device: u16,
+    /// What it is, in the host's words.
+    pub description: String,
+    /// The host has released it for partitions.
+    pub released: bool,
+    /// It can be given to a partition now.
+    pub assignable: bool,
+    /// Why not, when it cannot.
+    pub blocked: Option<Blocked>,
+    /// Its isolation group's number on the host.
+    pub group: u32,
+    /// The other devices of its group, by location code: they go with
+    /// it.
+    pub with: Vec<String>,
+    /// The partition that holds it; none when free.
+    pub holder: Option<DeviceHolder>,
+}
+wire_struct!(Device {
+    location,
+    address,
+    class,
+    vendor,
+    device,
+    description,
+    released,
+    assignable,
+    blocked,
+    group,
+    with,
+    holder
+});
+
+/// Ask for the host's devices as physical I/O sees them.
+pub type GetDevices = Empty;
+
+/// A device was released or taken back at the host.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeviceChanged {
+    /// Its location code.
+    pub location: String,
+    /// It now; `None` when it is gone.
+    pub device: Option<Device>,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(DeviceChanged {
+    location,
+    device,
+    time
+});
+
+/// A device was given to a partition at its activation, or given back
+/// at its end.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeviceHeld {
+    /// Its location code.
+    pub location: String,
+    /// The partition and its profile.
+    pub holder: DeviceHolder,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(DeviceHeld {
+    location,
+    holder,
+    time
+});
+
+/// A device did not reset when it was given or given back.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResetFailed {
+    /// Its location code.
+    pub location: String,
+    /// The partition it was going to or coming from; 0 for none.
+    pub partition: PartitionId,
+    /// The host's message.
+    pub note: Note,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(ResetFailed {
+    location,
+    partition,
+    note,
+    time
+});
+
 /// Operation numbers.
 pub mod op {
     /// [`super::GetHost`].
@@ -260,6 +410,15 @@ pub mod op {
     pub const SETTINGS: u16 = 0x0002;
     /// [`super::GetHardware`].
     pub const HARDWARE: u16 = 0x0003;
+    /// [`super::GetDevices`] ([`crate::caps::PHYSICAL_IO`]).
+    pub const DEVICES: u16 = 0x0010;
+
+    /// Whether `op` is physical I/O's, which needs
+    /// [`crate::caps::PHYSICAL_IO`].
+    #[must_use]
+    pub fn is_physical_io(op: u16) -> bool {
+        op == DEVICES
+    }
 }
 
 /// Event numbers.
@@ -270,6 +429,23 @@ pub mod event {
     /// A hardware item changed: its owner, its carrier, or it came or
     /// went.
     pub const ITEM: u16 = 0x0002;
+    /// A device was released at the host ([`crate::caps::PHYSICAL_IO`]).
+    pub const RELEASED: u16 = 0x0010;
+    /// A device was taken back at the host ([`crate::caps::PHYSICAL_IO`]).
+    pub const TAKEN_BACK: u16 = 0x0011;
+    /// A device was given to a partition ([`crate::caps::PHYSICAL_IO`]).
+    pub const ASSIGNED: u16 = 0x0012;
+    /// A device was given back ([`crate::caps::PHYSICAL_IO`]).
+    pub const RETURNED: u16 = 0x0013;
+    /// A device did not reset ([`crate::caps::PHYSICAL_IO`]).
+    pub const RESET_FAILED: u16 = 0x0014;
+
+    /// Whether `op` is an event of physical I/O, which needs
+    /// [`crate::caps::PHYSICAL_IO`].
+    #[must_use]
+    pub fn is_physical_io(op: u16) -> bool {
+        (RELEASED..=RESET_FAILED).contains(&op)
+    }
 }
 
 /// A hardware item changed.
@@ -295,6 +471,29 @@ pub mod msgid {
     pub const SERVICE_DOWN: &str = "QSI0301";
 }
 
+/// Physical I/O's refusals (`QSI1301` to `QSI1349`), of a profile put,
+/// an activation, or a load into a physical drive's slot. A host with
+/// identifiers of its own gives them after these.
+pub mod physio {
+    /// No device of the host has that location code.
+    pub const UNKNOWN_LOCATION: &str = "QSI1301";
+    /// The device is not released for partitions.
+    pub const NOT_RELEASED: &str = "QSI1302";
+    /// Another partition holds it.
+    pub const HELD: &str = "QSI1303";
+    /// Its isolation group is not wholly given to this partition.
+    pub const GROUP_SPLIT: &str = "QSI1304";
+    /// It cannot be given now for another reason: the host uses it, it
+    /// cannot be reset, the host has no interrupt remapping. The
+    /// device's own message follows.
+    pub const NOT_ASSIGNABLE: &str = "QSI1305";
+    /// A tape device names a location that is not a tape drive.
+    pub const NOT_A_DRIVE: &str = "QSI1306";
+    /// A load or unload of a slot that is a physical drive: its
+    /// cartridge is changed by hand.
+    pub const NOT_VIRTUAL: &str = "QSI1307";
+}
+
 messages! {
     /// What a console asks.
     pub enum Request: family::HOST => {
@@ -304,6 +503,8 @@ messages! {
         0x0002 => Settings(GetSettings),
         /// Its hardware.
         0x0003 => Hardware(GetHardware),
+        /// Its devices for physical I/O.
+        0x0010 => Devices(GetDevices),
     }
 }
 
@@ -316,6 +517,8 @@ messages! {
         0x0002 => Settings(Settings),
         /// Its hardware.
         0x0003 => Hardware(Hardware),
+        /// Its devices, by location code.
+        0x0010 => Devices(Vec<Device>),
     }
 }
 
@@ -326,6 +529,16 @@ messages! {
         0x0001 => Resources(Host),
         /// A hardware item changed.
         0x0002 => Item(ItemChanged),
+        /// A device was released for partitions.
+        0x0010 => Released(DeviceChanged),
+        /// A device was taken back from partitions.
+        0x0011 => TakenBack(DeviceChanged),
+        /// A device was given to a partition at its activation.
+        0x0012 => Assigned(DeviceHeld),
+        /// A device was given back at a partition's end.
+        0x0013 => Returned(DeviceHeld),
+        /// A device did not reset.
+        0x0014 => ResetFailed(ResetFailed),
     }
 }
 

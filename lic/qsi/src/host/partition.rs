@@ -7,10 +7,13 @@
 //! (delayed, operating system or immediate, each with or without a
 //! restart); restart it. What follows an answer (the state, the codes,
 //! the resources) comes as the partitions family's events.
+//!
+//! Version 2 ([`crate::caps::PARTITION_V2`]) changes a running shared
+//! partition's entitlement: its units, capped or uncapped, its weight.
 
 use ipc::wire_struct;
 
-use super::model::{Current, Definition, IplSource, PartitionId, check_id, check_name};
+use super::model::{Current, Definition, IplSource, PartitionId, Sharing, check_id, check_name};
 use crate::base::Keylock;
 use crate::message::Empty;
 use crate::{Family, family, messages, open_enum};
@@ -112,6 +115,57 @@ pub struct Restart {
 }
 wire_struct!(Restart { id });
 
+/// The highest uncapped weight.
+pub const MAX_WEIGHT: u32 = 255;
+
+/// Change a running shared-processor partition's entitlement
+/// ([`crate::caps::PARTITION_V2`]): any of its processing units,
+/// capped or uncapped, and uncapped weight; what is none stays.
+/// Virtual processors, dedicated processors and memory change only at
+/// activation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Entitlement {
+    /// The partition.
+    pub id: PartitionId,
+    /// Its processing units, hundredths of a core.
+    pub units: Option<u32>,
+    /// Capped or uncapped.
+    pub sharing: Option<Sharing>,
+    /// Its uncapped weight, 0 to [`MAX_WEIGHT`].
+    pub weight: Option<u32>,
+}
+wire_struct!(Entitlement {
+    id,
+    units,
+    sharing,
+    weight
+});
+
+/// A running partition's entitlement was changed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EntitlementChanged {
+    /// The partition.
+    pub id: PartitionId,
+    /// Its name.
+    pub name: String,
+    /// What it held before.
+    pub before: Current,
+    /// What it holds now.
+    pub current: Current,
+    /// The console's user who asked.
+    pub by: String,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(EntitlementChanged {
+    id,
+    name,
+    before,
+    current,
+    by,
+    time
+});
+
 /// Operation numbers.
 pub mod op {
     /// [`super::Create`].
@@ -126,6 +180,27 @@ pub mod op {
     pub const SHUT_DOWN: u16 = 0x0005;
     /// [`super::Restart`].
     pub const RESTART: u16 = 0x0006;
+    /// [`super::Entitlement`] ([`crate::caps::PARTITION_V2`]).
+    pub const ENTITLEMENT: u16 = 0x0007;
+
+    /// Whether `op` is version 2's, which needs
+    /// [`crate::caps::PARTITION_V2`].
+    #[must_use]
+    pub fn is_v2(op: u16) -> bool {
+        op == ENTITLEMENT
+    }
+}
+
+/// Event numbers: version 2's ([`crate::caps::PARTITION_V2`]).
+pub mod event {
+    /// [`super::EntitlementChanged`].
+    pub const ENTITLEMENT: u16 = 0x0001;
+
+    /// Whether `op` is version 2's: every event of the family is.
+    #[must_use]
+    pub fn is_v2(op: u16) -> bool {
+        op == ENTITLEMENT
+    }
 }
 
 /// The family's own refusals (`QSI0360` to `QSI0399`).
@@ -133,6 +208,22 @@ pub mod msgid {
     /// A value of an enumeration this host does not have (a shut down
     /// kind, an IPL source, a keylock position of a later version).
     pub const NO_SUCH_VALUE: &str = "QSI0361";
+}
+
+/// Version 2's refusals of an entitlement (`QSI1401` to `QSI1449`). A
+/// host with identifiers of its own gives them after these.
+pub mod entitlement {
+    /// The partition is not running.
+    pub const NOT_RUNNING: &str = "QSI1401";
+    /// It has dedicated processors.
+    pub const DEDICATED: &str = "QSI1402";
+    /// The units are outside its profile's minimum and maximum.
+    pub const OUTSIDE_PROFILE: &str = "QSI1403";
+    /// The units are below what its virtual processors need (0.05
+    /// each), or above their worth (1.00 each).
+    pub const VIRTUALS: &str = "QSI1404";
+    /// Its pool has not that much left.
+    pub const POOL_SHORT: &str = "QSI1405";
 }
 
 messages! {
@@ -150,6 +241,8 @@ messages! {
         0x0005 => ShutDown(ShutDown),
         /// Restart it.
         0x0006 => Restart(Restart),
+        /// Change a running partition's entitlement.
+        0x0007 => Entitlement(Entitlement),
     }
 }
 
@@ -168,13 +261,19 @@ messages! {
         0x0005 => ShutDown(Empty),
         /// Asked.
         0x0006 => Restart(Empty),
+        /// What it holds now.
+        0x0007 => Entitlement(Current),
     }
 }
 
 messages! {
-    /// The family has no events: the partitions family's say what
-    /// follows.
-    pub enum Event: family::PARTITION => {}
+    /// Version 1 has no events: the partitions family's say what
+    /// follows. Version 2 says an entitlement changed (the partitions
+    /// family's `ResourcesChanged` follows too).
+    pub enum Event: family::PARTITION => {
+        /// A running partition's entitlement was changed.
+        0x0001 => Entitlement(EntitlementChanged),
+    }
 }
 
 impl Request {
@@ -195,17 +294,29 @@ impl Request {
                 }
                 Ok(())
             }
+            Self::Entitlement(e) => {
+                check_id(e.id)?;
+                if e.units.is_none() && e.sharing.is_none() && e.weight.is_none() {
+                    return Err("an entitlement that changes nothing");
+                }
+                if e.weight.is_some_and(|w| w > MAX_WEIGHT) {
+                    return Err("a weight over 255");
+                }
+                Ok(())
+            }
         }
     }
 }
 
-/// The partition family.
+/// The partition family. Version 2 ([`crate::caps::PARTITION_V2`]) adds
+/// a running partition's entitlement and its event; version 1 is
+/// [`crate::caps::PARTITION`].
 #[derive(Debug)]
 pub struct Partition;
 
 impl Family for Partition {
     const ID: u16 = family::PARTITION;
-    const VERSION: u16 = 1;
+    const VERSION: u16 = 2;
     const CAP: u64 = crate::caps::PARTITION;
     type Request = Request;
     type Reply = Reply;

@@ -108,6 +108,13 @@ pub mod caps {
     pub const CONSOLE: u64 = 1 << 15;
     /// [`super::family::VRES`] version 1.
     pub const VRES: u64 = 1 << 16;
+    /// Physical I/O: the host family's devices (operation `0x0010`,
+    /// events `0x0010` to `0x0014`) and vres's physical tape drives
+    /// (operation `0x0034`, event `0x000A`).
+    pub const PHYSICAL_IO: u64 = 1 << 17;
+    /// [`super::family::PARTITION`] version 2: a running partition's
+    /// entitlement (operation `0x0007`, the family's events).
+    pub const PARTITION_V2: u64 = 1 << 18;
 
     /// What every managed system and console has.
     pub const MANAGED: u64 = BASE | PAIR;
@@ -154,8 +161,13 @@ pub mod caps {
     /// own. 0 for a family this crate does not know.
     #[must_use]
     pub fn of_request(family: u16, op: u16) -> u64 {
+        use super::family as f;
+        use crate::host::{host, partition, vres};
         match family {
-            super::family::BASE if crate::base::op::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::BASE if crate::base::op::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::HOST if host::op::is_physical_io(op) => HOST | PHYSICAL_IO,
+            f::VRES if vres::op::is_physical_io(op) => VRES | PHYSICAL_IO,
+            f::PARTITION if partition::op::is_v2(op) => PARTITION | PARTITION_V2,
             _ => of(family),
         }
     }
@@ -165,8 +177,13 @@ pub mod caps {
     /// agreed on all of it.
     #[must_use]
     pub fn of_event(family: u16, op: u16) -> u64 {
+        use super::family as f;
+        use crate::host::{host, partition, vres};
         match family {
-            super::family::BASE if crate::base::event::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::BASE if crate::base::event::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::HOST if host::event::is_physical_io(op) => HOST | PHYSICAL_IO,
+            f::VRES if vres::event::is_physical_io(op) => VRES | PHYSICAL_IO,
+            f::PARTITION if partition::event::is_v2(op) => PARTITION | PARTITION_V2,
             _ => of(family),
         }
     }

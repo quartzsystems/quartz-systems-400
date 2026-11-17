@@ -27,7 +27,9 @@ fn ops<F: Family>() -> Ops {
     assert_eq!(<F::Request as Message>::FAMILY, F::ID);
     assert_eq!(<F::Reply as Message>::FAMILY, F::ID);
     assert_eq!(<F::Event as Message>::FAMILY, F::ID);
-    assert_eq!(F::VERSION, 1);
+    // Partition is at version 2 (a running partition's entitlement).
+    let version = if F::ID == qsi::family::PARTITION { 2 } else { 1 };
+    assert_eq!(F::VERSION, version);
     Ops {
         id: F::ID,
         cap: F::CAP,
@@ -161,30 +163,67 @@ fn the_families_and_their_capabilities() {
         assert_eq!(caps::of(f.id), f.cap);
         assert_eq!((caps::HOST_V1 | caps::SERVICING) & f.cap, f.cap);
     }
+    let extra = caps::SYSTEM_DUMPS | caps::PHYSICAL_IO | caps::PARTITION_V2;
     let all = families.iter().fold(0, |a, f| {
         assert_eq!(a & f.cap, 0, "two families share a bit");
         a | f.cap
     });
-    assert_eq!(all & caps::SYSTEM_DUMPS, 0, "the dumps' bit is no family's");
+    assert_eq!(all & extra, 0, "a bit of operations is no family's");
     assert_eq!(all | caps::SYSTEM_DUMPS, caps::HOST_V1 | caps::SERVICING);
     // HOST_V1 is what it was: the new bits are beside it.
     assert_eq!(caps::HOST_V1 & caps::SERVICING, 0);
+    assert_eq!(caps::HOST_V1 & (caps::PHYSICAL_IO | caps::PARTITION_V2), 0);
     assert_eq!(caps::HOST_V1, 0x1_ff03);
+    assert_eq!(caps::PHYSICAL_IO | caps::PARTITION_V2, 0x6_0000);
 }
 
 #[test]
 fn what_each_message_needs() {
+    use qsi::family::{BASE, HOST, PARTITION, VRES};
+    let mut physical = (0, 0);
+    let mut v2 = (0, 0);
     for (q, p) in samples::exchanges() {
-        let need = caps::of_request(q.family(), q.op());
-        assert_eq!(need & caps::of(q.family()), caps::of(q.family()));
-        let dump = q.family() == qsi::family::BASE && base::op::is_dump(q.op());
+        let (f, op) = (q.family(), q.op());
+        let need = caps::of_request(f, op);
+        assert_eq!(need & caps::of(f), caps::of(f));
+        let dump = f == BASE && base::op::is_dump(op);
         assert_eq!(need & caps::SYSTEM_DUMPS != 0, dump, "{q:?}");
+        let phys = (f == HOST && host::op::is_physical_io(op))
+            || (f == VRES && vres::op::is_physical_io(op));
+        assert_eq!(need & caps::PHYSICAL_IO != 0, phys, "{q:?}");
+        let ent = f == PARTITION && partition::op::is_v2(op);
+        assert_eq!(need & caps::PARTITION_V2 != 0, ent, "{q:?}");
+        assert_eq!(need.count_ones(), 1 + u32::from(dump || phys || ent));
+        physical.0 += usize::from(phys);
+        v2.0 += usize::from(ent);
         assert_eq!(caps::of_request(p.family(), p.op()), need);
     }
     for e in samples::events() {
-        let need = caps::of_event(e.family(), e.op());
-        let dump = e.family() == qsi::family::BASE && base::event::is_dump(e.op());
+        let (f, op) = (e.family(), e.op());
+        let need = caps::of_event(f, op);
+        let dump = f == BASE && base::event::is_dump(op);
         assert_eq!(need & caps::SYSTEM_DUMPS != 0, dump, "{e:?}");
+        let phys = (f == HOST && host::event::is_physical_io(op))
+            || (f == VRES && vres::event::is_physical_io(op));
+        assert_eq!(need & caps::PHYSICAL_IO != 0, phys, "{e:?}");
+        let ent = f == PARTITION && partition::event::is_v2(op);
+        assert_eq!(need & caps::PARTITION_V2 != 0, ent, "{e:?}");
+        physical.1 += usize::from(phys);
+        v2.1 += usize::from(ent);
+    }
+    // Devices and tape drives; their five events and the drive's.
+    assert_eq!(physical, (2, 6));
+    // The entitlement and its event.
+    assert_eq!(v2, (1, 1));
+    // Version 1's operations need their family alone.
+    for op in 1..=3 {
+        assert_eq!(caps::of_request(HOST, op), caps::HOST);
+    }
+    for op in 1..=6 {
+        assert_eq!(caps::of_request(PARTITION, op), caps::PARTITION);
+    }
+    for op in [0x0024, 0x0025, 0x0033, 0x0040] {
+        assert_eq!(caps::of_request(VRES, op), caps::VRES);
     }
     // Base's version 1 operations need base alone.
     for op in 1..=7 {
@@ -282,7 +321,9 @@ fn an_unknown_enumeration_value_is_kept() {
         assert_eq!(service::ResourceKind::from_u8(b).as_u8(), b);
         assert_eq!(update::Attempt::from_u8(b).as_u8(), b);
         assert_eq!(base::DumpKind::from_u8(b).as_u8(), b);
+        assert_eq!(host::Blocker::from_u8(b).as_u8(), b);
     }
+    assert_eq!(vres::DriveKind::from_u8(3), vres::DriveKind::PhysicalTape);
     // A resource of a kind a later version adds is kept.
     let r = service::Resource {
         kind: service::ResourceKind::Other(40),
@@ -354,6 +395,24 @@ fn the_samples_are_in_bounds_and_out_of_bounds_is_refused() {
             partitions: update::Partitions::ShutDown,
             timeout: 100_000,
         })),
+        AnyRequest::Partition(partition::Request::Entitlement(partition::Entitlement {
+            id: 3,
+            units: None,
+            sharing: None,
+            weight: None,
+        })),
+        AnyRequest::Partition(partition::Request::Entitlement(partition::Entitlement {
+            id: 3,
+            units: None,
+            sharing: None,
+            weight: Some(partition::MAX_WEIGHT + 1),
+        })),
+        AnyRequest::Partition(partition::Request::Entitlement(partition::Entitlement {
+            id: 0,
+            units: Some(100),
+            sharing: None,
+            weight: None,
+        })),
     ];
     for q in bad {
         assert!(q.check().is_err(), "{q:?}");
@@ -366,9 +425,47 @@ fn the_samples_are_in_bounds_and_out_of_bounds_is_refused() {
     else {
         panic!("no put sample")
     };
+    let mut drive = put.clone();
     let adapter = put.profile.ethernet[0].clone();
     put.profile.ethernet = vec![adapter; model::MAX_ITEMS + 1];
     assert!(profiles::Request::Put(put).check().is_err());
+    // A physical drive's location is a text, not a name; too long is
+    // refused.
+    let location = "L".repeat(model::MAX_NAME + 1);
+    drive.profile.tape = vec![model::MediaDevice::drive(6, &location)];
+    assert_eq!(profiles::Request::Put(drive.clone()).check(), Ok(()));
+    let location = "L".repeat(model::MAX_TEXT + 1);
+    drive.profile.tape = vec![model::MediaDevice::drive(6, &location)];
+    assert!(profiles::Request::Put(drive).check().is_err());
+}
+
+#[test]
+fn a_tape_device_is_a_volume_or_a_physical_drive() {
+    use model::{MediaDevice, TapeSource};
+    let d = MediaDevice::drive(6, "SPCIE-SLOT-4-T0.0.3.0");
+    assert_eq!(d.media.as_deref(), Some("@SPCIE-SLOT-4-T0.0.3.0"));
+    assert_eq!(d.tape_source(), TapeSource::Drive("SPCIE-SLOT-4-T0.0.3.0"));
+    let v = MediaDevice {
+        slot: 4,
+        media: Some("SAVE01".into()),
+    };
+    assert_eq!(v.tape_source(), TapeSource::Volume("SAVE01"));
+    let e = MediaDevice {
+        slot: 4,
+        media: None,
+    };
+    assert_eq!(e.tape_source(), TapeSource::Empty);
+    // The sample profile has one of each.
+    let Some(AnyRequest::Profiles(profiles::Request::Put(put))) = samples::exchanges()
+        .into_iter()
+        .map(|(q, _)| q)
+        .find(|q| matches!(q, AnyRequest::Profiles(profiles::Request::Put(_))))
+    else {
+        panic!("no put sample")
+    };
+    let sources: Vec<_> = put.profile.tape.iter().map(MediaDevice::tape_source).collect();
+    assert!(sources.contains(&TapeSource::Empty));
+    assert!(sources.iter().any(|s| matches!(s, TapeSource::Drive(_))));
 }
 
 #[test]

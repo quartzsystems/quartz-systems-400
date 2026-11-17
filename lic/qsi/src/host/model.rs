@@ -351,13 +351,55 @@ wire_struct!(EthernetAdapter {
 pub struct MediaDevice {
     /// The virtual slot.
     pub slot: u32,
-    /// The medium loaded at activation, by its name in the library.
+    /// The medium loaded at activation, by its name in the library; or,
+    /// for a tape device, a physical drive of the host: [`DRIVE_MARK`]
+    /// and its location code ([`MediaDevice::drive`]).
     pub media: Option<String>,
 }
 wire_struct!(MediaDevice { slot, media });
 
-/// A device of the host given to the partition (physical I/O, a later
-/// version's to manage; carried so a profile reads whole).
+/// What comes before a physical tape drive's location code in a tape
+/// device's `media`. No library name and no location code has it.
+pub const DRIVE_MARK: char = '@';
+
+/// What a tape device is given at activation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TapeSource<'a> {
+    /// Nothing: an empty drive.
+    Empty,
+    /// A volume of the media library, by name.
+    Volume(&'a str),
+    /// A physical drive of the host, by location code
+    /// ([`crate::caps::PHYSICAL_IO`]).
+    Drive(&'a str),
+}
+
+impl MediaDevice {
+    /// A tape device that is the host's physical drive at `location`.
+    #[must_use]
+    pub fn drive(slot: u32, location: &str) -> Self {
+        Self {
+            slot,
+            media: Some(format!("{DRIVE_MARK}{location}")),
+        }
+    }
+
+    /// What a tape device is given: a volume or a physical drive.
+    #[must_use]
+    pub fn tape_source(&self) -> TapeSource<'_> {
+        match self.media.as_deref() {
+            None => TapeSource::Empty,
+            Some(m) => match m.strip_prefix(DRIVE_MARK) {
+                Some(location) => TapeSource::Drive(location),
+                None => TapeSource::Volume(m),
+            },
+        }
+    }
+}
+
+/// A device of the host given to the partition at activation (physical
+/// I/O, [`crate::caps::PHYSICAL_IO`]): a PCI function by location code,
+/// which goes with the rest of its isolation group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PhysicalIo {
     /// Its location code.
@@ -427,9 +469,16 @@ impl Profile {
         }
         check_items(&self.optical)?;
         check_items(&self.tape)?;
-        for m in self.optical.iter().chain(&self.tape) {
+        for m in &self.optical {
             if let Some(n) = &m.media {
                 check_name(n)?;
+            }
+        }
+        for m in &self.tape {
+            match m.tape_source() {
+                TapeSource::Empty => {}
+                TapeSource::Volume(n) => check_name(n)?,
+                TapeSource::Drive(l) => check_text(l)?,
             }
         }
         check_items(&self.physical_io)?;

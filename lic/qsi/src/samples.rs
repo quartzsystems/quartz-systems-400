@@ -49,6 +49,7 @@ pub fn events() -> Vec<AnyEvent> {
     out.extend(update_events());
     out.extend(host_events());
     out.extend(partitions_events());
+    out.extend(partition_events());
     out.extend(profiles_events());
     out.extend(refcodes_events());
     out.extend(dumps_events());
@@ -58,6 +59,10 @@ pub fn events() -> Vec<AnyEvent> {
 
 /// A time, seconds since the epoch: 2026-11-15.
 const T: u64 = 1_794_700_000;
+
+/// A physical tape drive's location code: a SAS drive behind the card
+/// in slot 4.
+const TAPE_DRIVE: &str = "SPCIE-SLOT-4-T0.0.3.0";
 
 fn s(text: &str) -> String {
     text.to_string()
@@ -148,10 +153,13 @@ fn profile() -> Profile {
             slot: 3,
             media: Some(s("V1R2M0_BASE")),
         }],
-        tape: vec![MediaDevice {
-            slot: 4,
-            media: None,
-        }],
+        tape: vec![
+            MediaDevice {
+                slot: 4,
+                media: None,
+            },
+            MediaDevice::drive(6, TAPE_DRIVE),
+        ],
         physical_io: vec![PhysicalIo {
             location: s("SPCIE-SLOT-3"),
             required: false,
@@ -926,7 +934,63 @@ fn host_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 ],
             }),
         ),
+        w(
+            Q::Devices(Empty),
+            P::Devices(vec![device(), blocked_device()]),
+        ),
     ]
+}
+
+fn holder() -> host::DeviceHolder {
+    host::DeviceHolder {
+        partition: 3,
+        name: s("PROD"),
+        profile: s("NORMAL"),
+    }
+}
+
+/// A card released for partitions and held by one.
+fn device() -> host::Device {
+    host::Device {
+        location: s("SPCIE-SLOT-3"),
+        address: s("0000:41:00.0"),
+        class: 0x02_00_00,
+        vendor: 0x8086,
+        device: 0x1572,
+        description: s("Intel Ethernet Controller X710 for 10GbE SFP+"),
+        released: true,
+        assignable: true,
+        blocked: None,
+        group: 31,
+        with: vec![s("SPCIE-SLOT-3-F1")],
+        holder: Some(holder()),
+    }
+}
+
+/// A function not released: it shares its group with one the host
+/// uses.
+fn blocked_device() -> host::Device {
+    host::Device {
+        location: s("P0000-B00-D14-F0"),
+        address: s("0000:00:14.0"),
+        class: 0x0C_03_30,
+        vendor: 0x8086,
+        device: 0xA36D,
+        description: s("USB 3.1 xHCI Host Controller"),
+        released: false,
+        assignable: false,
+        blocked: Some(host::Blocked {
+            reason: host::Blocker::GroupNotReleased,
+            note: Note {
+                msgid: s("QVS1402"),
+                text: s("P0000-B00-D14-F0 shares its group with P0000-B00-D14-F2."),
+                help: s("Release every device of the group, or none."),
+            },
+        }),
+        group: 7,
+        with: vec![s("P0000-B00-D14-F2")],
+        holder: None,
+    }
 }
 
 fn host_events() -> Vec<AnyEvent> {
@@ -936,6 +1000,39 @@ fn host_events() -> Vec<AnyEvent> {
         E::Item(host::ItemChanged {
             location: s("SM-2-SLOT-1-N1"),
             item: Some(disk_item()),
+            time: T,
+        }),
+        E::Released(host::DeviceChanged {
+            location: s("SPCIE-SLOT-3"),
+            device: Some(host::Device {
+                holder: None,
+                ..device()
+            }),
+            time: T,
+        }),
+        E::TakenBack(host::DeviceChanged {
+            location: s("P0000-B00-D14-F0"),
+            device: Some(blocked_device()),
+            time: T,
+        }),
+        E::Assigned(host::DeviceHeld {
+            location: s("SPCIE-SLOT-3"),
+            holder: holder(),
+            time: T,
+        }),
+        E::Returned(host::DeviceHeld {
+            location: s("SPCIE-SLOT-3"),
+            holder: holder(),
+            time: T,
+        }),
+        E::ResetFailed(host::ResetFailed {
+            location: s("SPCIE-SLOT-3"),
+            partition: 3,
+            note: Note {
+                msgid: s("QVS1408"),
+                text: s("SPCIE-SLOT-3 did not reset."),
+                help: String::new(),
+            },
             time: T,
         }),
     ]
@@ -1053,7 +1150,39 @@ fn partition_exchanges() -> Vec<(AnyRequest, AnyReply)> {
             P::ShutDown(Empty),
         ),
         w(Q::Restart(partition::Restart { id: 3 }), P::Restart(Empty)),
+        w(
+            Q::Entitlement(partition::Entitlement {
+                id: 3,
+                units: Some(250),
+                sharing: Some(Sharing::Capped),
+                weight: None,
+            }),
+            P::Entitlement(entitled()),
+        ),
     ]
+}
+
+/// [`current`] after its entitlement was changed to 2.50 units, capped.
+fn entitled() -> Current {
+    Current {
+        units: 250,
+        capped: true,
+        weight: 0,
+        ..current()
+    }
+}
+
+fn partition_events() -> Vec<AnyEvent> {
+    vec![AnyEvent::Partition(partition::Event::Entitlement(
+        partition::EntitlementChanged {
+            id: 3,
+            name: s("PROD"),
+            before: current(),
+            current: entitled(),
+            by: s("OPER1"),
+            time: T,
+        },
+    ))]
 }
 
 fn profiles_exchanges() -> Vec<(AnyRequest, AnyReply)> {
@@ -1422,6 +1551,12 @@ fn vres_media() -> Vec<(AnyRequest, AnyReply)> {
                     prevented: false,
                 },
                 drive(),
+                vres::Drive {
+                    slot: 6,
+                    kind: vres::DriveKind::PhysicalTape,
+                    name: s(TAPE_DRIVE),
+                    prevented: false,
+                },
             ]),
         ),
         w(
@@ -1463,7 +1598,20 @@ fn vres_media() -> Vec<(AnyRequest, AnyReply)> {
             }),
             P::VolumeProtect(Empty),
         ),
+        w(Q::TapeDrives(Empty), P::TapeDrives(vec![tape_drive()])),
     ]
+}
+
+fn tape_drive() -> vres::TapeDrive {
+    vres::TapeDrive {
+        location: s(TAPE_DRIVE),
+        vendor: s("IBM"),
+        product: s("ULT3580-HH9"),
+        serial: s("10WT123456"),
+        released: true,
+        loaded: true,
+        holder: hold(3, 6),
+    }
 }
 
 fn vres_network() -> Vec<(AnyRequest, AnyReply)> {
@@ -1617,6 +1765,11 @@ fn vres_events() -> Vec<AnyEvent> {
             slot: 5,
             switch: s("PRODNET"),
             open: true,
+            time: T,
+        }),
+        E::TapeDrive(vres::TapeDriveChanged {
+            location: s(TAPE_DRIVE),
+            drive: Some(tape_drive()),
             time: T,
         }),
     ]
