@@ -72,7 +72,12 @@ impl T {
     }
 
     pub fn with(s: Settings) -> Self {
-        let mut sys = common::system(16384);
+        Self::with_blocks(s, 16384)
+    }
+
+    /// Over a store of `blocks` pages.
+    pub fn with_blocks(s: Settings, blocks: u64) -> Self {
+        let mut sys = common::system(blocks);
         let clock = Arc::new(AtomicU64::new(T0));
         let schema = Schema::shipped().unwrap();
         let admin_dn = Dn::parse(&s.admin_dn).unwrap();

@@ -20,7 +20,7 @@ use crate::obj::ObjectId;
 use crate::obj::guard::Guard;
 use crate::obj::lock::LockTable;
 use crate::page::pager::PageNo;
-use crate::page::{Page, PageType};
+use crate::page::{PAGE_SIZE, Page, PageType};
 use crate::txn::Txn;
 use crate::wal::Wal;
 use crate::wal::record::WalRecord;
@@ -28,6 +28,9 @@ use crate::{Result, StoreError};
 
 mod ifs;
 mod parity;
+
+/// The most pages one write of a commit carries.
+const MAX_RUN: usize = 256;
 
 /// Tunables.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -515,11 +518,12 @@ impl Store {
         sealed: Vec<(PageNo, Page)>,
     ) -> Result<()> {
         self.check()?;
-        for (pno, mut page) in fresh {
-            if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
-                self.broken = Some("page write");
-                return Err(e);
-            }
+        let mut fresh = fresh;
+        if let Err(e) = self.write_runs(&mut fresh) {
+            self.broken = Some("page write");
+            return Err(e);
+        }
+        for (pno, page) in fresh {
             self.cache.insert(pno, page);
         }
         if self.joins_group(record)? {
@@ -532,11 +536,12 @@ impl Store {
             }
         } else {
             self.append(record)?;
-            for (pno, mut page) in sealed {
-                if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
-                    self.broken = Some("in-place write");
-                    return Err(e);
-                }
+            let mut sealed = sealed;
+            if let Err(e) = self.write_runs(&mut sealed) {
+                self.broken = Some("in-place write");
+                return Err(e);
+            }
+            for (pno, page) in sealed {
                 self.cache.insert(pno, page);
                 self.imaged.insert(pno);
             }
@@ -635,13 +640,41 @@ impl Store {
         let Some(record) = g.record.take() else {
             return Ok(());
         };
-        let held = std::mem::take(&mut g.held);
+        let mut held: Vec<(PageNo, Page)> = std::mem::take(&mut g.held).into_iter().collect();
         self.append(&record)?;
-        for (pno, mut page) in held {
-            if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
-                self.broken = Some("in-place write");
-                return Err(e);
+        if let Err(e) = self.write_runs(&mut held) {
+            self.broken = Some("in-place write");
+            return Err(e);
+        }
+        Ok(())
+    }
+
+    /// Write `pages` sorted by number, each run of consecutive pages on
+    /// one unit in a single write.
+    fn write_runs(&mut self, pages: &mut [(PageNo, Page)]) -> Result<()> {
+        pages.sort_unstable_by_key(|(p, _)| *p);
+        let mut at = 0;
+        while at < pages.len() {
+            let first = pages[at].0;
+            let span = self.asp.layout().locate(first).map(|(s, _)| s);
+            let mut end = at + 1;
+            while end < pages.len()
+                && end - at < MAX_RUN
+                && pages[end].0 == first + (end - at) as u64
+                && self.asp.layout().locate(pages[end].0).map(|(s, _)| s) == span
+            {
+                end += 1;
             }
+            if end - at == 1 {
+                self.asp.io().write_raw(first, &mut pages[at].1)?;
+            } else {
+                let mut buf = blockdev::AlignedBuf::new(end - at);
+                for (i, (_, page)) in pages[at..end].iter().enumerate() {
+                    buf[i * PAGE_SIZE..(i + 1) * PAGE_SIZE].copy_from_slice(page.bytes());
+                }
+                self.asp.io().write_bytes(first, &buf)?;
+            }
+            at = end;
         }
         Ok(())
     }
