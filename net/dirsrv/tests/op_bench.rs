@@ -34,7 +34,7 @@ fn person(i: usize, n: usize) -> (String, Vec<ldap::msg::Attribute>) {
 #[test]
 #[ignore = "a bench: run by hand"]
 fn adds() {
-    let n = 5000usize;
+    let n = 20_000usize;
     let mut t = T::with_blocks(harness::settings(), 262_144);
     let a = t.admin.clone();
     let s0 = t.sys.store.stats();
@@ -60,11 +60,19 @@ fn adds() {
         per(d1.flushes, d0.flushes),
         s1.checkpoints - s0.checkpoints,
     );
-    let start = Instant::now();
-    let r = t.search(&a, "o=Acme", Scope::One, "(sn=s00001*)", &["cn"]);
-    println!(
-        "substring search: {} replies, {:.1} ms",
-        r.len(),
-        start.elapsed().as_secs_f64() * 1e3
-    );
+    for f in [
+        "(cn=user0012345)",
+        "(sn=s00001*)",
+        "(cn=*12345*)",
+        "(cn=*9*)",
+        "(&(objectClass=person)(sn=*0123))",
+    ] {
+        let start = Instant::now();
+        let r = t.search(&a, "o=Acme", Scope::Sub, f, &["cn"]);
+        println!(
+            "search {f}: {} replies, {:.1} ms",
+            r.len(),
+            start.elapsed().as_secs_f64() * 1e3
+        );
+    }
 }

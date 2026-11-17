@@ -23,6 +23,13 @@ type Index = BTree<IndexKey, Vec<u8>>;
 const START: u8 = 0x02;
 const END: u8 = 0x03;
 
+/// A gram's posting list this long or shorter is short: read whole.
+const SHORT: usize = 4096;
+/// Candidates few enough to look each up in a long posting list.
+const PROBE: usize = 32;
+/// Candidates few enough to match without another gram.
+const ENOUGH: usize = 8;
+
 /// Entries re-indexed per batch when an index is added.
 const BATCH: usize = 256;
 
@@ -377,21 +384,64 @@ impl DirDb {
             p.push(END);
             gs.extend(piece_grams(&p));
         }
+        let keys: Vec<IndexKey> = gs
+            .iter()
+            .map(|g| IndexKey::new(d.number, IndexKind::Substring, g, 0))
+            .collect();
+        if keys.is_empty() {
+            return Ok(None);
+        }
+        self.gram_candidates(txn, &keys).map(Some)
+    }
+
+    /// The entries under every key of `keys` (grams), ascending, or a few
+    /// more. Each list is read up to [`SHORT`] entries: the short ones
+    /// whole, intersected shortest first. A long one is then probed for
+    /// the candidates when they are at most [`PROBE`], read whole and
+    /// intersected when more, and left alone once at most [`ENOUGH`] are
+    /// left (the caller matches the candidates).
+    fn gram_candidates(&self, txn: &mut Txn<'_>, keys: &[IndexKey]) -> Result<Vec<u64>> {
+        let mut short: Vec<Vec<u64>> = Vec::new();
+        let mut long: Vec<IndexKey> = Vec::new();
+        for k in keys {
+            let ids = self.postings(txn, *k, None, SHORT + 1)?;
+            if ids.is_empty() {
+                return Ok(ids);
+            }
+            if ids.len() <= SHORT {
+                short.push(ids);
+            } else {
+                long.push(*k);
+            }
+        }
+        short.sort_by_key(Vec::len);
         let mut found: Option<Vec<u64>> = None;
-        for g in gs {
-            let key = IndexKey::new(d.number, IndexKind::Substring, &g, 0);
-            let ids = self.postings(txn, key, None, usize::MAX)?;
-            let next = match found {
+        for ids in short {
+            found = Some(match found {
                 None => ids,
                 Some(f) => intersect(&f, &ids),
-            };
-            if next.is_empty() {
-                return Ok(Some(next));
-            }
-            found = Some(next);
+            });
         }
-        Ok(found)
+        let t: Index = self.tree(txn, SLOT_INDEX)?;
+        for k in long {
+            found = Some(match found {
+                Some(f) if f.len() <= ENOUGH => return Ok(f),
+                Some(f) if f.len() <= PROBE => {
+                    let mut kept = Vec::with_capacity(f.len());
+                    for id in f {
+                        if t.get(txn, &k.with_entry(id))?.is_some() {
+                            kept.push(id);
+                        }
+                    }
+                    kept
+                }
+                Some(f) => intersect(&f, &self.postings(txn, k, None, usize::MAX)?),
+                None => self.postings(txn, k, None, usize::MAX)?,
+            });
+        }
+        Ok(found.unwrap_or_default())
     }
+
 }
 
 #[cfg(test)]
