@@ -131,6 +131,8 @@ pub struct Stats {
     pub again: AtomicU64,
     /// Lent work taken back from a helper that did not post in time.
     pub reclaimed: AtomicU64,
+    /// Writes over blocks this mount wrote before (logged, not in `get`).
+    pub rewritten: AtomicU64,
 }
 
 impl Stats {
@@ -352,6 +354,7 @@ impl RemoteMount {
             target: "ifs::remote::stats",
             source = %self.core.info.source,
             made, read, sent, lent, again, reclaimed,
+            rewritten = self.core.stats.rewritten.load(Ordering::Relaxed),
             "remote mount ended"
         );
         self.core.queue().stop = true;
@@ -747,9 +750,26 @@ impl RemoteMount {
             let src =
                 &data[usize::try_from(k * bs + from as u64 - off).unwrap_or(0)..][..to - from];
             let i = c.inode(h);
-            if !i.blocks.contains_key(&k) {
-                Stats::add(&self.core.stats.made);
+            let over = match i.blocks.get(&k) {
+                None => {
+                    Stats::add(&self.core.stats.made);
+                    k < i.made_upto
+                }
+                Some(b) => b.state != BState::Dirty && i.made_upto > k,
+            };
+            if over {
+                // Data this mount wrote before is written again.
+                let n = self.core.stats.rewritten.fetch_add(1, Ordering::Relaxed);
+                if n == 0 {
+                    tracing::warn!(
+                        source = %self.core.info.source,
+                        block = k,
+                        off,
+                        "remote mount: a write goes over data written before"
+                    );
+                }
             }
+            i.made_upto = i.made_upto.max(k + 1);
             let b = i.blocks.entry(k).or_insert_with(|| Block {
                 data: Vec::new(),
                 base: k * bs >= size,

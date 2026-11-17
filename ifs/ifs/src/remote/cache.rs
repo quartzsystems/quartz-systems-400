@@ -122,6 +122,8 @@ pub(crate) struct Inode {
     pub silly: Option<(RHandle, Vec<u8>)>,
     /// Where sequential reads reached, for read-ahead.
     pub next_seq: u64,
+    /// Past the highest block a write made.
+    pub made_upto: u64,
     /// Fetches that failed, by what was asked, and when (good only for
     /// the request that asked).
     pub errs: HashMap<String, (RemoteError, Instant)>,
