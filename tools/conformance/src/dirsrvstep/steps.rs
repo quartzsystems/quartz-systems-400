@@ -717,6 +717,23 @@ impl Suite {
         if !out.to_ascii_lowercase().contains("cn=localhost") {
             return Err(format!("ldapsearch of {SUFFIX}:\n{out}"));
         }
+        // A name of the host table (CFGTCP), which the C library's
+        // resolver does not know.
+        let _ = s.command("RMVTCPHTE INTNETADR('127.0.0.19')", CMD);
+        clean(
+            s,
+            "ADDTCPHTE INTNETADR('127.0.0.19') HOSTNAME((LDAP190.QS400TEST))",
+            CMD,
+        )?;
+        let out = ok(
+            s,
+            "ldapsearch by a host table name",
+            &format!("ldapsearch -h ldap190.qs400test -b {SUFFIX} -s base objectclass=*"),
+        )?;
+        if !out.to_ascii_lowercase().contains("cn=localhost") {
+            return Err(format!("ldapsearch by a host table name:\n{out}"));
+        }
+        let _ = s.command("RMVTCPHTE INTNETADR('127.0.0.19')", CMD);
         // The records, written a line at a time.
         let mut add = String::new();
         for l in [
