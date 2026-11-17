@@ -2,9 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Problems, code update and the system's own dumps between peers of
-//! different ages: a peer without a capability bit is never asked its
-//! messages and never sent its events, and the rest goes on.
+//! The bits added since `HOST_V1` between peers of different ages:
+//! problems, code update and the system's own dumps (handoff 19),
+//! physical I/O and partition version 2 (handoff 20). A peer without a
+//! capability bit is never asked its messages and never sent its
+//! events, and the rest goes on.
 
 mod common;
 
@@ -31,20 +33,41 @@ fn older_host() -> Hello {
     }
 }
 
-/// The new requests: the service and update families and base's dumps.
-fn new_requests() -> Vec<AnyRequest> {
+/// Every bit added beside `HOST_V1`.
+const NEW: u64 = caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2;
+
+/// Each of them alone.
+const BITS: [u64; 5] = [
+    caps::SERVICE,
+    caps::UPDATE,
+    caps::SYSTEM_DUMPS,
+    caps::PHYSICAL_IO,
+    caps::PARTITION_V2,
+];
+
+/// The requests that need any of `bits`.
+fn requests_of(bits: u64) -> Vec<AnyRequest> {
     samples::exchanges()
         .into_iter()
         .map(|(q, _)| q)
-        .filter(|q| caps::of_request(q.family(), q.op()) & caps::SERVICING != 0)
+        .filter(|q| caps::of_request(q.family(), q.op()) & bits != 0)
         .collect()
 }
 
-fn new_events() -> Vec<AnyEvent> {
+fn events_of(bits: u64) -> Vec<AnyEvent> {
     samples::events()
         .into_iter()
-        .filter(|e| caps::of_event(e.family(), e.op()) & caps::SERVICING != 0)
+        .filter(|e| caps::of_event(e.family(), e.op()) & bits != 0)
         .collect()
+}
+
+/// The new requests.
+fn new_requests() -> Vec<AnyRequest> {
+    requests_of(NEW)
+}
+
+fn new_events() -> Vec<AnyEvent> {
+    events_of(NEW)
 }
 
 fn pair(console: Hello, managed: Hello) -> Loopback {
@@ -52,14 +75,24 @@ fn pair(console: Hello, managed: Hello) -> Loopback {
 }
 
 #[test]
-fn the_new_messages_are_the_three() {
-    let q = new_requests();
+fn the_new_messages_are_these() {
+    let q = requests_of(caps::SERVICING);
     // Base's four dumps, service's three, update's six.
     assert_eq!(q.len(), 13);
     assert_eq!(q.iter().filter(|q| q.family() == family::BASE).count(), 4);
-    let e = new_events();
     // Base's two, service's four, update's seven.
-    assert_eq!(e.len(), 13);
+    assert_eq!(events_of(caps::SERVICING).len(), 13);
+    // The host's devices and vres's tape drives; the host's five events
+    // and the drive's.
+    let q = requests_of(caps::PHYSICAL_IO);
+    assert_eq!(q.len(), 2);
+    assert_eq!(q.iter().filter(|q| q.family() == family::HOST).count(), 1);
+    assert_eq!(events_of(caps::PHYSICAL_IO).len(), 6);
+    // The entitlement and its event.
+    assert_eq!(requests_of(caps::PARTITION_V2).len(), 1);
+    assert_eq!(events_of(caps::PARTITION_V2).len(), 1);
+    assert_eq!(new_requests().len(), 16);
+    assert_eq!(new_events().len(), 20);
 }
 
 #[test]
@@ -156,7 +189,7 @@ fn events_go_only_where_agreed() {
     );
     for (_, e) in &to_older {
         assert_eq!(
-            caps::of_event(e.family(), e.op()) & caps::SERVICING,
+            caps::of_event(e.family(), e.op()) & NEW,
             0,
             "{e:?}"
         );
@@ -201,6 +234,75 @@ fn service_and_update_need_only_their_own_bits() {
             assert!(r.is_ok(), "{q:?}");
         } else {
             assert!(matches!(r, Err(Error::NotAgreed { .. })), "{q:?}");
+        }
+    }
+}
+
+#[test]
+fn each_bit_alone() {
+    for bit in BITS {
+        let with = Hello {
+            caps: caps::HOST_V1 | bit,
+            ..host_hello()
+        };
+        let console = Hello {
+            caps: caps::HOST_V1 | bit,
+            ..console_hello()
+        };
+        // A host with the bit alone, a newer console; then the other way.
+        for (c, h) in [(console_hello(), with.clone()), (console, host_hello())] {
+            let mut l = pair(c, h);
+            assert_eq!(l.console.agreed().unwrap().caps, caps::HOST_V1 | bit);
+            for q in new_requests() {
+                let need = caps::of_request(q.family(), q.op());
+                let r = l.console.request_any("U", &q);
+                if need & NEW & !bit == 0 {
+                    assert!(r.is_ok(), "{bit:#x}: {q:?}");
+                } else {
+                    assert!(matches!(r, Err(Error::NotAgreed { .. })), "{bit:#x}: {q:?}");
+                }
+            }
+        }
+
+        // Events: a console with the bit alone is sent its events and none
+        // of the other new ones.
+        let limits = Limits::default();
+        let mut log = EventLog::new(&limits);
+        let console = Hello {
+            caps: caps::HOST_V1 | bit,
+            ..console_hello()
+        };
+        let mut l = pair(console, host_hello());
+        let id = l
+            .console
+            .request_msg(
+                "U",
+                &base::Request::Subscribe(base::Subscribe { since: None }),
+            )
+            .unwrap();
+        l.pump();
+        l.take_request(id).unwrap();
+        l.managed.subscribe(id, &log, None).unwrap();
+        l.pump();
+        for e in &samples::events() {
+            log.push_any(e).unwrap();
+        }
+        let sent = l.managed.publish(&log).unwrap();
+        l.pump();
+        let got: Vec<AnyEvent> = l
+            .at_console
+            .iter()
+            .filter_map(|i| match i {
+                Incoming::Event(e) => e.decode().unwrap(),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(got.len(), sent);
+        let old = samples::events().len() - new_events().len();
+        assert_eq!(sent, old + events_of(bit).len(), "{bit:#x}");
+        for e in &got {
+            let need = caps::of_event(e.family(), e.op());
+            assert_eq!(need & NEW & !bit, 0, "{bit:#x}: {e:?}");
         }
     }
 }
