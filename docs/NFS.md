@@ -1467,8 +1467,9 @@ reads the cache and queues work:
   the server gives at the time. Clean data past 64 MiB per mount goes,
   oldest first (data written and sent counts too); past 16 MiB dirty a
   write queues every block still waiting at once, so the mount's
-  workers send them side by side, and waits for the last (data only
-  sent unstable waits for a commit).
+  workers send them side by side, and waits until half of them went
+  (data only sent unstable waits for a commit), so the workers always
+  have blocks to send while the writer fills the cache again.
 
 ### 7.4 Operations on a remote object
 
@@ -1535,7 +1536,10 @@ own connection to `source` and posts `HelperResult { data, eof, count,
 stable, verifier, err }` with `remote_post(fs, id, r)` (operation 84);
 a write's result is checked against the block's generation, so data
 changed meanwhile is written again. Work not posted within 30 seconds
-goes back to the queue. The mount's own threads take the same work, so
+goes back to the queue (or within the mount's `slow_after`, its major
+timeout, when that is longer: a call the server is slow to answer, as
+when its sync waits on the host, is not sent a second time while the
+helper's is still on its way). The mount's own threads take the same work, so
 without helpers nothing changes. Wave 2's `QNFSBIOD` is this loop.
 
 ### 7.7 The NFS client
