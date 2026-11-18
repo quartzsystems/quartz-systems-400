@@ -357,12 +357,17 @@ handle caching but is not refused while the client keeps it open (the
 IFS allows it; Windows refuses it within one job).
 
 NFS's are in `NFS.md` §10 and §7. The main ones: a file not used
-since the IPL is found from its handle by one walk of its file system;
-a mode an NFS client sets loses its group bits when the owner has no
-primary group (the IFS's authority model); version 3 locks on a mount
-need the server's binder; NFSv4 blocking locks are polled. A QS/400
-client copying a large file to a QS/400 server with `CPY` writes at
-only 4 to 11 MiB/s under QEMU (`NFS.md` §11).
+since the IPL is found from its handle by a walk of its file system's
+directories (an xfs handle names no parent; xfs parent pointers would
+need a new volume format); a mode an NFS client sets loses its group
+bits when the owner has no primary group (the IFS's authority model);
+version 3 locks on a mount need the server's binder (IBM has no option
+naming the lock manager's port); NFSv4 blocking locks are polled, a
+4.1 client being told by `CB_NOTIFY_LOCK` when a lock this server holds
+goes, and QS/400's own client polls. A `*SYNC` export syncs every
+write, as IBM documents: under QEMU a QS/400 client copying 1 GiB to a
+QS/400 server with `CPY` writes at 15 to 37 MiB/s, the rest of the
+time the host writing back the guests' disks (`NFS.md` §11).
 
 The directory server's are in `DIRSRV.md` §14 and §16. The main ones:
 a bind on a new connection costs about 27 ms under QEMU (2 200 a

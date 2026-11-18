@@ -2275,6 +2275,10 @@ below, and the QEMU steps (last item).
   | host to guest, `bench` read, 1 MiB | | | 94.8 to 103.2 MiB/s | 88.7 to 101.8 MiB/s (4.1) |
   | guest A to guest B, `CPY` through B's mount (B reads) | 30.9 to 99.8 MiB/s | 15.5 to 63.7 MiB/s | 9.1 to 93.5 MiB/s (68.6 in the last) | 6.7 to 90.7 MiB/s (66.6) |
   | guest B to guest A, `CPY` through B's mount (B writes) | 1.0 to 6.4 MiB/s | 5.2 to 6.0 MiB/s | 3.3 to 11.0 MiB/s (7.6) | 4.0 to 44.3 MiB/s (4.3) |
+  | guest B to guest A, `CPY` through B's mount (B writes), 2026-11-17 before the `CPY` fix (each block made twice) | | | 5.4 MiB/s | 15.4 MiB/s |
+  | the same after the `CPY` fix (each block made once) | | | 14.9 MiB/s | 37.1 MiB/s |
+  | guest A to guest B, `CPY` (B reads), the same two runs | | | 20.1, 38.5 MiB/s | 22.3, 16.8 MiB/s |
+  | host to guest, `bench` 2026-11-17 (v3 1 MiB, 64 KiB; 4.1 1 MiB, 64 KiB; `*ASYNC`) | | | write 48.2, 12.1; read 102.0, 34.7 | write 19.2, 19.7; read 99.3, 69.8; `*ASYNC` write 153.0 |
 
   Ranges are the runs of 2026-11-13 (the previous agent's and this
   work's, some with the timers below); the guests share the host's disk
@@ -2390,7 +2394,12 @@ below, and the QEMU steps (last item).
   `remote_data.rs` `copy_outlasting_the_cache_copies_once`, which copied
   twice before). The mount also counts writes over blocks it wrote
   before (`rewritten` in `ifs::remote::stats`, the first one logged with
-  its offset), so any other cause shows at once.
+  its offset), so any other cause shows at once. Measured on the same
+  harness (`cargo run -p conformance -- --only 184`, 1 GiB each way):
+  B writing to A went from 5.4 to 14.9 MiB/s (version 3) and from 15.4
+  to 37.1 MiB/s (version 4), with `made=32768 rewritten=0` and no
+  `copy begun again`; the version 3 run still lost 52 seconds to one of
+  B's device flushes (below).
 
   The same run showed the rest of the time is the host's: on both
   guests single device transfers of 13 to 20 seconds (`qsstg: IFS
