@@ -374,22 +374,25 @@ for drives and `TAPMLB01`, ... for changers.
 |-------|---------|
 | no volume loaded | CPF6760 |
 | volume write protected | CPF6768 |
-| end of volume, no further volume | CPF6718 |
+| end of volume, no further volume | CPF6722 |
 | wrong volume mounted, or not the continuation | CPF6720 |
 | labels damaged, unlabeled where labels are needed, or the reverse | CPF6772 |
-| file not found by SEQNBR or FILELABEL | CPF6790 |
-| active file would be overwritten | CPA4036 |
-| changer failure | CPF6745 |
+| file not found by SEQNBR or FILELABEL | CPF6723 |
+| active file would be overwritten | CPF6754 |
+| changer failure | CPF67C7 |
 | device error, cancelled, bad parameter, record length | CPF6708 |
-| cartridge not in the library | CPF6745 |
-| category refuses the operation | CPF67D2 |
-| cartridge in use | CPF6747 |
-| no drive available | CPF6749 |
+| cartridge not in the library | CPF67A1 |
+| category refuses the operation | CPF67A5 |
+| category cannot be assigned | CPF67A6 |
+| library uses `*SYSGEN` only | CPF67D5 |
+| cartridge in use | CPF67A8 |
+| no drive available | CPF67ED |
+| no free slot or station | CPF67DC |
 
-CPF6760 ("Device TAP01 not ready") is the oracle's own answer to
-`DSPTAP` with no volume; the others are provisional until checked
-against the oracle's message file (`docs/SVC_OPEN_QUESTIONS.md`,
-Media).
+Every identifier is IBM's for the meaning, read from the primary's
+`QCPFMSG` (`tools/conformance/oracle/msgdata/fields.txt`), and each
+message's data is laid out as IBM's entry declares it
+(`medio::msg::escape`); see "Messages of the media commands".
 
 ## Tape: physical tape acceptance
 
@@ -685,11 +688,11 @@ volume's counter to the larger of one more and the time in nanoseconds,
 so a change lost in a crash before `flush` never gives a value that
 comes again. Each change is checked against the capacity
 first and refused whole (`OPT1335`) when the rewritten image would not
-fit; a write-protected volume refuses every change (`OPT1520`).
+fit; a write-protected volume refuses every change (`OPT1315`).
 
 | Command | Operation |
 |---|---|
-| `INZOPT NEWVOL CHECK CLEAR TEXT` | `volume::ops::inzopt`: `CHECK(*YES)` refuses a volume holding files (`OPT1330`); `CLEAR(*YES)` overwrites the old image with zeros first; capacity kept from the old label |
+| `INZOPT NEWVOL CHECK CLEAR TEXT` | `volume::ops::inzopt`: `CHECK(*YES)` refuses a volume holding files (`OPT1335`); `CLEAR(*YES)` overwrites the old image with zeros first; capacity kept from the old label |
 | `DSPOPT DATA(*VOLATR)` | `ops::volume_attrs`: identifier, text, `*ISO9660`, capacity, used, free, block size 2048, dates, set, protection |
 | `DSPOPT DATA(*DIRATR)` | `ops::dir_attrs`: each directory with its file, directory and byte counts |
 | `DSPOPT DATA(*FILATR)` | `ops::file_attrs`: each file with its size |
@@ -939,21 +942,21 @@ reading: `MediaWriter`, `MediaReader`).
   the product identifier `SAVLICPGM`, the PTF's name `LODPTF`.
   `SEQNBR(*END)` appends; `EXPDATE` defaults to `*PERM`; `CLEAR` other
   than `*NONE` lets the save overwrite files that have not expired,
-  else the inquiry `CPA4036` is asked: `I` overwrites, anything else
-  ends the save (`CPF3794`). `SEQNBR(*SEARCH)` with `LABEL(*SAVLIB)`
+  else the inquiry `CPA6754` is asked: `I` overwrites, anything else
+  ends the save (`CPF3794` after `CPF6754`). `SEQNBR(*SEARCH)` with `LABEL(*SAVLIB)`
   finds the first file with the library's label. A save to a save file
   stays one stream.
 - **Multi-volume**: on a virtual device the next volume is the `VOL`
   list's next one, or for `VOL(*MOUNTED)` the catalog's next loaded
   entry after the mounted one (`medio::CatalogTapes`); the last volume
-  used stays mounted. When there is none the inquiry `CPA4075` is
-  asked (see "Operator replies"): `G` looks again over every loaded
+  used stays mounted. When there is none the inquiry `CPA4088` is
+  asked (`CPA4089` when the `VOL` list names the volume) (see "Operator replies"): `G` looks again over every loaded
   entry not used yet in the operation, anything else cancels. On a real
   drive `G` means the operator has put the next volume in.
 - **Optical**: the file `OPTFILE` names on the mounted volume of the
   device's catalog (`'*'` the generated name of the Optical section);
   an existing file is replaced only with `CLEAR`, else the inquiry
-  `OPT1260` is asked: `G` replaces it. A save larger than the volume's
+  `OPT1260` is asked: `I` replaces it. A save larger than the volume's
   room continues on the next volume, chosen as for tape (the `VOL`
   list, else the catalog's next loaded entry, else the operator); see
   "Optical saves across volumes".
@@ -975,7 +978,7 @@ reading: `MediaWriter`, `MediaReader`).
   labels (`QFILEIOC`, `QFILEUPR`, `QSAVIFS`, the install media's).
 - `SAVSYS` (`cpp/savsys.rs`) writes the install media layout
   (docs/INSTALL.md) through the same devices: on tape from sequence 1
-  of a labeled volume (`CPF6772` for a blank one; `CPA4036` for files
+  of a labeled volume (`CPF6772` for a blank one; `CPA6754` for files
   not expired unless `CLEAR`), on optical into the mounted volume
   (`OPT1260` for a system save already there unless `CLEAR`). It does
   not span volumes.
@@ -1015,14 +1018,14 @@ slot `n`), 4 import/export stations and 2 drives, `<rsrc>D1` and
 - **Insert**: an entry added or loaded into the catalog arrives in
   `*INSERT`; `ADDTAPCTG` makes it usable.
 - **Mount**: a command on the library with `VOL(x)` checks every
-  volume of the list is in a usable category (`CPF67D2`), then
+  volume of the list is in a usable category (`CPF67A5`), then
   `MediaLibrary::select` picks the drive and the changer moves the
   cartridge in (the drive's cartridge goes home first). `VOL(*MOUNTED)`
   uses the cartridge in the first drive holding one (`CPF6760` when
   none does). Further volumes of a multi-volume file are moved in
   (`medio::LibraryVolumes`): a volume the list names, or for
   `*MOUNTED` the next spare cartridge in a usable category once the
-  operator answers `CPA4075` with `G`.
+  operator answers `CPA4088` with `G`.
 - **Demount**: a cartridge stays in its drive after the command unless
   the command unloaded it (`ENDOPT(*UNLOAD)`); then it goes home (a
   `*CNV` cartridge goes to a station as `*EJECT`). `WRKTAPCTG` option 8
@@ -1093,12 +1096,12 @@ lengths are the longest record (plus 4 for `V`) and, for blocked
 records, the largest multiple of the record length up to 32760 bytes
 (32760 for `VB`). `CODE(*ASCII)` writes and reads the data in ASCII.
 `TOLABEL(*FROMMBR)` labels the file with the member's name. An active
-file in the way asks `CPA4036` as a save does. `OVRTAPF` is not
+file in the way asks `CPA6754` as a save does. `OVRTAPF` is not
 provided.
 
 ### Operator replies
 
-Media inquiries (`CPA4075` next volume, `CPA4036` active file,
+Media inquiries (`CPA4088` or `CPA4089` next volume, `CPA6754` active file,
 `OPT1260` optical file exists) go to `QSYSOPR` from program `QTAERR`.
 The reply comes from, in order:
 
@@ -1134,12 +1137,66 @@ is Quartz's (no capture).
 
 | Event | Operator | Logged |
 |---|---|---|
-| wrong volume, not ready, write protected, end of volume, unlabeled where labels are needed | attention message (`CPF6720`, `CPF6760`, `CPF6768`, `CPF6718`, `CPF6772`, `OPT1520`, `OPT1335`) | |
-| drive or changer failure | attention message (`CPF6708`, `CPF6745`) | product activity log `A6006300` with the resource, a problem |
+| wrong volume, not ready, write protected, end of volume, unlabeled where labels are needed | attention message (`CPF6720`, `CPF6760`, `CPF6768`, `CPF6722`, `CPF6772`, `OPT1315`, `OPT1345`) | |
+| drive or changer failure | attention message (`CPF6708`, `CPF67C7`) | product activity log `A6006300` with the resource, a problem |
 | damaged labels, frames or image | attention message (`CPF6772`, `OPT1605`) | product activity log `A6006310` with the resource, a problem |
-| next volume needed | inquiry `CPA4075` (C cancel, G look again), default C | |
-| active file in the way | inquiry `CPA4036` (C cancel, I overwrite), default C | |
-| optical file exists | inquiry `OPT1260` (C cancel, G replace), default C | |
+| next volume needed | inquiry `CPA4088`, `CPA4089` with the volume (C cancel, G look again), default C | |
+| active file in the way of a write | inquiry `CPA6754` (C cancel, I overwrite), default C; `INZTAP` sends the escape `CPF6754` instead | |
+| optical file exists | inquiry `OPT1260` (C cancel, I replace), default C | |
+
+The attention messages carry the escape's data (the device as `&1` and
+the rest as the entry declares).
+
+### Messages of the media commands
+
+Each message a media command sends is its `QCPFMSG` entry: IBM's
+identifier for the meaning, IBM's severity and data layout (the
+primary, V7R1M0, `tools/conformance/oracle/msgdata/fields.txt`), and a
+Quartz-written text. The reply carries no text of the command's own
+(only real output: a display, a listing, `CHKTAP`'s install media);
+a cause the entry has no field for is `CPF9897` before the escape.
+The data are built in one place, `medio::msg` (and `cpp::medcmd`,
+`cpp::tapcpy` for the completions), and checked against the entries
+by `media/medio/tests/msgs.rs`.
+
+| Command | Completion | Data |
+|---|---|---|
+| `CRTDEVTAP`, `CRTDEVOPT`, `CRTDEVMLB` | `CPC2622` | device |
+| `CHGDEVxxx` | `CPC2613` | device |
+| `CRTIMGCLG` | `CPCBC00` | catalog, `QUSRSYS` |
+| `DLTIMGCLG` | `CPCBC18` | catalog (one per catalog) |
+| `ADDIMGCLGE` | `CPCBC28` | catalog |
+| `RMVIMGCLGE` | `CPCBC30` | catalog, index `*BIN 2` |
+| `CHGIMGCLGE` | `CPCBC0C` | index |
+| `LODIMGCLG` | `CPCBC10`, `CPCBC11` | catalog, device |
+| `LODIMGCLGE` | `CPCBC40`, `CPCBC41`, `CPCBC42` | index |
+| `VFYIMGCLG` | `CPCBC20` | catalog, type |
+| `INZTAP` | `CPC6773` (QS/400's), `CPC6776` nonlabeled | device, volume; device, density as `&4` |
+| `CHKTAP` | `CPC6778`, `CPC6779` with `SEQNBR` or `LABEL` | device, volume; sequence, label, creation date |
+| `DUPTAP` | `CPC6775` | devices, volumes, files `*BIN 4` |
+| `INZOPT`, `CHKOPT`, `DUPOPT` | `CPC6774`, `CPC6770`, `CPC6772` (QS/400's) | device, volume; files read; source, device, target |
+| `ADDTAPCTG`, `CHGTAPCTG`, `RMVTAPCTG` | `CPC67F8` | library, first cartridge, category (`*EJECT`), count `*BIN 2` |
+| `CRTTAPF`, `CHGTAPF` | `CPC7301`, `CPC7303` | file, library |
+| `CPYTOTAP`, `CPYFRMTAP` | `CPC2955` | from file, library, member or label; to file, library, label or member; records |
+
+The escapes: a device not found `CPF9814`, not varied on `CPF6718`, not
+a tape device `CPF6721`, not an optical device `OPT1530`, not a media
+library `CPF6745`; a description not made or changed `CPF261A`,
+`CPF2618`; `FROMDEV` and `TODEV` alike `CPF6740`; a catalog missing
+`CPFBC45`, already there `CPFBC01`, else the command's own (`CPFBC02`,
+`CPFBC18`, `CPFBC28`, `CPFBC30` or `CPFBC31`, `CPFBC0C`, `CPFBC10`,
+`CPFBC11`, `CPFBC13` to `CPFBC15`, `CPFBC42`) after the cause; a
+cartridge carrying another volume `CPF67A0`; a tape file that is not
+one `CPF2801`, `CPF2803`, `CPF7304`; a member that holds records
+`CPF2863`; optical volume not found `OPT1331`, not in the device
+`OPT1332`, the same volume both ways `OPT1339`, an image that cannot be
+read `OPT1605`.
+
+V7R1M0 has no completion for `INZTAP` of a labeled volume, nor for
+`INZOPT`, `CHKOPT` and `DUPOPT` (only progress status messages):
+`CPC6773`, `CPC6774`, `CPC6770` and `CPC6772` are QS/400's own, in a
+part of `CPC67xx` the primary shows unused
+(`tools/conformance/oracle/msgdata/dspmsgd5.s`).
 
 A product activity log entry of a device carries its resource name (ten
 bytes after the entry's 17; the Phase 1 entries have none) and shows it

@@ -33,7 +33,7 @@ user IDs, and QSECOFR's password at the time of the save.
 image catalog loaded on it, a media library, a real drive. The tape
 must be labeled first, as IBM i requires (`INZTAP`; a catalog's
 `FROMFILE(*NEW)` volume is labeled when it is made); `SAVSYS` writes
-from sequence 1, asks `CPA4036` before it overwrites files that have
+from sequence 1, asks `CPA6754` before it overwrites files that have
 not expired (`CLEAR(*ALL)` does not ask) and honors `EXPDATE` and
 `ENDOPT`. On optical it asks `OPT1260` before it replaces an earlier
 system save on the volume. The user data goes on the same tape after

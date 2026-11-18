@@ -48,3 +48,15 @@ themselves carry IBM's second-level help and stay out of the tree.
   `CPI371D`, refused `CPF3881`, missing `CPF3836`; `RSTAUT` ends
   `CPC3710` or `CPF3776` (`CPF3845` per profile); `CPF4110` is the
   cancel reply to the inquiry its `&6` names; `CPF3700` is unused.
+- (`dspmsgd6.s`, `dspmsgd7.s`, the tape and media half.) A device
+  description is made `CPC2622`, changed `CPC2613` (`CPC2618` and
+  `CPC2619` are class-of-service and table messages); the image catalog
+  completions are `CPCBC00` (created in library), `CPCBC18`, `CPCBC28`,
+  `CPCBC30`, `CPCBC0C`, `CPCBC10`, `CPCBC11`, `CPCBC20`, `CPCBC40` to
+  `CPCBC42`, the escapes `CPFBC45` (not found), `CPFBC01` (exists, with
+  the library) and a "not done" escape per command. `CHKTAP`'s are
+  `CPC6778` and `CPC6779`, `DUPTAP`'s `CPC6775`, cartridges `CPC67F8`;
+  the tape file copies are `CPYF`'s `CPC2955`, `CHGTAPF` `CPC7303`.
+  `CPC6770`, `CPC6772`, `CPC6773` and `CPC6774` are unused, as are
+  `CPI9BB0` to `CPI9BBF` and `OPT1203`; V7R1M0 has no completion for
+  `INZOPT`, `CHKOPT` or `DUPOPT`.

@@ -81,25 +81,16 @@ The V7R1M0 oracle settled 27 restore rules
     them.
 ## Media
 
-14. **Tape message identifiers.** The tape crate's mapping
-   (`TapeError::message_id`, `docs/MEDIA.md`) against what is known of
-   IBM's: `CPF6760` device not ready is the oracle's own answer
-   (`34-devices.txt`, "Device TAP01 not ready") and stays. Fairly sure:
-   `CPF6720` incorrect volume mounted, `CPF6768` volume write
-   protected, `CPA4036` active file found (an inquiry with C and I),
-   `CPF6772` volume cannot be processed. Unsure, kept until the
-   oracle's `QCPFMSG` can be read (`DSPMSGD` over JDBC with `QCMDEXC`
-   and `OUTPUT(*PRINT)`): `CPF6718` (used for the end of the volume; it
-   may be IBM's "cannot allocate device"), `CPF6790` (file not found;
-   IBM may use a CPF67xx neighbour), `CPF6708` (command ended because of
-   an error), `CPF6745` (changer failure and cartridge not in the
-   library), `CPF67D2`, `CPF6747`, `CPF6749` (library category, cartridge
-   in use, no drive), `CPF6721` (device not available, used for a device
-   not varied on).
-15. **Operator inquiries.** The next-volume inquiry is `CPA4075` with
-   replies C and G (unsure; IBM's tape volume request may be a CPA40xx
-   or CPA67xx neighbour); the optical file-exists inquiry is `OPT1260`
-   (Quartz's choice in the OPT range). Replies are real now
+14. **Tape message identifiers.** Resolved (handoff 21): the
+   primary's `QCPFMSG` was read (`tools/conformance/oracle/msgdata/`)
+   and every media message has IBM's identifier for its meaning and
+   IBM's data layout (`docs/MEDIA.md`, "Tape: message identifiers" and
+   "Messages of the media commands").
+15. **Operator inquiries.** The next-volume inquiry is `CPA4088`
+   (`CPA4089` naming the volume), replies C and G; an active file in
+   the way of a write `CPA6754`, replies C and I; the optical
+   file-exists inquiry `OPT1260` (IBM's "active file found on volume",
+   replies C and I). Replies are real now
    (`docs/MEDIA.md`, "Operator replies"): a reply the operator already
    sent to the same inquiry, else the job's `INQMSGRPY` (`*DFT`, the
    reply list for `*SYSRPYL`); with `*RQD` the inquiry waits on
@@ -108,16 +99,10 @@ The V7R1M0 oracle settled 27 restore rules
    whether IBM keeps a save waiting in `MSGW` for an interactive job's
    operator (it does for batch); settle by a job-side reply path when
    the service can suspend a command.
-16. **Completion messages.** Quartz's choices, to check against the
-   oracle: `CPC2618`/`CPC2619` device description made and changed,
-   `CPF2605` device description exists, `CPF2702` device description not
-   found (fairly sure of this one), `CPF2653` device in use,
-   `CPC6773`/`CPC6774`/`CPC6775` volume initialized, checked, files
-   duplicated, `CPC6776`/`CPC6777` cartridge category set and ejected,
-   `CPC6778`/`CPC6779` records copied to and from tape, `CPC7301`/
-   `CPC7302` tape file made and changed, `CPCBC01` to `CPCBC09` the image
-   catalog completions (the `CPFBC` escapes are `imgclg`'s, also
-   Quartz's).
+16. **Completion messages.** Resolved (handoff 21): IBM's identifiers
+   from the primary (`docs/MEDIA.md`, "Messages of the media
+   commands"); `CPC6773`, `CPC6774`, `CPC6770` and `CPC6772` are
+   QS/400's own where V7R1M0 has no completion.
 17. **One file per save.** Resolved: a `SAVLIB` of several libraries to
    tape or optical writes a file per library, labeled with its name
    (as IBM does), and `RSTLIB` of several libraries reads each one's
