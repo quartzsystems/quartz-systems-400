@@ -557,10 +557,10 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `docs/SQL.md:618` | in `work/qsjob/src/console/drda.rs`). |
 | `NEEDS-CODY` | `docs/SQL.md:619` | ACS Run SQL Scripts checklist ( |
 | `NEEDS-CODY` | `docs/SQL.md:621` | ( |
-| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:399` | until each can reach its job). DFU |
-| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:451` | the service console has no job runtime). `MODE DB2SQL` after |
-| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:462` | `ALWREPCHG(*NO)` on an after trigger does not yet |
-| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:463` | refuse the program's own change of the same record ( |
+| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:479` | until each can reach its job). DFU |
+| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:531` | the service console has no job runtime). `MODE DB2SQL` after |
+| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:542` | `ALWREPCHG(*NO)` on an after trigger does not yet |
+| `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:543` | refuse the program's own change of the same record ( |
 | `BLOCKED(rel)` | `docs/SYSAPI.md:568` | the DRDA requester), and a CLI call made by a procedure |
 | `BLOCKED(rel)` | `docs/TCPIP.md:1168` | VT and 3270 sessions and |
 | `BLOCKED(rel)` | `docs/WORKMGMT.md:1250` | a program running |
@@ -572,7 +572,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `lic/slic/src/cpp/jrncmd.rs:58` | CMPJRNIMG's entry selection (sequence numbers, |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/jrncmd.rs:64` | a receiver range other than *CURRENT is not taken. |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/rpg/mod.rs:352` | CRTPGM does not carry a module's statements. |
-| `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1450` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
+| `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1654` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:87` | the plan cache (`sql::exec::plan::cache`) keeps |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:98` | a package's statements are kept (`db::sqlpkg`) |
 | `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:71` | IBM's, |
