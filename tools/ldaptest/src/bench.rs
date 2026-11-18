@@ -13,11 +13,6 @@ use crate::client::{Conn, expect_rc};
 use crate::conn::Tls;
 use crate::scenarios::{Ctx, controls, read};
 
-/// Connections the bare loop makes at most.
-const BARE: usize = 1000;
-/// How long one of them may take to connect.
-const BARE_WAIT: std::time::Duration = std::time::Duration::from_secs(10);
-
 /// The bench's lines.
 pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
     let mut out = Vec::new();
@@ -31,26 +26,6 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
         dn.as_str()
     };
     let n = c.t.binds.max(1);
-    // Connections alone, no LDAP: what the network and the accept cost.
-    let bare = n.min(BARE);
-    let addrs: Vec<std::net::SocketAddr> =
-        std::net::ToSocketAddrs::to_socket_addrs(&(c.t.host.as_str(), c.t.port))?.collect();
-    let started = Instant::now();
-    let mut made = 0;
-    for _ in 0..bare {
-        let Some(a) = addrs.first() else { break };
-        match std::net::TcpStream::connect_timeout(a, BARE_WAIT) {
-            Ok(s) => {
-                let _ = s.shutdown(std::net::Shutdown::Both);
-                made += 1;
-            }
-            Err(_) => break,
-        }
-    }
-    out.push(format!(
-        "connections: {made} of {bare} opened and closed, no LDAP, {:.0} a minute",
-        per_minute(made, started)
-    ));
     let started = Instant::now();
     for _ in 0..n {
         let mut x = Conn::open(&c.t, Tls::None)?;
