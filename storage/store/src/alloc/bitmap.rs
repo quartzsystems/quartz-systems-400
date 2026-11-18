@@ -10,6 +10,9 @@ pub struct Bitmap {
     words: Vec<u64>,
     pages: u64,
     free: u64,
+    /// Every page below this one is allocated: where a search for a
+    /// free run starts.
+    low: u64,
 }
 
 fn idx(v: u64) -> usize {
@@ -24,6 +27,7 @@ impl Bitmap {
             words: vec![0; idx(pages.div_ceil(64))],
             pages,
             free: 0,
+            low: pages,
         }
     }
 
@@ -58,6 +62,7 @@ impl Bitmap {
             self.words[idx(p / 64)] |= 1 << (p % 64);
         }
         self.free += len;
+        self.low = self.low.min(lba);
     }
 
     /// Mark a run allocated. Every page must be free.
@@ -122,8 +127,23 @@ impl Bitmap {
 
     /// First run of at least `len` pages.
     #[must_use]
-    pub fn first_fit(&self, len: u64) -> Option<u64> {
-        self.runs().find(|&(_, l)| l >= len).map(|(s, _)| s)
+    pub fn first_fit(&mut self, len: u64) -> Option<u64> {
+        let mut at = self.low;
+        let mut first = true;
+        while let Some((start, l)) = self.next_run(at) {
+            if first {
+                self.low = start;
+                first = false;
+            }
+            if l >= len {
+                return Some(start);
+            }
+            at = start + l;
+        }
+        if first {
+            self.low = self.pages;
+        }
+        None
     }
 
     /// The longest run, capped at `max`: `(lba, len)`.
@@ -171,6 +191,25 @@ mod tests {
         b.clear(3, 10);
         assert_eq!(b.first_fit(1), Some(70));
         assert_eq!(b.free(), 101);
+    }
+
+    #[test]
+    fn first_fit_starts_past_the_allocated_front() {
+        let mut b = Bitmap::new(10_000);
+        b.set(0, 10_000);
+        b.clear(0, 9000);
+        assert_eq!(b.first_fit(1), Some(9000));
+        b.clear(9000, 1);
+        assert_eq!(b.first_fit(1), Some(9001));
+        // A page freed below the front is found again.
+        b.set(17, 1);
+        assert_eq!(b.first_fit(1), Some(17));
+        assert_eq!(b.first_fit(2), Some(9001));
+        b.clear(17, 1);
+        b.clear(9001, 999);
+        assert_eq!(b.first_fit(1), None);
+        b.set(5, 3);
+        assert_eq!(b.first_fit(3), Some(5));
     }
 
     #[test]
