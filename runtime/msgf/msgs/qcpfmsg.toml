@@ -4221,7 +4221,7 @@ text = "File &1 in &2 now has the new values."
 help = "The file was changed."
 vars = ["*CHAR 10", "*CHAR 10"]
 
-# &7 and &8 are *UBIN 4 on IBM i; the frozen *MSGF payload has *BIN 4.
+# &7 and &8 are *UBIN 4 in IBM's layout; the frozen *MSGF payload has *BIN 4.
 [[msg]]
 id = "CPC2955"
 sev = 0
@@ -4310,7 +4310,7 @@ vars = ["*CHAR 32"]
 [[msg]]
 id = "OPT1315"
 sev = 40
-text = "Optical volume &1 is write protected."
+text = "Optical volume &1 cannot be written: it is protected."
 help = "CHGIMGCLGE WRTPTC(*NO) lifts the protection of a writable image."
 vars = ["*CHAR 32"]
 
