@@ -1,0 +1,1248 @@
+# QCPFMSG on the primary oracle (V7R1M0), 2026-11-18: ID|SEV|data fields|first-level text
+# From DSPMSGD DETAIL(*FULL) OUTPUT(*PRINT) over the ranges in dspmsgd.s and dspmsgd2.s (table.awk).
+CPA4001|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C I)
+CPA4002|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Verify alignment on printer &3. (I G N R E C)
+CPA4003|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Form feed attachment &4 required on printer &3. (C G H)
+CPA4004|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of ribbon on printer &3. (C H I PAGE 1-9999999)
+CPA4005|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of ribbon on printer &3. (C I)
+CPA4006|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume &5 density is not correct. (C R)
+CPA4007|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Paper jam on printer &3. (C R)
+CPA4008|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Open cover on printer &3. (C H PAGE 1-9999999)
+CPA4009|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Open cover on printer &3. (C R)
+CPA400A|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume &5 density is not correct. (C R INZ)
+CPA400C|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| File label &4 with creation date &5 already exists on diskette in &3. (C R)
+CPA400D|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 4; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| ASCII code of volume &5 on device &4 is not valid (C R).
+CPA400E|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 4; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| ASCII code of volume &5 on device &4 is not valid (C INZ R).
+CPA400F|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Media error while writing to volume &5 on device &4. (C G)
+CPA4010|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Character on printer &3 not printable. (H I PAGE 1-9999999)
+CPA4011|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Character on printer &3 not printable. (C R)
+CPA4012|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Print check on printer &3. (C H PAGE 1-9999999)
+CPA4013|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Print check on printer &3. (C R)
+CPA4014|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Forms error on printer &3. (C H PAGE 1-9999999)
+CPA4015|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Forms check on printer &3. (C R)
+CPA4016|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C H I PAGE 1-9999999)
+CPA4017|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C I)
+CPA4018|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Operator action required on device &1.
+CPA4019|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Paper jam on printer &3. (C H PAGE 1-9999999)
+CPA401A|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Volume &5 is not usable. (C R)
+CPA401B|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume on device &4 at end of data. (C G)
+CPA401C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6| Volume ID does not match cartridge ID (C INZ)
+CPA401D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Library device &5 not ready (C R)
+CPA401E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Library device storage slots full (C R)
+CPA401F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Library device &5 not in library mode (C R)
+CPA4020|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Volume &5 not last volume for file &40 (C I R).
+CPA4021|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Load failure occurred on device &4. (C R)
+CPA4022|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Error while reading labels on device &3.  (C R)
+CPA4023|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Volume &4 damaged for file sequence &40. (C R)
+CPA4024|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume &5 density differs from other volumes (C R INZ).
+CPA4025|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in &1 different from first diskette in multivolume file. (C R INZ)
+CPA4026|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in device &2 not prepared correctly. (C R INZ)
+CPA4027|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Code on volume &5 differs from previous volumes (C R).
+CPA4028|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 0; &4 *CHAR 6; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in device &2 not written in &4. (C R INZ)
+CPA4029|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in &3 has wrong format for save or restore. (C R INZ)
+CPA402A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Database busy or error occurred (C R)
+CPA4030|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume identifier not standard for file &2 in library &3 on device &4. (C I R)
+CPA4031|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Expected volume &6, found volume &5 in device &3. (C I R INZ)
+CPA4032|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 16; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume table of contents (VTOC) read error on device &3.
+CPA4032|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 16; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume table of contents (VTOC) read error on device &3. (C R INZ)
+CPA4033|99|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette volume identifier &2 at device &1 not valid for save or restore. (C I R)
+CPA4034|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Volume &5 not first for file sequence number &40 (C I R).
+CPA4035|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *BIN 2; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Labels on volume &5 device &4 are not valid (C R).
+CPA4036|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 10; &9 *CHAR 10; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| File expiration dates out of sequence (C I R).
+CPA4037|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 7; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Character &5 on printer &3 not printable. (H I PAGE 1-9999999)
+CPA4038|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 7; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Character &5 on printer &3 not printable. (C R)
+CPA4039|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C H I PAGE 1-9999999)
+CPA403D|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2; &6 *CHAR 7; &7 *BIN 2; &8 *BIN 2| Operator action required on device &4 (C R).
+CPA403E|99|&1 *CHAR 20| Tape management information not available. (C I R)
+CPA403F|99|&1 *CHAR 20| Storage extension information not available. (I R)
+CPA4040|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C I)
+CPA4041|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Problem on device &1 requires operator help.
+CPA4042|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Print head overheating on printer &3. (C H I PAGE 1-9999999)
+CPA4043|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Print head overheating on printer &3. (C R)
+CPA4044|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Verify alignment on printer &3. (I C G R)
+CPA4045|99|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette volume identifier &2 in device &1 not valid for save or restore. (C R INZ)
+CPA4046|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Print check on printer &3. (C H I PAGE 1-9999999)
+CPA4047|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Either end of forms or forms check on printer &3. (C H I PAGE 1-9999999)
+CPA4048|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms or forms check on printer &3. (C I)
+CPA4049|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 4; &4 *CHAR 16; &5 *CHAR 0; &6 *CHAR 6; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Error on diskette volume &6 device &1. (C R)
+CPA404A|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Shared printer &1 is busy.
+CPA404B|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Volume &5 not first for file sequence number &40 (C R).
+CPA404D|99|&1 *CHAR 10| A paper jam has occurred on device &1 (C R).
+CPA404E|99|&1 *CHAR 10| Device &1 not ready (C R).
+CPA404F|99|&1 *CHAR 10| Problem with device &1 (C R).
+CPA4050|99|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Not authorized to data on diskette in device &1 volume &2. (C R)
+CPA4051|99|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Not authorized to data on diskette in device &1 volume &2. (C R INZ)
+CPA4052|99|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *QTDCHAR 2; &5 *CHAR 17; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in device &2 out of sequence. (C R)
+CPA4053|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| One-sided diskette required in device &1. (C R)
+CPA4054|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Error while reading labels on device &3. (C R INZ)
+CPA4055|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| No authority to access data (C INZ R).
+CPA4056|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Code on volume &5 differs from previous volumes (C INZ R).
+CPA4057|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *BIN 2; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Labels on volume &5 device &4 are not valid (C INZ R).
+CPA4058|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 4; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume &5 on device &4 wrong type (C INZ R).
+CPA4059|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Found &5; expected &6 on device &4. (C I INZ R)
+CPA405B|99|&1 *CHAR 10| A door, cover, or interlock is open on device &1 (C R).
+CPA405C|99|&1 *CHAR 10| An input tray needs attention on device &1 (C R).
+CPA405D|99|&1 *CHAR 10| An output bin needs attention on device &1 (C R).
+CPA405E|99|&1 *CHAR 10| A printer supply needs attention on device &1 (C R).
+CPA405F|99|&1 *CHAR 10| A paper path needs attention on device &1 (C R).
+CPA4060|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 6; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &4 cannot process loaded volume. (C R INZ)
+CPA4061|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Cannot initialize tape on device &4. (C R)
+CPA4062|99|&1 *CHAR 10; &2 *BIN 2| DBCS device may be required. (C G)
+CPA4063|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| Cannot access data file on volume &5 device &4 (C INZ R).
+CPA4064|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 10; &6 *BIN 2; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in &1 did not format correctly. (C R INZ)
+CPA4065|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Check status lights on printer &3. (C H PAGE 1-9999999)
+CPA4066|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Check status lights on printer &3. (C R)
+CPA4067|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Save file &2 in &3 already contains data. (C G)
+CPA4068|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume &5 density differs from previous volumes. (C R)
+CPA4069|99|| Trace table size should be greater than 128000 (C G)
+CPA4070|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in device &1 has extended label area. (C R)
+CPA4071|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Platen protection tape on device &2 needs replacement. (I C)
+CPA4072|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Maximum number of records reached for file &1. (C R NOMAX 1-999999)
+CPA4073|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Data position check on printer &3. (C H PAGE 1-9999999)
+CPA4074|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Data position check on printer &3. (C R)
+CPA4075|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Not enough storage on printer &3. (C H PAGE 1-9999999)
+CPA4076|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Not enough storage on printer &3. (C G)
+CPA4077|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Load form type '&2' on printer &3. (I C G)
+CPA4078|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Paper length error on printer &3. (C H PAGE 1-9999999)
+CPA4079|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Paper length error on printer &3. (C R)
+CPA407A|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Paper size changed on printer &3. (C H PAGE 1-99999)
+CPA4080|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Change print band on printer &1.
+CPA4081|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 17; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0; &40 *CHAR 10| File &7 will be written over. (C I R)
+CPA4082|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in device &1 is write-protected. (C R)
+CPA4085|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Insert next diskette to receive a copy. (C G)
+CPA4086|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &4 was not ready or next volume was not loaded.  (C R)
+CPA4087|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 17; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette inserted in device &3 is not correct. (C R)
+CPA4088|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Load next tape volume on device &4. (C G)
+CPA4089|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Load volume &5 on device &4. (C G)
+CPA4090|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &4 was not ready. (C R)
+CPA4091|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0| Wrong cartridge type in device &4 (C R).
+CPA6744|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 10| Cannot initialize volume on device &4. (C R)
+CPA6745|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume on device &4 is write protected (C R).
+CPA6746|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume on device &4 cannot be processed (C R).
+CPA6747|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume on device &4 cannot be processed (C R INZ).
+CPA6748|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| End of VOL list for device &4 (C I).
+CPA6749|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 10| Cannot overwrite file on device &4. (C R)
+CPA6751|99|&1 *CHAR 0; &2 *CHAR 16; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8| One-sided diskette in device &3.  (C R)
+CPA6752|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 16; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Diskette in device &1 is write-protected. (C R)
+CPA6754|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 17; &5 *CHAR 10; &6 *CHAR 10| Active file &4 found on volume &2 (C I).
+CPA6755|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Data on diskette in &1 not accessible for processing. (C R)
+CPA6758|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 4; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume &5 on device &4 wrong type (C I R).
+CPA6759|99|&1 *CHAR 0; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 16; &5 *CHAR 10; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Defective diskette in device &5. (C R)
+CPA6761|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Active files on diskette in device &1. (C I R)
+CPA6762|99|&1 *CHAR 10; &2 *CHAR 10| Key store file &1 needs retranslation. (C G)
+CPA6770|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Data on diskette in device &1 cannot be accessed. (C I R)
+CPA6773|99|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| VTOC indicates one-sided diskette in device &1. (C R)
+CPA6797|99|&1 *CHAR 10; &2 *CHAR 6| Cartridge &2 on device &1 not valid. (C "cartridge id")
+CPA6798|99|&1 *CHAR 10| No volume to mount on device &1. (C "cartridge id")
+CPA6799|40|&1 *CHAR 17; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 6; &6 *CHAR 10; &7 *BIN 4; &8 *BIN 4; &9 *CHAR 10; &10 *CHAR 6; &11 *CHAR 6| File cannot be duplicated (C I).
+CPC2102|0|&1 *CHAR 10; &2 *UBIN 2; &3 *CHAR 10| Library &1 created.
+CPC2618|0|&1 *CHAR 10| Damaged class-of-service &1 deleted during IPL.
+CPC2619|0|&1 *CHAR 10; &2 *CHAR 10| Table &1 in library &2 created.
+CPC3701|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 4; &7 *CHAR 15; &8 *BIN 4; &9 *CHAR 6; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 32; &14 *CHAR 10; &15 *BIN 4| &1 objects saved from library &3.
+CPC3702|0|&1 *CHAR 70; &2 *DTS; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 32| Save System (SAVSYS) command has completed processing.
+CPC3703|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *CHAR 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32; &10 *BIN 4| &1 objects restored from &3 to &4.
+CPC3704|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 4; &7 *CHAR 15; &8 *BIN 4; &9 *CHAR 6; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 32; &14 *CHAR 10; &15 *BIN 4| &1 objects saved from library &3. &8 objects not included.
+CPC3705|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *BIN 4; &5 *BIN 4; &6 *BIN 4; &7 *BIN 4; &8 *BIN 4; &9 *CHAR 10; &10 *BIN 4; &11 *BIN 4| &1 user profiles restored at &3.
+CPC3706|0|&1 *CHAR 10; &2 *DTS; &3 *CHAR 22| Private authorities restored for user profile &1.
+CPC3707|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR 6; &5 *CHAR 10; &6 *BIN 4; &7 *CHAR 32| &1 libraries saved at &3.
+CPC3708|0|&1 *CHAR 10; &2 *DTS; &3 *BIN 4; &4 *CHAR 10; &5 *CHAR 68| No objects saved from library &1. All objects excluded.
+CPC3709|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR 10| &1 libraries restored at &3.
+CPC3710|0|&1 *BIN 4; &2 *DTS; &3 *BIN 4| Private authorities restored for &1 user profiles at &2.
+CPC3711|0|| Save or restore of entire system completed successfully.
+CPC3712|0|&1 *CHAR 10; &2 *CHAR 7| &2 &1 restored.
+CPC3713|0|&1 *CHAR 10; &2 *CHAR 7| &2 &1 restored without password or group linkage.
+CPC3714|0|&1 *CHAR 10; &2 *CHAR 7| &2 &1 restored. Password and group linkages were not changed.
+CPC3715|0|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4; &5 *BIN 4| No objects saved, all objects were excluded.
+CPC3716|0|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4| No objects restored, all objects were excluded.
+CPC3717|0|| All digital certificate manager objects restored.
+CPC3718|0|| Save System Information (SAVSYSINF) command has completed processing.
+CPC3719|0|| Restore System Information (RSTSYSINF) command has completed processing.
+CPC371A|0|&1 *CHAR 10| Synchronization ID &1 started.
+CPC371B|0|&1 *CHAR 10| Synchronization ID &1 ended.
+CPC371C|0|&1 *CHAR 10; &2 *BIN 4| &2 objects completed for DFRID &1.
+CPC371D|0|&1 *CHAR 10| DFRID &1 removed.
+CPC3720|0|&1 *BIN 4; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 82; &5 *CHAR 32| All objects saved from &1 libraries.
+CPC3721|0|&1 *BIN 4; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 82; &5 *CHAR 32| &1 libraries saved.
+CPC3722|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 50; &7 *DTS; &8 *CHAR 618; &9 *BIN 4| &1 objects saved from library &3.
+CPC3723|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 50; &7 *DTS; &8 *CHAR 19; &9 *BIN 4; &10 *CHAR 16; &11 *CHAR 82; &12 *CHAR 497; &13 *BIN 4| &1 objects saved from library &3. &9 objects not included.
+CPC3724|0|&1 *CHAR 18; &2 *CHAR 70; &3 *DTS; &4 *CHAR 4; &5 *CHAR 15; &6 *BIN 4; &7 *CHAR 6; &8 *CHAR 10; &9 *CHAR 10; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 10; &14 *CHAR 32| Objects in save file &9 in &10 saved to media.
+CPC6775|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *BIN 2; &5 *BIN 4; &6 *BIN 4; &7 *BIN 4; &8 *CHAR 6; &9 *CHAR 6| Tape duplication completed successfully.
+CPC6776|0|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 10| Nonlabeled tape volume initialized.
+CPC6777|0|&1 *CHAR 10; &2 *CHAR 6| All file data deleted from volume &2 on device &1.
+CPC6778|0|&1 *CHAR 10; &2 *CHAR 6| Volume &2 found on device &1.
+CPC6779|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 10| File found at sequence number &3.
+CPC7301|0|&1 *CHAR 10; &2 *CHAR 10| File &1 created in library &2.
+CPC7302|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| File &1 created in &2 with SRTSEQ.
+CPCBC08|0|&1 *CHAR 10| Image catalog &1 changed.
+CPD0071|30|&1 *CHAR 4; &2 *CHAR 10| Parameter &2 required.
+CPD0072|30|&1 *CHAR 4; &2 *CHAR 10| List item value for parameter &2 required.
+CPD0073|30|&1 *CHAR 4; &2 *CHAR 10| *N not valid as a list value for parameter &2.
+CPD0074|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10; &4 *BIN 2| Value &3 for &2 exceeds &4 characters.
+CPD0075|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10; &4 *BIN 2| Value &3 for &2 must be &4 characters.
+CPD0076|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10| &3 for parameter &2 must be numeric.
+CPD0077|30|&1 *CHAR 4; &2 *CHAR 10| Decimal point for parameter value &2 not valid.
+CPD0078|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10| Value &3 for parameter &2 not a valid name.
+CPD0079|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10| Value &3 for &2 not a name or generic name.
+CPD0080|30|&1 *CHAR 4; &2 *CHAR 10| 0 or 1 required for parameter &2.
+CPD0081|30|&1 *CHAR 4; &2 *CHAR 10| Variable name required for parameter &2.
+CPD0082|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10| Value &3 for parameter &2 not a valid date.
+CPD0083|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 8| Value &3 for parameter &2 not valid time.
+CPD0084|30|&1 *CHAR 4; &2 *CHAR 10; &3 *QTDCHAR 10| &3 not valid for parameter &2.
+CPD0085|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26; &5 *CHAR 26| Range of parameter &2 does not include &4.
+CPD0086|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26| Parameter &2 value must be greater than &3.
+CPD0087|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26| Parameter &2 value must be &3.
+CPD0088|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26| Parameter &2 value must be &3 or greater.
+CPD0089|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26| Parameter &2 value must be less than &3.
+CPD0090|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26| Parameter &2 value cannot be &3.
+CPD0091|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 26; &4 *CHAR 26| Parameter &2 value must be &3 or less.
+CPD0092|40|&1 *CHAR 4; &2 *CHAR 10| Error detected on parameter &2. Internal failure.
+CPD0093|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 10| &3 not valid for parameter &2.
+CPD0094|30|&1 *CHAR 4; &2 *CHAR 10; &3 *CHAR 10| &3 must be only value for parameter &2.
+CPD2415|40|&1 *CHAR 10; &2 *CHAR 10| Data queue &1 not restored. Data queue exists in library &2.
+CPD3700|30|| Licensed program option not valid.
+CPD3701|30|| IBM supplied user libraries option not valid.
+CPD3702|30|| PTF type not valid.
+CPD3703|30|| End of media option not valid.
+CPD3704|30|| Objects to install option not valid.
+CPD3705|30|| Sequence number option not valid.
+CPD3706|30|| No secondary languages selected.
+CPD3707|0|| No secondary languages installed.
+CPD3708|30|&1 *BIN 4| Type &1 to select option.
+CPD3709|0|| No licensed programs installed.
+CPD370A|30|| OMITLIB parameter not allowed.
+CPD370B|30|| STG(*FREE) not allowed.
+CPD370D|20|| OBJ(*ALL) must be specified with LIB(*ALLUSR).
+CPD370E|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 256; &5 *CHAR 18; &6 *CHAR 4; &7 *CHAR 32; &8 *CHAR 10| Object &1 in &3 not restored.
+CPD370F|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| Object &1 in &3 not restored.
+CPD3712|20|&1 *CHAR 7| Program temporary fix (PTF) processing not successful for &1.
+CPD3713|20|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4| &3 objects for licensed program &1 option &2 not found on installation media.
+CPD3714|20|&1 *CHAR 4| Secondary language &1 not restored.
+CPD3715|20|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *DTS; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 6; &8 *CHAR 7; &9 *CHAR 5; &10 *CHAR 4| Secondary language &3 not installed.
+CPD3716|20|&1 *CHAR 10| IBM supplied user library &1 not restored.
+CPD3718|30|| Automatic IPL option not valid.
+CPD3719|30|| The IPL mode is not set at Normal.
+CPD371A|30|| SRM(*NONE) not allowed with OBJ(*SRM).
+CPD371B|20|&1 *CHAR 10; &2 *CHAR 10| Save file &1 not restored to library &2.
+CPD371C|30|| OBJTYPE value not allowed.
+CPD371D|30|| INFTYPE parameter not allowed with OUTPUT(*NONE).
+CPD371E|30|| OUTFILE parameter must be specified with OUTPUT(*OUTFILE).
+CPD371F|30|| OUTPUT(*OUTFILE) must be specified with OUTFILE parameter.
+CPD3720|30|| Automatic IPL cannot be requested.
+CPD3721|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 256; &5 *CHAR 18; &6 *CHAR 4; &7 *CHAR 32; &8 *CHAR 10| Object &1 type &2 in &3 cannot be restored individually.
+CPD3722|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| Object &1 type &2 in &3 not restored.
+CPD3723|20|| System may be too busy for save or restore operation.
+CPD3724|20|&1 *CHAR 10| Library &1 must be installed.
+CPD3725|20|&1 *CHAR 7| Program temporary fixes not found for &1.
+CPD3726|30|| SAVACTWAIT or SAVACTMSGQ parameter not allowed with SAVACT(*NO).
+CPD3727|30|| Specified STG value not allowed with SAVACT value.
+CPD3728|30|| Specified TGTRLS value not allowed with SAVACT value.
+CPD3729|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| RSTCFG command not allowed for file &1.
+CPD372A|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPD372B|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPD372C|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| RSTUSRPRF command not allowed for file &1.
+CPD372D|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPD372E|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPD372F|30|| Specified LIB value not allowed with SAVACT value.
+CPD3730|20|&1 *CHAR *VARY 4| Cannot save directory &1.
+CPD3733|20|&1 *CHAR 10; &2 *BIN 4| Save history area for library &1 full.
+CPD3734|20|&1 *CHAR 10; &2 *BIN 4| Save history area for document library objects is full.
+CPD3735|30|| INFTYPE parameter only allowed with OUTPUT(*OUTFILE).
+CPD3736|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPD3737|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Object &1 type *&2 not restored to library &3.
+CPD3738|40|&1 *DTS; &2 *BIN 4| System storage saved at &1. &2 sectors unreadable.
+CPD3739|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to perform operation on file &1.
+CPD373D|20|&1 *CHAR 10| User profile &1 too large to be saved.
+CPD373E|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPD373F|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &1 in library &3 with adopt authority attribute not restored.
+CPD3740|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &1 in library &3 with system state attribute not restored.
+CPD3741|30|| SAVACTMSGQ parameter not allowed with SAVACT(*NO).
+CPD3742|30|| Parameter not allowed with diskette device.
+CPD3743|30|| INFTYPE parameter not allowed with OUTPUT(*NONE).
+CPD3744|30|| REFDATE(*SAVLIB) cannot be used with REFTIME.
+CPD3745|30|| VOL(*SAVVOL) cannot be specified with SAVDATE or SAVTIME parameters.
+CPD3746|30|| The SAVTIME and SAVDATE parameters must be specified together.
+CPD3747|30|| RSTLIB parameter not allowed.
+CPD3748|30|| System library cannot be saved with SAVLIB command.
+CPD3749|30|| VOL and OPTION values not correct.
+CPD374A|20|&1 *CHAR *VARY 4; &2 *CHAR *VARY 4| Object not restored for &1.
+CPD374B|20|&1 *CHAR *VARY 4; &2 *CHAR *VARY 4| Object not restored for &1.
+CPD374C|30|| Error occurred during CCSID conversion.
+CPD3750|30|| DEV(*SAVF) and CLEAR(*AFTER) cannot be used together.
+CPD3751|30|| VOL(*SAVVOL) cannot be specified with SEQNBR.
+CPD3753|30|| Save file and device parameters cannot be used together.
+CPD3754|30|| Save file and device parameters cannot be used together.
+CPD3755|30|| SAVF parameter not allowed.
+CPD3756|30|| SAVF parameter required if UPDHST parameter is specified.
+CPD3757|30|| VOL(*SAVVOL) cannot be specified with LABEL.
+CPD3758|30|| LABEL parameter not allowed with multiple library operations.
+CPD3759|30|| FILEMBR cannot be specified with MBROPT(*MATCH).
+CPD375A|30|| Media error on save media.
+CPD375B|20|&1 *CHAR *VARY 4| Cannot restore directory &1.
+CPD375C|30|| FILEMBR cannot be specified with STG(*FREE).
+CPD375E|20|&1 *CHAR 7; &2 *CHAR *VARY 4| Object not restored. Object name is &2.
+CPD375F|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 7; &4 *CHAR *VARY 4| Not able to save or restore &2.
+CPD3760|30|| SAVF parameter required with DEV(*SAVF).
+CPD3761|30|| SAVFLIB parameter required with DEV(*SAVF).
+CPD3762|30|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 6; &5 *CHAR 12; &6 *CHAR 10; &7 *BIN 2; &8 *CHAR 7; &9 *CHAR 5; &10 *CHAR 4; &11 *CHAR 6; &12 *BIN 2; &13 *BIN 2; &14 *DTS; &15 *CHAR 4; &16 *CHAR 17; &17 *BIN 4; &18 *CHAR 7; &19 *CHAR 10| Library &19 cannot be specified for language library.
+CPD3763|30|| Save file and device parameters cannot be used together.
+CPD3765|30|| TGTRLS value not allowed.
+CPD3766|30|&1 *CHAR 4| OBJTYPE specified cannot be saved to target release.
+CPD3767|20|&1 *CHAR 10| Security object portion of user profile &1 not restored.
+CPD3768|30|| ALWOBJDIF(*ALL) cannot be used with MBROPT(*MATCH).
+CPD3769|30|| STRLIB parameter not allowed.
+CPD376B|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4; &4 *BIN 4; &5 *BIN 4; &6 *BIN 4| Not able to restore object &2.
+CPD376C|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4; &4 *BIN 4; &5 *BIN 4; &6 *BIN 4| Not able to save object &2.
+CPD376D|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4| Not able to save &2.
+CPD376E|30|| Parameters not valid with optical device.
+CPD376F|30|| Parameter not allowed with tape device.
+CPD3770|30|| STRLIB parameter value not valid.
+CPD3771|30|| STRLIB parameter not allowed.
+CPD3772|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 256; &5 *CHAR 18; &6 *CHAR 4; &7 *CHAR 32; &8 *CHAR 10| Object &1 type &2 in &3 not restored.
+CPD3773|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| Object &1 type &2 in &3 not restored.
+CPD3774|40|| USRPRF(*ALL) required when MAIL(*YES) specified.
+CPD3775|20|&1 *CHAR *VARY 4| Cannot save or restore &1.
+CPD3776|20|&1 *CHAR 10; &2 *CHAR 10; &3 *CCHAR *VARY 4| Authority not restored for user &1.
+CPD3777|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4| Not authorized to &2.
+CPD3778|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4| Not authorized to &2.
+CPD3779|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| Object not restored, &2.
+CPD377A|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR *VARY 4; &4 *CHAR *VARY 4| Object not restored, &4.
+CPD377B|20|&1 *BIN 4| Security changes occurred for &1 objects.
+CPD377C|20|&1 *CHAR 7; &2 *CHAR *VARY 4| Object not restored, &2.
+CPD377D|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not converted.
+CPD377E|20|&1 *BIN 4; &2 *CHAR 10| &1 objects not converted.
+CPD377F|20|&1 *BIN 4| &1 libraries had objects that did not convert.
+CPD3780|30|| Specified TGTRLS value not allowed with SAVACT value.
+CPD3781|30|| SEQNBR value not allowed with STRLIB value.
+CPD3782|20|&1 *CHAR *VARY 4| Objects not saved for file system &1.
+CPD3783|20|&1 *CHAR *VARY 4| Some objects not saved for file system &1.
+CPD3784|20|&1 *CHAR *VARY 4| Objects not restored for file system &1.
+CPD3785|20|&1 *CHAR *VARY 4| Some objects not restored for file system &1.
+CPD3786|20|&1 *CHAR *VARY 4; &2 *CHAR *VARY 4| Object not restored, &1.
+CPD3787|20|&1 *CHAR *VARY 4| Objects not saved for file system &1.
+CPD3788|20|&1 *CHAR *VARY 4| File system information not saved for &1.
+CPD3789|20|&1 *CHAR *VARY 4| Not enough storage to save objects in directory &1.
+CPD378A|30|| Parameters not valid with USEOPTBLK value.
+CPD378B|20|&1 *CHAR *VARY 4| Objects for file system not saved to previous release.
+CPD378C|20|&1 *CHAR *VARY 4| Objects not restored for file system &1.
+CPD378D|10|&1 *CCHAR *VARY 4| File system &1 not saved.
+CPD378E|10|&1 *CCHAR *VARY 4| File system &1 not saved.
+CPD378F|20|&1 *CHAR 10| User profile &1 in use.
+CPD3791|30|&1 *CHAR *VARY 4| File system not restored, &1.
+CPD3792|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| Object &1 type *&2 in &3 not restored.
+CPD3793|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 7; &6 *CHAR 7| Object &1 type *&2 in &3 not restored.
+CPD3794|30|| OUTPUT(*OUTFILE) required with INFTYPE(*ERR).
+CPD3796|20|| Critical recovery data may not have been saved.
+CPD3798|30|| Media definition not valid with device parameters.
+CPD3799|30|| MEDDFN parameter required with DEV(*MEDDFN).
+CPD379A|20|&1 *CHAR 7; &2 *BIN 4; &3 *CHAR *VARY 4| Object not restored, &3.
+CPD379B|30|&1 *CHAR 6; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10| Density does not match.
+CPD379C|30|| Media definition not valid with target release.
+CPD379D|20|&1 *CHAR 32; &2 *CHAR 10| File not selected. File is a duplicate of another file.
+CPD379E|30|| DEV(*MEDDFN) required with MEDDFN parameter.
+CPD379F|30|| SAVACTOPT parameter not allowed with SAVACT(*NO).
+CPD37A0|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not restored.
+CPD37A1|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not restored.
+CPD37A2|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 not restored to library &3.
+CPD37A3|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| Object not restored, &2.
+CPD37A4|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4| Object not restored, &2.
+CPD37A5|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| &1 not restored, &2.
+CPD37A6|20|&1 *CHAR *VARY 4; &2 *BIN 4| Objects not saved or restored for file system &1.
+CPD37A7|30|| Cannot specify both RSTASPDEV and RSTASP.
+CPD37A8|30|| USRPRF(*NONE) and SECDTA(*DCM) must be specified together.
+CPD37A9|30|| FRCOBJCVN value not allowed.
+CPD37B0|40|&1 *CHAR 13; &2 *CHAR 13| RSTSYSINF cannot be applied to a SAVSYS base different from which it was created from.
+CPD37B1|30|| Media definition not valid with target release.
+CPD37B2|30|| CMDUSRSPC required with *USRSPC.
+CPD37B3|30|| CMDUSRSPC not valid.
+CPD37B4|30|| Media definition not valid with LIB value.
+CPD37B6|30|| SYNCID not allowed with SAVACT value.
+CPD37B7|30|| OMITSECDTA not allowed with USRPRF value.
+CPD37B8|20|&1 *CHAR *VARY 4; &2 *CHAR *VARY 4; &3 *BIN 4| Mounted file system not restored, &1.
+CPD37B9|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *BIN 4| Name conflict for object &2.
+CPD37BA|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not selected. Authorities not saved for file &1.
+CPD37BB|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPD37BC|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPD37BD|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| RBDMFS parameter not valid for file &1.
+CPD37BE|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Object &1 type *&2 in &3 save limit exceeded.
+CPD37BF|30|| Starting position requires sequence number.
+CPD37C0|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 signature not valid.
+CPD37C1|20|&1 *CHAR 10; &2 *BIN 4| &2 integrity errors found.
+CPF2189|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Not authorized to object &1 in &2 type *&3.
+CPF2605|40|&1 *CHAR 10| Not able to allocate &1.
+CPF2702|40|&1 *CHAR 10| Device description &1 not found.
+CPF2817|40|&1 *CHAR 7| Copy command ended because of error.
+CPF3204|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 1| Cannot find object needed for file &1 in &2.
+CPF3205|40|| File not created.
+CPF3206|40|&1 *CHAR 10; &2 *CHAR 10| Key field &1 not found in record format &2.
+CPF3207|40|| Member not added. Errors occurred.
+CPF3208|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Cannot delete file &1 in &2.
+CPF3209|20|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 not saved or restored.
+CPF3210|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File &1 in library &2 not correct type.
+CPF3211|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 already exists.
+CPF3212|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10| Cannot add member &3 to file &1.
+CPF3213|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Members for file &1 more than maximum allowed.
+CPF3214|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Expiration date not valid for member &3.
+CPF3215|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Storage for member &3 not contiguous.
+CPF3216|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Storage for member &3 not on requested unit.
+CPF3217|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Not enough storage to create file &1 or add member to file.
+CPF3218|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10| Cannot allocate object needed for file &1 in &2.
+CPF3219|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Cannot delete file or member of file &1 in &2.
+CPF321A|0|&1 *CHAR 10| Data dictionary in library &1 not saved.
+CPF321B|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Data dictionary in library &2 not saved or restored.
+CPF321C|0|&1 *CHAR 10; &2 *CHAR 10| Storage for file &1 in library &2 not freed.
+CPF321D|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Successful recovery of data dictionary &1.
+CPF321E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Recovery of data dictionary &1 not successful.
+CPF321F|40|&1 *BIN 4| Job holds &1 record locks.
+CPF3220|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *HEX 10; &6 *BIN 2| Cannot do operation on file &1 in &2.
+CPF3221|40|&1 *CHAR 10; &2 *CHAR 10| Option passed for file &1 in &2 not valid.
+CPF3222|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File &1 in library &2 in use.
+CPF3223|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10| Not authorized to objects needed for file &1 in &2.
+CPF3224|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| Not authorized to perform operation on file &1.
+CPF3225|40|&1 *CHAR 10; &2 *CHAR 10| Attributes of field &1 in record format &2 not correct.
+CPF3226|40|&1 *CHAR 10; &2 *CHAR 10| Logical field &1 not found in physical record format &2.
+CPF3227|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Record format &3 for file &1 not found.
+CPF3228|40|&1 *CHAR 10; &2 *CHAR 10| Select/omit template length for file &1 not valid.
+CPF3229|40|&1 *CHAR 10; &2 *CHAR 10| File &1 not allowed as based-on file.
+CPF322A|20|&1 *CHAR 10; &2 *CHAR 10| Data dictionary file &1 in library &2 not saved.
+CPF322B|40|&1 *CHAR 10| Not authorized to SQL data base &1.
+CPF322C|40|&1 *CHAR 10; &2 *CHAR 10| Move or rename of file &1 in &2 failed.
+CPF322D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| Operation not done for data base file &1.
+CPF322E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Move of file &1 to library &3 not complete.
+CPF322F|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| Storage limit exceeded for user profile &1.
+CPF3230|40|&1 *CHAR 10; &2 *CHAR 10| Data type for field &1 not valid.
+CPF3231|40|&1 *CHAR 10; &2 *CHAR 10| Cannot move file &1 from library &2.
+CPF3232|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 already exists.
+CPF3233|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Record format &3 not found or type not valid.
+CPF3234|20|&1 *CHAR 10; &2 *CHAR 10| Data authority ignored for file &1 in library &2.
+CPF3235|40|&1 *CHAR 10; &2 *CHAR 10| Field &1 not found in record format &2.
+CPF3236|40|&1 *CHAR 10; &2 *CHAR 10| Template length for file &1 in &2 not valid.
+CPF3237|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| File &1 in library &2 not created.
+CPF3238|40|&1 *CHAR 10; &2 *CHAR 10| Key field &1 not same as previous formats.
+CPF3239|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Number of members not valid for file &1.
+CPF323A|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Rename library recovery complete for file &1.
+CPF323B|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Rename library recovery failed for file &1.
+CPF323C|40|&1 *BIN 2| QRECOVERY library could not be allocated.
+CPF323D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| User does not have correct authority.
+CPF323E|40|&1 *CHAR 10; &2 *CHAR 10| One or more file errors during rename library operation.
+CPF323F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Move or rename of file &1 in library &2 not complete.
+CPF3240|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *UBIN 4; &5 *CHAR 10; &6 *BIN 2; &7 *UBIN 4; &8 *CHAR 10; &9 *BIN 2| Duplicate key values exist for member &3.
+CPF3241|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Storage unit requested not valid for file &1.
+CPF3242|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Record format too long for file &1 in &2.
+CPF3243|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 already saved with storage freed.
+CPF3244|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Template created for member &3 not valid.
+CPF3245|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2; &6 *CHAR 10| Damage to file &1 member &6 prevents operation on file &3.
+CPF3246|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 not added to file &1 in &2.
+CPF3247|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *UBIN 4| Record number &4 does not exist in member &3.
+CPF3248|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Select/omit specifications too large for file &1.
+CPF3249|40|| Select/omit specifications not valid.
+CPF324A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2; &6 *BIN 2; &7 *BIN 2| Requested operation for file &1 not done.
+CPF324B|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Cannot allocate dictionary for file &1.
+CPF324C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Concurrent authority holder operation prevents move, rename or restore.
+CPF324D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 1; &4 *CHAR 10| File &1 was not restored.
+CPF324E|20|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| File &1 in library &2 already exists.
+CPF324F|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 does not exist.
+CPF3250|40|&1 *CHAR 10; &2 *CHAR 10; &3 *HEX 17| Select/omit statement &3 not valid.
+CPF3251|40|&1 *CHAR 10; &2 *CHAR 10; &3 *HEX 17| Select/omit specification for file &1 not valid.
+CPF3252|40|&1 *CHAR 10; &2 *CHAR 10| Maximum number of machine locks exceeded.
+CPF3253|40|&1 *CHAR 10; &2 *CHAR 10; &3 *HEX 17| Select/omit statement &3 must be ALL.
+CPF3254|30|&1 *CHAR 10; &2 *CHAR 10| Not enough storage to own file &1 or member of file.
+CPF3255|40|&1 *CHAR 10; &2 *CHAR 10; &3 *HEX 17| Select/omit statement &3 has too many parameters.
+CPF3256|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Select/omit statement &3 not valid.
+CPF3257|40|&1 *CHAR 10; &2 *CHAR 10| Select/omit field &1 not in record format &2.
+CPF3258|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2| Select/omit statements not same as number of based-on files.
+CPF3259|10|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Saved &3 members of file &1 in &2.
+CPF325A|40|| Object reached maximum size.
+CPF325B|40|| Access paths that are required to be rebuilt prior to IPL have completed.
+CPF325C|40|&1 *CHAR 10; &2 *CHAR 7| Database object &1 is in error.
+CPF325D|20|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *BIN 2| Field CCSID values not compatible.
+CPF325E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *HEX 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 6; &8 *CHAR 39; &9 *CHAR 20; &10 *HEX 140| Uncommitted changes pending for file &1 in library &2.
+CPF325F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 20; &5 *BIN 4; &6 *BIN 4| Conversion of the text failed.
+CPF3260|0|&1 *CHAR 10; &2 *CHAR 10| Recovery deleted file &1 in library &2.
+CPF3261|40|&1 *CHAR 10; &2 *CHAR 10| Recovery failed to delete file &1 in &2.
+CPF3262|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 removed from file &1 in &2.
+CPF3263|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 not removed from file &1 in &2.
+CPF3264|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10| Move or rename file recovery complete for file &1.
+CPF3265|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| File &1 in &2 not moved or renamed by recovery.
+CPF3266|0|&1 *CHAR 10; &2 *CHAR 10| Recovery of file &1 in &2 successful.
+CPF3267|40|&1 *CHAR 10; &2 *CHAR 10| Recovery of file &1 in &2 not successful.
+CPF3268|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Not enough storage to add member &3 to file &1.
+CPF3269|20|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Storage for &3 members of file &1 not freed.
+CPF326A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Operation not successful for file &1 in library &2.
+CPF326B|40|&1 *CHAR 10; &2 *CHAR 10| Damage to file &1 in library &2.
+CPF326C|30|&1 *CHAR 10| File name &1 not valid special value.
+CPF326D|30|&1 *CHAR 10| Member name &1 not valid special value.
+CPF326E|30|&1 *CHAR 10| Record format name &1 not valid special value.
+CPF326F|30|&1 *CHAR 10| Value &1 for system parameter is not valid.
+CPF3270|40|&1 *CHAR 10; &2 *CHAR 10| Keyed file operation not allowed for file &1.
+CPF3271|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Operation failed on member &3 file &1.
+CPF3272|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Damage ignored for file &1 in &2.
+CPF3273|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File or member not created, deleted or changed.
+CPF3274|10|&1 *CHAR 10; &2 *CHAR 10| Data rights do not apply to file &1 in &2.
+CPF3275|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 file &1 in &2 not found.
+CPF3276|0|&1 *CHAR 10; &2 *CHAR 10| Conversion recovery of file &1 in &2 complete.
+CPF3277|30|&1 *CHAR 10| Damage detected on library &1.
+CPF3278|40|| Database conversion recovery failed.
+CPF3279|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 file &1 in &2 damaged.
+CPF327A|30|&1 *CHAR 10| Value &1 for format type parameter is not valid.
+CPF327B|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6; &4 *BIN 2| File &1 information cannot be retrieved.
+CPF327C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *BIN 2| File &1 cannot be moved into library &4.
+CPF327D|30|&1 *CHAR 10| Alternative name specified more than once in record.
+CPF327E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 258; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 258| Alternative name for file &1 not allowed.
+CPF327F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Operation not successful for file &1 in library &2.
+CPF3280|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Damage found during directory update.
+CPF3281|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10| New format &3 created for file &1.
+CPF3282|50|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 in use by another job.
+CPF3283|50|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Saved file or member level ID not same as file &1.
+CPF3284|50|&1 *CHAR 10; &2 *CHAR 10| Member list of file &1 and saved file not the same.
+CPF3285|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Damage found on file &1 in library &3.
+CPF3286|0|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2| &3 members of file &1 saved. &4 not included.
+CPF3287|30|&1 *CHAR 10; &2 *CHAR 10| Recovery object deleted for file &1 in &2.
+CPF3288|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 file &1 in &2 not changed.
+CPF3289|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Damage found during access path processing.
+CPF328A|40|| System not in proper state to do requested operation.
+CPF328B|40|| Commitment control cannot be active during reclaim database system files.
+CPF328C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| File directory contains maximum number of entries.
+CPF328D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *CHAR 10; &5 *CHAR 10| Grant or revoke not successful for file &1 in library &2.
+CPF328E|40|&1 *CHAR 10; &2 *CHAR 10| File column extension operation not allowed for file &1.
+CPF328F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *CHAR 10| Authority checking not successful for file &1 in library &2.
+CPF3290|50|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 damaged during restore.
+CPF3291|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| File &1 restored with different library for depended-on files.
+CPF3292|10|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2; &5 *BIN 2; &6 *BIN 2| File &1 in library &2 restored.
+CPF3293|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Creation date of file &3 changed since save.
+CPF3294|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Cannot start journaling for member &3.
+CPF329A|10|| Operation not performed for the database file.
+CPF329B|10|| Damage has been detected against the database file.
+CPF329C|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Access path recovery facility detected damage.
+CPF329D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| Operation not successful for file &1 in library &2.
+CPF329E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Partial transaction error processing member &3.
+CPF329F|40|&1 *CHAR 10| The file(s) may be too large to save.
+CPF3701|20|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 50; &7 *DTS; &8 *CHAR 618; &9 *BIN 4; &10 *BIN 4| &1 objects saved from &3. &2 not saved.
+CPF3702|30|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 50; &7 *DTS; &8 *CHAR 19; &9 *BIN 4; &10 *CHAR 16; &11 *CHAR 82; &12 *CHAR 497; &13 *BIN 4; &14 *BIN 4| &1 objects saved from &3. &2 not saved. &9 not included.
+CPF3703|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF3704|30|&1 *CHAR 7| Request ended; data management error occurred.
+CPF3705|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not journaled.
+CPF3706|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3707|30|&1 *CHAR 10; &2 *CHAR 10| Save file &1 in &2 contains no data.
+CPF3708|30|&1 *CHAR 10; &2 *CHAR 10| Save file &1 in &2 too small.
+CPF3709|30|&1 *CHAR 10; &2 *CHAR 10| Tape devices do not support same densities.
+CPF370A|20|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS| Not all security objects saved to save file &3.
+CPF370B|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &4 owns &2 &1 in &3.
+CPF370C|30|| Not authorized to ALWOBJDIF parameter.
+CPF370D|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not included.
+CPF370E|40|| Save storage operation did not complete successfully.
+CPF370F|40|| Restore of all system storage ended checksum protection.
+CPF3710|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not restored. Object name conflict for file &1.
+CPF3711|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not restored.  Object type conflict for file &1.
+CPF3712|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not restored. Date or time conflict for file &1.
+CPF3713|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| RSTLIB command not valid for file &1.
+CPF3714|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| RSTOBJ command not valid for file &1.
+CPF3715|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not selected. Data encrypted or not valid.
+CPF3716|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File starts on a previous volume for file &1.
+CPF3717|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not selected. File label or file name mismatch for file &1.
+CPF3718|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| Restore command not valid for file &1.
+CPF3719|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Owner of &2 &1 in library &3 not found.
+CPF371A|30|&1 *CHAR 7| Not able to update QSAVSTG data area in library QSYS.
+CPF371C|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Error occurred during install of &2 &1.
+CPF371D|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Installation &2 &1 in &3 not found.
+CPF371E|40|&1 *CHAR 10| Library &1 not found on installation media.
+CPF371F|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6| Error occurred during Initialize System (INZSYS) processing.
+CPF3720|10|&1 *CHAR 10; &2 *CHAR 10| &1 and &2 are the same for OBJ or USRPRF parameter.
+CPF3721|10|&1 *CHAR 6| Media error on volume &1.
+CPF3722|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 20; &7 *CHAR 17| Older version of &1 type &2 in &3 restored.
+CPF3723|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &4 owns &2 &1 in &3.
+CPF3724|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not selected to be restored.
+CPF3725|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not selected to be restored.
+CPF3726|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not selected to be restored.
+CPF3727|30|&1 *CHAR 10| Duplicate device &1 specified on device name list.
+CPF3728|30|&1 *CHAR 10| Device &1 specified with other devices.
+CPF3729|60|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 17; &7 *CHAR 15; &8 *SPP 400; &9 *SPP 400; &10 *SYP; &11 *SYP; &12 *SYP; &13 *SYP; &14 *SYP; &15 *SYP| Error decompressing file &6.
+CPF372A|40|| INZSYS or GO LICPGM currently running in another job.
+CPF372B|80|| Not all objects were saved.
+CPF372C|30|&1 *CHAR 10; &2 *BIN 2; &3 *BIN 2| Library &1 not restored to ASP &2.
+CPF372D|10|&1 *CHAR 10; &2 *BIN 2; &3 *BIN 2| Library &1 restored to ASP &3.
+CPF372E|10|&1 *CHAR 10; &2 *BIN 2| Library &1 restored to system ASP.
+CPF372F|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2| RSTASP parameter ignored for &2 &1.
+CPF3730|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Not authorized to &2 &1 in library &3.
+CPF3731|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Cannot use &2 &1 in library &3.
+CPF3732|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 status error during restore operation.
+CPF3733|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 previously damaged.
+CPF3734|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not restored.
+CPF3735|30|&1 *CHAR 10| Storage limit exceeded for user profile &1.
+CPF3736|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| Authority not restored for user &4.
+CPF3737|30|&1 *CHAR 10| Save and restore data area &1 not found.
+CPF3738|40|&1 *CHAR 10| Device &1 used for save or restore is damaged.
+CPF3739|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Database file &1 member in &3 damaged.
+CPF373A|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2| &2 &1 restored to system ASP.
+CPF373B|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF373C|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2; &5 *BIN 2| &2 &1 restored to ASP &5.
+CPF373D|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 restored to system ASP.
+CPF373E|30|&1 *CHAR 10; &2 *BIN 2| Library &1 not restored to ASP &2.
+CPF373F|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2| RSTASP parameter ignored for &2 &1.
+CPF3740|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Object &1 type &2 in &3 not found.
+CPF3741|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF3742|30|&1 *CHAR 17; &2 *CHAR 70; &3 *CHAR 7; &4 *CHAR 256| Save and restore file on media is not complete.
+CPF3743|30|&1 *CHAR 364| File cannot be restored, displayed, or listed.
+CPF3744|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| &2 &1 not restored to library &3.
+CPF3745|30|&1 *CHAR 10| No record of SAVLIB operation exists for &1.
+CPF3746|30|&1 *DTS; &2 *DTS; &3 *CHAR 10| System date and time earlier than reference date and time.
+CPF3747|30|| Object names cannot be specified with more than one library.
+CPF3748|30|&1 *CHAR 10| Object information for library &1 damaged.
+CPF3749|30|&1 *BIN 4; &2 *CHAR 10; &3 *CHAR 82| Objects from library &2 not saved.
+CPF374A|0|| SAVFDTA(*YES) ignored. Not supported on previous release.
+CPF374B|30|| SAVFDTA(*YES) requires SAVF to be in different library.
+CPF374C|30|&1 *CHAR 10; &2 *BIN 2; &3 *BIN 2| No objects restored to ASP &2.
+CPF374D|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2| &2 &1 not restored to ASP &4.
+CPF374E|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2| &2 &1 not restored to ASP &4.
+CPF374F|20|&1 *CHAR 10| &1 specified more than once for OMITLIB parameter.
+CPF3750|20|&1 *CHAR 10| Library &1 description not restored.
+CPF3751|20|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4; &4 *CHAR 6; &5 *CHAR 10; &6 *CHAR 82; &7 *CHAR 32| Some libraries not saved.
+CPF3752|30|&1 *CHAR 10| No record of save operation exists for library &1.
+CPF3753|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| (*SAVVOL) version of &2 &1 not restored to library &3.
+CPF3754|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3755|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3756|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPF3757|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| &2 &1 not restored to &3.
+CPF3758|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| &2 &1 not restored to &3.
+CPF3759|20|&1 *CHAR 10| User profile &1 not found.
+CPF375B|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Altered &2 &1 restored to library &3.
+CPF375E|30|| Attempted to save too many objects or database file members.
+CPF375F|20|&1 *CHAR 256; &2 *CHAR 18; &3 *CHAR 4; &4 *CHAR 32; &5 *CHAR 10| File not selected. Cannot restore from save type file &1.
+CPF3760|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Not authorized to save or restore &2 &1 in &3.
+CPF3761|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Cannot use &2 &1 in &3.
+CPF3762|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3763|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 previously damaged.
+CPF3764|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not found.
+CPF3765|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not restored.  Object not saved.
+CPF3766|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 not restored to library &3.
+CPF3767|30|&1 *CHAR 10| Device &1 not found.
+CPF3768|30|&1 *CHAR 10| Device &1 not valid for command.
+CPF3769|30|&1 *CHAR 364| Data encrypted or not save data.
+CPF376A|30|| System must not be in manual mode.
+CPF376B|30|&1 *CHAR 10| File &1 not found.
+CPF376D|40|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS| Not all configuration objects saved to save file &3.
+CPF376E|40|&1 *CHAR 70; &2 *BIN 4; &3 *BIN 4; &4 *DTS; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 32| Not all configuration objects saved.
+CPF3770|30|&1 *CHAR 10; &2 *DTS; &3 *BIN 4; &4 *CHAR 10; &5 *CHAR 82| No objects saved or restored for library &1.
+CPF3771|30|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 4; &7 *CHAR 15; &8 *BIN 4; &9 *CHAR 6; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 32; &14 *CHAR 10; &15 *BIN 4; &16 *BIN 4| &1 objects saved from &3. &2 not saved.
+CPF3772|40|&1 *CHAR 70; &2 *DTS; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 32| SAVSYS completed.  One or more objects not saved.
+CPF3773|20|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *CHAR 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32; &10 *BIN 4; &11 *BIN 4| &1 objects restored. &2 not restored to &4.
+CPF3774|30|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 4; &7 *CHAR 15; &8 *BIN 4; &9 *CHAR 6; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 32; &14 *CHAR 10; &15 *BIN 4; &16 *BIN 4| &1 objects saved from &3. &2 not saved. &8 not included.
+CPF3775|20|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *BIN 4; &5 *BIN 4; &6 *BIN 4; &7 *BIN 4; &8 *BIN 4; &9 *CHAR 10; &10 *BIN 4; &11 *BIN 4| Not all user profiles or authority objects restored.
+CPF3776|30|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *BIN 4; &5 *BIN 4| Not all user profiles had all authorities restored.
+CPF3777|30|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR 6; &5 *CHAR 10; &6 *BIN 4; &7 *CHAR 32| &1 libraries saved, &6 partially saved, &2 not saved.
+CPF3778|30|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4; &4 *CHAR 6; &5 *CHAR 10; &6 *CHAR 82; &7 *CHAR 32| Not all objects saved from all libraries.
+CPF3779|30|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *BIN 4; &5 *CHAR 10| &1 libraries restored; &4 partially restored; &2 not restored.
+CPF377A|30|&1 *CHAR 70; &2 *DTS; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 32; &6 *CHAR 17| SAVSYSISD not complete for file &6.
+CPF377B|40|&1 *CHAR 10; &2 *DTS; &3 *BIN 4; &4 *CHAR 10; &5 *CHAR 82| No objects restored.  &3 objects excluded.
+CPF377C|20|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *BIN 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32| &1 objects restored; &2 not restored; &6 excluded.
+CPF377D|80|| Save ended because of read error on internal system resource.
+CPF377E|80|| Not enough storage for save-while-active request.
+CPF377F|40|&1 *CHAR 17; &2 *CHAR 10| Save ended. Unable to reach checkpoint.
+CPF3780|30|&1 *CHAR 10| Specified file for library &1 not found.
+CPF3781|30|&1 *CHAR 10| Library &1 not found.
+CPF3782|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not a save file.
+CPF3783|30|| Cannot determine VOL(*SAVVOL) location. No objects restored.
+CPF3784|30|| Restore device specified in the DEV parameter does not match VOL(*SAVVOL) device.
+CPF3785|30|| Not all subsystems ended.
+CPF3786|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPF3787|10|&1 *CHAR 10| No authorities to restore for user profile &1.
+CPF3789|30|| Only one library allowed with specified parameters.
+CPF378A|30|| Message queue not available.
+CPF378B|40|&1 *CHAR 10| Library &1 not created.
+CPF378C|30|| SAVACTMSGQ(*WRKSTN) not valid for batch job.
+CPF378D|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF378E|30|&1 *CHAR 10| Library &1 not saved.
+CPF378F|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not restored.
+CPF3790|30|| No available space on diskette.
+CPF3791|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 256| While processing &2 &1 in &3, encountered end of file &4.
+CPF3792|30|| Information not displayed.  Error occurred.
+CPF3793|80|| Machine or ASP storage limit reached.
+CPF3794|30|&1 *CHAR 7| Save or restore operation ended unsuccessfully.
+CPF3795|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 4; &5 *CHAR 4; &6 *CHAR 13; &7 *SPP 64; &8 *SYP; &9 *SYP| Error while processing &2 &1 in &3.
+CPF3796|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| Storage limit exceeded for user profile &4.
+CPF3797|50|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Objects from library &3 not saved.  Save limit exceeded.
+CPF3798|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Installation &2 &1 in &3 not found.
+CPF3799|30|| Errors occurred. Object not processed.
+CPF379A|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF379B|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF379C|20|&1 *CHAR 10; &2 *CHAR 7| &2 &1 was excluded.
+CPF379D|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not restored.
+CPF379E|50|&1 *CHAR 10| Not enough storage available to save library &1.
+CPF37A0|20|&1 *CHAR 30; &2 *CHAR 7; &3 *CHAR 10| Save operation could not continue.
+CPF37A1|40|&1 *CHAR 10| Cannot install from optical device &1.
+CPF37A2|40|| Installation cannot be performed.
+CPF37A3|40|&1 *CHAR 7; &2 *CHAR 10; &3 *CHAR 10| Data area &2 in &3 not available.
+CPF37A4|30|&1 *CHAR 10; &2 *CHAR 10| Signature verification failed for save file &1 in &2.
+CPF37A5|30|&1 *BIN 2| RSTASP &1 is not online.
+CPF37A6|40|| Cannot perform signature verification.
+CPF37A7|30|| FRCOBJCVN value not allowed.
+CPF37A8|40|| Specified data compression not supported for device.
+CPF37A9|40|| Specified data compression not supported for target release.
+CPF37B1|40|| SPLFDTA not allowed with target release.
+CPF37B2|40|&1 *CHAR 10; &2 *BIN 4| Not authorized to perform restore operation.
+CPF37B3|40|| QDTA not allowed with target release.
+CPF37B4|30|&1 *CHAR 10; &2 *CHAR 10| User space &1 in &2 not valid.
+CPF37B5|40|| PVTAUT not allowed with target release.
+CPF37B6|40|| Work with licensed programs function not complete.
+CPF37B7|30|| Not authorized to save private authorities.
+CPF37B8|30|| Not authorized to restore private authorities.
+CPF37B9|40|&1 *CHAR 10| Synchronization ID &1 in use.
+CPF37BA|30|| Not authorized to RBDMFS parameter.
+CPF37BB|40|&1 *CHAR 10| Synchronization ID &1 already started.
+CPF37BC|40|&1 *CHAR 10| Synchronization ID &1 ended. Wait time exceeded.
+CPF37BD|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6| Synchronization ID &1 ended. Save ended before checkpoint.
+CPF37BE|40|&1 *CHAR 10| Synchronization ID &1 not started.
+CPF37C1|30|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4| &2 objects completed. &3 objects deferred.
+CPF37C2|30|| Not authorized to use DFRID.
+CPF37C3|40|| Cannot save base operating system.
+CPF37C4|40|&1 *CHAR 32; &2 *CHAR 32| Service &1 with protocol &2 not found.
+CPF37C5|40|&1 *BIN 4; &2 *CHAR 32| Save While Active synchronization manager bind error.
+CPF37C6|40|&1 *BIN 4; &2 *BIN 4| A communication error occurred.
+CPF37C7|40|&1 *CHAR 10| Synchronization ID &1 ended. SAVACTWAIT error.
+CPF37C8|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6| Synchronization ID &1 ended. Synchronization manager ended.
+CPF37C9|40|| Synchronization session limit reached.
+CPF37CA|30|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Library &1 not allowed in ASP &2.
+CPF3801|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF3802|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF3803|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF3804|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF3805|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 4; &4 *CHAR 4| Objects from save file &1 in &2 not restored.
+CPF3806|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF3807|60|&1 *CHAR 10; &2 *CHAR 10| Data decompression error for save file &1 in &2.
+CPF3808|30|&1 *CHAR 17; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 50; &5 *CHAR 7| Save file &2 in &3 not complete.
+CPF3809|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 10; &7 *CHAR 10| Older version of &1 type &2 in &3 restored.
+CPF3810|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Save file &1 not restored to library &3.
+CPF3811|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 in &3 not restored.
+CPF3812|40|&1 *CHAR 10; &2 *CHAR 10| Save file &1 in &2 in use.
+CPF3813|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 2; &5 *BIN 2| &2 &1 not restored to library &3.
+CPF3814|40|&1 *CHAR 10; &2 *CHAR 10| No objects from save file &1 in &2 saved to media.
+CPF3815|30|&1 *CHAR 10; &2 *CHAR 10| Save file &1 in &2 too small for save operation.
+CPF3816|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3817|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &1 type &2 not restored to library &3.
+CPF3818|30|&1 *CHAR 10| Starting library &1 not found.
+CPF3819|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Damaged object &2 &1 not restored.
+CPF381A|30|&1 *CHAR 10; &2 *CHAR 10| Error occurred while attempting to access save file &1 in library &2.
+CPF381B|40|&1 *BIN 2| No DLOs restored to ASP &1.
+CPF381C|30|| Cannot restore active sort table to the current release.
+CPF381D|30|| Values on CHGPERIOD parameter not valid.
+CPF381E|30|| Not authorized to ALWOBJDIF parameter.
+CPF381F|30|&1 *CHAR 10; &2 *CHAR 10| Save file &1 cannot be processed by API QSRLSAVF.
+CPF3820|30|&1 *CHAR 7; &2 *CHAR 5; &3 *DTS; &4 *CHAR 4| &4 objects for &1 option &2 not restored.
+CPF3821|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not restored.
+CPF3822|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| *&2 &1 not restored to &3.
+CPF3823|30|&1 *DTS| No objects saved or restored.
+CPF3824|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 was restored with public authority of *EXCLUDE.
+CPF3825|10|&1 *CHAR *VARY 4| Duplicate names specified on the OBJ parameter.
+CPF3826|30|| *INCLUDE object required on OBJ parameter.
+CPF3827|30|&1 *BIN 4; &2 *CHAR 7| Option &1 not valid for object type &2.
+CPF3828|30|&1 *CHAR *VARY 4| Error occurred while attempting to use &1.
+CPF3829|30|| Specified parameter not valid for QSYS file system.
+CPF382A|30|| Specified parameter not valid for QDLS file system.
+CPF382B|30|| Parameters not valid with multiple file systems.
+CPF382C|30|| OBJ parameter value not valid for QSYS file system.
+CPF382D|30|| Specified parameter not valid for QSYS file system.
+CPF382E|30|| Specified parameter not valid for QDLS file system.
+CPF382F|30|| OBJ parameter value not valid for QDLS file system.
+CPF3831|30|| Function key 22 not valid on this field.
+CPF3832|30|| No objects saved on media file for specified subdirectory.
+CPF3833|30|| Specified value on DEV parameter not valid.
+CPF3834|30|| Too many values specified on the DEV parameter.
+CPF3835|30|| Tape devices do not support same densities.
+CPF3836|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| &1 restored with public authority *EXCLUDE.
+CPF3837|30|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 2475; &4 *DTS; &5 *CHAR 4; &6 *CHAR 18; &7 *CHAR 32; &8 *CHAR *VARY 4; &9 *CHAR 10| &1 objects saved. &2 not saved.
+CPF3838|30|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR *VARY 4| &1 objects saved. &2 objects not saved.
+CPF3839|30|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 2475; &4 *DTS; &5 *CHAR 4; &6 *CHAR 18; &7 *CHAR 32; &8 *CHAR *VARY 4; &9 *CHAR 10| &1 objects restored. &2 not restored.
+CPF383A|40|&1 *HEX 2; &2 *HEX 2; &3 *CHAR 12; &4 *SPP 64; &5 *SYP; &6 *SYP; &7 *CHAR *VARY 4| Save or restore ended unsuccessfully.
+CPF383B|40|&1 *CHAR 17; &2 *CHAR *VARY 4| End of file &1.
+CPF383C|40|&1 *CHAR 10; &2 *CHAR *VARY 4| Storage limit exceeded for user profile &1.
+CPF383D|40|&1 *CHAR *VARY 4| Cannot use &1.
+CPF383E|30|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR *VARY 4| &1 objects restored. &2 objects not restored.
+CPF383F|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restored.
+CPF3840|30|| Specified file for restore operation not found.
+CPF3841|20|&1 *CHAR 10| User profile &1 not allowed on the system.
+CPF3842|10|&1 *CHAR 10| Interactive section of user profile &1 not saved.
+CPF3843|20|&1 *CHAR 10| Interactive section of user profile &1 not restored.
+CPF3844|20|&1 *CHAR 10| Private authorities not restored for user profile &1.
+CPF3845|20|&1 *BIN 4; &2 *CHAR 10; &3 *DTS; &4 *CHAR 10; &5 *CHAR 22; &6 *CHAR 22| Some authorities not restored for user profile &4.
+CPF3846|20|&1 *BIN 4| Security changes occurred for &1 security objects.
+CPF3847|20|&1 *CHAR 10| User profile &1 not found on media.
+CPF3848|20|&1 *BIN 4; &2 *CHAR 10| &1 security or data format changes occurred.
+CPF384A|40|&1 *CHAR 32| Volume identifier &1 not valid.
+CPF384B|40|&1 *CHAR 256| Optical file specified not valid.
+CPF384C|40|&1 *BIN 4; &2 *BIN 4| Error occurred during CCSID conversion.
+CPF384D|30|&1 *BIN 2| Save or restore operation not allowed on ASP &1.
+CPF384E|30|| USEOPTBLK(*YES) not valid for CD-ROM premastering.
+CPF384F|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3C3C|30|&1 *BIN 4; &2 *CHAR 30| Value for parameter &1 not valid.
+CPF4110|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 7; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 9; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Cancel reply received for message &6.
+CPF4111|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 6; &7 *BIN 2; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 8; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Labels that are not valid were found on the volume.
+CPF4112|40|&1 *CHAR 10; &2 *CHAR 10| DEVTYPE(*USERASCII) not allowed with externally-described file.
+CPF4113|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 17; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 15; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Wrong file label parameter specified.
+CPF4114|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 6; &7 *CHAR 10; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| File sequence number &7 not found on volume &6.
+CPF4115|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 10; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 22; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Device &4 cannot be opened because an error occurred.
+CPF4116|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP| No device defined for file &2 in library &3.
+CPF4117|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 14; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP; &19 *SPP 400; &20 *SPP 600| Record length exceeds the block length for file &2 in &3.
+CPF4118|70|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 6; &7 *BIN 2; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 8; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP; &19 *CHAR 32; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &4 was reset.
+CPF4119|60|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP; &19 *CHAR 32; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &4 cannot process loaded volume.
+CPF4120|70|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP; &19 *CHAR 32; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &4 reported a hardware failure.
+CPF4121|70|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP; &19 *CHAR 32; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Interface error while using device &4.
+CPF4122|70|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 14; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Switched connection failed for device &4 in file &2 in &3.
+CPF4123|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| Open options ignored for shared open of member &3.
+CPF412A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 10; &7 *CHAR 10; &8 *DEC 7 4; &9 *DEC 7 4; &10 *CHAR 4; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Value specified for &6 parameter is larger than &7 limit.
+CPF412B|60|&1 *CHAR 10; &2 *CHAR 10| Error detected using program &1 in &2.
+CPF412C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6| Cartridge &6 not found
+CPF412D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Cartridge not available.
+CPF412E|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Category does not exist
+CPF412F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 6; &7 *CHAR 6; &8 *BIN 2; &9 *CHAR 10; &10 *CHAR 8| Cartridge &6 not available.
+CPF6702|40|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Error processing volume on device &1.
+CPF6703|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6; &4 *CHAR 17| Duplication to *END of partial file not correct.
+CPF6704|40|| Set not duplicated.
+CPF6706|40|&1 *CHAR 10; &2 *CHAR 6| No files found on volume &2.
+CPF6707|40|&1 *CHAR 8; &2 *CHAR 10| Format name &1 not correct.
+CPF6708|40|| Command ended due to error.
+CPF6709|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 2| Parameter &3 not correct.
+CPF670A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 1; &9 *BIN 2; &10 *BIN 2; &11 *CHAR 20; &12 *CHAR 32| Incorrect encryption key information specified.
+CPF670B|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 10; &9 *CHAR 32; &10 *CHAR 10| Incorrect encryption key information specified.
+CPF6710|40|&1 *BIN 4; &2 *CHAR 10; &3 *CHAR 2; &4 *BIN 4| Specified length not correct.
+CPF6711|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 10| Command not allowed
+CPF6712|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10| Category &4 not mounted.
+CPF6713|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10| Category not demounted.
+CPF6714|40|&1 *CHAR 10| TOVOL(*FROMVOL) not correct.
+CPF6715|40|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0| Error at beginning of tape on device &1.
+CPF6716|40|&1 *CHAR 10| Device &1 not a diskette device.
+CPF6717|40|| Initialize diskette ended; previous errors occurred.
+CPF6718|40|&1 *CHAR 10| Cannot allocate device &1.
+CPF6719|40|&1 *CHAR 10| Command not allowed due to device state.
+CPF671A|40|&1 *CHAR 10; &2 *CHAR 10| Sequence number too large for DATA(*SAVRST).
+CPF671B|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6; &4 *CHAR 6; &5 *BIN 4; &6 *BIN 4; &7 *CHAR 6; &8 *CHAR 6| Block size mismatch from &1 to &2.
+CPF671C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 4| Not all files duplicated to device &2.
+CPF671D|40|&1 *CHAR 10| Category commands not available.
+CPF671E|40|&1 *CHAR 10; &2 *CHAR 10| Parameter &2 not supported.
+CPF671F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 2| Parameter list not correct.
+CPF6720|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6| Incorrect volume &2 found on device &1.
+CPF6721|40|&1 *CHAR 10| Device &1 not a tape device.
+CPF6722|40|&1 *CHAR 10| End of tape found on device &1.
+CPF6723|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 10| File not found on volume &2 on device &1.
+CPF6724|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 17| File label &5 not found on volume &2.
+CPF6725|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 0; &4 *CHAR 10; &5 *CHAR 10| Ending file sequence number less than starting sequence number.
+CPF6726|40|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 10; &4 *CHAR 10| Ending data block less than starting block.
+CPF6727|40|&1 *CHAR 10| Dump type not allowed for nonlabeled volume on device &1.
+CPF6728|40|&1 *CHAR 10| LABEL(*NONE) or CRTDATE(*NONE) required.
+CPF6729|40|&1 *CHAR 10; &2 *CHAR 6| No authority to file data on volume &2 device &1.
+CPF672A|40|&1 *CHAR 17; &2 *BIN 4| Remote location name &1 contains syntactic errors.
+CPF672B|40|&1 *CHAR 10| Resource &1 not valid.
+CPF672C|40|&1 *CHAR 10| Device &1 not allowed.
+CPF672D|40|&1 *CHAR 8| Network ID &1 not in correct format.
+CPF672E|40|&1 *BIN 2; &2 *CHAR 10| Line description &2 wrong type.
+CPF672F|40|&1 *CHAR 10| Resource &1 not found.
+CPF6730|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 17; &5 *CHAR 10| Cannot access file sequence number &5.
+CPF6731|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 17| File label &5 not found on volume &2.
+CPF6732|40|&1 *CHAR 10; &2 *CHAR 6| Tape marker found on volume &2.
+CPF6733|40|&1 *CHAR 10; &2 *CHAR 6| Consecutive tape markers found on volume &2.
+CPF6734|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 6| File sequence number &3 not found on volume &2.
+CPF6735|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 10; &6 *CHAR 17| Label ID &6 not found at &3.
+CPF6736|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 10; &6 *CHAR 10| Creation date &6 not found at &3.
+CPF6737|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 10| Label &4 not found on volume &2.
+CPF6738|40|&1 *CHAR 10; &2 *CHAR 10| Command &1 replaced by &2 command. Use &2 command.
+CPF6739|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6; &4 *CHAR 2| Dynamic retrieval operation ended unsuccessfully.
+CPF673A|40|&1 *CHAR 8; &2 *CHAR 10; &3 *CHAR 10| Device &3 not varied on.
+CPF673B|40|&1 *CHAR 10; &2 *CHAR 6| Blank tape found on volume &2.
+CPF673F|40|&1 *CHAR 10; &2 *CHAR 10| Device &1 does not support &2.
+CPF6740|40|&1 *CHAR 10| TODEV and FROMDEV must be different.
+CPF6741|40|&1 *CHAR 10| Nonlabeled tape format not valid on device &1.
+CPF6742|0|&1 *HEX 15; &2 *CHAR 10; &3 *CHAR 2| Cartridge in library device &2 changed.
+CPF6743|0|&1 *HEX 15; &2 *CHAR 10; &3 *CHAR 240| Library device manager operator message.
+CPF6744|0|&1 *HEX 6; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2; &5 *CHAR 1; &6 *CHAR 1; &7 *CHAR 1; &8 *CHAR 1; &9 *CHAR 1; &10 *CHAR 1; &11 *CHAR 1; &12 *CHAR 1| Station status changed on media library &2.
+CPF6745|40|&1 *CHAR 10| Device &1 not a media library device.
+CPF6746|0|&1 *HEX 15; &2 *CHAR 10; &3 *CHAR 1; &4 *CHAR 1; &5 *CHAR 1; &6 *CHAR 1; &7 *CHAR 1; &8 *BIN 2| Operational state change on device &2.
+CPF6747|0|&1 *HEX 15; &2 *CHAR 10; &3 *CHAR 1; &4 *CHAR 1; &5 *CHAR 1; &6 *CHAR 6| Cartridge &6 in error on device &2.
+CPF6748|0|&1 *HEX 15; &2 *CHAR 10; &3 *HEX 1; &4 *BIN 2| Component availability in device &2 changed.
+CPF6749|0|&1 *HEX 6; &2 *CHAR 10; &3 *BIN 2| Device &2 cleaned.
+CPF674A|40|&1 *CHAR 10; &2 *BIN 2; &3 *HEX 2; &4 *HEX 2| Device &1 library manager detected a problem.
+CPF6750|40|&1 *CHAR 10; &2 *CHAR 6| NEWVOL(*NONE) not valid for device &1.
+CPF6751|70|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP; &19 *CHAR 32; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Load failure occurred on device &4.
+CPF6752|40|&1 *CHAR 10| SEQNBR(*FIRST) or SEQNBR(*NEXT) is not valid.
+CPF6753|40|&1 *HEX 6; &2 *CHAR 10; &3 *HEX 34| Device &2 library device manager program error.
+CPF6754|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 17; &5 *CHAR 10; &6 *CHAR 10| Active file &4 found on volume &2.
+CPF6755|40|| No label information for data files on volume.
+CPF6756|40|&1 *CHAR 10; &2 *CHAR 10| No data files on volume.
+CPF6757|40|&1 *QTDCHAR 14| Owner identifier &1 contains wrong characters.
+CPF6758|40|&1 *QTDCHAR 6| Volume identifier &1 contains wrong characters.
+CPF6759|40|| Last file on volume, press F3 to exit.
+CPF6760|40|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &1 not ready.
+CPF6761|40|| Labels not found while processing file.
+CPF6762|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 14; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 10| Wrong type of cartridge in device &1.
+CPF6763|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 14; &4 *CHAR 10| Wrong type of cartridge in device &1.
+CPF6764|10|&1 *HEX 6; &2 *CHAR 10; &3 *HEX 11; &4 *HEX 7| Device &2 has reported an exception on a tape device.
+CPF6765|40|&1 *CHAR 10| No data files exist on diskette.
+CPF6766|40|&1 *HEX 15; &2 *CHAR 10; &3 *HEX 3; &4 *HEX 1; &5 *CHAR 1; &6 *HEX 11; &7 *HEX 7| Tape device failure on library device &2.
+CPF6767|40|&1 *CHAR 10| File not found on diskette.
+CPF6768|40|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume on device &1 is write protected.
+CPF6769|40|&1 *CHAR 10; &2 *CHAR 10| Resource &1 deallocated from &2.
+CPF676A|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 14; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 10| Wrong write density specified for device &1.
+CPF676B|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 6; &6 *CHAR 6; &7 *CHAR 10| Volume on device &4 is write protected.
+CPF6770|40|&1 *HEX 15; &2 *CHAR 10| Device &2 vision system not operational.
+CPF6771|40|&1 *HEX 15; &2 *CHAR 10| Intervention required on device &2.
+CPF6772|40|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Volume on device &1 cannot be processed.
+CPF6773|40|&1 *HEX 15; &2 *CHAR 10| Unrecoverable error on device &2.
+CPF6774|40|&1 *CHAR 10; &2 *QTDCHAR 6| New volume &2 is a nonstandard labeled tape.  Volume not prepared.
+CPF6775|40|&1 *HEX 15; &2 *CHAR 10| All storage cells full on device &2.
+CPF6776|40|&1 *HEX 15; &2 *CHAR 10| No cleaning cartridges exist in device &2.
+CPF6777|30|&1 *CHAR 6; &2 *CHAR 10; &3 *HEX 48| Library manager command failed.
+CPF6778|0|&1 *HEX 15; &2 *CHAR 10; &3 *CHAR 1; &4 *CHAR 1; &5 *CHAR 1; &6 *CHAR 6| Cartridge &6 in error on device &2.
+CPF6779|40|&1 *CHAR 10| Format (FMT) specified for diskette in device &1 not valid.
+CPF6780|70|&1 *CHAR 6; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Defective cylinder on volume &1.
+CPF6781|70|&1 *CHAR 6; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Defective cylinders on volume &1.
+CPF6782|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &25 not operational.
+CPF6783|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &25 is not ready.
+CPF6784|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &25 status changed from not ready to ready.
+CPF6785|20|&1 *CHAR 10| Diskette in device &1 two-sided and FMT(1) specified.
+CPF6786|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Interface check on the device.
+CPF6787|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Equipment check while processing on device &25.
+CPF6788|70|&1 *CHAR 6; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Media error found on volume &1 on device &25.
+CPF678A|40|&1 *HEX 6; &2 *CHAR 10; &3 *BIN 2| Device &2 library device manager going online.
+CPF678B|40|&1 *HEX 15; &2 *CHAR 10| Maximum buffer size in line description not correct.
+CPF678C|40|&1 *HEX 6; &2 *CHAR 10; &3 *BIN 2| Device &2 library device manager going offline.
+CPF6792|70|&1 *CHAR 0; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &25 needs to be cleaned.
+CPF6793|70|&1 *CHAR 6; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Write protect error on volume &1 on device &25.
+CPF6794|70|&1 *CHAR 6; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| End of media was found on device &25.
+CPF6795|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Load failure occurred on device &25.
+CPF6796|70|&1 *CHAR 0; &2 *HEX 2; &3 *HEX 2; &4 *CHAR 4; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *CHAR 0; &34 *CHAR 0; &35 *CHAR 0; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Device &25 was reset.
+CPF6797|70|&1 *CHAR 0; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *HEX 2; &34 *CHAR 4; &35 *CHAR 10; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Command did not complete on device &25.
+CPF6798|70|&1 *CHAR 0; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *HEX 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 2; &32 *CHAR 8; &33 *HEX 2; &34 *CHAR 4; &35 *CHAR 10; &36 *CHAR 0; &37 *CHAR 0; &38 *CHAR 0; &39 *CHAR 0| Command for device &25 failed to complete.
+CPF67A0|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Volume ID does not match cartridge ID
+CPF67A1|40|&1 *CHAR 10; &2 *CHAR 6| Cartridge &2 not found
+CPF67A5|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Cartridge &2 not in an available category
+CPF67A6|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category does not exist
+CPF67A7|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device description &1 not deleted
+CPF67A8|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Cartridge &2 not available
+CPF67B0|40|&1 *CHAR 10; &2 *CHAR 10| Tape resource &2 not in specified library device
+CPF67B1|30|&1 *CHAR 10; &2 *BIN 4| Option value &1 not valid.
+CPF67B2|30|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4; &5 *BIN 4| Number of device entries &1 not valid.
+CPF67B3|30|&1 *BIN 4; &2 *CHAR 10; &3 *BIN 4| Media library device &2 not valid.
+CPF67B4|30|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4| Value &1 in field &2 not valid.
+CPF67B5|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6| &3/&2/&1 not authorized to change attribute.
+CPF67B6|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 6| Not authorized to do requested operation.
+CPF67BA|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 8| Move failure for cartridge &2
+CPF67BB|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 8| Cartridge &2 not available
+CPF67BC|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Range of sequence numbers not correct.
+CPF67BD|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Range &2 to &3 not correct.
+CPF67C0|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Command not allowed
+CPF67C1|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device &1 no longer in library mode
+CPF67C2|40|&1 *BIN 4; &2 *CHAR 2; &3 *CHAR 3; &4 *BIN 4; &5 *BIN 4; &6 *CHAR 2; &7 *BIN 4; &8 *BIN 4; &9 *CHAR *VARY 4| Path name structure field &7 not valid.
+CPF67C3|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Cartridge &2 not available
+CPF67C4|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Object &1 type &2 in library &3 not freed. Object in use.
+CPF67C5|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Object &1 type &2 in library &3 not freed.
+CPF67C6|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category &4 not deleted
+CPF67C7|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Error on library device &1
+CPF67C8|40|&1 *CHAR 10; &2 *HEX 3| Command failed for device &1. Reason code &2.
+CPF67C9|40|&1 *BIN 4; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| An error occurred during a cartridge filter operation.
+CPF67CA|40|&1 *CHAR 6; &2 *BIN 4| Cartridge &1 is not correct.
+CPF67CC|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Maximum number of categories has been reached
+CPF67D1|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10| Library device description not created
+CPF67D2|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Cartridge command was not successful.
+CPF67D3|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Database busy or error occurred
+CPF67D4|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category not available
+CPF67D5|40|&1 *CHAR 10| Category *SYSGEN only.
+CPF67DB|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10| Tape device &7 does not exist
+CPF67DC|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device storage slots full
+CPF67DD|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 8| Category not created.
+CPF67E2|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category already exists
+CPF67E3|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category not deleted
+CPF67E4|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 0; &6 *BIN 2| Library device function not successful
+CPF67E5|40|&1 *BIN 2| Local area network information not valid.
+CPF67E6|40|&1 *CHAR 10; &2 *QTDCHAR 6| Volume &2 is not correct
+CPF67E7|40|| No library devices exist
+CPF67E8|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| FROMVOL and TOVOL parameters not correct
+CPF67E9|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10| NEWVOL(&3) not correct
+CPF67EA|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Function not successful
+CPF67EC|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device description &1 does not exist
+CPF67ED|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device &1 not available
+CPF67EE|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| No cartridges assigned to category &4
+CPF67F0|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Station full
+CPF67F2|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Change to category not correct
+CPF67F4|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library error occurred
+CPF67F5|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Duplicate cartridge or virtual volume name found
+CPF67F6|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device &1 not ready
+CPF67F7|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 17; &5 *CHAR 10; &6 *CHAR 10| Continuation volume cannot be duplicated.
+CPF67F8|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 17; &5 *CHAR 10; &6 *CHAR 10| TOSEQNBR not correct on volume &2.
+CPF67F9|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| &6 cartridges not changed
+CPF67FA|40|&1 *CHAR 17; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 6; &6 *CHAR 10; &7 *BIN 4; &8 *BIN 4; &9 *CHAR 10; &10 *CHAR 6; &11 *CHAR 6| Volume compatibility not correct.
+CPF67FD|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 6| File sequence number &3 not correct for volume &2.
+CPF67FE|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 6| No files found on volume &2.
+CPF67FF|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Maximum number of devices has been reached
+CPF7081|30|&1 *CHAR 10; &2 *CHAR 10| Cannot restore receiver &1 while attached.
+CPF7082|30|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 7| Receiver &1 cannot have storage freed.  Reason code &3.
+CPF7083|30|&1 *CHAR 10; &2 *CHAR 10| Journal receiver not created.
+CPF7084|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 7; &7 *HEX 16; &8 *BIN 4; &9 *CHAR *VARY 4| Object of type *&6 could not be journaled.
+CPF7085|30|&1 *CHAR 10; &2 *CHAR 10| Journal &1 in &2 already exists.
+CPF7302|40|&1 *CHAR 10; &2 *CHAR 10| File &1 not created in library &2.
+CPF9812|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 not found.
+CPF9813|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Record format &3 in file &1 not found.
+CPF9814|40|&1 *CHAR 10| Device &1 not found.
+CPF9815|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 10| Member &5 file &2 in library &3 not found.
+CPF9816|40|| Floating point format not valid.
+CPF9817|20|&1 *CHAR 10| &1 objects may not be restored into a secondary language library.
+CPF9818|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7; &6 *CHAR 10| Object &2 in library &3 not created.
+CPF9819|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 in library &3 not created.
+CPF9820|40|&1 *CHAR 10| Not authorized to use library &1.
+CPF9821|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to program &1 in library &2.
+CPF9822|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to file &1 in library &2.
+CPF9823|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to data area &1 in library &2.
+CPF9824|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to command &1 in library &2.
+CPF9825|40|&1 *CHAR 10| Not authorized to device &1.
+CPF9826|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7; &6 *CHAR 10| Cannot allocate file &2.
+CPF9827|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 8; &4 *BIN 2; &5 *CHAR 10; &6 *BIN 2| Object &1 cannot be created or moved into &2.
+CPF9828|30|&1 *CHAR 10; &2 *CHAR 10| Not authorized to module &1 in library &2.
+CPF9829|40|&1 *BIN 2| Auxiliary storage pool &1 not found.
+CPF982A|30|&1 *CHAR 10; &2 *CHAR 10| Not authorized to binding directory &1 in library &2.
+CPF9830|40|&1 *CHAR 10| Cannot assign library &1.
+CPF9831|40|&1 *CHAR 10| Cannot assign device &1.
+CPF9832|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 10| Function not supported for DDM file &2.
+CPF9833|40|&1 *HEX 8| *CURASPGRP or *ASPGRPPRI specified and thread has no ASP group.
+CPF9834|40|&1 *CHAR 10; &2 *CHAR 10| Input file &1 in library &2 is not a source file.
+CPF9835|30|| Wrong source type.
+CPF9836|40|&1 *CHAR 10| Attempt to close DMCQ entry failed.
+CPF9837|40|&1 *CHAR 10| Attempt made to override file &1 to MBR(*ALL).
+CPF9838|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7; &6 *CHAR 10| User profile storage limit exceeded.
+CPF9839|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7; &4 *BIN 2| Object &1 not created.
+CPF9840|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7; &4 *BIN 2; &5 *BIN 2; &6 *CHAR 10| Object &1 not created.
+CPF9841|40|&1 *BIN 2; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10| Override not found at specified level.
+CPF9842|40|&1 *CHAR 10; &2 *CHAR 8| Overrides not found for file &1.
+CPF9843|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Object &1 in library &3 type &2 cannot be accessed.
+CPF9845|40|&1 *CHAR 10; &2 *CHAR 10| Error occurred while opening file &1.
+CPF9846|40|&1 *CHAR 10; &2 *CHAR 10| Error while processing file &1 in library &2.
+CPF9847|40|&1 *CHAR 10; &2 *CHAR 10| Error occurred while closing file &1 in library &2.
+CPF9848|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Cannot open file &1 in library &2 member &3.
+CPF9849|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Error while processing file &1 in library &2 member &3.
+CPF9850|40|&1 *CHAR 10; &2 *CHAR 10| Override of printer file &1 not allowed.
+CPF9851|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2| Overflow value for file &1 in &2 too small.
+CPF9852|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2| Page size too narrow for file &1 in &2.
+CPF9853|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *BIN 4; &7 *CHAR 10; &8 *BIN 2; &9 *CHAR 28; &10 *CHAR 4; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP| Record in use by another job.
+CPF9854|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File &1 in library &2 not correct type.
+CPF9855|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File &1 in library &3 contains no members.
+CPF9860|40|| Error occurred during output file processing.
+CPF9861|0|&1 *CHAR 10; &2 *CHAR 10| Output file &1 created in library &2.
+CPF9862|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &3 added to output file &1 in library &2.
+CPF9863|40|| OUTPUT(*OUTFILE) not valid with OUTFILE(*NONE).
+CPF9864|40|&1 *CHAR 10; &2 *CHAR 10| System-supplied output file &1 not valid.
+CPF9865|40|&1 *CHAR 10; &2 *CHAR 10| Format of output file &1 in library &2 not valid.
+CPF9866|40|| Source file record length too long.
+CPF9867|40|| Output file name required when output member specified.
+CPF9870|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 type *&5 already exists in library &3.
+CPF9871|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Error occurred while processing.
+CPF9872|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 1| Program or service program &1 in library &2 ended. Reason code &3.
+CPF9873|30|&1 *CHAR 10| ASP status is preventing access to object.
+CPF9874|40|| File override caused I/O buffer size to be exceeded.
+CPF9875|60|&1 *SYP; &2 *UBIN 2; &3 *UBIN 2| Resources exceeded on ASP &1.
+CPF9876|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Protected library &2 cannot be modified.
+CPF9890|99|| Function not supported, request rejected.
+CPF9896|40|&1 *CHAR 512| No online help information available.
+CPF9897|40|&1 *CHAR 512| &1
+CPF9898|40|&1 *CHAR 512| &1.
+CPF9899|40|| Error occurred during processing of command.
+CPFBC01|30|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 already exists in library &2.
+CPFBC02|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 was not created in library &2.
+CPFBC03|40|&1 *CHAR 1| Image catalog type &1 not valid.
+CPFBC08|40|&1 *CHAR 10| Image catalog &1 not changed.
+CPFBC10|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 not loaded to device &2.
+CPI320A|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File level identifiers do not match.
+CPI3722|10|| Save-while-active request ended abnormally.
+CPI3723|10|&1 *CCHAR *VARY 4| Objects not saved for directory &1.
+CPI3724|0|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *DTS| &2 of &3 libraries processed. Started &1 at &4.
+CPI3725|0|| Save-while-active checkpoint processing in progress.
+CPI3726|10|&1 *CCHAR *VARY 4| Save history not updated for objects in &1.
+CPI3727|20|&1 *BIN 2| Cannot save or restore security data using ASP &1.
+CPI3728|0|&1 *CCHAR *VARY 4; &2 *CCHAR *VARY 4| OBJ parameter value changed, &1.
+CPI3729|0|&1 *BIN 4; &2 *BIN 4| Started processing &1 objects, completed &2 objects.
+CPI3731|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 10; &9 *CHAR 10| *&2 &1 saved with partial transaction.
+CPI3732|10|&1 *CHAR *VARY 4; &2 *CHAR 10| Parent directory created, &1.
+CPI3733|0|&1 *BIN 4| &1 existing spooled files not restored.
+CPI3734|10|&1 *CHAR 7; &2 *CHAR 7; &3 *CHAR 6| PTF &1-&2 &3 should be removed.
+CPI3735|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6; &5 *BIN 4; &6 *BIN 4| Save operation started for synchronization ID &1.
+CPI3736|0|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Object &1 type &2 in library &3 not freed. Object in use.
+CPI3737|10|&1 *CHAR 7; &2 *CHAR *VARY 4| Additional recovery may be needed for object &2.
+CPI3738|10|&1 *CHAR 7; &2 *CHAR *VARY 4| All authorizations revoked for &2.
+CPI3739|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| Authority not restored for user &4.
+CPI373A|10|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *BIN 4; &5 *BIN 4| Authority not restored for user &3.
+CPI373B|10|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4| All objects completed for DFRID &1.
+CPI373C|10|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4| DFRID &1 has &3 objects remaining.
+CPI373D|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| Authority not restored for user &4.
+CPI373E|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6; &5 *BIN 4; &6 *BIN 4| Checkpoint complete for synchronization ID &1.
+CPI373F|10|&1 *CHAR 10| Waiting for all synchronization ID &1 operations to start.
+CPI374A|0|&1 *CHAR 10; &2 *CHAR 10| SAVFDTA(*YES) ignored for file &1 in library &2.
+CPI374B|0|&1 *CHAR 10; &2 *CHAR 10| SAVFDTA(*YES) ignored for file &1 in library &2.
+CPI374C|10|| Data compaction not performed.
+CPI374D|10|&1 *CHAR 10| Omit library &1 not included.
+CPI374F|20|&1 *CHAR 7; &2 *CHAR *VARY 4| Signature verification failed for restored object &2.
+CPI379E|20|&1 *CHAR 10; &2 *CHAR 7| &2 &1 was excluded.
+CPI379F|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 4| &2 &1 in library &3 restored with failed signature verification.
+CPI380E|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 in library &3 restored with primary group *NONE.
+CPI380F|10|&1 *CHAR 10; &2 *BIN 4| UID for user profile &1 already exists.
+CPI3810|10|&1 *CHAR 10; &2 *BIN 4| GID for user profile &1 already exists.
+CPI3811|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &4 is the primary group of &2 &1 in &3.
+OPT1115|40|&1 *CHAR 32; &2 *CHAR 256| File not found.
+OPT1116|40|&1 *CHAR 32; &2 *CHAR 256| Duplicate file or directory name found.
+OPT1120|40|&1 *CHAR 32; &2 *CHAR 256| File already exists.
+OPT1121|40|| Length beyond end of buffer.
+OPT1122|40|| Storage in offline Auxilary Storage Pool (ASP).
+OPT1124|30|| Value entered not valid for field 'Release after save'.
+OPT1125|40|&1 *CHAR 32; &2 *CHAR 256| File is in use.
+OPT1126|40|&1 *CHAR 30; &2 *CHAR 288| File not open or not found.
+OPT1127|30|| File is no longer open.
+OPT1128|30|| No held files found.
+OPT1129|40|&1 *CHAR 32; &2 *CHAR 256| Operation not allowed to file opened for Expanding Buffer I/O.
+OPT1130|40|&1 *CHAR 32; &2 *CHAR 256| File name specified is a reserved file name.
+OPT1132|40|| Operation is not allowed to the root directory.
+OPT1133|40|&1 *CHAR 32; &2 *CHAR 256; &3 *CHAR 2| Incorrect open information.
+OPT1134|40|&1 *CHAR 32; &2 *CHAR 256| Invalid I/O method.
+OPT1135|40|&1 *CHAR 32; &2 *CHAR 256| Request failed because number of open files is at the limit.
+OPT1136|40|&1 *CHAR 32; &2 *CHAR 256| Request failed because number of open files is at the limit.
+OPT1137|40|| Copy append not supported.
+OPT1140|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256| Unexpected error occurred during file processing.
+OPT1160|40|&1 *CHAR 32; &2 *CHAR 256| Attempted write operation beyond file size limit.
+OPT1170|40|| File handle not valid.
+OPT1172|40|&1 *CHAR 32; &2 *CHAR 256| File or directory handle is no longer valid.
+OPT1175|40|&1 *CHAR 32; &2 *CHAR 256; &3 *HEX 4; &4 *BIN 4; &5 *CHAR 6| File pointer position not valid.
+OPT1180|10|&1 *CHAR 32; &2 *CHAR 256| File was extended for the write operation.
+OPT1182|40|&1 *CHAR 32; &2 *CHAR 256| File was fragmented into multiple extents.
+OPT1183|40|&1 *CHAR 32; &2 *CHAR 256| File too fragmented.
+OPT1185|40|&1 *CHAR 32; &2 *CHAR 256| Cannot access held optical file.
+OPT1190|40|&1 *CHAR 32; &2 *CHAR 256| Range of bytes in file in use.
+OPT1192|40|&1 *CHAR 32; &2 *CHAR 256| Unlock range of bytes in file failed.
+OPT1205|40|&1 *CHAR 32; &2 *CHAR 256| Directory not found.
+OPT1210|40|&1 *CHAR 32; &2 *CHAR 256| Directory already exists.
+OPT1212|40|&1 *CHAR 32; &2 *CHAR 256| Directory in use.
+OPT1215|40|&1 *CHAR 32; &2 *CHAR 256| Directory cannot be deleted.
+OPT1220|40|&1 *CHAR 32; &2 *CHAR 256| File or directory name already exists.
+OPT1221|30|| Volume must be specified.
+OPT1222|40|&1 *CHAR 32; &2 *CHAR 256| Invalid path name.
+OPT1224|40|&1 *CHAR 256; &2 *CHAR 255| Path length exceeds the maximum of 256 bytes.
+OPT1225|40|&1 *CHAR 32; &2 *CHAR 256| Value specified is not a held optical file.
+OPT1226|30|&1 *CHAR 288| Incorrect optical path specified.
+OPT1227|30|&1 *CHAR 7| Incorrect optical path specified.
+OPT1228|30|&1 *CHAR 7| Incorrect To path value specified.
+OPT122A|40|&1 *CHAR 32; &2 *CHAR 256| Path name not allowed for media format.
+OPT1231|0|&1 *CHAR 40; &2 *CHAR 288| Held file released.
+OPT1232|0|&1 *CHAR 45; &2 *CHAR 288; &3 *CHAR 288| Held file saved.
+OPT1233|0|&1 *CHAR 28; &2 *CHAR 288; &3 *CHAR 288| Held file saved and released.
+OPT1234|40|&1 *CHAR 32; &2 *CHAR 256| Held file can not be saved.
+OPT1236|10|| Held optical file support is not active.
+OPT1237|0|&1 *CHAR 32; &2 *BIN 4| &2 held files released.
+OPT1238|0|&1 *CHAR 32; &2 *BIN 4; &3 *BIN 4| &2 held files saved.  &3 held files released.
+OPT1239|40|&1 *CHAR 32; &2 *BIN 4; &3 *BIN 4| Error saving held optical files.
+OPT1245|40|&1 *CHAR 32; &2 *CHAR 2| Error processing directories for optical volume &1.
+OPT1247|40|&1 *CHAR 10; &2 *CHAR 10| User space &1 not created in library &2.
+OPT1255|40|&1 *CHAR 32; &2 *CHAR 256| File is corrupted.
+OPT1260|99|&1 *CHAR 32; &2 *CHAR 256| Active file found on volume &1. (C I).
+OPT1261|40|&1 *CHAR 32; &2 *CHAR 256| Active file found on volume &1.
+OPT1302|10|&1 *CHAR 32| Unable to read volume alias file.
+OPT1303|99|&1 *CHAR 32; &2 *CHAR 32| Volume name different in previous release. (C RNM).
+OPT1305|40|&1 *CHAR 32| Optical volume &1 is read only.
+OPT1307|40|&1 *CHAR 32| Optical volume &1 is read only.
+OPT1308|0|&1 *CHAR 32; &2 *BIN 2| Initialization of &1 &2% complete.
+OPT1309|0|&1 *CHAR 32; &2 *BIN 2| Duplication of &1 &2% complete.
+OPT1310|0|&1 *CHAR 32; &2 *BIN 2| Check of &1 &2% complete.
+OPT1311|0|&1 *CHAR 32; &2 *BIN 2| Preparation of &1 for duplication &2% complete.
+OPT1312|0|&1 *CHAR 10; &2 *BIN 2| Inventory of library device &1 &2% complete.
+OPT1313|0|&1 *CHAR 32| Reading directory information for volume &1.
+OPT1314|99|&1 *CHAR 10; &2 *CHAR 32| Volume is write protected or read only. (C G)
+OPT1315|40|&1 *CHAR 32| Optical volume &1 is write protected.
+OPT1316|40|&1 *CHAR 288| Optical volume name is too long.
+OPT1317|40|&1 *CHAR 256| Directory name is too long.
+OPT1318|30|&1 *CHAR 400| File name is too long.
+OPT1320|40|&1 *CHAR 32| Optical volume &1 in use.
+OPT1321|99|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 10| Error occurred processing volume &2. (C G)
+OPT1325|40|&1 *CHAR 10; &2 *CHAR 32| Optical volume format not recognized.
+OPT1330|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 2; &4 *CHAR 32| Optical volume not found or not useable.
+OPT1331|40|&1 *CHAR 32| Optical volume &1 not found.
+OPT1332|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 10| Optical volume not found in device &1.
+OPT1335|40|&1 *CHAR 32| Volume &1 already initialized.
+OPT1336|40|&1 *CHAR 32; &2 *CHAR 2| Media format not allowed on media type.
+OPT1337|40|| Operation will result in duplicate volume identifiers.
+OPT1338|40|| Operation not supported for library device.
+OPT1339|40|&1 *CHAR 32| From volume can not equal To volume.
+OPT1340|40|&1 *CHAR 32| Optical volume &1 not initialized.
+OPT1341|40|&1 *CHAR 32| THRESHOLD or TEXT can not be specified.
+OPT1342|40|&1 *CHAR 32| Invalid volume identifier specified.
+OPT1343|40|&1 *CHAR 256| Incorrect characters in directory name.
+OPT1344|40|&1 *CHAR 256| Optical file name not valid.
+OPT1345|40|&1 *CHAR 32| No free space available on media.
+OPT1346|40|&1 *CHAR 32; &2 *CHAR 10| Operation not allowed to volume located in a remote optical device.
+OPT1347|40|&1 *CHAR 32| Renaming a volume is not allowed when the volume is in a remote optical server.
+OPT1348|40|&1 *CHAR 32; &2 *CHAR 256; &3 *BIN 4; &4 *BIN 4; &5 *DEC 11 0; &6 *DEC 15 0; &7 *DEC 15 0; &8 *DEC 15 0| Maximum optical file size exceeded.
+OPT1349|40|&1 *CHAR 32; &2 *CHAR 256; &3 *DEC 11 0| Maximum optical file size exceeded.
+OPT1350|40|&1 *CHAR 32; &2 *CHAR 10; &3 *CHAR 2| Write operation failed to optical volume &1.
+OPT1351|40|&1 *CHAR 32| No free space available on media.
+OPT1352|40|| Machine storage limit reached.
+OPT1353|20|&1 *CHAR 256; &2 *CHAR 32; &3 *CHAR 10; &4 *DEC 15 0; &5 *DEC 15 0| Maximum file size exceeded for file system &3.
+OPT1360|40|&1 *CHAR 32; &2 *CHAR 32| Media directory corrupted on optical volume &1.
+OPT1365|40|&1 *CHAR 10| Media not compatible with optical device.
+OPT1366|40|| Operation failed due to high system activity.
+OPT1367|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 2; &4 *CHAR 32; &5 *CHAR 8| Operation not supported by this device.
+OPT1368|40|&1 *CHAR 32; &2 *CHAR 8| Volume &1 is not a virtual volume.
+OPT1369|40|| New volume identifier is not valid.
+OPT1375|40|&1 *CHAR 32; &2 *CHAR 2| Optical volume &1 already exists.
+OPT1380|20|&1 *CHAR 32; &2 *CHAR 32| Duplicate volume directory has been lost on volume &1.
+OPT1385|40|&1 *CHAR 32| Volume directory partially updated for optical volume.
+OPT1390|40|&1 *CHAR 10| Error with virtual volume image.
+OPT1410|0|&1 *CHAR 10; &2 *CHAR 32| Volume &2 added to optical device.
+OPT1412|10|&1 *CHAR 10; &2 *BIN 4| &2 volumes added from bulk load magazine for device &1.
+OPT1415|0|&1 *CHAR 10; &2 *CHAR 32| Volume &2 removed from optical device.
+OPT1416|0|| Optical media was not moved to the input/ouput station.
+OPT1420|40|&1 *CHAR 10; &2 *CHAR 32| Operation not allowed to optical volume &2.
+OPT1427|40|| A generic or *ALL volume request is not allowed with DATA value.
+OPT1428|10|&1 *CHAR 32| Directory index not built for optical volume.
+OPT1429|10|&1 *CHAR 32| Directory index rebuilt for optical volume &1.
+OPT1430|20|&1 *CHAR 32| Optical volume &1 information removed.
+OPT1460|40|&1 *CHAR 32| Optical volume &1 is not in an optical device.
+OPT1462|40|&1 *CHAR 32| Operation not completed, optical volume is not a backup volume.
+OPT1463|40|&1 *CHAR 32| Operation not completed, optical volume is not a primary volume.
+OPT1470|0|&1 *CHAR 32; &2 *CHAR 32| Volume identifier changed.
+OPT1471|40|&1 *CHAR 32| Operation not allowed to volume with Install or PTF data.
+OPT1480|40|&1 *CHAR 10| Add optical disk cartridge failed.
+OPT1481|40|&1 *CHAR 10| Add optical disk cartridge failed to complete successfully.
+OPT1482|40|&1 *CHAR 10| Remove optical disk cartridge failed to complete successfully.
+OPT1485|40|&1 *CHAR 32| Initialize or rename of optical volume failed.
+OPT1486|99|&1 *CHAR 10; &2 *CHAR 32| Load next volume on optical device &1. (C G)
+OPT1487|99|&1 *CHAR 10; &2 *CHAR 32| Load volume &2 on optical device &1. (C G)
+OPT1488|99|&1 *CHAR 10; &2 *CHAR 32| Volume &2 on optical device &1 is not initialized (C INZ).
+OPT1489|40|&1 *CHAR 10; &2 *CHAR 32| Volume parameter is not permitted for device &1.
+OPT148A|40|&1 *CHAR 32| Volume name matching pattern not found.
+OPT1490|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 10| Media format &3 on volume &2 does not support continued files.
+OPT1491|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 4; &6 *CHAR 4; &7 *BIN 2; &8 *BIN 2| Media format or CCSID on volume &2 is different than previous volumes.
+OPT1492|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 10| Not authorized to initialize volume &2.
+OPT1493|40|&1 *CHAR 10; &2 *CHAR 32| Request to reinitialize volume &2 on device &1 is not permitted.
+OPT1494|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256; &4 *BIN 2| Optical volume is part of a existing volume set.
+OPT1495|99|&1 *CHAR 10; &2 *CHAR 32| Volume name list exhausted on device &1. (C G)
+OPT1496|99|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256; &4 *BIN 2; &5 *BIN 2| Load volume with sequence number &5 on device &1. (C G)
+OPT1497|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256; &4 *BIN 2; &5 *BIN 2; &6 *CHAR 32; &7 *CHAR 32| Wrong continuation volume &2 specified for file.
+OPT1498|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256| Volume name list exhausted on device &1.
+OPT1499|30|&1 *CHAR 32; &2 *CHAR 32| Source and target volumes are in different optical device types.
+OPT149A|40|&1 *CHAR 10; &2 *CHAR 32| Optical volume failed to unload.
+OPT149B|99|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 32; &4 *CHAR 32; &5 *CHAR 256| Load volume with correct starting volume on device &1. (C G)
+OPT149C|99|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256| Load volume with correct continued file on device &1. (C G)
+OPT149D|99|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256; &4 *BIN 2| Optical volume is part of a existing volume set. (C G INZ)
+OPT149E|99|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 32| Found unexpected volume on device &1. (C I R)
+OPT149F|99|&1 *CHAR 10; &2 *CHAR 32; &3 *BIN 2| Load next volume on optical device &1. (C A G)
+OPT1501|99|&1 *CHAR 10| Volume name list exhausted on device &1. (C "volume name")
+OPT1502|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 256| Attempted to process past the end of a multi-volume set.
+OPT1503|99|&1 *CHAR 10; &2 *CHAR 32| Optical volume contains active files. (C INZ)
+OPT1504|99|&1 *CHAR 10| Optical device &1 is empty. (C G)
+OPT1505|40|&1 *CHAR 10; &2 *CHAR 32| Optical device &1 is full.
+OPT1515|40|&1 *CHAR 10; &2 *CHAR 32| Unsupported or insufficient configuration on optical device &1.
+OPT1520|20|| Data displayed may not be current.
+OPT1530|40|&1 *CHAR 10| &1 does not represent a valid optical device.
+OPT1540|40|&1 *CHAR 2| Invalid parameters specified.
+OPT1542|40|&1 *CHAR 32; &2 *CHAR 2; &3 *CHAR 32| Operation not supported to optical volume.
+OPT1543|40|&1 *CHAR 32; &2 *CHAR 2; &3 *CHAR 32| Operation not supported to optical volume.
+OPT1555|40|&1 *CHAR 10| Optical device &1 in use.
+OPT1580|99|&1 *CHAR 10| Place optical cartridge into input/output station (C R).
+OPT1585|99|&1 *CHAR 10| Problem found with input/output station (C R).
+OPT1590|99|&1 *CHAR 32| Remove cartridge ignoring media error (C I).
+OPT1605|60|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 2; &4 *CHAR 32| Media or device error occurred.
+OPT1630|40|| Buffer overflow occurred.
+OPT1640|40|&1 *CHAR 32| Error occurred reading files or directories.
+OPT1650|40|&1 *CHAR 10| Write operation not valid for device &1.
+OPT1651|40|&1 *CHAR 10; &2 *CHAR 32| Device &1 not allowed for requested operation.
+OPT1652|40|&1 *CHAR 10| Device &1 is not an optical media library.
+OPT1660|40|&1 *CHAR 10| Optical device &1 is empty.
