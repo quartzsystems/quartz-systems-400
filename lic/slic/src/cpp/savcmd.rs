@@ -1180,7 +1180,11 @@ fn save_reply(reports: &[SaveReport], dests: &[Dest], now: u64) -> CmdReply {
         let kind = if done(id) { COMP } else { DIAG };
         reply.messages.push(message(id, kind, data));
     }
-    if full < reports.len() {
+    // A library with nothing in it does not fail the save: only objects
+    // not saved, or nothing saved at all, end it with the escape.
+    let saved: usize = reports.iter().map(SaveReport::saved).sum();
+    let not: usize = reports.iter().map(SaveReport::not_saved).sum();
+    if not > 0 || saved == 0 {
         reply.escape = Some(message(
             msg::SAVED_LIBS_PARTIAL,
             ESC,
@@ -2486,6 +2490,35 @@ mod reply_tests {
 
     fn shown(m: &CmdMsg) -> String {
         crate::stgsvc::hist::message_text(&m.msgid, &m.data)
+    }
+
+    #[test]
+    fn an_empty_library_does_not_fail_a_save_of_several() {
+        let full = SaveReport {
+            library: "TAPLIB2".into(),
+            objects: vec![obj("DA1", None)],
+            notes: Vec::new(),
+        };
+        let empty = SaveReport {
+            library: "EMPTY".into(),
+            objects: Vec::new(),
+            notes: Vec::new(),
+        };
+        let dest = Dest::Savf("S".into(), "QGPL".into());
+        let r = save_reply(&[full, empty], &[dest], 0);
+        assert!(r.escape.is_none(), "{:?}", r.escape);
+        assert!(r.messages.iter().any(|m| m.msgid == msg::NONE_FOR_LIB));
+        let failed = SaveReport {
+            library: "BAD".into(),
+            objects: vec![obj("DA2", Some("CPF3761"))],
+            notes: Vec::new(),
+        };
+        let dest = Dest::Savf("S".into(), "QGPL".into());
+        let r = save_reply(&[failed, SaveReport::default()], &[dest], 0);
+        assert_eq!(
+            r.escape.map(|e| e.msgid).as_deref(),
+            Some(msg::SAVED_LIBS_PARTIAL)
+        );
     }
 
     #[test]

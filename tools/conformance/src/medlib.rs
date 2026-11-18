@@ -128,7 +128,7 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "rstlib SAVLIB(QS76R) DEV(TAPMLB76) VOL(QS76B) ENDOPT(*UNLOAD)",
-        &["CPC3703", "QS76R"],
+        &["were restored to library QS76R"],
     )?;
     run(s, "svc.dtaara get QS76R/DA1", &["library kept"])?;
     Ok(())
