@@ -77,7 +77,7 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "savlib LIB(QS76) DEV(TAPMLB76) VOL(QS76A)",
-        &["CPC3722", "QS76A"],
+        &["were saved on QS76A"],
     )?;
     run(s, "wrktapctg DEV(TAPMLB76) CTG(QS76A)", &["Mounted", "D1"])?;
     run(s, "wrkmlbsts", &["TAPMLB76", "D1", "*ALLOCATED", "QS76A"])?;
@@ -85,7 +85,7 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "rstlib SAVLIB(QS76) DEV(TAPMLB76) VOL(QS76A) RSTLIB(QS76R) ENDOPT(*UNLOAD)",
-        &["CPC3703", "QS76R"],
+        &["restored to library QS76R"],
     )?;
     run(s, "svc.dtaara get QS76R/DA1", &["library kept"])?;
     run(
@@ -113,7 +113,7 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "savlib LIB(QS76 QS76R) DEV(TAPMLB76) VOL(QS76B) ENDOPT(*UNLOAD)",
-        &["CPC3722", "sequence 1", "sequence 2"],
+        &["library QS76 were saved", "library QS76R were saved"],
     )?;
     run(
         s,
@@ -154,13 +154,13 @@ fn optical(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "savlib LIB(QS76) DEV(OPTVRT76) VOL(QS76O1)",
-        &["CPC3722", "QS76O1 QS76O2"],
+        &["were saved on QS76O1 QS76O2"],
     )?;
     run(s, "svc.ifs ls /QOPT/QS76O2", &["QS76"])?;
     run(
         s,
         "rstlib SAVLIB(QS76) DEV(OPTVRT76) VOL(QS76O1) RSTLIB(QS76P)",
-        &["CPC3703", "QS76P"],
+        &["restored to library QS76P"],
     )?;
     run(s, "svc.usrspc rd QS76P/BIG 1500000 3", &["end"])?;
     Ok(())
@@ -258,7 +258,7 @@ fn reply_list(s: &mut Session) -> Result<(), String> {
         run(
             s,
             "savlib LIB(QS76) DEV(TAPVRT76) SEQNBR(1) CLEAR(*ALL)",
-            &["CPC3722", "QS76Y QS76X"],
+            &["were saved on QS76Y QS76X"],
         )
     });
     s.command("rmvrpyle SEQNBR(7601)", CMD).ok();

@@ -3661,7 +3661,7 @@ vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 [[msg]]
 id = "CPF7085"
 sev = 30
-text = "Journal &1 in &2 exists and was not restored over."
+text = "Journal &1 already exists in library &2."
 help = "A journal on the system is never replaced by a restore."
 vars = ["*CHAR 10", "*CHAR 10"]
 
@@ -3689,8 +3689,8 @@ vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 [[msg]]
 id = "CPF3204"
 sev = 40
-text = "Logical file &1 in &2 was not restored: a file it is based on is missing."
-help = "Restore the physical files with it or before it."
+text = "An object file &1 in &2 needs was not found."
+help = "A library, file or member the file is based on is missing. When restoring, restore the physical files with the logical file or before it."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]

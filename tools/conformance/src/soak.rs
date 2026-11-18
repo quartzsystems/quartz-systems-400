@@ -581,7 +581,7 @@ impl Suite {
                         "savlib LIB(SOAKSAV) DEV(*SAVF) SAVF(QGPL/SOAKSAVF) CLEAR(*ALL)",
                         LONG,
                     ),
-                    "CPC3722",
+                    "were saved to save file",
                 );
                 check(
                     "restore",
@@ -589,7 +589,7 @@ impl Suite {
                         "rstlib SAVLIB(SOAKSAV) DEV(*SAVF) SAVF(QGPL/SOAKSAVF) RSTLIB(SOAKRST)",
                         LONG,
                     ),
-                    "CPC3703",
+                    "restored to library SOAKRST",
                 );
                 check(
                     "library delete",

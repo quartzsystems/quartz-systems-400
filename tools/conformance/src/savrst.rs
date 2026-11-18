@@ -34,14 +34,14 @@ impl Suite {
             return Err(format!("CRTSAVF: {made}"));
         }
         let saved = s.command("savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71)", CMD)?;
-        want(&saved, "SAVLIB", &["CPC3722", "QS71"])?;
+        want(&saved, "SAVLIB", &["from library QS71 were saved to save file S71"])?;
         let again = s.command("savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71)", CMD)?;
         want(&again, "SAVLIB without CLEAR", &["CPF3794"])?;
         let rst = s.command(
             "rstlib SAVLIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) RSTLIB(QS71B)",
             CMD,
         )?;
-        want(&rst, "RSTLIB", &["CPC3703", "QS71B"])?;
+        want(&rst, "RSTLIB", &["restored to library QS71B"])?;
         let v = s.command("svc.dtaara get QS71B/DA1", CMD)?;
         want(&v, "restored data area", &["kept value"])?;
         let out = s.command(
@@ -51,7 +51,7 @@ impl Suite {
         want(
             &out,
             "SAVLIB OUTPUT(*OUTFILE)",
-            &["records written to QGPL/S71OUT"],
+            &["from library QS71 were saved"],
         )?;
         let ffd = s.command("dspffd FILE(QGPL/S71OUT)", CMD)?;
         want(&ffd, "the QSRSAV outfile", &["SROCMD", "SROPSN"])?;
@@ -59,18 +59,18 @@ impl Suite {
             "savobj OBJ(DA1) LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) CLEAR(*ALL)",
             CMD,
         )?;
-        want(&one, "SAVOBJ", &["CPC3722"])?;
+        want(&one, "SAVOBJ", &["from library QS71 were saved"])?;
         let none = s.command(
             "rstobj OBJ(DA1) SAVLIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) RSTLIB(QS71C)",
             CMD,
         )?;
-        want(&none, "RSTOBJ to a missing library", &["CPF3781"])?;
+        want(&none, "RSTOBJ to a missing library", &["CPF3773", "QS71C"])?;
         s.command("crtlib LIB(QS71C)", CMD)?;
         let obj = s.command(
             "rstobj OBJ(DA1) SAVLIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) RSTLIB(QS71C)",
             CMD,
         )?;
-        want(&obj, "RSTOBJ", &["CPC3703"])?;
+        want(&obj, "RSTOBJ", &["restored to library QS71C"])?;
         let v = s.command("svc.dtaara get QS71C/DA1", CMD)?;
         want(&v, "object restored alone", &["kept value"])?;
         for l in ["QS71", "QS71B", "QS71C"] {

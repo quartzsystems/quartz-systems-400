@@ -67,7 +67,7 @@ impl Suite {
         run(
             s,
             "savlib LIB(QS72) DEV(TAPVRT72)",
-            &["CPC3722", "sequence 1", "QS72V1"],
+            &["from library QS72 were saved on QS72V1"],
         )?;
         run(
             s,
@@ -82,7 +82,7 @@ impl Suite {
         run(
             s,
             "rstlib SAVLIB(QS72) DEV(TAPVRT72) RSTLIB(QS72B)",
-            &["CPC3703", "QS72B"],
+            &["restored to library QS72B"],
         )?;
         run(s, "svc.dtaara get QS72B/DA1", &["kept value"])?;
 
@@ -109,7 +109,7 @@ impl Suite {
         run(
             s,
             "savlib LIB(QS72) DEV(TAPVRT72) VOL(QS72A QS72B)",
-            &["CPC3722", "QS72A QS72B"],
+            &["were saved on QS72A QS72B"],
         )?;
         run(
             s,
@@ -119,7 +119,7 @@ impl Suite {
         run(
             s,
             "rstlib SAVLIB(QS72) DEV(TAPVRT72) VOL(QS72A QS72B) RSTLIB(QS72C)",
-            &["CPC3703", "QS72C"],
+            &["restored to library QS72C"],
         )?;
         run(s, "svc.usrspc rd QS72C/BIG 1500000 3", &["end"])?;
         run(
@@ -151,7 +151,7 @@ impl Suite {
             "inzopt VOL(QS72O) DEV(OPTVRT72) CHECK(*NO)",
             &["CPC6773"],
         )?;
-        run(s, "savlib LIB(QS72) DEV(OPTVRT72)", &["CPC3722", "QS72O"])?;
+        run(s, "savlib LIB(QS72) DEV(OPTVRT72)", &["were saved on", "QS72O"])?;
         run(
             s,
             "dspopt VOL(QS72O) DEV(OPTVRT72) DATA(*SAVRST)",
@@ -161,7 +161,7 @@ impl Suite {
         run(
             s,
             "rstlib SAVLIB(QS72) DEV(OPTVRT72) RSTLIB(QS72D)",
-            &["CPC3703", "QS72D"],
+            &["restored to library QS72D"],
         )?;
         run(s, "svc.dtaara get QS72D/DA1", &["kept value"])?;
 

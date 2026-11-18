@@ -217,7 +217,7 @@ fn old_user_data(s: &mut Session, old: &str) -> Result<Vec<String>, String> {
         ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
         (
             "savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
-            "CPC3722",
+            "from library SLIPSAV were saved",
         ),
         ("dltlib LIB(SLIPSAV)", ""),
         // The audit journal, and a profile whose creation it records.
@@ -311,7 +311,7 @@ fn upgraded_checks(
         ),
         (
             "rstlib SAVLIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
-            &["CPC3703", "SLIPSAV"],
+            &["restored to library SLIPSAV"],
         ),
         (
             "svc.sql SELECT ID, NAME FROM SLIPSAV/PARTS;",
@@ -521,12 +521,12 @@ impl Suite {
                 ),
                 // SAVSYS needs the restricted state.
                 ("ENDSBS SBS(*ALL) OPTION(*IMMED)", "ending"),
-                ("SAVSYS DEV(TAPVRT01)", "CPC3703"),
+                ("SAVSYS DEV(TAPVRT01)", "The system was saved on"),
                 ("CHKTAP DEV(TAPVRT01)", "system save (SAVSYS)"),
-                ("SAVLIB LIB(*NONSYS) DEV(TAPVRT01)", "CPC3722"),
+                ("SAVLIB LIB(*NONSYS) DEV(TAPVRT01)", "were saved on"),
                 (
                     "SAV DEV('/QSYS.LIB/TAPVRT01.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/savsys' *OMIT))",
-                    "objects saved, 0 not saved",
+                    "objects were saved on",
                 ),
                 ("svc.vrtout TAPVRT01 /dev/vdb", "bytes copied"),
             ] {

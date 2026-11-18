@@ -996,7 +996,7 @@ impl Suite {
         let saved = want(
             s,
             "SAVLIB LIB(QUSRDIRDB) DEV(*SAVF) SAVF(QGPL/DIRSAVF)",
-            &["CPC3722"],
+            &["from library QUSRDIRDB were saved"],
             SLOW,
         )?;
         if !errors(&saved).is_empty() {
@@ -1019,7 +1019,7 @@ impl Suite {
         let restored = want(
             s,
             "RSTLIB SAVLIB(QUSRDIRDB) DEV(*SAVF) SAVF(QGPL/DIRSAVF)",
-            &["CPC3703"],
+            &["restored to library QUSRDIRDB"],
             SLOW,
         )?;
         if !errors(&restored).is_empty() {
