@@ -38,6 +38,8 @@ pub(crate) mod medcmd;
 pub(crate) mod meddsp;
 mod medout;
 mod msgfcmd;
+#[allow(dead_code)] // until the save and media commands send through it
+pub(crate) mod msgout;
 mod nfscmd;
 mod objcmd;
 pub(crate) mod opacmd;
