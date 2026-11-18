@@ -51,7 +51,7 @@ difference (§15).
 | The protocol | `net/ldap` | BER (`ber`), LDAPv3 messages (`msg`), DNs (`dn`), filters (`filter`), controls (`control`), extended operations (`ext`), LDIF (`ldif`), LDAP URLs (`url`), schema descriptions (`schema`), a blocking client (`client`), result codes (`code`). No store, no job; the server, the client API, the QSH tools and the publisher all use it |
 | The server's logic | `net/dirsrv` | the schema model and matching rules (`schema`), the entry store over the object store (`store`), access control (`acl`), the backends (`backend/btree`, `backend/projected`, `backend/config`, `backend/schema`, `backend/monitor`, `backend/changelog`), operations (`ops`), password policy and storage schemes (`pwd`), the configuration file (`config`), publishing (`publish`), the connection loop (`server`) |
 | The service's side | `lic/slic/src/stgsvc/dirsrv/` | the instances' stores and backends behind `stg` requests 1560-1579, the projected backend over the profiles, binds against `sec` |
-| The job | `work/qsjob/src/work/dirsrv/` | the instance job (`QUSRDIR`): listeners on 389 and 636, a thread per connection, TLS, requests to the service; the publishing jobs `QGLDPUBE`, `QGLDPUBA` |
+| The job | `work/qsjob/src/work/dirsrv/` | the instance job (`QUSRDIR`): listeners on 389 and 636, a pool of connection workers, TLS, requests to the service; the publishing jobs `QGLDPUBE`, `QGLDPUBA` |
 | Commands | `command/sys-cpps/cmds/CHGDIRSVRA.cmd`, `STRTCPSVR.cmd`, `ENDTCPSVR.cmd`; `lic/slic/src/cpp/dircmd.rs` | `CHGDIRSVRA`, `*DIRSRV` with `INSTANCE` (§2.2) |
 | Messages | `runtime/msgf/msgs/qgldmsg.toml` | `QSYS/QGLDMSG`, IBM's IDs, severities and formats, Quartz text |
 | The client API | `runtime/ldapclnt` | `QGLDCLNT`'s exports as bound procedures over `net/ldap::client`; QS/400's own `QSYSINC/H(LDAP, LBER, LDAPSSL)` and `QRPGLESRC(LDAP)` |
@@ -242,8 +242,17 @@ the job's part is the link, the certificate and the job log.
   (the primary: `none`, no certificate); a value asking for TLS without a
   certificate is `TCP1A63` to `QSYSOPR` and the job log, and the job runs
   in the clear. `GLD0269` names the ports.
-- *Connections.* A thread per connection, with a link of its own to the
-  service (`hello_thread`, as the NFS daemons' threads). Messages are cut
+- *Connections.* Each connection is served by a worker thread of a pool
+  (`server/pool.rs`), each worker with a link of its own to the service
+  (`hello_thread`, as the NFS daemons' threads) made once and kept
+  across the connections it serves: four wait ready from the start; a
+  connection that finds none free for 2 ms gets a new worker, up to 128
+  (beyond them a connection waits for one to finish, so a burst cannot
+  use up the job's or the service's descriptors); idle workers never
+  wake on a timer, and one beyond four idle for 10 seconds ends (each
+  holds a link the service polls on every request). Identity is the
+  session's (`dir_open` per connection, closed at its end), never the
+  link's. Messages are cut
   from the stream with `ldap::ber::frame_len` (16 MiB, or the
   settings' limit) and decoded with `ldap::msg`; one that does not
   frame or decode, or is not a request, ends the connection with a
@@ -1504,6 +1513,13 @@ internals and are not exported. `ber_*` are bound to `QGLDCLNT` too
   `ldap_stop_tls_s_np` ends the TLS session and the connection, since
   LDAP has no way back to the clear on one connection; the next
   operation connects again in the clear, unbound.
+- *Host names.* Every LDAP client in a job (`QGLDCLNT`, the QSH tools,
+  the publishing agents; `ldap::client::set_names`, installed when the
+  job starts by `work/qsjob/src/work/dirsrv/names.rs`) names a host as
+  the NFS daemons do: `localhost` is the loopback, an address is itself,
+  a name goes through the host table and the name servers of `CFGTCP`
+  (`HOSTSCHPTY` decides which first; the configuration read again after
+  a minute), then the C library's resolver.
 - *Options.* `LDAP_OPT_DEREF`, `SIZELIMIT`, `TIMELIMIT`, `REFHOPLIMIT`,
   `REFERRALS` (off by default), `PROTOCOL_VERSION`, `UTF8_IO`,
   `SSL_TIMEOUT`, `SERVER_CONTROLS`, `CLIENT_CONTROLS`, `ERROR_NUMBER`,
@@ -1785,10 +1801,16 @@ ignored.
   keeps the connection loop over a directory in memory up for
   `ldaptest ... --suffix o=Acme` (password `secret`): the quickest way to
   run the whole client against the server without QEMU.
+- `cargo test --release -p dirsrv --test op_bench -- --ignored --nocapture`:
+  20 000 adds through the operations engine, each its own transaction as
+  the service runs them, with the store's I/O per add (commits, WAL
+  pages, device writes, flushes), then timed searches (equality and
+  substring filters); `--test server bind_rate` binds a minute with a
+  connection each in memory.
 
 **QEMU steps** (`tools/conformance/src/dirsrvstep/`, on the main guest
 after step 107; `cargo run -p conformance -- --only
-193,186,187,188,189,190,191,192`):
+193,186,187,188,189,190,191,192,199`):
 
 | Step | What it proves |
 |---|---|
@@ -1797,29 +1819,78 @@ after step 107; `cargo run -p conformance -- --only
 | 187 | `ldaptest oracle` on the shipped entries, diffed with the primary's record (the differences are §15's); then `ldaptest` suites read, controls, ext, write, acl and ldif under `cn=localhost` from the host: 61 scenarios pass (`sasl-external` is 189's) |
 | 188 | profiles made for it: `ldaptest` projected (bind, a `*DISABLED` profile 49, read-only 53, the administrator's view); three wrong passwords disable a profile under `QMAXSIGN` 3 and `QMAXSGNACN` 2 (its right password then 49), a `PW` entry; a profile with `QIBM_DIRSRV_ADMIN` sees every profile and writes as an administrator, a plain one sees itself and is refused (50) |
 | 189 | a certificate assigned to `QS400_DIRECTORY_SERVER`, `ibm-slapdSecurity: SSLTLS` and a suffix `o=qs400test` through `cn=configuration`; after a restart `ldaptest` ext: StartTLS on 389, LDAPS on 636, SASL `EXTERNAL` with a client certificate the local CA issued (`CN=ldext,O=qs400test`, an entry's DN), `EXTERNAL` without one 48 |
-| 190 | in the guest's QSH: `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapcompare` (status 0 and 5), `ldapmodrdn`, `ldapexop -op whoami`, `ldapdelete`; an IR program bound to `QGLDCLNT` (`ldap_init`, `ldap_simple_bind_s`, `ldap_search_s`, `ldap_count_entries`, `ldap_compare_s`) |
+| 190 | in the guest's QSH: `ldapsearch` (also by a name of the host table, `ADDTCPHTE`), `ldapadd`, `ldapmodify`, `ldapcompare` (status 0 and 5), `ldapmodrdn`, `ldapexop -op whoami`, `ldapdelete`; an IR program bound to `QGLDCLNT` (`ldap_init`, `ldap_simple_bind_s`, `ldap_search_s`, `ldap_count_entries`, `ldap_compare_s`) |
 | 191 | `publish.conf` enabling the users agent (anonymous, under a parent whose ACL lets anyone write): `CRTUSRPRF` appears under `ou=Users,cn=localhost` within a resync, `DLTUSRPRF` removes it |
 | 192 | an entry survives `ENDTCPSVR`/`STRTCPSVR` and an IPL; `SAVLIB QUSRDIRDB` (the save file holds the `*DIRDB`), the entry deleted, `RSTLIB` brings it back; `RCLSTG *CHECK` finds no problem |
 | 194 | `ldaptest bench`: binds a minute and a paged search (below) |
+| 199 | Navigator (`NAVIGATOR` started, `QSECOFR` over 2002): the instances, properties, administrator, suffixes, indexes, schema, access control, monitor and publishing pages of the running `QUSRDIR`, an index on `givenName` added and removed through the forms; QAP's `Dirsrv` (version 12) through the real connection jobs: `QAPTEST` refused, and as `QSECOFR` every read, an index put and removed, the counters |
 | 10 | (the install suite) the slip install from V1R1M0 then 186's checks on the upgraded system: the shipped files, `QDIRSRV`, its job descriptions, `QUSRDIRDB`, the `*DIRDB` made at the first start |
 
 **Performance** (step 194, `ldaptest bench` from the host through
-QEMU's user network, KVM, 2026-11-14):
+QEMU's user network, KVM; 2026-11-18, the code before this round
+(`2e950f9f6`) and after it measured the same night on the same host):
 
-| Measure | Result | Target |
-|---|---|---|
-| Binds on one connection (administrator) | 471 510 to 491 986 a minute | 10 000 |
-| Binds with a connection each | 2 186 a minute (1 196 before the accept loop's fix; 171 660 a minute in memory on the loopback, `dirsrv --test server bind_rate`) | 10 000: **not met** |
-| Adds (one at a time, each a store transaction) | 81 a second over 100 000 entries (20.6 minutes), 115 a second over 10 000 | — |
-| Paged search, one level, pages of 1000 | 100 000 entries in 101 pages, 6.04 s (16 563 a second); 10 000 in 0.62 s | 1 000 000 |
+| Measure | Before | After | Target |
+|---|---|---|---|
+| Binds on one connection (administrator) | 450 255 a minute | 511 919 a minute | 10 000 |
+| Binds with a connection each | 2 211 a minute | 99 817 a minute | 10 000: **met** |
+| Adds (one at a time, each a store transaction), 10 000 entries | 117 a second | 178 a second | — |
+| Adds, 100 000 entries | 81 a second (20.6 minutes, 2026-11-14) | 96 a second (17.4 minutes) | — |
+| Paged search, one level, pages of 1000, 10 000 entries | 16 715 a second | 15 927 a second | — |
+| Paged search, 100 000 entries | 16 563 a second (2026-11-14) | 16 094 a second (6.21 s, 101 pages) | 1 000 000 |
 
-1 000 000 entries were not loaded: at 81 adds a second the load takes
-about 3.4 hours. The paged search's rate held from 10 000 to 100 000
-entries (16 035 and 16 563 a second), so a million pages in about a
-minute by extrapolation (not measured). A connection each is dominated
-by the job's per-connection setup under QEMU (a thread and its own link
-to the storage service, `hello_thread`, and the session's open), not by
-the bind: the next thing to look at for the 10 000 a minute target.
+*A connection each.* The 27 ms a connection cost was the instance job's
+setup, not the bind: a thread and a link of its own to the storage
+service (`hello_thread`) for every connection. A pool of workers
+(`server/pool.rs`, §4) keeps threads and links across connections;
+with the bench's sequential client a connection now costs its session's
+open and close (two requests) and the bind. Under QEMU's user network
+each closed connection lingers in its TCP emulation for about a minute
+and slows the guest's traffic while it does, so the bench runs the
+connection loop last (run first, it slowed the binds on one connection
+that followed it to 118 000 a minute and the adds to a third).
+
+*Adds.* An add of the bench's `inetOrgPerson` writes about 94 new pages
+(the copy-on-write B-trees: the entry, its name, and some 35 index keys,
+each gram of `cn` and `sn` in a different leaf, with their parents).
+What changed: a commit writes its pages sorted, each run of
+consecutive pages on a unit in one write (80 device writes an add to
+18 in memory, `dirsrv --test op_bench`); an entry's index keys go in
+with one descent per node (`BTree::insert_many`: B-tree nodes loaded per
+add 146 to 92); a search for free pages starts from a hint at the
+allocated front, not from page 0 (it scanned the whole used ASP word by
+word for every page a commit took, so adds slowed as the store grew:
+10 % of the instructions of 20 000 adds in memory under callgrind, 3 %
+after). The pages' checksums, a quarter of those instructions, were
+already one per new page (sealing them only at commit changed nothing),
+so the cost of an add is the number of pages it writes. Group commit of concurrent adds was not done: the bench's
+adds come one at a time from one connection, so each must be durable
+before its answer whatever is grouped; the store's group commit is
+there for a later round that has the service answer several requests
+after one flush. The rate still falls as the directory grows (the
+index of 100 000 entries is some 3.5 million 128-byte keys, far past the
+page cache), so 1 000 000 entries were not loaded: at the 100 000 rate
+the load takes nearly three hours. The paged search held its rate from
+10 000 to 100 000 entries, so a million pages in about a minute by
+extrapolation (not measured).
+
+*Searches.* A substring filter's candidates come from its grams' posting
+lists read up to 4 096 entries each: the short lists are intersected,
+a long one is probed for at most 32 candidates (a point lookup each),
+and none are read once 8 or fewer candidates are left (the caller
+matches them); only when every list is long are they read whole, as
+before. The paged search's rate is unchanged within the run-to-run
+spread.
+
+*Reviewed and left.* Every operation is one request to the service and
+one store transaction; a search streams in budgets of 100 entries (a
+`dir_next` each). Persistent searches are polled with `dir_changes`
+every 500 ms per watching connection (a push from the service would
+need a new request; changes arrive within half a second). The projected
+backend lists every profile name for each page of a listing (cheap for
+the hundreds of profiles a system has). The publishing agents look for
+changes every 10 seconds. A modify or delete removes its index keys one
+descent each (`insert_many` serves the inserts, which an add is all of).
 
 What the steps found and fixed (DS-14): `CHGDIRSVRA` never reached a
 running instance (`cpp/dircmd.rs` now calls `serve::config_changed`);
@@ -1836,6 +1907,14 @@ base search below `cn=monitor` answered 53 where one-level should be
 (21); the accept loop polled every 50 ms, so each new connection waited up
 to that (`server/listen.rs`: blocking accepts now); and `ldaptest`'s searches dropped continuation references (ldap3's
 `search` filters them).
+
+The speed round (2026-11-18): step 199 drove Navigator's directory pages
+and QAP's `Dirsrv` for the first time and found nothing to fix; step 190
+now names a host by the host table (the clients knew only `localhost`,
+since the C library's resolver does not read `CFGTCP`). A burst of
+connections could have given every connection its own thread and link
+without bound (the job's and the service's descriptors): the pool caps
+them at 128.
 
 ## 17. NEEDS-CODY
 
@@ -1883,9 +1962,9 @@ own:
 | The QSH tools (§13) | proven | step 190 (seven of the nine in the guest); `cargo test -p qsh-utils --test ldap` (all nine) |
 | Publishing: `QGLDPUBE` users (§10.1) | proven | step 191 |
 | Publishing: `QGLDPUBA` printers (§10.1) | built | `cargo test -p dirsrv --test publish` |
-| Navigator's and QAP's Directory server pages over `dir_admin`, publishing's configuration and the sealed password (§4, §10.1) | built, not run under QEMU | the storage service answers request 1568 (`lic/slic/src/stgsvc/dirsrv/admin.rs`, all 24 operations); `cargo test -p navigator --test dirsrv`, `-p qapd --test dirsrv`, `-p dirsrv --lib admin`, `-p stg --lib diradmin`; no QEMU step drives the pages yet |
+| Navigator's and QAP's Directory server pages over `dir_admin`, publishing's configuration and the sealed password (§4, §10.1) | proven | step 199 (every Navigator page of the running instance, an index added and removed through the forms; QAP `Dirsrv` through the real connection jobs); `cargo test -p navigator --test dirsrv`, `-p qapd --test dirsrv`, `-p dirsrv --lib admin`, `-p stg --lib diradmin` |
 | `tools/ldaptest`, independent of the server, and its oracle record (§13) | proven | steps 187-189; `cargo test --manifest-path tools/ldaptest/Cargo.toml` |
 | The differences from the primary (§15) | proven | step 187's diff (`dirsrv-187-oracle.diff`) |
-| Performance: 10 000 binds a minute, a paged search of 1 000 000 entries (§16) | measured, partly met | step 194: binds on one connection far past it, a connection each 2 186 a minute; paged search measured at 100 000 (§16) |
+| Performance: 10 000 binds a minute, a paged search of 1 000 000 entries (§16) | binds met; the paged search measured at 100 000 | step 194: binds on one connection about 500 000 a minute, a connection each about 100 000 (2 211 before the worker pool); the paged search 16 094 entries a second over 100 000, a million not loaded (adds 96 a second) (§16) |
 | The slip install from V1R1M0 brings the directory server | built, not run | install step 10 calls `dir_after_upgrade`; not run (needs the V1R1M0 development ISO built first) |
 | Apache Directory Studio, the primary's administrator view, publishing to and from the primary | NEEDS-CODY | §17 |
