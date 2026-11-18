@@ -325,3 +325,41 @@ fn copy_to_the_mount_sends_each_block_once() {
         assert_eq!((made, sent + lent, again, reclaimed), (256, 256, 0, 0));
     }
 }
+
+/// `CPY` to the mount that outlasts the attributes and access bits
+/// cached before it began: the run that sets the copy's attributes
+/// waits for them again, and the data is not copied a second time.
+#[test]
+fn copy_outlasting_the_cache_copies_once() {
+    let mut i = info();
+    i.sync_writes = true;
+    let r = mounted_with(
+        i,
+        RemoteConfig {
+            threads: 4,
+            behind: 2,
+            dirty_bytes: 8 * 1024,
+            cache_bytes: 16 * 1024,
+            ..RemoteConfig::default()
+        },
+    );
+    let c = r.client("QSECOFR", 1);
+    let data: Vec<u8> = (0..128 * 1024u32)
+        .map(|i| u8::try_from(i % 251).unwrap())
+        .collect();
+    let fd = c
+        .open("/tmp/src", OpenArgs::new(O_WRONLY | O_CREAT).mode(0o644))
+        .unwrap();
+    write_all(&c, fd, &data).unwrap();
+    c.close(fd).unwrap();
+    c.mkdir("/mnt/d", 0o777).unwrap();
+    c.stat("/mnt/d", true).unwrap();
+    // Each call slow: the copy takes longer than the cache keeps
+    // what was looked up before it.
+    r.server.set_latency(Duration::from_millis(30));
+    c.copy("/tmp/src", "/mnt/d/dst", ifs::ops::CopyOpts::default())
+        .unwrap();
+    assert_eq!(r.server.file("d/dst").unwrap(), data);
+    let [made, ..] = r.mount().stats().get();
+    assert_eq!(made, 128, "each block made once");
+}

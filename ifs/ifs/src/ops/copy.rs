@@ -122,6 +122,29 @@ impl<B: Backend> Ifs<B> {
         sm: &crate::meta::Meta,
         o: CopyOpts,
     ) -> Result<()> {
+        let file_ccsid = o.to_ccsid.unwrap_or(sm.ccsid);
+        let copied = format!("copy-copied:{from}>{to}");
+        if request::step::<bool>(&copied).is_none() {
+            self.copy_file_data(cx, from, to, sm, o)?;
+            // A run that waits after this (for the copy's attributes) does not
+            // copy the data again.
+            request::keep_step(&copied, true);
+        }
+        let mut dm = sm.clone();
+        dm.ccsid = file_ccsid;
+        dm.codepage = ccsid::conv::codepage_of(file_ccsid);
+        self.copy_meta(cx, &dm, to, o)
+    }
+
+    /// A file copy's data, both descriptors closed at its end.
+    fn copy_file_data(
+        &self,
+        cx: &Ctx<'_>,
+        from: &str,
+        to: &str,
+        sm: &crate::meta::Meta,
+        o: CopyOpts,
+    ) -> Result<()> {
         let key = format!("copy-file:{from}>{to}");
         let file_ccsid = o.to_ccsid.unwrap_or(sm.ccsid);
         let began = format!("copy-began:{from}>{to}");
@@ -191,11 +214,7 @@ impl<B: Backend> Ifs<B> {
             }
             Ok(()) => {}
         }
-        self.close(cx, fc.src)?;
-        let mut dm = sm.clone();
-        dm.ccsid = file_ccsid;
-        dm.codepage = ccsid::conv::codepage_of(file_ccsid);
-        self.copy_meta(cx, &dm, to, o)
+        self.close(cx, fc.src)
     }
 
     /// Move the data of a file copy, from where it stands.
