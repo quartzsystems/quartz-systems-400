@@ -750,26 +750,7 @@ impl RemoteMount {
             let src =
                 &data[usize::try_from(k * bs + from as u64 - off).unwrap_or(0)..][..to - from];
             let i = c.inode(h);
-            let over = match i.blocks.get(&k) {
-                None => {
-                    Stats::add(&self.core.stats.made);
-                    k < i.made_upto
-                }
-                Some(b) => b.state != BState::Dirty && i.made_upto > k,
-            };
-            if over {
-                // Data this mount wrote before is written again.
-                let n = self.core.stats.rewritten.fetch_add(1, Ordering::Relaxed);
-                if n == 0 {
-                    tracing::warn!(
-                        source = %self.core.info.source,
-                        block = k,
-                        off,
-                        "remote mount: a write goes over data written before"
-                    );
-                }
-            }
-            i.made_upto = i.made_upto.max(k + 1);
+            self.count_made(i, k, off);
             let b = i.blocks.entry(k).or_insert_with(|| Block {
                 data: Vec::new(),
                 base: k * bs >= size,
@@ -858,6 +839,27 @@ impl RemoteMount {
         // The writer goes on once half has gone, so the workers always have
         // blocks to send while it fills the cache again.
         tickets[tickets.len() / 2]
+    }
+
+    /// Count block `k` of `i` as a write makes it, and as written again
+    /// when this mount wrote it before (the first such logged).
+    fn count_made(&self, i: &mut super::cache::Inode, k: u64, off: u64) {
+        let over = match i.blocks.get(&k) {
+            None => {
+                Stats::add(&self.core.stats.made);
+                k < i.made_upto
+            }
+            Some(b) => b.state != BState::Dirty && i.made_upto > k,
+        };
+        if over && self.core.stats.rewritten.fetch_add(1, Ordering::Relaxed) == 0 {
+            tracing::warn!(
+                source = %self.core.info.source,
+                block = k,
+                off,
+                "remote mount: a write goes over data written before"
+            );
+        }
+        i.made_upto = i.made_upto.max(k + 1);
     }
 
     /// Whether `h` has data not yet on the server, or a write-back
