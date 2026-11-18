@@ -203,7 +203,13 @@ fn accept_loop<L: Links>(
     }
     drop(tx);
     while !stop.load(Ordering::Relaxed) {
-        match rx.recv_timeout(ACCEPT_TICK) {
+        // While connections wait for a worker, often enough to start one.
+        let tick = if pool.short() {
+            Duration::from_millis(1)
+        } else {
+            ACCEPT_TICK
+        };
+        match rx.recv_timeout(tick) {
             Ok((s, ssl)) => {
                 let setup = Setup {
                     instance: instance.to_string(),
@@ -217,6 +223,7 @@ fn accept_loop<L: Links>(
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
         }
+        pool.grow();
         if last_report.elapsed() >= REPORT {
             last_report = Instant::now();
             report(&mut reporter, instance, counters, &mut sent);
