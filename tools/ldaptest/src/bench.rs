@@ -26,17 +26,6 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
         dn.as_str()
     };
     let n = c.t.binds.max(1);
-    let started = Instant::now();
-    for _ in 0..n {
-        let mut x = Conn::open(&c.t, Tls::None)?;
-        let r = x.bind(&dn, &pw)?;
-        expect_rc("bind", &r, 0)?;
-        x.close();
-    }
-    out.push(format!(
-        "binds: {n} as {who}, a connection each, {:.0} a minute",
-        per_minute(n, started)
-    ));
     let mut x = Conn::open(&c.t, Tls::None)?;
     let started = Instant::now();
     for _ in 0..n {
@@ -86,6 +75,19 @@ pub fn run(c: &Ctx) -> Result<Vec<String>, Error> {
             p.last
         ));
     }
+    // Last: under QEMU's user network every closed connection lingers
+    // in its TCP emulation for a while and slows whatever follows.
+    let started = Instant::now();
+    for _ in 0..n {
+        let mut x = Conn::open(&c.t, Tls::None)?;
+        let r = x.bind(&dn, &pw)?;
+        expect_rc("bind", &r, 0)?;
+        x.close();
+    }
+    out.push(format!(
+        "binds: {n} as {who}, a connection each, {:.0} a minute",
+        per_minute(n, started)
+    ));
     Ok(out)
 }
 
