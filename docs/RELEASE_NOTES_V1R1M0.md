@@ -482,15 +482,15 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `database/sql/src/pl/compile.rs:693` | a CALL passes values, and an array |
 | `BLOCKED(rel)` | `database/sql/tests/trigger.rs:266` | in exec::reads); every row its scan keeps here. |
 | `BLOCKED(rel)` | `docs/DB_OPEN_QUESTIONS.md:283` | the database |
-| `NEEDS-CODY` | `docs/DIRSRV.md:1438` | §17 item 5). A failed bind as an OS profile also |
-| `NEEDS-CODY` | `docs/DIRSRV.md:1840` | 17. |
-| `NEEDS-CODY` | `docs/DIRSRV.md:1879` | item 5 |
-| `NEEDS-CODY` | `docs/DIRSRV.md:1891` | Apache Directory Studio, the primary's administrator view, publishing to and from the primary |
+| `NEEDS-CODY` | `docs/DIRSRV.md:1447` | §17 item 5). A failed bind as an OS profile also |
+| `NEEDS-CODY` | `docs/DIRSRV.md:1923` | 17. |
+| `NEEDS-CODY` | `docs/DIRSRV.md:1962` | item 5 |
+| `NEEDS-CODY` | `docs/DIRSRV.md:1974` | Apache Directory Studio, the primary's administrator view, publishing to and from the primary |
 | `NEEDS-CODY` | `docs/NFS.md:244` | IBM's user, section 12), as the service's own |
-| `NEEDS-CODY` | `docs/NFS.md:1227` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
-| `NEEDS-CODY` | `docs/NFS.md:1871` | the primary's `EXPE0100` |
-| `NEEDS-CODY` | `docs/NFS.md:1913` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
-| `NEEDS-CODY` | `docs/NFS.md:2401` | 12. |
+| `NEEDS-CODY` | `docs/NFS.md:1238` | IBM's own `HOSTOPT` form in `/etc/exports` and what its |
+| `NEEDS-CODY` | `docs/NFS.md:1890` | the primary's `EXPE0100` |
+| `NEEDS-CODY` | `docs/NFS.md:1932` | settled by mounting the primary's export as a UID whose profile is disabled); none: the anonymous user |
+| `NEEDS-CODY` | `docs/NFS.md:2486` | 12. |
 | `BLOCKED(rel)` | `docs/PHASE12.md:99` | SAVLICPGM writes no IFS records, RSTLICPGM restores none |
 | `BLOCKED(rel)` | `docs/PHASE12.md:104` | at jobcmd.rs:153 |
 | `BLOCKED(rel)` | `docs/PHASE12.md:138` | (b855a775) |
@@ -517,8 +517,8 @@ Every marker left in the tree, generated from it.
 | `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:25` | Oracle VirtualBox 7 \| EFI \| AHCI (SATA), virtio-scsi, NVMe \| Intel PRO/1000 (e1000), virtio-net \| VBoxVGA/VMSVGA through the GOP \| none |
 | `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:26` | Microsoft Hyper-V, Generation 2 \| UEFI \| SCSI (storvsc) \| synthetic (netvsc) \| Gen2 EFI framebuffer \| none; vsock (hv_sock) |
 | `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:27` | Dell PowerEdge with PERC H330 in HBA mode, 4 x 1 TB SSD (reference physical target, `HARDWARE_NOTES.md`) \| UEFI \| MegaRAID (`megaraid_sas`) \| the board's Broadcom or Intel ports \| iDRAC/Matrox VGA thr |
-| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:136` | hypervisor checklists |
-| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:191` | the Dell with the PERC H330 |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:149` | hypervisor checklists |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:204` | the Dell with the PERC H330 |
 | `NEEDS-CODY` | `docs/SECURITY.md:597` | with directory auditing on for a test instance on the |
 | `NEEDS-CODY` | `docs/SQL.md:57` | `sql::objects` |
 | `BLOCKED(rel)` | `docs/SQL.md:60` | when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column \| primary \| `integrity/CSTALTER`, `integrity/IDENTITY` |
@@ -575,7 +575,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1450` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:87` | the plan cache (`sql::exec::plan::cache`) keeps |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:98` | a package's statements are kept (`db::sqlpkg`) |
-| `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:70` | IBM's, |
+| `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:71` | IBM's, |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:119` | the request holds the service until it answers |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:305` | commands whose processing program runs in the |
 | `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:470` | the job's own variables live in the job; the |
