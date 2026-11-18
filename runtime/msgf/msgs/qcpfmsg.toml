@@ -4006,6 +4006,13 @@ help = "DSPTAP DATA(*LABELS) lists the files with their sequence numbers and lab
 vars = ["*CHAR 10", "*CHAR 6"]
 
 [[msg]]
+id = "CPF6740"
+sev = 40
+text = "FROMDEV and TODEV name the same device, &1."
+help = "A duplicate goes from one device to another. Name two devices."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "CPF6745"
 sev = 40
 text = "Device &1 is not a media library."

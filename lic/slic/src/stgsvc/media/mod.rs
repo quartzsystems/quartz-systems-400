@@ -11,6 +11,7 @@
 pub(crate) mod catalogs;
 pub(crate) mod devices;
 pub(crate) mod drive;
+pub(crate) mod fail;
 pub(crate) mod library;
 pub(crate) mod operator;
 pub(crate) mod stream;
@@ -79,10 +80,16 @@ fn sync() {
 pub(crate) fn with_catalogs<T>(
     f: impl FnOnce(&mut Registry) -> imgclg::Result<T>,
 ) -> Result<T, String> {
+    catalog_op(f).map_err(|e| format!("{} {e}", e.msgid()))
+}
+
+/// Run `f` over the catalogs, then bring `/QOPT` in line; the error as
+/// the catalogs gave it.
+pub(crate) fn catalog_op<T>(f: impl FnOnce(&mut Registry) -> imgclg::Result<T>) -> imgclg::Result<T> {
     let r = {
         let mut g = lock();
         let reg = g.get_or_insert_with(catalogs::empty);
-        f(reg).map_err(|e| format!("{} {e}", e.msgid()))
+        f(reg)
     };
     sync();
     r

@@ -15,8 +15,11 @@ use tape::volume::{FileReader, ReadOptions, VolumeKind};
 use tape::{MAX_BLOCK, TapeTransport, VolumeProvider};
 use wm::obj::devmed::MediaKind;
 
+use medio::msg::Field;
+
 use crate::ipl::system::System;
 use crate::stgsvc::media::drive::{self, TapeJob};
+use crate::stgsvc::media::fail::Fail;
 use crate::stgsvc::media::{self, devices, stream};
 
 /// A label date in the asking job's format.
@@ -204,7 +207,7 @@ pub(crate) struct TapAsk<'a> {
 
 /// Read the volume on the device.
 #[allow(clippy::too_many_lines)]
-pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, String> {
+pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, Fail> {
     let label = a.label.trim().to_ascii_uppercase();
     let mut job = Dsp {
         vol: named(a.vol),
@@ -214,7 +217,7 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
         end_opt: stream::end_opt(a.end_opt),
     };
     let vl: Vec<String> = job.vol.iter().cloned().collect();
-    let (l, saves, density) = drive::with_tape(system, a.dev, &vl, false, &mut job)?;
+    let (l, saves, density) = drive::tape_job(system, a.dev, &vl, false, &mut job)?;
     let (owner, vol_type, code, vol1) = match &l.kind {
         VolumeKind::Labeled { vol1, code } => (
             vol1.owner.clone(),
@@ -334,17 +337,20 @@ pub(crate) fn cartridges(
     dev: &str,
     ids: &[String],
     cgy: &str,
-) -> Result<Vec<CtgView>, String> {
+) -> Result<Vec<CtgView>, Fail> {
     let dev = dev.trim().to_ascii_uppercase();
     let d = devices::read(system, &dev).map_err(|e| {
         if e.starts_with(devices::NOT_FOUND) {
-            format!("CPF9814 Device {dev} not found.")
+            Fail::new("CPF9814", &[Field::Char(&dev, 10)])
         } else {
-            e
+            Fail::from(e)
         }
     })?;
     if d.media_kind() != Some(MediaKind::TapeLibrary) {
-        return Err(format!("CPF6745 device {dev} is not a tape media library"));
+        return Err(Fail::new(
+            media::library::NOT_LIBRARY,
+            &[Field::Char(&dev, 10)],
+        ));
     }
     // `CGY(*ALL *CURRENT)`: the category, not its system qualifier.
     let cgy = cgy
@@ -356,8 +362,9 @@ pub(crate) fn cartridges(
     if rows.is_empty() {
         // Nothing matched: the cartridge asked for, else the category.
         if let Some(id) = ids.iter().find(|i| !i.starts_with('*')) {
-            return Err(format!(
-                "CPF67A1 Cartridge {id} is not in media library {dev}."
+            return Err(Fail::new(
+                "CPF67A1",
+                &[Field::Char(&dev, 10), Field::Char(id, 6)],
             ));
         }
         let cgy = if cgy.trim().is_empty() {
@@ -365,8 +372,14 @@ pub(crate) fn cartridges(
         } else {
             cgy.trim()
         };
-        return Err(format!(
-            "CPF67EE Media library {dev} has no cartridges in category {cgy}."
+        return Err(Fail::new(
+            "CPF67EE",
+            &[
+                Field::Char(&dev, 10),
+                Field::Char("", 6),
+                Field::Char("", 6),
+                Field::Char(cgy, 10),
+            ],
         ));
     }
     Ok(rows
@@ -419,21 +432,27 @@ pub(crate) fn optical_view(
     dev: &str,
     data: &str,
     path: &str,
-) -> Result<OptView, String> {
+) -> Result<OptView, Fail> {
     let v = named(vol);
     let dev = dev.trim().to_ascii_uppercase();
     let (t, volid) = if !dev.is_empty() && !dev.starts_with('*') {
-        drive::optical(system, &dev, v.as_deref())?
+        drive::optical_volume(system, &dev, v.as_deref())?
     } else {
         match &v {
             Some(v) => drive::optical_by_volume(system, v)?,
-            None => return Err("CPD0084 DEV is needed with VOL(*MOUNTED)".into()),
+            None => {
+                return Err(Fail::new("CPD0084", &[Field::Char("DEV", 10)])
+                    .detail("DEV is needed with VOL(*MOUNTED)"));
+            }
         }
     };
     let set = media::volume_set();
     let path = path.trim().trim_matches('\'');
     let path = if path.is_empty() { "/" } else { path };
-    let opt = |e: optical::Error| format!("{} {e}", e.msgid());
+    let (odev, ovol) = (t.dev.clone(), volid.clone());
+    let opt = |e: optical::Error| {
+        Fail::from(medio::msg::escape(&MediaError::Optical(e), &odev, &ovol))
+    };
     Ok(match data {
         "*DIRATR" => OptView::Dirs(
             t.dev,
@@ -503,7 +522,7 @@ pub(crate) fn optical_volumes(
     system: &mut System,
     dev: &str,
     vol: &str,
-) -> Result<Vec<OptVolRow>, String> {
+) -> Result<Vec<OptVolRow>, Fail> {
     let dev = dev.trim().to_ascii_uppercase();
     let vol = vol.trim().trim_matches('\'').to_ascii_uppercase();
     let wanted = |v: &str| {
@@ -551,7 +570,7 @@ pub(crate) fn optical_volumes(
     }
     if out.is_empty() && !(dev.is_empty() || dev == "*ALL") && !devs.iter().any(|(n, _)| *n == dev)
     {
-        return Err(format!("CPF9814 Device {dev} not found."));
+        return Err(Fail::new("CPF9814", &[Field::Char(&dev, 10)]));
     }
     Ok(out)
 }

@@ -8,7 +8,9 @@
 //! commands (`INZTAP`, `DSPTAP`, `CHKTAP`, `DUPTAP`, `INZOPT`, `DSPOPT`,
 //! `CHKOPT`, `DUPOPT`, `WRKOPTVOL`). The work is `stgsvc::media`'s and
 //! the `tape`, `optical` and `imgclg` crates'; here are the parameters,
-//! the text forms and the messages.
+//! the text forms and the messages: each its catalogue entry with IBM's
+//! identifier and data layout, and no words of the command's own
+//! (docs/MEDIA.md, "Messages of the media commands").
 
 use std::fmt::Write as _;
 
@@ -19,6 +21,7 @@ use imgclg::ops::{
     VfyImgClg, VfyType,
 };
 use medio::MediaError;
+use medio::msg::{Field, Msg};
 use stg::proto::CmdReply;
 use tape::device::Category;
 use tape::volume::{Check, ChkOptions, DupOptions, DupSeq, InzOptions, ToSeq};
@@ -26,11 +29,10 @@ use tape::{SeqNbr, TapeTransport, VolumeProvider};
 use wm::obj::devd::Devd;
 use wm::obj::devmed::{MediaDevice, MediaKind};
 
-use super::direct::failed;
-use super::done;
 use super::meddsp;
 use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::media::drive::{self, TapeJob};
+use crate::stgsvc::media::fail::{Fail, cause, done};
 use crate::stgsvc::media::{self, catalogs, devices, stream};
 
 /// Run `name`, or `None` when it is not one of these.
@@ -50,7 +52,9 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             &parms.name("IMGCLG"),
             &parms.name("TYPE"),
         ))),
-        "WRKIMGCLGE" => wrkimgclge_text(&parms.name("IMGCLG")).map(plain),
+        "WRKIMGCLGE" => wrkimgclge_text(&parms.name("IMGCLG"))
+            .map(plain)
+            .map_err(Fail::from),
         "INZTAP" => inztap(system, parms),
         "DSPTAP" => dsptap(system, parms),
         "CHKTAP" => chktap(system, parms),
@@ -68,28 +72,70 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     };
     Some(match r {
         Ok(reply) => reply,
-        Err(e) => failed(name, &e),
+        Err(e) => e.reply(),
     })
 }
 
-/// Device description created; changed.
-const DEV_CREATED: &str = "CPC2618";
-const DEV_CHANGED: &str = "CPC2619";
-/// Image catalog created, deleted, entry added, removed, changed,
-/// catalog loaded, unloaded, verified, entry loaded.
-const CLG_CREATED: &str = "CPCBC01";
-const CLG_DELETED: &str = "CPCBC02";
-const CLGE_ADDED: &str = "CPCBC03";
-const CLGE_REMOVED: &str = "CPCBC04";
-const CLGE_CHANGED: &str = "CPCBC05";
-const CLG_LOADED: &str = "CPCBC06";
-const CLG_UNLOADED: &str = "CPCBC07";
-const CLG_VERIFIED: &str = "CPCBC08";
-const CLGE_LOADED: &str = "CPCBC09";
-/// Volume initialized, checked, duplicated.
-const VOL_INITIALIZED: &str = "CPC6773";
-const VOL_CHECKED: &str = "CPC6774";
-const VOL_DUPLICATED: &str = "CPC6775";
+/// Device description created, changed; not created, not changed;
+/// not found.
+const DEV_CREATED: &str = "CPC2622";
+const DEV_CHANGED: &str = "CPC2613";
+const DEV_NOT_CREATED: &str = "CPF261A";
+const DEV_NOT_CHANGED: &str = "CPF2618";
+const DEV_NOT_FOUND: &str = "CPF9814";
+/// Image catalog created in its library, deleted, entry added, removed,
+/// changed, catalog loaded, unloaded, verified; entry loaded, unloaded,
+/// mounted.
+const CLG_CREATED: &str = "CPCBC00";
+const CLG_DELETED: &str = "CPCBC18";
+const CLGE_ADDED: &str = "CPCBC28";
+const CLGE_REMOVED: &str = "CPCBC30";
+const CLGE_CHANGED: &str = "CPCBC0C";
+const CLG_LOADED: &str = "CPCBC10";
+const CLG_UNLOADED: &str = "CPCBC11";
+const CLG_VERIFIED: &str = "CPCBC20";
+const CLGE_LOADED: &str = "CPCBC40";
+const CLGE_UNLOADED: &str = "CPCBC41";
+const CLGE_MOUNTED: &str = "CPCBC42";
+/// The library image catalogs live in.
+const CLG_LIB: &str = "QUSRSYS";
+/// Tape volume found, file found, files duplicated.
+const VOL_FOUND: &str = "CPC6778";
+const FILE_FOUND: &str = "CPC6779";
+const TAPE_DUPLICATED: &str = "CPC6775";
+/// QS/400's own: optical volume initialized, checked, duplicated.
+const OPT_INITIALIZED: &str = "CPC6774";
+const OPT_CHECKED: &str = "CPC6770";
+const OPT_DUPLICATED: &str = "CPC6772";
+
+/// A parameter value that cannot be used: `CPD0084` naming it.
+fn bad_parm(kwd: &str) -> Fail {
+    Fail::new("CPD0084", &[Field::Char(kwd, 10)])
+}
+
+/// A catalog's refusal: its own escape when the catalog is missing or
+/// already there, else the command's `id` over the cause.
+fn clg_fail(e: &imgclg::Error, name: &str, id: &str, fields: &[Field<'_>]) -> Fail {
+    match e {
+        imgclg::Error::NotFound(_) => Fail::new("CPFBC45", &[Field::Char(name, 10)]),
+        imgclg::Error::Exists(_) => Fail::new(
+            "CPFBC01",
+            &[Field::Char(name, 10), Field::Char(CLG_LIB, 10)],
+        ),
+        _ => Fail::new(id, fields).detail(e),
+    }
+}
+
+/// A device description read for a command: `CPF9814` when there is none.
+fn read_dev(system: &mut System, dev: &str) -> Result<Devd, Fail> {
+    devices::read(system, dev).map_err(|e| {
+        if e.starts_with(devices::NOT_FOUND) {
+            Fail::new(DEV_NOT_FOUND, &[Field::Char(dev, 10)])
+        } else {
+            Fail::from(e)
+        }
+    })
+}
 
 /// Not an optical device; an optical device that is not a library.
 const OPT_NOT_DEVICE: &str = "OPT1530";
@@ -113,22 +159,9 @@ fn addoptctg(system: &mut System, parms: &Parms) -> CmdReply {
         }
         Ok(_) => OPT_NOT_DEVICE,
         Err(e) if e.starts_with(devices::NOT_FOUND) => OPT_NOT_DEVICE,
-        Err(e) => return failed("ADDOPTCTG", &e),
+        Err(e) => return Fail::from(e).reply(),
     };
-    CmdReply {
-        text: format!("{id} device {dev}: no optical media library to add a cartridge to\n"),
-        escape: Some(stg::proto::CmdMsg {
-            msgid: id.into(),
-            kind: 7,
-            data: cmd::error::data(&[(&dev, 10)]),
-        }),
-        ..CmdReply::default()
-    }
-}
-
-/// A completion: its message, and the text led by its identifier.
-fn ok(text: &str, msgid: &str, fields: &[(&str, usize)]) -> CmdReply {
-    done(format!("{msgid} {text}"), msgid, fields)
+    Fail::new(id, &[Field::Char(&dev, 10)]).reply()
 }
 
 fn plain(text: String) -> CmdReply {
@@ -180,19 +213,20 @@ fn kind_of(cmd: &str) -> MediaKind {
     }
 }
 
-fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, String> {
+fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Fail> {
     let kind = kind_of(cmd);
     if kind == MediaKind::TapeLibrary && parms.name("DEVCLS") == "*OPT" {
-        return Err(
-            "CPF9B70 DEVCLS(*OPT): optical media libraries are not available in this release"
-                .into(),
-        );
+        return Err(Fail::new("CPF9B70", &[Field::Char(cmd, 10)])
+            .detail("DEVCLS(*OPT): optical media libraries are not available in this release"));
     }
     let name = parms.name("DEVD");
+    let not_made = |e: String| {
+        Fail::new(DEV_NOT_CREATED, &[Field::Char(&name, 10)]).detail(cause(&e))
+    };
     let rsrc_in = parms.name("RSRCNAME");
     let virt = rsrc_in == "*VRT" || parms.name("TYPE") == "*VRT";
     let rsrc = if virt {
-        devices::next_virtual(system, kind)?
+        devices::next_virtual(system, kind).map_err(not_made)?
     } else if rsrc_in == "*NONE" {
         String::new()
     } else {
@@ -229,38 +263,39 @@ fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
         d.msgq = q;
     }
     let who = owner(system);
-    devices::create(system, &name, &d, &who)?;
-    Ok(ok(
-        &format!("Description for device {name} created.\n"),
-        DEV_CREATED,
-        &[(&name, 10)],
-    ))
+    devices::create(system, &name, &d, &who).map_err(not_made)?;
+    Ok(done(&Msg::new(DEV_CREATED, &[Field::Char(&name, 10)])))
 }
 
-fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, String> {
+fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("DEVD");
-    let mut d = devices::read(system, &name)?;
+    let not_changed = |why: &str| {
+        Fail::new(DEV_NOT_CHANGED, &[Field::Char(&name, 10)]).detail(cause(why))
+    };
+    let mut d = devices::read(system, &name).map_err(|e| {
+        if e.starts_with(devices::NOT_FOUND) {
+            Fail::new(devices::NOT_FOUND, &[Field::Char(&name, 10)])
+        } else {
+            not_changed(&e)
+        }
+    })?;
     let kind = kind_of(cmd);
     let Some(m) = d.media.as_mut() else {
         unreachable!("read checks")
     };
     if m.kind != kind {
-        return Err(format!(
-            "{} device {name} is a {} device",
-            devices::NOT_FOUND,
-            m.kind.devcls()
-        ));
+        let why = format!("device {name} is a {} device", m.kind.devcls());
+        return Err(not_changed(&why));
     }
     let rsrc = parms.name("RSRCNAME");
     if !rsrc.is_empty() && rsrc != "*SAME" {
         if devices::usable(&d) {
-            return Err(format!(
-                "{} device {name} is varied on",
-                cmncfg::msgs::MUST_VARY_OFF
-            ));
+            return Err(not_changed(&format!(
+                "device {name} must be varied off to change RSRCNAME"
+            )));
         }
         let new = if rsrc == "*VRT" {
-            devices::next_virtual(system, kind)?
+            devices::next_virtual(system, kind).map_err(|e| not_changed(&e))?
         } else {
             rsrc
         };
@@ -302,17 +337,13 @@ fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
     if let Some(q) = msgq(parms) {
         d.msgq = q;
     }
-    devices::write(system, &name, &d)?;
-    Ok(ok(
-        &format!("Description for device {name} changed.\n"),
-        DEV_CHANGED,
-        &[(&name, 10)],
-    ))
+    devices::write(system, &name, &d).map_err(|e| not_changed(&e))?;
+    Ok(done(&Msg::new(DEV_CHANGED, &[Field::Char(&name, 10)])))
 }
 
 // ----------------------------------------------------------------- catalogs
 
-fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
     let kind = if parms.name("TYPE") == "*TAP" {
         ImgType::Tap
@@ -338,7 +369,8 @@ fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         epoch: now_unix(),
         import: parms.yes("IMPORT"),
     };
-    media::with_catalogs(|r| r.crtimgclg(&p))?;
+    let fields = [Field::Char(&name, 10), Field::Char(CLG_LIB, 10)];
+    media::catalog_op(|r| r.crtimgclg(&p)).map_err(|e| clg_fail(&e, &name, "CPFBC02", &fields))?;
     let who = owner(system);
     if let Err(e) = catalogs::create_object(
         system,
@@ -348,32 +380,34 @@ fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         &who,
     ) {
         let _ = media::with_catalogs(|r| r.dltimgclg(&name, true));
-        return Err(e);
+        return Err(Fail::new("CPFBC02", &fields).detail(cause(&e)));
     }
-    Ok(ok(
-        &format!("Image catalog {name} created.\n"),
-        CLG_CREATED,
-        &[(&name, 10)],
-    ))
+    Ok(done(&Msg::new(CLG_CREATED, &fields)))
 }
 
-fn dltimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn dltimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let want = parms.name("IMGCLG");
     let keep = parms.name("KEEP") != "*NO";
-    let names: Vec<String> = media::with_catalogs(|r| Ok(r.names()))?
+    let names: Vec<String> = media::catalog_op(|r| Ok(r.names()))
+        .unwrap_or_default()
         .into_iter()
         .filter(|n| *n == want || want.strip_suffix('*').is_some_and(|p| n.starts_with(p)))
         .collect();
     if names.is_empty() {
-        return Err(format!("CPFBC01 image catalog {want} does not exist"));
+        return Err(Fail::new("CPFBC45", &[Field::Char(&want, 10)]));
     }
-    let mut text = String::new();
+    let mut reply = CmdReply::default();
     for n in &names {
-        media::with_catalogs(|r| r.dltimgclg(n, keep))?;
-        catalogs::delete_object(system, n)?;
-        let _ = writeln!(text, "Image catalog {n} deleted.");
+        let fields = [Field::Char(n, 10)];
+        media::catalog_op(|r| r.dltimgclg(n, keep))
+            .map_err(|e| clg_fail(&e, n, "CPFBC18", &fields))?;
+        catalogs::delete_object(system, n)
+            .map_err(|e| Fail::new("CPFBC18", &fields).detail(cause(&e)))?;
+        reply
+            .messages
+            .extend(done(&Msg::new(CLG_DELETED, &fields)).messages);
     }
-    Ok(ok(&text, CLG_DELETED, &[(&names[0], 10)]))
+    Ok(reply)
 }
 
 fn index_of(parms: &Parms) -> Option<u16> {
@@ -391,29 +425,28 @@ enum FromDev {
     Drive(String),
 }
 
-fn from_dev(system: &mut System, dev: &str) -> Result<FromDev, String> {
-    let t = drive::target(system, dev)?;
+fn from_dev(system: &mut System, dev: &str) -> Result<FromDev, Fail> {
+    let t = drive::device(system, dev)?;
     if t.kind != MediaKind::Optical {
-        return Err(format!("OPT1203 device {} is not an optical device", t.dev));
+        return Err(Fail::new(OPT_NOT_DEVICE, &[Field::Char(&t.dev, 10)]));
     }
+    let empty = || Fail::new(drive::OPT_EMPTY, &[Field::Char(&t.dev, 10)]);
     if t.virtual_ {
-        let c = media::catalog_on(&t.dev)
-            .ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
-        let e = c
-            .mounted()
-            .ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
+        let c = media::catalog_on(&t.dev).ok_or_else(empty)?;
+        let e = c.mounted().ok_or_else(empty)?;
         return Ok(FromDev::Image(c.path_of(e)));
     }
     let node = devices::node_of(system, &t.rsrc).ok_or_else(|| {
-        format!(
-            "CPF6760 device {} not ready: resource {} not found",
-            t.dev, t.rsrc
+        drive::dev_fail(
+            drive::NOT_READY,
+            &t.dev,
+            format_args!("resource {} not found", t.rsrc),
         )
     })?;
     Ok(FromDev::Drive(format!("/dev/{node}")))
 }
 
-fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
     let dev = if parms.specified("FROMDEV") {
         let d = parms.name("FROMDEV");
@@ -432,7 +465,7 @@ fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     let from = from.trim().trim_matches('\'');
     if from.is_empty() {
-        return Err("CPD0084 FROMFILE is needed".into());
+        return Err(bad_parm("FROMFILE"));
     }
     let to = parms.text("TOFILE");
     let to = to.trim().trim_matches('\'');
@@ -460,14 +493,14 @@ fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         epoch: now_unix(),
     };
     let replace = parms.yes("REPLACE");
-    let mut drive =
-        match &from_dev {
-            Some(FromDev::Drive(node)) => Some(std::fs::File::open(node).map_err(|e| {
-                format!("CPF6760 {} not ready: {e}", dev.clone().unwrap_or_default())
-            })?),
-            _ => None,
-        };
-    let i = media::with_catalogs(|r| {
+    let mut drive = match &from_dev {
+        Some(FromDev::Drive(node)) => Some(std::fs::File::open(node).map_err(|e| {
+            drive::dev_fail(drive::NOT_READY, dev.as_deref().unwrap_or_default(), e)
+        })?),
+        _ => None,
+    };
+    let fields = [Field::Char(&name, 10)];
+    media::catalog_op(|r| {
         if replace && let Some(i) = p.index {
             let _ = r.rmvimgclge(&name, i, true);
         }
@@ -475,20 +508,23 @@ fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             Some(f) => r.addimgclge_from(&name, &p, f),
             None => r.addimgclge(&name, &p),
         }
-    })?;
-    Ok(ok(
-        &format!("Entry {i} added to image catalog {name}.\n"),
-        CLGE_ADDED,
-        &[(&name, 10), (&i.to_string(), 3)],
-    ))
+    })
+    .map_err(|e| clg_fail(&e, &name, "CPFBC28", &fields))?;
+    Ok(done(&Msg::new(CLGE_ADDED, &fields)))
 }
 
-fn rmvimgclge(parms: &Parms) -> Result<CmdReply, String> {
+/// An entry index as `*BIN 2`.
+fn bin2(i: u16) -> Field<'static> {
+    Field::Bin2(i16::try_from(i).unwrap_or(i16::MAX))
+}
+
+fn rmvimgclge(parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
     let keep = parms.name("KEEP") != "*NO";
     let vol = parms.text("VOL").trim().to_ascii_uppercase();
-    let i = media::with_catalogs(|r| {
-        let i = match index_of(parms) {
+    let at = index_of(parms);
+    let i = media::catalog_op(|r| {
+        let i = match at {
             Some(i) => i,
             None => r
                 .catalog(&name)?
@@ -501,15 +537,23 @@ fn rmvimgclge(parms: &Parms) -> Result<CmdReply, String> {
                 })?,
         };
         r.rmvimgclge(&name, i, keep).map(|()| i)
+    })
+    .map_err(|e| match at {
+        Some(i) => clg_fail(&e, &name, "CPFBC30", &[Field::Char(&name, 10), bin2(i)]),
+        None => clg_fail(
+            &e,
+            &name,
+            "CPFBC31",
+            &[Field::Char(&name, 10), Field::Char(&vol, 6)],
+        ),
     })?;
-    Ok(ok(
-        &format!("Entry {i} removed from image catalog {name}.\n"),
+    Ok(done(&Msg::new(
         CLGE_REMOVED,
-        &[(&name, 10), (&i.to_string(), 3)],
-    ))
+        &[Field::Char(&name, 10), bin2(i)],
+    )))
 }
 
-fn chgimgclge(parms: &Parms) -> Result<CmdReply, String> {
+fn chgimgclge(parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
     let i = index_of(parms).unwrap_or(0);
     let p = ChgImgClgE {
@@ -520,72 +564,71 @@ fn chgimgclge(parms: &Parms) -> Result<CmdReply, String> {
         },
         text: text(parms),
     };
-    media::with_catalogs(|r| r.chgimgclge(&name, i, &p))?;
-    Ok(ok(
-        &format!("Entry {i} of image catalog {name} changed.\n"),
-        CLGE_CHANGED,
-        &[(&name, 10), (&i.to_string(), 3)],
-    ))
+    media::catalog_op(|r| r.chgimgclge(&name, i, &p))
+        .map_err(|e| clg_fail(&e, &name, "CPFBC0C", &[Field::Char(&name, 10), bin2(i)]))?;
+    Ok(done(&Msg::new(CLGE_CHANGED, &[bin2(i)])))
 }
 
-fn lodimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn lodimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
     let unload = parms.name("OPTION") == "*UNLOAD";
     let dev = parms.name("DEV");
     if unload {
-        media::with_catalogs(|r| r.lodimgclg(&name, LoadOption::Unload, ""))?;
-        return Ok(ok(
-            &format!("Image catalog {name} unloaded.\n"),
-            CLG_UNLOADED,
-            &[(&name, 10)],
-        ));
+        // The device it was on, for the messages.
+        let on = media::catalog_op(|r| Ok(r.catalog(&name)?.device.clone()))
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| dev.clone());
+        let fields = [Field::Char(&name, 10), Field::Char(&on, 10)];
+        media::catalog_op(|r| r.lodimgclg(&name, LoadOption::Unload, ""))
+            .map_err(|e| clg_fail(&e, &name, "CPFBC11", &fields))?;
+        return Ok(done(&Msg::new(CLG_UNLOADED, &fields)));
     }
     if dev.is_empty() {
-        return Err("CPD0084 DEV is needed for OPTION(*LOAD)".into());
+        return Err(bad_parm("DEV"));
     }
-    let d = devices::read(system, &dev)?;
+    let fields = [Field::Char(&name, 10), Field::Char(&dev, 10)];
+    let d = read_dev(system, &dev)?;
     let m = d.media.unwrap_or_default();
-    let kind = media::with_catalogs(|r| Ok(r.catalog(&name)?.kind))?;
+    let kind = media::catalog_op(|r| Ok(r.catalog(&name)?.kind))
+        .map_err(|e| clg_fail(&e, &name, "CPFBC10", &fields))?;
     let fits = match kind {
         ImgType::Opt => m.kind == MediaKind::Optical,
         ImgType::Tap => m.kind != MediaKind::Optical,
     };
     if !m.is_virtual() || !fits {
-        return Err(format!(
-            "CPFBC0B device {dev} is not a virtual {} device",
-            if kind == ImgType::Opt {
-                "optical"
-            } else {
-                "tape"
-            }
-        ));
+        let what = if kind == ImgType::Opt {
+            "optical"
+        } else {
+            "tape"
+        };
+        return Err(Fail::new("CPFBC10", &fields)
+            .detail(format_args!("device {dev} is not a virtual {what} device")));
     }
-    media::with_catalogs(|r| r.lodimgclg(&name, LoadOption::Load, &dev))?;
-    Ok(ok(
-        &format!("Image catalog {name} loaded on device {dev}.\n"),
-        CLG_LOADED,
-        &[(&name, 10), (&dev, 10)],
-    ))
+    media::catalog_op(|r| r.lodimgclg(&name, LoadOption::Load, &dev))
+        .map_err(|e| clg_fail(&e, &name, "CPFBC10", &fields))?;
+    Ok(done(&Msg::new(CLG_LOADED, &fields)))
 }
 
-fn lodimgclge(parms: &Parms) -> Result<CmdReply, String> {
+fn lodimgclge(parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
     let i = index_of(parms).unwrap_or(0);
-    let opt = match parms.name("OPTION").as_str() {
-        "*UNLOAD" => EntryOption::Unload,
-        "*MOUNT" => EntryOption::Mount,
-        _ => EntryOption::Load,
+    let (opt, ok, not) = match parms.name("OPTION").as_str() {
+        "*UNLOAD" => (EntryOption::Unload, CLGE_UNLOADED, "CPFBC14"),
+        "*MOUNT" => (EntryOption::Mount, CLGE_MOUNTED, "CPFBC15"),
+        _ => (EntryOption::Load, CLGE_LOADED, "CPFBC13"),
     };
-    media::with_catalogs(|r| r.lodimgclge(&name, i, opt))?;
-    Ok(ok(
-        &format!("Entry {i} of image catalog {name} changed.\n"),
-        CLGE_LOADED,
-        &[(&name, 10), (&i.to_string(), 3)],
-    ))
+    media::catalog_op(|r| r.lodimgclge(&name, i, opt))
+        .map_err(|e| clg_fail(&e, &name, not, &[bin2(i), Field::Char(&name, 10)]))?;
+    Ok(done(&Msg::new(ok, &[bin2(i)])))
 }
 
-fn vfyimgclg(parms: &Parms) -> Result<CmdReply, String> {
+fn vfyimgclg(parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("IMGCLG");
+    let ty = match parms.name("TYPE") {
+        t if t.starts_with('*') => t,
+        _ => "*UPGRADE".to_string(),
+    };
     let p = VfyImgClg {
         kind: match parms.name("TYPE").as_str() {
             "*PTF" => VfyType::Ptf,
@@ -595,24 +638,17 @@ fn vfyimgclg(parms: &Parms) -> Result<CmdReply, String> {
         },
         sort: parms.yes("SORT"),
     };
-    let r = media::with_catalogs(|r| r.vfyimgclg(&name, &p))?;
-    let mut text = String::new();
-    for prob in &r.problems {
-        let _ = writeln!(text, "CPFBC0D {prob:?}");
-    }
+    let fields = [Field::Char(&name, 10)];
+    let r = media::catalog_op(|r| r.vfyimgclg(&name, &p))
+        .map_err(|e| clg_fail(&e, &name, "CPFBC42", &fields))?;
     if !r.ok() {
-        return Err(format!(
-            "CPFBC0D image catalog {name} did not verify: {} problem(s)\n{text}",
-            r.problems.len()
-        ));
+        let probs: Vec<String> = r.problems.iter().map(|p| format!("{p:?}")).collect();
+        return Err(Fail::new("CPFBC42", &fields).detail(probs.join("; ")));
     }
-    let _ = writeln!(
-        text,
-        "Image catalog {name} verified: {} entries{}.",
-        r.checked,
-        if r.sorted { ", sorted" } else { "" }
-    );
-    Ok(ok(&text, CLG_VERIFIED, &[(&name, 10)]))
+    Ok(done(&Msg::new(
+        CLG_VERIFIED,
+        &[Field::Char(&name, 10), Field::Char(&ty, 8)],
+    )))
 }
 
 /// `WRKIMGCLG`'s text form.
@@ -696,7 +732,7 @@ impl TapeJob for Inz {
     }
 }
 
-fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let dev = parms.name("DEV");
     let new = parms.text("NEWVOL").trim().to_ascii_uppercase();
     let v = vol(parms, "VOL");
@@ -729,14 +765,18 @@ fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         clear: parms.yes("CLEAR"),
         today: Some(stream::today()),
     };
+    let density = match parms.name("DENSITY") {
+        d if d.is_empty() => "*DEVTYPE".to_string(),
+        d => d,
+    };
     let vl: Vec<String> = v.into_iter().collect();
-    drive::with_tape(system, &dev, &vl, true, &mut Inz(opts))?;
-    let id = new_vol.unwrap_or_else(|| "*NL".into());
-    Ok(ok(
-        &format!("Volume {id} initialized on device {dev}.\n"),
-        VOL_INITIALIZED,
-        &[(&id, 6), (&dev, 10)],
-    ))
+    drive::tape_job(system, &dev, &vl, true, &mut Inz(opts))?;
+    let dev = dev.to_ascii_uppercase();
+    Ok(done(&medio::msg::tape_initialized(
+        &dev,
+        new_vol.as_deref(),
+        &density,
+    )))
 }
 
 /// The sequence range `SEQNBR` names.
@@ -758,7 +798,7 @@ fn seq_range(parms: &Parms) -> (u32, u32) {
 }
 
 /// `DSPTAP`'s view of the volume its parameters name.
-pub(crate) fn tape_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::TapView, String> {
+pub(crate) fn tape_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::TapView, Fail> {
     let (dev, vol, label, data, endopt) = (
         parms.name("DEV"),
         parms.text("VOL"),
@@ -832,15 +872,17 @@ fn tape_lines(v: &meddsp::TapView, data: &str) -> Vec<String> {
     s
 }
 
-fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     // Refused before the tape is read, as the 7.1 oracle does
     // (`audit/displays/dsptap71-outf-sav-err`).
     if parms.name("OUTPUT") == "*OUTFILE" && parms.name("DATA") != "*LABELS" {
-        return Err("CPD0084 OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only.".into());
+        return Err(bad_parm("OUTPUT").detail("OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only"));
     }
     let v = tape_view_of(system, parms)?;
     match parms.name("OUTPUT").as_str() {
-        "*OUTFILE" => super::medout::tape(system, parms, &v).map(plain),
+        "*OUTFILE" => super::medout::tape(system, parms, &v)
+            .map(plain)
+            .map_err(Fail::from),
         "*PRINT" => crate::svc::security::print_as(
             system,
             "QSYSPRT",
@@ -848,7 +890,8 @@ fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             &tape_lines(&v, &parms.name("DATA")),
             false,
         )
-        .map(plain),
+        .map(plain)
+        .map_err(Fail::from),
         _ => Ok(plain(tape_lines(&v, &parms.name("DATA")).join("\n") + "\n")),
     }
 }
@@ -868,7 +911,7 @@ impl TapeJob for Chk {
     }
 }
 
-fn chktap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn chktap(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let dev = parms.name("DEV");
     let label = parms.text("LABEL").trim().to_ascii_uppercase();
     let opts = ChkOptions {
@@ -882,20 +925,36 @@ fn chktap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         end_opt: stream::end_opt(&parms.name("ENDOPT")),
     };
     let vl: Vec<String> = opts.vol.iter().cloned().collect();
-    let (r, media) = drive::with_tape(system, &dev, &vl, false, &mut Chk(opts))?;
+    let (r, media) = drive::tape_job(system, &dev, &vl, false, &mut Chk(opts))?;
+    let dev = dev.to_ascii_uppercase();
     let id = r.kind.id();
-    let mut text = format!("Volume {id} on device {dev} checked.\n");
-    if let Some(f) = &r.file {
-        let _ = writeln!(
-            text,
-            "File sequence {}, label {} found.",
-            f.label.file_seq, f.label.file_id
-        );
-    }
+    let m = match &r.file {
+        Some(f) => {
+            let seq = f.label.file_seq.to_string();
+            let created = f
+                .label
+                .created
+                .map(|d| format!("{}.{:03}", d.year, d.day))
+                .unwrap_or_default();
+            Msg::new(
+                FILE_FOUND,
+                &[
+                    Field::Char(&dev, 10),
+                    Field::Char(&id, 6),
+                    Field::Char(&seq, 10),
+                    Field::Char(&f.label.file_id, 17),
+                    Field::Char(&created, 10),
+                ],
+            )
+        }
+        None => Msg::new(VOL_FOUND, &[Field::Char(&dev, 10), Field::Char(&id, 6)]),
+    };
+    let mut reply = done(&m);
+    // Install media: what it holds is shown.
     if let Some(c) = &media {
-        text.push_str(&install_media_text(c));
+        reply.text = install_media_text(c);
     }
-    Ok(ok(&text, VOL_CHECKED, &[(&id, 6), (&dev, 10)]))
+    Ok(reply)
 }
 
 /// What install media holds, as `CHKTAP` and `DSPOPT DATA(*SAVRST)`
@@ -924,11 +983,11 @@ pub(crate) fn install_media_text(c: &instmedia::layout::Contents) -> String {
     s
 }
 
-fn duptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let from = parms.name("FROMDEV");
-    let to = parms.name("TODEV");
+fn duptap(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
+    let from = parms.name("FROMDEV").to_ascii_uppercase();
+    let to = parms.name("TODEV").to_ascii_uppercase();
     if from == to {
-        return Err("CPD0084 FROMDEV and TODEV must be different devices".into());
+        return Err(Fail::new("CPF6740", &[Field::Char(&to, 10)]));
     }
     let e = parms.elems("FROMSEQNBR");
     let num = |i: usize, dft: i64| {
@@ -961,12 +1020,22 @@ fn duptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         from_end_opt: stream::end_opt(&parms.name("FROMENDOPT")),
         to_end_opt: stream::end_opt(&parms.name("TOENDOPT")),
     };
-    let n = drive::dup_tape(system, &from, &to, &opts)?;
-    Ok(ok(
-        &format!("{n} file(s) duplicated from device {from} to device {to}.\n"),
-        VOL_DUPLICATED,
-        &[(&from, 10), (&to, 10)],
-    ))
+    let d = drive::dup_tape(system, &from, &to, &opts)?;
+    let files = i32::try_from(d.files).unwrap_or(i32::MAX);
+    Ok(done(&Msg::new(
+        TAPE_DUPLICATED,
+        &[
+            Field::Char(&from, 10),
+            Field::Char(&d.from_vol, 6),
+            Field::Char(&to, 10),
+            Field::Bin2(0),
+            Field::Bin4(files),
+            Field::Bin4(1),
+            Field::Bin4(1),
+            Field::Char(&d.to_vol, 6),
+            Field::Char(&d.to_vol, 6),
+        ],
+    )))
 }
 
 // ------------------------------------------------------------------ optical
@@ -978,31 +1047,36 @@ fn optical(
     parms: &Parms,
     vol_kwd: &str,
     dev_kwd: &str,
-) -> Result<(drive::Target, String), String> {
+) -> Result<(drive::Target, String), Fail> {
     let v = vol(parms, vol_kwd);
     let dev = parms.name(dev_kwd);
     if !dev.is_empty() && !dev.starts_with('*') {
-        return drive::optical(system, &dev, v.as_deref());
+        return drive::optical_volume(system, &dev, v.as_deref());
     }
     match v {
         Some(v) => drive::optical_by_volume(system, &v),
-        None => Err(format!(
-            "CPD0084 {dev_kwd} is needed with {vol_kwd}(*MOUNTED)"
-        )),
+        None => Err(bad_parm(dev_kwd).detail(format_args!(
+            "{dev_kwd} is needed with {vol_kwd}(*MOUNTED)"
+        ))),
     }
 }
 
 /// The catalog entry holding volume `vol` on device `dev`: catalog,
 /// index, image path.
-fn entry_of(dev: &str, vol: &str) -> Result<(String, u16, String), String> {
+fn entry_of(dev: &str, vol: &str) -> Result<(String, u16, String), Fail> {
     let c = media::catalog_on(dev)
-        .ok_or_else(|| format!("{} optical device {dev} is empty", drive::OPT_EMPTY))?;
+        .ok_or_else(|| Fail::new(drive::OPT_EMPTY, &[Field::Char(dev, 10)]))?;
     let e = c
         .entries
         .iter()
         .find(|e| e.volume.eq_ignore_ascii_case(vol))
-        .ok_or_else(|| format!("OPT1115 volume {vol} not found"))?;
+        .ok_or_else(|| Fail::new("OPT1332", &[Field::Char(dev, 10), Field::Char(vol, 32)]))?;
     Ok((c.name.clone(), e.index, c.path_of(e)))
+}
+
+/// An image that cannot be opened: `OPT1605` with the cause.
+fn unreadable(dev: &str, vol: &str, why: impl std::fmt::Display) -> Fail {
+    Fail::new("OPT1605", &[Field::Char(dev, 10), Field::Char(vol, 32)]).detail(why)
 }
 
 /// Take a catalog off its device so `/QOPT` lets go of its volume (its
@@ -1027,7 +1101,7 @@ fn reenter(clg: &str, index: u16, path: &str, dev: &str) -> Result<(), String> {
     })
 }
 
-fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let (t, volid) = optical(system, parms, "VOL", "DEV")?;
     let new = parms.text("NEWVOL").trim().to_ascii_uppercase();
     let new = if new.is_empty() || new == "*VOL" {
@@ -1038,8 +1112,8 @@ fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let (clg, index, path) = entry_of(&t.dev, &volid)?;
     release(&clg)?;
     let store = imgclg::StdFs::new(crate::stgsvc::ifs::ROOT);
-    let img =
-        imgclg::CatalogFs::image(&store, &path).map_err(|e| format!("OPT1605 {path}: {e}"))?;
+    let img = imgclg::CatalogFs::image(&store, &path)
+        .map_err(|e| unreadable(&t.dev, &volid, format_args!("{path}: {e}")))?;
     let p = optical::volume::ops::InzOpt {
         new_volume: new.clone(),
         check: parms.name("CHECK") != "*NO",
@@ -1051,19 +1125,18 @@ fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let r = optical::volume::ops::inzopt(img, &p);
     // Back into the catalog and /QOPT whatever happened.
     reenter(&clg, index, &path, &t.dev)?;
-    r.map_err(|e| drive::optical_failed(system, &t, &MediaError::Optical(e)))?;
-    Ok(ok(
-        &format!("Volume {new} initialized on device {}.\n", t.dev),
-        VOL_INITIALIZED,
-        &[(&new, 32), (&t.dev, 10)],
-    ))
+    r.map_err(|e| drive::optical_fail(system, &t, &MediaError::Optical(e), &volid))?;
+    Ok(done(&Msg::new(
+        OPT_INITIALIZED,
+        &[Field::Char(&t.dev, 10), Field::Char(&new, 32)],
+    )))
 }
 
 /// `DSPOPT`'s view of the volume its parameters name.
 pub(crate) fn optical_view_of(
     system: &mut System,
     parms: &Parms,
-) -> Result<meddsp::OptView, String> {
+) -> Result<meddsp::OptView, Fail> {
     let path = parms.text("PATH");
     meddsp::optical_view(
         system,
@@ -1141,47 +1214,50 @@ fn optical_lines(v: &meddsp::OptView) -> Vec<String> {
     s
 }
 
-fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
+    if parms.name("OUTPUT") == "*OUTFILE" && parms.name("DATA") == "*SAVRST" {
+        return Err(bad_parm("OUTPUT").detail("OUTPUT(*OUTFILE) is not valid with DATA(*SAVRST)"));
+    }
     let v = optical_view_of(system, parms)?;
     match parms.name("OUTPUT").as_str() {
-        "*OUTFILE" => super::medout::optical(system, parms, &v).map(plain),
+        "*OUTFILE" => super::medout::optical(system, parms, &v)
+            .map(plain)
+            .map_err(Fail::from),
         "*PRINT" => {
             crate::svc::security::print_as(system, "QSYSPRT", "DSPOPT", &optical_lines(&v), false)
                 .map(plain)
+                .map_err(Fail::from)
         }
         _ => Ok(plain(optical_lines(&v).join("\n") + "\n")),
     }
 }
 
-fn chkopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn chkopt(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let (t, volid) = optical(system, parms, "VOL", "DEV")?;
     let r = media::volume_set()
         .with(&volid, |v| Ok(optical::volume::ops::chkopt(v)))
-        .map_err(|e| format!("{} {e}", e.msgid()))?;
-    let mut text = String::new();
-    for (p, why) in &r.errors {
-        let _ = writeln!(text, "{p}: {why}");
-    }
+        .map_err(|e| drive::optical_fail(system, &t, &MediaError::Optical(e), &volid))?;
     if !r.errors.is_empty() {
-        let e = MediaError::Optical(optical::Error::Malformed(format!(
-            "{} file(s) do not read",
-            r.errors.len()
-        )));
-        return Err(format!("{}\n{text}", drive::optical_failed(system, &t, &e)));
+        let list: Vec<String> = r.errors.iter().map(|(p, why)| format!("{p}: {why}")).collect();
+        let e = MediaError::Optical(optical::Error::Malformed(list.join("; ")));
+        return Err(drive::optical_fail(system, &t, &e, &volid));
     }
-    let _ = writeln!(
-        text,
-        "Volume {volid} checked: {} files, {} bytes.",
-        r.files, r.bytes
-    );
-    Ok(ok(&text, VOL_CHECKED, &[(&volid, 32), (&t.dev, 10)]))
+    let files = i32::try_from(r.files).unwrap_or(i32::MAX);
+    Ok(done(&Msg::new(
+        OPT_CHECKED,
+        &[
+            Field::Char(&t.dev, 10),
+            Field::Char(&volid, 32),
+            Field::Bin4(files),
+        ],
+    )))
 }
 
-fn dupopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let (_, from) = optical(system, parms, "FROMVOL", "FROMDEV")?;
+fn dupopt(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
+    let (ft, from) = optical(system, parms, "FROMVOL", "FROMDEV")?;
     let (t, to) = optical(system, parms, "TOVOL", "TODEV")?;
     if from.eq_ignore_ascii_case(&to) {
-        return Err("OPT1203 a volume cannot be copied onto itself".into());
+        return Err(Fail::new("OPT1339", &[Field::Char(&from, 32)]));
     }
     let new = parms.text("NEWVOL").trim().to_ascii_uppercase();
     let new_volume = match new.as_str() {
@@ -1191,11 +1267,13 @@ fn dupopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     let (clg, index, path) = entry_of(&t.dev, &to)?;
     let set = media::volume_set();
-    set.sync(&from).map_err(|e| format!("{} {e}", e.msgid()))?;
+    set.sync(&from)
+        .map_err(|e| drive::optical_fail(system, &ft, &MediaError::Optical(e), &from))?;
     release(&clg)?;
     let store = imgclg::StdFs::new(crate::stgsvc::ifs::ROOT);
-    let img =
-        imgclg::CatalogFs::image(&store, &path).map_err(|e| format!("OPT1605 {path}: {e}"))?;
+    let img = imgclg::CatalogFs::image(&store, &path)
+        .map_err(|e| unreadable(&t.dev, &to, format_args!("{path}: {e}")))?;
+    let target_vol = new_volume.clone().unwrap_or_else(|| from.clone());
     let p = optical::volume::ops::DupOpt {
         new_volume,
         text: None,
@@ -1206,15 +1284,18 @@ fn dupopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         optical::volume::ops::dupopt(v, img, &p).map(|_| ())
     });
     reenter(&clg, index, &path, &t.dev)?;
-    r.map_err(|e| drive::optical_failed(system, &t, &MediaError::Optical(e)))?;
-    Ok(ok(
-        &format!("Volume {from} duplicated onto device {}.\n", t.dev),
-        VOL_DUPLICATED,
-        &[(&from, 32), (&t.dev, 10)],
-    ))
+    r.map_err(|e| drive::optical_fail(system, &t, &MediaError::Optical(e), &to))?;
+    Ok(done(&Msg::new(
+        OPT_DUPLICATED,
+        &[
+            Field::Char(&from, 32),
+            Field::Char(&t.dev, 10),
+            Field::Char(&target_vol, 32),
+        ],
+    )))
 }
 
-fn wrkoptvol(system: &mut System, parms: &Parms) -> Result<String, String> {
+fn wrkoptvol(system: &mut System, parms: &Parms) -> Result<String, Fail> {
     let rows = meddsp::optical_volumes(system, &parms.name("DEV"), &parms.text("VOL"))?;
     let mut s = String::from(
         "Volume                            Device      Volume Type  Media Type  Catalog     Protected\n",
@@ -1236,9 +1317,24 @@ fn wrkoptvol(system: &mut System, parms: &Parms) -> Result<String, String> {
 
 // ------------------------------------------------------------ media library
 
-/// Cartridge added or changed, ejected.
-const CTG_CATEGORY: &str = "CPC6776";
-const CTG_EJECTED: &str = "CPC6777";
+/// Cartridges changed (added, moved to a category, ejected).
+const CTGS_CHANGED: &str = "CPC67F8";
+
+/// `CPC67F8`: `n` cartridges of `dev`, the first `first`, now in
+/// category `cgy`.
+fn ctgs_changed(dev: &str, first: &str, cgy: &str, n: usize) -> CmdReply {
+    done(&Msg::new(
+        CTGS_CHANGED,
+        &[
+            Field::Char(dev, 10),
+            Field::Char(first, 6),
+            Field::Char("", 6),
+            Field::Char(cgy, 10),
+            Field::Char("", 8),
+            Field::Bin2(i16::try_from(n).unwrap_or(i16::MAX)),
+        ],
+    ))
+}
 
 /// `WRKMLBSTS`'s text form: each library, its status, and for a virtual
 /// one its drive resources with their allocation and cartridge.
@@ -1308,15 +1404,17 @@ pub(crate) fn tapctg_rows(
     dev: &str,
     ids: &[String],
     cgy: &str,
-) -> Result<Vec<media::library::CtgRow>, String> {
+) -> Result<Vec<media::library::CtgRow>, Fail> {
     media::library::rows(system, dev, ids, cgy)
 }
 
 /// `DSPTAPCTG`'s cartridges as text, printed, or in an outfile.
-fn dsptapctg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn dsptapctg(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let all = meddsp::cartridges(system, &parms.name("DEV"), &ctgs(parms), &cgy(parms))?;
     if parms.name("OUTPUT") == "*OUTFILE" {
-        return super::medout::cartridges(system, parms, &all).map(plain);
+        return super::medout::cartridges(system, parms, &all)
+            .map(plain)
+            .map_err(Fail::from);
     }
     let mut s = Vec::new();
     for c in &all {
@@ -1332,17 +1430,21 @@ fn dsptapctg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     }
     if parms.name("OUTPUT") == "*PRINT" {
         return crate::svc::security::print_as(system, "QSYSPRT", "DSPTAPCTG", &s, false)
-            .map(plain);
+            .map(plain)
+            .map_err(Fail::from);
     }
     Ok(plain(s.join("\n") + "\n"))
 }
 
 #[allow(clippy::too_many_lines)]
-fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, String> {
-    let dev = parms.name("DEV");
-    let d = devices::read(system, &dev)?;
+fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Fail> {
+    let dev = parms.name("DEV").to_ascii_uppercase();
+    let d = read_dev(system, &dev)?;
     if d.media_kind() != Some(MediaKind::TapeLibrary) {
-        return Err(format!("CPF6745 device {dev} is not a tape media library"));
+        return Err(Fail::new(
+            media::library::NOT_LIBRARY,
+            &[Field::Char(&dev, 10)],
+        ));
     }
     let ids = ctgs(parms);
     let cgy = cgy(parms);
@@ -1367,7 +1469,7 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
                 Category::parse(&cgy)
             };
             if name == "ADDTAPCTG" && to.is_none() {
-                return Err(format!("CPD0084 CGY({cgy}) is not a category"));
+                return Err(bad_parm("CGY").detail(format_args!("CGY({cgy}) is not a category")));
             }
             let check = name == "ADDTAPCTG" && parms.name("CHECK") != "*NO";
             let all_inserted = ids.iter().any(|i| i == "*INSERT");
@@ -1385,14 +1487,20 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
                         && v != *id
                         && !matches!(v.as_str(), "*NL" | "*BLANK" | "*UNKNOWN")
                     {
-                        return Err(format!(
-                            "CPF6720 cartridge {id} on {dev} carries volume {v}"
+                        return Err(Fail::new(
+                            "CPF67A0",
+                            &[
+                                Field::Char(&dev, 10),
+                                Field::Char(id, 6),
+                                Field::Char(&v, 6),
+                            ],
                         ));
                     }
                 }
             }
+            let first = ids.first().cloned().unwrap_or_default();
             let Some(to) = to else {
-                return Ok(plain(format!("No cartridge of {dev} was changed.\n")));
+                return Ok(ctgs_changed(&dev, &first, "*SAME", 0));
             };
             media::library::with_library(system, &dev, |_, _, lib| {
                 for id in &ids {
@@ -1401,50 +1509,24 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
                     } else {
                         lib.change(id, to.clone())
                     };
-                    r.map_err(|e| media::library::refused(&e))?;
+                    r.map_err(|e| media::library::escape(&e, &dev))?;
                 }
-                Ok(())
+                Ok::<_, Fail>(())
             })?;
-            let mut text = String::new();
-            for id in &ids {
-                let _ = writeln!(
-                    text,
-                    "Cartridge {id} is now in category {} of {dev}.",
-                    to.name()
-                );
-            }
-            let first = ids.first().cloned().unwrap_or_default();
-            Ok(ok(
-                &text,
-                CTG_CATEGORY,
-                &[(&first, 6), (to.name(), 10), (&dev, 10)],
-            ))
+            Ok(ctgs_changed(&dev, &first, to.name(), ids.len()))
         }
         "RMVTAPCTG" => {
-            let moved = media::library::with_library(system, &dev, |_, _, lib| {
-                let mut out = Vec::new();
+            media::library::with_library(system, &dev, |_, _, lib| {
                 for id in &ids {
-                    let m = lib.remove(id).map_err(|e| media::library::refused(&e))?;
-                    out.push((id.clone(), !m.is_empty()));
+                    lib.remove(id)
+                        .map_err(|e| media::library::escape(&e, &dev))?;
                 }
-                Ok(out)
+                Ok::<_, Fail>(())
             })?;
-            let mut text = String::new();
-            for (id, moved) in &moved {
-                let _ = writeln!(
-                    text,
-                    "Cartridge {id} is ejected from {dev}{}.",
-                    if *moved {
-                        " to an import/export station"
-                    } else {
-                        "; it stays in its slot"
-                    }
-                );
-            }
             let first = ids.first().cloned().unwrap_or_default();
-            Ok(ok(&text, CTG_EJECTED, &[(&first, 6), (&dev, 10)]))
+            Ok(ctgs_changed(&dev, &first, "*EJECT", ids.len()))
         }
-        _ => Err(format!("CPF6745 {name} is not a cartridge command")),
+        _ => Err(Fail::new("CPF6708", &[]).detail(format_args!("{name} is not a cartridge command"))),
     }
 }
 
@@ -1620,7 +1702,7 @@ pub(crate) fn mlb_op(
                     .drives
                     .iter()
                     .position(|d| d.cartridge.as_deref() == Some(what.as_str()))
-                    .ok_or_else(|| format!("CPF6747 cartridge {what} is not mounted"))?;
+                    .ok_or_else(|| format!("CPF67A8 cartridge {what} is not mounted"))?;
                 lib.demount(i).map_err(|e| media::library::refused(&e))?;
                 format!("CPI9BB6\t{what}")
             }
@@ -1638,4 +1720,72 @@ pub(crate) fn mlb_op(
         };
         Ok(vec![line])
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stgsvc::hist::message_text;
+
+    /// The completion's message, its text filled from the catalogue.
+    fn shown(r: &CmdReply) -> (String, Vec<u8>, String) {
+        assert!(r.text.is_empty(), "no words of the command's own");
+        let m = &r.messages[0];
+        (m.msgid.clone(), m.data.clone(), message_text(&m.msgid, &m.data))
+    }
+
+    #[test]
+    fn inztap_completions() {
+        let r = done(&medio::msg::tape_initialized("TAP01", Some("PRT001"), "*DEVTYPE"));
+        let (id, data, text) = shown(&r);
+        assert_eq!(id, "CPC6773");
+        assert_eq!(
+            data,
+            medio::msg::data(&[Field::Char("TAP01", 10), Field::Char("PRT001", 6)])
+        );
+        assert!(text.contains("PRT001") && text.contains("TAP01"), "{text}");
+        let (id, data, _) = shown(&done(&medio::msg::tape_initialized("TAP01", None, "*DEVTYPE")));
+        assert_eq!((id.as_str(), data.len()), ("CPC6776", 20));
+    }
+
+    #[test]
+    fn write_protected_escape() {
+        let r = Fail::new("CPF6768", &[Field::Char("TAP01", 10)]).reply();
+        assert!(r.text.is_empty());
+        let e = r.escape.expect("escape");
+        assert_eq!(e.msgid, "CPF6768");
+        let text = message_text(&e.msgid, &e.data);
+        assert!(text.contains("TAP01") && !text.contains('&'), "{text}");
+    }
+
+    #[test]
+    fn cartridges_changed() {
+        let (id, data, text) = shown(&ctgs_changed("TAPMLB01", "CTG001", "*SHARE400", 3));
+        assert_eq!(id, "CPC67F8");
+        assert_eq!(data.len(), 10 + 6 + 6 + 10 + 8 + 2);
+        assert_eq!(&data[data.len() - 2..], &[0, 3]);
+        assert!(text.contains('3') && text.contains("TAPMLB01"), "{text}");
+    }
+
+    #[test]
+    fn catalog_refusals() {
+        let f = clg_fail(
+            &imgclg::Error::NotFound("X".into()),
+            "QS72TAP",
+            "CPFBC28",
+            &[],
+        );
+        assert_eq!(f.msgid, "CPFBC45");
+        assert_eq!(f.data, medio::msg::data(&[Field::Char("QS72TAP", 10)]));
+        let f = clg_fail(
+            &imgclg::Error::Full("QS72TAP".into()),
+            "QS72TAP",
+            "CPFBC28",
+            &[Field::Char("QS72TAP", 10)],
+        );
+        assert_eq!(f.msgid, "CPFBC28");
+        assert!(!f.detail.is_empty(), "the cause goes before the escape");
+        let r = f.reply();
+        assert_eq!(r.messages[0].msgid, "CPF9897");
+    }
 }

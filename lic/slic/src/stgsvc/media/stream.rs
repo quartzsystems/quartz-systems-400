@@ -20,6 +20,9 @@ use super::drive::{self, TapeJob};
 use super::operator;
 use crate::ipl::system::{System, now_unix};
 
+/// An active file ended the write.
+const ACTIVE_FILE: &str = "CPF6754";
+
 /// The save was ended (an inquiry took its default reply).
 pub(crate) const SAVE_ENDED: &str = "CPF3794";
 
@@ -140,6 +143,10 @@ impl TapeJob for SaveJob<'_> {
     ) -> Result<Written, MediaError> {
         TapeWriter::new(d, p, self.file.clone()).write_stream(self.bytes)
     }
+
+    fn active_files(&mut self) -> Option<&mut bool> {
+        Some(&mut self.file.allow_active)
+    }
 }
 
 struct RestoreJob {
@@ -233,8 +240,8 @@ fn save_optical(
         match wrote {
             Ok(w) => return Ok(w),
             Err(MediaError::Exists(p)) if !replace => {
-                let a = operator::inquiry(system, "OPT1260", &[(&p, 64), (&vol, 32)], "C");
-                if a.is("G") {
+                let a = operator::inquiry(system, "OPT1260", &[(&vol, 32), (&p, 256)], "C");
+                if a.is("I") {
                     replace = true;
                     // Start again on the first volume.
                     drive::mount_optical(&m.dev, &vol)?;
@@ -245,7 +252,7 @@ fn save_optical(
                     a.shown()
                 ));
             }
-            Err(e) => return Err(drive::optical_failed(system, &t, &e)),
+            Err(e) => return Err(drive::optical_fail(system, &t, &e, &vol).into()),
         }
     }
 }
@@ -263,7 +270,7 @@ pub(crate) fn save(
     if t.kind == MediaKind::Optical {
         return save_optical(system, m, target, bytes);
     }
-    let mut file = SaveFile {
+    let file = SaveFile {
         vols: m.vols.clone(),
         seq: u32::try_from(m.seq)
             .ok()
@@ -280,23 +287,15 @@ pub(crate) fn save(
         allow_active: m.clear,
         job: job_name(system),
     };
-    loop {
-        let mut job = SaveJob {
-            file: file.clone(),
-            bytes,
-        };
-        match drive::with_tape(system, &m.dev, &m.vols, true, &mut job) {
-            Err(e) if e.starts_with(operator::ACTIVE_FILE) && !file.allow_active => {
-                let a = operator::inquiry(system, operator::ACTIVE_FILE, &[(&m.dev, 10)], "C");
-                if a.is("I") {
-                    file.allow_active = true;
-                    continue;
-                }
-                return Err(format!("{SAVE_ENDED} {e}; {}", a.shown()));
-            }
-            r => return r,
+    // An active file is asked about (CPA6754) unless CLEAR said so.
+    let mut job = SaveJob { file, bytes };
+    drive::tape_job(system, &m.dev, &m.vols, true, &mut job).map_err(|f| {
+        if f.is(ACTIVE_FILE) {
+            format!("{SAVE_ENDED} {f}")
+        } else {
+            f.into()
         }
-    }
+    })
 }
 
 /// Read a save's stream from `m.dev`: the tape file with `label` when
@@ -321,7 +320,7 @@ pub(crate) fn restore(
         };
         return r
             .map(|(b, _)| b)
-            .map_err(|e| drive::optical_failed(system, &t, &e));
+            .map_err(|e| drive::optical_fail(system, &t, &e, &vol).into());
     }
     let file = RestoreFile {
         vols: m.vols.clone(),

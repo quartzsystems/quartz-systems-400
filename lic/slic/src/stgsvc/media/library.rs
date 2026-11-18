@@ -18,7 +18,8 @@ use tape::{TapeTransport, VirtualTape};
 use wm::obj::devmed::MediaKind;
 
 use super::catalogs::{host_path, open_image};
-use super::drive::{self, NOT_READY, Target};
+use super::drive::{self, NOT_READY, Target, dev_fail};
+use super::fail::Fail;
 use crate::ipl::system::System;
 
 /// A refusal of the library layer as `msgid text`.
@@ -26,32 +27,27 @@ pub(crate) fn refused(e: &medio::MediaError) -> String {
     format!("{} {e}", e.msgid())
 }
 
+/// Not a media library device.
+pub(crate) const NOT_LIBRARY: &str = "CPF6745";
+
 /// The library device `dev`, varied on and virtual, and its catalog.
-fn library_target(system: &mut System, dev: &str) -> Result<(Target, imgclg::Catalog), String> {
-    let t = drive::target(system, dev)?;
+fn library_target(system: &mut System, dev: &str) -> Result<(Target, imgclg::Catalog), Fail> {
+    let t = drive::device(system, dev)?;
     if t.kind != MediaKind::TapeLibrary {
-        return Err(format!(
-            "CPF6745 device {} is not a tape media library",
-            t.dev
-        ));
+        return Err(dev_fail(NOT_LIBRARY, &t.dev, ""));
     }
     if !t.virtual_ {
-        return Err(format!(
-            "CPF6745 device {}: the changer of a real media library is not driven in this release",
-            t.dev
+        return Err(dev_fail(
+            "CPF67C7",
+            &t.dev,
+            "the changer of a real media library is not driven in this release",
         ));
     }
-    let c = super::catalog_on(&t.dev).ok_or_else(|| {
-        format!(
-            "{NOT_READY} device {} not ready: no image catalog is loaded",
-            t.dev
-        )
-    })?;
+    let c = super::catalog_on(&t.dev)
+        .ok_or_else(|| dev_fail(NOT_READY, &t.dev, "no image catalog is loaded"))?;
     if c.kind != imgclg::ImgType::Tap {
-        return Err(format!(
-            "{NOT_READY} device {} not ready: image catalog {} is not a tape catalog",
-            t.dev, c.name
-        ));
+        let why = format!("image catalog {} is not a tape catalog", c.name);
+        return Err(dev_fail(NOT_READY, &t.dev, why));
     }
     Ok((t, c))
 }
@@ -61,7 +57,7 @@ fn state_path(c: &imgclg::Catalog) -> std::path::PathBuf {
 }
 
 /// The library over the catalog's loaded entries, as last kept.
-fn open(t: &Target, c: &imgclg::Catalog) -> Result<CatalogLibrary<File>, String> {
+fn open(t: &Target, c: &imgclg::Catalog) -> Result<CatalogLibrary<File>, Fail> {
     let mut tapes = Vec::new();
     for e in c
         .entries
@@ -69,18 +65,25 @@ fn open(t: &Target, c: &imgclg::Catalog) -> Result<CatalogLibrary<File>, String>
         .filter(|e| e.status != imgclg::EntryStatus::Available)
     {
         let path = c.path_of(e);
-        let f = open_image(&path).map_err(|x| format!("CPF6708 {path}: {x}"))?;
-        let mut v = VirtualTape::open(f).map_err(|x| format!("CPF6772 {path}: {x}"))?;
+        let f = open_image(&path)
+            .map_err(|x| Fail::new("CPF6708", &[]).detail(format_args!("{path}: {x}")))?;
+        let mut v = VirtualTape::open(f)
+            .map_err(|x| dev_fail("CPF6772", &t.dev, format_args!("{path}: {x}")))?;
         if v.header().write_protect != e.write_protect {
             let _ = v.set_write_protect(e.write_protect);
         }
         tapes.push((e.index, v));
     }
     let state = match std::fs::read_to_string(state_path(c)) {
-        Ok(text) => LibraryState::parse(&text).map_err(|e| refused(&e))?,
+        Ok(text) => LibraryState::parse(&text).map_err(|e| escape(&e, &t.dev))?,
         Err(_) => LibraryState::default(),
     };
-    CatalogLibrary::open(&t.dev, &t.rsrc, tapes, &state).map_err(|e| refused(&e))
+    CatalogLibrary::open(&t.dev, &t.rsrc, tapes, &state).map_err(|e| escape(&e, &t.dev))
+}
+
+/// A refusal of the library layer on `dev` as its escape.
+pub(crate) fn escape(e: &medio::MediaError, dev: &str) -> Fail {
+    Fail::from(medio::msg::escape(e, dev, ""))
 }
 
 fn keep(c: &imgclg::Catalog, lib: &CatalogLibrary<File>) {
@@ -91,11 +94,11 @@ fn keep(c: &imgclg::Catalog, lib: &CatalogLibrary<File>) {
 
 /// Run `f` on library `dev`; the library is kept afterwards whatever
 /// `f` gave.
-pub(crate) fn with_library<T>(
+pub(crate) fn with_library<T, E: From<Fail>>(
     system: &mut System,
     dev: &str,
-    f: impl FnOnce(&mut System, &Target, &mut CatalogLibrary<File>) -> Result<T, String>,
-) -> Result<T, String> {
+    f: impl FnOnce(&mut System, &Target, &mut CatalogLibrary<File>) -> Result<T, E>,
+) -> Result<T, E> {
     let (t, c) = library_target(system, dev)?;
     let mut lib = open(&t, &c)?;
     let r = f(system, &t, &mut lib);
@@ -149,7 +152,7 @@ pub(crate) fn rows(
     dev: &str,
     ids: &[String],
     cgy: &str,
-) -> Result<Vec<CtgRow>, String> {
+) -> Result<Vec<CtgRow>, Fail> {
     let (_, c) = library_target(system, dev)?;
     let volumes = labels(&c);
     with_library(system, dev, |_, _, lib| {
@@ -213,7 +216,7 @@ fn labels(c: &imgclg::Catalog) -> Vec<(String, String)> {
 }
 
 /// The cartridge's label volume, for `ADDTAPCTG CHECK(*YES)`.
-pub(crate) fn label_of(system: &mut System, dev: &str, id: &str) -> Result<Option<String>, String> {
+pub(crate) fn label_of(system: &mut System, dev: &str, id: &str) -> Result<Option<String>, Fail> {
     let (_, c) = library_target(system, dev)?;
     Ok(labels(&c)
         .into_iter()

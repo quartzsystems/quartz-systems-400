@@ -8,15 +8,14 @@
 //! write protected, end of volume), and for device and media errors a
 //! product activity log entry and a problem in the problem log.
 
+use medio::msg::Msg;
 use prb::PrbType;
 use wm::obj::msgq::{MsgKind, QMsg, Status};
 
 use crate::ipl::system::{System, now_unix};
 
-/// Load the next volume on a tape device (an inquiry, replies C G).
-pub(crate) const NEXT_VOLUME: &str = "CPA4075";
-/// An active file is in the way (an inquiry, replies C I).
-pub(crate) const ACTIVE_FILE: &str = "CPA4036";
+/// An active file is in the way of a write (an inquiry, replies C I).
+pub(crate) const ACTIVE_FILE: &str = medio::msg::ACTIVE_FILE_INQUIRY;
 
 fn send(system: &mut System, m: QMsg) {
     let (id, sev, text) = (m.msgid.clone(), m.severity, m.text.clone());
@@ -26,8 +25,7 @@ fn send(system: &mut System, m: QMsg) {
     crate::stgsvc::prblog::message_sent(system, &id, sev, &text);
 }
 
-fn message(system: &System, msgid: &str, data: &[(&str, usize)]) -> QMsg {
-    let data = cmd::error::data(data);
+fn message(system: &System, msgid: &str, data: Vec<u8>) -> QMsg {
     let number = system.current_job;
     QMsg {
         msgid: msgid.into(),
@@ -165,6 +163,16 @@ pub(crate) fn inquiry(
     data: &[(&str, usize)],
     dft: &str,
 ) -> Answer {
+    ask(system, msgid, cmd::error::data(data), dft)
+}
+
+/// Ask the operator inquiry `m` (its data as its entry declares it),
+/// as `inquiry` does.
+pub(crate) fn ask_msg(system: &mut System, m: &Msg, dft: &str) -> Answer {
+    ask(system, m.id, m.data.clone(), dft)
+}
+
+fn ask(system: &mut System, msgid: &str, data: Vec<u8>, dft: &str) -> Answer {
     let m = message(system, msgid, data);
     let before = earlier(system, msgid, &m.data);
     if let Some(Earlier::Answered(r)) = before {
@@ -206,17 +214,17 @@ pub(crate) fn inquiry(
     Answer::Reply(r)
 }
 
-/// Tell the operator.
-pub(crate) fn attention(system: &mut System, msgid: &str, data: &[(&str, usize)]) {
-    let mut m = message(system, msgid, data);
-    m.severity = 40;
-    send(system, m);
+/// Tell the operator `m`.
+pub(crate) fn attention(system: &mut System, m: &Msg) {
+    let mut q = message(system, m.id, m.data.clone());
+    q.severity = 40;
+    send(system, q);
 }
 
-/// A device or media error on resource `rsrc`: an attention to the
+/// A device or media error `m` on resource `rsrc`: an attention to the
 /// operator, a product activity log entry, and a problem.
-pub(crate) fn device_error(system: &mut System, rsrc: &str, dev: &str, msgid: &str, media: bool) {
-    attention(system, msgid, &[(dev, 10)]);
+pub(crate) fn device_error(system: &mut System, rsrc: &str, m: &Msg, media: bool) {
+    attention(system, m);
     let src = if media {
         &crate::src::MEDIA_ERROR
     } else {
@@ -279,14 +287,13 @@ pub(crate) fn event_of(e: &medio::MediaError) -> Event {
     }
 }
 
-/// Tell the operator about a failed operation on device `dev` over
+/// Tell the operator about failure `m` (of `e`) of an operation over
 /// resource `rsrc`.
-pub(crate) fn report(system: &mut System, rsrc: &str, dev: &str, e: &medio::MediaError) {
-    let id = e.msgid();
+pub(crate) fn report(system: &mut System, rsrc: &str, e: &medio::MediaError, m: &Msg) {
     match event_of(e) {
-        Event::Attention => attention(system, id, &[(dev, 10)]),
-        Event::Device => device_error(system, rsrc, dev, id, false),
-        Event::Media => device_error(system, rsrc, dev, id, true),
+        Event::Attention => attention(system, m),
+        Event::Device => device_error(system, rsrc, m, false),
+        Event::Media => device_error(system, rsrc, m, true),
         Event::Quiet => {}
     }
 }

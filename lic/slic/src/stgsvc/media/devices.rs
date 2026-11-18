@@ -21,10 +21,10 @@ use hwrsrc::{Kind, Status};
 
 /// Device description not found.
 pub(crate) const NOT_FOUND: &str = "CPF2702";
-/// Device description exists.
-pub(crate) const EXISTS: &str = "CPF2605";
-/// The device is not varied on.
-pub(crate) const NOT_AVAILABLE: &str = "CPF6721";
+/// Device description not made (it exists, or no resource is free).
+pub(crate) const NOT_MADE: &str = "CPF261A";
+/// The device cannot be used: not varied on.
+pub(crate) const NOT_AVAILABLE: &str = "CPF6718";
 
 fn with_qsys<T>(
     system: &mut System,
@@ -95,7 +95,7 @@ pub(crate) fn create(system: &mut System, name: &str, d: &Devd, owner: &str) -> 
     };
     with_qsys(system, |txn, qsys| {
         if find(txn, qsys, &name)?.is_some() {
-            return Err(format!("{EXISTS} device description {name} already exists"));
+            return Err(format!("{NOT_MADE} device description {name} already exists"));
         }
         let n = qsname::Name::parse(&name).map_err(|e| format!("CPD0078 {name}: {e}"))?;
         wm::obj::create(txn, qsys, n, types::DEVD, &d.text, &st, &d.encode())
@@ -113,7 +113,7 @@ pub(crate) fn next_virtual(system: &mut System, kind: MediaKind) -> Result<Strin
     (1..100)
         .map(|n| virtual_rsrc(kind, n))
         .find(|r| !used.contains(r))
-        .ok_or_else(|| "CPF2605 no virtual resource name is free".to_string())
+        .ok_or_else(|| format!("{NOT_MADE} no virtual resource name is free"))
 }
 
 /// The type and model a real resource reports, as the description keeps them.
