@@ -318,8 +318,13 @@ impl<K: FixedKey> Node<K> {
 
     /// Encode into a page body. The node must fit.
     pub fn encode(&self, body: &mut [u8], key_len: usize) {
-        debug_assert!(self.fits(key_len), "node does not fit");
         body.fill(0);
+        self.encode_zeroed(body, key_len);
+    }
+
+    /// [`Self::encode`] into a body already all zeros (a fresh page).
+    pub fn encode_zeroed(&self, body: &mut [u8], key_len: usize) {
+        debug_assert!(self.fits(key_len), "node does not fit");
         put_u16(body, OFF_KEY_LEN, u16_of(key_len));
         match self {
             Self::Leaf(entries) => {

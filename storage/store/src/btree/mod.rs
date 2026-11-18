@@ -572,7 +572,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     fn store(&self, p: &mut dyn Pager, node: &Node<K>) -> Result<PageNo> {
         let pno = p.alloc()?;
         let mut page = Page::zeroed();
-        node.encode(page.body_mut(), self.key_len);
+        node.encode_zeroed(page.body_mut(), self.key_len);
         p.write(pno, &mut page, PageType::BTreeNode, self.owner)?;
         Ok(pno)
     }
@@ -582,7 +582,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     fn rewrite(&self, p: &mut dyn Pager, old: PageNo, node: &Node<K>) -> Result<PageNo> {
         if p.owns(old) {
             let mut page = Page::zeroed();
-            node.encode(page.body_mut(), self.key_len);
+            node.encode_zeroed(page.body_mut(), self.key_len);
             p.write(old, &mut page, PageType::BTreeNode, self.owner)?;
             return Ok(old);
         }
