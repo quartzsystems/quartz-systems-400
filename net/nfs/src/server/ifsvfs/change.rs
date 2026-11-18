@@ -57,8 +57,13 @@ impl<C: IfsClient> IfsVfs<C> {
 
     /// What a call that made `path` in `dir` answers.
     fn made(r: &Req, a: &As<'_>, dpath: &str, dst: &Stat, path: &str) -> Made {
-        let node = a.c.stat(path, false).ok().map(|s| node_of(r, &s));
-        let after = a.c.stat(dpath, false).ok().map(|s| attr_of(r, &s));
+        // Both in one request.
+        let both =
+            a.c.stat_many(&[path.to_string(), dpath.to_string()], false)
+                .unwrap_or_default();
+        let mut both = both.into_iter().map(Result::ok);
+        let node = both.next().flatten().map(|s| node_of(r, &s));
+        let after = both.next().flatten().map(|s| attr_of(r, &s));
         Made {
             node,
             dir: Wcc {
@@ -269,14 +274,22 @@ impl<C: IfsClient> IfsVfs<C> {
             let (tdir, tst) = self.dir_of(a, r, to)?;
             let old = join(&fdir, &fname);
             let new = join(&tdir, &tname);
-            let src = a.c.stat(&old, false)?;
+            let mut both =
+                a.c.stat_many(&[old.clone(), new.clone()], false)?
+                    .into_iter();
+            let src = both.next().ok_or(Errno::EIO)??;
             self.forget_object(super::handle_of(r, &src).fid);
-            if let Ok(t) = a.c.stat(&new, false) {
+            if let Some(Ok(t)) = both.next() {
                 self.forget_object(super::handle_of(r, &t).fid);
             }
             a.c.rename(&old, &new, RenameMode::Unlink)?;
-            let fa = a.c.stat(&fdir, false).ok().map(|s| attr_of(r, &s));
-            let ta = a.c.stat(&tdir, false).ok().map(|s| attr_of(r, &s));
+            let mut dirs =
+                a.c.stat_many(&[fdir.clone(), tdir.clone()], false)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(Result::ok);
+            let fa = dirs.next().flatten().map(|s| attr_of(r, &s));
+            let ta = dirs.next().flatten().map(|s| attr_of(r, &s));
             Ok((
                 Wcc {
                     before: Some(wcc_of(&fst)),
