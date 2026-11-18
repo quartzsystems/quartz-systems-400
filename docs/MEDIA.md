@@ -78,6 +78,7 @@ How `st` results are read:
 |--------|---------|
 | `read` returns 0, GMT_EOD clear | tape mark |
 | `read` returns 0 or EIO, GMT_EOD set | end of data |
+| `read` fails EIO, GMT_EOD clear | asked of the drive (READ(6) through `SG_IO` on the `st` node): BLANK CHECK is end of data, anything else an error; at the volume's first read after a rewind the drive is rewound after the question |
 | `read` fails ENOMEM | block longer than the buffer |
 | spacing fails EIO | GMT_EOD: end of data; GMT_BOT: beginning of tape; GMT_EOF (records): tape mark |
 | `write` fails ENOSPC | nothing written: the block is written again once; written, it is reported with the warning |
@@ -269,6 +270,18 @@ records to the record length and blocks as many as fit; V puts a 4-byte
 block descriptor and 4-byte record descriptors (big-endian lengths that
 include the descriptor) around the records, the record length counting
 the descriptor; U is one record per block.
+
+A volume never written answers its first read with CHECK CONDITION,
+BLANK CHECK, end of data (00/05), on a real drive with a new cartridge
+as on QS/VS's virtual one. `st` gives it as EIO without noting the end
+of data (only a BLANK CHECK right after a file mark is), so it is asked
+of the drive as the table says. Such a volume is a volume with no
+labels: `DSPTAP` shows `*NL`, a save is refused with `CPF6772`, and
+`INZTAP CHECK(*YES)` initializes it. An EIO the drive explains another
+way (MEDIUM ERROR) stays `CPF6708`. `media/tape/tests/st_blank.rs` has
+it over the `st` model; the device-level proof is QS/VS's
+`pio-tape-save`, `pio-tape-span` and `pio-tape-volumes`, run again there
+on the pin that holds this (QEMU emulates no tape drive).
 
 ### Operations
 

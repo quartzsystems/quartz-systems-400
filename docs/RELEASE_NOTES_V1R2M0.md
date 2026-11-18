@@ -319,6 +319,13 @@ behind two more.
 - The web products' listeners took up to 50 ms to accept each new
   connection; every response now carries a `Server-Timing` header
   (`SERVERS.md`).
+- A slow request in the storage service is waited for, and step 200
+  shows the system and every job keep the service across one held 30 s;
+  when the service ends, `slic` logs its exit status before `B1001060`,
+  and only `slic` may close it (`STORAGE_SERVICE.md`, "Slow requests").
+- A tape never written was a device error (`CPF6708`, the drive's BLANK
+  CHECK as `EIO`): `DSPTAP` now shows `*NL`, a save is refused with
+  `CPF6772` and `INZTAP CHECK(*YES)` initializes it (`MEDIA.md`).
 
 ## Deliberately not in V1R2M0
 

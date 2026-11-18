@@ -143,8 +143,88 @@ The rules:
    (a data queue with nothing in it) answers at once; the job waits
    between tries (`stg::remote::RETRY`, 50 ms). The job's wait status
    is the job's own business.
-5. If the service itself ends, `slic` shows `B1001060` and halts: the
-   store's WAL recovers it at the next IPL like any crash.
+5. If the service itself ends, `slic` says how (`slic: storage service
+   PID ended: signal 11 (SIGSEGV)`, `exit 0`), shows `B1001060` and
+   halts: the store's WAL recovers it at the next IPL like any crash.
+6. Only `slic`'s connection may send `Close`; a job's is refused.
+
+## Slow requests
+
+A slow request is waited for, however long it takes. Nothing in QS/400
+ends a request, a job's link or the service because of time:
+
+- The serve loop's stall watcher (`stgsvc/stall.rs`) only logs: a
+  request over 2 s when it ends (`qsstg: slow request NAME: MS ms`),
+  one still running at 5 s and every 5 s after, with where each of the
+  service's threads waits in the kernel and the page cache's dirty and
+  writeback sizes.
+- `slic`'s channel to the service and a job's link (`stg::link`) have
+  no timeout; a job waits for its answer as long as it takes.
+- The IFS volume's ublk device is a privileged one (no
+  `UBLK_F_UNPRIVILEGED_DEV`): in Linux 6.18 `ublk_timeout` then only
+  rearms the block layer's 30 s timer. Only an unprivileged device's
+  server is sent `SIGKILL` on a timeout.
+- The kernel is built without a hung-task or lockup panic.
+
+So there is no limit to make long, set or report: none exists. If one
+is ever wanted, it is a documented constant, exceeding it is logged and
+sends a message, and it ends the request, never the service.
+
+### What ended the service in QS/VS's partitions (finding T5)
+
+QS/VS's Phase 10 saw, in partitions slowed by their host's load, a
+request take 5 s, then `slow request RunCmdCalling: 10332 ms`, then
+every job lose the service (`descriptor relay: EINVAL`, `storage
+service lost`), the IFS's xfs shut down on a log I/O error, and
+`B1001060`. The evidence, read against the code:
+
+- The jobs' messages and the xfs shutdown are what follows the
+  service's process ending, not what ends it. A relay taker reads end
+  of file when the process holding the relay thread is gone (`take`
+  answers `EINVAL` for a short reply); a job's link fails with `EPIPE`;
+  the kernel fails the IFS device's requests in flight once its ublk
+  server is gone, and xfs shuts down on the first failed log write.
+- The ending was silent. The service's standard error is the serial
+  line and the release profile aborts on a panic after printing it; no
+  panic line was logged. A `Close` would have logged the IFS's unmount.
+  What is left is a fatal signal: `SIGKILL` from outside, or `SIGSEGV`
+  or `SIGBUS` (Linux prints neither at the console's log level).
+- The slow request does not end it. Step 200 holds a command in the
+  service for 30 s with the fault point (three times the request in
+  the report) while the system jobs keep calling, then holds the IFS
+  device's writes for 45 s, past the block layer's timer: the service,
+  the system and every job stay.
+- The one partition log QS/VS kept of such an ending (Phase 8's
+  acceptance, `partition-identity`, the second system's first IPL) has
+  no slow request at all: the service ended about a second after it
+  started, with a page of `QSYS`'s user profile index read back as
+  zeros (`checksum 00000000 stored`), on a disk three levels of
+  virtualization deep. The log of the `RunCmdCalling` case was not kept.
+
+What ended the process is therefore not proven. Two changes make the
+next one tell: `slic` logs the service's exit status before
+`B1001060` (the signal, or the exit code), and a `Close` from any
+connection but `slic`'s is refused (before, a job, or a connection
+that had not said hello, could end the service with `exit 0`; nothing
+showed that it happened). QS/VS's suites that saw T5 run again on the
+pin that holds this, so a recurrence names its signal.
+
+Real hardware: a request is slow there too under heavy I/O (a
+`fdatasync` behind a busy disk, as the `ChgPwd` of 6 s in the same
+runs, its loop thread waiting in `blkdev_fsync`), and that is now shown
+harmless. Nothing found ties the ending to a partition; the zeroed page
+points at the storage under the partition. `NEEDS-CODY`: whether the
+Dell, two levels deep, ever logs `slic: storage service ... ended:`.
+
+### The fault point
+
+`dbgstall REQ(name) MS(n) [COUNT(n)]` (a dev build's service console,
+`svc.dbgstall`, refused without `qs400.svc=1`) arms it in the service:
+the next `COUNT` requests whose name is `REQ`, as the slow request line
+names them (`RunCmdCalling`, `IfsReq Write`), wait `MS` ms on the
+thread that runs them before they run; `REQ(IFSDEV)` delays the IFS
+device's writes and flushes instead, on the device's thread. `MS(0)`
+disarms it. Step 200 uses both.
 
 ## Long statements
 
