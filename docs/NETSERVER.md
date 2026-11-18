@@ -1339,7 +1339,10 @@ anything only if IBM checks the length first), and IBM's checks of
   device flush, and once failed at the client's 30 s timeout behind a
   34.9 s device flush (`qsstg: IFS device flush took ...`). READ and
   WRITE are the same one request per MiB as before; those figures are
-  the host's disk, not the server's.
+  the host's disk, not the server's. On merged `main` (2026-11-18, a
+  fresh build, no other guest running) step 168 gave 119.6 MB/s in
+  (8.98 s) and 110.3 MB/s out (9.73 s) with no slow service request;
+  small files 132.2, 188.0, 88.7 and 132.2 ms per operation.
 - Step 168 also runs `smbtest`'s `small-files` (200 files of 4 KiB made,
   their directory listed five times, each opened for its size, each
   deleted; one request at a time): 134.0, 205.6, 89.8 and 142.9 ms per
