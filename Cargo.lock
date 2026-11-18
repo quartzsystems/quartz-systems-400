@@ -3649,6 +3649,7 @@ dependencies = [
  "ed25519-dalek",
  "jrn",
  "medio",
+ "msgf",
  "optical",
  "qsname",
  "release",
