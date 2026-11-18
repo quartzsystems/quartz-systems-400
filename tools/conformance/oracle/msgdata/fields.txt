@@ -1,5 +1,6 @@
 # QCPFMSG on the primary oracle (V7R1M0), 2026-11-18: ID|SEV|data fields|first-level text
 # From DSPMSGD DETAIL(*FULL) OUTPUT(*PRINT) over the ranges in dspmsgd.s, dspmsgd2.s and dspmsgd5.s (table.awk).
+# From DSPMSGD DETAIL(*FULL) OUTPUT(*PRINT) over the ranges in the dspmsgd*.s scripts (table.awk).
 CPA4001|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C I)
 CPA4002|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Verify alignment on printer &3. (I G N R E C)
 CPA4003|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Form feed attachment &4 required on printer &3. (C G H)
@@ -136,8 +137,91 @@ CPA6797|99|&1 *CHAR 10; &2 *CHAR 6| Cartridge &2 on device &1 not valid. (C "car
 CPA6798|99|&1 *CHAR 10| No volume to mount on device &1. (C "cartridge id")
 CPA6799|40|&1 *CHAR 17; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 6; &6 *CHAR 10; &7 *BIN 4; &8 *BIN 4; &9 *CHAR 10; &10 *CHAR 6; &11 *CHAR 6| File cannot be duplicated (C I).
 CPC2102|0|&1 *CHAR 10; &2 *UBIN 2; &3 *CHAR 10| Library &1 created.
+CPC2601|0|&1 *CHAR 10| Line description &1 created.
+CPC2602|0|&1 *CHAR 10| Description for device &1 deleted.
+CPC2603|0|&1 *CHAR 10| Description for controller &1 deleted.
+CPC2604|0|&1 *CHAR 10| Description for line &1 deleted.
+CPC2605|0|&1 *CHAR 10| Vary on completed for device &1.
+CPC2606|0|&1 *CHAR 10| Vary off completed for device &1.
+CPC2607|0|&1 *CHAR 10| Vary on completed for line &1.
+CPC2608|0|&1 *CHAR 10| Vary off completed for line &1.
+CPC2609|0|&1 *CHAR 10| Vary on completed for controller &1.
+CPC2610|0|&1 *CHAR 10| Vary off completed for controller &1.
+CPC2611|0|&1 *CHAR 8| Class-of-service description &1 changed.
+CPC2612|0|&1 *CHAR 10| Mode description &1 created during IPL.
+CPC2613|0|&1 *CHAR 10| Description for device &1 changed.
+CPC2614|0|&1 *CHAR 10| Controller description &1 changed.
+CPC2615|0|&1 *CHAR 10| Description for line &1 changed.
+CPC2616|0|&1 *CHAR 10| Class-of-service &1 created during IPL.
+CPC2617|0|&1 *CHAR 10| Damaged mode description &1 deleted during IPL.
 CPC2618|0|&1 *CHAR 10| Damaged class-of-service &1 deleted during IPL.
 CPC2619|0|&1 *CHAR 10; &2 *CHAR 10| Table &1 in library &2 created.
+CPC2620|0|&1 *CHAR 10; &2 *CHAR 10| Edit description &1 in library &2 created.
+CPC2621|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 6| Warning. Device &1 varied off while in session.
+CPC2622|0|&1 *CHAR 10| Description for device &1 created.
+CPC2623|0|&1 *CHAR 10| Description for controller &1 created.
+CPC2624|0|&1 *CHAR 8| Mode description &1 created.
+CPC2625|0|&1 *CHAR 8| Mode description &1 changed.
+CPC2626|0|&1 *CHAR 10| IOP reset for line &1 complete.
+CPC2627|0|&1 *CHAR 10| IOP reset for controller &1 complete.
+CPC2628|0|&1 *CHAR 10| IOP reset for device &1 complete.
+CPC2629|0|&1 *CHAR 10| Automatic configuration created controller description &1.
+CPC2630|0|&1 *CHAR 10| Automatic configuration created device description &1.
+CPC2631|0|&1 *CHAR 10| Automatic configuration deleted controller description &1.
+CPC2632|0|&1 *CHAR 10| Automatic configuration deleted device description &1.
+CPC2633|0|&1 *CHAR 10| Class-of-service description &1 deleted.
+CPC2634|0|&1 *CHAR 8| Class-of-service description &1 created.
+CPC2635|0|&1 *CHAR 10| Configuration list &1 created.
+CPC2636|0|&1 *CHAR 10| Configuration list &1 deleted.
+CPC2637|0|&1 *CHAR 10| Configuration list &1 changed.
+CPC2639|0|&1 *CHAR 10| Mode &1 successfully deleted.
+CPC2640|0|&1 *CHAR 10| Automatic configuration converted controller description &1.
+CPC2641|0|&1 *CHAR 10| Automatic configuration converted device description &1.
+CPC2642|0|&1 *CHAR 10| Network interface description &1 created.
+CPC2643|0|&1 *CHAR 10| Description for network interface &1 changed.
+CPC2644|0|&1 *CHAR 10| Description for network interface &1 deleted.
+CPC2645|0|&1 *CHAR 10| Automatic configuration changed device description &1.
+CPC2646|0|&1 *CHAR 10| IOP reset for network interface &1 complete.
+CPC2647|0|&1 *CHAR 10| Vary on completed for network interface &1.
+CPC2648|0|&1 *CHAR 10| Vary off completed for network interface &1.
+CPC2649|0|&1 *CHAR 10| Port sharing changed device description &1.
+CPC2650|0|&1 *CHAR 10| Connection list &1 deleted.
+CPC2651|0|&1 *CHAR 10| Connection list &1 created.
+CPC2652|0|&1 *CHAR 10| Connection list &1 changed.
+CPC2653|0|&1 *CHAR 10; &2 *CHAR 10| Entry &2 added to connection list &1.
+CPC2654|0|&1 *CHAR 10; &2 *CHAR 10| Entry &2 changed in connection list &1.
+CPC2655|0|&1 *CHAR 10; &2 *CHAR 10| Entry &2 removed from connection list &1.
+CPC2656|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Entry &2 in connection list &1 renamed to &3.
+CPC2657|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| CL source for &1 objects retrieved; CL source for &2 objects not retrieved.
+CPC2658|0|&1 *BIN 2; &2 *BIN 2; &3 *BIN 2| &1 objects converted; &2 objects not converted.
+CPC2659|0|&1 *CHAR 10| NetBIOS description &1 created.
+CPC2660|0|&1 *CHAR 10| NetBIOS description &1 changed.
+CPC2661|0|&1 *CHAR 10; &2 *CHAR 8; &3 *CHAR 3| Network server storage space link added.
+CPC2662|0|&1 *CHAR 10; &2 *CHAR 8| Network server storage space link removed.
+CPC2663|0|&1 *CHAR 10| Network server description &1 created.
+CPC2664|0|&1 *CHAR 10| Vary on completed for network server &1.
+CPC2665|0|&1 *CHAR 10| Vary off completed for network server &1.
+CPC2666|0|&1 *CHAR 10| Description for network server &1 deleted.
+CPC2667|0|&1 *CHAR 10| Description for network server &1 changed.
+CPC2668|0|&1 *CHAR 10| Description for NetBIOS description &1 deleted.
+CPC2669|40|&1 *CHAR 10; &2 *CHAR 8| Remove network server storage link completed with errors.
+CPC2670|0|&1 *CHAR 10| Status of drive resource in device &1 changed successfully.
+CPC2671|0|&1 *CHAR 10| Vary on completed with errors for network server &1.
+CPC2672|0|&1 *CHAR 10| IPX description &1 created.
+CPC2673|0|&1 *CHAR 10| IPX description &1 changed.
+CPC2674|0|&1 *CHAR 10| Line &1 created by Advanced 36 machine.
+CPC2675|0|&1 *CHAR 10| Description for line &1 deleted by Advanced 36 machine.
+CPC2676|0|&1 *CHAR 10| Vary on completed with errors for network server &1.
+CPC2677|0|&1 *CHAR 10| Lock obtained on device &1.
+CPC2678|0|| Vary configuration completed for online at IPL.
+CPC2954|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17; &7 *UBIN 4; &8 *UBIN 4; &9 *UBIN 4| &9 records updated in to-file member &6.
+CPC2955|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17; &7 *UBIN 4; &8 *UBIN 4| &7 records copied from member &3.
+CPC2956|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17; &7 *UBIN 4| &7 records copied from member &3.
+CPC2957|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17; &7 *UBIN 4; &8 *UBIN 4| No records copied from file &1 in &2.
+CPC2958|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17| All records copied from file &1 in &2.
+CPC2959|0|&1 *CHAR 37; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17; &7 *UBIN 4; &8 *UBIN 4| &7 records copied to member &6.
+CPC2983|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Data in member &3 reorganized.
+CPC2984|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Update of sequence number and date field complete.
 CPC3701|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 4; &7 *CHAR 15; &8 *BIN 4; &9 *CHAR 6; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 32; &14 *CHAR 10; &15 *BIN 4| &1 objects saved from library &3.
 CPC3702|0|&1 *CHAR 70; &2 *DTS; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 32| Save System (SAVSYS) command has completed processing.
 CPC3703|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *CHAR 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32; &10 *BIN 4| &1 objects restored from &3 to &4.
@@ -191,14 +275,63 @@ CPC37A1|20|&1 *CHAR 7| Program temporary fixes loaded for licensed program &1.
 CPC37A2|20|&1 *CHAR 7| Program temporary fixes applied for licensed program &1.
 CPC37A3|0|&1 *CHAR 4; &2 *CHAR 10| Secondary language &1 restored.
 CPC37A9|0|| Initialize System (INZSYS) processing completed successfully.
+CPC6725|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 17; &6 *BIN 2; &7 *BIN 2| &6 files on volume &2 on device &1 processed.
+CPC6726|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 17| File sequence number &3 label &5 dumped.
+CPC6727|0|&1 *CHAR 10; &2 *CHAR 6| Volume labels for volume &2 device &1 dumped.
+CPC672A|0|&1 *CHAR 10| &1 configured and varied on successfully.
+CPC672B|0|| LAN information displayed successfully.
+CPC6763|0|&1 *BIN 2; &2 *BIN 2; &3 *CHAR 10; &4 *CHAR 6; &5 *CHAR 14| Initialize diskette completed.  &1 diskette processed.
+CPC6766|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 10| Mounted category &4 assigned.
+CPC6767|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 10| Mounted category &4 released.
+CPC6768|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 10| Category &4 demounted from device &1.
+CPC6769|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2; &7 *CHAR 10; &8 *CHAR 10| Category &4 mounted on device &1.
+CPC6771|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 14; &4 *CHAR 10; &5 *CHAR 10| Volume &2 prepared for operation with owner ID &3.
 CPC6775|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *BIN 2; &5 *BIN 4; &6 *BIN 4; &7 *BIN 4; &8 *CHAR 6; &9 *CHAR 6| Tape duplication completed successfully.
 CPC6776|0|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 10| Nonlabeled tape volume initialized.
 CPC6777|0|&1 *CHAR 10; &2 *CHAR 6| All file data deleted from volume &2 on device &1.
 CPC6778|0|&1 *CHAR 10; &2 *CHAR 6| Volume &2 found on device &1.
 CPC6779|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 17; &5 *CHAR 10| File found at sequence number &3.
+CPC67DA|0|| Display tape cartridge complete
+CPC67DE|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device description &1 created
+CPC67DF|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Library device description &1 deleted
+CPC67E0|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category &4 created
+CPC67E1|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| Category &4 deleted
+CPC67E5|0|| Display tape category complete
+CPC67F8|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 8; &6 *BIN 2| &6 cartridges changed
 CPC7301|0|&1 *CHAR 10; &2 *CHAR 10| File &1 created in library &2.
 CPC7302|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| File &1 created in &2 with SRTSEQ.
+CPC7303|0|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 changed.
+CPC7305|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &1 added to file &2 in &3.
+CPC7309|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &1 removed from file &2 in &3.
+CPC7311|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 34; &4 *BIN 4| &4 files changed for file &1 in library &2.
+CPC7312|0|&1 *CHAR 10; &2 *CHAR 10| Device added to file &1 in library &2.
+CPC7314|0|&1 *CHAR 10; &2 *CHAR 10| Devices removed from file &1 in &2.
+CPC7315|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| &4 members removed for &1.
+CPC7316|0|&1 *CHAR 10; &2 *CHAR 10| Device changed in file &1 in library &2.
+CPCBC00|0|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 created in library &2.
 CPCBC08|0|&1 *CHAR 10| Image catalog &1 changed.
+CPCBC0C|0|&1 *BIN 2| Image catalog entry &1 changed.
+CPCBC10|0|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 loaded in device &2.
+CPCBC11|0|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 unloaded from device &2.
+CPCBC12|0|&1 *CHAR 10| Image catalog &1 loaded.
+CPCBC18|0|&1 *CHAR 10| Image catalog &1 deleted.
+CPCBC19|0|&1 *CHAR 10| Image catalog entry removed from image catalog &1.
+CPCBC20|0|&1 *CHAR 10; &2 *CHAR 8| Image catalog &1, type &2 verified.
+CPCBC28|0|&1 *CHAR 10| Image catalog entry added to image catalog &1.
+CPCBC30|0|&1 *CHAR 10; &2 *BIN 2| Image catalog entry &2 removed from image catalog &1.
+CPCBC31|0|&1 *CHAR 10| All image catalog entries removed from image catalog &1.
+CPCBC40|0|&1 *BIN 2| Image catalog entry &1 loaded.
+CPCBC41|0|&1 *BIN 2| Image catalog entry &1 unloaded.
+CPCBC42|0|&1 *BIN 2| Image catalog entry &1 mounted.
+CPCBC43|0|&1 *CHAR 10; &2 *BIN 2; &3 *BIN 2| Image catalog entry &2 mounted, entry &3 loaded in catalog &1.
+CPCBC44|0|&1 *BIN 2| Image catalog entry &1 initialized.
+CPCBC45|0|&1 *BIN 2| Image catalog entry &1 duplicated.
+CPCBC46|0|&1 *BIN 2| Image catalog entry &1 dumped.
+CPCBC4F|0|| Installation langauge set.
+CPCBC80|0|| Successful return.
+CPCBC88|0|| The secure handshake operation was successfully started.
+CPCBCBA|0|| The secure data receive operation was successfully started.
+CPCBCBB|0|| The secure data send operation was successfully started.
 CPD0071|30|&1 *CHAR 4; &2 *CHAR 10| Parameter &2 required.
 CPD0072|30|&1 *CHAR 4; &2 *CHAR 10| List item value for parameter &2 required.
 CPD0073|30|&1 *CHAR 4; &2 *CHAR 10| *N not valid as a list value for parameter &2.
@@ -397,9 +530,266 @@ CPF2111|40|&1 *CHAR 10| Library &1 already exists.
 CPF2112|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Object &1 in &2 type *&3 already exists.
 CPF2113|40|&1 *CHAR 10| Cannot allocate library &1.
 CPF2189|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Not authorized to object &1 in &2 type *&3.
+CPF2601|40|&1 *CHAR 10| Line description &1 not found.
+CPF2602|40|&1 *CHAR 10| Controller &1 not found.
+CPF2603|40|&1 *CHAR 10| Device description &1 not found.
 CPF2605|40|&1 *CHAR 10| Not able to allocate &1.
+CPF2606|40|&1 *CHAR 10| Line description &1 already exists.
+CPF2608|40|| Cannot identify device type for automatic configuration.
+CPF2609|40|| Controller description not created by automatic configuration because of error.
+CPF260A|40|&1 *CHAR 8| Mode description &1 not found.
+CPF260B|30|| At least one logical channel entry must be specified.
+CPF260D|40|&1 *CHAR 10| Configuration list &1 already exists.
+CPF260E|40|&1 *CHAR 10| Configuration list &1 not created.
+CPF260F|40|&1 *CHAR 10| Configuration list &1 not found.
+CPF2610|40|| Parameter not valid.
+CPF2611|40|| Device description not created by automatic configuration because of error.
+CPF2612|40|&1 *CHAR 10| List type &1 not correct for copy.
+CPF2613|40|| Too many entries were added.
+CPF2614|40|&1 *CHAR 10; &2 *CHAR 10| Table &1 in &2 already exists.
+CPF2615|40|&1 *CHAR 10| Controller &1 must be varied off for this operation.
+CPF2616|40|&1 *CHAR 10| Device Description &1 not deleted. Device in use.
+CPF2617|40|| Edit description not found.
+CPF2618|40|&1 *CHAR 10| Device description &1 not changed.
+CPF2619|40|&1 *CHAR 10| Table &1 not found.
+CPF261A|40|&1 *CHAR 10| Device description &1 not created due to errors.
+CPF261B|40|&1 *CHAR 8| Mode description &1 not created due to errors.
+CPF261C|40|&1 *CHAR 10| Index for configuration list &1 not changed.
+CPF261D|40|&1 *CHAR 10| Index for configuration list &1 not changed.
+CPF261E|40|&1 *CHAR 10| Line description &1 not changed.
+CPF261F|40|&1 *CHAR 10| Configuration list &1 has been deleted.
+CPF2620|40|| Field longer than integer or fraction mask.
+CPF2621|40|&1 *CHAR 8| Class-of-service description &1 not changed.
+CPF2622|40|| Need connection number for switched or SNBU controllers.
+CPF2623|40|&1 *CHAR 10| Library &1 not found.
+CPF2624|40|&1 *CHAR 10; &2 *CHAR 10| Edit description &1 in &2 previously deleted.
+CPF2625|40|&1 *CHAR 10| Not able to allocate object &1.
+CPF2626|40|| Line description previously deleted.
+CPF2627|40|| Controller description previously deleted.
+CPF2628|40|| Device description previously deleted.
+CPF2629|40|| Device description parameter not valid.
+CPF262B|40|&1 *CHAR 8| Mode description &1 previously deleted.
+CPF262C|40|&1 *CHAR 8| Mode description &1 damaged.
+CPF262D|40|&1 *CHAR 8| Mode description &1 not changed.
+CPF262E|40|| Error occurred during vary on at IPL processing.
+CPF262F|40|| QDCTRF stopped due to failure.
+CPF2630|40|&1 *CHAR 10| Connection number and X.25 password duplicate of &1.
+CPF2631|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Device type &2 not valid.
+CPF2633|40|&1 *CHAR 10| Line description &1 must be varied off.
+CPF2634|40|&1 *CHAR 10| Not authorized to object &1.
+CPF2635|40|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 10| Device &1 in use. Command not run.
+CPF2636|40|&1 *CHAR 10| Command not processed. Controller &1 in use.
+CPF2638|40|| Parameter not valid.
+CPF2639|40|| Edit mask too large.
+CPF263A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| CFGL type &1 does not match existing type &2.
+CPF263B|40|&1 *CHAR 10| Controller &1 not a work station controller.
+CPF263C|40|| Automatic configuration failed to complete.
+CPF263D|40|&1 *CHAR 2; &2 *CHAR 2| Auto-configuration stopped due to wrong keyboard type.
+CPF263E|40|&1 *CHAR 10| File member &1 contains its maximum sequence number.
+CPF263F|40|| No objects found.
+CPF2640|40|| Vary command not processed.
+CPF2641|40|&1 *CHAR 10| Device name &1 not valid.
+CPF2642|40|| Remote identifiers required.
+CPF2643|40|&1 *CHAR 7| Delete request failed. Message &1 occurred.
+CPF2646|40|| Delete request failed.
+CPF2647|30|| Buffer length not valid.
+CPF2648|40|&1 *CHAR 10| Delete request not allowed for device &1.
+CPF264A|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2| Record length of &1 in library &2 is too small.
+CPF264B|40|&1 *BIN 2| Option &1 not valid for specified entry.
+CPF264C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Source file member &1 not found.
+CPF264D|40|| Double-byte character set language not valid.
+CPF264E|40|| Shift-in and shift-out value of double-byte character set not valid.
+CPF264F|40|| Translation type of double-byte character set not valid.
+CPF2651|40|&1 *CHAR 10| Table &1 not found.
+CPF2652|40|&1 *CHAR 10| Controller description &1 not changed.
+CPF2653|40|&1 *CHAR 10; &2 *CHAR 10| Printer not attached to same controller as display.
+CPF2654|40|&1 *CHAR 10| Device description &1 created but possibly not usable.
+CPF2659|40|| Vary command may not have completed.
+CPF265D|40|| *PROMPT value not allowed in batch mode.
+CPF265E|40|| Number of parameters specified not valid.
+CPF265F|40|| Translation length exceeded maximum length.
+CPF2660|40|&1 *CHAR 8| Class-of-service description &1 already exists.
+CPF2661|30|&1 *CHAR 3; &2 *CHAR 2| Identifier &1 not correct for logical channel entry &2.
+CPF2662|40|| Line description parameter specified not valid.
+CPF2663|40|&1 *CHAR 10| Configuration list &1 previously deleted.
+CPF2664|30|&1 *CHAR 8; &2 *CHAR 2| Type &1 not correct for logical channel entry &2.
+CPF2665|30|&1 *CHAR 10; &2 *CHAR 2| Controller &1 cannot attach to logical channel entry &2.
+CPF2666|40|&1 *CHAR 10| Cannot remove all entries from configuration list &1.
+CPF2667|30|&1 *CHAR 3| Identifier &1 entry cannot be changed while controller attached.
+CPF2668|40|| Object description not deleted.
+CPF2669|40|| Double-byte character set source not valid.
+CPF266A|40|| Device description not changed by port sharing because of error.
+CPF266B|40|| Port sharing failed to complete.
+CPF266C|40|&1 *CHAR 10| Connection list &1 not found.
+CPF266D|40|&1 *CHAR 10| Program name &1 not found in system library.
+CPF266E|40|&1 *CHAR 10| Connection list &1 has been damaged.
+CPF266F|40|&1 *CHAR 10; &2 *CHAR 10| Entry &2 not added to connection list &1.
+CPF2670|40|&1 *CHAR 8| Class-of-service description &1 not found.
+CPF2671|40|&1 *CHAR 8| Class-of-service description &1 previously deleted.
+CPF2672|40|&1 *CHAR 10; &2 *CHAR 4| Changes not compatible with attachments.
+CPF2673|40|&1 *CHAR 10; &2 *CHAR 4| Line &1 not compatible with controller.
+CPF2675|40|&1 *CHAR 8| Class-of-service description &1 damaged.
+CPF2677|40|&1 *CHAR 10| Device &1 no longer communicating.
+CPF2678|40|&1 *CHAR 10; &2 *CHAR 10| Data in source file &1 in &2 not valid.
+CPF2679|40|| Device description not changed by automatic configuration because of error.
+CPF267A|40|&1 *CHAR 10| Connection list &1 not created due to errors.
+CPF267B|40|&1 *CHAR 10| Connection list &1 already exists.
+CPF267D|40|&1 *CHAR 10| Connection list &1 not deleted.
+CPF267E|40|&1 *CHAR 10| Connection list &1 not changed due to errors.
+CPF2680|40|&1 *CHAR 10; &2 *CHAR 10| Entry &2 not changed in connection list &1.
+CPF2681|40|&1 *CHAR 10; &2 *CHAR 10| Entry &2 does not exist in connection list &1.
+CPF2683|40|&1 *CHAR 10; &2 *CHAR 10| Entry &2 in connection list &1 not renamed.
+CPF2684|40|&1 *CHAR 10| Line &1 not compatible with network interface.
+CPF2685|40|&1 *CHAR 10; &2 *CHAR 10| Entry &2 in connection list &1 not removed.
+CPF2686|40|&1 *CHAR 10; &2 *CHAR 4| Line description &1 not compatible with NWI.
+CPF2688|40|&1 *CHAR 10| Device &1 is not in a proper status to get mode information.
+CPF2689|40|| Duplicate mode names.
+CPF268A|40|&1 *CHAR 11; &2 *CHAR 10; &3 *CHAR 10| &1 not valid for line &2.
+CPF268B|40|&1 *CHAR 11; &2 *CHAR 10; &3 *CHAR 10| &1 not valid for controller &2.
+CPF268C|40|&1 *CHAR 11; &2 *CHAR 10; &3 *CHAR 10| &1 not valid for device &2.
+CPF268D|40|&1 *CHAR 10| Unable to access system value &1.
+CPF268E|40|&1 *CHAR 10| Device description &1 cannot be deleted or renamed.
+CPF268F|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 10; &9 *CHAR 10; &10 *CHAR 10; &11 *CHAR 10; &12 *CHAR 10; &13 *CHAR 10; &14 *CHAR 10; &15 *CHAR 10; &16 *CHAR 10; &17 *CHAR 10; &18 *CHAR 10; &19 *CHAR 10; &20 *CHAR 10; &21 *CHAR 10; &22 *CHAR 10; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10; &29 *CHAR 10; &30 *CHAR 10; &31 *CHAR 10; &32 *CHAR 10; &33 *CHAR 10; &34 *CHAR 10| Connection list &1 not deleted.
+CPF2691|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Rename of &2 type *&5 did not complete.
+CPF2692|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 type *&5 must be varied off.
+CPF2693|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| &2 type *&5 cannot be used for rename.
+CPF2694|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 type *&5 cannot be renamed.
+CPF2696|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 type *&5 not renamed.
+CPF2697|40|| The request did not complete in the time allotted.
+CPF2698|40|&1 *CHAR 8; &2 *CHAR 10| Mode &1 not found for device &2.
+CPF269A|40|| Library parameter is not set to "QSYS      " on call.
+CPF269B|40|&1 *CHAR 10| T.61 conversion table not found.
+CPF269C|40|&1 *BIN 2; &2 *CHAR 2| Error in input data.
+CPF269D|40|| A nonspacing underline character was found in the input data.
+CPF269E|40|&1 *BIN 2| Ward value not supported.
+CPF269F|40|&1 *CHAR 10| Incorrect information in T.61 conversion table.
+CPF26A3|40|&1 *CHAR 10| Configuration list &1 not converted.
+CPF26A4|40|&1 *CHAR 10| Change option not allowed for &1 configuration list.
+CPF26A5|40|&1 *CHAR 10| Work with entries not allowed for &1 configuration list.
+CPF26A6|40|| Channel entries cannot be changed if CALLCTL(*THIRD) is specified.
+CPF26A7|40|&1 *CHAR 10; &2 *CHAR 5; &3 *CHAR 8| Category of object not compatible with API format.
+CPF26A8|40|&1 *CHAR 10; &2 *CHAR 10| Configuration description type not valid for this API.
+CPF26A9|40|| Object qualifier not valid for this API.
+CPF26B0|40|&1 *CHAR 10; &2 *CHAR 10| Function &1 for object &2 not supported, request rejected.
+CPF26B2|40|&1 *CHAR 10| NetBIOS description &1 previously deleted.
+CPF26B3|30|&1 *CHAR 10| Extended wireless line member not added.
+CPF26B4|30|&1 *CHAR 10| Extended wireless line member not changed.
+CPF26B5|30|&1 *CHAR 10| Extended wireless line member not displayed.
+CPF26B6|40|| Initialization program has ended with a hard error.
+CPF26B7|40|| Initialization program ended with soft error.
+CPF26B8|30|&1 *CHAR 10| Extended wireless controller member not added.
+CPF26B9|40|| Remove network server storage link command failed.
+CPF26BA|40|| Add network server storage link command failed.
+CPF26BB|30|&1 *CHAR 10| Extended wireless controller member not changed.
+CPF26BC|30|&1 *CHAR 10| Extended wireless controller member not displayed.
+CPF26BD|30|&1 *CHAR 10| Entry for barcode group not removed from extended wireless controller member.
+CPF26BE|30|&1 *CHAR 10| Entry for PTC group not removed from extended wireless controller member.
+CPF26BF|30|&1 *CHAR 10| Program QZXCINZ terminated abnormally. See previous messages.
+CPF26C1|40|&1 *CHAR 10| Network server &1 not varied off.
+CPF26C2|40|&1 *CHAR 10| Active IPX description &1 cannot be changed or deleted.
+CPF26C3|40|&1 *CHAR 10| IPX description &1 not created due to errors.
+CPF26C5|40|&1 *CHAR 10| IPX description &1 previously deleted.
+CPF26C6|40|&1 *CHAR 10| IPX description &1 not changed.
+CPF26C7|40|&1 *BIN 4; &2 *CHAR 10; &3 *CHAR 10| Key not valid for this API
+CPF26C8|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 8| NWSD type not compatible with API format.
+CPF26C9|40|&1 *BIN 4; &2 *CHAR 10| New value not valid for this API.
+CPF26CA|40|| Number of changes not valid.
+CPF26CB|40|&1 *CHAR 10| Class-of-service description &1 not created due to errors.
+CPF26CC|40|&1 *CHAR 10; &2 *CHAR 4| Network interface &1 not compatible with attached line.
+CPF26CD|40|&1 *CHAR 10| Mode &1 can not be deleted.
+CPF26CE|40|&1 *CHAR 10; &2 *CHAR 4; &3 *CHAR 10| Network interface &1 not compatible with line &3.
+CPF26CF|40|&1 *CHAR 10; &2 *CHAR 4| Line description &1 not compatible with NWI.
+CPF26D4|40|&1 *CHAR 10; &2 *CHAR 10| Network server type not supported.
+CPF26D6|40|&1 *CHAR 10; &2 *CHAR 10| Not able to allocate object &1 type &2.
+CPF26D7|40|&1 *CHAR 10; &2 *CHAR 10| Line &1 not compatible with network server &2.
+CPF26D8|40|&1 *CHAR 11; &2 *CHAR 10; &3 *CHAR 10| Option &1 not valid for server &2.
+CPF26D9|40|&1 *CHAR 10| The conversion of object &1 must be performed before
+CPF26DA|40|&1 *CHAR 10| Pointer in program &1 does not point to correct data.
+CPF26DC|0|&1 *CHAR 10| Object &1 not supported.
+CPF26DD|40|| not used in v5r4
+CPF26EF|30|| Sequence for logical channel type not valid.
 CPF2702|40|&1 *CHAR 10| Device description &1 not found.
+CPF2801|30|&1 *CHAR 10; &2 *CHAR 10| From-file &1 in &2 not allowed.
+CPF2802|30|&1 *CHAR 10; &2 *CHAR 10| From-file &1 in &2 not found.
+CPF2803|30|&1 *CHAR 10; &2 *CHAR 10| To-file &1 in &2 not allowed.
+CPF2804|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| FMTOPT(*CVTSRC) not allowed for specified files.
+CPF2805|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 40| Remote from-file in DDM file not found.
+CPF2806|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| File &1 in &2 and &3 in &4 both DDM files.
+CPF2807|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17; &7 *CHAR 7| Cancel reply received for message &7.
+CPF2808|10|&1 *CHAR 10; &2 *CHAR 10| Member or label for file &1 in &2 created.
+CPF2810|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| FMTOPT(*CVTSRC) required for files with different types.
+CPF2811|30|&1 *CHAR 10; &2 *CHAR 10| From-file &1 in &2 not copied because of error.
+CPF2812|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not copied because of error.
+CPF2813|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not available.
+CPF2814|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not copied because of error.
+CPF2816|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not copied because of error.
 CPF2817|40|&1 *CHAR 7| Copy command ended because of error.
+CPF2818|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| *FROMMBR value is not allowed on TOMBR parameter.
+CPF2819|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| &3 not allowed on TOMBR for &1 in &2.
+CPF2820|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| &3 not allowed on FROMMBR for inline file.
+CPF2821|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| &3 not allowed on RCDFMT for &1 in &2.
+CPF2822|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| COMPRESS(*NO) not valid for specified files.
+CPF2823|30|&1 *CHAR 10; &2 *CHAR 10| Multiple from-members not allowed.
+CPF2825|30|&1 *CHAR 10; &2 *CHAR 10| SRCOPT value not allowed for &1 in &2.
+CPF2826|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Data from DBCS file copied to a file that is not DBCS.
+CPF2827|10|&1 *CHAR 10; &2 *CHAR 10| Copy started from override position.
+CPF2830|30|&1 *CHAR 10; &2 *CHAR 10| FROMRCD or TORCD value not allowed for from-file.
+CPF2831|30|&1 *CHAR 10; &2 *CHAR 10| FROMRCD and TORCD not allowed for from-file.
+CPF2832|30|&1 *CHAR 10; &2 *CHAR 10| FROMKEY and TOKEY not valid for from-file.
+CPF2833|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 2; &6 *BIN 2| INCCHAR position and character string not valid.
+CPF2834|30|&1 *CHAR 10; &2 *CHAR 10| INCREL not valid for from-file.
+CPF2835|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *BIN 2| INCCHAR starting position and length too long.
+CPF2836|30|&1 *CHAR 10; &2 *CHAR 10| INCCHAR field name not valid for from-file.
+CPF2837|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| INCCHAR field &4 not a character or DBCS field.
+CPF2839|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| INCCHAR field &4 not found.
+CPF2840|30|| First expression in INCREL must be *IF.
+CPF2841|30|&1 *BIN 2| Expression number &1 in INCREL not *AND or *OR.
+CPF2842|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2| Field &4 in INCREL expression not found.
+CPF2843|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2; &6 *BIN 2| Value in INCREL expression number &5 not valid.
+CPF2844|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2| INCREL expression not valid for numeric field &4.
+CPF2845|40|&1 *CHAR 10; &2 *BIN 2| The copy did not complete for reason code &2.
+CPF2846|40|&1 *CHAR 10; &2 *BIN 2| The copy did not complete for reason code &2.
+CPF2847|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2| Too many key field values for FROMKEY or TOKEY.
+CPF2848|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2| FROMKEY field value not valid for numeric key field.
+CPF2849|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2| TOKEY field value not valid for numeric key field.
+CPF2850|0|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *BIN 4; &5 *BIN 4| Some records were not copied from file &1 in &2.
+CPF2851|30|&1 *CHAR 10; &2 *CHAR 10| MBR(*ALL) override not valid.
+CPF2853|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| RCDFMT(*ALL) not valid for file &1 in library &2.
+CPF2854|30|&1 *CHAR 10; &2 *CHAR 10| Printer file &1 in library &2 not valid.
+CPF2855|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Record format &3 not found in from-file.
+CPF2856|30|&1 *CHAR 10; &2 *CHAR 10| From-file has more than one record format.
+CPF2857|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| Multiple member or label copy not allowed with override.
+CPF2858|40|&1 *CHAR 10; &2 *CHAR 10| File attributes not valid for printed output.
+CPF2859|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| Shared open data path not allowed.
+CPF2860|30|&1 *CHAR 10; &2 *CHAR 10| Not authorized to create physical file.
+CPF2861|30|&1 *CHAR 10; &2 *CHAR 10| To-file &1 in &2 not found or not created.
+CPF2862|30|&1 *CHAR 10; &2 *CHAR 10| Not authorized to file &1 in library &2.
+CPF2863|30|&1 *CHAR 10; &2 *CHAR 10| MBROPT(*ADD) or (*REPLACE) required for existing to-file.
+CPF2864|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to file &1 in library &2.
+CPF2865|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 40| Remote to-file in DDM file not found.
+CPF2867|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Open of member &3 file &1 in &2 failed.
+CPF2868|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| Member or label not found or suspended in from-file.
+CPF2869|20|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10| Empty member &3 in file &1 in library &2 is not copied.
+CPF2870|20|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10| All from-file members empty. No members copied.
+CPF2871|30|&1 *CHAR 10; &2 *CHAR 10| To-file overridden to file that does not exist.
+CPF2873|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| *FROMMBR not valid for from-file and to-file.
+CPF2874|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| Both to-file and from-file members are the same.
+CPF2875|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17| Wrong file member or label opened.
+CPF2877|30|&1 *CHAR 10; &2 *CHAR 10| *LIBL not allowed on TOFILE parameter with CRTFILE(*YES).
+CPF2878|30|&1 *CHAR 10; &2 *CHAR 10| Multiple member or label copy not allowed for tape.
+CPF2879|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 17| From-file member based on to-file member.
+CPF287A|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| *ALL not valid for to-file.
+CPF2880|10|&1 *CHAR 10; &2 *CHAR 10| Physical file &1 created in library &2.
+CPF2881|30|&1 *CHAR 10; &2 *CHAR 10| TOMBR(*FIRST) not allowed for file &1 in &2.
+CPF2882|10|&1 *CHAR 10; &2 *CHAR 10| SEQONLY override specified with ERRLVL parameter.
+CPF2883|40|&1 *CHAR 10; &2 *CHAR 10| Error creating file &1 in library &2.
+CPF2884|30|| FROMKEY and TOKEY allow one value unless *BLDKEY specified.
+CPF2885|30|&1 *CHAR 10; &2 *CHAR 10| Field Definition or Error file &1 in &2 not allowed.
+CPF2888|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| Member &3 not added to file because of error.
+CPF2889|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 17| Member &3 added to file &1 in &2.
+CPF2890|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2; &6 *BIN 2| FROMKEY field value not valid for key field.
+CPF2891|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *BIN 2; &6 *BIN 2| TOKEY field value not valid for key field.
+CPF2893|30|| Null string not allowed for FROMKEY or TOKEY.
 CPF3204|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 1| Cannot find object needed for file &1 in &2.
 CPF3205|40|| File not created.
 CPF3206|40|&1 *CHAR 10; &2 *CHAR 10| Key field &1 not found in record format &2.
@@ -1100,7 +1490,47 @@ CPF7082|30|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 2; &4 *CHAR 10; &5 *CHAR 10; &6 *CH
 CPF7083|30|&1 *CHAR 10; &2 *CHAR 10| Journal receiver not created.
 CPF7084|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 7; &7 *HEX 16; &8 *BIN 4; &9 *CHAR *VARY 4| Object of type *&6 could not be journaled.
 CPF7085|30|&1 *CHAR 10; &2 *CHAR 10| Journal &1 in &2 already exists.
+CPF7301|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2; &5 *BIN 2| &5 members not removed from file &2 in &3.
 CPF7302|40|&1 *CHAR 10; &2 *CHAR 10| File &1 not created in library &2.
+CPF7303|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| No members found for &1 in file &2 in &3.
+CPF7304|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not changed.
+CPF7305|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 changed but distributed requests failed.
+CPF7306|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &1 not added to file &2 in &3.
+CPF7308|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 34; &4 *BIN 4; &5 *BIN 4| &5 files not changed for &1 in &2. &4 files changed.
+CPF7310|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Member &1 not removed from file &2 in &3.
+CPF7311|30|| Errors in DDS not allowed with specified GENLVL.
+CPF7312|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 not found.
+CPF7313|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 already exists.
+CPF7315|30|| No records found in the source file member.
+CPF7316|30|| More than 1024 record formats in source file.
+CPF7317|30|| More than 32767 fields in record format.
+CPF7318|30|&1 *CHAR 10; &2 *CHAR 10| No files found for &1 in library &2.
+CPF7319|30|| FMTSLT(*RECID) requires RECID keyword.
+CPF7320|40|| VOL parameter not allowed with REELS parameter.
+CPF7333|30|| Block separator character not allowed.
+CPF7336|10|| One or more record lengths larger than BLKLEN value.
+CPF7337|20|| OVRFLW value larger than PAGESIZE value.
+CPF7338|20|| Number of devices larger than MAXDEV.
+CPF7339|20|| Starting page value larger than ending page value.
+CPF7340|30|| Combination of values on SIZE parameter not valid.
+CPF7341|20|| FMTSLR value requires more than one record in file.
+CPF7343|30|| Channel number specified more than once on CHLVAL.
+CPF7344|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 50; &4 *CHAR 6; &5 *CHAR 10| Value &4 on PAGESIZE not valid.
+CPF7346|30|| Value on CCSID parameter not valid.
+CPF7347|40|| Source sequence numbers not valid.
+CPF7350|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not logical or DDM file.
+CPF7351|30|| No members exist for physical files used by logical file.
+CPF7352|30|| One and only one member required for each physical file on DTAMBRS.
+CPF7353|30|&1 *CHAR 10; &2 *CHAR 10| DTAMBRS(*ALL) not allowed.
+CPF7354|30|| More than 256 members specified on DTAMBRS.
+CPF7355|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Duplicate member name specified on DTAMBRS.
+CPF7356|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 on DTAMBRS not valid.
+CPF7360|30|| No member name specified for any file on DTAMBRS parameter.
+CPF7361|30|| Number of files specified on DTAMBRS not valid.
+CPF7365|40|&1 *CHAR 10; &2 *CHAR 10| Device not added to file &1 in &2.
+CPF7366|40|&1 *CHAR 10; &2 *CHAR 10| Devices not removed from file &1 in &2.
+CPF7367|40|&1 *CHAR 10; &2 *CHAR 10| Device not changed in file &1 in &2.
+CPF7368|30|| DSPATR keyword with field name not found in file.
 CPF9801|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 in library &3 not found.
 CPF9802|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Not authorized to object &2 in &3.
 CPF9803|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Cannot allocate object &2 in library &3.
@@ -1181,7 +1611,48 @@ CPFBC01|30|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 already exists in library 
 CPFBC02|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 was not created in library &2.
 CPFBC03|40|&1 *CHAR 1| Image catalog type &1 not valid.
 CPFBC08|40|&1 *CHAR 10| Image catalog &1 not changed.
+CPFBC0B|40|&1 *CHAR 10; &2 *CHAR 6| Catalog entry &2 in image catalog &1 not changed.
+CPFBC0C|40|&1 *CHAR 10; &2 *BIN 2| Catalog entry &2 in image catalog &1 not changed.
+CPFBC0D|40|&1 *CHAR 6| Catalog entry at index &1 not loaded.
+CPFBC0E|40|&1 *CHAR 6| Catalog entry at index &1 not unloaded.
+CPFBC0F|40|&1 *CHAR 6| Catalog entry at index &1 not mounted.
 CPFBC10|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 not loaded to device &2.
+CPFBC11|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 not unloaded from device &2.
+CPFBC12|20|&1 *CHAR 10; &2 *BIN 2; &3 *BIN 2| Image catalog &1 created. &2 of &3 volumes not added.
+CPFBC13|40|&1 *BIN 2; &2 *CHAR 10| Image catalog entry &1 not loaded in image catalog &2.
+CPFBC14|40|&1 *BIN 2; &2 *CHAR 10| Image catalog entry &1 not unloaded from image catalog &2.
+CPFBC15|40|&1 *BIN 2; &2 *CHAR 10| Image catalog entry &1 not mounted in image catalog &2.
+CPFBC16|30|&1 *CHAR 10| No catalog entries exist in image catalog &1.
+CPFBC17|30|&1 *CHAR 10| Image catalog &1 not accessed.
+CPFBC18|40|&1 *CHAR 10| Image catalog &1 not deleted.
+CPFBC20|40|&1 *CHAR 10; &2 *CHAR 10| Verification for image catalog &1 failed.
+CPFBC28|40|&1 *CHAR 10| Image catalog entry not added to image catalog &1.
+CPFBC30|40|&1 *CHAR 10; &2 *BIN 2| Catalog entry at index &2 not removed from image catalog &1.
+CPFBC31|40|&1 *CHAR 10; &2 *CHAR 6| Catalog entry at index &2 not removed from image catalog &1.
+CPFBC32|40|&1 *CHAR 10| Unable to start network install with device &1.
+CPFBC3F|30|&1 *CHAR 4| NLV &1 not valid for parameter.
+CPFBC40|40|&1 *CHAR 10| Not authorized to &1 command.
+CPFBC41|40|&1 *CHAR 10| Command &1 failed.
+CPFBC42|40|&1 *CHAR 10| Verification for image catalog &1 failed.
+CPFBC43|40|&1 *CHAR 10; &2 *CHAR 4| Device &1 not a virtual optical device.
+CPFBC44|40|&1 *CHAR 5| Invalid function call to QVOICMGR.
+CPFBC45|40|&1 *CHAR 10| Image catalog &1 not found.
+CPFBC46|40|&1 *BIN 2| Catalog entry at index &1 not loaded.
+CPFBC47|40|&1 *BIN 2| Catalog entry at index &1 not unloaded.
+CPFBC48|40|&1 *BIN 2| Catalog entry at index &1 not mounted.
+CPFBC49|40|&1 *CHAR 10; &2 *BIN 2| Catalog entry is already associated with image catalog &1.
+CPFBC4A|40|&1 *CHAR 10; &2 *BIN 2| Catalog entry not found in image catalog &1.
+CPFBC4B|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 in use.
+CPFBC4C|40|&1 *CHAR 10| Image catalog &1 must be in ready status.
+CPFBC4D|40|&1 *CHAR 10| Image catalog &1 must be in Not Ready status.
+CPFBC4E|40|&1 *CHAR 10| No image catalog found for device &1.
+CPFBC4F|40|| Not authorized to verify image catalog.
+CPFBC50|40|| Path name or path names not found.
+CPFBC51|40|| File system is not available.
+CPFBC53|0|| Parameter not valid.
+CPFBC54|40|| Not authorized to call program.
+CPFBC55|20|&1 *CCHAR *VARY 4| &1 not created.
+CPFBC56|30|&1 *BIN 4; &2 *CHAR *VARY 4| Mount request for system name &2 failed.
 CPI320A|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File level identifiers do not match.
 CPI3701|0|&1 *CHAR 84| &1.
 CPI3702|0|&1 *CHAR 84; &2 *CHAR 10| &1 for &2.
@@ -1263,6 +1734,17 @@ CPI380E|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1
 CPI380F|10|&1 *CHAR 10; &2 *BIN 4| UID for user profile &1 already exists.
 CPI3810|10|&1 *CHAR 10; &2 *BIN 4| GID for user profile &1 already exists.
 CPI3811|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &4 is the primary group of &2 &1 in &3.
+CPI9B01|0|| No lines, controllers, or devices
+CPI9B02|0|| No lines or controllers
+CPI9B03|0|| No communications ports
+CPI9B04|0|&1 *CHAR 11| Attach type &1 cable to the communications port.
+CPI9B05|20|&1 *CHAR 8; &2 *CHAR 8| SMTP data exists for this user. Press Enter to replace, F12 to cancel.
+CPI9B06|0|| Retrieving configuration information.  Please wait.
+CPI9B07|10|&1 *CHAR 10| Cannot remove line &1.  Line not found.
+CPI9B08|0|| Attempting to make network operational.  Please wait.
+OPT1105|40|&1 *CHAR 32; &2 *CHAR 256| File is read only.
+OPT1110|40|&1 *CHAR 32; &2 *CHAR 256| File is write only.
+OPT1114|40|&1 *CCHAR *VARY 4| Error accessing stream file.
 OPT1115|40|&1 *CHAR 32; &2 *CHAR 256| File not found.
 OPT1116|40|&1 *CHAR 32; &2 *CHAR 256| Duplicate file or directory name found.
 OPT1120|40|&1 *CHAR 32; &2 *CHAR 256| File already exists.
@@ -1429,3 +1911,56 @@ OPT1650|40|&1 *CHAR 10| Write operation not valid for device &1.
 OPT1651|40|&1 *CHAR 10; &2 *CHAR 32| Device &1 not allowed for requested operation.
 OPT1652|40|&1 *CHAR 10| Device &1 is not an optical media library.
 OPT1660|40|&1 *CHAR 10| Optical device &1 is empty.
+OPT1671|40|&1 *CHAR 10| Feature not installed for optical device &1.
+OPT1672|40|&1 *CHAR 10| Error accessing bulk load magazine for optical device &1.
+OPT1675|40|&1 *CHAR 10| Bulk load magazine is empty for optical device &1.
+OPT1676|40|&1 *CHAR 10| Bulk load magazine is full for optical device &1.
+OPT1677|40|&1 *CHAR 10| Bulk load magazine is open for optical device &1.
+OPT1680|40|&1 *CHAR 10| Back door is open for optical device &1.
+OPT1681|40|&1 *CHAR 10| An active optical device was not found.
+OPT1715|40|| Stream file object too large for this operation.
+OPT1740|10|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4| Optical library device &1 is at or nearing capacity.
+OPT1750|10|&1 *CHAR 32; &2 *CHAR 10; &3 *CHAR 10| Cleaning of optical device or volume may be required.
+OPT1760|40|&1 *CHAR 10| Error addressing command parameter.
+OPT1763|40|&1 *CHAR 600; &2 *BIN 4; &3 *CHAR 2| Input data buffer not valid.
+OPT1764|40|&1 *CHAR 32; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4; &5 *CHAR 10; &6 *CHAR 2| Error reading media during sector read.
+OPT1765|40|&1 *CHAR 32; &2 *CHAR 10; &3 *BIN 4; &4 *BIN 4; &5 *CHAR 2; &6 *BIN 4; &7 *DEC 15 0; &8 *DEC 15 0; &9 *DEC 15 0| Error during sector read.
+OPT1781|40|&1 *CHAR 2| Objects not saved or restored for file system QOPT.
+OPT1782|40|&1 *CHAR 2; &2 *CHAR 32| Object not saved or restored, &2.
+OPT1783|99|&1 *CHAR 32| Active files found on volume &1. (C I)
+OPT1784|40|&1 *CHAR 32; &2 *CHAR 12| Operation not supported to optical volume &1.
+OPT1785|40|&1 *CHAR 32; &2 *CHAR 10| Not authorized to save or restore optical volume &1.
+OPT1786|40|&1 *CHAR 32| Volume &1 already initialized.
+OPT1787|40|&1 *CHAR 32| Obj - New Path Name parameter value not allowed.
+OPT1788|20|&1 *CHAR 32| Error occurred while updating the optical volume index for
+OPT178A|10|&1 *CHAR 32| Security attributes not preserved for existing object.
+OPT1790|40|&1 *CHAR 10; &2 *CHAR 32; &3 *CHAR 2; &4 *CHAR 32; &5 *CHAR 8| Operation not allowed or conflicts with another request.
+OPT1795|40|&1 *CHAR 32; &2 *CHAR 256| Error accessing directory attributes.
+OPT1796|40|&1 *CHAR 32| Operation failed.
+OPT1797|40|&1 *CHAR 32| System is not enabled for this function.
+OPT1805|60|&1 *CHAR 4| Error accessing optical volume index file.
+OPT1810|60|&1 *CHAR 4| Error accessing optical directory index file.
+OPT1812|40|&1 *CHAR 4| Input not valid for function requested.
+OPT1813|40|&1 *CHAR 10; &2 *CHAR 18| Unexpected error occurred.
+OPT1814|40|&1 *CHAR 4; &2 *CHAR 32| Internal program error occurred.
+OPT1815|60|| Internal program error occurred.
+OPT1820|60|&1 *CHAR 10; &2 *CHAR 32| Internal error occurred on optical device &1.
+OPT1821|60|&1 *CHAR 10; &2 *CHAR 32| Error occurred on optical device &1.
+OPT1825|40|&1 *CHAR 10| Optical indexes are incorrect for optical device &1.
+OPT1860|40|&1 *CHAR 10| Request to optical device &1 failed.
+OPT1861|40|&1 *CHAR 10| No device description configured for resource &1.
+OPT1862|40|&1 *CHAR 10| No active device description for resource &1.
+OPT1863|40|| Optical libraries need to be reclaimed.
+OPT1864|40|&1 *CHAR 10| Insufficient allocated and operational optical drives.
+OPT1872|40|&1 *CHAR 10| Optical request timed out or was cancelled.
+OPT1885|40|&1 *CHAR 10| Not authorized to optical device &1.
+OPT1886|40|&1 *CHAR 32; &2 *CHAR 10| Command &2 is not allowed for optical volume.
+OPT1887|40|&1 *CHAR 32; &2 *CHAR 10| Command &2 is not allowed for optical volume.
+OPT1888|40|&1 *CHAR 2| Request failed.
+OPT1890|10|&1 *BIN 2; &2 *BIN 2; &3 *BIN 4; &4 *CHAR 2| A problem has occurred during volume, directory or file name translation.
+OPT1892|40|&1 *BIN 2; &2 *BIN 2; &3 *CHAR 300| An error occurred during path name translation.
+OPT1934|0|&1 *CHAR 32| Optical directory index is being built for volume &1.
+OPT1935|0|| Operation in progress, please wait.
+OPT1936|0|&1 *BIN 4| Building list for &1 files, please wait.
+OPT1937|30|&1 *BIN 4; &2 *BIN 4| Unable to display all requested files.
+OPT1938|30|&1 *BIN 4| Unable to display all requested directories.
