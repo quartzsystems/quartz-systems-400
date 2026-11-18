@@ -297,12 +297,12 @@ fn handles_and_waiting_locks_over_the_link() {
         anon.stat_attrs("/home/d/none", &[AttrId::FileId], true),
         Err(Errno::ENOENT)
     );
-    let l = anon.read_dir_stat("/home/d", &[AttrId::FileId]).unwrap();
-    assert_eq!(l.entries.len(), 1);
-    assert_eq!(l.entries[0].ent.name, "f");
-    let (fs, fa) = l.entries[0].stat.clone().unwrap();
+    let listing = anon.read_dir_stat("/home/d", &[AttrId::FileId]).unwrap();
+    assert_eq!(listing.entries.len(), 1);
+    assert_eq!(listing.entries[0].ent.name, "f");
+    let (fs, fa) = listing.entries[0].stat.clone().unwrap();
     assert_eq!((fs.ino, fa), (id.ino, vec![Attr::FileId(id)]));
-    assert!(!l.case_sensitive);
+    assert!(!listing.case_sensitive);
     // A file server's write in two requests: the handle with the
     // caller's access, then the data, its sync and the attributes after.
     let (p, _, acc) = anon.stat_by_id_access(id, W_OK).unwrap();
