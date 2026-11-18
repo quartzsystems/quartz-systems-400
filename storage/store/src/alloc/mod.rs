@@ -83,6 +83,9 @@ const RESERVE_MIN: u64 = 64;
 const RESERVE_MAX: u64 = 16384;
 /// Most chunks one checkpoint draws its pages from.
 const MAX_CHUNKS: usize = 8;
+/// Pages a search from a span's hint looks at before it starts over
+/// from the first page.
+const HINT_STEPS: u64 = 4096;
 
 /// The allocator of one ASP.
 pub struct Allocator {
@@ -105,6 +108,11 @@ pub struct Allocator {
     held: RangeSet,
     /// In the middle of a checkpoint: the state to publish at the end.
     staged: Option<Staged>,
+    /// Per span, where a search for a free page starts: every page
+    /// below it was allocated when it was set, and a free lowers it. A
+    /// hint only; a search from it that finds nothing soon starts over
+    /// from the first page.
+    low: Vec<u64>,
 }
 
 /// Checkpoint results waiting for the superblock write.
@@ -126,6 +134,7 @@ impl Allocator {
         let reserve = (layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
         Self {
             reserve,
+            low: vec![0; layout.spans().len()],
             excluded: vec![false; layout.spans().len()],
             layout,
             bitmaps,
@@ -145,6 +154,7 @@ impl Allocator {
         let mut bm = Bitmap::new(pages);
         bm.set(RESERVED_HEAD, pages - 1 - RESERVED_HEAD);
         self.bitmaps.push(bm);
+        self.low.push(0);
         self.excluded.push(false);
         self.layout = layout;
         self.reserve = (self.layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
@@ -161,6 +171,7 @@ impl Allocator {
             });
         }
         self.bitmaps.pop();
+        self.low.pop();
         self.excluded.pop();
         let sizes: Vec<u64> = self.bitmaps.iter().map(Bitmap::pages).collect();
         let mut layout = self.layout.clone();
@@ -207,6 +218,7 @@ impl Allocator {
             }
         }
         self.bitmaps[usize::from(span)] = shrunk;
+        self.low[usize::from(span)] = 0;
         self.reserve = (self.layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
         Ok(())
     }
@@ -300,11 +312,21 @@ impl Allocator {
         let Some(unit) = self.pick_span() else {
             return Err(StoreError::NoSpace { asp: 0 });
         };
-        let bm = &mut self.bitmaps[unit];
-        if bm.free() == 0 {
+        if self.bitmaps[unit].free() == 0 {
             return Err(StoreError::NoSpace { asp: 0 });
         }
-        let (lba, len) = match bm.first_fit(pages) {
+        let found = match self.fit_from_low(unit, pages) {
+            Some(lba) => Some(lba),
+            None => {
+                let lba = self.bitmaps[unit].first_fit(pages);
+                if let Some(l) = lba.filter(|_| pages == 1) {
+                    self.low[unit] = l;
+                }
+                lba
+            }
+        };
+        let bm = &mut self.bitmaps[unit];
+        let (lba, len) = match found {
             Some(lba) => (lba, pages),
             None => bm.largest_run(pages).expect("free > 0"),
         };
@@ -315,6 +337,41 @@ impl Allocator {
             start: self.layout.logical(unit, lba),
             len,
         })
+    }
+
+    /// A run of `pages` free pages of span `unit` found from its hint
+    /// within [`HINT_STEPS`] pages, the hint moved to the first free page
+    /// seen; `None` to search from the first page.
+    fn fit_from_low(&mut self, unit: usize, pages: u64) -> Option<u64> {
+        let bm = &self.bitmaps[unit];
+        let mut p = self.low[unit];
+        let mut first = None;
+        let end = bm.pages().min(p.saturating_add(HINT_STEPS));
+        let mut found = None;
+        while p < end {
+            if bm.is_free(p) {
+                first.get_or_insert(p);
+                let run = bm.free_run_from(p, pages);
+                if run >= pages {
+                    found = Some(p);
+                    break;
+                }
+                p += run;
+            } else {
+                p += 1;
+            }
+        }
+        if let Some(f) = first {
+            self.low[unit] = f;
+        }
+        found
+    }
+
+    /// A run of span `unit` from `lba` became free.
+    fn lower(&mut self, unit: usize, lba: u64) {
+        if let Some(l) = self.low.get_mut(unit) {
+            *l = (*l).min(lba);
+        }
     }
 
     /// One page.
@@ -401,6 +458,7 @@ impl Allocator {
     pub fn rollback_alloc(&mut self, start: PageNo, len: u64) {
         let (unit, lba) = self.layout.locate(start).expect("own run");
         self.bitmaps[usize::from(unit)].set(lba, len);
+        self.lower(usize::from(unit), lba);
         self.allocs.remove(Extent { unit, lba, len });
     }
 
@@ -437,6 +495,7 @@ impl Allocator {
         for bm in &mut self.bitmaps {
             *bm = Bitmap::new(bm.pages());
         }
+        self.low.iter_mut().for_each(|l| *l = 0);
         self.allocs = RangeSet::default();
         self.pending = RangeSet::default();
         for e in free {
@@ -626,6 +685,7 @@ impl Allocator {
         self.without_held(&mut release);
         for e in release.iter() {
             self.bitmaps[usize::from(e.unit)].set(e.lba, e.len);
+            self.lower(usize::from(e.unit), e.lba);
         }
         self.tree_pages = staged.tree_pages;
         self.log_pages = staged.log_pages;
