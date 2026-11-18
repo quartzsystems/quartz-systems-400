@@ -590,6 +590,38 @@ Record format of `QASRRSTO`, the restore outfile, as IBM i V7R1M0's `DSPFFD` sho
 | 4400 | 1 | RSODFR | CHAR 1 |
 | 4401 | 10 | RSODFI | CHAR 10 |
 
+## 8. Messages
+
+The save and restore commands send IBM's message for each meaning with
+its data laid out as IBM declares it, and no text of their own: Command
+Entry and the job log show the catalogue's text (`QCPFMSG`, Quartz's
+words) filled from the data, and a program that monitors for a message
+reads what IBM's would carry. The identifiers and layouts come from the
+primary oracle's `DSPMSGD` (`tools/conformance/oracle/msgdata/fields.txt`);
+`save/saverst/src/msg.rs` builds the data, `runtime/msgf/tests/save_layouts.rs`
+holds the catalogue to IBM's layouts and `save/saverst/tests/messages.rs`
+the data to the catalogue.
+
+- A save to a save file ends `CPC3722` (`CPF3701` when objects were not
+  saved), to media `CPC3701` (`CPF3771`); several libraries end
+  `CPF3777` when not all were saved; nothing saved is `CPF3770`.
+- A restore ends `CPC3703` (`CPF3773` when objects were not restored or
+  differences were accepted, `CPF3770` when nothing was, `CPF3780` when
+  nothing named was in the save).
+- `SAV` ends `CPC370D` to a save file and `CPC370C` to media (`CPF3838`,
+  `CPF3837`); `RST` ends `CPC370F` and `CPC370E` (`CPF383E`, `CPF3839`);
+  each link not handled is `CPD3775`.
+- `SAVSECDTA` ends as a library save of `QSYS`; `RSTUSRPRF` `CPC3705`
+  (`CPF3775`); `RSTAUT` `CPC3706` per profile and `CPC3710` (`CPF3845`,
+  `CPF3776`); `SAVSYS` `CPC3702`.
+- A cause underneath the escape (the store, the stream, a device) goes
+  before it as `CPF9897`; a save or restore that cannot go on ends
+  `CPF3794`.
+
+`CPF3700` (a save function this release does not have) is QS/400's own:
+IBM's `QCPFMSG` leaves it unused (the oracle's `CPF37A0`-`CPF3799` range
+in `dspmsgd5.s` has no `CPF3700`).
+
 ## Frozen at V1R1M0
 
 Frozen: the media header, records, object descriptors, parts, references, the index and trailer, chunk compression, the content digest and the `QSRSAV`/`QSRRST` outfile layouts. The version is the media header's `VERSION`. V1R1M0 freezes version 2, which adds the `sqlinf` parts (an object's SQL information). V1R0M0 wrote version 1; a V1R1M0 system restores every version 1 save as objects with no SQL information, so a `SAVLIB` made on V1R0M0 restores after a slip install.

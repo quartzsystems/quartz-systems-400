@@ -41,3 +41,10 @@ themselves carry IBM's second-level help and stay out of the tree.
 - `CPF6708` has no data. `CPC2102` is `&1 *CHAR 10; &2 *UBIN 2; &3
   *CHAR 10`; `CPC3703` has ten fields (counts, both libraries, a time
   stamp).
+- `dspmsgd5.s` (save and restore, handoff 21): `SAV` and `RST` end
+  `CPC370C`/`CPC370E` to and from media and `CPC370D`/`CPC370F` with a
+  save file (`CPF3837`/`CPF3839`, `CPF3838`/`CPF383E` when links were
+  not handled); `SAVSYS` ends `CPC3702`; an authorization list kept is
+  `CPI371D`, refused `CPF3881`, missing `CPF3836`; `RSTAUT` ends
+  `CPC3710` or `CPF3776` (`CPF3845` per profile); `CPF4110` is the
+  cancel reply to the inquiry its `&6` names; `CPF3700` is unused.

@@ -283,8 +283,9 @@ fn savsys(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     need(SpecialAuth::SAVSYS, "*SAVSYS", "save the system")?;
     // The restricted state, as on IBM i: `ENDSBS SBS(*ALL)` first.
     if let Some(sbs) = system.sbs.keys().next() {
-        return Err(Fail::new(NOT_RESTRICTED, &[])
-            .because(format!("Subsystem {sbs} is active; end it with ENDSBS SBS(*ALL).")));
+        return Err(Fail::new(NOT_RESTRICTED, &[]).because(format!(
+            "Subsystem {sbs} is active; end it with ENDSBS SBS(*ALL)."
+        )));
     }
     let dev = values(parms, "DEV").first().cloned().unwrap_or_default();
     if !stream::is_device(&dev) {

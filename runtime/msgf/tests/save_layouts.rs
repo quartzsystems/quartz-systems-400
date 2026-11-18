@@ -60,7 +60,9 @@ fn save_messages_have_ibms_layouts() {
     let ibm = oracle();
     for id in SAVE_MSGS {
         let d = f.find(id).unwrap_or_else(|| panic!("{id} not in QCPFMSG"));
-        let (sev, fields) = ibm.get(*id).unwrap_or_else(|| panic!("{id} not in fields.txt"));
+        let (sev, fields) = ibm
+            .get(*id)
+            .unwrap_or_else(|| panic!("{id} not in fields.txt"));
         assert_eq!(d.severity, *sev, "{id} severity");
         let ours: Vec<String> = d.vars.iter().map(msgf::VarType::declaration).collect();
         assert!(

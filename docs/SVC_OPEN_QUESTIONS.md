@@ -174,9 +174,9 @@ The V7R1M0 oracle settled 27 restore rules
 
 ## Install and recovery
 
-27. **`SAVSYS`'s completion message.** `CPC3703` here, with the device
-   in its data; IBM's message for a completed system save was not
-   captured (the oracles may not run `SAVSYS`).
+27. **`SAVSYS`'s completion message.** Resolved by handoff 21: `CPC3702`,
+   IBM's, with its data (the volumes, the time, the device, the last
+   volume) as the primary oracle's `DSPMSGD` declares it.
 28. **`SAVSYS` while active.** Resolved in Phase 12: `ENDSBS *ALL` now
    ends every job but the console's and leaves the console usable, so
    `SAVSYS` refuses as IBM i does unless the system is in the restricted

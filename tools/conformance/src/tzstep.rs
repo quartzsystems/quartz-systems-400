@@ -86,7 +86,11 @@ impl Suite {
             "SAVOBJ OBJ(QSTZTEST) LIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)",
             CMD,
         )?;
-        want(&saved, "SAVOBJ of a *TIMZON", &["from library QSYS were saved"])?;
+        want(
+            &saved,
+            "SAVOBJ of a *TIMZON",
+            &["from library QSYS were saved"],
+        )?;
         let gone = s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD)?;
         want(&gone, "DLTTIMZON", &["QSTZTEST"])?;
         let none = s.command("WRKTIMZON TIMZON(QSTZTEST)", CMD)?;

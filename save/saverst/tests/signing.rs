@@ -233,7 +233,10 @@ fn qalwobjrst_refuses_system_state() {
     t.commit().unwrap();
     let bytes = saved(&mut s, q);
     let out = outcome(&mut s, q, &bytes, "LS", 1, "*NONE");
-    assert_eq!(out[1], ("NOSIG".into(), Some(msg::NOT_RESTORED_SYSTEM_STATE)));
+    assert_eq!(
+        out[1],
+        ("NOSIG".into(), Some(msg::NOT_RESTORED_SYSTEM_STATE))
+    );
     let out = outcome(&mut s, q, &bytes, "LS2", 1, "*ALWSYSSTT");
     assert_eq!(out[1], ("NOSIG".into(), None));
 }

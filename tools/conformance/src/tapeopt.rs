@@ -151,7 +151,11 @@ impl Suite {
             "inzopt VOL(QS72O) DEV(OPTVRT72) CHECK(*NO)",
             &["CPC6773"],
         )?;
-        run(s, "savlib LIB(QS72) DEV(OPTVRT72)", &["were saved on", "QS72O"])?;
+        run(
+            s,
+            "savlib LIB(QS72) DEV(OPTVRT72)",
+            &["were saved on", "QS72O"],
+        )?;
         run(
             s,
             "dspopt VOL(QS72O) DEV(OPTVRT72) DATA(*SAVRST)",

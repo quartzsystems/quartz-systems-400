@@ -34,7 +34,11 @@ impl Suite {
             return Err(format!("CRTSAVF: {made}"));
         }
         let saved = s.command("savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71)", CMD)?;
-        want(&saved, "SAVLIB", &["from library QS71 were saved to save file S71"])?;
+        want(
+            &saved,
+            "SAVLIB",
+            &["from library QS71 were saved to save file S71"],
+        )?;
         let again = s.command("savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71)", CMD)?;
         want(&again, "SAVLIB without CLEAR", &["CPF3794"])?;
         let rst = s.command(

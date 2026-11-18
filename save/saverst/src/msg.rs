@@ -199,10 +199,13 @@ pub fn object(msgid: &str, name: &str, type_code: u16, library: &str) -> Vec<u8>
     let d = Data::new();
     match msgid {
         NO_LIBRARY | NONE_IN_SAVE => d.char(library, 10),
-        JOURNAL_EXISTS | DTAQ_EXISTS | RECEIVER_ATTACHED | NOT_RESTORED_BASED_ON
-        | NOT_RESTORED_MEMBERS | NOT_RESTORED_LEVEL | SAVF_NO_DATA => {
-            d.char(name, 10).char(library, 10)
-        }
+        JOURNAL_EXISTS
+        | DTAQ_EXISTS
+        | RECEIVER_ATTACHED
+        | NOT_RESTORED_BASED_ON
+        | NOT_RESTORED_MEMBERS
+        | NOT_RESTORED_LEVEL
+        | SAVF_NO_DATA => d.char(name, 10).char(library, 10),
         JOURNAL_MISSING => d.char(name, 10).char(library, 10).char("*N", 10),
         // These write the type as `*&2`.
         NOT_RESTORED_SYSTEM_STATE | NOT_RESTORED_ADOPTS => d

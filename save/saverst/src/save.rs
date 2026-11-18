@@ -427,7 +427,12 @@ fn save_in<W: Write>(
         locked.push(c.id);
         let target = opts.target_savf == Some(c.id);
         if target {
-            report.notes.push(msg::Note::new(msg::SAVF_NO_DATA, &c.name, types::SAVF, &lib_text));
+            report.notes.push(msg::Note::new(
+                msg::SAVF_NO_DATA,
+                &c.name,
+                types::SAVF,
+                &lib_text,
+            ));
         }
         let data = c.id.type_code != order::SAVF || (opts.save_file_data && !target);
         let me = pos[&c.id.to_bytes()];

@@ -29,9 +29,9 @@ use store::txn::Txn;
 use tracing::debug;
 
 use crate::hooks::Hooks;
+use crate::msg::Note;
 use crate::save::ObjResult;
 use crate::select::{ObjSel, wanted};
-use crate::msg::Note;
 use crate::{Error, Result, ids, image, msg, order};
 
 /// `OPTION`.
@@ -681,17 +681,21 @@ fn differs(cx: &Ctx<'_>, d: &ObjectDescriptor, h: &store::obj::ObjectHeader) -> 
         if !(allow.autl || allow.all) {
             return Err(Error::refused(msg::NOT_RESTORED_AUTL, name));
         }
-        out.push(note(cx, msg::AUTL_KEPT, d).values(
-            &or_none(&text_of(&h.autl)),
-            &or_none(&text_of(&d.autl)),
-        ));
+        out.push(
+            note(cx, msg::AUTL_KEPT, d)
+                .values(&or_none(&text_of(&h.autl)), &or_none(&text_of(&d.autl))),
+        );
     }
     Ok(out)
 }
 
 /// `*NONE` for a blank name, as the messages show it.
 fn or_none(s: &str) -> String {
-    if s.is_empty() { "*NONE".into() } else { s.into() }
+    if s.is_empty() {
+        "*NONE".into()
+    } else {
+        s.into()
+    }
 }
 
 /// A note about `d` in the library it is restored into.

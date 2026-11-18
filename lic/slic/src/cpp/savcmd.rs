@@ -8,8 +8,8 @@
 //! (`stgsvc::media::stream`: tape, optical, image catalogs), authority
 //! and the messages.
 
-use std::fmt::Write as _;
 use std::fmt::Display;
+use std::fmt::Write as _;
 use std::io::Cursor;
 
 use cmd::Value;
@@ -160,7 +160,9 @@ impl Fail {
 
     /// The old text form, for callers that pass errors as text.
     pub(super) fn text(&self) -> String {
-        format!("{} {}", self.id, self.detail).trim_end().to_string()
+        format!("{} {}", self.id, self.detail)
+            .trim_end()
+            .to_string()
     }
 }
 
@@ -757,9 +759,7 @@ fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
 fn last_savlib(system: &mut System, lib: &str) -> u64 {
     in_store(system, |txn, qsys, _| {
         let n = qsname::Name::parse(lib).map_err(Fail::ended)?;
-        let id = ops::find_library(txn, qsys, n)
-            .map_err(Fail::ended)?
-            .id;
+        let id = ops::find_library(txn, qsys, n).map_err(Fail::ended)?.id;
         let (_, h) = ops::read_header(txn, id).map_err(Fail::ended)?;
         Ok(
             if store::obj::header::text_of(&h.save.command) == "SAVLIB" {
@@ -1171,7 +1171,10 @@ fn save_reply(reports: &[SaveReport], dests: &[Dest], now: u64) -> CmdReply {
         return reply;
     }
     let full = ends.iter().filter(|(id, _)| done(id)).count();
-    let none = ends.iter().filter(|(id, _)| *id == msg::NONE_FOR_LIB).count();
+    let none = ends
+        .iter()
+        .filter(|(id, _)| *id == msg::NONE_FOR_LIB)
+        .count();
     let partial = ends.len() - full - none;
     for (id, data) in ends {
         let kind = if done(id) { COMP } else { DIAG };
@@ -1386,8 +1389,9 @@ fn restore_stream(
     }
     // The hooks decide who may restore; the objects are made by the
     // system so they keep their saved owners.
-    let r = sec::guard::as_system(|| saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts))
-        .map_err(Fail::ended)?;
+    let r =
+        sec::guard::as_system(|| saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts))
+            .map_err(Fail::ended)?;
     let (mut made, mut kept) = (0, 0);
     if parms.text("SPLFDTA") != "*NONE" {
         for (lib, q, part) in &r.spool {
@@ -1573,7 +1577,9 @@ fn rst_reply(
         reply.messages.push(message(n.msgid, INFO, n.data()));
     }
     for n in &r.notes {
-        reply.messages.push(message(n.msgid, note_kind(n.msgid), n.data()));
+        reply
+            .messages
+            .push(message(n.msgid, note_kind(n.msgid), n.data()));
     }
     if r.restored() == 0 && r.not_restored() == 0 && !r.not_found.is_empty() {
         // Nothing named was there: once, for the save file (rule 24).
@@ -1722,10 +1728,9 @@ fn savsecdta(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let hooks = SvcHooks::new(qsys);
     let mut w = Writer::new(Vec::new(), &head).map_err(Fail::ended)?;
     let _ = w.parameters(&parms.to_line(NAME));
-    let rep = sec::guard::as_system(|| {
-        saverst::secdta::save_security(store, &hooks, qsys, now, &mut w)
-    })
-    .map_err(Fail::ended)?;
+    let rep =
+        sec::guard::as_system(|| saverst::secdta::save_security(store, &hooks, qsys, now, &mut w))
+            .map_err(Fail::ended)?;
     let (_, bytes) = w
         .finish(u32::try_from(rep.not_saved()).unwrap_or(0))
         .map_err(Fail::ended)?;
@@ -2366,8 +2371,7 @@ fn listing(stream: &[u8]) -> Result<SavfListing, Fail> {
         .iter()
         .filter(|e| e.owner_index == savfmt::object::NO_OWNER)
     {
-        let (d, tail) =
-            savfmt::descriptor_at(&mut cur, e.offset).map_err(bad_save)?;
+        let (d, tail) = savfmt::descriptor_at(&mut cur, e.offset).map_err(bad_save)?;
         let ty = if d.has(savfmt::object::flags::IFS) {
             "*IFS".to_string()
         } else {
@@ -2402,22 +2406,22 @@ fn listing(stream: &[u8]) -> Result<SavfListing, Fail> {
 fn dspsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let (file, lib) = parms.qual("FILE");
     let (desc, rows) = savf_contents(system, &file, &lib_or(&lib))?;
-            let mut text = String::new();
-            for (k, v) in &desc {
-                let _ = writeln!(text, "{k:<24} {v}");
-            }
-            let _ = writeln!(
-                text,
-                "{:<10} {:<10} {:<10} {:<10} {:>12}  Text",
-                "Object", "Type", "Library", "Attribute", "Size"
-            );
-            for r in &rows {
-                let _ = writeln!(
-                    text,
-                    "{:<10} {:<10} {:<10} {:<10} {:>12}  {}",
-                    r[0], r[1], r[2], r[3], r[4], r[5]
-                );
-            }
+    let mut text = String::new();
+    for (k, v) in &desc {
+        let _ = writeln!(text, "{k:<24} {v}");
+    }
+    let _ = writeln!(
+        text,
+        "{:<10} {:<10} {:<10} {:<10} {:>12}  Text",
+        "Object", "Type", "Library", "Attribute", "Size"
+    );
+    for r in &rows {
+        let _ = writeln!(
+            text,
+            "{:<10} {:<10} {:<10} {:<10} {:>12}  {}",
+            r[0], r[1], r[2], r[3], r[4], r[5]
+        );
+    }
     Ok(CmdReply {
         text,
         ..CmdReply::default()
@@ -2522,9 +2526,12 @@ mod reply_tests {
 
     #[test]
     fn a_failure_is_its_escape_with_the_cause_before_it() {
-        let r = Fail::new(SAVF_EMPTY, &[Field::Char("S71", 10), Field::Char("QGPL", 10)])
-            .because("checked")
-            .reply();
+        let r = Fail::new(
+            SAVF_EMPTY,
+            &[Field::Char("S71", 10), Field::Char("QGPL", 10)],
+        )
+        .because("checked")
+        .reply();
         assert!(r.text.is_empty());
         assert_eq!(r.messages[0].msgid, "CPF9897");
         let e = r.escape.unwrap();

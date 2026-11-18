@@ -70,10 +70,12 @@ fn object_messages_fit_their_entries() {
         let shown = d.format(&data);
         assert!(!shown.contains('&'), "{id}: {shown}");
     }
-    let shown = f
-        .find(msg::NOT_RESTORED)
-        .unwrap()
-        .format(&msg::object(msg::NOT_RESTORED, "CUST", types::FILE, "QGPL"));
+    let shown = f.find(msg::NOT_RESTORED).unwrap().format(&msg::object(
+        msg::NOT_RESTORED,
+        "CUST",
+        types::FILE,
+        "QGPL",
+    ));
     assert_eq!(shown, "*FILE CUST was not restored to QGPL.");
 }
 
