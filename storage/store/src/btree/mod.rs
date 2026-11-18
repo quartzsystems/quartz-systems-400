@@ -36,6 +36,12 @@ pub struct BTree<K, V> {
     _marker: PhantomData<(K, V)>,
 }
 
+/// The pages a subtree became, each after the first with its separator.
+type Pieces<K> = Vec<(Option<K>, PageNo)>;
+
+/// Keys and their encoded values.
+type Items<K> = Vec<(K, Vec<u8>)>;
+
 /// Result of inserting into a subtree.
 enum Put<K> {
     /// The subtree was rewritten to this page.
@@ -266,7 +272,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         p: &mut dyn Pager,
         pno: PageNo,
         items: Vec<(K, Vec<u8>)>,
-    ) -> Result<(Vec<(Option<K>, PageNo)>, usize)> {
+    ) -> Result<(Pieces<K>, usize)> {
         let (node, new) = match self.load(p, pno)? {
             Node::Leaf(entries) => {
                 let mut merged = Vec::with_capacity(entries.len() + items.len());
@@ -286,7 +292,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
             }
             Node::Internal { first, entries } => {
                 // Each child with the items that go below it.
-                let mut groups: Vec<(usize, Vec<(K, Vec<u8>)>)> = Vec::new();
+                let mut groups: Vec<(usize, Items<K>)> = Vec::new();
                 for (k, v) in items {
                     let i = child_index(&entries, &k);
                     match groups.last_mut() {
@@ -880,7 +886,11 @@ mod tests {
                     fresh += 1;
                 }
             }
-            assert_eq!(many.insert_many(&mut p, &batch).unwrap(), fresh, "round {round}");
+            assert_eq!(
+                many.insert_many(&mut p, &batch).unwrap(),
+                fresh,
+                "round {round}"
+            );
             p.commit().unwrap();
         }
         let a: Vec<_> = one.entries(&mut p).unwrap().map(Result::unwrap).collect();

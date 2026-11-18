@@ -166,10 +166,8 @@ impl DirDb {
                 delta -= 1;
             }
         }
-        let added: Vec<(IndexKey, Vec<u8>)> = after
-            .difference(before)
-            .map(|k| (*k, Vec::new()))
-            .collect();
+        let added: Vec<(IndexKey, Vec<u8>)> =
+            after.difference(before).map(|k| (*k, Vec::new())).collect();
         delta += i64::try_from(t.insert_many(txn, &added)?).unwrap_or(i64::MAX);
         // A delete and an insert can leave the count as it was and
         // still move the tree's root: it is kept whenever it moved.
@@ -441,7 +439,6 @@ impl DirDb {
         }
         Ok(found.unwrap_or_default())
     }
-
 }
 
 #[cfg(test)]

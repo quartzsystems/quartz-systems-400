@@ -67,37 +67,7 @@ pub fn run(a: &mut Conn, sec: &mut Conn) -> Result<String, String> {
     {
         return Err(format!("no cn index: {:?}", before.indexes));
     }
-    let put = PutDirIndex {
-        instance: INSTANCE.into(),
-        index: DirIndex {
-            attribute: INDEXED.into(),
-            equality: true,
-            ..DirIndex::default()
-        },
-    };
-    let r = sec.call(Op::PutDirIndex, &put)?;
-    if r.status != Status::Ok {
-        return Err(format!("PutDirIndex {INDEXED}: {}", brief(&r)));
-    }
-    let with = indexes(sec)?;
-    if !with
-        .indexes
-        .iter()
-        .any(|i| i.attribute.eq_ignore_ascii_case(INDEXED) && i.equality)
-    {
-        return Err(format!("{INDEXED} not indexed: {:?}", with.indexes));
-    }
-    let rm = DirIndexRef {
-        instance: INSTANCE.into(),
-        attribute: INDEXED.into(),
-    };
-    let r = sec.call(Op::RemoveDirIndex, &rm)?;
-    if r.status != Status::Ok {
-        return Err(format!("RemoveDirIndex {INDEXED}: {}", brief(&r)));
-    }
-    if indexes(sec)?.indexes.len() != before.indexes.len() {
-        return Err("the index count after the removal".into());
-    }
+    index_put_and_removed(sec, before.indexes.len())?;
     let admin: DirAdmin = sec.ok(Op::GetDirAdmin, &q())?;
     if !admin.dn.eq_ignore_ascii_case("cn=Administrator") || !admin.password_set {
         return Err(format!("administrator: {admin:?}"));
@@ -141,4 +111,40 @@ pub fn run(a: &mut Conn, sec: &mut Conn) -> Result<String, String> {
         access.acl_source,
         counts.binds
     ))
+}
+
+/// An index on [`INDEXED`] put, seen and removed; the count as it was.
+fn index_put_and_removed(sec: &mut Conn, count: usize) -> Result<(), String> {
+    let put = PutDirIndex {
+        instance: INSTANCE.into(),
+        index: DirIndex {
+            attribute: INDEXED.into(),
+            equality: true,
+            ..DirIndex::default()
+        },
+    };
+    let r = sec.call(Op::PutDirIndex, &put)?;
+    if r.status != Status::Ok {
+        return Err(format!("PutDirIndex {INDEXED}: {}", brief(&r)));
+    }
+    let with = indexes(sec)?;
+    if !with
+        .indexes
+        .iter()
+        .any(|i| i.attribute.eq_ignore_ascii_case(INDEXED) && i.equality)
+    {
+        return Err(format!("{INDEXED} not indexed: {:?}", with.indexes));
+    }
+    let rm = DirIndexRef {
+        instance: INSTANCE.into(),
+        attribute: INDEXED.into(),
+    };
+    let r = sec.call(Op::RemoveDirIndex, &rm)?;
+    if r.status != Status::Ok {
+        return Err(format!("RemoveDirIndex {INDEXED}: {}", brief(&r)));
+    }
+    if indexes(sec)?.indexes.len() != count {
+        return Err("the index count after the removal".into());
+    }
+    Ok(())
 }

@@ -72,11 +72,11 @@ impl Trailer {
 
     /// Encode into a whole page, the checksum left as it was.
     pub fn write_fields(&self, page: &mut [u8]) {
-            let t = &mut page[BODY_SIZE..PAGE_SIZE];
-            put_u16(t, OFF_TYPE, self.page_type);
-            put_u16(t, OFF_FLAGS, self.flags);
-            t[OFF_OWNER..OFF_OWNER + 16].copy_from_slice(&self.owner.to_bytes());
-            put_u64(t, OFF_GENERATION, self.generation);
+        let t = &mut page[BODY_SIZE..PAGE_SIZE];
+        put_u16(t, OFF_TYPE, self.page_type);
+        put_u16(t, OFF_FLAGS, self.flags);
+        t[OFF_OWNER..OFF_OWNER + 16].copy_from_slice(&self.owner.to_bytes());
+        put_u64(t, OFF_GENERATION, self.generation);
     }
 }
 
