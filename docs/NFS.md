@@ -2348,6 +2348,24 @@ below, and the QEMU steps (last item).
     `remote_data.rs` `write_back_sends_each_block_once`,
     `copy_to_the_mount_sends_each_block_once`.
 
+  **Metadata requests** (2026-11-17): the service requests
+  each call makes, counted from the code (`IfsVfs`), before and after:
+
+  | Call | Before | After |
+  |---|---|---|
+  | `GETATTR`, `READ`, `WRITE` | 1, 2, 2 | the same |
+  | `LOOKUP` | 2 | 2 |
+  | `ACCESS` (read, lookup or execute, modify) | 1 + one per mode asked (up to 4) | 2 (`access_many`) |
+  | `READDIRPLUS` page of n entries, directory of N | 2 + n, and the whole directory listed (N entries over the link) for every page | the first page 3; each next page 2 while the directory is unchanged (the listing kept, `stat_many` for the n) |
+  | `READDIR` page | 2, the whole directory listed each time | the first 2, each next 1 |
+  | `CREATE`, `MKDIR`, `SYMLINK`, `MKNOD` | the object and its directory after: 2 | 1 (`stat_many`) |
+  | `RENAME` | 7 | 5 |
+
+  A 10,000-entry directory read with `READDIRPLUS` pages of about 100
+  entries took about 10,200 requests and moved a million names; it now
+  takes about 200 and moves 10,000. The handles a file ID resolves by
+  walking (below) read directories only.
+
   **What remains.** The default `HOSTOPT` write mode is `*SYNC`, which
   IBM documents as data written to disk immediately: every `WRITE`
   waits for a sync, whatever the client asks. Under QEMU a sync is the
