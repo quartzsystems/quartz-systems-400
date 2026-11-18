@@ -50,6 +50,7 @@ impl ublk::Target for Target {
 /// Run a device transfer; one slower than a second is logged.
 fn slow<T>(what: &str, f: impl FnOnce() -> T) -> T {
     let at = Instant::now();
+    super::stall::hit("IFSDEV");
     let r = f();
     let took = at.elapsed();
     if took >= Duration::from_secs(1) {

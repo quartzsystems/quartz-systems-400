@@ -819,14 +819,19 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
 
 /// Children that exited: the storage service ending is fatal, the
 /// service console job is started again.
-fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
-    for &pid in pids {
+fn reaped(system: &mut System, pids: &[(u32, String)], tx: &mpsc::Sender<Event>) {
+    for (pid, how) in pids {
+        let pid = *pid;
         if system
             .procs
             .stg
             .as_ref()
             .is_some_and(|p| p.pid == pid && !p.closing)
         {
+            // How it ended is the first thing to know about a B1001060.
+            system
+                .out
+                .serial(&format!("slic: storage service {pid} ended: {how}\n"));
             system.procs.stg = None;
             system.fatal(&src::STG_ENDED);
         }
@@ -868,7 +873,7 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                 storage::tick(system);
             }
             Ok(Event::Signal(s)) if s == libc_sigchld() => {
-                let pids = sys::reap();
+                let pids = sys::reap_with_status();
                 reaped(system, &pids, tx);
             }
             Ok(Event::Signal(s)) if s == libc_sigusr1() => power::requested(system),

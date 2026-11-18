@@ -42,6 +42,7 @@ pub fn run(system: &mut System, line: &str) -> String {
             };
         }
         "wmstats" => return system.stats.report(),
+        "dbgstall" if system.boot.svc => return dbgstall(&p),
         "stgstat" => return super::census::report(system),
         "tcp" => return super::tcp::console(system, line),
         _ => {}
@@ -51,4 +52,18 @@ pub fn run(system: &mut System, line: &str) -> String {
         return super::hist::dsplog(system, &p).unwrap_or_else(|e| format!("{e}\n"));
     }
     svc::reply(system, line)
+}
+
+/// `dbgstall REQ(name) MS(n) [COUNT(n)]`: the slow request fault point
+/// (dev builds). `MS(0)` disarms it.
+fn dbgstall(p: &wm::cmd::Params) -> String {
+    let req = p.kw("REQ").unwrap_or_default();
+    let ms: u64 = p.kw("MS").and_then(|m| m.parse().ok()).unwrap_or(0);
+    let count: u32 = p.kw("COUNT").and_then(|c| c.parse().ok()).unwrap_or(1);
+    if req.is_empty() {
+        return "dbgstall REQ(name|IFSDEV) MS(n) [COUNT(n)]\n".into();
+    }
+    let count = if ms == 0 { 0 } else { count };
+    super::stall::arm(req, std::time::Duration::from_millis(ms), count);
+    format!("fault point: {count} {req} request(s) wait {ms} ms\n")
 }

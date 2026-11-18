@@ -88,6 +88,7 @@ mod savrst;
 mod secacg;
 mod servers;
 mod service;
+mod slowreq;
 mod smallsvr;
 pub mod soak;
 pub mod sql;

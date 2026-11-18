@@ -778,6 +778,7 @@ impl Suite {
         )?);
         reports.push(self.step(&mut s, "194 directory server bench", Self::dir_bench)?);
         reports.push(self.step(&mut s, "108 job accounting", Self::job_accounting)?);
+        reports.push(self.step(&mut s, "200 slow storage request", Self::slow_request)?);
         reports.push(self.step(&mut s, "140 storage thresholds", Self::storage_limits)?);
         reports.push(self.step(&mut s, "120 INSLNG", Self::install_language)?);
         reports.push(self.step(&mut s, "121 Spanish sign-on", Self::spanish_sign_on)?);

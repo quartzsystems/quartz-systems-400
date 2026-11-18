@@ -295,7 +295,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
             served::group(&mut svc.system, false);
             grouped = false;
         }
-        if !svc.fibers.is_empty() && matches!(req, Request::Close {}) {
+        if !svc.fibers.is_empty() && matches!(req, Request::Close {}) && svc.conns[i].is_slic() {
             // The close ends every job's database use: not under a
             // statement still running.
             svc.closing = true;
@@ -376,7 +376,7 @@ fn answer(svc: &mut Svc, i: usize, req: Request) {
 
 /// Answer a request, parking it when `park` and it defers.
 fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
-    let close = matches!(req, Request::Close {});
+    let close = matches!(req, Request::Close {}) && svc.conns[i].is_slic();
     let keep = match &req {
         Request::IfsReq { op }
             if park

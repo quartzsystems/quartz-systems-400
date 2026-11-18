@@ -47,12 +47,28 @@ pub struct Conn {
     pub id: u64,
 }
 
+/// The connection to `slic`, the only one that may close the store.
+static SLIC: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 impl Conn {
     /// A new connection.
     pub fn new(chan: Chan, ctx: Option<JobCtx>) -> Self {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         let id = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         Self { chan, ctx, id }
+    }
+
+    /// The connection to `slic`.
+    pub fn slic(chan: Chan, ctx: Option<JobCtx>) -> Self {
+        let c = Self::new(chan, ctx);
+        SLIC.store(c.id, std::sync::atomic::Ordering::Relaxed);
+        c
+    }
+
+    /// Whether this is `slic`'s connection.
+    #[must_use]
+    pub fn is_slic(&self) -> bool {
+        self.id == SLIC.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
@@ -189,6 +205,11 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
         return ipc::encode(&r);
     }
     if let Request::Close {} = req {
+        // Only `slic` ends the service; a job's close is refused.
+        if !conns[i].is_slic() {
+            let r: Result<String, String> = Err("only slic closes the store".into());
+            return ipc::encode(&r);
+        }
         return ipc::encode(&close(system, conns));
     }
     if let Request::JoblogOf { number } = req {

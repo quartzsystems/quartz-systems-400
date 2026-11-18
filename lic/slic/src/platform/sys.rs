@@ -77,9 +77,42 @@ pub fn wait_signal() -> i32 {
 
 /// Reap every exited child. Returns their process IDs.
 pub fn reap() -> Vec<u32> {
-    let mut pids = Vec::new();
-    while let Ok(Some((pid, _))) = waitpid(None, WaitOptions::NOHANG) {
-        pids.push(pid.as_raw_nonzero().get().unsigned_abs());
+    reap_with_status().into_iter().map(|(p, _)| p).collect()
+}
+
+/// Reap every exited child: each one's process ID and how it ended
+/// (`exit 0`, `signal 9 (SIGKILL)`, with `, core dumped` when it did).
+pub fn reap_with_status() -> Vec<(u32, String)> {
+    let mut out = Vec::new();
+    while let Ok(Some((pid, st))) = waitpid(None, WaitOptions::NOHANG) {
+        out.push((pid.as_raw_nonzero().get().unsigned_abs(), how_ended(st)));
     }
-    pids
+    out
+}
+
+/// A wait status in words.
+fn how_ended(st: rustix::process::WaitStatus) -> String {
+    if let Some(code) = st.exit_status() {
+        return format!("exit {code}");
+    }
+    if let Some(sig) = st.terminating_signal() {
+        let name = match sig {
+            4 => " (SIGILL)",
+            6 => " (SIGABRT)",
+            7 => " (SIGBUS)",
+            9 => " (SIGKILL)",
+            11 => " (SIGSEGV)",
+            13 => " (SIGPIPE)",
+            15 => " (SIGTERM)",
+            _ => "",
+        };
+        // WCOREDUMP: bit 7 of the raw status.
+        let core = if st.as_raw() & 0x80 != 0 {
+            ", core dumped"
+        } else {
+            ""
+        };
+        return format!("signal {sig}{name}{core}");
+    }
+    format!("status {:#x}", st.as_raw())
 }

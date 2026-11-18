@@ -7,6 +7,10 @@
 //! [`STUCK`] is logged from a watchdog thread with where the loop's
 //! thread waits in the kernel and the page cache's dirty and writeback
 //! sizes, so a stall shows its cause on the console log.
+//!
+//! Nothing here ends a request: a slow one is waited for, however long
+//! (`docs/STORAGE_SERVICE.md`, "Slow requests"). [`arm`] is the fault
+//! point the tests use to make one slow.
 
 use std::fmt::Write as _;
 use std::sync::Mutex;
@@ -61,7 +65,51 @@ pub fn begin(req: &stg::Request) {
     let l = label(req);
     *CURRENT
         .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some((l, Instant::now()));
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some((l.clone(), Instant::now()));
+    hit(&l);
+}
+
+/// The fault point: what to delay, how long, how many more times.
+struct Fault {
+    name: String,
+    wait: Duration,
+    left: u32,
+}
+
+static FAULT: Mutex<Option<Fault>> = Mutex::new(None);
+
+/// Arm the fault point (`dbgstall`, dev builds): the next `count`
+/// requests named `name` (as the slow request line names them, or
+/// `IFSDEV` for the IFS device's writes and flushes) wait `wait` first,
+/// on the thread that runs them, as when the machine's disks stall.
+pub fn arm(name: &str, wait: Duration, count: u32) {
+    *FAULT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = (count > 0).then(|| Fault {
+        name: name.to_string(),
+        wait,
+        left: count,
+    });
+}
+
+/// Wait here when the fault point is armed for `name`.
+pub fn hit(name: &str) {
+    let wait = {
+        let mut f = FAULT
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Some(armed) = f.as_mut().filter(|a| a.name.eq_ignore_ascii_case(name)) else {
+            return;
+        };
+        armed.left -= 1;
+        let wait = armed.wait;
+        if armed.left == 0 {
+            *f = None;
+        }
+        wait
+    };
+    eprintln!("qsstg: fault point: {name} waits {} ms", wait.as_millis());
+    std::thread::sleep(wait);
 }
 
 /// It ended: logged when slow.
@@ -173,4 +221,25 @@ pub fn watch() {
                 }
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_fault_point_delays_only_its_request_as_often_as_armed() {
+        let short = Duration::from_millis(25);
+        arm("Ping", Duration::from_millis(60), 2);
+        let t = Instant::now();
+        hit("SbsState");
+        assert!(t.elapsed() < short, "another request is not delayed");
+        let t = Instant::now();
+        hit("ping");
+        hit("Ping");
+        assert!(t.elapsed() >= Duration::from_millis(120), "both delayed");
+        let t = Instant::now();
+        hit("Ping");
+        assert!(t.elapsed() < short, "disarmed after its count");
+    }
 }
