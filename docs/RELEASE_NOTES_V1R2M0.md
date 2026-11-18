@@ -370,7 +370,7 @@ QS/400 server with `CPY` writes at 15 to 37 MiB/s, the rest of the
 time the host writing back the guests' disks (`NFS.md` §11).
 
 The directory server's are in `DIRSRV.md` §14 and §16. The main one:
-entries are added one at a time at 96 a second over 100 000 (178
+entries are added one at a time at 96 a second over 100 000 (195
 over 10 000), slowing as the directory grows, so a million take nearly
 three hours to load. (Binds with a new connection each, 2 200 a minute
 before, are now about 100 000 a minute under QEMU.)

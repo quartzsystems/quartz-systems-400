@@ -1828,15 +1828,19 @@ after step 107; `cargo run -p conformance -- --only
 
 **Performance** (step 194, `ldaptest bench` from the host through
 QEMU's user network, KVM; 2026-11-18, the code before this round
-(`2e950f9f6`) and after it measured the same night on the same host):
+(`2e950f9f6`) and after it measured the same night on the same host,
+`--only 193,186,194`; the 100 000 entries after it with the hint of the
+free search in the bitmap itself, before it moved to the allocator
+(the same search). Run after steps 187 to 199, the bench's adds of
+10 000 read 118 a second: the steps leave the guest busier for a while):
 
 | Measure | Before | After | Target |
 |---|---|---|---|
-| Binds on one connection (administrator) | 450 255 a minute | 511 919 a minute | 10 000 |
-| Binds with a connection each | 2 211 a minute | 99 817 a minute | 10 000: **met** |
-| Adds (one at a time, each a store transaction), 10 000 entries | 117 a second | 178 a second | — |
+| Binds on one connection (administrator) | 450 255 a minute | 510 199 a minute | 10 000 |
+| Binds with a connection each | 2 211 a minute | 98 951 a minute | 10 000: **met** |
+| Adds (one at a time, each a store transaction), 10 000 entries | 117 a second | 195 a second | — |
 | Adds, 100 000 entries | 81 a second (20.6 minutes, 2026-11-14) | 96 a second (17.4 minutes) | — |
-| Paged search, one level, pages of 1000, 10 000 entries | 16 715 a second | 15 927 a second | — |
+| Paged search, one level, pages of 1000, 10 000 entries | 16 715 a second | 16 290 a second | — |
 | Paged search, 100 000 entries | 16 563 a second (2026-11-14) | 16 094 a second (6.21 s, 101 pages) | 1 000 000 |
 
 *A connection each.* The 27 ms a connection cost was the instance job's
