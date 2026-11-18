@@ -217,7 +217,8 @@ fn old_user_data(s: &mut Session, old: &str) -> Result<Vec<String>, String> {
         ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
         (
             "savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
-            "from library SLIPSAV were saved",
+            // V1R1M0 prints its own line, V1R2M0 the catalogue's.
+            "from library SLIPSAV",
         ),
         ("dltlib LIB(SLIPSAV)", ""),
         // The audit journal, and a profile whose creation it records.
