@@ -2417,6 +2417,8 @@ dependencies = [
 name = "medio"
 version = "0.1.0"
 dependencies = [
+ "ccsid",
+ "msgf",
  "optical",
  "tape",
  "thiserror 2.0.21",

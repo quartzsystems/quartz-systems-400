@@ -16,6 +16,8 @@
 //!   `*TAP` catalog, its cartridges, categories and moves.
 //! - [`tapf`]: tape files (`*FILE TAPF`) and the records of `CPYTOTAP`
 //!   and `CPYFRMTAP`.
+//! - [`msg`]: the messages the media commands send, as `QCPFMSG` lays
+//!   out their data.
 //! - [`MediaWriter`] and [`MediaReader`]: what a save or restore
 //!   command holds, whichever medium it names.
 //!
@@ -26,6 +28,7 @@
 pub mod catalog;
 pub mod error;
 pub mod library;
+pub mod msg;
 pub mod optfile;
 pub mod tapefile;
 pub mod tapf;

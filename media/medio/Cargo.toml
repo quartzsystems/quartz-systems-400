@@ -9,7 +9,11 @@ publish.workspace = true
 [dependencies]
 tape = { path = "../tape", version = "0.1.0" }
 optical = { path = "../optical", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 thiserror.workspace = true
+
+[dev-dependencies]
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 
 [lints]
 workspace = true
