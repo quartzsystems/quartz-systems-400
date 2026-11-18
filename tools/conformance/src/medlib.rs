@@ -42,21 +42,25 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "crtdevmlb DEVD(TAPMLB76) DEVCLS(*TAP) RSRCNAME(*VRT)",
-        &["CPC2618"],
+        &["Device description TAPMLB76 is made"],
     )?;
     run(
         s,
         "crtimgclg IMGCLG(QS76LIB) DIR('/qs76/lib') TYPE(*TAP)",
-        &["CPCBC01"],
+        &["Image catalog QS76LIB is made in QUSRSYS"],
     )?;
     for v in ["QS76A", "QS76B", "QS76C"] {
         run(
             s,
             &format!("addimgclge IMGCLG(QS76LIB) FROMFILE(*NEW) TOFILE({v}) VOLNAM({v}) IMGSIZ(8)"),
-            &["CPCBC03"],
+            &["has a new entry"],
         )?;
     }
-    run(s, "lodimgclg IMGCLG(QS76LIB) DEV(TAPMLB76)", &["CPCBC06"])?;
+    run(
+        s,
+        "lodimgclg IMGCLG(QS76LIB) DEV(TAPMLB76)",
+        &["Image catalog QS76LIB is ready on device TAPMLB76"],
+    )?;
     run(
         s,
         "vrycfg CFGOBJ(TAPMLB76) CFGTYPE(*DEV) STATUS(*ON)",
@@ -67,11 +71,11 @@ fn library(s: &mut Session) -> Result<(), String> {
         "wrktapctg DEV(TAPMLB76)",
         &["QS76A", "*INSERT", "Inserted", "Slot 1"],
     )?;
-    run(s, "savlib LIB(QS76) DEV(TAPMLB76) VOL(QS76A)", &["CPF67D2"])?;
+    run(s, "savlib LIB(QS76) DEV(TAPMLB76) VOL(QS76A)", &["CPF67A5"])?;
     run(
         s,
         "addtapctg DEV(TAPMLB76) CTG(QS76A QS76B) CGY(*SHARE400)",
-        &["CPC6776"],
+        &["2 cartridges of media library TAPMLB76 changed"],
     )?;
     // Mount: the save moves the cartridge into a drive; it stays there.
     run(
@@ -97,7 +101,7 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "rmvtapctg DEV(TAPMLB76) CTG(QS76C)",
-        &["CPC6777", "station"],
+        &["1 cartridges of media library TAPMLB76 changed"],
     )?;
     run(
         s,
@@ -108,7 +112,7 @@ fn library(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "inztap DEV(TAPMLB76) NEWVOL(QS76B) VOL(QS76B) CHECK(*NO)",
-        &["CPC6773"],
+        &["Volume QS76B is initialized on device TAPMLB76"],
     )?;
     run(
         s,
@@ -132,20 +136,28 @@ fn library(s: &mut Session) -> Result<(), String> {
 
 /// A save across two optical volumes of 1 MiB, and back.
 fn optical(s: &mut Session) -> Result<(), String> {
-    run(s, "crtdevopt DEVD(OPTVRT76) RSRCNAME(*VRT)", &["CPC2618"])?;
+    run(
+        s,
+        "crtdevopt DEVD(OPTVRT76) RSRCNAME(*VRT)",
+        &["Device description OPTVRT76 is made"],
+    )?;
     run(
         s,
         "crtimgclg IMGCLG(QS76OPT) DIR('/qs76/opt') TYPE(*OPT)",
-        &["CPCBC01"],
+        &["Image catalog QS76OPT is made in QUSRSYS"],
     )?;
     for (f, v) in [("O1.ISO", "QS76O1"), ("O2.ISO", "QS76O2")] {
         run(
             s,
             &format!("addimgclge IMGCLG(QS76OPT) FROMFILE(*NEW) TOFILE({f}) VOLNAM({v}) IMGSIZ(1)"),
-            &["CPCBC03"],
+            &["has a new entry"],
         )?;
     }
-    run(s, "lodimgclg IMGCLG(QS76OPT) DEV(OPTVRT76)", &["CPCBC06"])?;
+    run(
+        s,
+        "lodimgclg IMGCLG(QS76OPT) DEV(OPTVRT76)",
+        &["Image catalog QS76OPT is ready on device OPTVRT76"],
+    )?;
     run(
         s,
         "vrycfg CFGOBJ(OPTVRT76) CFGTYPE(*DEV) STATUS(*ON)",
@@ -169,20 +181,28 @@ fn optical(s: &mut Session) -> Result<(), String> {
 /// `CPYTOTAP` and `CPYFRMTAP` through a tape file; then `ENDOPT(*UNLOAD)`
 /// on the virtual tape device mounts the catalog's next entry.
 fn copies(s: &mut Session) -> Result<(), String> {
-    run(s, "crtdevtap DEVD(TAPVRT76) RSRCNAME(*VRT)", &["CPC2618"])?;
+    run(
+        s,
+        "crtdevtap DEVD(TAPVRT76) RSRCNAME(*VRT)",
+        &["Device description TAPVRT76 is made"],
+    )?;
     run(
         s,
         "crtimgclg IMGCLG(QS76TAP) DIR('/qs76/tap') TYPE(*TAP)",
-        &["CPCBC01"],
+        &["Image catalog QS76TAP is made in QUSRSYS"],
     )?;
     for v in ["QS76T1", "QS76T2"] {
         run(
             s,
             &format!("addimgclge IMGCLG(QS76TAP) FROMFILE(*NEW) TOFILE({v}) VOLNAM({v}) IMGSIZ(8)"),
-            &["CPCBC03"],
+            &["has a new entry"],
         )?;
     }
-    run(s, "lodimgclg IMGCLG(QS76TAP) DEV(TAPVRT76)", &["CPCBC06"])?;
+    run(
+        s,
+        "lodimgclg IMGCLG(QS76TAP) DEV(TAPVRT76)",
+        &["Image catalog QS76TAP is ready on device TAPVRT76"],
+    )?;
     run(
         s,
         "vrycfg CFGOBJ(TAPVRT76) CFGTYPE(*DEV) STATUS(*ON)",
@@ -197,27 +217,31 @@ fn copies(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "crttapf FILE(QS76/RECTAP) DEV(TAPVRT76) SEQNBR(*END) RCDBLKTYP(*FB)",
-        &["CPC7301"],
+        &["File RECTAP in QS76 is made"],
     )?;
     run(s, "dspfd FILE(QS76/RECTAP)", &["TAPF", "TAPVRT76", "*FB"])?;
     run(
         s,
         "cpytotap FROMFILE(QS76/RECS) TOFILE(QS76/RECTAP)",
-        &["CPC6778", "3 records", "RECS"],
+        &["3 records were copied from RECS to RECS"],
     )?;
     run(s, "dsptap DEV(TAPVRT76) DATA(*LABELS)", &["RECS"])?;
     run(
         s,
         "cpyfrmtap FROMFILE(QS76/RECTAP) TOFILE(QS76/RECS2) FROMLABEL(RECS) TOMBR(*FIRST) MBROPT(*ADD)",
-        &["CPC6779", "3 records"],
+        &["3 records were copied from RECS"],
     )?;
     run(s, "svc.sql SELECT COUNT(*) FROM QS76/RECS2;", &["3"])?;
     run(
         s,
         "cpyfrmtap FROMFILE(QS76/RECTAP) TOFILE(*PRINT) FROMLABEL(RECS)",
-        &["CPC6779", "ALPHA", "CHARLIE"],
+        &["ALPHA", "CHARLIE"],
     )?;
-    run(s, "chktap DEV(TAPVRT76) ENDOPT(*UNLOAD)", &["CPC6774"])?;
+    run(
+        s,
+        "chktap DEV(TAPVRT76) ENDOPT(*UNLOAD)",
+        &["is in device TAPVRT76"],
+    )?;
     let e = run(s, "wrkimgclge IMGCLG(QS76TAP)", &["*MOUNTED"])?;
     let mounted = e
         .lines()
@@ -232,7 +256,7 @@ fn reply_list(s: &mut Session) -> Result<(), String> {
     run(
         s,
         "crtimgclg IMGCLG(QS76TAP2) DIR('/qs76/tap2') TYPE(*TAP)",
-        &["CPCBC01"],
+        &["Image catalog QS76TAP2 is made in QUSRSYS"],
     )?;
     for v in ["QS76X", "QS76Y"] {
         run(
@@ -240,20 +264,28 @@ fn reply_list(s: &mut Session) -> Result<(), String> {
             &format!(
                 "addimgclge IMGCLG(QS76TAP2) FROMFILE(*NEW) TOFILE({v}) VOLNAM({v}) IMGSIZ(2)"
             ),
-            &["CPCBC03"],
+            &["has a new entry"],
         )?;
     }
-    run(s, "lodimgclg IMGCLG(QS76TAP) OPTION(*UNLOAD)", &["CPCBC07"])?;
-    run(s, "lodimgclg IMGCLG(QS76TAP2) DEV(TAPVRT76)", &["CPCBC06"])?;
+    run(
+        s,
+        "lodimgclg IMGCLG(QS76TAP) OPTION(*UNLOAD)",
+        &["Image catalog QS76TAP is off device"],
+    )?;
+    run(
+        s,
+        "lodimgclg IMGCLG(QS76TAP2) DEV(TAPVRT76)",
+        &["Image catalog QS76TAP2 is ready on device TAPVRT76"],
+    )?;
     run(
         s,
         "lodimgclge IMGCLG(QS76TAP2) IMGCLGIDX(2) OPTION(*MOUNT)",
-        &["CPCBC09"],
+        &["Image catalog entry 2 is mounted"],
     )?;
     let before = inqmsgrpy(s);
     s.command("chgjob INQMSGRPY(*DFT)", CMD)?;
     let r = run(s, "savlib LIB(QS76) DEV(TAPVRT76)", &["CPF67"]).and_then(|_| {
-        s.command("addrpyle SEQNBR(7601) MSGID(CPA4075) RPY(G)", CMD)?;
+        s.command("addrpyle SEQNBR(7601) MSGID(CPA4088) RPY(G)", CMD)?;
         s.command("chgjob INQMSGRPY(*SYSRPYL)", CMD)?;
         run(
             s,
@@ -264,7 +296,7 @@ fn reply_list(s: &mut Session) -> Result<(), String> {
     s.command("rmvrpyle SEQNBR(7601)", CMD).ok();
     s.command(&format!("chgjob INQMSGRPY({before})"), CMD).ok();
     r?;
-    run(s, "dspmsg MSGQ(QSYSOPR)", &["CPA4075"])?;
+    run(s, "dspmsg MSGQ(QSYSOPR)", &["CPA4088"])?;
     Ok(())
 }
 

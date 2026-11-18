@@ -85,7 +85,9 @@ pub(crate) fn with_catalogs<T>(
 
 /// Run `f` over the catalogs, then bring `/QOPT` in line; the error as
 /// the catalogs gave it.
-pub(crate) fn catalog_op<T>(f: impl FnOnce(&mut Registry) -> imgclg::Result<T>) -> imgclg::Result<T> {
+pub(crate) fn catalog_op<T>(
+    f: impl FnOnce(&mut Registry) -> imgclg::Result<T>,
+) -> imgclg::Result<T> {
     let r = {
         let mut g = lock();
         let reg = g.get_or_insert_with(catalogs::empty);

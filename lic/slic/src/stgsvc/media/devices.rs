@@ -95,7 +95,9 @@ pub(crate) fn create(system: &mut System, name: &str, d: &Devd, owner: &str) -> 
     };
     with_qsys(system, |txn, qsys| {
         if find(txn, qsys, &name)?.is_some() {
-            return Err(format!("{NOT_MADE} device description {name} already exists"));
+            return Err(format!(
+                "{NOT_MADE} device description {name} already exists"
+            ));
         }
         let n = qsname::Name::parse(&name).map_err(|e| format!("CPD0078 {name}: {e}"))?;
         wm::obj::create(txn, qsys, n, types::DEVD, &d.text, &st, &d.encode())

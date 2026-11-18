@@ -112,7 +112,9 @@ impl Suite {
             CMD,
         )?;
         let _ = s.command("DLTIMGCLG IMGCLG(LEFTA) KEEP(*NO)", CMD);
-        if !busy.contains("LEFTA") || empty.contains("created") {
+        // The refusal is CPFBC02; the cause (LEFTA's directory) is in
+        // the job log before it.
+        if !busy.contains("CPFBC02") || empty.contains("is made") {
             return Err(format!("IMPORT(*YES) was not checked:\n{busy}\n{empty}"));
         }
         // The FTP client's display, signed on to the loopback server. Step

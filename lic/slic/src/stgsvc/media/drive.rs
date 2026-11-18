@@ -402,13 +402,8 @@ fn real_tape<J: TapeJob>(
         )
     })?;
     let path = std::path::PathBuf::from(format!("/dev/n{node}"));
-    let io = tape::st::LinuxSt::open(&path).map_err(|e| {
-        dev_fail(
-            NOT_READY,
-            &t.dev,
-            format_args!("{}: {e}", path.display()),
-        )
-    })?;
+    let io = tape::st::LinuxSt::open(&path)
+        .map_err(|e| dev_fail(NOT_READY, &t.dev, format_args!("{}: {e}", path.display())))?;
     let mut drive = tape::st::StTransport::new(io);
     let r = {
         let mut prov = Operator {
@@ -434,7 +429,9 @@ pub(crate) fn optical_volume(
         return Err(Fail::new(NOT_OPTICAL, &[Field::Char(&t.dev, 10)]));
     }
     if !t.virtual_ {
-        return Err(empty("a real drive's volume is read with ADDIMGCLGE FROMDEV"));
+        return Err(empty(
+            "a real drive's volume is read with ADDIMGCLGE FROMDEV",
+        ));
     }
     if let Some(v) = vol {
         mount(&t.dev, v)?;
@@ -480,10 +477,7 @@ pub(crate) fn mount_optical(dev: &str, vol: &str) -> Result<(), String> {
 
 /// The optical volume `vol` wherever it is loaded (`DSPOPT VOL(x)
 /// DEV(*ALL)`): the device it is on, and the identifier.
-pub(crate) fn optical_by_volume(
-    system: &mut System,
-    vol: &str,
-) -> Result<(Target, String), Fail> {
+pub(crate) fn optical_by_volume(system: &mut System, vol: &str) -> Result<(Target, String), Fail> {
     let devs = devices::all(system)?;
     for (n, d) in devs {
         if d.media_kind() != Some(MediaKind::Optical) {
@@ -510,7 +504,9 @@ pub(crate) fn optical_fail(system: &mut System, t: &Target, e: &MediaError, vol:
 fn open_virtual(t: &Target) -> Result<(VirtualTape<std::fs::File>, String), Fail> {
     let not_ready = |why: &str| dev_fail(NOT_READY, &t.dev, why);
     let clg = super::catalog_on(&t.dev).ok_or_else(|| not_ready("no image catalog is loaded"))?;
-    let ent = clg.mounted().ok_or_else(|| not_ready("no volume is mounted"))?;
+    let ent = clg
+        .mounted()
+        .ok_or_else(|| not_ready("no volume is mounted"))?;
     let path = clg.path_of(ent);
     let file = super::catalogs::open_image(&path)
         .map_err(|x| Fail::new("CPF6708", &[]).detail(format_args!("{path}: {x}")))?;

@@ -1909,57 +1909,27 @@ lic/slic/src/cpp/lpcmd.rs	{SAVED} {n} product load(s) of {pid} saved\n
 lic/slic/src/cpp/lpcmd.rs	{k}: load state {}
 lic/slic/src/cpp/lpcmd.rs	{} license key(s) written to {path}\n
 lic/slic/src/cpp/medcmd.rs	  {:<10} {:<10} {:<10} {:<10} {:>12}  Text
-lic/slic/src/cpp/medcmd.rs	 to an import/export station
-lic/slic/src/cpp/medcmd.rs	, sorted
-lic/slic/src/cpp/medcmd.rs	; it stays in its slot
 lic/slic/src/cpp/medcmd.rs	Attribute
 lic/slic/src/cpp/medcmd.rs	Attribute
 lic/slic/src/cpp/medcmd.rs	Available
 lic/slic/src/cpp/medcmd.rs	Block size
-lic/slic/src/cpp/medcmd.rs	CPD0084 CGY({cgy}) is not a category
-lic/slic/src/cpp/medcmd.rs	CPD0084 DEV is needed for OPTION(*LOAD)
-lic/slic/src/cpp/medcmd.rs	CPD0084 FROMDEV and TODEV must be different devices
-lic/slic/src/cpp/medcmd.rs	CPD0084 FROMFILE is needed
-lic/slic/src/cpp/medcmd.rs	CPD0084 OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only.
-lic/slic/src/cpp/medcmd.rs	CPD0084 {dev_kwd} is needed with {vol_kwd}(*MOUNTED)
-lic/slic/src/cpp/medcmd.rs	CPF6720 cartridge {id} on {dev} carries volume {v}
-lic/slic/src/cpp/medcmd.rs	CPF6745 device {dev} is not a tape media library
-lic/slic/src/cpp/medcmd.rs	CPF6745 {name} is not a cartridge command
-lic/slic/src/cpp/medcmd.rs	CPF6747 cartridge {what} is not mounted
-lic/slic/src/cpp/medcmd.rs	CPF6760 device {} not ready: resource {} not found
-lic/slic/src/cpp/medcmd.rs	CPF6760 {} not ready: {e}
+lic/slic/src/cpp/medcmd.rs	CGY({cgy}) is not a category
+lic/slic/src/cpp/medcmd.rs	CPF67A8 cartridge {what} is not mounted
 lic/slic/src/cpp/medcmd.rs	CPF9899 no library action {op}
-lic/slic/src/cpp/medcmd.rs	CPF9B70 DEVCLS(*OPT): optical media libraries are not available in this release
-lic/slic/src/cpp/medcmd.rs	CPFBC01 image catalog {want} does not exist
-lic/slic/src/cpp/medcmd.rs	CPFBC0B device {dev} is not a virtual {} device
-lic/slic/src/cpp/medcmd.rs	CPFBC0D image catalog {name} did not verify: {} problem(s)\n{text}
 lic/slic/src/cpp/medcmd.rs	Capacity (bytes)
 lic/slic/src/cpp/medcmd.rs	Cartridge  Volume  Category    Status      Location
 lic/slic/src/cpp/medcmd.rs	Cartridge ID  . . . . : {}
-lic/slic/src/cpp/medcmd.rs	Cartridge {id} is ejected from {dev}{}.
-lic/slic/src/cpp/medcmd.rs	Cartridge {id} is now in category {} of {dev}.
 lic/slic/src/cpp/medcmd.rs	Catalog     Status      Type  Text\n
 lic/slic/src/cpp/medcmd.rs	Category  . . . . . . : {}
 lic/slic/src/cpp/medcmd.rs	Code  . . . . . . . . . . . : {}
-lic/slic/src/cpp/medcmd.rs	Description for device {name} changed.\n
-lic/slic/src/cpp/medcmd.rs	Description for device {name} created.\n
+lic/slic/src/cpp/medcmd.rs	DEVCLS(*OPT): optical media libraries are not available in this release
 lic/slic/src/cpp/medcmd.rs	Device  . . . . . . . . . . : {}
 lic/slic/src/cpp/medcmd.rs	Device  . . . . . . : {}
 lic/slic/src/cpp/medcmd.rs	Device/Resource   Status        Allocation     Cartridge\n
 lic/slic/src/cpp/medcmd.rs	Directory . . . . . : {}
-lic/slic/src/cpp/medcmd.rs	Entry {i} added to image catalog {name}.\n
-lic/slic/src/cpp/medcmd.rs	Entry {i} of image catalog {name} changed.\n
-lic/slic/src/cpp/medcmd.rs	Entry {i} of image catalog {name} changed.\n
-lic/slic/src/cpp/medcmd.rs	Entry {i} removed from image catalog {name}.\n
 lic/slic/src/cpp/medcmd.rs	File sequence number  . . . : {}
-lic/slic/src/cpp/medcmd.rs	File sequence {}, label {} found.
 lic/slic/src/cpp/medcmd.rs	Home slot . . . . . . : {}
 lic/slic/src/cpp/medcmd.rs	Image catalog . . . : {}
-lic/slic/src/cpp/medcmd.rs	Image catalog {name} created.\n
-lic/slic/src/cpp/medcmd.rs	Image catalog {name} loaded on device {dev}.\n
-lic/slic/src/cpp/medcmd.rs	Image catalog {name} unloaded.\n
-lic/slic/src/cpp/medcmd.rs	Image catalog {name} verified: {} entries{}.
-lic/slic/src/cpp/medcmd.rs	Image catalog {n} deleted.
 lic/slic/src/cpp/medcmd.rs	Index  Status      WrtPtc  Volume                            File
 lic/slic/src/cpp/medcmd.rs	Install media . . . . . . . : {kind}, release {}
 lic/slic/src/cpp/medcmd.rs	Library
@@ -1971,13 +1941,9 @@ lic/slic/src/cpp/medcmd.rs	Loaded
 lic/slic/src/cpp/medcmd.rs	Location  . . . . . . : {}
 lic/slic/src/cpp/medcmd.rs	Media format
 lic/slic/src/cpp/medcmd.rs	Mounted
-lic/slic/src/cpp/medcmd.rs	No cartridge of {dev} was changed.\n
 lic/slic/src/cpp/medcmd.rs	Not ready
-lic/slic/src/cpp/medcmd.rs	OPT1115 volume {vol} not found
-lic/slic/src/cpp/medcmd.rs	OPT1203 a volume cannot be copied onto itself
-lic/slic/src/cpp/medcmd.rs	OPT1203 device {} is not an optical device
-lic/slic/src/cpp/medcmd.rs	OPT1660 optical device {} is empty
-lic/slic/src/cpp/medcmd.rs	OPT1660 optical device {} is empty
+lic/slic/src/cpp/medcmd.rs	OUTPUT(*OUTFILE) is not valid with DATA(*SAVRST)
+lic/slic/src/cpp/medcmd.rs	OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only
 lic/slic/src/cpp/medcmd.rs	Object
 lic/slic/src/cpp/medcmd.rs	Object
 lic/slic/src/cpp/medcmd.rs	Optical
@@ -2009,31 +1975,21 @@ lic/slic/src/cpp/medcmd.rs	Volume identifier . . . . . : {}
 lic/slic/src/cpp/medcmd.rs	Volume in the manifest  . . : {}
 lic/slic/src/cpp/medcmd.rs	Volume set
 lic/slic/src/cpp/medcmd.rs	Volume type . . . . . . . . : {}
-lic/slic/src/cpp/medcmd.rs	Volume {from} duplicated onto device {}.\n
-lic/slic/src/cpp/medcmd.rs	Volume {id} initialized on device {dev}.\n
-lic/slic/src/cpp/medcmd.rs	Volume {id} on device {dev} checked.\n
-lic/slic/src/cpp/medcmd.rs	Volume {new} initialized on device {}.\n
-lic/slic/src/cpp/medcmd.rs	Volume {volid} checked: {} files, {} bytes.
 lic/slic/src/cpp/medcmd.rs	Volumes in set
 lic/slic/src/cpp/medcmd.rs	Writable volume
 lic/slic/src/cpp/medcmd.rs	Write protected
+lic/slic/src/cpp/medcmd.rs	device {dev} is not a virtual {what} device
+lic/slic/src/cpp/medcmd.rs	device {name} is a {} device
+lic/slic/src/cpp/medcmd.rs	device {name} must be varied off to change RSRCNAME
 lic/slic/src/cpp/medcmd.rs	distribution media
+lic/slic/src/cpp/medcmd.rs	resource {} not found
 lic/slic/src/cpp/medcmd.rs	system save (SAVSYS)
 lic/slic/src/cpp/medcmd.rs	volume {vol} is not in image catalog {name}
 lic/slic/src/cpp/medcmd.rs	{:<40} files {:>6}  directories {:>6}  bytes {:>12}
 lic/slic/src/cpp/medcmd.rs	{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  Text
-lic/slic/src/cpp/medcmd.rs	{id} device {dev}: no optical media library to add a cartridge to\n
-lic/slic/src/cpp/medcmd.rs	{n} file(s) duplicated from device {from} to device {to}.\n
-lic/slic/src/cpp/medcmd.rs	{} device {name} is a {} device
-lic/slic/src/cpp/medcmd.rs	{} device {name} is varied on
-lic/slic/src/cpp/medcmd.rs	{} file(s) do not read
-lic/slic/src/cpp/medcmd.rs	{} optical device {dev} is empty
-lic/slic/src/cpp/meddsp.rs	CPD0084 DEV is needed with VOL(*MOUNTED)
-lic/slic/src/cpp/meddsp.rs	CPF6745 device {dev} is not a tape media library
-lic/slic/src/cpp/meddsp.rs	CPF67A1 Cartridge {id} is not in media library {dev}.
-lic/slic/src/cpp/meddsp.rs	CPF67EE Media library {dev} has no cartridges in category {cgy}.
-lic/slic/src/cpp/meddsp.rs	CPF9814 Device {dev} not found.
-lic/slic/src/cpp/meddsp.rs	CPF9814 Device {dev} not found.
+lic/slic/src/cpp/medcmd.rs	{dev_kwd} is needed with {vol_kwd}(*MOUNTED)
+lic/slic/src/cpp/medcmd.rs	{name} is not a cartridge command
+lic/slic/src/cpp/meddsp.rs	DEV is needed with VOL(*MOUNTED)
 lic/slic/src/cpp/medout.rs	CPD0084 OUTPUT(*OUTFILE) is not valid with DATA(*SAVRST).
 lic/slic/src/cpp/medout.rs	Ejected
 lic/slic/src/cpp/medout.rs	Inserted
@@ -2426,17 +2382,11 @@ lic/slic/src/cpp/sysinfo.rs	sysval QSYSNAME {s}
 lic/slic/src/cpp/sysinfo.rs	{deleted} device description(s) deleted.\n
 lic/slic/src/cpp/sysinfo.rs	{id} QSYSNAME could not be set: {r}
 lic/slic/src/cpp/sysinfo.rs	{n} network attribute(s) changed.\n
-lic/slic/src/cpp/tapcpy.rs	CPD0084 member {m}: {e}
-lic/slic/src/cpp/tapcpy.rs	CPF2817 the member already holds {} records; give MBROPT(*ADD) or *REPLACE
-lic/slic/src/cpp/tapcpy.rs	CPF4123 {qual} is not a tape file
-lic/slic/src/cpp/tapcpy.rs	CPF6708 no device: give {kwd} or set DEV on the tape file
 lic/slic/src/cpp/tapcpy.rs	File  . . . . . . . : {qual}\n{}
 lic/slic/src/cpp/tapcpy.rs	File {qual} deleted.
-lic/slic/src/cpp/tapcpy.rs	{COPIED_FROM} {n} records copied from tape file {shown} to {to_name}.\n
-lic/slic/src/cpp/tapcpy.rs	{COPIED_FROM} {n} records copied from tape file {shown}.\n
-lic/slic/src/cpp/tapcpy.rs	{COPIED_TO} {n} records copied to tape file {shown}, sequence {}, on volume(s) {}.\n
-lic/slic/src/cpp/tapcpy.rs	{TAPF_CHANGED} Tape file {n} changed.\n
-lic/slic/src/cpp/tapcpy.rs	{TAPF_CREATED} Tape file {n} created in library {lib}.\n
+lic/slic/src/cpp/tapcpy.rs	no device: give {kwd} or set DEV on the tape file
+lic/slic/src/cpp/tapcpy.rs	not a tape file
+lic/slic/src/cpp/tapcpy.rs	not a tape file
 lic/slic/src/cpp/tcpcmd.rs	File {file} not found.
 lic/slic/src/cpp/tcpcmd.rs	HOSTNAME is required for TYPE(*HOSTAUTH).
 lic/slic/src/cpp/tcpcmd.rs	Host table
@@ -2832,7 +2782,6 @@ lic/slic/src/stgsvc/media/catalogs.rs	object store not initialized
 lic/slic/src/stgsvc/media/catalogs.rs	object store not open
 lic/slic/src/stgsvc/media/devices.rs	  Library  
 lic/slic/src/stgsvc/media/devices.rs	Assign device at vary on 
-lic/slic/src/stgsvc/media/devices.rs	CPF2605 no virtual resource name is free
 lic/slic/src/stgsvc/media/devices.rs	Category of device 
 lic/slic/src/stgsvc/media/devices.rs	Created by automatic configuration
 lic/slic/src/stgsvc/media/devices.rs	Device description 
@@ -2851,41 +2800,35 @@ lic/slic/src/stgsvc/media/devices.rs	Unload device at vary off
 lic/slic/src/stgsvc/media/devices.rs	Unload wait time 
 lic/slic/src/stgsvc/media/devices.rs	object store not initialized
 lic/slic/src/stgsvc/media/devices.rs	object store not open
-lic/slic/src/stgsvc/media/devices.rs	{EXISTS} device description {name} already exists
 lic/slic/src/stgsvc/media/devices.rs	{NOT_FOUND} device description {name} not found
 lic/slic/src/stgsvc/media/devices.rs	{NOT_FOUND} device description {name} not found
 lic/slic/src/stgsvc/media/devices.rs	{NOT_FOUND} device {name} is not a tape, optical or media library device
+lic/slic/src/stgsvc/media/devices.rs	{NOT_MADE} device description {name} already exists
+lic/slic/src/stgsvc/media/devices.rs	{NOT_MADE} no virtual resource name is free
 lic/slic/src/stgsvc/media/devices.rs	{} resource {rsrc} of device {name} not found
-lic/slic/src/stgsvc/media/drive.rs	CPF6708 DUPTAP copies between virtual tape devices in this release
-lic/slic/src/stgsvc/media/drive.rs	CPF6708 device {} is an optical device
-lic/slic/src/stgsvc/media/drive.rs	CPF6768 volume {vol} on device {} is write protected
-lic/slic/src/stgsvc/media/drive.rs	CPF6768 volume {} on device {} is write protected
-lic/slic/src/stgsvc/media/drive.rs	OPT1115 volume {vol} not found
-lic/slic/src/stgsvc/media/drive.rs	OPT1115 volume {v} not found on device {}
-lic/slic/src/stgsvc/media/drive.rs	OPT1203 device {} is not an optical device
-lic/slic/src/stgsvc/media/drive.rs	{NOT_AVAILABLE} device {dev} is not available ({})
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: image catalog {} is not a tape catalog
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: no image catalog is loaded
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: no image catalog is loaded
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: no volume is mounted
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: no volume is mounted
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: resource {} not found
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {} not ready: {}: {e}
-lic/slic/src/stgsvc/media/drive.rs	{NOT_READY} device {}: no cartridge is mounted; name one with VOL
-lic/slic/src/stgsvc/media/drive.rs	{OPT_EMPTY} optical device {} is empty
-lic/slic/src/stgsvc/media/drive.rs	{OPT_EMPTY} optical device {} is empty
-lic/slic/src/stgsvc/media/drive.rs	{OPT_EMPTY} optical device {} is empty
+lic/slic/src/stgsvc/media/drive.rs	a real drive\'s volume is read with ADDIMGCLGE FROMDEV
+lic/slic/src/stgsvc/media/drive.rs	an optical device
+lic/slic/src/stgsvc/media/drive.rs	device {dev} is {}
+lic/slic/src/stgsvc/media/drive.rs	image catalog {} is not a tape catalog
+lic/slic/src/stgsvc/media/drive.rs	no cartridge is mounted; name one with VOL
+lic/slic/src/stgsvc/media/drive.rs	no image catalog is loaded
+lic/slic/src/stgsvc/media/drive.rs	no image catalog is loaded
+lic/slic/src/stgsvc/media/drive.rs	no image catalog is loaded
+lic/slic/src/stgsvc/media/drive.rs	no volume is mounted
+lic/slic/src/stgsvc/media/drive.rs	no volume is mounted
+lic/slic/src/stgsvc/media/drive.rs	no volume is mounted
+lic/slic/src/stgsvc/media/drive.rs	resource {} not found
+lic/slic/src/stgsvc/media/drive.rs	{}: DUPTAP copies between virtual tape devices in this release
 lic/slic/src/stgsvc/media/library.rs	Available
-lic/slic/src/stgsvc/media/library.rs	CPF6745 device {} is not a tape media library
-lic/slic/src/stgsvc/media/library.rs	CPF6745 device {}: the changer of a real media library is not driven in this release
 lic/slic/src/stgsvc/media/library.rs	Drive {}
 lic/slic/src/stgsvc/media/library.rs	Ejected
 lic/slic/src/stgsvc/media/library.rs	Inserted
 lic/slic/src/stgsvc/media/library.rs	Mounted
 lic/slic/src/stgsvc/media/library.rs	Slot {}
 lic/slic/src/stgsvc/media/library.rs	Station {}
-lic/slic/src/stgsvc/media/library.rs	{NOT_READY} device {} not ready: image catalog {} is not a tape catalog
-lic/slic/src/stgsvc/media/library.rs	{NOT_READY} device {} not ready: no image catalog is loaded
+lic/slic/src/stgsvc/media/library.rs	image catalog {} is not a tape catalog
+lic/slic/src/stgsvc/media/library.rs	no image catalog is loaded
+lic/slic/src/stgsvc/media/library.rs	the changer of a real media library is not driven in this release
 lic/slic/src/stgsvc/media/mod.rs	{n} image catalog(s), {made} media device(s) configured
 lic/slic/src/stgsvc/media/operator.rs	the inquiry waits for its reply on QSYSOPR
 lic/slic/src/stgsvc/media/operator.rs	the reply was {r}

@@ -37,18 +37,26 @@ impl Suite {
             "crtdtaara DTAARA(QS72/DA1) TYPE(*CHAR) LEN(20) VALUE('kept value')",
             CMD,
         )?;
-        run(s, "crtdevtap DEVD(TAPVRT72) RSRCNAME(*VRT)", &["CPC2618"])?;
+        run(
+            s,
+            "crtdevtap DEVD(TAPVRT72) RSRCNAME(*VRT)",
+            &["Device description TAPVRT72 is made"],
+        )?;
         run(
             s,
             "crtimgclg IMGCLG(QS72TAP) DIR('/qs72/tap') TYPE(*TAP)",
-            &["CPCBC01"],
+            &["Image catalog QS72TAP is made in QUSRSYS"],
         )?;
         run(
             s,
             "addimgclge IMGCLG(QS72TAP) FROMFILE(*NEW) TOFILE(VOL1) VOLNAM(QS72V1) IMGSIZ(64)",
-            &["CPCBC03"],
+            &["has a new entry"],
         )?;
-        run(s, "lodimgclg IMGCLG(QS72TAP) DEV(TAPVRT72)", &["CPCBC06"])?;
+        run(
+            s,
+            "lodimgclg IMGCLG(QS72TAP) DEV(TAPVRT72)",
+            &["Image catalog QS72TAP is ready on device TAPVRT72"],
+        )?;
         run(
             s,
             "vrycfg CFGOBJ(TAPVRT72) CFGTYPE(*DEV) STATUS(*ON)",
@@ -62,7 +70,7 @@ impl Suite {
         run(
             s,
             "inztap DEV(TAPVRT72) NEWVOL(QS72V1) CHECK(*NO)",
-            &["CPC6773"],
+            &["Volume QS72V1 is initialized on device TAPVRT72"],
         )?;
         run(
             s,
@@ -93,7 +101,7 @@ impl Suite {
         run(
             s,
             "crtimgclg IMGCLG(QS72TAP2) DIR('/qs72/tap2') TYPE(*TAP)",
-            &["CPCBC01"],
+            &["Image catalog QS72TAP2 is made in QUSRSYS"],
         )?;
         for (file, vol) in [("V1", "QS72A"), ("V2", "QS72B")] {
             run(
@@ -101,11 +109,19 @@ impl Suite {
                 &format!(
                     "addimgclge IMGCLG(QS72TAP2) FROMFILE(*NEW) TOFILE({file}) VOLNAM({vol}) IMGSIZ(2)"
                 ),
-                &["CPCBC03"],
+                &["has a new entry"],
             )?;
         }
-        run(s, "lodimgclg IMGCLG(QS72TAP) OPTION(*UNLOAD)", &["CPCBC07"])?;
-        run(s, "lodimgclg IMGCLG(QS72TAP2) DEV(TAPVRT72)", &["CPCBC06"])?;
+        run(
+            s,
+            "lodimgclg IMGCLG(QS72TAP) OPTION(*UNLOAD)",
+            &["Image catalog QS72TAP is off device"],
+        )?;
+        run(
+            s,
+            "lodimgclg IMGCLG(QS72TAP2) DEV(TAPVRT72)",
+            &["Image catalog QS72TAP2 is ready on device TAPVRT72"],
+        )?;
         run(
             s,
             "savlib LIB(QS72) DEV(TAPVRT72) VOL(QS72A QS72B)",
@@ -129,18 +145,26 @@ impl Suite {
         )?;
 
         // Virtual optical.
-        run(s, "crtdevopt DEVD(OPTVRT72) RSRCNAME(*VRT)", &["CPC2618"])?;
+        run(
+            s,
+            "crtdevopt DEVD(OPTVRT72) RSRCNAME(*VRT)",
+            &["Device description OPTVRT72 is made"],
+        )?;
         run(
             s,
             "crtimgclg IMGCLG(QS72OPT) DIR('/qs72/opt') TYPE(*OPT)",
-            &["CPCBC01"],
+            &["Image catalog QS72OPT is made in QUSRSYS"],
         )?;
         run(
             s,
             "addimgclge IMGCLG(QS72OPT) FROMFILE(*NEW) TOFILE(OPT1.ISO) VOLNAM(QS72O) IMGSIZ(64)",
-            &["CPCBC03"],
+            &["has a new entry"],
         )?;
-        run(s, "lodimgclg IMGCLG(QS72OPT) DEV(OPTVRT72)", &["CPCBC06"])?;
+        run(
+            s,
+            "lodimgclg IMGCLG(QS72OPT) DEV(OPTVRT72)",
+            &["Image catalog QS72OPT is ready on device OPTVRT72"],
+        )?;
         run(
             s,
             "vrycfg CFGOBJ(OPTVRT72) CFGTYPE(*DEV) STATUS(*ON)",
@@ -149,7 +173,7 @@ impl Suite {
         run(
             s,
             "inzopt VOL(QS72O) DEV(OPTVRT72) CHECK(*NO)",
-            &["CPC6773"],
+            &["Optical volume QS72O is initialized on device OPTVRT72"],
         )?;
         run(
             s,

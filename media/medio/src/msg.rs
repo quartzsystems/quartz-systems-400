@@ -95,15 +95,13 @@ pub fn escape(e: &MediaError, dev: &str, vol: &str) -> Msg {
 fn tape(id: &'static str, e: &TapeError, dev: &str, vol: &str) -> Msg {
     let d = Field::Char(dev, 10);
     match e {
-        TapeError::WrongVolume { expected, found } => Msg::new(
-            id,
-            &[d, Field::Char(found, 6), Field::Char(expected, 6)],
-        ),
-        TapeError::NotContinuation { volume, .. } => Msg::new(
-            id,
-            &[d, Field::Char(volume, 6), Field::Char("", 6)],
-        )
-        .with_detail(e.to_string()),
+        TapeError::WrongVolume { expected, found } => {
+            Msg::new(id, &[d, Field::Char(found, 6), Field::Char(expected, 6)])
+        }
+        TapeError::NotContinuation { volume, .. } => {
+            Msg::new(id, &[d, Field::Char(volume, 6), Field::Char("", 6)])
+                .with_detail(e.to_string())
+        }
         TapeError::FileNotFound { .. } => {
             Msg::new(id, &[d, Field::Char(vol, 6)]).with_detail(e.to_string())
         }
@@ -121,13 +119,10 @@ fn library(id: &'static str, e: &LibraryError, dev: &str) -> Msg {
     let d = Field::Char(dev, 10);
     let none = Field::Char("", 6);
     match e {
-        LibraryError::NotFound(c) | LibraryError::InUse(c) => {
-            Msg::new(id, &[d, Field::Char(c, 6)])
+        LibraryError::NotFound(c) | LibraryError::InUse(c) => Msg::new(id, &[d, Field::Char(c, 6)]),
+        LibraryError::Category { id: c, category } => {
+            Msg::new(id, &[d, Field::Char(c, 6), none, Field::Char(category, 10)])
         }
-        LibraryError::Category { id: c, category } => Msg::new(
-            id,
-            &[d, Field::Char(c, 6), none, Field::Char(category, 10)],
-        ),
         LibraryError::BadCategory(category) => {
             Msg::new(id, &[d, none, none, Field::Char(category, 10)])
         }

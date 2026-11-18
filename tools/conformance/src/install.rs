@@ -505,16 +505,22 @@ impl Suite {
             // A virtual tape over an image catalog, as any save uses.
             let long = Duration::from_mins(15);
             for (line, want) in [
-                ("CRTDEVTAP DEVD(TAPVRT01) RSRCNAME(*VRT)", "CPC2618"),
+                (
+                    "CRTDEVTAP DEVD(TAPVRT01) RSRCNAME(*VRT)",
+                    "Device description TAPVRT01 is made",
+                ),
                 (
                     "CRTIMGCLG IMGCLG(SAVSYS) DIR('/savsys') TYPE(*TAP)",
-                    "CPCBC01",
+                    "Image catalog SAVSYS is made in QUSRSYS",
                 ),
                 (
                     "ADDIMGCLGE IMGCLG(SAVSYS) FROMFILE(*NEW) TOFILE(SYS001) VOLNAM(SYS001) IMGSIZ(900)",
-                    "CPCBC03",
+                    "has a new entry",
                 ),
-                ("LODIMGCLG IMGCLG(SAVSYS) DEV(TAPVRT01)", "CPCBC06"),
+                (
+                    "LODIMGCLG IMGCLG(SAVSYS) DEV(TAPVRT01)",
+                    "Image catalog SAVSYS is ready on device TAPVRT01",
+                ),
                 (
                     "VRYCFG CFGOBJ(TAPVRT01) CFGTYPE(*DEV) STATUS(*ON)",
                     "CPC2605",

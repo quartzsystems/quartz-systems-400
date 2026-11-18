@@ -433,8 +433,9 @@ fn device(parms: &Parms, kwd: &str, d: &TapeFileDef) -> Result<String, Fail> {
         .next()
         .or_else(|| d.devs.first().cloned())
         .ok_or_else(|| {
-            Fail::new("CPF6708", &[])
-                .detail(format_args!("no device: give {kwd} or set DEV on the tape file"))
+            Fail::new("CPF6708", &[]).detail(format_args!(
+                "no device: give {kwd} or set DEV on the tape file"
+            ))
         })
 }
 

@@ -88,7 +88,10 @@ impl fmt::Display for Fail {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = crate::stgsvc::hist::message_text(&self.msgid, &self.data);
         let text = text.trim();
-        let text = text.strip_prefix(self.msgid.as_str()).unwrap_or(text).trim();
+        let text = text
+            .strip_prefix(self.msgid.as_str())
+            .unwrap_or(text)
+            .trim();
         write!(f, "{} {text}", self.msgid)?;
         if !self.detail.is_empty() {
             write!(f, " ({})", self.detail)?;

@@ -220,9 +220,8 @@ fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Fai
             .detail("DEVCLS(*OPT): optical media libraries are not available in this release"));
     }
     let name = parms.name("DEVD");
-    let not_made = |e: String| {
-        Fail::new(DEV_NOT_CREATED, &[Field::Char(&name, 10)]).detail(cause(&e))
-    };
+    let not_made =
+        |e: String| Fail::new(DEV_NOT_CREATED, &[Field::Char(&name, 10)]).detail(cause(&e));
     let rsrc_in = parms.name("RSRCNAME");
     let virt = rsrc_in == "*VRT" || parms.name("TYPE") == "*VRT";
     let rsrc = if virt {
@@ -269,9 +268,8 @@ fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Fai
 
 fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Fail> {
     let name = parms.name("DEVD");
-    let not_changed = |why: &str| {
-        Fail::new(DEV_NOT_CHANGED, &[Field::Char(&name, 10)]).detail(cause(why))
-    };
+    let not_changed =
+        |why: &str| Fail::new(DEV_NOT_CHANGED, &[Field::Char(&name, 10)]).detail(cause(why));
     let mut d = devices::read(system, &name).map_err(|e| {
         if e.starts_with(devices::NOT_FOUND) {
             Fail::new(devices::NOT_FOUND, &[Field::Char(&name, 10)])
@@ -1055,9 +1053,10 @@ fn optical(
     }
     match v {
         Some(v) => drive::optical_by_volume(system, &v),
-        None => Err(bad_parm(dev_kwd).detail(format_args!(
-            "{dev_kwd} is needed with {vol_kwd}(*MOUNTED)"
-        ))),
+        None => {
+            Err(bad_parm(dev_kwd)
+                .detail(format_args!("{dev_kwd} is needed with {vol_kwd}(*MOUNTED)")))
+        }
     }
 }
 
@@ -1133,10 +1132,7 @@ fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
 }
 
 /// `DSPOPT`'s view of the volume its parameters name.
-pub(crate) fn optical_view_of(
-    system: &mut System,
-    parms: &Parms,
-) -> Result<meddsp::OptView, Fail> {
+pub(crate) fn optical_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::OptView, Fail> {
     let path = parms.text("PATH");
     meddsp::optical_view(
         system,
@@ -1238,7 +1234,11 @@ fn chkopt(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
         .with(&volid, |v| Ok(optical::volume::ops::chkopt(v)))
         .map_err(|e| drive::optical_fail(system, &t, &MediaError::Optical(e), &volid))?;
     if !r.errors.is_empty() {
-        let list: Vec<String> = r.errors.iter().map(|(p, why)| format!("{p}: {why}")).collect();
+        let list: Vec<String> = r
+            .errors
+            .iter()
+            .map(|(p, why)| format!("{p}: {why}"))
+            .collect();
         let e = MediaError::Optical(optical::Error::Malformed(list.join("; ")));
         return Err(drive::optical_fail(system, &t, &e, &volid));
     }
@@ -1526,7 +1526,9 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, F
             let first = ids.first().cloned().unwrap_or_default();
             Ok(ctgs_changed(&dev, &first, "*EJECT", ids.len()))
         }
-        _ => Err(Fail::new("CPF6708", &[]).detail(format_args!("{name} is not a cartridge command"))),
+        _ => {
+            Err(Fail::new("CPF6708", &[]).detail(format_args!("{name} is not a cartridge command")))
+        }
     }
 }
 
@@ -1731,12 +1733,20 @@ mod tests {
     fn shown(r: &CmdReply) -> (String, Vec<u8>, String) {
         assert!(r.text.is_empty(), "no words of the command's own");
         let m = &r.messages[0];
-        (m.msgid.clone(), m.data.clone(), message_text(&m.msgid, &m.data))
+        (
+            m.msgid.clone(),
+            m.data.clone(),
+            message_text(&m.msgid, &m.data),
+        )
     }
 
     #[test]
     fn inztap_completions() {
-        let r = done(&medio::msg::tape_initialized("TAP01", Some("PRT001"), "*DEVTYPE"));
+        let r = done(&medio::msg::tape_initialized(
+            "TAP01",
+            Some("PRT001"),
+            "*DEVTYPE",
+        ));
         let (id, data, text) = shown(&r);
         assert_eq!(id, "CPC6773");
         assert_eq!(
@@ -1744,7 +1754,9 @@ mod tests {
             medio::msg::data(&[Field::Char("TAP01", 10), Field::Char("PRT001", 6)])
         );
         assert!(text.contains("PRT001") && text.contains("TAP01"), "{text}");
-        let (id, data, _) = shown(&done(&medio::msg::tape_initialized("TAP01", None, "*DEVTYPE")));
+        let (id, data, _) = shown(&done(&medio::msg::tape_initialized(
+            "TAP01", None, "*DEVTYPE",
+        )));
         assert_eq!((id.as_str(), data.len()), ("CPC6776", 20));
     }
 

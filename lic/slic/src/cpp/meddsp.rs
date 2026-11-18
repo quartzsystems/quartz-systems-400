@@ -450,9 +450,8 @@ pub(crate) fn optical_view(
     let path = path.trim().trim_matches('\'');
     let path = if path.is_empty() { "/" } else { path };
     let (odev, ovol) = (t.dev.clone(), volid.clone());
-    let opt = |e: optical::Error| {
-        Fail::from(medio::msg::escape(&MediaError::Optical(e), &odev, &ovol))
-    };
+    let opt =
+        |e: optical::Error| Fail::from(medio::msg::escape(&MediaError::Optical(e), &odev, &ovol));
     Ok(match data {
         "*DIRATR" => OptView::Dirs(
             t.dev,

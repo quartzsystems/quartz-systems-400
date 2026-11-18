@@ -20,7 +20,10 @@ fn render(m: &Msg) -> (String, String) {
     let declared: usize = d.vars.iter().map(msgf::desc::VarType::fixed_size).sum();
     assert_eq!(m.data.len(), declared, "{}: data and fields", m.id);
     let (text, help) = (d.format(&m.data), d.format_help(&m.data));
-    assert!(!text.contains('&') && !help.contains('&'), "{text} / {help}");
+    assert!(
+        !text.contains('&') && !help.contains('&'),
+        "{text} / {help}"
+    );
     (text, help)
 }
 
@@ -37,7 +40,10 @@ fn active() -> MediaError {
 fn inztap_labeled_and_nonlabeled() {
     let m = msg::tape_initialized("TAP01", Some("PRT001"), "*DEVTYPE");
     assert_eq!(m.id, "CPC6773");
-    assert_eq!(m.data, msg::data(&[msg::Field::Char("TAP01", 10), msg::Field::Char("PRT001", 6)]));
+    assert_eq!(
+        m.data,
+        msg::data(&[msg::Field::Char("TAP01", 10), msg::Field::Char("PRT001", 6)])
+    );
     let (text, _) = render(&m);
     assert!(text.contains("PRT001") && text.contains("TAP01"), "{text}");
 
@@ -46,7 +52,10 @@ fn inztap_labeled_and_nonlabeled() {
     assert_eq!(m.data.len(), 20);
     assert_eq!(&m.data[10..13], &[0x5c, 0xc4, 0xc5], "&4 the density");
     let (text, help) = render(&m);
-    assert!(text.contains("TAP01") && help.contains("*DEVTYPE"), "{help}");
+    assert!(
+        text.contains("TAP01") && help.contains("*DEVTYPE"),
+        "{help}"
+    );
 }
 
 #[test]
@@ -89,13 +98,22 @@ fn active_file_escape_and_inquiry() {
 fn next_volume_inquiries() {
     let m = msg::next_volume("TAPVRT01", None);
     assert_eq!(m.id, "CPA4088");
-    assert_eq!(&m.data[30..], msg::data(&[msg::Field::Char("TAPVRT01", 10)]).as_slice());
+    assert_eq!(
+        &m.data[30..],
+        msg::data(&[msg::Field::Char("TAPVRT01", 10)]).as_slice()
+    );
     assert!(render(&m).0.contains("TAPVRT01"));
     let m = msg::next_volume("TAPVRT01", Some("VOL002"));
     assert_eq!(m.id, "CPA4089");
-    assert_eq!(&m.data[40..], msg::data(&[msg::Field::Char("VOL002", 6)]).as_slice());
+    assert_eq!(
+        &m.data[40..],
+        msg::data(&[msg::Field::Char("VOL002", 6)]).as_slice()
+    );
     let (text, _) = render(&m);
-    assert!(text.contains("VOL002") && text.contains("TAPVRT01"), "{text}");
+    assert!(
+        text.contains("VOL002") && text.contains("TAPVRT01"),
+        "{text}"
+    );
 }
 
 #[test]
