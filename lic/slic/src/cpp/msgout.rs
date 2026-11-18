@@ -30,8 +30,6 @@ pub enum Field<'a> {
     Bin4(i32),
     /// `*DTS`: microseconds since the Unix epoch, as `msgf` reads it.
     Dts(i64),
-    /// `*HEX n`: `n` zero bytes (a field QS/400 has nothing for).
-    Zeros(usize),
 }
 
 /// The data of `fields`, one after another.
@@ -44,7 +42,6 @@ pub fn data(fields: &[Field<'_>]) -> Vec<u8> {
             Field::Bin2(v) => out.extend_from_slice(&v.to_be_bytes()),
             Field::Bin4(v) => out.extend_from_slice(&v.to_be_bytes()),
             Field::Dts(v) => out.extend_from_slice(&v.to_be_bytes()),
-            Field::Zeros(n) => out.resize(out.len() + n, 0),
         }
     }
     out
@@ -102,9 +99,8 @@ mod tests {
             Field::Bin4(0),
             Field::Char("QSTEST", 10),
             Field::Bin2(1),
-            Field::Zeros(2),
         ]);
-        assert_eq!(d.len(), 4 + 4 + 10 + 2 + 2);
+        assert_eq!(d.len(), 4 + 4 + 10 + 2);
         assert_eq!(&d[..4], &[0, 0, 0, 3]);
         assert_eq!(d[8], 0xd8, "Q in CP037");
         assert_eq!(&d[14..18], &[0x40; 4]);

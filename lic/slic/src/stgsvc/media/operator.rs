@@ -14,9 +14,6 @@ use wm::obj::msgq::{MsgKind, QMsg, Status};
 
 use crate::ipl::system::{System, now_unix};
 
-/// An active file is in the way of a write (an inquiry, replies C I).
-pub(crate) const ACTIVE_FILE: &str = medio::msg::ACTIVE_FILE_INQUIRY;
-
 fn send(system: &mut System, m: QMsg) {
     let (id, sev, text) = (m.msgid.clone(), m.severity, m.text.clone());
     if let Err(e) = crate::stgsvc::msgs::send(system, "QSYS", "QSYSOPR", m) {

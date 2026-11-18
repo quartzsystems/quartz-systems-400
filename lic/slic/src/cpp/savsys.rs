@@ -204,37 +204,28 @@ impl TapeJob for SysJob<'_> {
     ) -> Result<u32, MediaError> {
         write_tape(d, self.img, &self.w).map_err(media_error)
     }
+    fn active_files(&mut self) -> Option<&mut bool> {
+        Some(&mut self.w.allow_active)
+    }
 }
 
 /// Write `img` on the tape in `m.dev`. Files that have not expired are
-/// asked about (`CPA4036`) unless `CLEAR` says otherwise.
+/// asked about (`CPA6754`, by the drive) unless `CLEAR` says otherwise.
 fn to_tape(
     system: &mut System,
     m: &stream::Media,
     img: &Image,
     vol: &str,
 ) -> Result<String, String> {
-    let mut w = TapeWrite {
+    let w = TapeWrite {
         today: stream::today(),
         expires: m.expires,
         allow_active: m.clear,
         end_opt: m.end_opt,
     };
-    loop {
-        let mut job = SysJob { img, w };
-        match drive::with_tape(system, &m.dev, &m.vols, true, &mut job) {
-            Err(e) if e.starts_with(operator::ACTIVE_FILE) && !w.allow_active => {
-                let a = operator::inquiry(system, operator::ACTIVE_FILE, &[(&m.dev, 10)], "C");
-                if a.is("I") {
-                    w.allow_active = true;
-                    continue;
-                }
-                return Err(format!("{} {e}; {}", stream::SAVE_ENDED, a.shown()));
-            }
-            Err(e) => return Err(e),
-            Ok(n) => return Ok(format!("{n} files on tape volume {vol}")),
-        }
-    }
+    let mut job = SysJob { img, w };
+    let n = drive::with_tape(system, &m.dev, &m.vols, true, &mut job)?;
+    Ok(format!("{n} files on tape volume {vol}"))
 }
 
 /// Write `img` on the optical volume `vol` of `m.dev`. A system save

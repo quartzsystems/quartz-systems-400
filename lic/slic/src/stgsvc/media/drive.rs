@@ -252,9 +252,7 @@ pub(crate) fn tape_job<J: TapeJob>(
     }
 }
 
-/// `tape_job` for the callers that take `msgid text`. A write ended by
-/// an active file leads with `operator::ACTIVE_FILE`, for a caller that
-/// asks the operator itself.
+/// `tape_job` for the callers that take `msgid text`.
 pub(crate) fn with_tape<J: TapeJob>(
     system: &mut System,
     dev: &str,
@@ -262,13 +260,7 @@ pub(crate) fn with_tape<J: TapeJob>(
     write: bool,
     job: &mut J,
 ) -> Result<J::Out, String> {
-    tape_job(system, dev, vols, write, job).map_err(|f| {
-        if write && f.is("CPF6754") {
-            format!("{} {f}", operator::ACTIVE_FILE)
-        } else {
-            f.into()
-        }
-    })
+    tape_job(system, dev, vols, write, job).map_err(Into::into)
 }
 
 /// Run `job` on the mounted entry of the catalog on a virtual device.
