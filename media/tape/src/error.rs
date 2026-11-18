@@ -24,7 +24,7 @@ pub enum TapeError {
     WrongVolume {
         /// The volume asked for.
         expected: String,
-        /// The volume found ("*NL" when unlabeled, "*BLANK" when empty).
+        /// The volume found ("*NL" when it has no labels).
         found: String,
     },
     /// The operation needs a labeled volume.

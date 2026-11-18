@@ -459,10 +459,15 @@ impl StSim {
             }
         }
         let Some(rec) = self.cart().records.get(self.pos).cloned() else {
-            // BLANK CHECK: 0 bytes the first time after a file mark.
-            let after_mark = self.eof == Eof::Fm;
-            self.eof = Eof::Eod;
-            return if after_mark { Ok(0) } else { Err(err(EIO)) };
+            // BLANK CHECK: 0 bytes the first time after a file mark (the
+            // end of data). Anywhere else EIO, the end of data not
+            // noted and the block number lost (st.c's read_tape).
+            if self.eof == Eof::Fm {
+                self.eof = Eof::Eod;
+                return Ok(0);
+            }
+            self.blkno_unknown = true;
+            return Err(err(EIO));
         };
         self.pos += 1;
         match rec {
@@ -572,6 +577,22 @@ impl StIoctl for StSim {
         let r = self.do_write(data);
         self.log
             .push(format!("write {} -> {}", data.len(), name(&r)));
+        r
+    }
+
+    fn read_sense(&mut self) -> io::Result<Option<(u8, u8, u8)>> {
+        // The drive past the last record answers BLANK CHECK, end of data
+        // (00/05); a record there reads (and moves the drive).
+        let r = if !self.ready {
+            Err(err(ENOMEDIUM))
+        } else if self.pos >= self.cart().records.len() {
+            Ok(Some((super::ioctl::BLANK_CHECK, 0x00, 0x05)))
+        } else {
+            self.pos += 1;
+            self.blkno_unknown = true;
+            Ok(None)
+        };
+        self.log.push(format!("read sense -> {r:?}"));
         r
     }
 }

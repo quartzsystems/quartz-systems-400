@@ -11,6 +11,13 @@
 //!   mark, unless MTIOCGET then reports `GMT_EOD` (the end of data). A
 //!   block longer than the buffer fails with ENOMEM. EIO with `GMT_EOD`
 //!   set is the end of data too.
+//! - A volume never written answers its first read with BLANK CHECK,
+//!   which the driver gives as EIO with neither `GMT_EOD` nor `GMT_BOT`
+//!   (only a BLANK CHECK right after a file mark is noted as the end);
+//!   so does data that ends without a file mark. So a read's EIO
+//!   without `GMT_EOD` is put to the drive with `SG_IO`: BLANK CHECK is
+//!   the end of data (at the start, a volume with no labels, and the
+//!   drive is rewound); anything else stays a device error.
 //! - Spacing that runs into the end of data or the beginning of tape
 //!   fails with EIO; MTIOCGET's `GMT_EOD`, `GMT_BOT` and `GMT_EOF` tell which.
 //! - The write that reaches the early warning is written and returns its
@@ -38,7 +45,7 @@
 use std::io;
 
 use super::ioctl::{
-    GMT_BOT, GMT_EOD, GMT_EOF, GMT_EOT, GMT_ONLINE, GMT_WR_PROT, MT_ST_BLKSIZE_MASK,
+    BLANK_CHECK, GMT_BOT, GMT_EOD, GMT_EOF, GMT_EOT, GMT_ONLINE, GMT_WR_PROT, MT_ST_BLKSIZE_MASK,
     MT_ST_DENSITY_SHIFT, MtGet, MtOp, StIoctl,
 };
 use crate::transport::{
@@ -80,6 +87,9 @@ pub struct StTransport<I> {
     unloaded: bool,
     /// The fixed block size set here, 0 for variable.
     block_size: u32,
+    /// Rewound, and nothing read, written or spaced since: the next read
+    /// is the volume's first.
+    at_start: bool,
 }
 
 fn errno(e: &io::Error) -> Option<i32> {
@@ -117,6 +127,7 @@ impl<I: StIoctl> StTransport<I> {
             early_warning: false,
             unloaded: false,
             block_size: 0,
+            at_start: false,
         }
     }
 
@@ -158,6 +169,7 @@ impl<I: StIoctl> StTransport<I> {
             Err(e) => return Err(map(e)),
         }
         self.unloaded = false;
+        self.at_start = true;
         self.early_warning = false;
         Ok(())
     }
@@ -191,7 +203,19 @@ impl<I: StIoctl> StTransport<I> {
         }
     }
 
+    /// After a read's EIO the driver did not explain: whether the drive
+    /// answers BLANK CHECK there, the end of data. The probe leaves the
+    /// driver without a position; at the volume's first read it rewinds.
+    fn blank_check(&mut self, first: bool) -> Result<bool, TransportError> {
+        let sense = self.io.read_sense();
+        if first {
+            self.io.mtop(MtOp::Rew, 1).map_err(map)?;
+        }
+        Ok(matches!(sense, Ok(Some((BLANK_CHECK, _, _)))))
+    }
+
     fn moved(&mut self, op: MtOp, count: u32) -> Result<(), TransportError> {
+        self.at_start = false;
         let mut r = self.op(op, count);
         // After writes the driver writes a file mark before MTREW and
         // MTOFFL, which at the physical end fails, and keeps failing.
@@ -207,7 +231,9 @@ impl<I: StIoctl> StTransport<I> {
 
 impl<I: StIoctl> TapeTransport for StTransport<I> {
     fn rewind(&mut self) -> Result<(), TransportError> {
-        self.moved(MtOp::Rew, 1)
+        self.moved(MtOp::Rew, 1)?;
+        self.at_start = true;
+        Ok(())
     }
     fn fsf(&mut self, n: u32) -> Result<(), TransportError> {
         self.moved(MtOp::Fsf, n)
@@ -225,9 +251,11 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
         self.moved(MtOp::Eom, 1)
     }
     fn write_eof(&mut self, n: u32) -> Result<(), TransportError> {
+        self.at_start = false;
         self.op(MtOp::Weof, n)
     }
     fn erase(&mut self) -> Result<(), TransportError> {
+        self.at_start = false;
         self.op(MtOp::Erase, 1)
     }
     fn unload(&mut self) -> Result<(), TransportError> {
@@ -295,6 +323,7 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
             }
             bs => bs,
         };
+        let first = std::mem::take(&mut self.at_start);
         match self.retried(|io| io.read(&mut buf[..n])) {
             Ok(0) => {
                 // The physical end read shows as GMT_EOT: no more data.
@@ -310,7 +339,7 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
                 Err(TransportError::BlockTooLarge { len: 0, max: n })
             }
             Err(e) if is(&e, errno::EIO) => {
-                if self.gstat()? & GMT_EOD != 0 {
+                if self.gstat()? & GMT_EOD != 0 || self.blank_check(first)? {
                     Ok(ReadOutcome::EndOfData)
                 } else {
                     Err(TransportError::Io(e))
@@ -321,6 +350,7 @@ impl<I: StIoctl> TapeTransport for StTransport<I> {
     }
 
     fn write_block(&mut self, data: &[u8]) -> Result<Written, TransportError> {
+        self.at_start = false;
         if data.is_empty() || data.len() > MAX_BLOCK {
             return Err(TransportError::BlockTooLarge {
                 len: data.len(),

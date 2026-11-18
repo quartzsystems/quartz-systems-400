@@ -135,7 +135,18 @@ pub trait StIoctl {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize>;
     /// `write` on the node: one block.
     fn write(&mut self, data: &[u8]) -> io::Result<usize>;
+    /// Ask the drive itself to read one block (READ(6) through `SG_IO`
+    /// on the node): its sense key, ASC and ASCQ when it answered CHECK
+    /// CONDITION, `None` when it read or cannot be asked. Only to explain
+    /// an `EIO` the driver gave without saying why; the position after
+    /// it is unknown to the driver, so the caller rewinds.
+    fn read_sense(&mut self) -> io::Result<Option<(u8, u8, u8)>> {
+        Ok(None)
+    }
 }
+
+/// Sense key BLANK CHECK.
+pub const BLANK_CHECK: u8 = 0x08;
 
 /// `SG_IO` data direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

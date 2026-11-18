@@ -174,6 +174,18 @@ impl StIoctl for LinuxSt {
     fn write(&mut self, data: &[u8]) -> io::Result<usize> {
         self.file.write(data)
     }
+
+    fn read_sense(&mut self) -> io::Result<Option<(u8, u8, u8)>> {
+        // READ(6), variable blocks, up to 64 KiB less one (the label is
+        // 80 bytes); SILI so a short block is no error.
+        let mut buf = vec![0u8; 0xffff];
+        let cdb = [0x08, 0x02, 0x00, 0xff, 0xff, 0x00];
+        let r = sg_io(&self.file, &cdb, SgDir::FromDevice, &mut buf, 60_000)?;
+        if r.status == 0x02 {
+            return Ok(super::sg::sense_codes(&r.sense));
+        }
+        Ok(None)
+    }
 }
 
 /// An open `sg` node.
@@ -197,49 +209,61 @@ impl SgIoctl for LinuxSg {
         data: &mut [u8],
         timeout_ms: u32,
     ) -> io::Result<SgReply> {
-        let mut sense = [0u8; 64];
-        let too_big = || io::Error::new(io::ErrorKind::InvalidInput, "SG_IO buffer too large");
-        let mut hdr = RawSgIoHdr {
-            interface_id: libc::c_int::from(b'S'),
-            dxfer_direction: match dir {
-                SgDir::None => SG_DXFER_NONE,
-                SgDir::ToDevice => SG_DXFER_TO_DEV,
-                SgDir::FromDevice => SG_DXFER_FROM_DEV,
-            },
-            cmd_len: u8::try_from(cdb.len()).map_err(|_| too_big())?,
-            mx_sb_len: 64,
-            iovec_count: 0,
-            dxfer_len: u32::try_from(data.len()).map_err(|_| too_big())?,
-            dxferp: data.as_mut_ptr().cast(),
-            cmdp: cdb.as_ptr(),
-            sbp: sense.as_mut_ptr(),
-            timeout: timeout_ms,
-            flags: 0,
-            pack_id: 0,
-            usr_ptr: std::ptr::null_mut(),
-            status: 0,
-            masked_status: 0,
-            msg_status: 0,
-            sb_len_wr: 0,
-            host_status: 0,
-            driver_status: 0,
-            resid: 0,
-            duration: 0,
-            info: 0,
-        };
-        // SAFETY: SG_IO reads `hdr` and the command block, transfers at
-        // most `dxfer_len` bytes to or from `data`, writes at most
-        // `mx_sb_len` bytes of sense into `sense`, and writes the status
-        // fields of `hdr`. All of them outlive the call, which is
-        // synchronous; the descriptor is open.
-        check(unsafe { libc::ioctl(self.file.as_raw_fd(), request(SG_IO), &raw mut hdr) })?;
-        let n = usize::from(hdr.sb_len_wr).min(sense.len());
-        Ok(SgReply {
-            status: hdr.status,
-            host_status: hdr.host_status,
-            driver_status: hdr.driver_status,
-            sense: sense[..n].to_vec(),
-            resid: hdr.resid,
-        })
+        sg_io(&self.file, cdb, dir, data, timeout_ms)
     }
+}
+
+/// One `SG_IO` on an open node: an `sg` node, or an `st` node, which
+/// passes it to the drive.
+fn sg_io(
+    file: &File,
+    cdb: &[u8],
+    dir: SgDir,
+    data: &mut [u8],
+    timeout_ms: u32,
+) -> io::Result<SgReply> {
+    let mut sense = [0u8; 64];
+    let too_big = || io::Error::new(io::ErrorKind::InvalidInput, "SG_IO buffer too large");
+    let mut hdr = RawSgIoHdr {
+        interface_id: libc::c_int::from(b'S'),
+        dxfer_direction: match dir {
+            SgDir::None => SG_DXFER_NONE,
+            SgDir::ToDevice => SG_DXFER_TO_DEV,
+            SgDir::FromDevice => SG_DXFER_FROM_DEV,
+        },
+        cmd_len: u8::try_from(cdb.len()).map_err(|_| too_big())?,
+        mx_sb_len: 64,
+        iovec_count: 0,
+        dxfer_len: u32::try_from(data.len()).map_err(|_| too_big())?,
+        dxferp: data.as_mut_ptr().cast(),
+        cmdp: cdb.as_ptr(),
+        sbp: sense.as_mut_ptr(),
+        timeout: timeout_ms,
+        flags: 0,
+        pack_id: 0,
+        usr_ptr: std::ptr::null_mut(),
+        status: 0,
+        masked_status: 0,
+        msg_status: 0,
+        sb_len_wr: 0,
+        host_status: 0,
+        driver_status: 0,
+        resid: 0,
+        duration: 0,
+        info: 0,
+    };
+    // SAFETY: SG_IO reads `hdr` and the command block, transfers at
+    // most `dxfer_len` bytes to or from `data`, writes at most
+    // `mx_sb_len` bytes of sense into `sense`, and writes the status
+    // fields of `hdr`. All of them outlive the call, which is
+    // synchronous; the descriptor is open.
+    check(unsafe { libc::ioctl(file.as_raw_fd(), request(SG_IO), &raw mut hdr) })?;
+    let n = usize::from(hdr.sb_len_wr).min(sense.len());
+    Ok(SgReply {
+        status: hdr.status,
+        host_status: hdr.host_status,
+        driver_status: hdr.driver_status,
+        sense: sense[..n].to_vec(),
+        resid: hdr.resid,
+    })
 }

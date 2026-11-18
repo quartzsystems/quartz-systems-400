@@ -112,7 +112,7 @@ pub(crate) struct TapObj {
 pub(crate) struct TapView {
     /// The device.
     pub dev: String,
-    /// The volume identifier, `*NL` or `*BLANK`.
+    /// The volume identifier, `*NL` without labels.
     pub vol: String,
     /// The owner.
     pub owner: String,
@@ -228,8 +228,7 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
                 .map(|r| label_text(&r))
                 .unwrap_or_default(),
         ),
-        VolumeKind::Unlabeled => (String::new(), "*NL", "", String::new()),
-        VolumeKind::Blank => (String::new(), "", "", String::new()),
+        VolumeKind::Unlabeled | VolumeKind::Blank => (String::new(), "*NL", "", String::new()),
     };
     let files = if a.data == "*VOLLBL" {
         Vec::new()

@@ -28,13 +28,12 @@ pub enum VolumeKind {
 }
 
 impl VolumeKind {
-    /// The volume identifier, "*NL" or "*BLANK".
+    /// The volume identifier; "*NL" for no labels, blank volumes too.
     #[must_use]
     pub fn id(&self) -> String {
         match self {
             Self::Labeled { vol1, .. } => vol1.volume_id.clone(),
-            Self::Unlabeled => "*NL".into(),
-            Self::Blank => "*BLANK".into(),
+            Self::Unlabeled | Self::Blank => "*NL".into(),
         }
     }
 }
