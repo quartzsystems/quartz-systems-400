@@ -2079,7 +2079,9 @@ below, and the QEMU steps (last item).
   `DELEGPURGE`, no delegation without a callback path; `srv4_net.rs`
   `run::nfsd4` over loopback TCP: version 3 on the same port, a 4.1
   session whose backchannel is its own connection, a delegation
-  recalled with `CB_SEQUENCE` and `CB_RECALL` on it; `srv4_text.rs`
+  recalled with `CB_SEQUENCE` and `CB_RECALL` on it, and a
+  `WRITEW_LT` refused told by `CB_NOTIFY_LOCK` there when the holder's
+  `LOCKU` frees the file; `srv4_text.rs`
   text conversion through an open, a path name in the host's CCSID, a
   `/QSYS.LIB` export through the pseudo file system; `srv4_fuzz.rs`
   the `nfs4` entry point over mutated compounds.
