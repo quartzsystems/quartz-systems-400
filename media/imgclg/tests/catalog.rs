@@ -473,6 +473,6 @@ fn sizes_and_names() {
     assert!(imgsiz("0").is_err() && imgsiz("big").is_err());
     let mut r = Registry::new(Arc::new(MemFs::new()), Arc::new(NoTape));
     let e = r.crtimgclg(&crt("1BAD", "/x", ImgType::Opt)).unwrap_err();
-    assert_eq!(e.msgid(), "CPFBC0F");
-    assert_eq!(Error::NotFound("X".into()).msgid(), "CPFBC01");
+    assert_eq!(e.msgid(), "CPF9897");
+    assert_eq!(Error::NotFound("X".into()).msgid(), "CPFBC45");
 }

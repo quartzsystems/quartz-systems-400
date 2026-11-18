@@ -87,26 +87,29 @@ pub enum Error {
 }
 
 impl Error {
-    /// The message identifier (chosen by Quartz; see docs/MEDIA.md).
+    /// IBM's message identifier for the error's meaning (docs/MEDIA.md).
+    /// A cause IBM gives no message of its own is `CPF9897`: the
+    /// command sends it before its escape (`Image catalog not created`
+    /// and the like).
     #[must_use]
     pub fn msgid(&self) -> &'static str {
         match self {
-            Self::NotFound(_) => "CPFBC01",
-            Self::Exists(_) => "CPFBC02",
-            Self::DirInUse { .. } => "CPFBC03",
-            Self::NoDir(_) => "CPFBC04",
-            Self::NoEntry { .. } => "CPFBC05",
-            Self::IndexInUse(_) => "CPFBC06",
-            Self::Full(_) => "CPFBC07",
-            Self::NoImage(_) => "CPFBC08",
-            Self::BadImage { .. } => "CPFBC09",
-            Self::Loaded(_) => "CPFBC0A",
-            Self::DeviceInUse(_) => "CPFBC0B",
-            Self::DuplicateVolume(_) => "CPFBC0C",
-            Self::Verify { .. } => "CPFBC0D",
-            Self::ReadOnlyImage(_) => "CPFBC0E",
-            Self::Invalid(_) => "CPFBC0F",
-            Self::Damaged(_) | Self::Io(_) => "CPFBC10",
+            Self::NotFound(_) => "CPFBC45",
+            Self::Exists(_) => "CPFBC01",
+            Self::NoEntry { .. } => "CPFBC4A",
+            Self::Loaded(_) => "CPFBC4D",
+            Self::DeviceInUse(_) => "CPFBC4B",
+            Self::Verify { .. } => "CPFBC42",
+            Self::Damaged(_) | Self::Io(_) => "CPFBC17",
+            Self::DirInUse { .. }
+            | Self::NoDir(_)
+            | Self::IndexInUse(_)
+            | Self::Full(_)
+            | Self::NoImage(_)
+            | Self::BadImage { .. }
+            | Self::DuplicateVolume(_)
+            | Self::ReadOnlyImage(_)
+            | Self::Invalid(_) => "CPF9897",
             Self::Optical(e) => e.msgid(),
         }
     }

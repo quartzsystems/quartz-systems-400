@@ -718,16 +718,19 @@ fold. A writable volume grants `*PUBLIC *ALL`; a read-only one `*RX`.
 |---|---|---|
 | damaged image, I/O | `OPT1605` | `EIO` |
 | not found | `OPT1115` | `ENOENT` |
-| already there | `OPT1210` | `EEXIST` |
-| not a directory, a directory, not empty, bad request | `OPT1203` | `ENOTDIR`, `EISDIR`, `ENOTEMPTY`, `EINVAL` |
-| name not allowed | `OPT1317` | `ENAMETOOLONG` |
-| volume identifier not allowed | `OPT1331` | `EINVAL` |
-| volume full | `OPT1335` | `ENOSPC` |
-| write protected, read only | `OPT1520` | `EROFS` |
-| `INZOPT CHECK(*YES)` found files | `OPT1330` | `EINVAL` |
+| already there | `OPT1220` | `EEXIST` |
+| not a directory | `OPT1205` | `ENOTDIR` |
+| name not allowed | `OPT1344` | `ENAMETOOLONG` |
+| volume identifier not allowed | `OPT1342` | `EINVAL` |
+| volume full | `OPT1345` | `ENOSPC` |
+| write protected | `OPT1315` | `EROFS` |
+| `INZOPT CHECK(*YES)` found files | `OPT1335` | `EINVAL` |
 
-The message identifiers are Quartz's choice in IBM's `OPT` range; IBM's
-texts for them are not reproduced.
+A directory where a file was expected is `OPT1222` (`EISDIR`), a
+directory that still holds entries `OPT1215` (`ENOTEMPTY`), a bad
+request `OPT1540` (`EINVAL`) and a read-only volume `OPT1305`
+(`EROFS`). The identifiers are IBM's for the meaning (the primary's
+`QCPFMSG`); the texts are Quartz's.
 
 ## Image catalogs
 
@@ -816,25 +819,32 @@ An `entry` line is `entry` and these fields, tab separated:
 
 | Error | Message |
 |---|---|
-| catalog not found | `CPFBC01` |
-| catalog already exists | `CPFBC02` |
-| directory belongs to another catalog | `CPFBC03` |
-| directory missing (`CRTDIR(*NO)`) | `CPFBC04` |
-| no entry at the index | `CPFBC05` |
-| index in use | `CPFBC06` |
-| catalog full | `CPFBC07` |
-| image file missing | `CPFBC08` |
-| not an image of the catalog's type | `CPFBC09` |
-| catalog loaded | `CPFBC0A` |
-| device in use | `CPFBC0B` |
-| volume already in the catalog | `CPFBC0C` |
-| verification failed | `CPFBC0D` |
-| image can only be read | `CPFBC0E` |
-| parameter not allowed | `CPFBC0F` |
-| metadata file damaged, file system | `CPFBC10` |
+| catalog not found | `CPFBC45` |
+| catalog already exists | `CPFBC01` |
+| directory belongs to another catalog | `CPF9897` |
+| directory missing (`CRTDIR(*NO)`) | `CPF9897` |
+| no entry at the index | `CPFBC4A` |
+| index in use | `CPF9897` |
+| catalog full | `CPF9897` |
+| image file missing | `CPF9897` |
+| not an image of the catalog's type | `CPF9897` |
+| catalog loaded | `CPFBC4D` |
+| device in use | `CPFBC4B` |
+| volume already in the catalog | `CPF9897` |
+| verification failed | `CPFBC42` |
+| image can only be read | `CPF9897` |
+| parameter not allowed | `CPF9897` |
+| metadata file damaged, file system | `CPFBC17` |
 
-The `CPFBC` identifiers are Quartz's choice; optical errors keep their
-`OPT` identifiers.
+The identifiers are IBM's for the meaning (the primary's `QCPFMSG`,
+`tools/conformance/oracle/msgdata/fields.txt`). A cause IBM has no
+message of its own for is `CPF9897` with the cause as its text, sent
+before the command's escape: `CPFBC02` (not created), `CPFBC18` (not
+deleted), `CPFBC28` (entry not added), `CPFBC30` (entry not removed),
+`CPFBC0C` (entry not changed), `CPFBC10` and `CPFBC11` (not loaded,
+not unloaded), `CPFBC13` to `CPFBC15` (entry not loaded, unloaded,
+mounted), `CPFBC42` (not verified). Optical errors keep their `OPT`
+identifiers.
 
 ## Save file data to media
 

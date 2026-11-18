@@ -100,7 +100,7 @@ fn cartridges_move_through_the_library() {
         );
     }
     // Not usable yet.
-    assert_eq!(lib.mount("CTG001").unwrap_err().msgid(), "CPF67D2");
+    assert_eq!(lib.mount("CTG001").unwrap_err().msgid(), "CPF67A5");
     lib.add("CTG001", Category::Share400).unwrap();
     lib.add("CTG002", Category::Share400).unwrap();
     lib.add("CTG003", Category::Cnv).unwrap();

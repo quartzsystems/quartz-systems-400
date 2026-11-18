@@ -43,7 +43,7 @@ impl MediaError {
             Self::Tape(t) => t.message_id(),
             Self::Optical(o) => o.msgid(),
             Self::NotFound(_) | Self::Continuation(_) => "OPT1115",
-            Self::Exists(_) => "OPT1210",
+            Self::Exists(_) => "OPT1220",
             Self::Library(l) => l.message_id(),
             Self::State(_) => "CPF6708",
         }

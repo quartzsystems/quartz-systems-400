@@ -61,20 +61,23 @@ pub enum Error {
 }
 
 impl Error {
-    /// The message identifier for this error (chosen by Quartz where
-    /// IBM's is not documented; see docs/MEDIA.md).
+    /// IBM's message identifier for this error's meaning (docs/MEDIA.md).
     #[must_use]
     pub fn msgid(&self) -> &'static str {
         match self {
             Self::Io(_) | Self::Malformed(_) => "OPT1605",
             Self::NotFound(_) => "OPT1115",
-            Self::Exists(_) => "OPT1210",
-            Self::NotDir(_) | Self::IsDir(_) | Self::NotEmpty(_) | Self::Invalid(_) => "OPT1203",
-            Self::BadName(_) => "OPT1317",
-            Self::BadVolumeId(_) => "OPT1331",
-            Self::VolumeFull { .. } => "OPT1335",
-            Self::WriteProtected | Self::ReadOnly => "OPT1520",
-            Self::ActiveFiles => "OPT1330",
+            Self::Exists(_) => "OPT1220",
+            Self::NotDir(_) => "OPT1205",
+            Self::IsDir(_) => "OPT1222",
+            Self::NotEmpty(_) => "OPT1215",
+            Self::Invalid(_) => "OPT1540",
+            Self::BadName(_) => "OPT1344",
+            Self::BadVolumeId(_) => "OPT1342",
+            Self::VolumeFull { .. } => "OPT1345",
+            Self::WriteProtected => "OPT1315",
+            Self::ReadOnly => "OPT1305",
+            Self::ActiveFiles => "OPT1335",
         }
     }
 

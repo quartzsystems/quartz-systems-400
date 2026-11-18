@@ -111,7 +111,7 @@ fn capacity_and_protection() {
         .put_file("/big", vec![0; 2 * MIB as usize], false)
         .unwrap_err();
     assert!(matches!(err, Error::VolumeFull { .. }), "{err}");
-    assert_eq!(err.msgid(), "OPT1335");
+    assert_eq!(err.msgid(), "OPT1345");
     assert!(v.stat("/big").is_err(), "a refused file leaves nothing");
     v.put_file("/small", vec![1; 1000], false).unwrap();
     assert!(matches!(

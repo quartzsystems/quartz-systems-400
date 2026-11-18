@@ -95,22 +95,23 @@ pub fn expiry_text(d: Option<Date>) -> String {
 }
 
 impl TapeError {
-    /// The IBM message identifier the commands send for this error.
+    /// The IBM message identifier the commands send for this error
+    /// (IBM's for the meaning, `tools/conformance/oracle/msgdata`).
     #[must_use]
     pub fn message_id(&self) -> &'static str {
         match self {
             Self::Transport(t) => match t {
                 TransportError::NotLoaded => "CPF6760",
                 TransportError::WriteProtected => "CPF6768",
-                TransportError::EndOfMedium => "CPF6718",
+                TransportError::EndOfMedium => "CPF6722",
                 _ => "CPF6708",
             },
-            Self::Changer(_) => "CPF6745",
+            Self::Changer(_) => "CPF67C7",
             Self::Label(_) | Self::NotLabeled | Self::Labeled => "CPF6772",
             Self::WrongVolume { .. } | Self::NotContinuation { .. } => "CPF6720",
-            Self::FileNotFound { .. } => "CPF6790",
-            Self::ActiveFile { .. } => "CPA4036",
-            Self::EndOfVolume => "CPF6718",
+            Self::FileNotFound { .. } => "CPF6723",
+            Self::ActiveFile { .. } => "CPF6754",
+            Self::EndOfVolume => "CPF6722",
             Self::Cancelled | Self::Parameter { .. } | Self::RecordLength { .. } => "CPF6708",
         }
     }

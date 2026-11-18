@@ -198,10 +198,13 @@ impl LibraryError {
     #[must_use]
     pub fn message_id(&self) -> &'static str {
         match self {
-            Self::NotFound(_) => "CPF6745",
-            Self::Category { .. } | Self::BadCategory(_) | Self::SysGen(_) => "CPF67D2",
-            Self::InUse(_) => "CPF6747",
-            Self::NoDrive(_) | Self::NoSpace(_) => "CPF6749",
+            Self::NotFound(_) => "CPF67A1",
+            Self::Category { .. } => "CPF67A5",
+            Self::BadCategory(_) => "CPF67A6",
+            Self::SysGen(_) => "CPF67D5",
+            Self::InUse(_) => "CPF67A8",
+            Self::NoDrive(_) => "CPF67ED",
+            Self::NoSpace(_) => "CPF67DC",
         }
     }
 }

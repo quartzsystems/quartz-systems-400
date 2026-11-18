@@ -107,7 +107,7 @@ fn one_volume_save_and_restore() {
     let e = TapeWriter::new(&mut t, &mut NoMoreVolumes, again.clone())
         .write_stream(b"y")
         .unwrap_err();
-    assert_eq!(e.msgid(), "CPA4036");
+    assert_eq!(e.msgid(), "CPF6754");
     again.allow_active = true;
     TapeWriter::new(&mut t, &mut NoMoreVolumes, again)
         .write_stream(b"y")
@@ -205,7 +205,7 @@ fn optical_save_files() {
     let e = OpticalWriter::new(&set, "SAVE01", "/SAVES/QGPL", false)
         .write_stream(b"x")
         .unwrap_err();
-    assert_eq!(e.msgid(), "OPT1210");
+    assert_eq!(e.msgid(), "OPT1220");
     let (back, _) = OpticalReader::new(&set, "SAVE01", "/SAVES/QGPL")
         .read_stream()
         .unwrap();
@@ -239,7 +239,7 @@ fn optical_saves_span_volumes() {
     let e = OpticalWriter::new(&set, "SPAN01", "/BIG", false)
         .write_stream(&data)
         .unwrap_err();
-    assert_eq!(e.msgid(), "OPT1335");
+    assert_eq!(e.msgid(), "OPT1345");
     let mut next = Spare(vec!["SPAN02".into(), "SPAN03".into()], Vec::new());
     let w = OpticalWriter::new(&set, "SPAN01", "/BIG", false)
         .spanning(&mut next)

@@ -157,7 +157,7 @@ fn inztap_labels_and_checks() {
     };
     let e = inztap(&mut t, &again(Check::Yes, None)).unwrap_err();
     assert!(matches!(e, TapeError::ActiveFile { seq: 2, .. }), "{e}");
-    assert_eq!(e.message_id(), "CPA4036");
+    assert_eq!(e.message_id(), "CPF6754");
     let e = inztap(&mut t, &again(Check::First, Some("VOLXXX"))).unwrap_err();
     assert!(matches!(e, TapeError::WrongVolume { .. }));
     assert_eq!(e.message_id(), "CPF6720");
@@ -390,7 +390,7 @@ fn chktap_finds_files() {
         ..ChkOptions::default()
     };
     let e = chktap(&mut t, &o).unwrap_err();
-    assert_eq!(e.message_id(), "CPF6790");
+    assert_eq!(e.message_id(), "CPF6723");
     let o = ChkOptions {
         seq: Some(SeqNbr::End),
         end_opt: EndOpt::Unload,

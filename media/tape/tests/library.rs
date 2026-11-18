@@ -175,7 +175,7 @@ fn categories_and_their_rules() {
     assert_eq!(Category::parse("*BOGUS"), None);
     assert_eq!(Category::User("PAYROLL".into()).name(), "PAYROLL");
     let e = m.add("CTG001", Category::Ipl).unwrap_err();
-    assert_eq!(e.message_id(), "CPF67D2");
+    assert_eq!(e.message_id(), "CPF67A5");
 
     // *SYSGEN libraries take no categories.
     let mut s = MediaLibrary::new("TAPMLB02", Vec::new(), true);
