@@ -947,9 +947,10 @@ vars = ["*CHAR 10"]
 [[msg]]
 id = "CPC2102"
 sev = 0
-text = "Library &1 created."
-help = "The library was created and is empty. Objects can now be created in it or moved to it."
-vars = ["*CHAR 10"]
+text = "Library &1 was created in ASP &2."
+help = "The new library is empty. Create objects in it or move objects into it."
+# IBM's &2 is *UBIN 2, a type the *MSGF payload does not have: *BIN 2.
+vars = ["*CHAR 10", "*BIN 2", "*CHAR 10"]
 
 [[msg]]
 id = "CPC2194"
@@ -3218,63 +3219,64 @@ reply = { default = "C", valid = ["C", "G"] }
 [[msg]]
 id = "CPC3703"
 sev = 0
-text = "&1 objects restored to library &2."
-help = "Every object the restore selected was restored."
-vars = ["*CHAR 10", "*CHAR 10"]
+text = "&1 objects saved from library &3 were restored to library &4."
+help = "Every object the restore selected came back, at &5. &10 spooled files were restored with them."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 10", "*DTS", "*CHAR 4", "*CHAR 10", "*CHAR 97", "*CHAR 32", "*BIN 4"]
 
 [[msg]]
 id = "CPC3722"
 sev = 0
-text = "&1 objects saved from library &2."
-help = "Every object the save selected was saved."
-vars = ["*CHAR 10", "*CHAR 10"]
+text = "&1 objects from library &3 were saved to save file &4 in &5."
+help = "The save was written at &7. &9 spooled files were saved with the objects."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 50", "*DTS", "*CHAR 618", "*BIN 4"]
 
 [[msg]]
 id = "CPF3741"
-sev = 40
-text = "&1 in &2 was not saved: not authorized."
-help = "Saving an object needs *OBJEXIST authority to it, or *SAVSYS special authority."
-vars = ["*CHAR 10", "*CHAR 10"]
+sev = 20
+text = "&2 &1 in &3 was not saved."
+help = "The message before this one gives the reason."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3743"
-sev = 40
-text = "The save cannot be read by this release."
-help = "It was made for a later release, or in a format this release does not know."
+sev = 30
+text = "The save cannot be restored, displayed or listed here."
+help = "It was made for a later release, or the data is not a save this release can read. &1"
+vars = ["*CHAR 364"]
 
 [[msg]]
 id = "CPF3757"
-sev = 40
-text = "&1 in &2 was not restored: not authorized."
-help = "Restoring over an existing object needs *OBJEXIST authority to it, or *SAVSYS special authority."
-vars = ["*CHAR 10", "*CHAR 10"]
+sev = 20
+text = "&2 &1 was not restored to &3: no *ADD authority to &4."
+help = "Restoring an object owned by user profile &4 needs *ADD authority to that profile."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3770"
-sev = 40
-text = "No objects were saved or restored."
-help = "The save or restore found nothing to do for the libraries and objects named."
+sev = 30
+text = "Nothing was saved or restored for library &1."
+help = "The save or restore found nothing to do for the library at &2. The diagnostic messages before this one say why."
+vars = ["*CHAR 10", "*DTS"]
 
 [[msg]]
 id = "CPF3773"
-sev = 40
-text = "&1 objects restored to library &2. &3 not restored."
-help = "The diagnostic messages before this one name each object that was not restored."
-vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+sev = 20
+text = "&1 objects were restored to library &4; &2 were not."
+help = "The objects were saved from library &3 and restored at &5. The diagnostic messages before this one name each object that was not restored, and each difference the restore accepted."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 10", "*DTS", "*CHAR 4", "*CHAR 10", "*CHAR 97", "*CHAR 32", "*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPF3777"
-sev = 40
-text = "&1 objects saved from &2 libraries. &3 not saved."
-help = "The diagnostic messages before this one name each object that was not saved."
-vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+sev = 30
+text = "Of the libraries named, &1 were saved, &6 saved in part and &2 not saved."
+help = "The messages before this one give each library's result at &3."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*CHAR 6", "*CHAR 10", "*BIN 4"]
 
 [[msg]]
 id = "CPF3793"
-sev = 40
-text = "The save or restore ended: &1."
-help = "The operation could not go on. Objects already handled stay as they are."
-vars = ["*CHAR 50"]
+sev = 80
+text = "The save or restore ended: the system or ASP storage is full."
+help = "Free storage by deleting objects or saving them with STG(*FREE), then run the operation again."
 
 [[msg]]
 id = "CPF7302"
@@ -3298,74 +3300,60 @@ help = "Check the device name with WRKDEVD."
 vars = ["*CHAR 10"]
 
 [[msg]]
-id = "CPI3722"
-sev = 0
-text = "An object was given the default owner: &1."
-help = "The profile that owned the object when it was saved does not exist here, so QDFTOWN owns it."
-vars = ["*CHAR 50"]
-
-[[msg]]
 id = "CPC3701"
 sev = 0
-text = "&1 user profiles and authorization lists saved."
-help = "The security data is in the save. RSTUSRPRF and RSTAUT bring it back."
-vars = ["*CHAR 10"]
+text = "&1 objects from library &3 were saved on &4."
+help = "The save ended on volume &13 at &5."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 70", "*DTS", "*CHAR 4", "*CHAR 15", "*BIN 4", "*CHAR 6", "*CHAR 10", "*CHAR 82", "*CHAR 455", "*CHAR 32", "*CHAR 10", "*BIN 4"]
 
 [[msg]]
 id = "CPC3705"
 sev = 0
-text = "&1 user profiles restored."
-help = "Their private authorities wait for RSTAUT."
-vars = ["*CHAR 10", "*CHAR 10"]
+text = "&1 user profiles were restored."
+help = "&5 authorization lists were restored with them at &3. RSTAUT grants the private authorities the profiles had."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 10", "*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPC3706"
 sev = 0
-text = "&1 authorities restored for user profile &2."
-help = "Every authority the profile had in the save was granted."
-vars = ["*CHAR 10", "*CHAR 10"]
+text = "The private authorities of user profile &1 were restored."
+help = "Every authority waiting for the profile was granted at &2."
+vars = ["*CHAR 10", "*DTS", "*CHAR 22"]
 
 [[msg]]
 id = "CPF3736"
-sev = 40
-text = "&1 authorities restored for user profile &2. &3 objects were not found."
-help = "The authorities whose objects are not on the system stay waiting; run RSTAUT again after restoring those objects."
-vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+sev = 20
+text = "An authority of user &4 to &2 &1 in &3 was not restored."
+help = "The object is not on the system, or could not be used, when the authority was granted. Restore the object and run RSTAUT again."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3775"
-sev = 40
-text = "&1 user profiles restored. &2 not restored."
-help = "The diagnostic messages before this one name each profile that was not restored."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
-id = "CPF3847"
-sev = 40
-text = "&1 was not restored: its signature is missing or does not verify."
-help = "The system value QVFYOBJRST asks for signatures on programs. Restore a copy signed by a trusted signer, or change QVFYOBJRST."
-vars = ["*CHAR 50"]
+sev = 20
+text = "Some security data was not restored: &2 user profiles were left out."
+help = "&1 user profiles and &5 authorization lists were restored at &3; &6 authorization lists were not. The diagnostic messages before this one name each one left out."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 10", "*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPC370D"
 sev = 0
-text = "&1 objects restored."
-help = "Every link the restore selected was restored."
-vars = ["*CHAR 10"]
+text = "&1 objects were saved to &4."
+help = "Every link the save selected went into the save file at &3."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPF3837"
-sev = 40
-text = "&1 objects saved. &2 not saved."
-help = "The messages before this one name the links that were not saved and why."
-vars = ["*CHAR 10", "*CHAR 10"]
+sev = 30
+text = "&1 objects were saved on &3; &2 were not."
+help = "The save of the integrated file system ended on volume &7 at &4. The messages before this one name each link not saved and why."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 2475", "*DTS", "*CHAR 4", "*CHAR 18", "*CHAR 32", "*CHAR *VARY 4", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3838"
-sev = 40
-text = "&1 objects restored. &2 not restored."
-help = "The messages before this one name the links that were not restored and why."
-vars = ["*CHAR 10", "*CHAR 10"]
+sev = 30
+text = "&1 objects were saved to &4; &2 were not."
+help = "The messages before this one name each link not saved and why."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*CHAR *VARY 4"]
 
 # PTFs.
 
@@ -3574,52 +3562,52 @@ vars = ["*CHAR 10"]
 # Save and restore, settled against the oracle.
 [[msg]]
 id = "CPF3756"
-sev = 40
-text = "&1 in &2 was not restored."
+sev = 20
+text = "&2 &1 was not restored to &3."
 help = "The message before this one gives the reason."
-vars = ["*CHAR 10", "*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3761"
-sev = 40
-text = "&1 in &2 is in use by another job."
-help = "Another job holds a lock that the save or restore cannot share. Try again once the job releases it."
-vars = ["*CHAR 10", "*CHAR 10"]
+sev = 20
+text = "&2 &1 in &3 is in use by another job."
+help = "Another job holds a lock the save or restore cannot share. Try again once the job releases it."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3780"
-sev = 40
-text = "Nothing named was found in the save for library &1."
-help = "Check the object names, their types and the library they were saved from with DSPSAVF."
+sev = 30
+text = "The save holds nothing named for library &1."
+help = "Check the object names, their types and the library they were saved from with DSPSAVF or DSPTAP."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPF3782"
-sev = 40
-text = "&1 in &2 could not be read from the save."
-help = "The save is damaged or is not a save file. Restore from another copy of the save."
+sev = 30
+text = "File &1 in &2 is not a save file."
+help = "Name a save file, created with CRTSAVF."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3848"
 sev = 20
-text = "&1 security or data format changes were made during the restore."
-help = "ALWOBJDIF allowed differences between the saved objects and those on the system, or journaling could not start again. The messages before this one name each change."
-vars = ["*CHAR 10"]
+text = "&1 security or data format differences were accepted in library &2."
+help = "ALWOBJDIF allowed differences between the saved objects and those on the system, or journaling could not start again. The messages before this one name each one."
+vars = ["*BIN 4", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3294"
 sev = 40
-text = "Journaling could not be started again: &1."
-help = "The journal the object was journaled to is not on the system. Start journaling with STRJRNPF once it is."
-vars = ["*CHAR 50"]
+text = "Journaling of file &1 in &2 could not be started again."
+help = "The journal the file was journaled to is not on the system. Start journaling with STRJRNPF once it is. Member: &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3701"
-sev = 40
-text = "&1 objects saved. &3 not saved."
-help = "The messages before this one name each object that was not saved."
-vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+sev = 20
+text = "&1 objects from library &3 were saved to save file &4 in &5; &2 were not."
+help = "The diagnostic messages before this one name each object that was not saved and why."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 50", "*DTS", "*CHAR 618", "*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPC3723"
@@ -3630,163 +3618,157 @@ vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3764"
-sev = 40
-text = "&1 was not found to save."
+sev = 20
+text = "&2 &1 in &3 was not found to save."
 help = "Check the object name, type and library."
-vars = ["*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3781"
-sev = 40
-text = "Library &1 not found."
+sev = 30
+text = "Library &1 was not found."
 help = "The library to save from or restore into does not exist."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPI374B"
 sev = 0
-text = "Save file &1 was saved without its data."
+text = "Save file &1 in &2 was saved without its data."
 help = "The save was being written into that save file, so its data was not saved with it."
-vars = ["*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3725"
-sev = 0
-text = "&1 was not restored: it exists and OPTION(*NEW) was given."
+sev = 10
+text = "&2 &1 in &3 was left out: it exists and OPTION(*NEW) was given."
 help = "Only objects not on the system were selected."
-vars = ["*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3724"
-sev = 0
-text = "&1 was not restored: it does not exist and OPTION(*OLD) was given."
+sev = 10
+text = "&2 &1 in &3 was left out: it does not exist and OPTION(*OLD) was given."
 help = "Only objects already on the system were selected."
-vars = ["*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3726"
-sev = 0
-text = "&1 was not restored: its storage was not freed."
+sev = 10
+text = "&2 &1 in &3 was left out: its storage was not freed."
 help = "OPTION(*FREE) selects only objects whose storage a save freed."
-vars = ["*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF7085"
-sev = 40
-text = "Journal &1 exists and was not restored over."
+sev = 30
+text = "Journal &1 in &2 exists and was not restored over."
 help = "A journal on the system is never replaced by a restore."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPD2415"
 sev = 40
-text = "Data queue &1 exists and was not restored over."
+text = "Data queue &1 exists in library &2 and was not restored over."
 help = "A data queue on the system is never replaced by a restore. Delete it first to restore the saved one."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF7081"
-sev = 40
-text = "Receiver &1 is attached and was not restored over."
+sev = 30
+text = "Receiver &1 in &2 is attached and was not restored over."
 help = "An attached journal receiver is never replaced by a restore."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3734"
-sev = 40
-text = "Receiver &1 exists and was not restored over."
-help = "Delete the receiver on the system to restore the saved one."
-vars = ["*CHAR 10", "*CHAR 10"]
+sev = 30
+text = "&2 &1 in &3 exists and was not restored over."
+help = "Delete the object on the system to restore the saved one."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3204"
 sev = 40
-text = "Logical file &1 not restored: a file it is based on is missing."
+text = "Logical file &1 in &2 was not restored: a file it is based on is missing."
 help = "Restore the physical files with it or before it."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3284"
-sev = 40
-text = "&1 not restored: its members differ from the saved file's."
+sev = 50
+text = "File &1 in &2 was not restored: its members differ from the saved file's."
 help = "MBROPT(*MATCH) needs the same members in the save and on the system. Use MBROPT(*ALL), *NEW or *OLD."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3283"
-sev = 40
-text = "&1 not restored: its level identifiers differ from the saved file's."
+sev = 50
+text = "File &1 in &2 was not restored: its level identifiers differ from the saved file's."
 help = "The file on the system was created again or has another format. ALWOBJDIF(*FILELVL) accepts a file created again with the same format; ALWOBJDIF(*ALL) with MBROPT(*ALL) replaces it."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPI320A"
-sev = 0
-text = "The file on the system was renamed: &1."
-help = "ALWOBJDIF(*ALL) kept the file with the other format under a new name and restored the saved one."
-vars = ["*CHAR 50"]
+sev = 10
+text = "File &1 in &2 on the system was renamed &3."
+help = "ALWOBJDIF(*ALL) kept the file with the other format under the name &3 and restored the saved file as &1. Logical files over the old file now depend on &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3766"
-sev = 40
-text = "&1 not restored: its owner differs from the saved object's."
+sev = 20
+text = "&2 &1 was not restored to &3: its owner differs from the saved object's."
 help = "ALWOBJDIF(*OWNER) restores it and keeps the owner on the system."
-vars = ["*CHAR 10", "*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPF370B"
-sev = 0
-text = "The owner on the system was kept: &1."
-help = "ALWOBJDIF(*OWNER) allowed the saved object with another owner."
-vars = ["*CHAR 50"]
+sev = 10
+text = "&2 &1 in &3 keeps its owner &4."
+help = "ALWOBJDIF(*OWNER) allowed the saved object, owned by &5 when it was saved; the owner on the system stays."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPD37A2"
-sev = 40
-text = "&1 not restored: its primary group differs from the saved object's."
+sev = 20
+text = "&2 &1 was not restored to &3: its primary group differs from the saved object's."
 help = "ALWOBJDIF(*PGP) restores it and keeps the primary group on the system."
-vars = ["*CHAR 10", "*CHAR 10"]
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
 id = "CPI3811"
-sev = 0
-text = "The primary group on the system was kept: &1."
-help = "ALWOBJDIF(*PGP) allowed the saved object with another primary group."
-vars = ["*CHAR 50"]
+sev = 10
+text = "&2 &1 in &3 keeps its primary group &4."
+help = "ALWOBJDIF(*PGP) allowed the saved object, whose primary group was &5 when it was saved; the group on the system stays."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3801"
-sev = 40
-text = "&1 is not in the save."
-help = "DSPSAVF lists what the save holds."
-vars = ["*CHAR 10"]
-
-[[msg]]
-id = "CPF3846"
-sev = 40
-text = "&1 was not restored: the system value QALWOBJRST does not allow it."
-help = "QALWOBJRST names which system-state, adopting or otherwise sensitive objects may be restored."
-vars = ["*CHAR 50"]
+sev = 20
+text = "Nothing named was restored from save file &1 in &2."
+help = "The objects named are not in the save. DSPSAVF lists what it holds."
+vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPI3733"
 sev = 0
 text = "&1 spooled files already on the system were not restored again."
-help = "They match a restored output queue's saved spooled files."
-vars = ["*CHAR 10"]
+help = "They match spooled files saved with a restored output queue."
+vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPF4110"
 sev = 40
-text = "Save file &1 already holds a save."
-help = "The inquiry about clearing it took the reply C. Use CLEAR(*ALL) or CLEAR(*REPLACE), or clear it with CLRSAVF."
-vars = ["*CHAR 10"]
+text = "Message &6 was answered with cancel."
+help = "The reply C to the inquiry about save file &2 in &3 ended the operation. Use CLEAR(*ALL) or CLEAR(*REPLACE), or clear the save file with CLRSAVF."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 24", "*CHAR 7"]
 
 [[msg]]
 id = "CPF3794"
-sev = 40
-text = "The save ended: the save file was not cleared."
-help = "The message before this one names the save file."
+sev = 30
+text = "The save or restore ended before it was done."
+help = "The message &1, or the diagnostic messages before this one, give the cause. Objects already handled stay as they are."
+vars = ["*CHAR 7"]
 
 [[msg]]
 id = "CPD3754"
@@ -3796,29 +3778,31 @@ help = "Use CLEAR(*ALL) or CLEAR(*REPLACE) to replace the save file's contents."
 
 [[msg]]
 id = "CPF3808"
-sev = 40
-text = "The save does not fit in the save file."
-help = "Raise MAXRCDS with CHGSAVF, or save to another save file."
+sev = 30
+text = "The save into save file &2 in &3 is incomplete."
+help = "The save did not fit. The message after this one says what ended it."
+vars = ["*CHAR 17", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3815"
-sev = 40
-text = "The save ended: the save file is full."
-help = "The message before this one gives the size the save needed."
+sev = 30
+text = "Save file &1 in &2 is too small for the save."
+help = "The save needs more records than MAXRCDS allows. Raise it with CHGSAVF, or save to another save file."
+vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3707"
-sev = 40
-text = "Save file &1 is empty."
-help = "There is nothing to restore from it."
-vars = ["*CHAR 10"]
+sev = 30
+text = "Save file &1 in &2 holds no save."
+help = "Nothing was ever saved into it, or it was cleared since."
+vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPC370F"
 sev = 0
-text = "&1 objects restored."
-help = "Every link the restore selected was restored."
-vars = ["*CHAR 10"]
+text = "&1 objects were restored from &4."
+help = "Every link the restore selected came back from the save file at &3."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPC3716"
@@ -6800,9 +6784,9 @@ vars = ["*CHAR *VARY 2"]
 [[msg]]
 id = "CPF2189"
 sev = 40
-text = "Not authorized to save file &1."
-help = "Correct what the message names and try the request again."
-vars = ["*CHAR *VARY 2"]
+text = "The user may not use object &1 in library &2, type *&3."
+help = "The authority the operation needs to the object is missing. Ask its owner or the security officer for it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 7"]
 
 [[msg]]
 id = "CPF2203"
@@ -8567,10 +8551,9 @@ help = "Looking at the byte-range locks another job holds needs *JOBCTL special 
 
 [[msg]]
 id = "CPF3785"
-sev = 40
-text = "The system is not in the restricted state; &1 is still active."
-help = "A system save runs only when every subsystem has ended. End them with ENDSBS SBS(*ALL), wait until they have ended, and run the save again from the console."
-vars = ["*CHAR 10"]
+sev = 30
+text = "Some subsystems are still active."
+help = "A system save runs only in the restricted state. End every subsystem with ENDSBS SBS(*ALL), wait until they have ended, and run the save again from the console."
 
 # --- Collection Services (docs/PERF.md). CPFB94C and CPF8225 are IBM's;
 # the CPIB92x and CPFB99x identifiers are this release's own.
@@ -9420,9 +9403,9 @@ vars = []
 [[msg]]
 id = "CPC3724"
 sev = 0
-text = "The objects in save file &9 in &10 were saved to media."
-help = "SAVSAVFDTA wrote the save file's contents as the save that made it had; RSTLIB and RSTOBJ restore them from the media."
-vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+text = "The save in save file &9 in &10 was written on &2."
+help = "SAVSAVFDTA wrote the save file's contents at &3 as the save that made them would have, ending on volume &14. RSTLIB and RSTOBJ restore them from the media."
+vars = ["*CHAR 18", "*CHAR 70", "*DTS", "*CHAR 4", "*CHAR 15", "*BIN 4", "*CHAR 6", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 82", "*CHAR 455", "*CHAR 10", "*CHAR 32"]
 
 [[msg]]
 id = "CPF3814"
@@ -10575,3 +10558,158 @@ id = "CPI9C10"
 sev = 0
 text = "There is no *GSS NFS server daemon on this system."
 help = "Kerberos (RPCSEC_GSS) is not supported, so the *GSS daemon cannot be started or ended. The other daemons use AUTH_SYS."
+
+# Save and restore (handoff 21): IBM's identifiers and data layouts
+# (tools/conformance/oracle/msgdata/fields.txt), Quartz's text.
+[[msg]]
+id = "CPC3702"
+sev = 0
+text = "The system was saved on &1."
+help = "The Licensed Internal Code, the operating system and its products, the security data and the configuration were written at &2 to device &4. The save ended on volume &5. The media can install the system again."
+vars = ["*CHAR 70", "*DTS", "*CHAR 6", "*CHAR 10", "*CHAR 32"]
+
+[[msg]]
+id = "CPC370C"
+sev = 0
+text = "&1 objects were saved on &3."
+help = "The save of the integrated file system ended on volume &7 at &4."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 2475", "*DTS", "*CHAR 4", "*CHAR 18", "*CHAR 32", "*CHAR *VARY 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPC370E"
+sev = 0
+text = "&1 objects were restored from &3."
+help = "Every link the restore selected came back. The restore ended on volume &7 at &4."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 2475", "*DTS", "*CHAR 4", "*CHAR 18", "*CHAR 32", "*CHAR *VARY 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPC3710"
+sev = 0
+text = "The private authorities of &1 user profiles were restored."
+help = "Every authority waiting for them was granted at &2. &3 profiles had none waiting."
+vars = ["*BIN 4", "*DTS", "*BIN 4"]
+
+[[msg]]
+id = "CPF3771"
+sev = 30
+text = "&1 objects from library &3 were saved on &4; &2 were not."
+help = "The save ended on volume &13 at &5. The diagnostic messages before this one name each object that was not saved and why."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 10", "*CHAR 70", "*DTS", "*CHAR 4", "*CHAR 15", "*BIN 4", "*CHAR 6", "*CHAR 10", "*CHAR 82", "*CHAR 455", "*CHAR 32", "*CHAR 10", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPF3776"
+sev = 30
+text = "Some user profiles still have authorities waiting to be restored."
+help = "At &3, &1 profiles had every authority restored, &2 some of them and &4 none; &5 had none waiting. An authority waits until its object is on the system: restore the objects and run RSTAUT again."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPF3787"
+sev = 10
+text = "User profile &1 has no authorities waiting to be restored."
+help = "RSTUSRPRF saved none for it, or RSTAUT granted them already."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3760"
+sev = 20
+text = "Not authorized to save or restore &2 &1 in &3."
+help = "Saving or restoring the object needs *OBJEXIST authority to it, or *SAVSYS special authority."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3881"
+sev = 20
+text = "&2 &1 was not restored to &3: its authorization list differs from the saved object's."
+help = "ALWOBJDIF(*AUTL) restores it and keeps the authorization list on the system."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPI371D"
+sev = 10
+text = "&2 keeps its authorization list &3."
+help = "ALWOBJDIF(*AUTL) allowed the saved &1, secured by &4 when it was saved; the list on the system stays."
+vars = ["*CHAR 7", "*CHAR *VARY 4", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3836"
+sev = 20
+text = "&2 &1 in &3 was restored with public authority *EXCLUDE."
+help = "Authorization list &4 secured it when it was saved and is not on the system. Restore or create the list, then secure the object with it again."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3795"
+sev = 40
+text = "&2 &1 in &3 could not be saved or restored."
+help = "The save holds the object damaged, or writing it failed. Restore it from another copy of the save."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPD3773"
+sev = 20
+text = "&1 of type &2 from library &3 is not in the save."
+help = "Some of the objects named were restored, but this one was not in save file &4 in &5 or on the media."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3719"
+sev = 10
+text = "The owner of &2 &1 in &3 is not on the system."
+help = "The profile that owned the object when it was saved does not exist here, so QDFTOWN owns it."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPD3740"
+sev = 30
+text = "&1 in library &3 was not restored: it runs in system state."
+help = "The system value QALWOBJRST does not allow *&2 objects in system state to be restored."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPD373F"
+sev = 30
+text = "&1 in library &3 was not restored: it adopts authority."
+help = "The system value QALWOBJRST does not allow *&2 objects that adopt their owner's authority to be restored."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPD37C0"
+sev = 20
+text = "&2 &1 in library &3 was not restored: its signature is missing or does not verify."
+help = "The system value QVFYOBJRST asks for signatures on programs. Restore a copy signed by a trusted signer, or change QVFYOBJRST."
+vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPD3765"
+sev = 30
+text = "This release cannot save for the target release given."
+help = "Give TGTRLS(*CURRENT), or a release this one can write."
+
+[[msg]]
+id = "CPD3775"
+sev = 20
+text = "&1 could not be saved or restored."
+help = "The message before this one gives the reason."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPF3839"
+sev = 30
+text = "&1 objects were restored from &3; &2 were not."
+help = "The restore ended on volume &7 at &4. The messages before this one name each link not restored and why."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 2475", "*DTS", "*CHAR 4", "*CHAR 18", "*CHAR 32", "*CHAR *VARY 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPF383E"
+sev = 30
+text = "&1 objects were restored from &4; &2 were not."
+help = "The messages before this one name each link not restored and why."
+vars = ["*BIN 4", "*BIN 4", "*DTS", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPF3845"
+sev = 20
+text = "Some authorities of user profile &4 are still waiting to be restored."
+help = "At &3, &1 authorities were restored and &2 were not: their objects are not on the system. Restore the objects and run RSTAUT again."
+vars = ["*BIN 4", "*CHAR 10", "*DTS", "*CHAR 10", "*CHAR 22", "*CHAR 22"]

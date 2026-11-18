@@ -9,10 +9,12 @@
 //! and the messages.
 
 use std::fmt::Write as _;
+use std::fmt::Display;
 use std::io::Cursor;
 
 use cmd::Value;
 use cmd::block::Parms;
+use saverst::msg::{Data, Dest};
 use saverst::{
     AllowDiff, AllowRestore, Hooks, MbrOpt, ObjSel, RestoreOptions, RestoreReport, RstOption,
     SaveOptions, SaveReport, SaveTarget, msg,
@@ -25,7 +27,8 @@ use store::obj::savf::{self, SavfAttr};
 use store::obj::{JobHandle, ObjectId, ops, types};
 use store::txn::Txn;
 
-use super::direct::{ctx, failed, in_store, lib_or, library};
+use super::direct::{ctx, lib_or};
+use super::msgout::{self, Field};
 use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::media::stream::{self, Media};
 use crate::stgsvc::security::actor;
@@ -37,21 +40,18 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CRTSAVF" => crtsavf(system, parms),
         "CHGSAVF" => chgsavf(system, parms),
         "CLRSAVF" => clrsavf(system, parms),
-        "SAVLIB" | "SAVOBJ" | "SAVCHGOBJ" | "SAVCFG" => return Some(save(system, name, parms)),
-        "RSTLIB" | "RSTOBJ" | "RSTCFG" => return Some(rst(system, name, parms)),
-        "SAVSECDTA" => return Some(savsecdta(system, parms)),
-        "RSTUSRPRF" => return Some(rstusrprf(system, parms)),
-        "RSTAUT" => return Some(rstaut(system, parms)),
-        "SAV" => return Some(sav(system, parms)),
-        "RST" => return Some(rst_ifs(system, parms)),
-        "DSPSAVF" => return Some(dspsavf(system, parms)),
-        "SAVSAVFDTA" => return Some(savsavfdta(system, parms)),
+        "SAVLIB" | "SAVOBJ" | "SAVCHGOBJ" | "SAVCFG" => save(system, name, parms),
+        "RSTLIB" | "RSTOBJ" | "RSTCFG" => rst(system, name, parms),
+        "SAVSECDTA" => savsecdta(system, parms),
+        "RSTUSRPRF" => rstusrprf(system, parms),
+        "RSTAUT" => rstaut(system, parms),
+        "SAV" => sav(system, parms),
+        "RST" => rst_ifs(system, parms),
+        "DSPSAVF" => dspsavf(system, parms),
+        "SAVSAVFDTA" => savsavfdta(system, parms),
         _ => return None,
     };
-    Some(match r {
-        Ok(reply) => reply,
-        Err(e) => failed(name, &e),
-    })
+    Some(r.unwrap_or_else(Fail::reply))
 }
 
 /// Save file not empty and `CLEAR(*NONE)`: the inquiry `CPA4067` takes
@@ -59,6 +59,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 const SAVF_NOT_EMPTY: &str = "CPF3794";
 /// The diagnostic before it.
 const SAVF_HOLDS_DATA: &str = "CPF4110";
+/// The inquiry it answers.
+const SAVF_INQUIRY: &str = "CPA4067";
 /// `CLEAR(*AFTER)` is not for save files.
 const CLEAR_AFTER: &str = "CPD3754";
 /// The save file is empty (a restore).
@@ -66,21 +68,177 @@ const SAVF_EMPTY: &str = "CPF3707";
 /// The save needs more records than the save file allows: `CPF3808`
 /// then the escape `CPF3815`.
 const SAVF_FULL: &str = "CPF3815";
-/// A device other than `*SAVF` before the media layer is wired.
+/// The diagnostic before it.
+const SAVF_INCOMPLETE: &str = "CPF3808";
+/// No such device.
 const NO_DEVICE: &str = "CPF9814";
-/// Save active and other functions this release does not have.
+/// Save active and other functions this release does not have
+/// (QS/400's own: `CPF3700` is unused in IBM's QCPFMSG).
 const NOT_AVAILABLE: &str = "CPF3700";
+/// The save cannot be read: a later release, or not a save.
+const BAD_SAVE: &str = "CPF3743";
 /// A target release this release cannot write.
-const BAD_TGTRLS: &str = "CPF3743";
+const BAD_TGTRLS: &str = "CPD3765";
 /// Save file not found.
 const NO_SAVF: &str = "CPF9812";
+/// Not authorized to an object (the save file).
+const NOT_AUTHORIZED: &str = "CPF2189";
+/// A special authority the command needs.
+const SPECIAL_AUTHORITY: &str = "CPF222E";
+/// The save or restore ended: a cause underneath it.
+const ENDED: &str = "CPF3794";
+/// A library not found.
+const NO_LIB: &str = "CPF2110";
 
-fn message(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
+/// A message for the reply: `kind` is the job log's type.
+fn message(id: &str, kind: u8, data: Vec<u8>) -> CmdMsg {
     CmdMsg {
         msgid: id.into(),
         kind,
-        data: cmd::error::data(fields),
+        data,
     }
+}
+
+/// The job log's types.
+const DIAG: u8 = 2;
+const INFO: u8 = 1;
+const COMP: u8 = 4;
+const ESC: u8 = 7;
+
+/// A command that failed: its escape as the catalogue declares it,
+/// diagnostics before it, and the cause underneath (`CPF9897`).
+#[derive(Debug)]
+pub(super) struct Fail {
+    id: String,
+    data: Vec<u8>,
+    detail: String,
+    diags: Vec<CmdMsg>,
+}
+
+impl Fail {
+    /// Escape `id` with `fields`.
+    pub(super) fn new(id: &str, fields: &[Field<'_>]) -> Self {
+        Self::raw(id, msgout::data(fields))
+    }
+
+    /// Escape `id` with data laid out already.
+    fn raw(id: &str, data: Vec<u8>) -> Self {
+        Self {
+            id: id.into(),
+            data,
+            detail: String::new(),
+            diags: Vec::new(),
+        }
+    }
+
+    /// The save or restore ended for `why` (the store, the stream).
+    pub(super) fn ended(why: impl Display) -> Self {
+        Self::new(ENDED, &[Field::Char("", 7)]).because(why)
+    }
+
+    /// With the cause underneath.
+    pub(super) fn because(mut self, why: impl Display) -> Self {
+        self.detail = why.to_string();
+        self
+    }
+
+    /// With a diagnostic before the escape.
+    fn after(mut self, m: CmdMsg) -> Self {
+        self.diags.push(m);
+        self
+    }
+
+    /// The reply.
+    pub(super) fn reply(self) -> CmdReply {
+        let mut r = msgout::escape(&self.id, &[], &self.detail);
+        r.messages.extend(self.diags);
+        if let Some(e) = r.escape.as_mut() {
+            e.data = self.data;
+        }
+        r
+    }
+
+    /// The old text form, for callers that pass errors as text.
+    pub(super) fn text(&self) -> String {
+        format!("{} {}", self.id, self.detail).trim_end().to_string()
+    }
+}
+
+/// Text from code that still reports `CPFnnnn detail` (the media
+/// layer): its identifier, the rest as the cause.
+impl From<String> for Fail {
+    fn from(e: String) -> Self {
+        match super::leading_msgid(e.trim()) {
+            Some(id) => {
+                let id = id.to_string();
+                let rest = e.trim()[id.len()..].trim().to_string();
+                Self::raw(&id, Vec::new()).because(rest)
+            }
+            None => Self::ended(e),
+        }
+    }
+}
+
+/// The special authority `a` (`*SAVSYS`, `*SECADM`), or `CPF222E`.
+pub(super) fn need(a: SpecialAuth, name: &str, what: &str) -> Result<(), Fail> {
+    crate::stgsvc::security::require(a, what)
+        .map_err(|e| Fail::new(SPECIAL_AUTHORITY, &[Field::Char(name, 10)]).because(e))
+}
+
+/// Run `f` on ASP 1 in a transaction with the job's names.
+fn in_store<T>(
+    system: &mut System,
+    f: impl FnOnce(&mut Txn<'_>, ObjectId, &ops::NameContext) -> Result<T, Fail>,
+) -> Result<T, Fail> {
+    let (store, qsys) = storage(system)?;
+    let mut txn = store.begin().map_err(Fail::ended)?;
+    let names = crate::svc::ile::name_context(&mut txn, qsys);
+    match f(&mut txn, qsys, &names) {
+        Ok(v) => {
+            txn.commit().map_err(Fail::ended)?;
+            Ok(v)
+        }
+        Err(e) => {
+            txn.abort();
+            Err(e)
+        }
+    }
+}
+
+/// The store and `QSYS`, or the escape when the store is not open.
+fn storage(system: &mut System) -> Result<(&mut store::Store, ObjectId), Fail> {
+    let s = system
+        .storage
+        .as_mut()
+        .ok_or_else(|| Fail::ended("the object store is not open"))?;
+    let qsys = s
+        .qsys
+        .ok_or_else(|| Fail::ended("the object store is not initialized"))?;
+    Ok((&mut s.store, qsys))
+}
+
+/// A library by name, `*CURLIB` through the names.
+fn library(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    names: &ops::NameContext,
+    lib: &str,
+) -> Result<ObjectId, Fail> {
+    match lib {
+        "*CURLIB" | "" => names
+            .curlib
+            .ok_or_else(|| Fail::new(NO_LIB, &[Field::Char("*CURLIB", 10)])),
+        l => wm::obj::library(txn, qsys, l)
+            .map_err(|e| Fail::new(NO_LIB, &[Field::Char(l, 10)]).because(e)),
+    }
+}
+
+/// A device that is not one: `CPF9814`.
+fn no_device(dev: &[String]) -> Fail {
+    Fail::new(
+        NO_DEVICE,
+        &[Field::Char(dev.first().map_or("", String::as_str), 10)],
+    )
 }
 
 fn job(system: &System) -> JobHandle {
@@ -223,12 +381,25 @@ fn find_savf(
     qsys: ObjectId,
     names: &ops::NameContext,
     (name, lib): &(String, String),
-) -> Result<ObjectId, String> {
-    wm::obj::find(txn, qsys, names, &lib_or(lib), name, types::SAVF)
-        .map_err(|_| format!("{NO_SAVF} save file {}/{name} not found", lib_or(lib)))
+) -> Result<ObjectId, Fail> {
+    let l = lib_or(lib);
+    wm::obj::find(txn, qsys, names, &l, name, types::SAVF)
+        .map_err(|_| Fail::new(NO_SAVF, &[Field::Char(name, 10), Field::Char(&l, 10)]))
 }
 
-fn crtsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+/// `CPF2189` for save file `file` in `lib`.
+fn savf_not_authorized(file: &str, lib: &str) -> Fail {
+    Fail::new(
+        NOT_AUTHORIZED,
+        &[
+            Field::Char(file, 10),
+            Field::Char(lib, 10),
+            Field::Char("FILE", 7),
+        ],
+    )
+}
+
+fn crtsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let (name, lib) = parms.qual("FILE");
     let text = parms.text("TEXT");
     let attr = SavfAttr {
@@ -238,14 +409,15 @@ fn crtsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     let c = ctx(system);
     let owner = user(system);
+    let lib = if lib.is_empty() {
+        "*CURLIB".to_string()
+    } else {
+        lib
+    };
     in_store(system, |txn, qsys, names| {
-        let l = library(
-            txn,
-            qsys,
-            names,
-            if lib.is_empty() { "*CURLIB" } else { &lib },
-        )?;
-        let n = qsname::Name::parse(&name).map_err(|e| format!("CPD0074 {e}"))?;
+        let l = library(txn, qsys, names, &lib)?;
+        let n = qsname::Name::parse(&name)
+            .map_err(|e| Fail::new("CPD0074", &[Field::Char("FILE", 10)]).because(e))?;
         savf::create(
             txn,
             &ops::CreateParams {
@@ -261,7 +433,13 @@ fn crtsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             },
             attr,
         )
-        .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF7302")))?;
+        .map_err(|e| {
+            Fail::new(
+                e.msgid().unwrap_or("CPF7302"),
+                &[Field::Char(&name, 10), Field::Char(&lib, 10)],
+            )
+            .because(e)
+        })?;
         Ok(())
     })?;
     Ok(CmdReply::default())
@@ -275,7 +453,7 @@ struct SavfChange {
     text: String,
 }
 
-fn chgsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn chgsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let file = parms.qual("FILE");
     let ch = SavfChange {
         max: parms.int("MAXRCDS").unwrap_or(-1),
@@ -298,12 +476,12 @@ fn change_savf(
     file: &(String, String),
     ch: &SavfChange,
     now: u64,
-) -> Result<(), String> {
+) -> Result<(), Fail> {
     let id = find_savf(txn, qsys, names, file)?;
     if !sec::guard::allowed(txn, qsys, "savf.change", id) {
-        return Err(format!("CPF2189 not authorized to save file {}", file.0));
+        return Err(savf_not_authorized(&file.0, &lib_or(&file.1)));
     }
-    let mut a = savf::attr(txn, id).map_err(|e| e.to_string())?;
+    let mut a = savf::attr(txn, id).map_err(Fail::ended)?;
     if ch.max >= 0 {
         a.max_records = u32::try_from(ch.max).unwrap_or(u32::MAX);
     }
@@ -313,21 +491,21 @@ fn change_savf(
     if ch.share != "*SAME" {
         a.share = ch.share == "*YES";
     }
-    savf::set_attr(txn, id, a).map_err(|e| e.to_string())?;
+    savf::set_attr(txn, id, a).map_err(Fail::ended)?;
     if ch.text != "*SAME" {
-        ops::change_text(txn, id, &ch.text, now).map_err(|e| e.to_string())?;
+        ops::change_text(txn, id, &ch.text, now).map_err(Fail::ended)?;
     }
     Ok(())
 }
 
-fn clrsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+fn clrsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let file = parms.qual("FILE");
     in_store(system, |txn, qsys, names| {
         let id = find_savf(txn, qsys, names, &file)?;
         if !savsys() && !sec::guard::allowed(txn, qsys, "savf.clear", id) {
-            return Err(format!("CPF2189 not authorized to save file {}", file.0));
+            return Err(savf_not_authorized(&file.0, &lib_or(&file.1)));
         }
-        savf::clear(txn, id).map_err(|e| e.to_string())
+        savf::clear(txn, id).map_err(Fail::ended)
     })?;
     Ok(CmdReply::default())
 }
@@ -342,14 +520,23 @@ pub(super) fn may_write_savf(
     id: ObjectId,
     file: &str,
 ) -> Result<u64, String> {
-    let used = savf::len(txn, id).map_err(|e| e.to_string())?;
+    write_allowed(txn, qsys, id, (file, "*LIBL")).map_err(|f| f.text())
+}
+
+fn write_allowed(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    id: ObjectId,
+    (file, lib): (&str, &str),
+) -> Result<u64, Fail> {
+    let used = savf::len(txn, id).map_err(Fail::ended)?;
     let ok = if used > 0 {
         sec::guard::allowed(txn, qsys, "savf.replace", id)
     } else {
         sec::guard::allowed(txn, qsys, "savf.write", id)
     };
     if !ok {
-        return Err(format!("CPF2189 not authorized to save file {file}"));
+        return Err(savf_not_authorized(file, lib));
     }
     Ok(used)
 }
@@ -362,19 +549,29 @@ fn save_target(
     names: &ops::NameContext,
     file: &(String, String),
     clear: &str,
-) -> Result<ObjectId, String> {
+) -> Result<ObjectId, Fail> {
+    let lib = lib_or(&file.1);
     let id = find_savf(txn, qsys, names, file)?;
-    let used = may_write_savf(txn, qsys, id, &file.0)?;
+    let used = write_allowed(txn, qsys, id, (&file.0, &lib))?;
     if clear == "*AFTER" {
-        return Err(format!(
-            "{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"
-        ));
+        return Err(Fail::new(CLEAR_AFTER, &[]));
     }
     if used > 0 && !matches!(clear, "*ALL" | "*REPLACE") {
-        return Err(format!(
-            "{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C",
-            file.0
-        ));
+        return Err(
+            Fail::new(SAVF_NOT_EMPTY, &[Field::Char(SAVF_HOLDS_DATA, 7)]).after(
+                msgout::diagnostic(
+                    SAVF_HOLDS_DATA,
+                    &[
+                        Field::Char("", 10),
+                        Field::Char(&file.0, 10),
+                        Field::Char(&lib, 10),
+                        Field::Char("", 10),
+                        Field::Char("", 24),
+                        Field::Char(SAVF_INQUIRY, 7),
+                    ],
+                ),
+            ),
+        );
     }
     Ok(id)
 }
@@ -386,11 +583,76 @@ pub(super) fn may_read_savf(
     id: ObjectId,
     file: &str,
 ) -> Result<(), String> {
+    read_allowed(txn, qsys, id, (file, "*LIBL")).map_err(|f| f.text())
+}
+
+fn read_allowed(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    id: ObjectId,
+    (file, lib): (&str, &str),
+) -> Result<(), Fail> {
     if sec::guard::allowed(txn, qsys, "savf.read", id) {
         Ok(())
     } else {
-        Err(format!("CPF2189 not authorized to save file {file}"))
+        Err(savf_not_authorized(file, lib))
     }
+}
+
+/// A save file's stream, found and readable; empty when it holds none.
+fn savf_bytes(system: &mut System, file: &(String, String)) -> Result<Vec<u8>, Fail> {
+    let lib = lib_or(&file.1);
+    in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, file)?;
+        read_allowed(txn, qsys, id, (&file.0, &lib))?;
+        savf::read(txn, id).map_err(Fail::ended)
+    })
+}
+
+/// A save file's stream: `CPF3707` when it holds no save.
+fn read_stream(system: &mut System, file: &(String, String)) -> Result<Vec<u8>, Fail> {
+    let stream = savf_bytes(system, file)?;
+    if stream.is_empty() {
+        return Err(savf_empty(file));
+    }
+    Ok(stream)
+}
+
+/// `CPF3707`: the save file holds no save.
+fn savf_empty(file: &(String, String)) -> Fail {
+    Fail::new(
+        SAVF_EMPTY,
+        &[Field::Char(&file.0, 10), Field::Char(&lib_or(&file.1), 10)],
+    )
+}
+
+/// Write `bytes` into save file `id`: `CPF3808` and `CPF3815` when it
+/// does not fit.
+fn write_savf(
+    system: &mut System,
+    id: ObjectId,
+    file: &(String, String),
+    bytes: &[u8],
+) -> Result<(), Fail> {
+    let lib = lib_or(&file.1);
+    in_store(system, |txn, _, _| {
+        savf::write(txn, id, bytes).map_err(|e| match e {
+            store::StoreError::BadValue { .. } => {
+                let f = [Field::Char(&file.0, 10), Field::Char(&lib, 10)];
+                Fail::new(SAVF_FULL, &f)
+                    .because(e)
+                    .after(msgout::diagnostic(
+                        SAVF_INCOMPLETE,
+                        &[
+                            Field::Char("", 17),
+                            Field::Char(&file.0, 10),
+                            Field::Char(&lib, 10),
+                        ],
+                    ))
+            }
+            e => Fail::ended(e),
+        })
+    })
 }
 
 /// Text values of a list parameter, uppercase.
@@ -494,11 +756,11 @@ fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
 /// When `SAVLIB` last saved `lib`, for `REFDATE(*SAVLIB)`; 0 for never.
 fn last_savlib(system: &mut System, lib: &str) -> u64 {
     in_store(system, |txn, qsys, _| {
-        let n = qsname::Name::parse(lib).map_err(|e| e.to_string())?;
+        let n = qsname::Name::parse(lib).map_err(Fail::ended)?;
         let id = ops::find_library(txn, qsys, n)
-            .map_err(|e| e.to_string())?
+            .map_err(Fail::ended)?
             .id;
-        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+        let (_, h) = ops::read_header(txn, id).map_err(Fail::ended)?;
         Ok(
             if store::obj::header::text_of(&h.save.command) == "SAVLIB" {
                 h.last_saved
@@ -570,11 +832,12 @@ pub(super) fn expand_libs(system: &mut System, libs: &[String]) -> Result<Vec<St
     }
     let all: Vec<String> = in_store(system, |txn, qsys, _| {
         Ok(ops::libraries(txn, qsys)
-            .map_err(|e| e.to_string())?
+            .map_err(Fail::ended)?
             .into_iter()
             .map(|(n, _)| n.to_string())
             .collect())
-    })?;
+    })
+    .map_err(|f| f.text())?;
     let mut out = Vec::new();
     for l in &all {
         if NEVER.contains(&l.as_str()) {
@@ -642,43 +905,40 @@ fn media_of(parms: &Parms) -> Option<Media> {
         .map(|d| stream::of(parms, d))
 }
 
-/// The text line a save to media adds.
-fn written_line(w: &medio::Written) -> String {
-    if w.seq > 0 {
-        format!(
-            "Saved as file {} sequence {} on volume(s) {}\n",
-            w.file,
-            w.seq,
-            w.volumes.join(" ")
-        )
-    } else {
-        format!("Saved as {} on volume {}\n", w.file, w.volumes.join(" "))
+/// Where a save to media went, for its messages.
+fn media_dest(dev: &str, w: &medio::Written) -> Dest {
+    Dest::Media {
+        volumes: w.volumes.join(" "),
+        device: dev.to_string(),
+        last: w.volumes.last().cloned().unwrap_or_default(),
     }
 }
 
+/// A library the engine refused before saving anything: its own
+/// diagnostic (`CPF3781`, `CPF3761`, `CPF3770`).
+fn refused_lib(msgid: &'static str, lib: &str, now: u64) -> CmdMsg {
+    let data = if msgid == msg::NONE_FOR_LIB {
+        Data::new().char(lib, 10).dts(now).into_bytes()
+    } else {
+        msg::object(msgid, lib, types::LIB, "QSYS")
+    };
+    message(msgid, DIAG, data)
+}
+
 #[allow(clippy::too_many_lines)]
-fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
+fn save(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Fail> {
     let dev = values(parms, "DEV");
     let media = media_of(parms);
     if media.is_none() && dev.first().map(String::as_str) != Some("*SAVF") {
-        return failed(
-            name,
-            &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
-        );
+        return Err(no_device(&dev));
     }
     let savact = parms.text("SAVACT");
     if !savact.is_empty() && savact != "*NO" {
-        return failed(
-            name,
-            &format!("{NOT_AVAILABLE} SAVACT({savact}) is not available"),
-        );
+        return Err(Fail::new(NOT_AVAILABLE, &[]).because(format!("SAVACT({savact})")));
     }
     let tgtrls = parms.text("TGTRLS");
     if !tgtrls_ok(&tgtrls) {
-        return failed(
-            name,
-            &format!("{BAD_TGTRLS} target release {tgtrls} is not valid"),
-        );
+        return Err(Fail::new(BAD_TGTRLS, &[]).because(format!("TGTRLS({tgtrls})")));
     }
     let savf_name = parms.qual("SAVF");
     let libs = if name == "SAVCFG" {
@@ -686,10 +946,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     } else {
         values(parms, "LIB")
     };
-    let libs = match expand_libs(system, &libs) {
-        Ok(l) => l,
-        Err(e) => return failed(name, &e),
-    };
+    let libs = expand_libs(system, &libs).map_err(Fail::from)?;
     let omit_libs = values(parms, "OMITLIB");
     let omit = objsels(parms, "OMITOBJ");
     let select: Vec<ObjSel> = if name == "SAVCFG" {
@@ -756,12 +1013,9 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let savf_id = if media.is_some() {
         None
     } else {
-        match in_store(system, |txn, qsys, names| {
+        Some(in_store(system, |txn, qsys, names| {
             save_target(txn, qsys, names, &savf_name, &clear)
-        }) {
-            Ok(id) => Some(id),
-            Err(e) => return failed(name, &e),
-        }
+        })?)
     };
     let base = SaveOptions {
         target_savf: savf_id,
@@ -783,20 +1037,12 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     }
     let head = header(system, name, parms, kind);
     let spool = if base.spool {
-        match spool_parts(system, &libs) {
-            Ok(m) => m,
-            Err(e) => return failed(name, &e),
-        }
+        spool_parts(system, &libs)?
     } else {
         std::collections::HashMap::new()
     };
     let jobh = job(system);
-    let Some(storage) = system.storage.as_mut() else {
-        return failed(name, "CPF3700 object store not open");
-    };
-    let Some(qsys) = storage.qsys else {
-        return failed(name, "CPF3700 object store not initialized");
-    };
+    let (store, qsys) = storage(system)?;
     let hooks = SvcHooks { qsys, spool };
     // A save of several libraries to media is a file per library, as
     // IBM writes it; to a save file it is one stream.
@@ -808,10 +1054,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             w
         })
     };
-    let mut w = match new_writer() {
-        Ok(w) => w,
-        Err(e) => return failed(name, &format!("CPF3793 {e}")),
-    };
+    let mut w = new_writer().map_err(Fail::ended)?;
     let mut streams: Vec<(String, Vec<u8>)> = Vec::new();
     let mut reports: Vec<SaveReport> = Vec::new();
     let mut refused: Vec<CmdMsg> = Vec::new();
@@ -828,42 +1071,38 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             changed_since: changed_since.get(lib).copied(),
             ..base.clone()
         };
-        match saverst::save_library(&mut storage.store, jobh, &hooks, qsys, lib, &opts, &mut w) {
+        match saverst::save_library(store, jobh, &hooks, qsys, lib, &opts, &mut w) {
             Ok(r) => {
                 let ns = r.not_saved();
                 reports.push(r);
                 if per_lib {
-                    let next = match new_writer() {
-                        Ok(n) => n,
-                        Err(e) => return failed(name, &format!("CPF3793 {e}")),
-                    };
-                    match std::mem::replace(&mut w, next)
+                    let next = new_writer().map_err(Fail::ended)?;
+                    let (_, b) = std::mem::replace(&mut w, next)
                         .finish(u32::try_from(ns).unwrap_or(u32::MAX))
-                    {
-                        Ok((_, b)) => streams.push((lib.clone(), b)),
-                        Err(e) => return failed(name, &format!("CPF3793 {e}")),
-                    }
+                        .map_err(Fail::ended)?;
+                    streams.push((lib.clone(), b));
                 }
             }
-            Err(saverst::Error::Refused { msgid, text }) => {
+            Err(saverst::Error::Refused { msgid, .. }) => {
                 reports.push(SaveReport {
                     library: lib.clone(),
                     objects: Vec::new(),
                     notes: Vec::new(),
                 });
-                refused.push(message(msgid, 5, &[(&text, 10), (lib, 10)]));
+                refused.push(refused_lib(msgid, lib, now));
             }
-            Err(e) => return failed(name, &format!("CPF3793 {e}")),
+            Err(e) => return Err(Fail::ended(e)),
         }
     }
     if !per_lib {
         let not_saved: usize = reports.iter().map(SaveReport::not_saved).sum();
-        match w.finish(u32::try_from(not_saved).unwrap_or(u32::MAX)) {
-            Ok((_, b)) => streams.push((libs.first().cloned().unwrap_or_default(), b)),
-            Err(e) => return failed(name, &format!("CPF3793 {e}")),
-        }
+        let (_, b) = w
+            .finish(u32::try_from(not_saved).unwrap_or(u32::MAX))
+            .map_err(Fail::ended)?;
+        streams.push((libs.first().cloned().unwrap_or_default(), b));
     }
-    let mut written = String::new();
+    // Where each library's save went.
+    let mut dests: Vec<Dest> = Vec::new();
     if let Some(m) = &media {
         let mut cur = m.clone();
         let n = streams.len();
@@ -877,102 +1116,74 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             } else {
                 (lib.clone(), OptTarget::Library(lib))
             };
-            match stream::save(system, &each, &label, target, bytes) {
-                Ok(w) => {
-                    written.push_str(&written_line(&w));
-                    // The next library's file follows where this one ended.
-                    cur.seq = 0;
-                    if let Some(at) = w
-                        .volumes
-                        .last()
-                        .and_then(|l| cur.vols.iter().position(|v| v == l))
-                    {
-                        cur.vols = cur.vols[at..].to_vec();
-                    }
-                }
-                Err(e) => return failed(name, &e),
+            let w = stream::save(system, &each, &label, target, bytes)?;
+            dests.push(media_dest(&m.dev, &w));
+            // The next library's file follows where this one ended.
+            cur.seq = 0;
+            if let Some(at) = w
+                .volumes
+                .last()
+                .and_then(|l| cur.vols.iter().position(|v| v == l))
+            {
+                cur.vols = cur.vols[at..].to_vec();
             }
         }
     } else if let Some(savf_id) = savf_id {
         let bytes = streams.pop().map(|(_, b)| b).unwrap_or_default();
-        let wrote = in_store(system, |txn, _, _| {
-            savf::write(txn, savf_id, &bytes).map_err(|e| match e {
-                store::StoreError::BadValue { .. } => format!("{SAVF_FULL} {e}"),
-                e => e.to_string(),
-            })
-        });
-        if let Err(e) = wrote {
-            return failed(name, &e);
-        }
+        write_savf(system, savf_id, &savf_name, &bytes)?;
+        let q = Dest::Savf(savf_name.0.clone(), lib_or(&savf_name.1));
+        dests.push(q);
     }
-    let mut reply = save_reply(&reports);
-    reply.text.push_str(&written);
+    let mut reply = save_reply(&reports, &dests, now);
     reply.messages.splice(0..0, refused);
     if parms.text("OUTPUT") == "*OUTFILE" {
         let q = (savf_name.0.clone(), lib_or(&savf_name.1));
-        match super::savout::save(system, parms, name, &reports, &q, now) {
-            Ok((t, m)) => {
-                reply.text.push_str(&t);
-                reply.messages.extend(m);
-            }
-            Err(e) => return failed(name, &e),
-        }
+        let (_, m) = super::savout::save(system, parms, name, &reports, &q, now)?;
+        reply.messages.extend(m);
     }
-    reply
+    Ok(reply)
 }
 
-fn save_reply(reports: &[SaveReport]) -> CmdReply {
+/// The messages of a save: each object not saved, each library's end,
+/// and the escape when not everything was saved. `dests` is where each
+/// library went (one for all of them when the save was one stream).
+fn save_reply(reports: &[SaveReport], dests: &[Dest], now: u64) -> CmdReply {
     let mut reply = CmdReply::default();
-    let mut text = String::new();
-    for r in reports {
-        for (id, t) in &r.notes {
-            reply.messages.push(message(id, 1, &[(t, 10)]));
-            let _ = writeln!(text, "{id} {t}: saved without its data");
+    let none = Dest::Savf(String::new(), String::new());
+    let mut ends = Vec::new();
+    for (i, r) in reports.iter().enumerate() {
+        for n in &r.notes {
+            reply.messages.push(message(n.msgid, INFO, n.data()));
         }
-        for o in r.objects.iter().filter(|o| o.msgid.is_some()) {
-            let id = o.msgid.unwrap_or(msg::NOT_SAVED_IN_USE);
-            let _ = writeln!(text, "{id} {} in {} not saved", o.name, o.library);
-            reply
-                .messages
-                .push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
+        for (id, data) in r.objects.iter().filter_map(msg::of_result) {
+            reply.messages.push(message(id, DIAG, data));
         }
-        let n = r.saved().to_string();
-        reply.messages.push(message(
-            r.completion(),
-            if r.not_saved() == 0 && r.saved() > 0 {
-                4
-            } else {
-                5
-            },
-            &[(&n, 10), (&r.library, 10), (&r.not_saved().to_string(), 10)],
-        ));
-        let _ = writeln!(
-            text,
-            "{} {} objects saved from library {}",
-            r.completion(),
-            r.saved(),
-            r.library
-        );
+        let dest = dests.get(i).or(dests.last()).unwrap_or(&none);
+        ends.push(msg::save_end(r, dest, now));
     }
-    let saved: usize = reports.iter().map(SaveReport::saved).sum();
-    let not: usize = reports.iter().map(SaveReport::not_saved).sum();
-    if not > 0 || saved == 0 {
-        let id = match (reports.len(), saved) {
-            (_, 0) => msg::NONE_FOR_LIB,
-            (1, _) => msg::SAVED_LIB_PARTIAL,
-            _ => msg::SAVED_LIBS_PARTIAL,
-        };
+    let done = |id: &str| matches!(id, msg::SAVED_LIB | msg::SAVED_LIB_MEDIA);
+    if let [(id, data)] = ends.as_slice() {
+        if done(id) {
+            reply.messages.push(message(id, COMP, data.clone()));
+        } else {
+            reply.escape = Some(message(id, ESC, data.clone()));
+        }
+        return reply;
+    }
+    let full = ends.iter().filter(|(id, _)| done(id)).count();
+    let none = ends.iter().filter(|(id, _)| *id == msg::NONE_FOR_LIB).count();
+    let partial = ends.len() - full - none;
+    for (id, data) in ends {
+        let kind = if done(id) { COMP } else { DIAG };
+        reply.messages.push(message(id, kind, data));
+    }
+    if full < reports.len() {
         reply.escape = Some(message(
-            id,
-            7,
-            &[
-                (&saved.to_string(), 10),
-                (&reports.len().to_string(), 10),
-                (&not.to_string(), 10),
-            ],
+            msg::SAVED_LIBS_PARTIAL,
+            ESC,
+            msg::libraries_end(full, none, partial, now),
         ));
     }
-    reply.text = text;
     reply
 }
 
@@ -995,22 +1206,19 @@ fn mbr_option(s: &str) -> MbrOpt {
 }
 
 #[allow(clippy::too_many_lines)]
-fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
+fn rst(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Fail> {
     let dev = values(parms, "DEV");
     let media = media_of(parms);
     if media.is_none() && dev.first().map(String::as_str) != Some("*SAVF") {
-        return failed(
-            name,
-            &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
-        );
+        return Err(no_device(&dev));
     }
     let alw = values(parms, "ALWOBJDIF");
     if alw.iter().any(|v| v == "*ALL") {
         if alw.len() > 1 {
-            return failed(name, "CPD0094 ALWOBJDIF(*ALL) must be the only value");
+            return Err(Fail::new("CPD0094", &[Field::Char("ALWOBJDIF", 10)]));
         }
         if name != "RSTCFG" && parms.text("MBROPT") != "*ALL" {
-            return failed(name, "CPD3768 ALWOBJDIF(*ALL) needs MBROPT(*ALL)");
+            return Err(Fail::new("CPD3768", &[]));
         }
     }
     let savf_name = parms.qual("SAVF");
@@ -1085,72 +1293,60 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             AllowRestore::from_value(if v.is_empty() { "*ALL" } else { &v })
         },
     };
+    let first = saved.first().cloned().unwrap_or_default();
     // A save of several libraries on media is a file per library.
     let named: Vec<String> = saved
         .iter()
         .filter(|l| !l.starts_with('*'))
         .cloned()
         .collect();
-    let reads: Vec<Result<Vec<u8>, String>> = if let Some(m) = &media {
-        let first = saved.first().cloned().unwrap_or_default();
+    let reads: Vec<(String, Result<Vec<u8>, Fail>)> = if let Some(m) = &media {
+        let each = Media {
+            seq: 0,
+            ..m.clone()
+        };
+        let read = |system: &mut System, l: &str| {
+            stream::restore(system, &each, Some(l), OptTarget::Library(l)).map_err(Fail::from)
+        };
         if name == "RSTCFG" {
-            vec![stream::restore(
-                system,
-                m,
-                Some("QFILEIOC"),
-                OptTarget::System("SAVCFG"),
+            vec![(
+                first.clone(),
+                stream::restore(system, m, Some("QFILEIOC"), OptTarget::System("SAVCFG"))
+                    .map_err(Fail::from),
             )]
         } else if name == "RSTLIB" && named.len() > 1 && m.label.is_empty() {
-            let each = Media {
-                seq: 0,
-                ..m.clone()
-            };
-            named
-                .iter()
-                .map(|l| stream::restore(system, &each, Some(l), OptTarget::Library(l)))
-                .collect()
+            named.iter().map(|l| (l.clone(), read(system, l))).collect()
         } else if name == "RSTLIB" && named.is_empty() && m.label.is_empty() {
             // *NONSYS, *ALLUSR, *IBM: every library file on the medium.
             match stream::file_labels(system, m) {
                 Ok(labels) => {
-                    let each = Media {
-                        seq: 0,
-                        ..m.clone()
-                    };
                     let libs = library_files(&labels, &saved, &values(parms, "OMITLIB"));
                     if libs.is_empty() {
-                        vec![Err(format!("CPF3780 no library saves on device {}", m.dev))]
-                    } else {
-                        libs.iter()
-                            .map(|l| stream::restore(system, &each, Some(l), OptTarget::Library(l)))
-                            .collect()
+                        return Err(Fail::new(msg::NONE_IN_SAVE, &[Field::Char(&first, 10)])
+                            .because(format!("no library saves on device {}", m.dev)));
                     }
+                    libs.iter().map(|l| (l.clone(), read(system, l))).collect()
                 }
-                Err(e) => vec![Err(e)],
+                Err(e) => vec![(first.clone(), Err(Fail::from(e)))],
             }
         } else {
             let label = (!first.starts_with('*')).then_some(first.as_str());
-            vec![stream::restore(
-                system,
-                m,
-                label,
-                OptTarget::Library(&first),
+            vec![(
+                first.clone(),
+                stream::restore(system, m, label, OptTarget::Library(&first)).map_err(Fail::from),
             )]
         }
     } else {
-        vec![in_store(system, |txn, qsys, names| {
-            let id = find_savf(txn, qsys, names, &savf_name)?;
-            may_read_savf(txn, qsys, id, &savf_name.0)?;
-            savf::read(txn, id).map_err(|e| e.to_string())
-        })]
+        vec![(first.clone(), savf_bytes(system, &savf_name))]
     };
     let mut all: Option<CmdReply> = None;
-    for read in reads {
-        let one = restore_stream(system, name, parms, &opts, &savf_name, read);
+    for (lib, read) in reads {
+        let one = read
+            .and_then(|s| restore_stream(system, name, parms, &opts, &savf_name, &lib, &s))
+            .unwrap_or_else(Fail::reply);
         all = Some(match all {
             None => one,
             Some(mut a) => {
-                a.text.push_str(&one.text);
                 a.messages.extend(one.messages);
                 if a.escape.is_none() {
                     a.escape = one.escape;
@@ -1159,72 +1355,83 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             }
         });
     }
-    all.unwrap_or_else(|| failed(name, "CPF3780 nothing to restore"))
+    all.ok_or_else(|| Fail::new(msg::NONE_IN_SAVE, &[Field::Char(&first, 10)]))
 }
 
-/// Restore one save stream read from a save file or a medium.
+/// Restore one save stream of library `saved` read from a save file or
+/// a medium.
 fn restore_stream(
     system: &mut System,
     name: &str,
     parms: &Parms,
     opts: &RestoreOptions,
     savf_name: &(String, String),
-    read: Result<Vec<u8>, String>,
-) -> CmdReply {
-    let stream = match read {
-        Ok(s) => s,
-        Err(e) => return failed(name, &e),
-    };
+    saved: &str,
+    stream: &[u8],
+) -> Result<CmdReply, Fail> {
     if stream.is_empty() {
-        return failed(
-            name,
-            &format!("{SAVF_EMPTY} save file {} is empty", savf_name.0),
-        );
+        return Err(savf_empty(savf_name));
     }
     let jobh = job(system);
-    let Some(storage) = system.storage.as_mut() else {
-        return failed(name, "CPF3700 object store not open");
-    };
-    let Some(qsys) = storage.qsys else {
-        return failed(name, "CPF3700 object store not initialized");
-    };
+    let (store, qsys) = storage(system)?;
     let hooks = SvcHooks::new(qsys);
-    let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
-        Ok(r) => r,
-        Err(e) => return failed(name, &format!("CPF3743 {e}")),
-    };
+    let mut reader = Reader::new(Cursor::new(stream)).map_err(bad_save)?;
     let r = reader.header().target;
     let cur = release::RELEASE;
     if (r.0, r.1, r.2) > (cur.v, cur.r, cur.m) {
-        return failed(name, "CPF3743 the save is for a later release");
+        return Err(bad_save(format!(
+            "The save is for release V{}R{}M{}.",
+            r.0, r.1, r.2
+        )));
     }
     // The hooks decide who may restore; the objects are made by the
     // system so they keep their saved owners.
-    let store = &mut storage.store;
-    let res =
-        sec::guard::as_system(|| saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts));
-    match res {
-        Ok(r) => {
-            let mut reply = rst_reply(&r, opts.target_library.as_deref());
-            if parms.text("OUTPUT") == "*OUTFILE" {
-                let q = (savf_name.0.clone(), lib_or(&savf_name.1));
-                match super::savout::restore(system, parms, name, &r, &q, now_unix()) {
-                    Ok((t, m)) => {
-                        reply.text.push_str(&t);
-                        reply.messages.extend(m);
-                    }
-                    Err(e) => return failed(name, &e),
-                }
-            }
-            if parms.text("SPLFDTA") != "*NONE" {
-                for (lib, q, part) in &r.spool {
-                    let n = restore_spool(system, &format!("{lib}/{q}"), part);
-                    let _ = writeln!(reply.text, "{n} spooled files restored to {lib}/{q}");
-                }
-            }
-            reply
+    let r = sec::guard::as_system(|| saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts))
+        .map_err(Fail::ended)?;
+    let (mut made, mut kept) = (0, 0);
+    if parms.text("SPLFDTA") != "*NONE" {
+        for (lib, q, part) in &r.spool {
+            let (m, k) = restore_spool(system, &format!("{lib}/{q}"), part);
+            made += m;
+            kept += k;
         }
-        Err(e) => failed(name, &format!("CPF3793 {e}")),
+    }
+    // The library saved: the file's label, else what the objects say.
+    let saved = if saved.is_empty() || saved.starts_with('*') {
+        r.objects
+            .first()
+            .map(|o| o.library.clone())
+            .or_else(|| r.created_libraries.first().cloned())
+            .unwrap_or_default()
+    } else {
+        saved.to_string()
+    };
+    let to = opts.target_library.clone().unwrap_or_else(|| saved.clone());
+    let from = savf_of(parms, savf_name);
+    let mut reply = rst_reply(&r, (&saved, &to), &from, made, now_unix());
+    if kept > 0 {
+        let data = Data::new().bin4(kept).into_bytes();
+        reply.messages.push(message(msg::SPOOL_EXISTS, INFO, data));
+    }
+    if parms.text("OUTPUT") == "*OUTFILE" {
+        let (_, m) = super::savout::restore(system, parms, name, &r, savf_name, now_unix())?;
+        reply.messages.extend(m);
+    }
+    Ok(reply)
+}
+
+/// `CPF3743`: the stream is not a save this release can read; `why`
+/// fills the message's `&1`.
+fn bad_save(why: impl Display) -> Fail {
+    Fail::new(BAD_SAVE, &[Field::Char(&why.to_string(), 364)])
+}
+
+/// The save file a restore read, blank for media.
+fn savf_of(parms: &Parms, savf_name: &(String, String)) -> (String, String) {
+    if media_of(parms).is_some() {
+        (String::new(), String::new())
+    } else {
+        (savf_name.0.clone(), lib_or(&savf_name.1))
     }
 }
 
@@ -1233,7 +1440,7 @@ fn restore_stream(
 fn spool_parts(
     system: &mut System,
     libs: &[String],
-) -> Result<std::collections::HashMap<String, Vec<u8>>, String> {
+) -> Result<std::collections::HashMap<String, Vec<u8>>, Fail> {
     let mut queues = Vec::new();
     for lib in libs {
         let names = in_store(system, |txn, qsys, _| {
@@ -1246,7 +1453,7 @@ fn spool_parts(
             };
             Ok(store::obj::library::Library::load(txn, found.id)
                 .and_then(|l| l.list(txn, Some(types::OUTQ)))
-                .map_err(|e| e.to_string())?
+                .map_err(Fail::ended)?
                 .into_iter()
                 .map(|(k, _)| k.name.to_string())
                 .collect::<Vec<_>>())
@@ -1261,7 +1468,7 @@ fn spool_parts(
         let mut b = Vec::new();
         b.extend_from_slice(&u32::try_from(files.len()).unwrap_or(0).to_be_bytes());
         for f in &files {
-            let (attrs, data) = crate::stgsvc::spool::data(system, f.id)?;
+            let (attrs, data) = crate::stgsvc::spool::data(system, f.id).map_err(Fail::ended)?;
             let rec = attrs.encode();
             b.extend_from_slice(&u32::try_from(rec.len()).unwrap_or(0).to_be_bytes());
             b.extend_from_slice(&rec);
@@ -1274,8 +1481,9 @@ fn spool_parts(
 }
 
 /// Bring back the spooled files of a restored output queue that are
-/// not on the system (`SPLFDTA(*NEW)`). How many.
-fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
+/// not on the system (`SPLFDTA(*NEW)`): how many, and how many were
+/// there already.
+fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> (usize, usize) {
     let take = |at: &mut usize, n: usize| -> Option<&[u8]> {
         let s = part.get(*at..*at + n)?;
         *at += n;
@@ -1283,9 +1491,9 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
     };
     let mut at = 0;
     let Some(count) = take(&mut at, 4).map(|b| u32::from_be_bytes(b.try_into().expect("4"))) else {
-        return 0;
+        return (0, 0);
     };
-    let mut made = 0;
+    let (mut made, mut kept) = (0, 0);
     for _ in 0..count {
         let Some(len) = take(&mut at, 4).map(|b| u32::from_be_bytes(b.try_into().expect("4")))
         else {
@@ -1317,6 +1525,7 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
                 && e.attrs.created == saved.created
         });
         if exists {
+            kept += 1;
             continue;
         }
         let mut attrs = saved.clone();
@@ -1334,32 +1543,59 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
         });
         made += 1;
     }
-    made
+    (made, kept)
 }
 
-fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
+/// The kind a note goes to the job log as: a diagnostic when something
+/// was lost, else information.
+fn note_kind(id: &str) -> u8 {
+    if matches!(id, msg::AUTL_MISSING | msg::JOURNAL_MISSING) {
+        DIAG
+    } else {
+        INFO
+    }
+}
+
+/// The messages of one library's restore: the objects `OPTION` left
+/// out, the notes, the names not in the save, each object not restored,
+/// the changes accepted and the end. `(saved, to)` are the library
+/// saved and the one restored into, `savf` the save file read (blank
+/// for media), `spooled` the spooled files restored.
+fn rst_reply(
+    r: &RestoreReport,
+    (saved, to): (&str, &str),
+    savf: &(String, String),
+    spooled: usize,
+    now: u64,
+) -> CmdReply {
     let mut reply = CmdReply::default();
-    let mut text = String::new();
-    for (id, t) in &r.skipped {
-        reply.messages.push(message(id, 1, &[(t, 10)]));
-        let _ = writeln!(text, "{id} {t} not selected");
+    for n in &r.skipped {
+        reply.messages.push(message(n.msgid, INFO, n.data()));
     }
-    for (id, t) in &r.notes {
-        reply.messages.push(message(id, 5, &[(t, 50)]));
-        let _ = writeln!(text, "{id} {t}");
+    for n in &r.notes {
+        reply.messages.push(message(n.msgid, note_kind(n.msgid), n.data()));
     }
-    for n in &r.not_found {
-        reply
-            .messages
-            .push(message(msg::NOT_IN_SAVE, 5, &[(n, 10)]));
-        let _ = writeln!(text, "{} {n} is not in the save", msg::NOT_IN_SAVE);
+    if r.restored() == 0 && r.not_restored() == 0 && !r.not_found.is_empty() {
+        // Nothing named was there: once, for the save file (rule 24).
+        let data = Data::new().char(&savf.0, 10).char(&savf.1, 10).into_bytes();
+        reply.messages.push(message(msg::NOT_IN_SAVE, DIAG, data));
+    } else {
+        for n in &r.not_found {
+            let data = Data::new()
+                .char(n, 10)
+                .char("*ALL", 7)
+                .char(saved, 10)
+                .char(&savf.0, 10)
+                .char(&savf.1, 10)
+                .into_bytes();
+            reply.messages.push(message(msg::NOT_IN_LIST, DIAG, data));
+        }
     }
-    for o in r.objects.iter().filter(|o| o.msgid.is_some()) {
-        let id = o.msgid.unwrap_or(msg::NOT_RESTORED_DAMAGED);
-        reply
-            .messages
-            .push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
-        let _ = writeln!(text, "{id} {} in {} not restored", o.name, o.library);
+    for o in &r.objects {
+        let Some((id, data)) = msg::of_result(o) else {
+            continue;
+        };
+        reply.messages.push(message(id, DIAG, data));
         // These reasons are followed by the general one (rules 6-11).
         if matches!(
             id,
@@ -1369,75 +1605,38 @@ fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
                 | msg::NOT_RESTORED_BASED_ON
                 | msg::NOT_RESTORED_MEMBERS
         ) {
-            reply.messages.push(message(
-                msg::NOT_RESTORED,
-                5,
-                &[(&o.name, 10), (&o.library, 10)],
-            ));
+            let data = msg::object(msg::NOT_RESTORED, &o.name, o.type_code, &o.library);
+            reply.messages.push(message(msg::NOT_RESTORED, DIAG, data));
         }
     }
     if r.changes > 0 {
-        let n = r.changes.to_string();
-        reply.messages.push(message(msg::CHANGES, 5, &[(&n, 10)]));
-        let _ = writeln!(text, "{} {n} security or data format changes", msg::CHANGES);
+        let data = Data::new().bin4(r.changes).char(to, 10).into_bytes();
+        reply.messages.push(message(msg::CHANGES, DIAG, data));
     }
-    let lib = target
-        .map(str::to_string)
-        .or_else(|| r.objects.first().map(|o| o.library.clone()))
-        .unwrap_or_default();
-    let n = r.restored().to_string();
-    let not = r.not_restored().to_string();
-    let id = r.completion();
-    let m = message(
-        id,
-        if id == msg::RESTORED_LIB { 4 } else { 7 },
-        &[(&n, 10), (&lib, 10), (&not, 10)],
-    );
-    let _ = writeln!(
-        text,
-        "{id} {n} objects restored to {lib}, {not} not restored"
-    );
+    let (id, data) = msg::restore_end(r, saved, to, spooled, now);
     if id == msg::RESTORED_LIB {
-        reply.messages.push(m);
+        reply.messages.push(message(id, COMP, data));
     } else {
-        reply.escape = Some(m);
+        reply.escape = Some(message(id, ESC, data));
     }
-    reply.text = text;
     reply
 }
 
-/// The save file of a security or configuration command, read.
-fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, Box<CmdReply>> {
+/// The save of a security command: from the device, or the save file.
+fn read_savf(system: &mut System, parms: &Parms) -> Result<Vec<u8>, Fail> {
     let dev = values(parms, "DEV");
     if let Some(m) = media_of(parms) {
-        return stream::restore(
+        return Ok(stream::restore(
             system,
             &m,
             Some(SECDTA_LABEL),
             OptTarget::System("SAVSECDTA"),
-        )
-        .map_err(|e| Box::new(failed(name, &e)));
+        )?);
     }
     if dev.first().map(String::as_str) != Some("*SAVF") {
-        return Err(Box::new(failed(
-            name,
-            &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
-        )));
+        return Err(no_device(&dev));
     }
-    let savf_name = parms.qual("SAVF");
-    let stream = in_store(system, |txn, qsys, names| {
-        let id = find_savf(txn, qsys, names, &savf_name)?;
-        may_read_savf(txn, qsys, id, &savf_name.0)?;
-        savf::read(txn, id).map_err(|e| e.to_string())
-    })
-    .map_err(|e| Box::new(failed(name, &e)))?;
-    if stream.is_empty() {
-        return Err(Box::new(failed(
-            name,
-            &format!("{SAVF_EMPTY} save file {} is empty", savf_name.0),
-        )));
-    }
-    Ok(stream)
+    read_stream(system, &parms.qual("SAVF"))
 }
 
 /// `SAVSAVFDTA SAVF() DEV()`: the save file's stream onto tape or
@@ -1445,36 +1644,23 @@ fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, 
 /// with the library saved (`QFILEIOC`, `QFILEUPR` for the system's
 /// saves), so `DSPTAP` shows the original save and `RSTLIB`/`RSTOBJ`
 /// read it back; `CPC3724` when it is written.
-fn savsavfdta(system: &mut System, parms: &Parms) -> CmdReply {
-    const NAME: &str = "SAVSAVFDTA";
+fn savsavfdta(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     // BLOCKED(rel): SAVSAVFDTA's OUTPUT(*PRINT|*OUTFILE) listing and
     // USEOPTBLK(*NO) are not made; the file is written in 64 KiB blocks.
     // COMPACT is the device's (*DEV), and a virtual device compacts nothing.
     for (k, dft) in [("OUTPUT", "*NONE"), ("USEOPTBLK", "*YES")] {
         let v = parms.name(k);
         if !v.is_empty() && v != dft {
-            return super::escape("CPF3C3C", k, "");
+            return Err(Fail::new(NOT_AVAILABLE, &[]).because(format!("{k}({v})")));
         }
     }
     let Some(m) = media_of(parms) else {
-        return failed(NAME, NO_DEVICE);
+        return Err(no_device(&values(parms, "DEV")));
     };
     let savf_name = parms.qual("SAVF");
-    let stream = match in_store(system, |txn, qsys, names| {
-        let id = find_savf(txn, qsys, names, &savf_name)?;
-        may_read_savf(txn, qsys, id, &savf_name.0)?;
-        savf::read(txn, id).map_err(|e| e.to_string())
-    }) {
-        Ok(s) => s,
-        Err(e) => return failed(NAME, &e),
-    };
-    if stream.is_empty() {
-        return failed(NAME, &format!("{SAVF_EMPTY} {}", savf_name.0));
-    }
-    let (desc, _) = match stream_listing(&stream) {
-        Ok(l) => l,
-        Err(e) => return failed(NAME, &e),
-    };
+    let savlib = lib_or(&savf_name.1);
+    let stream = read_stream(system, &savf_name)?;
+    let (desc, _) = listing(&stream)?;
     // The listing's first two rows: the save command and the library.
     let command = desc.first().map(|(_, v)| v.clone()).unwrap_or_default();
     let lib = desc.get(1).map(|(_, v)| v.clone()).unwrap_or_default();
@@ -1482,134 +1668,104 @@ fn savsavfdta(system: &mut System, parms: &Parms) -> CmdReply {
         "SAVSECDTA" => (SECDTA_LABEL.to_string(), OptTarget::System("SAVSECDTA")),
         "SAVCFG" => ("QFILEIOC".to_string(), OptTarget::System("SAVCFG")),
         _ if lib.is_empty() => {
-            return failed(NAME, &format!("CPF3814 {}", savf_name.0));
+            return Err(Fail::new(
+                "CPF3814",
+                &[Field::Char(&savf_name.0, 10), Field::Char(&savlib, 10)],
+            ));
         }
         _ => (lib.clone(), OptTarget::Library(&lib)),
     };
-    match stream::save(system, &m, &label, target, &stream) {
-        Ok(w) => {
-            let mut reply = CmdReply {
-                text: written_line(&w),
-                ..CmdReply::default()
-            };
-            let savlib = lib_or(&savf_name.1);
-            reply.messages.push(message(
-                "CPC3724",
-                4,
-                &[
-                    ("", 10),
-                    ("", 10),
-                    ("", 10),
-                    ("", 10),
-                    ("", 10),
-                    ("", 10),
-                    ("", 10),
-                    ("", 10),
-                    (&savf_name.0, 10),
-                    (&savlib, 10),
-                ],
-            ));
-            reply
-        }
-        Err(e) => failed(NAME, &e),
-    }
+    let w = stream::save(system, &m, &label, target, &stream)?;
+    let micros = i64::try_from(now_unix()).unwrap_or(0) * 1_000_000;
+    Ok(msgout::completion(
+        "CPC3724",
+        &[
+            Field::Char("", 18),
+            Field::Char(&w.volumes.join(" "), 70),
+            Field::Dts(micros),
+            Field::Char("", 4),
+            Field::Char("", 15),
+            Field::Bin4(0),
+            Field::Char("", 6),
+            Field::Char(&m.dev, 10),
+            Field::Char(&savf_name.0, 10),
+            Field::Char(&savlib, 10),
+            Field::Char("", 82),
+            Field::Char("", 455),
+            Field::Char("", 10),
+            Field::Char(w.volumes.last().map_or("", String::as_str), 32),
+        ],
+    ))
 }
 
 /// `SAVSECDTA`: profiles and authorization lists to a save file.
-fn savsecdta(system: &mut System, parms: &Parms) -> CmdReply {
+fn savsecdta(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     const NAME: &str = "SAVSECDTA";
-    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SAVSYS, "save security data") {
-        return failed(NAME, &format!("CPF2189 {e}"));
-    }
+    need(SpecialAuth::SAVSYS, "*SAVSYS", "save security data")?;
     let dev = values(parms, "DEV");
     let media = media_of(parms);
     if media.is_none() && dev.first().map(String::as_str) != Some("*SAVF") {
-        return failed(
-            NAME,
-            &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
-        );
+        return Err(no_device(&dev));
     }
     let savf_name = parms.qual("SAVF");
     let clear = parms.text("CLEAR");
     let savf_id = if media.is_some() {
         None
     } else {
-        match in_store(system, |txn, qsys, names| {
+        Some(in_store(system, |txn, qsys, names| {
             save_target(txn, qsys, names, &savf_name, &clear)
-        }) {
-            Ok(id) => Some(id),
-            Err(e) => return failed(NAME, &e),
-        }
+        })?)
     };
     let head = header(system, NAME, parms, SaveKind::Security);
-    let Some(storage) = system.storage.as_mut() else {
-        return failed(NAME, "CPF3700 object store not open");
-    };
-    let Some(qsys) = storage.qsys else {
-        return failed(NAME, "CPF3700 object store not initialized");
-    };
+    let now = now_unix();
+    let (store, qsys) = storage(system)?;
     let hooks = SvcHooks::new(qsys);
-    let mut w = match Writer::new(Vec::new(), &head) {
-        Ok(w) => w,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
-    };
+    let mut w = Writer::new(Vec::new(), &head).map_err(Fail::ended)?;
     let _ = w.parameters(&parms.to_line(NAME));
-    let store = &mut storage.store;
-    let rep = match sec::guard::as_system(|| {
-        saverst::secdta::save_security(store, &hooks, qsys, now_unix(), &mut w)
-    }) {
-        Ok(r) => r,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
-    };
-    let bytes = match w.finish(u32::try_from(rep.not_saved()).unwrap_or(0)) {
-        Ok((_, b)) => b,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
-    };
-    let mut written = String::new();
-    if let Some(m) = &media {
-        match stream::save(system, m, SECDTA_LABEL, OptTarget::System(NAME), &bytes) {
-            Ok(w) => written = written_line(&w),
-            Err(e) => return failed(NAME, &e),
+    let rep = sec::guard::as_system(|| {
+        saverst::secdta::save_security(store, &hooks, qsys, now, &mut w)
+    })
+    .map_err(Fail::ended)?;
+    let (_, bytes) = w
+        .finish(u32::try_from(rep.not_saved()).unwrap_or(0))
+        .map_err(Fail::ended)?;
+    let dest = if let Some(m) = &media {
+        let w = stream::save(system, m, SECDTA_LABEL, OptTarget::System(NAME), &bytes)?;
+        media_dest(&m.dev, &w)
+    } else {
+        if let Some(savf_id) = savf_id {
+            write_savf(system, savf_id, &savf_name, &bytes)?;
         }
-    } else if let Some(savf_id) = savf_id
-        && let Err(e) = in_store(system, |txn, _, _| {
-            savf::write(txn, savf_id, &bytes).map_err(|e| format!("{SAVF_FULL} {e}"))
-        })
-    {
-        return failed(NAME, &e);
-    }
-    let n = rep.saved().to_string();
-    CmdReply {
-        text: format!("{SAVED_SECDTA} {n} profiles and authorization lists saved\n{written}"),
-        messages: vec![message(SAVED_SECDTA, 4, &[(&n, 10)])],
-        ..CmdReply::default()
-    }
+        Dest::Savf(savf_name.0.clone(), lib_or(&savf_name.1))
+    };
+    Ok(save_reply(&[rep], &[dest], now))
 }
 
-/// `SAVSECDTA` completed.
-const SAVED_SECDTA: &str = "CPC3701";
 /// The tape file label of `SAVSECDTA` (IBM's name for the profiles file).
 const SECDTA_LABEL: &str = "QFILEUPR";
 /// Profiles restored, all of them.
 const RESTORED_PROFILES: &str = "CPC3705";
 /// Profiles restored, some not.
 const RESTORED_PROFILES_PARTIAL: &str = "CPF3775";
-/// Authorities granted for a profile.
+/// Every authority of a profile restored.
 const AUTH_RESTORED: &str = "CPC3706";
-/// Authorities left pending for a profile.
-const AUTH_NOT_RESTORED: &str = "CPF3736";
+/// Some authorities of a profile left pending.
+const AUTH_PARTIAL: &str = "CPF3845";
+/// `RSTAUT` restored every authority of every profile.
+const AUTH_ALL: &str = "CPC3710";
+/// `RSTAUT` left some authorities pending.
+const AUTH_NOT_ALL: &str = "CPF3776";
+/// A prestart job's name where IBM's messages give one: none here.
+const NO_JOB: &str = "*N";
+/// A profile with no authorities to restore.
+const NO_AUTHORITIES: &str = "CPF3787";
 
 /// `RSTUSRPRF`.
-fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
-    const NAME: &str = "RSTUSRPRF";
-    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SAVSYS, "restore user profiles") {
-        return failed(NAME, &format!("CPF2189 {e}"));
-    }
-    let stream = match read_savf(system, NAME, parms) {
-        Ok(s) => s,
-        Err(r) => return *r,
-    };
+fn rstusrprf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
+    need(SpecialAuth::SAVSYS, "*SAVSYS", "restore user profiles")?;
+    let stream = read_savf(system, parms)?;
     let users = values(parms, "USRPRF");
+    let now = now_unix();
     let opts = saverst::secdta::ProfileOptions {
         new_only: users.iter().any(|u| u == "*NEW"),
         users: users.into_iter().filter(|u| !u.starts_with('*')).collect(),
@@ -1617,36 +1773,21 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
             .into_iter()
             .filter(|u| u != "*NONE")
             .collect(),
-        now: now_unix(),
+        now,
     };
     let jobh = job(system);
-    let Some(storage) = system.storage.as_mut() else {
-        return failed(NAME, "CPF3700 object store not open");
-    };
-    let Some(qsys) = storage.qsys else {
-        return failed(NAME, "CPF3700 object store not initialized");
-    };
+    let (store, qsys) = storage(system)?;
     let hooks = SvcHooks::new(qsys);
-    let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
-        Ok(r) => r,
-        Err(e) => return failed(NAME, &format!("CPF3743 {e}")),
-    };
-    let store = &mut storage.store;
-    let rep = match sec::guard::as_system(|| {
+    let mut reader = Reader::new(Cursor::new(stream.as_slice())).map_err(bad_save)?;
+    let rep = sec::guard::as_system(|| {
         saverst::secdta::restore_profiles(store, jobh, &hooks, qsys, &mut reader, &opts)
-    }) {
-        Ok(r) => r,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
-    };
+    })
+    .map_err(Fail::ended)?;
     // Restored profiles and lists: what was built from them is stale.
     sec::auth::cache::bump_epoch();
     let mut reply = CmdReply::default();
-    for o in rep.objects.iter().filter(|o| o.msgid.is_some()) {
-        let id = o.msgid.unwrap_or(msg::NOT_RESTORED_DAMAGED);
-        reply
-            .messages
-            .push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
-        let _ = writeln!(reply.text, "{id} {} not restored", o.name);
+    for (id, data) in rep.objects.iter().filter_map(msg::of_result) {
+        reply.messages.push(message(id, DIAG, data));
     }
     // The job calls QIBM_QSY_RST_PROFILE for each profile restored.
     reply.notify = rep
@@ -1655,84 +1796,110 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
         .filter(|o| o.msgid.is_none() && o.type_code == store::obj::types::USRPRF)
         .map(|o| format!("QIBM_QSY_RST_PROFILE RSTP0100 {}", o.name))
         .collect();
-    let n = rep.profiles().to_string();
-    let not = rep.profiles_not().to_string();
-    let _ = writeln!(
-        reply.text,
-        "{n} user profiles restored, {not} not; {} authorization lists restored",
-        rep.autls()
-    );
-    let m = |id| message(id, 4, &[(&n, 10), (&not, 10)]);
-    if rep.profiles_not() == 0 {
-        reply.messages.push(m(RESTORED_PROFILES));
+    let autls_not = rep
+        .objects
+        .iter()
+        .filter(|o| o.msgid.is_some() && o.type_code == store::obj::types::AUTL)
+        .count();
+    let data = Data::new()
+        .bin4(rep.profiles())
+        .bin4(rep.profiles_not())
+        .dts(now)
+        .bin4(0)
+        .bin4(rep.autls())
+        .bin4(autls_not)
+        .bin4(0)
+        .bin4(0)
+        .char("", 10)
+        .bin4(0)
+        .bin4(0)
+        .into_bytes();
+    if rep.profiles_not() == 0 && autls_not == 0 {
+        reply.messages.push(message(RESTORED_PROFILES, COMP, data));
     } else {
-        reply.escape = Some(CmdMsg {
-            kind: 7,
-            ..m(RESTORED_PROFILES_PARTIAL)
-        });
+        reply.escape = Some(message(RESTORED_PROFILES_PARTIAL, ESC, data));
     }
-    reply
+    Ok(reply)
 }
 
 /// `RSTAUT`.
-fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
-    const NAME: &str = "RSTAUT";
-    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SECADM, "restore authority") {
-        return failed(NAME, &format!("CPF2189 {e}"));
-    }
+fn rstaut(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
+    need(SpecialAuth::SECADM, "*SECADM", "restore authority")?;
     let users: Vec<String> = values(parms, "USRPRF")
         .into_iter()
         .filter(|u| u != "*ALL")
         .collect();
-    let Some(storage) = system.storage.as_mut() else {
-        return failed(NAME, "CPF3700 object store not open");
-    };
-    let Some(qsys) = storage.qsys else {
-        return failed(NAME, "CPF3700 object store not initialized");
-    };
+    let now = now_unix();
+    let (store, qsys) = storage(system)?;
     let hooks = SvcHooks::new(qsys);
-    let store = &mut storage.store;
-    let done = match sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &users))
-    {
-        Ok(d) => d,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
-    };
+    let done = sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &users))
+        .map_err(Fail::ended)?;
     let mut reply = CmdReply::default();
-    let mut partial = false;
+    // Profiles: all restored, some, none, nothing to restore.
+    let (mut all, mut some, mut none, mut nothing) = (0, 0, 0, 0);
     for d in &done {
-        let (r, n) = (d.restored.to_string(), d.not_restored.to_string());
-        let _ = writeln!(
-            reply.text,
-            "{} authorities restored for {}, {} not",
-            d.restored, d.profile, d.not_restored
-        );
-        if d.not_restored == 0 {
-            reply
-                .messages
-                .push(message(AUTH_RESTORED, 4, &[(&r, 10), (&d.profile, 10)]));
+        match (d.restored, d.not_restored) {
+            (0, 0) => nothing += 1,
+            (_, 0) => all += 1,
+            (0, _) => none += 1,
+            _ => some += 1,
+        }
+        if d.restored == 0 && d.not_restored == 0 {
+            let data = Data::new().char(&d.profile, 10).into_bytes();
+            reply.messages.push(message(NO_AUTHORITIES, INFO, data));
+        } else if d.not_restored == 0 {
+            let data = Data::new()
+                .char(&d.profile, 10)
+                .dts(now)
+                .char(NO_JOB, 22)
+                .into_bytes();
+            reply.messages.push(message(AUTH_RESTORED, COMP, data));
         } else {
-            partial = true;
-            reply.messages.push(message(
-                AUTH_NOT_RESTORED,
-                5,
-                &[(&r, 10), (&d.profile, 10), (&n, 10)],
-            ));
+            let data = Data::new()
+                .bin4(d.restored)
+                .char(&d.not_restored.to_string(), 10)
+                .dts(now)
+                .char(&d.profile, 10)
+                .char(NO_JOB, 22)
+                .char(NO_JOB, 22)
+                .into_bytes();
+            reply.messages.push(message(AUTH_PARTIAL, DIAG, data));
         }
     }
-    if partial {
-        reply.escape = Some(message(AUTH_NOT_RESTORED, 7, &[]));
+    if some + none == 0 {
+        let data = Data::new().bin4(all).dts(now).bin4(nothing).into_bytes();
+        reply.messages.push(message(AUTH_ALL, COMP, data));
+    } else {
+        let data = Data::new()
+            .bin4(all)
+            .bin4(some)
+            .dts(now)
+            .bin4(none)
+            .bin4(nothing)
+            .into_bytes();
+        reply.escape = Some(message(AUTH_NOT_ALL, ESC, data));
     }
-    reply
+    Ok(reply)
 }
 
-/// IFS saves completed.
+/// IFS saves to a save file completed (rule 25).
 const SAVED_LINKS: &str = "CPC370D";
-/// IFS saves with links not saved.
-const SAVED_LINKS_PARTIAL: &str = "CPF3837";
-/// IFS restores completed.
+/// The same to media.
+const SAVED_LINKS_MEDIA: &str = "CPC370C";
+/// IFS saves to a save file with links not saved.
+const SAVED_LINKS_PARTIAL: &str = "CPF3838";
+/// The same to media.
+const SAVED_LINKS_PARTIAL_MEDIA: &str = "CPF3837";
+/// IFS restores from a save file completed (rule 25).
 const RESTORED_LINKS: &str = "CPC370F";
-/// IFS restores with links not restored.
-const RESTORED_LINKS_PARTIAL: &str = "CPF3838";
+/// The same from media.
+const RESTORED_LINKS_MEDIA: &str = "CPC370E";
+/// IFS restores from a save file with links not restored.
+const RESTORED_LINKS_PARTIAL: &str = "CPF383E";
+/// The same from media.
+const RESTORED_LINKS_PARTIAL_MEDIA: &str = "CPF3839";
+/// A link not saved or not restored.
+const LINK_FAILED: &str = "CPD3775";
 
 /// `OBJ((path *INCLUDE|*OMIT [new]) ...)`: (path, include, new name).
 fn ifs_objects(parms: &Parms) -> Vec<(String, bool, Option<String>)> {
@@ -1898,7 +2065,7 @@ const IFS_LABEL: &str = "QSAVIFS";
 
 /// `SAV` to a save file or a device.
 #[allow(clippy::too_many_lines)]
-fn sav(system: &mut System, parms: &Parms) -> CmdReply {
+fn sav(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     const NAME: &str = "SAV";
     let dev = values(parms, "DEV");
     let media = dev
@@ -1908,27 +2075,16 @@ fn sav(system: &mut System, parms: &Parms) -> CmdReply {
     let savf_name = dev.first().and_then(|d| savf_path(d));
     let savf_id = match (&media, &savf_name) {
         (Some(_), _) => None,
-        (None, None) => {
-            return failed(
-                NAME,
-                &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
-            );
-        }
-        (None, Some(savf_name)) => match in_store(system, |txn, qsys, names| {
+        (None, None) => return Err(no_device(&dev)),
+        (None, Some(savf_name)) => Some(in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, savf_name)?;
-            may_write_savf(txn, qsys, id, &savf_name.0)?;
+            write_allowed(txn, qsys, id, (&savf_name.0, &lib_or(&savf_name.1)))?;
             Ok(id)
-        }) {
-            Ok(id) => Some(id),
-            Err(e) => return failed(NAME, &e),
-        },
+        })?),
     };
     let objs = ifs_objects(parms);
     let head = header(system, NAME, parms, SaveKind::Ifs);
-    let mut w = match Writer::new(Vec::new(), &head) {
-        Ok(w) => w,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
-    };
+    let mut w = Writer::new(Vec::new(), &head).map_err(Fail::ended)?;
     let _ = w.parameters(&parms.to_line(NAME));
     let omit: Vec<String> = objs.iter().filter(|o| !o.1).map(|o| o.0.clone()).collect();
     let mut sink = LinkSink {
@@ -1954,7 +2110,7 @@ fn sav(system: &mut System, parms: &Parms) -> CmdReply {
                             expand(dir, &names, last, &omitted)
                         }
                         Err(e) => {
-                            errs.push(format!("{path}: {e}"));
+                            errs.push((path.clone(), e.to_string()));
                             continue;
                         }
                     }
@@ -1963,75 +2119,104 @@ fn sav(system: &mut System, parms: &Parms) -> CmdReply {
             };
             for p in paths {
                 if let Err(e) = ifs.save(cx, &p, &mut sink) {
-                    errs.push(format!("{p}: {e}"));
+                    errs.push((p, e.to_string()));
                 }
             }
         }
         errs
     });
     let Some(errs) = walked else {
-        return failed(NAME, "CPF3700 the integrated file system is not available");
+        return Err(Fail::new(NOT_AVAILABLE, &[]).because("the integrated file system"));
     };
     if let Some(e) = sink.failed.take() {
-        return failed(NAME, &format!("CPF3793 {e}"));
+        return Err(Fail::ended(e));
     }
     let saved = sink.saved;
-    let bytes = match w.finish(u32::try_from(errs.len()).unwrap_or(0)) {
-        Ok((_, b)) => b,
-        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    let (_, bytes) = w
+        .finish(u32::try_from(errs.len()).unwrap_or(0))
+        .map_err(Fail::ended)?;
+    let now = now_unix();
+    let dest = if let Some(m) = &media {
+        let w = stream::save(system, m, IFS_LABEL, OptTarget::Ifs(1), &bytes)?;
+        media_dest(&m.dev, &w)
+    } else {
+        let savf_name = savf_name.unwrap_or_default();
+        if let Some(savf_id) = savf_id {
+            write_savf(system, savf_id, &savf_name, &bytes)?;
+        }
+        Dest::Savf(dev.first().cloned().unwrap_or_default(), String::new())
     };
     let mut reply = CmdReply::default();
-    if let Some(m) = &media {
-        match stream::save(system, m, IFS_LABEL, OptTarget::Ifs(1), &bytes) {
-            Ok(w) => reply.text.push_str(&written_line(&w)),
-            Err(e) => return failed(NAME, &e),
-        }
-    } else if let Some(savf_id) = savf_id
-        && let Err(e) = in_store(system, |txn, _, _| {
-            savf::write(txn, savf_id, &bytes).map_err(|e| format!("{SAVF_FULL} {e}"))
-        })
-    {
-        return failed(NAME, &e);
-    }
-    for e in &errs {
-        let _ = writeln!(reply.text, "{SAVED_LINKS_PARTIAL} not saved: {e}");
-    }
-    let n = saved.to_string();
-    let not = errs.len().to_string();
-    let _ = writeln!(reply.text, "{n} objects saved, {not} not saved");
+    links_failed(&mut reply, &errs);
+    let (done, partial) = match dest {
+        Dest::Media { .. } => (SAVED_LINKS_MEDIA, SAVED_LINKS_PARTIAL_MEDIA),
+        Dest::Savf(..) => (SAVED_LINKS, SAVED_LINKS_PARTIAL),
+    };
+    let data = links_end(saved, errs.len(), &dest, now);
     if errs.is_empty() {
-        reply.messages.push(message(SAVED_LINKS, 4, &[(&n, 10)]));
+        reply.messages.push(message(done, COMP, data));
     } else {
-        reply.escape = Some(message(SAVED_LINKS_PARTIAL, 7, &[(&n, 10), (&not, 10)]));
+        reply.escape = Some(message(partial, ESC, data));
     }
-    reply
+    Ok(reply)
+}
+
+/// `CPD3775` for each link not saved or restored, its cause before it.
+fn links_failed(reply: &mut CmdReply, errs: &[(String, String)]) {
+    for (path, e) in errs {
+        reply
+            .messages
+            .push(msgout::diagnostic("CPF9897", &[Field::Char(e, 512)]));
+        let data = Data::new().vary4(path).into_bytes();
+        reply.messages.push(message(LINK_FAILED, DIAG, data));
+    }
+}
+
+/// The data of `SAV`'s and `RST`'s last message: to or from volumes,
+/// or a save file (its path).
+fn links_end(ok: usize, not: usize, dest: &Dest, now: u64) -> Vec<u8> {
+    let d = Data::new().bin4(ok).bin4(not);
+    match dest {
+        Dest::Media {
+            volumes,
+            device,
+            last,
+        } => d
+            .char(volumes, 2475)
+            .dts(now)
+            .char("", 4)
+            .char("", 18)
+            .char(last, 32)
+            .vary4("")
+            .char(device, 10),
+        Dest::Savf(path, _) => d.dts(now).vary4(path),
+    }
+    .into_bytes()
 }
 
 /// `RST` from a save file or a device.
-fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
-    const NAME: &str = "RST";
+#[allow(clippy::too_many_lines)]
+fn rst_ifs(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let dev = values(parms, "DEV");
     let media = dev
         .first()
         .and_then(|d| device_path(d))
         .map(|d| stream::of(parms, &d));
-    let read = match (&media, dev.first().and_then(|d| savf_path(d))) {
-        (Some(m), _) => stream::restore(system, m, Some(IFS_LABEL), OptTarget::Ifs(1)),
-        (None, None) => {
-            return failed(
-                NAME,
-                &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
-            );
+    let (stream, dest) = match (&media, dev.first().and_then(|d| savf_path(d))) {
+        (Some(m), _) => {
+            let s = stream::restore(system, m, Some(IFS_LABEL), OptTarget::Ifs(1))?;
+            let dest = Dest::Media {
+                volumes: m.vols.join(" "),
+                device: m.dev.clone(),
+                last: m.vols.last().cloned().unwrap_or_default(),
+            };
+            (s, dest)
         }
-        (None, Some(savf_name)) => in_store(system, |txn, qsys, names| {
-            let id = find_savf(txn, qsys, names, &savf_name)?;
-            may_read_savf(txn, qsys, id, &savf_name.0)?;
-            savf::read(txn, id).map_err(|e| e.to_string())
-        }),
-    };
-    let stream = match read {
-        Ok(s) => s,
-        Err(e) => return failed(NAME, &e),
+        (None, None) => return Err(no_device(&dev)),
+        (None, Some(savf_name)) => (
+            read_stream(system, &savf_name)?,
+            Dest::Savf(dev.first().cloned().unwrap_or_default(), String::new()),
+        ),
     };
     let objs = ifs_objects(parms);
     let option = parms.text("OPTION");
@@ -2040,10 +2225,7 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
         old_only: option == "*OLD",
         private_auth: parms.text("PVTAUT") == "*YES",
     };
-    let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
-        Ok(r) => r,
-        Err(e) => return failed(NAME, &format!("CPF3743 {e}")),
-    };
+    let mut reader = Reader::new(Cursor::new(stream.as_slice())).map_err(bad_save)?;
     let mut links = Vec::new();
     loop {
         match reader.next_object() {
@@ -2052,7 +2234,7 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
             }
             Ok(Some(_)) => {}
             Ok(None) => break,
-            Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+            Err(e) => return Err(Fail::ended(e)),
         }
     }
     let done = crate::stgsvc::ifs::with_job_ifs(system, |ifs, cx| {
@@ -2060,7 +2242,7 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
         let (mut ok, mut not) = (0usize, Vec::new());
         for o in &links {
             let Ok(d) = ifs::save::Descriptor::decode(o.part(savfmt::Part::IFS_META)) else {
-                not.push("a damaged link".to_string());
+                not.push(("*N".to_string(), "the saved link is damaged".to_string()));
                 continue;
             };
             let pick = objs
@@ -2087,26 +2269,28 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
                     ok += 1;
                     moved.insert(d.path.clone(), to);
                 }
-                Err(e) => not.push(format!("{to}: {e}")),
+                Err(e) => not.push((to, e.to_string())),
             }
         }
         (ok, not)
     });
     let Some((ok, not)) = done else {
-        return failed(NAME, "CPF3700 the integrated file system is not available");
+        return Err(Fail::new(NOT_AVAILABLE, &[]).because("the integrated file system"));
     };
     let mut reply = CmdReply::default();
-    for e in &not {
-        let _ = writeln!(reply.text, "{RESTORED_LINKS_PARTIAL} not restored: {e}");
-    }
-    let (n, k) = (ok.to_string(), not.len().to_string());
-    let _ = writeln!(reply.text, "{n} objects restored, {k} not restored");
+    links_failed(&mut reply, &not);
+    let (done, partial) = match dest {
+        Dest::Media { .. } => (RESTORED_LINKS_MEDIA, RESTORED_LINKS_PARTIAL_MEDIA),
+        Dest::Savf(..) => (RESTORED_LINKS, RESTORED_LINKS_PARTIAL),
+    };
+    let data = links_end(ok, not.len(), &dest, now_unix());
     if not.is_empty() {
-        reply.messages.push(message(RESTORED_LINKS, 4, &[(&n, 10)]));
+        // Every link selected came back.
+        reply.messages.push(message(done, COMP, data));
     } else {
-        reply.escape = Some(message(RESTORED_LINKS_PARTIAL, 7, &[(&n, 10), (&k, 10)]));
+        reply.escape = Some(message(partial, ESC, data));
     }
-    reply
+    Ok(reply)
 }
 
 /// A save's description (name, value) and its rows.
@@ -2117,24 +2301,27 @@ pub type SavfListing = (Vec<(String, String)>, Vec<Vec<String>>);
 /// text, owner, `YES` or `NO` for its data saved). `DSPSAVF`'s panel
 /// and its text form.
 pub fn savf_listing(system: &mut System, file: &str, lib: &str) -> Result<SavfListing, String> {
+    savf_contents(system, file, lib).map_err(|f| f.text())
+}
+
+fn savf_contents(system: &mut System, file: &str, lib: &str) -> Result<SavfListing, Fail> {
     let q = (file.to_ascii_uppercase(), lib.to_ascii_uppercase());
-    let stream = in_store(system, |txn, qsys, names| {
-        let id = find_savf(txn, qsys, names, &q)?;
-        may_read_savf(txn, qsys, id, &q.0)?;
-        savf::read(txn, id).map_err(|e| e.to_string())
-    })?;
+    let stream = savf_bytes(system, &q)?;
     if stream.is_empty() {
         return Ok((vec![("Records".into(), "0".into())], Vec::new()));
     }
-    stream_listing(&stream)
+    listing(&stream)
 }
 
 /// What a save stream holds, from its index alone: [`savf_listing`]'s
 /// description and rows, for a save file or a save on media.
 pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
+    listing(stream).map_err(|f| f.text())
+}
+
+fn listing(stream: &[u8]) -> Result<SavfListing, Fail> {
     let mut cur = Cursor::new(stream);
-    let (head, trailer, index) =
-        savfmt::read_index(&mut cur).map_err(|e| format!("CPF3743 {e}"))?;
+    let (head, trailer, index) = savfmt::read_index(&mut cur).map_err(bad_save)?;
     let parameters = Reader::new(Cursor::new(stream))
         .ok()
         .and_then(|mut r| {
@@ -2180,7 +2367,7 @@ pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
         .filter(|e| e.owner_index == savfmt::object::NO_OWNER)
     {
         let (d, tail) =
-            savfmt::descriptor_at(&mut cur, e.offset).map_err(|x| format!("CPF3743 {x}"))?;
+            savfmt::descriptor_at(&mut cur, e.offset).map_err(bad_save)?;
         let ty = if d.has(savfmt::object::flags::IFS) {
             "*IFS".to_string()
         } else {
@@ -2212,10 +2399,9 @@ pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
 }
 
 /// `DSPSAVF`'s text form.
-fn dspsavf(system: &mut System, parms: &Parms) -> CmdReply {
+fn dspsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let (file, lib) = parms.qual("FILE");
-    match savf_listing(system, &file, &lib_or(&lib)) {
-        Ok((desc, rows)) => {
+    let (desc, rows) = savf_contents(system, &file, &lib_or(&lib))?;
             let mut text = String::new();
             for (k, v) in &desc {
                 let _ = writeln!(text, "{k:<24} {v}");
@@ -2232,13 +2418,10 @@ fn dspsavf(system: &mut System, parms: &Parms) -> CmdReply {
                     r[0], r[1], r[2], r[3], r[4], r[5]
                 );
             }
-            CmdReply {
-                text,
-                ..CmdReply::default()
-            }
-        }
-        Err(e) => failed("DSPSAVF", &e),
-    }
+    Ok(CmdReply {
+        text,
+        ..CmdReply::default()
+    })
 }
 
 #[cfg(test)]
@@ -2280,6 +2463,75 @@ mod tests {
             library_files(&s(&["QS400LPQS00WDS", "QDEVTOOLS"]), &s(&["*IBM"]), &[]),
             s(&["QDEVTOOLS"])
         );
+    }
+}
+
+#[cfg(test)]
+mod reply_tests {
+    use super::*;
+
+    fn obj(name: &str, msgid: Option<&'static str>) -> saverst::ObjResult {
+        saverst::ObjResult {
+            library: "TAPLIB2".into(),
+            name: name.into(),
+            type_code: types::DTAARA,
+            msgid,
+            ..saverst::ObjResult::default()
+        }
+    }
+
+    fn shown(m: &CmdMsg) -> String {
+        crate::stgsvc::hist::message_text(&m.msgid, &m.data)
+    }
+
+    #[test]
+    fn rstlib_completes_with_cpc3703_and_its_data() {
+        let r = RestoreReport {
+            objects: (0..6).map(|i| obj(&format!("DA{i}"), None)).collect(),
+            ..RestoreReport::default()
+        };
+        let none = (String::new(), String::new());
+        let reply = rst_reply(&r, ("TAPLIB", "TAPLIB2"), &none, 0, 1_767_225_600);
+        assert!(reply.text.is_empty() && reply.escape.is_none());
+        let m = reply.messages.last().unwrap();
+        assert_eq!((m.msgid.as_str(), m.kind), ("CPC3703", COMP));
+        assert_eq!(&m.data[..8], &[0, 0, 0, 6, 0, 0, 0, 0]);
+        assert_eq!(ccsid::decode_trimmed(&m.data[8..18]), "TAPLIB");
+        assert_eq!(ccsid::decode_trimmed(&m.data[18..28]), "TAPLIB2");
+        assert_eq!(
+            shown(m),
+            "6 objects saved from library TAPLIB were restored to library TAPLIB2."
+        );
+    }
+
+    #[test]
+    fn a_partial_restore_ends_with_cpf3773_after_its_diagnostics() {
+        let r = RestoreReport {
+            objects: vec![obj("A", None), obj("B", Some(msg::IN_USE))],
+            ..RestoreReport::default()
+        };
+        let savf = ("S71".to_string(), "QGPL".to_string());
+        let reply = rst_reply(&r, ("TAPLIB", "TAPLIB2"), &savf, 0, 0);
+        let d = &reply.messages[0];
+        assert_eq!((d.msgid.as_str(), d.kind), ("CPF3761", DIAG));
+        assert_eq!(shown(d), "*DTAARA B in TAPLIB2 is in use by another job.");
+        let e = reply.escape.unwrap();
+        assert_eq!(e.msgid, "CPF3773");
+        assert_eq!(&e.data[..8], &[0, 0, 0, 1, 0, 0, 0, 1]);
+    }
+
+    #[test]
+    fn a_failure_is_its_escape_with_the_cause_before_it() {
+        let r = Fail::new(SAVF_EMPTY, &[Field::Char("S71", 10), Field::Char("QGPL", 10)])
+            .because("checked")
+            .reply();
+        assert!(r.text.is_empty());
+        assert_eq!(r.messages[0].msgid, "CPF9897");
+        let e = r.escape.unwrap();
+        assert_eq!(e.msgid, "CPF3707");
+        assert_eq!(shown(&e), "Save file S71 in QGPL holds no save.");
+        let r = Fail::from("CPF9814 device X not found".to_string()).reply();
+        assert_eq!(r.escape.unwrap().msgid, "CPF9814");
     }
 }
 
@@ -2445,7 +2697,7 @@ mod auth_tests {
             change_savf(&mut t, qsys, &names, &file, &change(), NOW)
         })
         .unwrap_err();
-        assert!(e.starts_with("CPF2189"), "{e}");
+        assert!(e.text().starts_with("CPF2189"), "{}", e.text());
         let id = find_savf(&mut t, qsys, &names, &file).unwrap();
         assert_eq!(savf::attr(&mut t, id).unwrap().max_records, 0);
         as_job(&secofr, || {
@@ -2535,7 +2787,7 @@ mod auth_tests {
             save_target(&mut t, qsys, &names, &empty, "*NONE")
         })
         .unwrap_err();
-        assert!(e.starts_with("CPF2189"), "{e}");
+        assert!(e.text().starts_with("CPF2189"), "{}", e.text());
         let sf = find_savf(&mut t, qsys, &names, &full).unwrap();
         as_job(&saver, || may_read_savf(&mut t, qsys, sf, "SF")).unwrap();
         grant::set_public(&mut t, sf, Some(Auth::EXCLUDE)).unwrap();
@@ -2572,7 +2824,7 @@ mod auth_tests {
         let sf = find_savf(&mut t, qsys, &names, &full).unwrap();
         grant::set_private(&mut t, qsys, sf, "BOB", Some(auth(&["*USE", "*ADD"]))).unwrap();
         let e = as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*ALL")).unwrap_err();
-        assert!(e.starts_with("CPF2189"), "{e}");
+        assert!(e.text().starts_with("CPF2189"), "{}", e.text());
         grant::set_private(
             &mut t,
             qsys,
@@ -2587,7 +2839,7 @@ mod auth_tests {
         );
         // Allowed, but still not cleared without CLEAR.
         let e = as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*NONE")).unwrap_err();
-        assert!(e.starts_with(SAVF_NOT_EMPTY), "{e}");
+        assert!(e.text().starts_with(SAVF_NOT_EMPTY), "{}", e.text());
     }
 
     #[test]

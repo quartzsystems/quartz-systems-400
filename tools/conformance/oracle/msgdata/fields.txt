@@ -1,5 +1,5 @@
 # QCPFMSG on the primary oracle (V7R1M0), 2026-11-18: ID|SEV|data fields|first-level text
-# From DSPMSGD DETAIL(*FULL) OUTPUT(*PRINT) over the ranges in dspmsgd.s and dspmsgd2.s (table.awk).
+# From DSPMSGD DETAIL(*FULL) OUTPUT(*PRINT) over the ranges in dspmsgd.s, dspmsgd2.s and dspmsgd5.s (table.awk).
 CPA4001|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| End of forms on printer &3. (C I)
 CPA4002|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *BIN 2; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Verify alignment on printer &3. (I G N R E C)
 CPA4003|99|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8; &5 *CHAR 0; &6 *CHAR 0; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 0; &11 *CHAR 0; &12 *CHAR 0; &13 *CHAR 0; &14 *CHAR 0; &15 *CHAR 0; &16 *CHAR 0; &17 *CHAR 0; &18 *CHAR 0; &19 *CHAR 0; &20 *CHAR 0; &21 *CHAR 0; &22 *CHAR 4; &23 *CHAR 10; &24 *CHAR 10; &25 *CHAR 10; &26 *CHAR 10; &27 *CHAR 10; &28 *CHAR 10| Form feed attachment &4 required on printer &3. (C G H)
@@ -147,6 +147,12 @@ CPC3706|0|&1 *CHAR 10; &2 *DTS; &3 *CHAR 22| Private authorities restored for us
 CPC3707|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR 6; &5 *CHAR 10; &6 *BIN 4; &7 *CHAR 32| &1 libraries saved at &3.
 CPC3708|0|&1 *CHAR 10; &2 *DTS; &3 *BIN 4; &4 *CHAR 10; &5 *CHAR 68| No objects saved from library &1. All objects excluded.
 CPC3709|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR 10| &1 libraries restored at &3.
+CPC370A|0|| No libraries or objects saved.
+CPC370B|0|&1 *CHAR 70; &2 *DTS; &3 *CHAR 6; &4 *CHAR 10; &5 *CHAR 32; &6 *CHAR 17| SAVSYSISD command saved file &6.
+CPC370C|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 2475; &4 *DTS; &5 *CHAR 4; &6 *CHAR 18; &7 *CHAR 32; &8 *CHAR *VARY 4; &9 *CHAR 10| &1 objects saved.
+CPC370D|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR *VARY 4| &1 objects saved.
+CPC370E|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 2475; &4 *DTS; &5 *CHAR 4; &6 *CHAR 18; &7 *CHAR 32; &8 *CHAR *VARY 4; &9 *CHAR 10| &1 objects restored.
+CPC370F|0|&1 *BIN 4; &2 *BIN 4; &3 *DTS; &4 *CHAR *VARY 4| &1 objects restored.
 CPC3710|0|&1 *BIN 4; &2 *DTS; &3 *BIN 4| Private authorities restored for &1 user profiles at &2.
 CPC3711|0|| Save or restore of entire system completed successfully.
 CPC3712|0|&1 *CHAR 10; &2 *CHAR 7| &2 &1 restored.
@@ -166,6 +172,25 @@ CPC3721|0|&1 *BIN 4; &2 *CHAR 6; &3 *CHAR 10; &4 *CHAR 82; &5 *CHAR 32| &1 libra
 CPC3722|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 50; &7 *DTS; &8 *CHAR 618; &9 *BIN 4| &1 objects saved from library &3.
 CPC3723|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 50; &7 *DTS; &8 *CHAR 19; &9 *BIN 4; &10 *CHAR 16; &11 *CHAR 82; &12 *CHAR 497; &13 *BIN 4| &1 objects saved from library &3. &9 objects not included.
 CPC3724|0|&1 *CHAR 18; &2 *CHAR 70; &3 *DTS; &4 *CHAR 4; &5 *CHAR 15; &6 *BIN 4; &7 *CHAR 6; &8 *CHAR 10; &9 *CHAR 10; &10 *CHAR 10; &11 *CHAR 82; &12 *CHAR 455; &13 *CHAR 10; &14 *CHAR 32| Objects in save file &9 in &10 saved to media.
+CPC3725|0|&1 *CHAR 10; &2 *CHAR 10| Save file &1 in library &2 cleared.
+CPC3726|20|&1 *CHAR 7; &2 *CHAR 5; &3 *DTS; &4 *CHAR 4| &4 objects restored for &1 option &2.
+CPC3727|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *BIN 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32; &10 *BIN 4| &1 objects restored. &6 objects excluded.
+CPC3728|20|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 70; &4 *DTS; &5 *BIN 2; &6 *CHAR 15; &7 *CHAR 6; &8 *CHAR 10; &9 *CHAR 10| Licensed program &1 option &2 saved.
+CPC3729|20|&1 *CHAR 7; &2 *CHAR 5| Licensed program &1 option &2 deleted.
+CPC3730|0|&1 *CHAR 10; &2 *CHAR 7| Private authorities made available for &2 &1.
+CPC3731|0|&1 *CHAR 10; &2 *CHAR 7| &2 &1 restored.
+CPC3732|0|&1 *CHAR 70; &2 *BIN 4; &3 *BIN 4; &4 *DTS; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 32| All security objects saved.
+CPC3733|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS| All security objects saved to save file &3.
+CPC3734|0|&1 *DTS| System storage saved at &1.
+CPC3735|0|| System storage restored from save storage media.
+CPC3736|0|&1 *CHAR 70; &2 *BIN 4; &3 *BIN 4; &4 *DTS; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 32| All configuration objects saved.
+CPC3737|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS| All configuration objects saved to save file &3.
+CPC3738|0|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *BIN 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32| &1 objects restored.  &6 objects excluded.
+CPC37A0|20|| Work with licensed programs function has completed.
+CPC37A1|20|&1 *CHAR 7| Program temporary fixes loaded for licensed program &1.
+CPC37A2|20|&1 *CHAR 7| Program temporary fixes applied for licensed program &1.
+CPC37A3|0|&1 *CHAR 4; &2 *CHAR 10| Secondary language &1 restored.
+CPC37A9|0|| Initialize System (INZSYS) processing completed successfully.
 CPC6775|0|&1 *CHAR 10; &2 *CHAR 6; &3 *CHAR 10; &4 *BIN 2; &5 *BIN 4; &6 *BIN 4; &7 *BIN 4; &8 *CHAR 6; &9 *CHAR 6| Tape duplication completed successfully.
 CPC6776|0|&1 *CHAR 10; &2 *CHAR 0; &3 *CHAR 0; &4 *CHAR 10| Nonlabeled tape volume initialized.
 CPC6777|0|&1 *CHAR 10; &2 *CHAR 6| All file data deleted from volume &2 on device &1.
@@ -367,6 +392,10 @@ CPD37BE|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Object &1 type *&2 in &3 save l
 CPD37BF|30|| Starting position requires sequence number.
 CPD37C0|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 signature not valid.
 CPD37C1|20|&1 *CHAR 10; &2 *BIN 4| &2 integrity errors found.
+CPF2110|40|&1 *CHAR 10| Library &1 not found.
+CPF2111|40|&1 *CHAR 10| Library &1 already exists.
+CPF2112|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Object &1 in &2 type *&3 already exists.
+CPF2113|40|&1 *CHAR 10| Cannot allocate library &1.
 CPF2189|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Not authorized to object &1 in &2 type *&3.
 CPF2605|40|&1 *CHAR 10| Not able to allocate &1.
 CPF2702|40|&1 *CHAR 10| Device description &1 not found.
@@ -710,6 +739,12 @@ CPF3806|20|&1 *CHAR 10; &2 *CHAR 10| Objects from save file &1 in &2 not restore
 CPF3807|60|&1 *CHAR 10; &2 *CHAR 10| Data decompression error for save file &1 in &2.
 CPF3808|30|&1 *CHAR 17; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 50; &5 *CHAR 7| Save file &2 in &3 not complete.
 CPF3809|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 70; &5 *DTS; &6 *CHAR 10; &7 *CHAR 10| Older version of &1 type &2 in &3 restored.
+CPF380A|0|| This message used internally only by SR.
+CPF380B|40|| Save cannot be completed at this time.
+CPF380C|40|&1 *CHAR 10; &2 *CHAR 10| Library &1 not restored.
+CPF380D|40|| Save or restore of entire system completed unsuccessfully.
+CPF380E|40|&1 *CHAR 10| User profile &1 not restored. Not able to create UID or
+CPF380F|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Cannot save sort table &1 to a release prior to V3R1M0.
 CPF3810|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Save file &1 not restored to library &3.
 CPF3811|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 in &3 not restored.
 CPF3812|40|&1 *CHAR 10; &2 *CHAR 10| Save file &1 in &2 in use.
@@ -766,12 +801,102 @@ CPF3845|20|&1 *BIN 4; &2 *CHAR 10; &3 *DTS; &4 *CHAR 10; &5 *CHAR 22; &6 *CHAR 2
 CPF3846|20|&1 *BIN 4| Security changes occurred for &1 security objects.
 CPF3847|20|&1 *CHAR 10| User profile &1 not found on media.
 CPF3848|20|&1 *BIN 4; &2 *CHAR 10| &1 security or data format changes occurred.
+CPF3849|20|&1 *BIN 4| &1 libraries had security or integrity changes.
 CPF384A|40|&1 *CHAR 32| Volume identifier &1 not valid.
 CPF384B|40|&1 *CHAR 256| Optical file specified not valid.
 CPF384C|40|&1 *BIN 4; &2 *BIN 4| Error occurred during CCSID conversion.
 CPF384D|30|&1 *BIN 2| Save or restore operation not allowed on ASP &1.
 CPF384E|30|| USEOPTBLK(*YES) not valid for CD-ROM premastering.
 CPF384F|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to library &3.
+CPF3850|10|&1 *CHAR 10| Library &1 specified more than once for LIB parameter.
+CPF3851|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Public authority to &2 &1 in &3 revoked.
+CPF3852|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| All authorizations to &2 &1 in library &3 revoked.
+CPF3853|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| All authorizations to &2 &1 in library &3 revoked.
+CPF3854|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPF3855|30|| RSTAUT not allowed at this time.
+CPF3856|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 restored. Object information not updated.
+CPF3857|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10| &2 &1 in &3 restored.  Object information not updated.
+CPF3859|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Could not save object information for &2 &1 in &3.
+CPF385A|30|| Option 5 not valid for specified entry.
+CPF385B|30|&1 *SYP| Object in use.
+CPF385C|30|| Incorrect level of save/restore index.
+CPF385D|40|| Vary off network servers option has conflicting values.
+CPF385E|40|| Cannot run this restore at this time.
+CPF385F|10|| Special authorities of *JOBCTL, *ALLOBJ and *IOSYSCFG required.
+CPF3860|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Save history for &2 &1 in &3 not updated.
+CPF3861|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 restored.  Object information not updated.
+CPF3862|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPF3863|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 not restored to &3.
+CPF3864|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not restored.
+CPF3865|20|&1 *CHAR 10| File &1 not found in OBJ parameter list.
+CPF3866|20|&1 *CHAR 10| &1 already specified on the FILEMBR parameter.
+CPF3867|30|| Contents of FILEMBR parameter not correct.
+CPF3868|30|| FILEMBR specified but OBJTYPE must be *ALL or *FILE.
+CPF3869|10|&1 *CHAR 10| &1 on FILEMBR parameter not processed.
+CPF386A|40|&1 *CHAR 32; &2 *CHAR 256| File not found.
+CPF386B|30|&1 *CHAR *VARY 4| Not able to save &1.
+CPF386C|30|&1 *CHAR *VARY 4| Not able to save &1.
+CPF386D|30|| Prestart job failed.
+CPF386E|10|| Not authorized to option.
+CPF386F|30|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4| Value in input data parameter not valid.
+CPF3870|20|| No files met FILEMBR selection criteria.
+CPF3871|30|&1 *CHAR 10; &2 *DTS; &3 *BIN 4; &4 *CHAR 10; &5 *CHAR 82| No objects saved or restored; &3 objects not included.
+CPF3872|20|&1 *BIN 4; &2 *BIN 4; &3 *CHAR 10; &4 *CHAR 10; &5 *DTS; &6 *BIN 4; &7 *CHAR 10; &8 *CHAR 97; &9 *CHAR 32; &10 *BIN 4; &11 *BIN 4| &1 objects restored. &2 not restored to &4.
+CPF3873|30|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 6| Licensed program &1 option &2 release &4 not saved.
+CPF3874|10|&1 *CHAR 10; &2 *CHAR 20; &3 *CHAR 63; &4 *CHAR 7| System name &1 also known as &2.
+CPF3875|30|&1 *CHAR 7; &2 *CHAR 5| Licensed program &1 option &2 not deleted.
+CPF3876|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved or restored.
+CPF3877|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 7| &2 &1 in &3 not allowed.
+CPF3878|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF3879|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPF387A|30|| No libraries or objects saved.
+CPF387B|30|| System library cannot be saved or restored.
+CPF387C|40|&1 *CHAR 10; &2 *CHAR 10; &3 *BIN 4| Device resources not available.
+CPF387D|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| Device &3 not available.
+CPF387E|40|&1 *CHAR 10; &2 *CHAR 10| Devices not valid in media definition.
+CPF387F|30|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 7| Error in media definition &1.
+CPF3880|30|&1 *CHAR 7; &2 *CHAR 5| No language objects exist.
+CPF3881|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 not restored to &3.
+CPF3882|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 7| &2 &1 in &3 not found.
+CPF3883|30|| S/38 device configuration objects not restored.
+CPF3884|30|&1 *CHAR 7; &2 *CHAR 5| Licensed program &1 option &2 not processed.
+CPF3885|30|&1 *CHAR 10| Device &1 is not a valid device.
+CPF3886|30|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 6| &3 objects for product &1 option &2 release &4 not processed.
+CPF3887|30|| No licensed program information found for target release.
+CPF3888|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 not restored to &3.
+CPF3889|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF388A|30|&1 *CHAR 8; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 8| Format not valid for *MEDDFN.
+CPF388B|30|| Optical file path name not valid.
+CPF388C|30|&1 *CHAR 32; &2 *BIN 4| Optical volume &1 not valid.
+CPF388D|30|| The RSTASP value specified cannot be used with this save media.
+CPF388E|30|| Not authorized to SECDTA(*PWDGRP) parameter.
+CPF388F|40|&1 *BIN 4| Unexpected error code &1 received.
+CPF3890|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| Mail objects for &2 &1 not restored.
+CPF3891|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF3892|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in &3 not saved.
+CPF3893|40|&1 *CHAR 70; &2 *BIN 4; &3 *BIN 4; &4 *DTS; &5 *CHAR 6; &6 *CHAR 10; &7 *CHAR 32| Not all security objects saved.
+CPF3894|30|&1 *CHAR 7| Cancel reply received for message &1.
+CPF3895|40|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 4; &5 *CHAR 4; &6 *CHAR 13; &7 *SPP 64; &8 *SYP; &9 *SYP| Error occurred during processing.
+CPF3896|50|| Tried to save too many office mail objects.
+CPF3897|10|&1 *CHAR 10| Interactive part of profile &1 not saved.
+CPF3898|30|&1 *CHAR 364| File found on media contains media file mismatch.
+CPF3899|30|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 in library &3 not saved.
+CPF389A|30|&1 *CHAR 10| Wrong tape volume loaded on device &1.
+CPF389B|20|| Duplicate device name specified.
+CPF389C|30|&1 *CHAR 2; &2 *CHAR 2| ObjectConnect internal error, function code &1, return code &2.
+CPF389D|30|&1 *CHAR 10; &2 *CHAR 32| Volume is full on &1.
+CPF389E|30|| Optical device not allowed with other devices.
+CPF389F|20|&1 *BIN 4| Trusted certificate list not available.
+CPF38A0|30|| SAVASPDEV value not valid with this save media.
+CPF38A1|30|| Not all digital certificate manager objects restored.
+CPF38A2|30|&1 *CHAR 10| ASP device &1 not correct.
+CPF38A3|30|&1 *CHAR 10; &2 *CHAR 10| File &1 in &2 not valid with ASPDEV.
+CPF38A4|30|&1 *CHAR 10| ASP device &1 not correct.
+CPF38A5|40|&1 *BIN 4| Error on the PATTERN parameter.
+CPF38A6|30|| Only one library allowed with specified parameters.
+CPF38A7|40|| SAVSYSINF completed.  One or more objects not saved.
+CPF38A8|40|| RSTSYSINF completed.  One or more objects not restored.
+CPF38A9|30|&1 *HEX 4; &2 *BIN 4; &3 *BIN 4; &4 *CHAR 10| Spooled file data key not valid.
 CPF3C3C|30|&1 *BIN 4; &2 *CHAR 30| Value for parameter &1 not valid.
 CPF4110|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 7; &7 *CHAR 0; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 9; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Cancel reply received for message &6.
 CPF4111|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 24; &6 *CHAR 6; &7 *BIN 2; &8 *CHAR 0; &9 *CHAR 0; &10 *CHAR 8; &11 *SPP 400; &12 *SPP 400; &13 *SYP; &14 *SYP; &15 *SYP; &16 *SYP; &17 *SYP; &18 *SYP| Labels that are not valid were found on the volume.
@@ -976,6 +1101,17 @@ CPF7083|30|&1 *CHAR 10; &2 *CHAR 10| Journal receiver not created.
 CPF7084|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 7; &7 *HEX 16; &8 *BIN 4; &9 *CHAR *VARY 4| Object of type *&6 could not be journaled.
 CPF7085|30|&1 *CHAR 10; &2 *CHAR 10| Journal &1 in &2 already exists.
 CPF7302|40|&1 *CHAR 10; &2 *CHAR 10| File &1 not created in library &2.
+CPF9801|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 in library &3 not found.
+CPF9802|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Not authorized to object &2 in &3.
+CPF9803|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Cannot allocate object &2 in library &3.
+CPF9804|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 in library &3 damaged.
+CPF9805|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 in library &3 destroyed.
+CPF9806|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Cannot perform function for object &2 in library &3.
+CPF9807|40|| One or more libraries in library list deleted.
+CPF9808|40|| Cannot allocate one or more libraries on library list.
+CPF9809|40|&1 *CHAR 10| Library &1 cannot be accessed.
+CPF9810|40|&1 *CHAR 10| Library &1 not found.
+CPF9811|40|&1 *CHAR 10; &2 *CHAR 10| Program &1 in library &2 not found.
 CPF9812|40|&1 *CHAR 10; &2 *CHAR 10| File &1 in library &2 not found.
 CPF9813|40|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 10| Record format &3 in file &1 not found.
 CPF9814|40|&1 *CHAR 10| Device &1 not found.
@@ -984,6 +1120,7 @@ CPF9816|40|| Floating point format not valid.
 CPF9817|20|&1 *CHAR 10| &1 objects may not be restored into a secondary language library.
 CPF9818|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7; &6 *CHAR 10| Object &2 in library &3 not created.
 CPF9819|40|&1 *CHAR 0; &2 *CHAR 10; &3 *CHAR 10; &4 *CHAR 0; &5 *CHAR 7| Object &2 in library &3 not created.
+CPF981A|40|&1 *SYP| Storage needed is larger than maximum size for object &1.
 CPF9820|40|&1 *CHAR 10| Not authorized to use library &1.
 CPF9821|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to program &1 in library &2.
 CPF9822|40|&1 *CHAR 10; &2 *CHAR 10| Not authorized to file &1 in library &2.
@@ -1046,6 +1183,26 @@ CPFBC03|40|&1 *CHAR 1| Image catalog type &1 not valid.
 CPFBC08|40|&1 *CHAR 10| Image catalog &1 not changed.
 CPFBC10|40|&1 *CHAR 10; &2 *CHAR 10| Image catalog &1 not loaded to device &2.
 CPI320A|10|&1 *CHAR 10; &2 *CHAR 10; &3 *CHAR 10| File level identifiers do not match.
+CPI3701|0|&1 *CHAR 84| &1.
+CPI3702|0|&1 *CHAR 84; &2 *CHAR 10| &1 for &2.
+CPI3703|0|&1 *CHAR 1| QIPLTYPE system value changed during install process.
+CPI3710|0|&1 *CHAR 10| Save-while-active checkpoint processing for library &1 complete.
+CPI3711|10|&1 *CHAR 10| Save-while-active request ended abnormally on library &1.
+CPI3712|0|| Save-while-active checkpoint processing complete.
+CPI3713|0|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4| &2 of &3 libraries processed. &4 objects saved from &1.
+CPI3714|0|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4| &2 of &3 libraries processed. &4 objects restored to &1.
+CPI3715|10|&1 *CHAR 10; &2 *CHAR 7| &1 type *&2 specified more than once.
+CPI3716|0|&1 *CHAR 8; &2 *CHAR 8| Save submitted at &2. Save will start at &1.
+CPI3717|0|&1 *BIN 4| &1 objects saved on media file.
+CPI3718|10|&1 *CHAR *VARY 4| Output data not complete in user space &1.
+CPI3719|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 has authorization list &4.
+CPI371B|10|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| Owner changed for object &2.
+CPI371C|10|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| &3 is the primary group for object &2.
+CPI371D|10|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| Authorization list changed for object &2.
+CPI371E|10|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10; &4 *CHAR 10| Owner changed for object &2.
+CPI371F|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10| Primary group *NONE for restored object &2.
+CPI3720|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10| Authorization list changed for object &2.
+CPI3721|20|&1 *CHAR 7; &2 *CHAR *VARY 4; &3 *CHAR 10| Public authority *EXCLUDE for restored object &2.
 CPI3722|10|| Save-while-active request ended abnormally.
 CPI3723|10|&1 *CCHAR *VARY 4| Objects not saved for directory &1.
 CPI3724|0|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *DTS| &2 of &3 libraries processed. Started &1 at &4.
@@ -1054,6 +1211,12 @@ CPI3726|10|&1 *CCHAR *VARY 4| Save history not updated for objects in &1.
 CPI3727|20|&1 *BIN 2| Cannot save or restore security data using ASP &1.
 CPI3728|0|&1 *CCHAR *VARY 4; &2 *CCHAR *VARY 4| OBJ parameter value changed, &1.
 CPI3729|0|&1 *BIN 4; &2 *BIN 4| Started processing &1 objects, completed &2 objects.
+CPI372A|0|&1 *BIN 4; &2 *BIN 4| Cleanup step &1 of &2.
+CPI372B|0|&1 *BIN 4; &2 *BIN 4; &3 *BIN 4| Cleanup step &1 of &2 is &3% complete.
+CPI372C|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10| &2 &1 created again while it was being restored to library &3.
+CPI372D|0|&1 *CHAR 10; &2 *BIN 4; &3 *BIN 4; &4 *BIN 4| &2 libraries processed. &4 objects restored to &1.
+CPI372E|10|&1 *CHAR 7; &2 *CHAR *VARY 4|   Object created again while being restored, &2.
+CPI372F|10|&1 *CHAR 7; &2 *CHAR *VARY 4|  Altered object restored, &2.
 CPI3731|10|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 10; &8 *CHAR 10; &9 *CHAR 10| *&2 &1 saved with partial transaction.
 CPI3732|10|&1 *CHAR *VARY 4; &2 *CHAR 10| Parent directory created, &1.
 CPI3733|0|&1 *BIN 4| &1 existing spooled files not restored.
@@ -1076,6 +1239,26 @@ CPI374D|10|&1 *CHAR 10| Omit library &1 not included.
 CPI374F|20|&1 *CHAR 7; &2 *CHAR *VARY 4| Signature verification failed for restored object &2.
 CPI379E|20|&1 *CHAR 10; &2 *CHAR 7| &2 &1 was excluded.
 CPI379F|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *BIN 4| &2 &1 in library &3 restored with failed signature verification.
+CPI37A0|0|&1 *CHAR 7| Applying program temporary fixes for &1.
+CPI37A1|0|&1 *CHAR 10| Starting to restore library &1.
+CPI37A2|0|&1 *CHAR 7; &2 *CHAR 5| Starting to restore licensed program &1 option &2.
+CPI37A3|0|&1 *CHAR 10| Starting to restore spelling aid dictionary &1.
+CPI37A4|0|&1 *CHAR 4| Starting to restore secondary language &1.
+CPI37A5|0|&1 *CHAR 10| Library &1 not restored.
+CPI37A7|0|&1 *CHAR 7; &2 *CHAR 5| Licensed program &1 option &2 not restored.
+CPI37A8|0|&1 *CHAR 10| Spelling aid dictionary &1 not restored.
+CPI37A9|0|&1 *CHAR 7| Loading program temporary fixes for &1.
+CPI37B1|40|| Device name specified not valid.
+CPI37B2|0|| Installed programs specified and none on system.
+CPI37B3|0|&1 *CHAR 10| Spelling aid dictionary &1 not deleted.
+CPI37B5|0|&1 *CHAR 7; &2 *CHAR 5| Licensed program &1 option &2 not deleted.
+CPI37B6|40|| Error on tape drive.
+CPI37B7|0|| Program temporary fixes (PTF) processing did not complete.
+CPI37C2|0|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 8; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 6; &8 *CHAR 7; &9 *CHAR 5; &10 *CHAR 4| Saving licensed program &1 option &2.
+CPI37C3|20|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 8; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 6; &8 *CHAR 7; &9 *CHAR 5; &10 *CHAR 4| Licensed program &1 option &2 not saved.
+CPI37C4|0|| Deleting spelling aid dictionaries.
+CPI37C5|0|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 8; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 6; &8 *CHAR 7; &9 *CHAR 5; &10 *CHAR 4| Deleting secondary language &3.
+CPI37C8|0|&1 *CHAR 7; &2 *CHAR 5; &3 *CHAR 4; &4 *CHAR 8; &5 *CHAR 10; &6 *CHAR 10; &7 *CHAR 6; &8 *CHAR 7; &9 *CHAR 5; &10 *CHAR 4| Deleting licensed program &1 option &2.
 CPI380E|20|&1 *CHAR 10; &2 *CHAR 7; &3 *CHAR 10; &4 *CHAR 10; &5 *CHAR 10| &2 &1 in library &3 restored with primary group *NONE.
 CPI380F|10|&1 *CHAR 10; &2 *BIN 4| UID for user profile &1 already exists.
 CPI3810|10|&1 *CHAR 10; &2 *BIN 4| GID for user profile &1 already exists.

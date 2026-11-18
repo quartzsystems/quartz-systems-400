@@ -28,7 +28,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             let lib = parms.name("LIB");
             let text = parms.text("TEXT");
             let out = old(system, &format!("obj crt *LIB QSYS/{lib} {text}"));
-            finish(out, name, "CPC2102", &[(&lib, 10)])
+            let r = plain(out);
+            if r.escape.is_some() {
+                r
+            } else {
+                lib_created(&lib)
+            }
         }
         "DLTLIB" => {
             // The objects go first, as IBM's DLTLIB deletes them.
@@ -254,6 +259,16 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHGPRXCMD" => chgprxcmd(system, parms),
         _ => return None,
     })
+}
+
+/// `CRTLIB`'s completion: `CPC2102` with the library, its ASP (the
+/// system ASP, 1) and its ASP device (none).
+fn lib_created(lib: &str) -> CmdReply {
+    use super::msgout::{Field, completion};
+    completion(
+        "CPC2102",
+        &[Field::Char(lib, 10), Field::Bin2(1), Field::Char("", 10)],
+    )
 }
 
 /// A library name for the old commands: `*LIBL` and `*CURLIB` as they
@@ -796,5 +811,23 @@ fn escape_with(msgid: &str, fields: &[(&str, usize)]) -> CmdReply {
             data: cmd::error::data(fields),
         }),
         ..CmdReply::default()
+    }
+}
+
+#[cfg(test)]
+mod crtlib_tests {
+    use super::*;
+
+    #[test]
+    fn crtlib_completes_with_cpc2102_and_its_data() {
+        let r = lib_created("TAPLIB");
+        assert!(r.text.is_empty() && r.escape.is_none());
+        let m = &r.messages[0];
+        assert_eq!((m.msgid.as_str(), m.kind), ("CPC2102", 4));
+        assert_eq!(m.data.len(), 22);
+        assert_eq!(ccsid::decode_trimmed(&m.data[..10]), "TAPLIB");
+        assert_eq!(&m.data[10..12], &[0, 1]);
+        let shown = crate::stgsvc::hist::message_text(&m.msgid, &m.data);
+        assert!(shown.contains("TAPLIB") && !shown.contains('&'), "{shown}");
     }
 }

@@ -289,11 +289,11 @@ fn line(opt: &str, mbr: &str, allow: &str, c: &Cell) -> String {
     for o in &r.objects {
         let _ = write!(s, " {}={}", o.name, o.msgid.unwrap_or("ok"));
     }
-    for (m, what) in &r.skipped {
-        let what = what.split_whitespace().next().unwrap_or("");
+    for n in &r.skipped {
+        let (m, what) = (n.msgid, n.name.as_str());
         let _ = write!(s, " skip:{what}={m}");
     }
-    let mut notes: Vec<&str> = r.notes.iter().map(|(m, _)| *m).collect();
+    let mut notes: Vec<&str> = r.notes.iter().map(|n| n.msgid).collect();
     notes.sort_unstable();
     notes.dedup();
     if !notes.is_empty() {
@@ -319,7 +319,7 @@ fn msgid(c: &Cell, n: &str) -> Option<&'static str> {
 }
 
 fn has_note(c: &Cell, id: &str) -> bool {
-    c.report.notes.iter().any(|(m, _)| *m == id)
+    c.report.notes.iter().any(|n| n.msgid == id)
 }
 
 /// The oracle's rules, on the cells they settle.
@@ -334,8 +334,8 @@ fn check_rules(opt: RstOption, mbr: MbrOpt, allow: &str, c: &Cell) {
         // 2: *NEW leaves what exists (informational); US1 comes back.
         RstOption::New => {
             assert_eq!(msgid(c, "US1"), None);
-            assert!(r.skipped.iter().all(|(m, _)| *m == msg::SKIP_EXISTS));
-            assert!(r.skipped.iter().any(|(_, w)| w.contains("CUST")));
+            assert!(r.skipped.iter().all(|n| n.msgid == msg::SKIP_EXISTS));
+            assert!(r.skipped.iter().any(|n| n.name.contains("CUST")));
             assert_eq!(c.cust_members, 2);
         }
         // 2: *OLD skips what is missing.
@@ -343,7 +343,7 @@ fn check_rules(opt: RstOption, mbr: MbrOpt, allow: &str, c: &Cell) {
             assert!(
                 r.skipped
                     .iter()
-                    .any(|(m, w)| *m == msg::SKIP_MISSING && w.contains("US1"))
+                    .any(|n| n.msgid == msg::SKIP_MISSING && n.name.contains("US1"))
             );
         }
         _ => {}

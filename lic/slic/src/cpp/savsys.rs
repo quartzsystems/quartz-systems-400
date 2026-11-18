@@ -13,7 +13,6 @@
 //! media, then the user libraries and the IFS from the tape files after
 //! the system save, once the storage service is up.
 
-use std::fmt::Write as _;
 use std::fs::{File, OpenOptions};
 use std::io::{Cursor, Read as _};
 use std::path::{Path, PathBuf};
@@ -31,25 +30,24 @@ use tape::volume::VolumeKind;
 use tape::{TapeTransport, VolumeProvider};
 use wm::obj::devmed::MediaKind;
 
-use super::direct::failed;
-use super::savcmd::{CFG_TYPES, SvcHooks, header_with, values};
+use super::msgout::{self, Field};
+use super::savcmd::{CFG_TYPES, Fail, SvcHooks, header_with, need, values};
 use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::media::drive::{self, TapeJob};
 use crate::stgsvc::media::{self, catalogs, operator, stream};
 
-/// `SAVSYS` completed (Quartz's choice in IBM's range; see
-/// `docs/SVC_OPEN_QUESTIONS.md`).
-const SAVED_SYSTEM: &str = "CPC3703";
+/// `SAVSYS` completed.
+const SAVED_SYSTEM: &str = "CPC3702";
 /// The device is not one `SAVSYS` can write.
 const NO_DEVICE: &str = "CPF9814";
-/// The save failed.
-const NOT_SAVED: &str = "CPF3793";
+/// Subsystems are active: not the restricted state.
+const NOT_RESTRICTED: &str = "CPF3785";
 /// An optical file is in the way.
 const OPT_EXISTS: &str = "OPT1260";
 
 /// Run `SAVSYS`, or `None` for another command.
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
-    (name == "SAVSYS").then(|| savsys(system, parms))
+    (name == "SAVSYS").then(|| savsys(system, parms).unwrap_or_else(Fail::reply))
 }
 
 fn read_slots() -> Result<(Vec<u8>, Vec<u8>), String> {
@@ -281,69 +279,45 @@ fn to_optical(
     ))
 }
 
-fn savsys(system: &mut System, parms: &Parms) -> CmdReply {
-    const NAME: &str = "SAVSYS";
-    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SAVSYS, "save the system") {
-        return failed(NAME, &format!("CPF2189 {e}"));
-    }
+fn savsys(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
+    need(SpecialAuth::SAVSYS, "*SAVSYS", "save the system")?;
     // The restricted state, as on IBM i: `ENDSBS SBS(*ALL)` first.
     if let Some(sbs) = system.sbs.keys().next() {
-        return failed(
-            NAME,
-            &format!(
-                "CPF3785 not all subsystems ended: {sbs} is active; end them with ENDSBS SBS(*ALL)"
-            ),
-        );
+        return Err(Fail::new(NOT_RESTRICTED, &[])
+            .because(format!("Subsystem {sbs} is active; end it with ENDSBS SBS(*ALL).")));
     }
     let dev = values(parms, "DEV").first().cloned().unwrap_or_default();
     if !stream::is_device(&dev) {
-        return failed(NAME, &format!("{NO_DEVICE} device {dev} not found"));
+        return Err(Fail::new(NO_DEVICE, &[Field::Char(&dev, 10)]));
     }
     let m = stream::of(parms, &dev);
-    let t = match drive::target(system, &m.dev) {
-        Ok(t) => t,
-        Err(e) => return failed(NAME, &e),
-    };
+    let t = drive::target(system, &m.dev)?;
     let optical = t.kind == MediaKind::Optical;
     // The volume first: nothing is built for a device that cannot take it.
     let vol = if optical {
         drive::optical(system, &m.dev, m.vols.first().map(String::as_str)).map(|(_, v)| v)
     } else {
         drive::with_tape(system, &m.dev, &m.vols, true, &mut Ident)
-    };
-    let vol = match vol {
-        Ok(v) => v,
-        Err(e) => return failed(NAME, &e),
-    };
+    }?;
     let omit = values(parms, "OMIT");
-    let img = match image(system, &vol, &omit) {
-        Ok(i) => i,
-        Err(e) => return failed(NAME, &format!("{NOT_SAVED} {e}")),
-    };
+    let img = image(system, &vol, &omit).map_err(Fail::ended)?;
     let wrote = if optical {
         to_optical(system, &m, &img, &vol)
     } else {
         to_tape(system, &m, &img, &vol)
     };
-    match wrote {
-        Ok(what) => {
-            let mut text = String::new();
-            for (p, d) in &img.files {
-                let _ = writeln!(text, "{} {} bytes", p.path(), d.len());
-            }
-            let _ = writeln!(text, "{SAVED_SYSTEM} system saved to {}: {what}", m.dev);
-            CmdReply {
-                text,
-                messages: vec![CmdMsg {
-                    msgid: SAVED_SYSTEM.into(),
-                    kind: 4,
-                    data: cmd::error::data(&[(&m.dev, 10)]),
-                }],
-                ..CmdReply::default()
-            }
-        }
-        Err(e) => failed(NAME, &e),
-    }
+    wrote?;
+    let micros = i64::try_from(now_unix()).unwrap_or(0) * 1_000_000;
+    Ok(msgout::completion(
+        SAVED_SYSTEM,
+        &[
+            Field::Char(&vol, 70),
+            Field::Dts(micros),
+            Field::Char("", 6),
+            Field::Char(&m.dev, 10),
+            Field::Char(&vol, 32),
+        ],
+    ))
 }
 
 /// Copy the volume mounted on virtual device `dev` onto `path` (a disk
@@ -564,8 +538,16 @@ fn outcome(r: &CmdReply) -> String {
         .rfind(|l| !l.is_empty())
         .unwrap_or("")
         .to_string();
+    let shown = |m: &CmdMsg| crate::stgsvc::hist::message_text(&m.msgid, &m.data);
     match &r.escape {
+        Some(e) if last.is_empty() => format!("{} {}", e.msgid, shown(e)),
         Some(e) if !last.starts_with(&e.msgid) => format!("{} {last}", e.msgid),
+        None if last.is_empty() => r
+            .messages
+            .iter()
+            .rfind(|m| m.kind == 4)
+            .map(|m| format!("{} {}", m.msgid, shown(m)))
+            .unwrap_or_default(),
         _ => last,
     }
 }
@@ -575,15 +557,10 @@ fn step(system: &mut System, out: &mut Vec<String>, cl: &str) -> bool {
     let r = super::opacmd::run_cl(system, cl);
     let word = cl.split([' ', '(']).next().unwrap_or(cl);
     out.push(format!("{word}: {}", outcome(&r)));
-    // What was not restored, for the operator.
-    for l in r
-        .text
-        .lines()
-        .map(str::trim)
-        .filter(|l| l.starts_with("CPF") || l.contains("not restored:"))
-        .take(20)
-    {
-        out.push(format!("{word}:   {l}"));
+    // What was not restored, for the operator: the diagnostics.
+    for m in r.messages.iter().filter(|m| m.kind == 2).take(20) {
+        let text = crate::stgsvc::hist::message_text(&m.msgid, &m.data);
+        out.push(format!("{word}:   {} {text}", m.msgid));
     }
     r.escape.is_none()
 }
@@ -731,9 +708,26 @@ mod tests {
 
     #[test]
     fn outcome_prefers_the_escape() {
-        let r = super::super::escape("CPF3780", "RSTLIB", "nothing to restore");
-        assert_eq!(outcome(&r), "CPF3780 nothing to restore");
-        let ok = super::super::done("12 objects restored\n".into(), "CPC3703", &[]);
-        assert_eq!(outcome(&ok), "12 objects restored");
+        use super::super::msgout::{self, Field};
+        let r = msgout::escape("CPF3780", &[Field::Char("QS71", 10)], "");
+        let o = outcome(&r);
+        assert!(o.starts_with("CPF3780 ") && o.contains("QS71"), "{o}");
+        let data = saverst::msg::Data::new()
+            .bin4(12)
+            .bin4(0)
+            .char("QS71", 10)
+            .char("QS71B", 10)
+            .dts(0)
+            .into_bytes();
+        let ok = CmdReply {
+            messages: vec![CmdMsg {
+                msgid: "CPC3703".into(),
+                kind: 4,
+                data,
+            }],
+            ..CmdReply::default()
+        };
+        let o = outcome(&ok);
+        assert!(o.starts_with("CPC3703 12 ") && o.contains("QS71B"), "{o}");
     }
 }

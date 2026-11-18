@@ -31,6 +31,7 @@ use tracing::debug;
 use crate::hooks::Hooks;
 use crate::save::ObjResult;
 use crate::select::{ObjSel, wanted};
+use crate::msg::Note;
 use crate::{Error, Result, ids, image, msg, order};
 
 /// `OPTION`.
@@ -202,8 +203,8 @@ impl Default for RestoreOptions {
 pub struct RestoreReport {
     /// Every object considered, restored or not, in stream order.
     pub objects: Vec<ObjResult>,
-    /// Diagnostics: (message, text), e.g. a default owner used.
-    pub notes: Vec<(&'static str, String)>,
+    /// Messages beside the outcomes, e.g. a default owner used.
+    pub notes: Vec<Note>,
     /// Libraries the restore created.
     pub created_libraries: Vec<String>,
     /// Output queues restored with spooled files: library, queue, the
@@ -214,7 +215,7 @@ pub struct RestoreReport {
     /// `CPF3773` (rules 4, 18).
     pub changes: usize,
     /// Objects `OPTION` did not select: informational, not counted.
-    pub skipped: Vec<(&'static str, String)>,
+    pub skipped: Vec<Note>,
     /// `OBJ` names nothing in the save matched (rule 24).
     pub not_found: Vec<String>,
 }
@@ -268,7 +269,7 @@ struct Staged {
     deferred: Vec<(ObjectId, RefEntry)>,
     file: Option<FileDone>,
     journal: Option<ObjectId>,
-    notes: Vec<(&'static str, String)>,
+    notes: Vec<Note>,
     members: u32,
     signature: Option<store::obj::Signature>,
     changes: usize,
@@ -375,7 +376,9 @@ pub fn restore<R: Read>(
             }
             Ok(Outcome::Skipped(m)) => {
                 txn.abort();
-                report.skipped.push((m, d.object_name()));
+                report
+                    .skipped
+                    .push(Note::new(m, &d.object_name(), d.type_code, &result.library));
             }
             Err(Error::Refused { msgid, text }) => {
                 txn.abort();
@@ -399,13 +402,13 @@ pub fn restore<R: Read>(
             || report
                 .skipped
                 .iter()
-                .any(|(_, n)| crate::select::generic(&sel.name, n));
+                .any(|n| crate::select::generic(&sel.name, &n.name));
         if !seen && !report.not_found.contains(&sel.name) {
             report.not_found.push(sel.name.clone());
         }
     }
     let mut txn = store.begin()?;
-    finish(&mut txn, &cx, &st, &mut report)?;
+    finish(&mut txn, &cx, &st)?;
     txn.commit()?;
     Ok(report)
 }
@@ -516,20 +519,13 @@ fn owner_for(
     txn: &mut Txn<'_>,
     cx: &Ctx<'_>,
     d: &ObjectDescriptor,
-    notes: &mut Vec<(&'static str, String)>,
+    notes: &mut Vec<Note>,
 ) -> String {
     let owner = text_of(&d.owner);
     if !owner.is_empty() && cx.hooks.profile_exists(txn, &owner) {
         return owner;
     }
-    notes.push((
-        msg::DEFAULT_OWNER,
-        format!(
-            "{} {}: owner {owner} not found",
-            d.library_name(),
-            d.object_name()
-        ),
-    ));
+    notes.push(note(cx, msg::DEFAULT_OWNER, d));
     cx.opts.default_owner.clone()
 }
 
@@ -589,7 +585,7 @@ fn one(
         .map_err(|m| Error::refused(m, d.object_name()))?;
     let mut notes = Vec::new();
     if let Some(h) = &existing_h {
-        notes = differs(cx.opts.allow, d, h)?;
+        notes = differs(cx, d, h)?;
     }
     let signature = policy(cx, o)?;
     let mut staged = Staged {
@@ -619,18 +615,13 @@ fn signable(type_code: u16) -> bool {
 fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>> {
     let d = &o.descriptor;
     let a = cx.opts.allow_restore;
-    let refuse = |what: &str| {
-        Err(Error::refused(
-            msg::NOT_RESTORED_SYSVAL,
-            format!("{}: {what}", d.object_name()),
-        ))
-    };
+    let refuse = |id| Err(Error::refused(id, d.object_name()));
     if !a.all && signable(d.type_code) {
         if d.state == 0 && !a.system_state {
-            return refuse("system state");
+            return refuse(msg::NOT_RESTORED_SYSTEM_STATE);
         }
         if d.has(savfmt::object::flags::ADOPTS) && !a.adopting {
-            return refuse("adopts authority");
+            return refuse(msg::NOT_RESTORED_ADOPTS);
         }
     }
     let level = cx.opts.verify;
@@ -644,10 +635,8 @@ fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>
     });
     if level >= 2 && signable(d.type_code) {
         let bad = |what: &str| {
-            Err(Error::refused(
-                msg::NOT_RESTORED_SIGNATURE,
-                format!("{}: {what}", d.object_name()),
-            ))
+            debug!("restore: {}: {what}", d.object_name());
+            Err(Error::refused(msg::NOT_RESTORED_SIGNATURE, d.object_name()))
         };
         match sig {
             None if level >= 4 => return bad("not signed"),
@@ -669,44 +658,46 @@ fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>
 
 /// `ALWOBJDIF`: may the saved object replace `h`? The differences it
 /// accepts, as messages (rule 13): the existing owner and group stay.
-fn differs(
-    allow: AllowDiff,
-    d: &ObjectDescriptor,
-    h: &store::obj::ObjectHeader,
-) -> Result<Vec<(&'static str, String)>> {
+fn differs(cx: &Ctx<'_>, d: &ObjectDescriptor, h: &store::obj::ObjectHeader) -> Result<Vec<Note>> {
+    let allow = cx.opts.allow;
     let name = d.object_name();
     let mut out = Vec::new();
     if d.owner != h.owner {
         if !(allow.owner || allow.all) {
             return Err(Error::refused(msg::NOT_RESTORED_OWNER, name));
         }
-        out.push((
-            msg::OWNER_KEPT,
-            format!("{} owns {name}", text_of(&h.owner)),
-        ));
+        out.push(note(cx, msg::OWNER_KEPT, d).values(&text_of(&h.owner), &text_of(&d.owner)));
     }
     if d.primary_group != h.primary_group {
         if !(allow.pgp || allow.all) {
             return Err(Error::refused(msg::NOT_RESTORED_PGP, name));
         }
-        out.push((
-            msg::PGP_KEPT,
-            format!(
-                "{} stays the primary group of {name}",
-                text_of(&h.primary_group)
-            ),
+        out.push(note(cx, msg::PGP_KEPT, d).values(
+            &or_none(&text_of(&h.primary_group)),
+            &or_none(&text_of(&d.primary_group)),
         ));
     }
     if d.autl != h.autl {
         if !(allow.autl || allow.all) {
-            return Err(Error::refused(msg::NOT_RESTORED_OWNER, name));
+            return Err(Error::refused(msg::NOT_RESTORED_AUTL, name));
         }
-        out.push((
-            msg::CHANGES,
-            format!("{name}: the authorization list on the system stays"),
+        out.push(note(cx, msg::AUTL_KEPT, d).values(
+            &or_none(&text_of(&h.autl)),
+            &or_none(&text_of(&d.autl)),
         ));
     }
     Ok(out)
+}
+
+/// `*NONE` for a blank name, as the messages show it.
+fn or_none(s: &str) -> String {
+    if s.is_empty() { "*NONE".into() } else { s.into() }
+}
+
+/// A note about `d` in the library it is restored into.
+fn note(cx: &Ctx<'_>, id: &'static str, d: &ObjectDescriptor) -> Note {
+    let lib = target_name(cx.opts, &d.library_name());
+    Note::new(id, &d.object_name(), d.type_code, &lib)
 }
 
 /// Resolve the references of an object about to be written: in-stream
@@ -858,7 +849,7 @@ fn create(
     lib: ObjectId,
     d: &ObjectDescriptor,
     owner: Option<ObjectId>,
-    notes: &mut Vec<(&'static str, String)>,
+    notes: &mut Vec<Note>,
 ) -> Result<ObjectId> {
     let params = ops::CreateParams {
         library: lib,
@@ -886,7 +877,7 @@ fn set_header(
     d: &ObjectDescriptor,
     auths: &[savfmt::AuthorityEntry],
     fresh: bool,
-    notes: &mut Vec<(&'static str, String)>,
+    notes: &mut Vec<Note>,
 ) -> Result<()> {
     let (page, mut h) = ops::read_header(txn, id)?;
     h.attribute = d.attribute;
@@ -936,10 +927,9 @@ fn set_header(
             h.autl = d.autl;
         } else {
             h.autl = [0x40; 10];
-            notes.push((
-                msg::NOT_RESTORED_OWNER,
-                format!("{}: authorization list {autl} not found", d.object_name()),
-            ));
+            // Not secured by the missing list: no public access either.
+            h.public_authority = Authority::EXCLUDE;
+            notes.push(note(cx, msg::AUTL_MISSING, d).values(&autl, ""));
         }
         h.auth_gen += 1;
     }
@@ -1027,10 +1017,7 @@ fn restore_file(
         let unresolved = patch_refs(txn, cx, &HashMap::new(), fid, &mut parts, staged)?;
         if unresolved.iter().any(|r| r.type_code == order::JRN) {
             staged.changes += 1;
-            staged.notes.push((
-                msg::JOURNAL_MISSING,
-                format!("{}: its journal was not found", d.object_name()),
-            ));
+            staged.notes.push(note(cx, msg::JOURNAL_MISSING, d));
         }
         image::import(txn, fid, &parts)?;
         set_header(txn, cx, fid, d, &o.authorities, true, &mut staged.notes)?;
@@ -1084,10 +1071,9 @@ fn restore_file(
         ops::rename(txn, fid, new, cx.opts.now)?;
         staged.map.retain(|(o, _)| *o != d.original_id);
         staged.changes += 1;
-        staged.notes.push((
-            msg::FILE_RENAMED,
-            format!("{} renamed to {new}", d.object_name()),
-        ));
+        staged
+            .notes
+            .push(note(cx, msg::FILE_RENAMED, d).values(&new.to_string(), ""));
         return restore_file(txn, cx, lib, o, saved_members, None, staged);
     }
     if format_differs || (created_differs && !(allow.filelvl || allow.all)) {
@@ -1168,7 +1154,7 @@ fn restore_file(
 
 /// The last pass: references to objects restored later in the stream,
 /// then the links between files, members and journals.
-fn finish(txn: &mut Txn<'_>, cx: &Ctx<'_>, st: &State, report: &mut RestoreReport) -> Result<()> {
+fn finish(txn: &mut Txn<'_>, cx: &Ctx<'_>, st: &State) -> Result<()> {
     for (obj, r) in &st.deferred {
         if let Some(new) = st.map.get(&r.original_id) {
             image::patch_stored(txn, *obj, r, *new)?;
@@ -1224,10 +1210,6 @@ fn finish(txn: &mut Txn<'_>, cx: &Ctx<'_>, st: &State, report: &mut RestoreRepor
         for o in jr.objects(txn)? {
             if ops::read_header(txn, o.object).is_err() {
                 jr.remove_object(txn, o.object, "")?;
-                report.notes.push((
-                    msg::JOURNAL_MISSING,
-                    format!("{}: a journaled object is gone", jr.name()),
-                ));
             }
         }
     }

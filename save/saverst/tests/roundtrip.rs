@@ -379,7 +379,7 @@ fn option_and_mbropt_over_existing_objects() {
     );
     assert_eq!(r.restored(), 0);
     assert_eq!(r.not_restored(), 0);
-    assert!(r.skipped.iter().all(|(m, _)| *m == msg::SKIP_EXISTS));
+    assert!(r.skipped.iter().all(|n| n.msgid == msg::SKIP_EXISTS));
     assert_eq!(r.skipped.len(), 7);
 
     // *ALL with *MATCH: the saved contents come back, same IDs. The
@@ -518,7 +518,7 @@ fn missing_owner_goes_to_the_default_owner() {
     let (bytes, _) = save(&mut sys, 1, &SaveOptions::default());
     let r = rst(&mut sys, &bytes, &NoProfiles, &opts_to("QSTEST3"));
     assert_eq!(r.not_restored(), 0, "{:?}", r.objects);
-    assert!(r.notes.iter().any(|(m, _)| *m == msg::DEFAULT_OWNER));
+    assert!(r.notes.iter().any(|n| n.msgid == msg::DEFAULT_OWNER));
     let mut t = sys.store.begin().unwrap();
     let da = find(&mut t, sys.qsys, "QSTEST3", "DA1", types::DTAARA).unwrap();
     let (_, h) = ops::read_header(&mut t, da).unwrap();
@@ -598,7 +598,7 @@ fn owners_public_authority_and_format_changes() {
     );
     assert_eq!(r.restored(), 1);
     assert_eq!(r.changes, 1);
-    assert!(r.notes.iter().any(|(m, _)| *m == msg::OWNER_KEPT));
+    assert!(r.notes.iter().any(|n| n.msgid == msg::OWNER_KEPT));
     assert_eq!(r.completion(), msg::RESTORED_LIB_PARTIAL);
     let mut t = sys.store.begin().unwrap();
     let (_, h) = ops::read_header(&mut t, da).unwrap();
