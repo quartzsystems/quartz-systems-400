@@ -305,7 +305,7 @@ impl<'a> Txn<'a> {
             // commit, so the change needs no log entry of its own.
             p.body_mut()[offset..offset + bytes.len()].copy_from_slice(bytes);
             let t = p.trailer();
-            p.label(
+            p.seal(
                 PageType::from_u16(t.page_type).unwrap_or(PageType::ObjectData),
                 t.owner,
                 self.id,
@@ -447,10 +447,7 @@ impl<'a> Txn<'a> {
             images,
             patches,
         };
-        let mut fresh: Vec<(PageNo, Page)> = self.dirty.drain().collect();
-        for (_, p) in &mut fresh {
-            p.reseal();
-        }
+        let fresh: Vec<(PageNo, Page)> = self.dirty.drain().collect();
         self.store.commit(&record, fresh, sealed)
     }
 
@@ -522,8 +519,7 @@ impl Pager for Txn<'_> {
         self.patched.remove(&pno);
         self.touched.insert(owner);
         if self.owned.contains(&pno) {
-            // Sealed once, at commit.
-            page.label(kind, owner, self.id);
+            page.seal(kind, owner, self.id);
             self.dirty.insert(pno, page.clone());
             return Ok(());
         }

@@ -156,26 +156,6 @@ impl Page {
         *self.sound.get_mut() = true;
     }
 
-    /// Write the trailer without its checksum: a page a transaction
-    /// keeps in memory and may change again, trusted as it is. It must
-    /// be [`Self::reseal`]ed before it reaches a unit.
-    pub fn label(&mut self, page_type: PageType, owner: ObjectId, generation: u64) {
-        Trailer {
-            page_type: page_type.as_u16(),
-            flags: 0,
-            owner,
-            generation,
-        }
-        .write_fields(&mut Arc::make_mut(&mut self.buf)[..]);
-        *self.sound.get_mut() = true;
-    }
-
-    /// Set the checksum to the page as it is, trailer included.
-    pub fn reseal(&mut self) {
-        trailer::set_checksum(&mut Arc::make_mut(&mut self.buf)[..]);
-        *self.sound.get_mut() = true;
-    }
-
     /// The trailer as stored, without verifying anything.
     #[must_use]
     pub fn trailer(&self) -> Trailer {
