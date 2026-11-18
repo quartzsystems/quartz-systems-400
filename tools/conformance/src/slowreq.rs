@@ -97,7 +97,6 @@ impl Suite {
             Duration::from_secs(120),
         )?;
         let dev = s.command("svc.ifs stat /tmp/slowreq.txt", Duration::from_secs(120))?;
-        let ifs_held = at.elapsed();
         if dev.contains("not found") || dev.contains("CPF") {
             return Err(format!("the IFS file after the stall: {put} / {dev}"));
         }
@@ -110,6 +109,17 @@ impl Suite {
             }
             std::thread::sleep(Duration::from_secs(3));
             let _ = s.command("svc.ifs df", CMD)?;
+        }
+        let ifs_held = at.elapsed();
+        let took = s.log[dev_from..]
+            .lines()
+            .find_map(|l| l.split("IFS device ").nth(1))
+            .unwrap_or_default()
+            .to_string();
+        if !s.log[dev_from..].contains("fault point: IFSDEV waits")
+            || ifs_held < Duration::from_secs(44)
+        {
+            return Err(format!("the IFS device was not held: {ifs_held:?}: {took}"));
         }
         if let Some(e) = lost(s, from) {
             return Err(e);
@@ -127,9 +137,10 @@ impl Suite {
         }
         let _ = s.command("svc.ifs rm /tmp/slowreq.txt", CMD);
         Ok(format!(
-            "a command held {:.1}s and the IFS device {:.1}s: {} jobs kept the service, none ended",
+            "a command held {:.1}s, the IFS device {:.1}s ({}): {} jobs kept the service, none ended",
             held.as_secs_f64(),
             ifs_held.as_secs_f64(),
+            took.trim(),
             before.len()
         ))
     }
