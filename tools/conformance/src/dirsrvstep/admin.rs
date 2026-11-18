@@ -90,7 +90,7 @@ impl Suite {
             ),
             (
                 format!("{Q}/indexes"),
-                vec!["Indexes of QUSRDIR", "objectclass"],
+                vec!["Indexes of QUSRDIR", "objectClass"],
             ),
             (format!("{Q}/schema"), vec!["Schema of QUSRDIR"]),
             (
