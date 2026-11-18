@@ -315,16 +315,13 @@ impl Allocator {
         if self.bitmaps[unit].free() == 0 {
             return Err(StoreError::NoSpace { asp: 0 });
         }
-        let found = match self.fit_from_low(unit, pages) {
-            Some(lba) => Some(lba),
-            None => {
-                let lba = self.bitmaps[unit].first_fit(pages);
-                if let Some(l) = lba.filter(|_| pages == 1) {
-                    self.low[unit] = l;
-                }
-                lba
+        let found = self.fit_from_low(unit, pages).or_else(|| {
+            let lba = self.bitmaps[unit].first_fit(pages);
+            if let Some(l) = lba.filter(|_| pages == 1) {
+                self.low[unit] = l;
             }
-        };
+            lba
+        });
         let bm = &mut self.bitmaps[unit];
         let (lba, len) = match found {
             Some(lba) => (lba, pages),
