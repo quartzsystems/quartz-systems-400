@@ -4,8 +4,11 @@
 
 //! The connection threads: a pool of workers, each with its own link to
 //! the service made once and kept across the connections it serves, so
-//! a new connection costs neither a thread nor a link. A connection goes
-//! to an idle worker when there is one, else to a new worker; workers
+//! a new connection costs neither a thread nor a link. Connections go to
+//! one queue the idle workers take from; a new worker starts when more
+//! connections wait than workers are idle, up to [`MAX`] (beyond it a
+//! connection waits for a worker to finish, so a burst of connections
+//! cannot use up the job's or the service's descriptors). Workers
 //! beyond [`KEEP`] that stay idle for [`IDLE_EXIT`] end. A worker whose
 //! link broke makes a new one for its next connection. Identity is the
 //! session's (`open` per connection, closed at its end), never the
@@ -25,6 +28,8 @@ use super::{Links, reply};
 
 /// Workers kept idle (and made at the start, their links opened).
 pub const KEEP: usize = 4;
+/// The most workers, so the most connections served at once.
+pub const MAX: usize = 128;
 /// How long a worker beyond [`KEEP`] waits for a connection before it ends.
 pub const IDLE_EXIT: Duration = Duration::from_secs(60);
 /// How often a waiting worker looks at the end.
@@ -33,15 +38,23 @@ const TICK: Duration = Duration::from_millis(200);
 /// A connection and what it is given.
 pub type Work = (TcpStream, Setup);
 
+/// What the workers share.
+struct Shared {
+    rx: Mutex<mpsc::Receiver<Work>>,
+    /// Workers waiting for a connection.
+    idle: AtomicUsize,
+    /// Connections queued and not yet taken.
+    pending: AtomicUsize,
+    /// Workers running.
+    workers: AtomicUsize,
+    stop: Arc<AtomicBool>,
+}
+
 /// The workers.
 pub struct Pool<L: Links> {
     links: Arc<L>,
-    stop: Arc<AtomicBool>,
-    /// Workers waiting for a connection, less the connections queued
-    /// for them.
-    idle: Arc<AtomicUsize>,
+    shared: Arc<Shared>,
     tx: mpsc::Sender<Work>,
-    rx: Arc<Mutex<mpsc::Receiver<Work>>>,
     threads: Vec<JoinHandle<()>>,
 }
 
@@ -51,74 +64,79 @@ impl<L: Links> Pool<L> {
         let (tx, rx) = mpsc::channel();
         let mut p = Self {
             links,
-            stop,
-            idle: Arc::new(AtomicUsize::new(0)),
+            shared: Arc::new(Shared {
+                rx: Mutex::new(rx),
+                idle: AtomicUsize::new(0),
+                pending: AtomicUsize::new(0),
+                workers: AtomicUsize::new(0),
+                stop,
+            }),
             tx,
-            rx: Arc::new(Mutex::new(rx)),
             threads: Vec::new(),
         };
         for _ in 0..KEEP {
-            p.idle.fetch_add(1, Ordering::SeqCst);
-            if !p.spawn(None) {
-                p.idle.fetch_sub(1, Ordering::SeqCst);
-            }
+            p.spawn();
         }
         p
     }
 
-    /// Serve `w` on an idle worker, or a new one.
+    /// Workers running now.
+    #[must_use]
+    pub fn workers(&self) -> usize {
+        self.shared.workers.load(Ordering::SeqCst)
+    }
+
+    /// Queue `w` for a worker, starting one when none is free.
     pub fn serve(&mut self, w: Work) {
         self.threads.retain(|t| !t.is_finished());
-        let reserved = self
-            .idle
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
-            .is_ok();
-        if reserved {
-            if let Err(mpsc::SendError(w)) = self.tx.send(w) {
-                refuse(w.0);
-            }
+        let s = &self.shared;
+        s.pending.fetch_add(1, Ordering::SeqCst);
+        if let Err(mpsc::SendError(w)) = self.tx.send(w) {
+            s.pending.fetch_sub(1, Ordering::SeqCst);
+            refuse(w.0);
             return;
         }
-        let first = Arc::new(Mutex::new(Some(w)));
-        if !self.spawn(Some(Arc::clone(&first))) {
-            let w = first.lock().unwrap_or_else(PoisonError::into_inner).take();
-            if let Some(w) = w {
-                tracing::warn!("LDAP: no thread for a connection");
-                refuse(w.0);
-            }
+        if s.pending.load(Ordering::SeqCst) > s.idle.load(Ordering::SeqCst)
+            && s.workers.load(Ordering::SeqCst) < MAX
+        {
+            self.spawn();
         }
     }
 
-    /// Start a worker, serving `first` before it waits; whether it started.
-    fn spawn(&mut self, first: Option<Arc<Mutex<Option<Work>>>>) -> bool {
+    /// Start a worker.
+    fn spawn(&mut self) {
         let links = Arc::clone(&self.links);
-        let rx = Arc::clone(&self.rx);
-        let idle = Arc::clone(&self.idle);
-        let stop = Arc::clone(&self.stop);
+        let shared = Arc::clone(&self.shared);
+        shared.workers.fetch_add(1, Ordering::SeqCst);
         let t = std::thread::Builder::new()
             .name("ldap-conn".into())
             .spawn(move || {
-                let first =
-                    first.and_then(|f| f.lock().unwrap_or_else(PoisonError::into_inner).take());
-                worker(&*links, first, &rx, &idle, &stop);
+                worker(&*links, &shared);
+                shared.workers.fetch_sub(1, Ordering::SeqCst);
             });
         match t {
-            Ok(t) => {
-                self.threads.push(t);
-                true
-            }
+            Ok(t) => self.threads.push(t),
             Err(e) => {
+                self.shared.workers.fetch_sub(1, Ordering::SeqCst);
                 tracing::warn!("LDAP: no thread: {e}");
-                false
             }
         }
     }
 
-    /// Wait for every worker (the stop flag is set).
+    /// Wait for every worker (the stop flag is set); connections still
+    /// queued get the notice.
     pub fn join(self) {
         drop(self.tx);
         for t in self.threads {
             let _ = t.join();
+        }
+        let rx = self
+            .shared
+            .rx
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        while let Ok((s, _)) = rx.try_recv() {
+            refuse(s);
         }
     }
 }
@@ -132,38 +150,17 @@ fn refuse(mut s: TcpStream) {
     ));
 }
 
-fn worker<L: Links>(
-    links: &L,
-    first: Option<Work>,
-    rx: &Mutex<mpsc::Receiver<Work>>,
-    idle: &AtomicUsize,
-    stop: &AtomicBool,
-) {
-    // A worker made ahead opens its link at once; one made for a
-    // connection when it serves it.
-    let mut svc = if first.is_none() {
-        links.link().ok()
-    } else {
-        None
-    };
-    let mut next = first;
-    loop {
-        let w = match next.take() {
-            Some(w) => w,
-            None => match wait(rx, idle, stop) {
-                Some(w) => w,
-                None => return,
-            },
-        };
-        let (s, setup) = w;
-        let _ = s.set_nonblocking(false);
+fn worker<L: Links>(links: &L, s: &Shared) {
+    let mut svc = links.link().ok();
+    while let Some((stream, setup)) = wait(s) {
+        let _ = stream.set_nonblocking(false);
         let link = match svc.take() {
             Some(l) => Ok(l),
             None => links.link(),
         };
         match link {
             Ok(l) => {
-                let (end, l) = Connection::serve_with(l, s, setup);
+                let (end, l) = Connection::serve_with(l, stream, setup);
                 tracing::debug!("LDAP connection ended: {end:?}");
                 if end != End::Broken {
                     svc = Some(l);
@@ -171,40 +168,37 @@ fn worker<L: Links>(
             }
             Err(e) => {
                 tracing::warn!("LDAP: no link to the storage service: {e}");
-                refuse(s);
+                refuse(stream);
             }
         }
-        if stop.load(Ordering::Relaxed) {
-            return;
-        }
-        idle.fetch_add(1, Ordering::SeqCst);
     }
 }
 
-/// The next connection for an idle worker (counted in `idle`); `None`
-/// when it is to end, having taken itself out of the count.
-fn wait(rx: &Mutex<mpsc::Receiver<Work>>, idle: &AtomicUsize, stop: &AtomicBool) -> Option<Work> {
+/// The next connection; `None` when the worker is to end: the job ends,
+/// or it stayed idle past [`IDLE_EXIT`] with [`KEEP`] others idle.
+fn wait(s: &Shared) -> Option<Work> {
+    s.idle.fetch_add(1, Ordering::SeqCst);
     let since = Instant::now();
-    loop {
-        if stop.load(Ordering::Relaxed) {
-            return None;
+    let got = loop {
+        if s.stop.load(Ordering::Relaxed) {
+            break None;
         }
-        let got = rx
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .recv_timeout(TICK);
-        match got {
-            Ok(w) => return Some(w),
-            Err(mpsc::RecvTimeoutError::Disconnected) => return None,
+        let r =
+            s.rx.lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .recv_timeout(TICK);
+        match r {
+            Ok(w) => {
+                s.pending.fetch_sub(1, Ordering::SeqCst);
+                break Some(w);
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => break None,
             Err(mpsc::RecvTimeoutError::Timeout) => {}
         }
-        if since.elapsed() >= IDLE_EXIT {
-            let left = idle.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| {
-                (n > KEEP).then(|| n - 1)
-            });
-            if left.is_ok() {
-                return None;
-            }
+        if since.elapsed() >= IDLE_EXIT && s.idle.load(Ordering::SeqCst) > KEEP {
+            break None;
         }
-    }
+    };
+    s.idle.fetch_sub(1, Ordering::SeqCst);
+    got
 }

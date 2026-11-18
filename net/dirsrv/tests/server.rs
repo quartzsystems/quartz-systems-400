@@ -735,6 +735,25 @@ fn workers_keep_their_links_across_connections() {
 }
 
 #[test]
+fn a_burst_of_connections_is_served_by_at_most_max_workers() {
+    let r = Arc::new(start(Setup::default()));
+    let threads: Vec<_> = (0..300)
+        .map(|_| {
+            let r = Arc::clone(&r);
+            std::thread::spawn(move || {
+                let c = r.admin();
+                c.unbind().unwrap();
+            })
+        })
+        .collect();
+    for t in threads {
+        t.join().unwrap();
+    }
+    let made = r.links.load(Ordering::SeqCst);
+    assert!(made <= 1 + dirsrv::server::pool::MAX, "{made} links");
+}
+
+#[test]
 fn the_end_sends_a_notice() {
     let mut r = start(Setup::default());
     let mut c = r.admin();
