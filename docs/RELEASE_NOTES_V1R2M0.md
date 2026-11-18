@@ -326,6 +326,14 @@ behind two more.
 - A tape never written was a device error (`CPF6708`, the drive's BLANK
   CHECK as `EIO`): `DSPTAP` now shows `*NL`, a save is refused with
   `CPF6772` and `INZTAP CHECK(*YES)` initializes it (`MEDIA.md`).
+- The save, restore, tape, optical and image catalog commands sent words
+  of their own beside a message identifier; each now sends its catalogue
+  entry with IBM's identifier for the meaning and IBM's data layout, as
+  captured from V7R1M0 (`tools/conformance/oracle/msgdata`). Programs
+  that monitored the old identifiers must change: the next tape volume
+  is `CPA4088`/`CPA4089` (was `CPA4075`), a write over an active file
+  `CPA6754` and `INZTAP CHECK(*YES)` on one `CPF6754` (was `CPA4036`);
+  the rest are listed in `MEDIA.md` and `SAVE_FORMAT.md`.
 
 ## Deliberately not in V1R2M0
 
