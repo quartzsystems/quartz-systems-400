@@ -66,15 +66,17 @@ impl Trailer {
 
     /// Encode into a whole page and set its checksum.
     pub fn write(&self, page: &mut [u8]) {
-        {
+        self.write_fields(page);
+        set_checksum(page);
+    }
+
+    /// Encode into a whole page, the checksum left as it was.
+    pub fn write_fields(&self, page: &mut [u8]) {
             let t = &mut page[BODY_SIZE..PAGE_SIZE];
             put_u16(t, OFF_TYPE, self.page_type);
             put_u16(t, OFF_FLAGS, self.flags);
             t[OFF_OWNER..OFF_OWNER + 16].copy_from_slice(&self.owner.to_bytes());
             put_u64(t, OFF_GENERATION, self.generation);
-        }
-        let crc = checksum(page);
-        put_u32(&mut page[BODY_SIZE..], OFF_CRC, crc);
     }
 }
 
@@ -85,6 +87,12 @@ pub fn checksum(page: &[u8]) -> u32 {
     d.update(&page[..BODY_SIZE]);
     d.update(&page[BODY_SIZE + OFF_CRC + 4..PAGE_SIZE]);
     d.finalize()
+}
+
+/// Set the checksum of a whole page to its contents.
+pub fn set_checksum(page: &mut [u8]) {
+    let crc = checksum(page);
+    put_u32(&mut page[BODY_SIZE..], OFF_CRC, crc);
 }
 
 /// The CRC stored in the trailer.
