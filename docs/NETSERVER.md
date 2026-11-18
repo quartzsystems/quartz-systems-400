@@ -1331,7 +1331,27 @@ anything only if IBM checks the length first), and IBM's checks of
   212.8 MB/s in (5.05 to 7.32 s; 100.5 MB/s once under memory pressure)
   and 88.7 to 114.2 MB/s out (9.40 to 12.11 s) over eight runs of step
   168 under QEMU with KVM on the build PC (WSL2, 4 jobs, a 1 GiB guest),
-  through a port forward (2026-11-10).
+  through a port forward (2026-11-10). On 2026-11-17, with other
+  guests' builds sharing the host's disk, the same step gave 122.0 MB/s
+  in and 89.1 MB/s out before the request changes of section 6
+  ("Backend"), 53.1 and 51.3 MB/s after them with two slow writes (5.8
+  and 6.4 s: the guest's page cache writeback, 11 MB free) and a 13.6 s
+  device flush, and once failed at the client's 30 s timeout behind a
+  34.9 s device flush (`qsstg: IFS device flush took ...`). READ and
+  WRITE are the same one request per MiB as before; those figures are
+  the host's disk, not the server's.
+- Step 168 also runs `smbtest`'s `small-files` (200 files of 4 KiB made,
+  their directory listed five times, each opened for its size, each
+  deleted; one request at a time): 134.0, 205.6, 89.8 and 142.9 ms per
+  operation before the request changes, 133.6, 199.2, 89.0 and 137.0 ms
+  after. About 40 ms of every SMB request there is the client's: the
+  `smb` crate sends a message's 4-byte transport header and its body in
+  two writes without `TCP_NODELAY`, so the body waits for the header's
+  delayed acknowledgment (Nagle). Windows, Samba and the kernel client
+  send each message in one write. The service requests the changes
+  saved (a listing of 200 files: 406 before, 2 after) cost about 25 µs
+  each in the guest, so they show as 6 ms per listing here; what they
+  free is the storage service's one thread, which every job shares.
 - The 1 GB copy's stall (a request waiting 30 s or more in 2 of 3 runs
   before): the storage service's IFS read waited on a page the ublk
   queue had to read, and the queue was waiting on a flush. Under QEMU a
@@ -1411,6 +1431,7 @@ any scenario failed. Every writing scenario works under a run directory
 | `watch-dir` (only with `--watch DIR`, and alone) | a watch on `DIR` (relative to the share) until one entry is added and then removed by anyone (QEMU 167: members added and removed from the console) |
 | `large-io` | several requests at the negotiated maximum read and write sizes, checked |
 | `copy` | `--copy-bytes` (64 MiB by default) written and read with 8 requests of up to 1 MiB in flight; `in:` and `out:` in MB/s (10^6 bytes) |
+| `small-files` | 200 files of 4 KiB made (CREATE, WRITE, CLOSE), their directory listed five times, each opened for its size and closed, each deleted, one request at a time; milliseconds per operation of each (`make:`, `list:`, `open:`, `delete:`) |
 
 What smb 0.12.1 cannot express, printed as `skip`: byte-range locks
 (`lock-conflict`: no LOCK request), leases and oplocks (`lease-break`,
@@ -1472,8 +1493,9 @@ every two seconds until the client has heard one come and go: database
 changes reaching change notify);
 168 `QSGROWIFS SIZE(1536)` (the guest's IFS volume starts at 1 GiB and
 grows a step at a time as it fills: without room first a 1 GiB write meets
-`STATUS_DISK_FULL`), then `--only copy,cleanup --copy-bytes 1G`
-(`QS400_NETSVR_COPY` sizes it otherwise), MB/s in and out and the
+`STATUS_DISK_FULL`), then `--only copy,small-files,cleanup --copy-bytes 1G`
+(`QS400_NETSVR_COPY` sizes it otherwise), MB/s in and out, the small
+files' milliseconds per operation and the
 service's slow requests in the step's detail (168 makes the user and
 share itself when 167 has not, so `--only 166,168` runs); 169 port 445 in
 `NETSTAT *CNN` and in `QSYS2.NETSTAT_INFO`, a maximum of one user through
@@ -1605,7 +1627,7 @@ oracle change the rules forbid.
 | Reconnect routing and durable handles across a dropped connection | netserver routed-reconnect tests; QEMU 167 | built |
 | Every `smbtest` scenario against the guest (one ClientGuid per run, as Windows) | QEMU 167: 23 scenarios | built |
 | Start, end, end session, maximum users, `NETSTAT_INFO` | QEMU 169 | built |
-| 1 GB copy | QEMU 168: 146.7-212.8 MB/s in, 88.7-114.6 MB/s out | built |
+| 1 GB copy | QEMU 168: 146.7-212.8 MB/s in, 88.7-114.6 MB/s out (2026-11-10; lower when the host's disk is busy, section 11) | built |
 | Print shares, spoolss point and print, `print$` | `cargo test -p netserver --test shares`; library `qs400_spoolss` | built; Windows 11 `NEEDS-CODY` |
 | Navigator NetServer pages, QAP v10 NetServer service | `cargo test -p navigator --test netsvr`, `-p qapd --test netserver`, `-p qap-proto --test version10` | built |
 | Fuzz targets: NetBIOS session service, the library's parsers, spoolss | `tools/fuzz` targets `nbss`, `smb`; `smb_server::fuzzing::spoolss_request` | built |
