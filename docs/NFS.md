@@ -1157,7 +1157,10 @@ path), `v4_nfsroot` (`NFSROOT=`, default `/`), `v4_root` (`ROOT`),
   service remembers (65536) and then a walk of its file system that
   remembers what it passes (`docs/IFS.md`, "File IDs"); the walk reads
 directories only (an entry's number and type come with its listing),
-never an object on its own. `/QSYS.LIB`
+never an object on its own. Finding a file with no walk at all needs xfs
+parent pointers (Linux 6.10's `parent` feature, set at `mkfs`, with
+`XFS_IOC_GETPARENTS_BY_HANDLE`): a change of the volume's format that
+volumes made before cannot take, left for a later release. `/QSYS.LIB`
   resolves by the hashes of library, object and member, level by level,
   a collision refused (`EBADFID`). A handle whose
   object is gone, whose generation differs, or whose file system is no
@@ -2364,42 +2367,71 @@ below, and the QEMU steps (last item).
   A 10,000-entry directory read with `READDIRPLUS` pages of about 100
   entries took about 10,200 requests and moved a million names; it now
   takes about 200 and moves 10,000. The handles a file ID resolves by
-  walking (below) read directories only.
+  walking read directories only (section 5.11).
 
-  **What remains.** The default `HOSTOPT` write mode is `*SYNC`, which
-  IBM documents as data written to disk immediately: every `WRITE`
-  waits for a sync, whatever the client asks. Under QEMU a sync is the
-  host's `fdatasync` of the disk image, 2 ms at best and far more while
-  the host writes back, which no change inside the guest removes; with
-  `*ASYNC` (the `*ASYNC` row) unstable writes wait for nothing and only
-  `COMMIT` syncs. `NetServer` (step 168) does not sync per write, which
-  is the gap to its figures. With IBM's default `wsize=32768`, a mount
-  of QS/400 makes 32768 `WRITE`s per GiB to a `*SYNC` server, eight at a
-  time sharing syncs; a larger `wsize` in `OPTIONS` divides them. In
-  steady state the client now sends 12,000 to 15,000 32 KiB `WRITE`s
-  per 10 seconds (40 MiB/s, 5 to 6 ms each, guest A answering each with
-  two service requests and a shared sync), but a 1 GiB copy still
-  averages 4 to 11 MiB/s: guest A's syncs, and guest B's own device
-  flushes after it wrote the 1 GiB it read just before, stop for 20 to
-  44 seconds at a time while the host writes back (`qsstg: IFS device
-  flush took 44136 ms`). And in four of the five 1 GiB copies from B
-  that were counted, the mount's cache took 2.6 to 3.6 times the file's
-  blocks (98,304 new blocks for 32,768 in one), as if `CPY` went over
-  parts of the file again, with no copy error logged; it did not happen
-  in memory (`copy_to_the_mount_sends_each_block_once`, also with a
-  helper and the service's sizes), at 512 MiB, or in the fifth run
-  (counted with a log of every fresh open of the copy and every park:
-  none after the data began), so its cause is not found yet and it is
-  the first thing to look at next for the client: it alone makes the
-  copy two to three times slower. To settle it, each mount now counts
-  its blocks (made by writes, read, sent by its threads, lent to
-  helpers, sent again, taken back from a helper after `LEND`) and logs
-  them when it ends (`ifs::remote::stats` on the serial console), and a
-  `CPY` whose descriptors were lost between runs logs `copy begun
-  again`. One cause of sending twice is fixed: a flush (`fsync`, the
-  last close) sent again every block another worker or a helper was
-  still sending; it now waits for them (at most 35 seconds). Tests:
-  `remote_data.rs` (each block made once and sent once).
+  **The `CPY` that copied twice, found** (2026-11-17). The block counts
+  settled it: in a 1 GiB run from B, both versions logged `copy begun
+  again` twice and `made=65536 ... rewritten=32768`, every block made
+  twice, the second time from block 0. `CPY` keeps a file copy's
+  descriptors in its request's token while it waits (7.2), and took
+  them out for each run; once the data was written and the target
+  closed, setting the copy's attributes resolves the target again, and
+  that needs the mount's access bits for the directories on the way.
+  Those had been looked up before the request began (by the copy the
+  other way), so they were good only for their time to live (30 to 60
+  seconds), and a copy of three minutes outlived them: that run waited
+  for them, and the next found no descriptors and copied the whole file
+  again. At 512 MiB the copy ended within their life, and in memory the
+  tests were too quick, which is why it showed only sometimes. The fix:
+  a copy whose data is done says so in the token, so a wait for its
+  attributes does not copy again (`ifs::ops::copy`; test
+  `remote_data.rs` `copy_outlasting_the_cache_copies_once`, which copied
+  twice before). The mount also counts writes over blocks it wrote
+  before (`rewritten` in `ifs::remote::stats`, the first one logged with
+  its offset), so any other cause shows at once.
+
+  The same run showed the rest of the time is the host's: on both
+  guests single device transfers of 13 to 20 seconds (`qsstg: IFS
+  device write took 13406 ms`, `flush took 19844 ms`) and a 15-second
+  `pread` on A's service thread waiting for the device's read, while
+  the host wrote back what the guests had written. The guests' disks
+  are files on one host disk with QEMU's default `cache=writeback`, so
+  a flush is the host's `fdatasync` of the image and waits for
+  everything the host holds of it; the IFS volume serves the kernel's
+  flushes off its queue thread, one flush for every request waiting
+  (`lic/ublk`), and its writes are `O_DIRECT`, so the guest holds no
+  dirty pages to add. Nothing in the guest makes the host write back
+  less; on real disks a flush is the disk's own cache.
+
+  Other changes of this round: a write past the dirty limit waits until
+  half the blocks queued went, not the last, so the mount's workers
+  always have blocks to send; work lent to a `QNFSBIOD` helper goes back
+  to the queue only after the mount's major timeout when that is longer
+  than 30 seconds (a server waiting on its host for a sync was answered
+  twice before); a `READW_LT`/`WRITEW_LT` refused gets `CB_NOTIFY_LOCK`
+  (4.1) when a lock this server holds on the file goes.
+
+  **What remains: `*SYNC`.** The default `HOSTOPT` write mode is
+  `*SYNC`, which IBM documents as data written to disk immediately:
+  every `WRITE` waits for a sync of its file, whatever the client asks.
+  What can be shared already is: writes to one file waiting together
+  share one sync (the IFS's syncer), and syncs of several files share
+  the device's flush (the volume answers every flush waiting with one).
+  What is left is a choice for Cody, not a speed fix: Linux's `knfsd`
+  with its `sync` export option still lets a client write `UNSTABLE`
+  and syncs only at `COMMIT` (its `sync` is about replying to `COMMIT`
+  and metadata after they are stable). Doing the same for `*SYNC`
+  would answer an `UNSTABLE` write `UNSTABLE` and sync once per
+  `COMMIT`: with IBM's default `wsize=32768` a client's 1 GiB would take
+  a few syncs instead of thousands (the `*ASYNC` row: 153 MiB/s
+  against 48), and a client that loses its server's restart sends the
+  data again, as the protocol says; but a write would no longer be on
+  disk when it is answered, which is what IBM's text promises. QS/400
+  keeps IBM's meaning (section 5.7). Under QEMU a sync is the
+  host's `fdatasync` of the disk image, 2 ms on a quiet host and far
+  more while it writes back, which no change in the guest removes;
+  `NetServer` (step 168) does not sync per write, which is the gap to
+  its figures.
 
 ### 11.1 Proving a v3 mount under QEMU
 
