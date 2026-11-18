@@ -719,7 +719,8 @@ must equal the object's (0 matches only 0). In order:
 2. **The remembered path**: every path resolved is remembered under its
    ID (at most 65536, oldest dropped).
 3. **The search**: a backend file system (root, `/QOpenSys`, a mounted
-   UDFS) by a walk of its tree that remembers every path it passes,
+   UDFS) by a walk of its tree that remembers every path it passes
+   (directories only are read: an entry's number comes with its listing),
    `/QSYS.LIB` level by level (libraries, then every library's objects,
    then every physical file's members) by the numbers their paths hash
    to; two names with one number are refused (`EBADFID`) rather than
@@ -848,7 +849,10 @@ authorities and attributes (not its check-out or journaling), owned by
 the caller (`OWNER(*KEEP)`: the source's owner, for that owner or
 `*ALLOBJ`); `to_ccsid` converts the data (`DTAFMT(*TEXT)`). `MOV` is a
 rename within a file system, else a copy of the subtree and its
-removal. `Ifs::walk` visits a subtree parents first in name order
+A copy that waits on a remote mount keeps its descriptors in its
+request's token between runs, and once its data is written it says so
+there, so a run that waits afterwards (for the copy's attributes) does
+not copy the data again. removal. `Ifs::walk` visits a subtree parents first in name order
 (`Qp0lProcessSubtree`); following links never enters a directory twice.
 A file ID is the file system, the inode number and the record's
 generation; `path_from_file_id` finds it as "File IDs" below says.
