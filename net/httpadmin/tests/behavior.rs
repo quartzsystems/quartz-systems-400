@@ -95,7 +95,7 @@ fn messages_and_help_resolve() {
             .contains("<title>Help: Server instances - QS/400</title>")
     );
     assert!(b.get("/help/nothing").text().contains("Contents"));
-    let css = b.get(qsweb::frame::CSS_PATH);
+    let css = b.get(httpadmin::BRAND.css_path);
     assert_eq!(css.bytes(), qsweb::CSS);
 }
 
@@ -153,7 +153,7 @@ fn crawl() {
             broken.push(format!("{url}: {}", r.status));
             continue;
         }
-        if url == qsweb::frame::CSS_PATH {
+        if url == httpadmin::BRAND.css_path {
             continue;
         }
         let page = url.split('?').next().unwrap_or("").to_string();
@@ -171,7 +171,7 @@ fn crawl() {
             assert!(
                 proto(&abs).is_some()
                     || abs.starts_with(PRODUCT.prefix)
-                    || abs == qsweb::frame::CSS_PATH,
+                    || abs == httpadmin::BRAND.css_path,
                 "{url} links to {abs}"
             );
             if method == "GET" {
@@ -511,7 +511,7 @@ fn every_page_carries_the_product_title() {
         if !seen.insert(url.clone())
             || url.ends_with("/signoff")
             || url.contains("/help/")
-            || url == qsweb::frame::CSS_PATH
+            || url == httpadmin::BRAND.css_path
         {
             continue;
         }

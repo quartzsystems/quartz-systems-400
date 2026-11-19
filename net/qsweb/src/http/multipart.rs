@@ -86,6 +86,149 @@ fn part(head: &str, data: Vec<u8>) -> Option<Part> {
     })
 }
 
+/// A part's head, as [`Parts`] meets it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PartHead {
+    /// The field name.
+    pub name: String,
+    /// The uploaded file's name, for a file field.
+    pub filename: Option<String>,
+    /// The part's `Content-Type`.
+    pub content_type: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum At {
+    Preamble,
+    Data,
+    End,
+}
+
+/// A `multipart/form-data` body read a part at a time from a stream
+/// (a [`super::request::BodyStream`]): [`Parts::next_part`] gives each
+/// part's head, and reading gives its data, so a file of any size
+/// passes through a small buffer.
+pub struct Parts<R> {
+    inner: R,
+    /// `\r\n--boundary`.
+    delim: Vec<u8>,
+    buf: Vec<u8>,
+    at: At,
+}
+
+/// The most a part's head may take.
+const PART_HEAD_MAX: usize = 8 * 1024;
+
+fn invalid(what: &str) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::InvalidData, what.to_string())
+}
+
+impl<R: std::io::Read> Parts<R> {
+    /// The parts of `inner`, delimited by `boundary` ([`boundary`]).
+    pub fn new(inner: R, boundary: &str) -> Self {
+        Self {
+            inner,
+            delim: format!("\r\n--{boundary}").into_bytes(),
+            // The first delimiter has no line break before it.
+            buf: b"\r\n".to_vec(),
+            at: At::Preamble,
+        }
+    }
+
+    /// Read more into the buffer; false at the stream's end.
+    fn more(&mut self) -> std::io::Result<bool> {
+        let mut chunk = [0u8; 16 * 1024];
+        let n = self.inner.read(&mut chunk)?;
+        self.buf.extend_from_slice(&chunk[..n]);
+        Ok(n > 0)
+    }
+
+    /// The next part's head, the rest of the current part skipped;
+    /// `None` after the last.
+    pub fn next_part(&mut self) -> std::io::Result<Option<PartHead>> {
+        match self.at {
+            At::End => return Ok(None),
+            At::Data => std::io::copy(self, &mut std::io::sink()).map(|_| ())?,
+            At::Preamble => loop {
+                if let Some(i) = find(&self.buf, &self.delim, 0) {
+                    self.buf.drain(..i);
+                    break;
+                }
+                let keep = self.buf.len().saturating_sub(self.delim.len());
+                self.buf.drain(..keep);
+                if !self.more()? {
+                    return Err(invalid("no multipart boundary"));
+                }
+            },
+        }
+        // The buffer starts with the delimiter.
+        while self.buf.len() < self.delim.len() + 2 {
+            if !self.more()? {
+                return Err(invalid("multipart body ends early"));
+            }
+        }
+        self.buf.drain(..self.delim.len());
+        if self.buf.starts_with(b"--") {
+            self.at = At::End;
+            return Ok(None);
+        }
+        let head_end = loop {
+            if let Some(i) = find(&self.buf, b"\r\n\r\n", 0) {
+                break i;
+            }
+            if self.buf.len() > PART_HEAD_MAX {
+                return Err(invalid("multipart part head too large"));
+            }
+            if !self.more()? {
+                return Err(invalid("multipart body ends early"));
+            }
+        };
+        let head: Vec<u8> = self.buf.drain(..head_end + 4).collect();
+        let text = std::str::from_utf8(&head[..head_end])
+            .map_err(|_| invalid("multipart part head is not text"))?;
+        // The line break after the delimiter.
+        let text = text.strip_prefix("\r\n").unwrap_or(text);
+        let p = part(text, Vec::new()).ok_or_else(|| invalid("multipart part has no name"))?;
+        self.at = At::Data;
+        Ok(Some(PartHead {
+            name: p.name,
+            filename: p.filename,
+            content_type: p.content_type,
+        }))
+    }
+}
+
+impl<R: std::io::Read> std::io::Read for Parts<R> {
+    /// The current part's data; 0 at its end.
+    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        if self.at != At::Data || out.is_empty() {
+            return Ok(0);
+        }
+        loop {
+            if let Some(i) = find(&self.buf, &self.delim, 0) {
+                let n = i.min(out.len());
+                out[..n].copy_from_slice(&self.buf[..n]);
+                self.buf.drain(..n);
+                if i == 0 {
+                    self.at = At::Preamble;
+                }
+                return Ok(n);
+            }
+            // What cannot be the start of a delimiter is the part's.
+            let safe = self.buf.len().saturating_sub(self.delim.len() - 1);
+            if safe > 0 {
+                let n = safe.min(out.len());
+                out[..n].copy_from_slice(&self.buf[..n]);
+                self.buf.drain(..n);
+                return Ok(n);
+            }
+            if !self.more()? {
+                return Err(invalid("multipart body ends early"));
+            }
+        }
+    }
+}
+
 fn skip_eol(b: &[u8], at: usize) -> Option<usize> {
     if b[at..].starts_with(b"\r\n") {
         Some(at + 2)
@@ -125,5 +268,55 @@ mod tests {
         assert_eq!(parts[1].data, b"-----BEGIN\r\n\x00\xff");
         assert_eq!(boundary("text/plain"), None);
         assert_eq!(parse(b"garbage", "XyZ"), None);
+    }
+
+    /// One byte at a time: the stream's reads never line up with parts.
+    struct Trickle<'a>(&'a [u8]);
+
+    impl std::io::Read for Trickle<'_> {
+        fn read(&mut self, b: &mut [u8]) -> std::io::Result<usize> {
+            let Some((first, rest)) = self.0.split_first() else {
+                return Ok(0);
+            };
+            b[0] = *first;
+            self.0 = rest;
+            Ok(1)
+        }
+    }
+
+    #[test]
+    fn streams_parts() {
+        use std::io::Read;
+        let mut file = Vec::new();
+        for i in 0..100_000u32 {
+            file.push((i % 251) as u8);
+        }
+        file.extend_from_slice(b"\r\n--Xy not the boundary\r\n");
+        let mut body = b"preamble\r\n--XyZ\r\nContent-Disposition: form-data; name=\"label\"\r\n\r\nweb\r\n--XyZ\r\nContent-Disposition: form-data; name=\"file\"; filename=\"big.bin\"\r\n\r\n".to_vec();
+        body.extend_from_slice(&file);
+        body.extend_from_slice(b"\r\n--XyZ--\r\n");
+        for whole in [true, false] {
+            let src: Box<dyn Read> = if whole {
+                Box::new(&body[..])
+            } else {
+                Box::new(Trickle(&body))
+            };
+            let mut p = Parts::new(src, "XyZ");
+            let h = p.next_part().unwrap().unwrap();
+            assert_eq!(h.name, "label");
+            // The label is skipped unread.
+            let h = p.next_part().unwrap().unwrap();
+            assert_eq!(h.filename.as_deref(), Some("big.bin"));
+            let mut got = Vec::new();
+            p.read_to_end(&mut got).unwrap();
+            assert!(got == file, "{} bytes", got.len());
+            assert_eq!(p.next_part().unwrap(), None);
+        }
+        let mut p = Parts::new(
+            &b"--XyZ\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\nx"[..],
+            "XyZ",
+        );
+        p.next_part().unwrap();
+        assert!(p.read_to_end(&mut Vec::new()).is_err());
     }
 }

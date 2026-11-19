@@ -23,7 +23,14 @@ use qsweb::http::{Body, Request, Response};
 fn assert_text(served: &str, g: &str, file: &str) {
     let dir = file.split('/').next().unwrap_or("");
     let map = |u: &str| proto(u).map(|t| relative(&t, dir));
-    if let Some(d) = diff(served, g, &Normalize { url: &map }) {
+    if let Some(d) = diff(
+        served,
+        g,
+        &Normalize {
+            url: &map,
+            script: Some(accessweb::BRAND.nav_path),
+        },
+    ) {
         panic!("{file} differs from the served page at {d}");
     }
 }

@@ -129,6 +129,14 @@ pub fn split_target(target: &str) -> (String, String) {
 /// Read one request from `r`. `pending` holds bytes read past the
 /// previous request on a kept-alive connection.
 pub fn read_request(r: &mut dyn Read, pending: &mut Vec<u8>) -> Result<Request, ReadError> {
+    let mut req = read_head(r, pending)?;
+    read_body(r, pending, &mut req)?;
+    Ok(req)
+}
+
+/// Read one request's head from `r`, its body left on the connection
+/// for [`read_body`] or a [`BodyStream`].
+pub fn read_head(r: &mut dyn Read, pending: &mut Vec<u8>) -> Result<Request, ReadError> {
     let mut chunk = [0u8; 4096];
     let end = loop {
         if let Some(at) = find_end(pending) {
@@ -143,8 +151,17 @@ pub fn read_request(r: &mut dyn Read, pending: &mut Vec<u8>) -> Result<Request, 
         }
     };
     let (head_len, sep) = end;
-    let mut req = parse_head(&pending[..head_len])?;
+    let req = parse_head(&pending[..head_len])?;
     pending.drain(..head_len + sep);
+    Ok(req)
+}
+
+/// Read `req`'s body whole, up to [`BODY_MAX`].
+pub fn read_body(
+    r: &mut dyn Read,
+    pending: &mut Vec<u8>,
+    req: &mut Request,
+) -> Result<(), ReadError> {
     if req
         .header("transfer-encoding")
         .is_some_and(|t| t.to_ascii_lowercase().contains("chunked"))
@@ -158,7 +175,133 @@ pub fn read_request(r: &mut dyn Read, pending: &mut Vec<u8>) -> Result<Request, 
         fill(r, pending, len)?;
         req.body = pending.drain(..len).collect();
     }
-    Ok(req)
+    Ok(())
+}
+
+/// How a body is framed on the connection.
+#[derive(Clone, Copy, Debug)]
+enum Framing {
+    /// `Content-Length`: bytes still to come.
+    Length(u64),
+    /// Chunked: bytes left in this chunk, whether one came before.
+    Chunked { left: u64, started: bool },
+    /// Read to its end.
+    Done,
+}
+
+/// A request's body read as it arrives, with no limit on its size: a
+/// large upload never sits in memory whole. What the reader leaves
+/// unread stays on the connection, which then cannot carry another
+/// request ([`BodyStream::finished`]).
+pub struct BodyStream<'a> {
+    r: &'a mut dyn Read,
+    pending: &'a mut Vec<u8>,
+    framing: Framing,
+}
+
+impl<'a> BodyStream<'a> {
+    /// The body of `req`, whose head was read by [`read_head`].
+    pub fn new(
+        r: &'a mut dyn Read,
+        pending: &'a mut Vec<u8>,
+        req: &Request,
+    ) -> Result<Self, ReadError> {
+        let framing = if req
+            .header("transfer-encoding")
+            .is_some_and(|t| t.to_ascii_lowercase().contains("chunked"))
+        {
+            Framing::Chunked {
+                left: 0,
+                started: false,
+            }
+        } else if let Some(len) = req.header("content-length") {
+            Framing::Length(len.trim().parse().map_err(|_| ReadError::Malformed)?)
+        } else {
+            Framing::Done
+        };
+        Ok(Self {
+            r,
+            pending,
+            framing,
+        })
+    }
+
+    /// Whether the body was read to its end.
+    pub fn finished(&self) -> bool {
+        matches!(self.framing, Framing::Done | Framing::Length(0))
+    }
+
+    /// Up to `buf.len()` bytes of what is on the connection.
+    fn raw(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if self.pending.is_empty() {
+            let n = self.r.read(buf)?;
+            if n == 0 {
+                return Err(std::io::ErrorKind::UnexpectedEof.into());
+            }
+            return Ok(n);
+        }
+        let n = buf.len().min(self.pending.len());
+        buf[..n].copy_from_slice(&self.pending[..n]);
+        self.pending.drain(..n);
+        Ok(n)
+    }
+}
+
+fn io_err(e: ReadError) -> std::io::Error {
+    let kind = match e {
+        ReadError::Gone => std::io::ErrorKind::UnexpectedEof,
+        _ => std::io::ErrorKind::InvalidData,
+    };
+    std::io::Error::new(kind, e)
+}
+
+impl Read for BodyStream<'_> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        loop {
+            match self.framing {
+                Framing::Done | Framing::Length(0) => return Ok(0),
+                Framing::Length(left) => {
+                    let want = usize::try_from(left).unwrap_or(usize::MAX).min(buf.len());
+                    let n = self.raw(&mut buf[..want])?;
+                    self.framing = Framing::Length(left - n as u64);
+                    return Ok(n);
+                }
+                Framing::Chunked { left: 0, started } => {
+                    if started {
+                        // The data's CRLF.
+                        if !line(self.r, self.pending).map_err(io_err)?.is_empty() {
+                            return Err(io_err(ReadError::Malformed));
+                        }
+                    }
+                    let size_line = line(self.r, self.pending).map_err(io_err)?;
+                    let hex = size_line.split(';').next().unwrap_or("").trim();
+                    let size =
+                        u64::from_str_radix(hex, 16).map_err(|_| io_err(ReadError::Malformed))?;
+                    if size == 0 {
+                        while !line(self.r, self.pending).map_err(io_err)?.is_empty() {}
+                        self.framing = Framing::Done;
+                        return Ok(0);
+                    }
+                    self.framing = Framing::Chunked {
+                        left: size,
+                        started: true,
+                    };
+                }
+                Framing::Chunked { left, .. } => {
+                    let want = usize::try_from(left).unwrap_or(usize::MAX).min(buf.len());
+                    let n = self.raw(&mut buf[..want])?;
+                    self.framing = Framing::Chunked {
+                        left: left - n as u64,
+                        started: true,
+                    };
+                    return Ok(n);
+                }
+            }
+        }
+    }
 }
 
 /// Read until `pending` holds `n` bytes.
@@ -281,6 +424,38 @@ mod tests {
         let two = read_request(&mut r, &mut pending).unwrap();
         assert_eq!(two.path, "/b");
         assert_eq!(read_request(&mut r, &mut pending), Err(ReadError::Gone));
+    }
+
+    #[test]
+    fn streamed_bodies() {
+        let wire = b"PUT /a HTTP/1.1\r\nContent-Length: 5\r\n\r\nhelloPUT /b HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n2\r\nde\r\n0\r\n\r\nGET /c HTTP/1.1\r\n\r\n";
+        let mut r = &wire[..];
+        let mut pending = Vec::new();
+        for want in [&b"hello"[..], b"abcde"] {
+            let req = read_head(&mut r, &mut pending).unwrap();
+            let mut s = BodyStream::new(&mut r, &mut pending, &req).unwrap();
+            let mut got = Vec::new();
+            let mut one = [0u8; 2];
+            loop {
+                let n = s.read(&mut one).unwrap();
+                if n == 0 {
+                    break;
+                }
+                got.extend_from_slice(&one[..n]);
+            }
+            assert!(s.finished());
+            assert_eq!(got, want);
+        }
+        let req = read_head(&mut r, &mut pending).unwrap();
+        assert_eq!(req.path, "/c");
+        // A body left unread is not finished; a short one fails.
+        let wire = b"PUT /a HTTP/1.1\r\nContent-Length: 9\r\n\r\nshort";
+        let mut r = &wire[..];
+        let req = read_head(&mut r, &mut pending).unwrap();
+        let mut s = BodyStream::new(&mut r, &mut pending, &req).unwrap();
+        assert!(!s.finished());
+        let mut all = Vec::new();
+        assert!(s.read_to_end(&mut all).is_err());
     }
 
     #[test]

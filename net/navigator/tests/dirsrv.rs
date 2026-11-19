@@ -30,7 +30,14 @@ fn approved(b: &Browser, served: &str, file: &str) {
         return;
     }
     let g = golden(file);
-    if let Some(d) = diff(served, &g, &Normalize { url: &|_| None }) {
+    if let Some(d) = diff(
+        served,
+        &g,
+        &Normalize {
+            url: &|_| None,
+            script: Some(navigator::BRAND.nav_path),
+        },
+    ) {
         panic!("{file} differs from the served page at {d}");
     }
 }

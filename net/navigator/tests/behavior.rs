@@ -83,7 +83,7 @@ fn messages_and_help_resolve() {
             .contains("<title>Help: System status - QS/400</title>")
     );
     assert!(b.get("/help/nothing").text().contains("Contents"));
-    assert_eq!(b.get(qsweb::frame::CSS_PATH).bytes(), qsweb::CSS);
+    assert_eq!(b.get(navigator::BRAND.css_path).bytes(), qsweb::CSS);
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn crawl() {
             broken.push(format!("{url}: {}", r.status));
             continue;
         }
-        if url == qsweb::frame::CSS_PATH {
+        if url == navigator::BRAND.css_path {
             continue;
         }
         let page = url.split('?').next().unwrap_or("").to_string();
@@ -166,7 +166,7 @@ fn crawl() {
                 continue;
             }
             assert!(
-                proto(&abs).is_some() || abs == qsweb::frame::CSS_PATH,
+                proto(&abs).is_some() || abs == navigator::BRAND.css_path,
                 "{url} links to {abs}"
             );
             if method == "GET" {

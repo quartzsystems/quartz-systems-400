@@ -679,7 +679,8 @@ mod tests {
     use crate::msg::Kind;
 
     const P: Product = Product {
-        wordmark: "QS/400 Test",
+        brand: &crate::brand::tests::TEST,
+        wordmark: "Demo Test",
         crumb_root: "Test",
         prefix: "/t",
         nav: &[],

@@ -8,16 +8,12 @@
 
 use askama::Template;
 
+use crate::brand::Brand;
 use crate::html::esc;
 use crate::http::{Request, Response};
 use crate::msg::Message;
 use crate::partials;
 use crate::session::{self, Sessions};
-
-/// The stylesheet's path, the same for every product.
-pub const CSS_PATH: &str = "/qs400/shared/qs400.css";
-/// The navigation script's path ([`Product::nav_script`]).
-pub const NAV_PATH: &str = "/qs400/shared/qsnav.js";
 
 /// A navigation group and its items (label, route under the prefix).
 /// A group whose one item has the group's own label is a leaf: a plain
@@ -30,21 +26,24 @@ pub struct NavGroup {
     pub items: &'static [(&'static str, &'static str)],
 }
 
-/// A web product: its name, route prefix and navigation tree.
+/// A web product: its family, name, route prefix and navigation tree.
 #[derive(Clone, Copy, Debug)]
 pub struct Product {
+    /// The family it belongs to: release, shared paths, cookie.
+    pub brand: &'static Brand,
     /// The header band's wordmark and the title suffix.
     pub wordmark: &'static str,
     /// The breadcrumb's first entry.
     pub crumb_root: &'static str,
-    /// Every route starts with this (`/qs400/httpadmin`).
+    /// Every route starts with this (`/admin`).
     pub prefix: &'static str,
     /// The tree.
     pub nav: &'static [NavGroup],
-    /// The header's label before the system name (`System`).
+    /// The header's label before [`Ctx::system`], beside the user
+    /// (`System`; a console says `Console`).
     pub system_label: &'static str,
-    /// Whether pages carry the navigation script ([`NAV_PATH`]), which
-    /// swaps pages in place instead of loading them.
+    /// Whether pages carry the navigation script ([`Brand::nav_path`]),
+    /// which swaps pages in place instead of loading them.
     pub nav_script: bool,
 }
 
@@ -73,6 +72,21 @@ impl Product {
     pub fn msg(&self, msgid: &str) -> String {
         self.url(&format!("/msg/{msgid}"))
     }
+
+    /// The session ID `req` carries in the family's cookie.
+    pub fn session_id<'r>(&self, req: &'r Request) -> Option<&'r str> {
+        req.cookie(self.brand.cookie)
+    }
+
+    /// The `Set-Cookie` value for session `id`, under the prefix.
+    pub fn set_cookie(&self, id: &str, secure: bool) -> String {
+        session::set_cookie(self.brand.cookie, id, self.prefix, secure)
+    }
+
+    /// The `Set-Cookie` value that removes the session cookie.
+    pub fn clear_cookie(&self) -> String {
+        session::clear_cookie(self.brand.cookie, self.prefix)
+    }
 }
 
 /// Who is looking: the request's view of the product.
@@ -80,7 +94,7 @@ impl Product {
 pub struct Ctx {
     /// The product.
     pub product: &'static Product,
-    /// The system name.
+    /// The value after [`Product::system_label`]: the system's name.
     pub system: String,
     /// The signed-on user ("" on the sign-on page).
     pub user: String,
@@ -130,8 +144,8 @@ pub struct Page {
     pub nav: Option<(&'static str, Option<&'static str>)>,
     /// Seconds between automatic reloads.
     pub refresh: Option<u32>,
-    /// Render as a generic QS/400 page (shared pages): wordmark and
-    /// title suffix `QS/400`.
+    /// Render as a generic page of the family (shared pages): wordmark
+    /// and title suffix [`Brand::name`].
     pub generic: bool,
 }
 
@@ -197,8 +211,8 @@ pub fn nav_toggle(product: &Product, sessions: &Sessions, id: &str, req: &Reques
 }
 
 /// The footer line.
-pub fn footer() -> String {
-    format!("QS/400 {} \u{b7} Quartz Systems", release::RELEASE)
+pub fn footer(product: &Product) -> String {
+    product.brand.footer()
 }
 
 /// Render `page` in the frame.
@@ -210,7 +224,11 @@ pub fn render(ctx: &Ctx, page: &Page) -> String {
 /// (Access for Web's `Messages waiting: N`).
 pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
     let p = ctx.product;
-    let wordmark = if page.generic { "QS/400" } else { p.wordmark };
+    let wordmark = if page.generic {
+        p.brand.name
+    } else {
+        p.wordmark
+    };
     let nav = p
         .nav
         .iter()
@@ -271,7 +289,7 @@ pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
     FrameT {
         title: &page.title,
         suffix: wordmark,
-        css: CSS_PATH,
+        css: p.brand.css_path,
         wordmark,
         system_label: p.system_label,
         system: &ctx.system,
@@ -284,10 +302,10 @@ pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
         desc: page.desc.as_deref(),
         messages: partials::messages(p, &page.messages),
         body: &page.body,
-        footer: footer(),
+        footer: footer(p),
         refresh: page.refresh,
         note,
-        nav_script: p.nav_script.then_some(NAV_PATH),
+        nav_script: p.nav_script.then_some(p.brand.nav_path),
     }
     .render()
     .expect("frame renders")
@@ -305,7 +323,10 @@ struct SignonT<'a> {
     messages: String,
     action: String,
     user: &'a str,
+    vendor: &'a str,
+    name: &'a str,
     release: String,
+    notice2: &'a str,
     footer: String,
 }
 
@@ -321,7 +342,7 @@ pub fn signon(
 ) -> String {
     SignonT {
         title: format!("Sign on - {0} - {0}", product.wordmark),
-        css: CSS_PATH,
+        css: product.brand.css_path,
         wordmark: product.wordmark,
         system_label: product.system_label,
         system,
@@ -329,8 +350,11 @@ pub fn signon(
         messages: partials::messages(product, messages),
         action: product.url("/signon"),
         user,
-        release: release::RELEASE.to_string(),
-        footer: footer(),
+        vendor: product.brand.vendor,
+        name: product.brand.name,
+        release: product.brand.release(),
+        notice2: product.brand.signon_notice,
+        footer: footer(product),
     }
     .render()
     .expect("sign-on renders")
@@ -340,6 +364,7 @@ pub fn signon(
 #[template(path = "help.html")]
 struct HelpT<'a> {
     topic: &'a str,
+    name: &'a str,
     css: &'a str,
     contents: String,
     index: String,
@@ -355,12 +380,13 @@ struct HelpT<'a> {
 pub fn help(product: &Product, topic: &str, body: &str) -> String {
     HelpT {
         topic,
-        css: CSS_PATH,
+        name: product.brand.name,
+        css: product.brand.css_path,
         contents: product.url("/help/contents"),
         index: product.url("/help/index"),
         print: "#",
         body,
-        footer: footer(),
+        footer: footer(product),
         close: "#",
     }
     .render()

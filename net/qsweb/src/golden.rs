@@ -223,20 +223,24 @@ pub fn tokens(html: &str) -> Vec<Tok> {
 
 /// How a comparison treats the served page.
 pub struct Normalize<'a> {
-    /// Maps a served URL to the prototype's (`/qs400/httpadmin/instances`
-    /// to `instances.html`); `None` leaves it.
+    /// Maps a served URL to the prototype's (`/admin/instances` to
+    /// `instances.html`); `None` leaves it.
     pub url: &'a dyn Fn(&str) -> Option<String>,
+    /// The navigation script's path ([`crate::brand::Brand::nav_path`]):
+    /// its tag is the server's, not the prototype's, and is dropped.
+    pub script: Option<&'a str>,
 }
 
-fn normalize(toks: Vec<Tok>, n: Option<&Normalize<'_>>) -> Vec<Tok> {
+fn normalize(toks: Vec<Tok>, n: &Normalize<'_>, map_urls: bool) -> Vec<Tok> {
     let mut out = Vec::with_capacity(toks.len());
-    // The navigation script's tag is the server's, not the prototype's.
+    let script = n.script;
     let mut nav_close = false;
     for t in toks {
         match t {
             Tok::Open(name, attrs)
                 if name == "script"
-                    && attrs.get("src").map(String::as_str) == Some(crate::frame::NAV_PATH) =>
+                    && script.is_some()
+                    && attrs.get("src").map(String::as_str) == script =>
             {
                 nav_close = true;
             }
@@ -246,7 +250,7 @@ fn normalize(toks: Vec<Tok>, n: Option<&Normalize<'_>>) -> Vec<Tok> {
                     && attrs.get("name").map(String::as_str)
                         == Some(crate::session::CSRF_FIELD) => {}
             Tok::Open(name, mut attrs) => {
-                if let Some(n) = n {
+                if map_urls {
                     for a in URL_ATTRS {
                         if let Some(v) = attrs.get_mut(a)
                             && let Some(m) = (n.url)(v)
@@ -266,8 +270,8 @@ fn normalize(toks: Vec<Tok>, n: Option<&Normalize<'_>>) -> Vec<Tok> {
 /// The first difference between `served` and `golden`, as text, or
 /// `None` when they are the same page.
 pub fn diff(served: &str, golden: &str, n: &Normalize<'_>) -> Option<String> {
-    let a = normalize(tokens(served), Some(n));
-    let b = normalize(tokens(golden), None);
+    let a = normalize(tokens(served), n, true);
+    let b = normalize(tokens(golden), n, false);
     let at = a
         .iter()
         .zip(&b)
@@ -321,16 +325,140 @@ pub fn links(html: &str) -> Vec<(String, String)> {
     out
 }
 
+/// What a crawl's fetch got.
+#[derive(Clone, Debug, Default)]
+pub struct Fetched {
+    /// The status.
+    pub status: u16,
+    /// A redirect's `Location`.
+    pub location: Option<String>,
+    /// An HTML page's text, `None` for anything else.
+    pub html: Option<String>,
+}
+
+/// What a crawl found.
+#[derive(Clone, Debug, Default)]
+pub struct Crawl {
+    /// Every URL fetched, in order.
+    pub seen: Vec<String>,
+    /// `URL: status` of each fetch that was neither 200 nor a redirect.
+    pub broken: Vec<String>,
+    /// `page links to target` for each link `inside` refused.
+    pub outside: Vec<String>,
+}
+
+/// `href` on page `url` as an absolute path: empty is the page itself,
+/// `?q` its query; `None` for `#` and other schemes' URLs.
+pub fn resolve(url: &str, href: &str) -> Option<String> {
+    if href.is_empty() {
+        return Some(url.to_string());
+    }
+    if href.starts_with('#') || href.contains("://") || href.starts_with("mailto:") {
+        return None;
+    }
+    if href.starts_with('?') {
+        let page = url.split('?').next().unwrap_or("");
+        return Some(format!("{page}{href}"));
+    }
+    Some(href.to_string())
+}
+
+/// The link check: from `start`, fetch every `GET` link of every page
+/// and follow redirects. `inside` says whether a link is the product's
+/// to serve (a link to another product is left, a link nowhere is
+/// listed); `skip` is never fetched (sign off). `POST` targets are
+/// checked for `inside` only.
+pub fn crawl(
+    start: &[&str],
+    fetch: &mut dyn FnMut(&str) -> Fetched,
+    inside: &dyn Fn(&str) -> bool,
+    skip: &dyn Fn(&str) -> bool,
+) -> Crawl {
+    let mut out = Crawl::default();
+    let mut seen = std::collections::BTreeSet::new();
+    let mut queue: std::collections::VecDeque<String> =
+        start.iter().map(ToString::to_string).collect();
+    while let Some(url) = queue.pop_front() {
+        if skip(&url) || !seen.insert(url.clone()) {
+            continue;
+        }
+        out.seen.push(url.clone());
+        let got = fetch(&url);
+        if (300..400).contains(&got.status) {
+            if let Some(to) = got.location.filter(|l| inside(l)) {
+                queue.push_back(to);
+            }
+            continue;
+        }
+        if got.status != 200 {
+            out.broken.push(format!("{url}: {}", got.status));
+            continue;
+        }
+        let Some(html) = got.html else { continue };
+        for (method, href) in links(&html) {
+            let Some(abs) = resolve(&url, &href) else {
+                continue;
+            };
+            if !inside(&abs) {
+                out.outside.push(format!("{url} links to {abs}"));
+                continue;
+            }
+            if method == "GET" {
+                queue.push_back(abs);
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn crawls_and_resolves() {
+        let mut fetch = |u: &str| {
+            match u {
+            "/p/a" => Fetched {
+                status: 200,
+                location: None,
+                html: Some(
+                    "<a href=\"/p/b\">b</a><a href=\"?x=1\">q</a><a href=\"#\">h</a><a href=\"/q/z\">z</a><a href=\"/p/out\">o</a>"
+                        .into(),
+                ),
+            },
+            "/p/b" => Fetched {
+                status: 303,
+                location: Some("/p/a".into()),
+                html: None,
+            },
+            "/p/a?x=1" => Fetched {
+                status: 404,
+                ..Fetched::default()
+            },
+            _ => Fetched {
+                status: 200,
+                ..Fetched::default()
+            },
+        }
+        };
+        let c = crawl(&["/p/a"], &mut fetch, &|u| u.starts_with("/p/"), &|u| {
+            u.ends_with("/out")
+        });
+        assert_eq!(c.seen, ["/p/a", "/p/b", "/p/a?x=1"]);
+        assert_eq!(c.broken, ["/p/a?x=1: 404"]);
+        assert_eq!(c.outside, ["/p/a links to /q/z"]);
+    }
 
     #[test]
     fn same_page_modulo_whitespace_csrf_and_urls() {
         let golden = "<p class=\"a  b\">x&nbsp;y\n  z</p>\n<a href=\"instances.html\">I</a><form method=\"post\"><pre>a\n  b</pre></form>";
         let served = "<p class=\"a b\">x\u{a0}y z</p><a href=\"/p/instances\">I</a><form method=\"post\"><input type=\"hidden\" name=\"csrf\" value=\"t\"><pre>a\n  b</pre></form>";
         let map = |u: &str| u.strip_prefix("/p/").map(|r| format!("{r}.html"));
-        let n = Normalize { url: &map };
+        let n = Normalize {
+            url: &map,
+            script: None,
+        };
         assert_eq!(diff(served, golden, &n), None);
         let d = diff("<p>x</p>", "<p>y</p>", &n).unwrap();
         assert!(d.contains("served: \"x\""), "{d}");

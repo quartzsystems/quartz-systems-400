@@ -9,7 +9,6 @@
 use qsweb::frame;
 use qsweb::http::{Peer, Request, Response};
 use qsweb::msg::Message;
-use qsweb::session;
 
 use crate::{Navigator, PRODUCT};
 
@@ -37,17 +36,14 @@ pub fn signon(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
             Err(m) => return page(nav, &typed, &[m]),
         };
     let sess = nav.sessions.create(&user);
-    Response::redirect(&PRODUCT.url("/home")).with(
-        "Set-Cookie",
-        &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure),
-    )
+    Response::redirect(&PRODUCT.url("/home"))
+        .with("Set-Cookie", &PRODUCT.set_cookie(&sess.id, peer.secure))
 }
 
 /// `/signoff`: end the session, back to the sign-on page.
 pub fn signoff(nav: &Navigator, req: &Request, _peer: &Peer) -> Response {
-    if let Some(id) = req.cookie(session::COOKIE) {
+    if let Some(id) = PRODUCT.session_id(req) {
         nav.sessions.remove(id);
     }
-    Response::redirect(&PRODUCT.url("/signon"))
-        .with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
+    Response::redirect(&PRODUCT.url("/signon")).with("Set-Cookie", &PRODUCT.clear_cookie())
 }

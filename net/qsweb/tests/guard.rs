@@ -21,6 +21,22 @@ impl Handler for Shaky {
         }
         Response::html(200, req.path.clone())
     }
+
+    fn server(&self) -> String {
+        "Shaky/1".into()
+    }
+
+    fn streams(&self, _: &Request, _: &Peer) -> bool {
+        true
+    }
+
+    /// Reads a little of the body, then panics.
+    fn handle_stream(&self, req: &Request, body: &mut dyn std::io::Read, peer: &Peer) -> Response {
+        let mut b = [0u8; 10];
+        let _ = body.read(&mut b);
+        assert!(req.path != "/upload", "boom");
+        self.handle(req, peer)
+    }
 }
 
 fn get(path: &str) -> Request {
@@ -77,6 +93,10 @@ fn main() {
     assert!(e.contains("boom") && e.contains("guard.rs"), "{e}");
     let e = guard::handle(&h, get("/index"), peer).expect_err("a panic");
     assert!(e.contains("index out of bounds"), "{e}");
+    // A streamed body larger than the channel holds: the panic stops it.
+    let big = vec![b'x'; 4 << 20];
+    let e = guard::handle_stream(&h, get("/upload"), peer, &mut &big[..]).expect_err("a panic");
+    assert!(e.contains("boom"), "{e}");
     let ok = guard::handle(&h, get("/fine"), peer).expect("an answer");
     assert_eq!(ok.status, 200);
     over_a_connection(&h, &peer);

@@ -1,13 +1,12 @@
 [package]
 name = "qsweb"
-description = "QS/400 web products' shared layer: HTTP/1.1, forms and uploads, sessions and CSRF, the page frame and its partials, golden comparison"
+description = "The web layer a family of products shares: HTTP/1.1, forms and uploads, sessions and CSRF, the page frame and its partials, golden comparison"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [dependencies]
-release = { path = "../../lic/release", version = "0.1.0" }
 thiserror.workspace = true
 hex.workspace = true
 sha1 = "0.11.0"

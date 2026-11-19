@@ -22,6 +22,7 @@ pub mod util;
 
 use std::time::Duration;
 
+use qsweb::brand::Brand;
 use qsweb::frame::{NavGroup, Product};
 use qsweb::http::{Handler, Peer, Request, Response};
 use qsweb::session::Sessions;
@@ -108,8 +109,23 @@ pub const NAV: &[NavGroup] = &[
     },
 ];
 
+/// QS/400's web products: the family [`PRODUCT`] belongs to.
+pub static BRAND: Brand = Brand {
+    name: "QS/400",
+    vendor: "Quartz Systems",
+    release: &release::RELEASE,
+    server: "QS400",
+    css_path: "/qs400/shared/qs400.css",
+    nav_path: "/qs400/shared/qsnav.js",
+    cookie: "QS400SID",
+    signon_notice: "Unauthorized use of this system is prohibited. Sign-on attempts are logged to the audit journal.",
+    notauth_note: "Contact the security officer (QSECOFR) if you need this authority. The attempt has been recorded in the audit journal (entry type AF).",
+    job_log: true,
+};
+
 /// The product.
 pub static PRODUCT: Product = Product {
+    brand: &BRAND,
     wordmark: "Navigator for QS/400",
     crumb_root: "Navigator",
     prefix: "/qs400/navigator",
@@ -149,6 +165,10 @@ impl Navigator {
 }
 
 impl Handler for Navigator {
+    fn server(&self) -> String {
+        BRAND.server_header()
+    }
+
     fn handle(&self, req: &Request, peer: &Peer) -> Response {
         routes::dispatch(self, req, peer)
     }

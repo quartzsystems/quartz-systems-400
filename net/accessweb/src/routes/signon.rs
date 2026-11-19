@@ -11,7 +11,6 @@
 use qsweb::frame;
 use qsweb::http::{Peer, Request, Response};
 use qsweb::msg::{Kind, Message};
-use qsweb::session;
 
 use super::{EXPIRED, shared};
 use crate::env::Audit;
@@ -118,20 +117,17 @@ pub fn signon(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
         }
         "/home"
     };
-    Response::redirect(&PRODUCT.url(target)).with(
-        "Set-Cookie",
-        &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure),
-    )
+    Response::redirect(&PRODUCT.url(target))
+        .with("Set-Cookie", &PRODUCT.set_cookie(&sess.id, peer.secure))
 }
 
 /// `/signoff`: end the session, back to the sign-on page.
 pub fn signoff(app: &AccessWeb, req: &Request, _peer: &Peer) -> Response {
-    if let Some(id) = req.cookie(session::COOKIE) {
+    if let Some(id) = PRODUCT.session_id(req) {
         if let Some(s) = app.sessions.get(id) {
             app.env.system.sign_off(&s.user);
         }
         app.sessions.remove(id);
     }
-    Response::redirect(&PRODUCT.url("/signon"))
-        .with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
+    Response::redirect(&PRODUCT.url("/signon")).with("Set-Cookie", &PRODUCT.clear_cookie())
 }

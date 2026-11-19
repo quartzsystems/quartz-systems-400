@@ -47,6 +47,7 @@ fn instances() {
 #[allow(clippy::too_many_lines)]
 fn components() {
     static P: Product = Product {
+        brand: &httpadmin::BRAND,
         wordmark: "QS/400",
         crumb_root: "QS/400",
         prefix: "/qs400/httpadmin",

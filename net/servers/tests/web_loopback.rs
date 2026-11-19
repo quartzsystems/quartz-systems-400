@@ -34,6 +34,10 @@ const APP_ID: &str = "QS400_HTTP_SERVER_ADMIN";
 struct Echo;
 
 impl Handler for Echo {
+    fn server(&self) -> String {
+        "QS400/test".into()
+    }
+
     fn handle(&self, req: &Request, peer: &Peer) -> Response {
         Response::html(
             200,

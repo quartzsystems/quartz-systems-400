@@ -9,7 +9,6 @@
 use qsweb::frame;
 use qsweb::http::{Peer, Request, Response};
 use qsweb::msg::{Kind, Message};
-use qsweb::session;
 
 use crate::env::Audit;
 use crate::settings::Settings;
@@ -53,17 +52,14 @@ pub fn signon(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         u64::from(s.session_minutes.max(1)) * 60,
     ));
     let sess = admin.sessions.create(&user);
-    Response::redirect(&PRODUCT.url("/instances")).with(
-        "Set-Cookie",
-        &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure),
-    )
+    Response::redirect(&PRODUCT.url("/instances"))
+        .with("Set-Cookie", &PRODUCT.set_cookie(&sess.id, peer.secure))
 }
 
 /// `/signoff`: end the session, back to the sign-on page.
 pub fn signoff(admin: &Admin, req: &Request, _peer: &Peer) -> Response {
-    if let Some(id) = req.cookie(session::COOKIE) {
+    if let Some(id) = PRODUCT.session_id(req) {
         admin.sessions.remove(id);
     }
-    Response::redirect(&PRODUCT.url("/signon"))
-        .with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
+    Response::redirect(&PRODUCT.url("/signon")).with("Set-Cookie", &PRODUCT.clear_cookie())
 }

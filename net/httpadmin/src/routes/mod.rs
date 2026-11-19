@@ -230,10 +230,10 @@ fn route(path: &str) -> Option<&str> {
 
 /// Answer a request.
 pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
-    if req.path == qsweb::frame::CSS_PATH {
+    if req.path == crate::BRAND.css_path {
         return qsweb::css_response();
     }
-    if req.path == qsweb::frame::NAV_PATH {
+    if req.path == crate::BRAND.nav_path {
         return qsweb::nav_response();
     }
     if req.path == "/" || req.path.is_empty() {
@@ -272,7 +272,7 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         _ => {}
     }
     let session = req
-        .cookie(session::COOKIE)
+        .cookie(crate::BRAND.cookie)
         .and_then(|id| admin.sessions.get(id));
     let Some(session) = session else {
         return Response::redirect(&PRODUCT.url("/signon"));

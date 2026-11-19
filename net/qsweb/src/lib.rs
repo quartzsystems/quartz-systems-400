@@ -2,9 +2,12 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The layer the QS/400 web products share (HTTP Server Administration,
-//! Navigator, Access for Web): `docs/WEB_STYLE.md` is the standard.
+//! The layer a family of web products shares: `docs/WEB_STYLE.md` is
+//! the standard. The family is the caller's ([`brand::Brand`]): its
+//! name, release, paths and cookie; each product brings its own name,
+//! routes, navigation tree, messages and help ([`frame::Product`]).
 //!
+//! - [`brand`]: what the family supplies.
 //! - [`http`]: HTTP/1.1 with keep-alive, forms, uploads, responses.
 //! - [`session`]: the session table, CSRF tokens, one-shot messages.
 //! - [`frame`]: the page frame, the sign-on page, the help window.
@@ -15,6 +18,7 @@
 //!
 //! Server-rendered HTML only: no script, one stylesheet ([`CSS`]).
 
+pub mod brand;
 pub mod frame;
 pub mod golden;
 pub mod html;
@@ -25,10 +29,11 @@ pub mod partials;
 pub mod session;
 pub mod ws;
 
-/// `shared/qs400.css`, byte for byte.
+/// The stylesheet, byte for byte, served at [`brand::Brand::css_path`].
 pub const CSS: &[u8] = include_bytes!("../assets/qs400.css");
 
-/// `shared/qsnav.js`: in-place navigation for a product that turns it on.
+/// In-place navigation for a product that turns it on, served at
+/// [`brand::Brand::nav_path`].
 pub const NAV_JS: &[u8] = include_bytes!("../assets/qsnav.js");
 
 /// The navigation script as a response.

@@ -129,15 +129,20 @@ impl Response {
         String::from_utf8_lossy(self.bytes()).into_owned()
     }
 
-    /// Write the response; `head_only` leaves the body out, `keep`
-    /// keeps the connection.
-    pub fn write(self, w: &mut dyn Write, head_only: bool, keep: bool) -> io::Result<()> {
+    /// Write the response with `server` as its `Server` header;
+    /// `head_only` leaves the body out, `keep` keeps the connection.
+    pub fn write(
+        self,
+        w: &mut dyn Write,
+        server: &str,
+        head_only: bool,
+        keep: bool,
+    ) -> io::Result<()> {
         let mut head = format!(
-            "HTTP/1.1 {} {}\r\nDate: {}\r\nServer: QS400/{}\r\n",
+            "HTTP/1.1 {} {}\r\nDate: {}\r\nServer: {server}\r\n",
             self.status,
             reason(self.status),
             date::now(),
-            release::RELEASE
         );
         for (k, v) in &self.headers {
             let _ = write!(head, "{k}: {v}\r\n");
@@ -232,14 +237,14 @@ mod tests {
     fn encodes_bytes_and_streams() {
         let mut out = Vec::new();
         Response::redirect("/x")
-            .write(&mut out, false, true)
+            .write(&mut out, "Test/1", false, true)
             .unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.starts_with("HTTP/1.1 303 See Other\r\n"));
         assert!(s.contains("Location: /x\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n"));
         let mut out = Vec::new();
         Response::stream("a.log", "text/plain", Box::new(&b"hello"[..]))
-            .write(&mut out, false, false)
+            .write(&mut out, "Test/1", false, false)
             .unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.ends_with("Transfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"));
@@ -247,12 +252,12 @@ mod tests {
         let mut out = Vec::new();
         Response::new(200, "x/y", Vec::new())
             .body_sized(3, Box::new(&b"abcdef"[..]))
-            .write(&mut out, false, true)
+            .write(&mut out, "Test/1", false, true)
             .unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.ends_with("Content-Length: 3\r\n\r\nabc"), "{s}");
         let mut out = Vec::new();
         let short = Response::new(200, "x/y", Vec::new()).body_sized(9, Box::new(&b"ab"[..]));
-        assert!(short.write(&mut out, false, true).is_err());
+        assert!(short.write(&mut out, "Test/1", false, true).is_err());
     }
 }

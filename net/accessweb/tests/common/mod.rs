@@ -145,7 +145,7 @@ pub fn golden(file: &str) -> String {
 /// Each area keeps its own routes' entries.
 #[allow(clippy::too_many_lines, clippy::match_same_arms)]
 pub fn proto(url: &str) -> Option<String> {
-    if url == qsweb::frame::CSS_PATH {
+    if url == accessweb::BRAND.css_path {
         return Some("shared/qs400.css".into());
     }
     // Pages of the other products this one links to.
@@ -277,7 +277,14 @@ pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
     }
     let dir = file.split('/').next().unwrap_or("");
     let map = |u: &str| proto(u).map(|t| relative(&t, dir));
-    if let Some(d) = diff(served, &g, &Normalize { url: &map }) {
+    if let Some(d) = diff(
+        served,
+        &g,
+        &Normalize {
+            url: &map,
+            script: Some(accessweb::BRAND.nav_path),
+        },
+    ) {
         panic!("{file} differs from the served page at {d}");
     }
 }

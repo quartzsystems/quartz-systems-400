@@ -36,6 +36,11 @@ use site::{Plan, Site};
 
 use crate::files::Files;
 
+/// The `Server` header's value.
+fn server() -> String {
+    format!("QS400/{}", release::RELEASE)
+}
+
 /// How often a waiting connection looks at the stop flag.
 const POLL: Duration = Duration::from_millis(250);
 
@@ -287,14 +292,18 @@ impl Server {
                         ReadError::BodyTooLarge => (413, "The request body was too large."),
                         _ => (400, "The request was not understood."),
                     };
-                    let _ = plain(status, says).write(conn, false, false);
+                    let _ = plain(status, says).write(conn, &server(), false, false);
                     return;
                 }
             };
             n += 1;
             if req.version != "HTTP/1.1" && req.version != "HTTP/1.0" {
-                let _ = plain(505, "This server speaks HTTP/1.1 and HTTP/1.0.")
-                    .write(conn, false, false);
+                let _ = plain(505, "This server speaks HTTP/1.1 and HTTP/1.0.").write(
+                    conn,
+                    &server(),
+                    false,
+                    false,
+                );
                 return;
             }
             self.state.busy.fetch_add(1, Ordering::SeqCst);
@@ -306,7 +315,7 @@ impl Server {
             idle = secs(site.keep_alive_timeout);
             let head_only = req.method == "HEAD";
             let resp = self.respond(&req, &ctx);
-            let wrote = resp.write(conn, head_only, keep);
+            let wrote = resp.write(conn, &server(), head_only, keep);
             self.state.busy.fetch_sub(1, Ordering::SeqCst);
             if wrote.is_err() || !keep {
                 return;

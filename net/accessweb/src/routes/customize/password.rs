@@ -90,8 +90,7 @@ pub fn page(rq: &Rq<'_>) -> Response {
     if expired {
         rq.app.sessions.remove(&rq.session.id);
         let to = format!("{}?changed={}", PRODUCT.url("/signon"), rq.user());
-        return Response::redirect(&to)
-            .with("Set-Cookie", &qsweb::session::clear_cookie(PRODUCT.prefix));
+        return Response::redirect(&to).with("Set-Cookie", &PRODUCT.clear_cookie());
     }
     rq.set(&[(PWD_WARN, "")]);
     let m = rq.message(

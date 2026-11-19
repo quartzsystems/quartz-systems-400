@@ -140,7 +140,7 @@ pub fn golden(file: &str) -> String {
 /// Each area keeps its own routes' entries.
 #[allow(clippy::too_many_lines, clippy::match_same_arms)]
 pub fn proto(url: &str) -> Option<String> {
-    if url == qsweb::frame::CSS_PATH {
+    if url == navigator::BRAND.css_path {
         return Some("shared/qs400.css".into());
     }
     // HTTP Server Administration, another product, on port 2001.
@@ -314,7 +314,14 @@ pub fn assert_golden_text(served: &str, mut g: String, file: &str, fix: &[(&str,
     }
     let dir = file.split('/').next().unwrap_or("");
     let map = |u: &str| proto(u).map(|t| relative(&t, dir));
-    if let Some(d) = diff(served, &g, &Normalize { url: &map }) {
+    if let Some(d) = diff(
+        served,
+        &g,
+        &Normalize {
+            url: &map,
+            script: Some(navigator::BRAND.nav_path),
+        },
+    ) {
         panic!("{file} differs from the served page at {d}");
     }
 }

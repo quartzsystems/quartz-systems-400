@@ -70,11 +70,15 @@ pub fn second_level(ctx: &Ctx, sl: &SecondLevel, sent: Option<&Sent>, crumb: &st
     body.push_str(&form(
         ctx,
         "",
-        &buttons(&[
-            Button::bare("< Back"),
-            Button::bare("Job log"),
-            Button::bare("Close"),
-        ]),
+        &buttons(&if ctx.product.brand.job_log {
+            vec![
+                Button::bare("< Back"),
+                Button::bare("Job log"),
+                Button::bare("Close"),
+            ]
+        } else {
+            vec![Button::bare("< Back"), Button::bare("Close")]
+        }),
     ));
     body.push('\n');
     Page {
@@ -127,9 +131,10 @@ pub fn not_authorized(ctx: &Ctx, r: &Refusal) -> Page {
         rows.push(Prop::new("Policy", p.clone()));
     }
     let body = format!(
-        "\n<p>{}</p>\n{}\n<p>Contact the security officer (QSECOFR) if you need this authority. The attempt has been recorded in the audit journal (entry type AF).</p>\n{}\n",
+        "\n<p>{}</p>\n{}\n<p>{}</p>\n{}\n",
         r.explain,
         props_table(ctx.product, &[PropGroup { title: None, rows }], true),
+        ctx.product.brand.notauth_note,
         form(
             ctx,
             "",

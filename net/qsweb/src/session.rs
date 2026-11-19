@@ -13,8 +13,6 @@ use std::time::{Duration, Instant};
 
 use crate::msg::Message;
 
-/// The session cookie's name.
-pub const COOKIE: &str = "QS400SID";
 /// The hidden form field carrying the CSRF token.
 pub const CSRF_FIELD: &str = "csrf";
 
@@ -215,17 +213,17 @@ pub fn csrf_ok(s: &Session, sent: &str) -> bool {
     a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
-/// The `Set-Cookie` value for session `id` under `path`.
-pub fn set_cookie(id: &str, path: &str, secure: bool) -> String {
+/// The `Set-Cookie` value for session `id` in cookie `name` under `path`.
+pub fn set_cookie(name: &str, id: &str, path: &str, secure: bool) -> String {
     format!(
-        "{COOKIE}={id}; Path={path}; HttpOnly; SameSite=Strict{}",
+        "{name}={id}; Path={path}; HttpOnly; SameSite=Strict{}",
         if secure { "; Secure" } else { "" }
     )
 }
 
-/// The `Set-Cookie` value that removes the cookie.
-pub fn clear_cookie(path: &str) -> String {
-    format!("{COOKIE}=; Path={path}; HttpOnly; SameSite=Strict; Max-Age=0")
+/// The `Set-Cookie` value that removes cookie `name`.
+pub fn clear_cookie(name: &str, path: &str) -> String {
+    format!("{name}=; Path={path}; HttpOnly; SameSite=Strict; Max-Age=0")
 }
 
 #[cfg(test)]
@@ -268,6 +266,6 @@ mod tests {
         let t = Sessions::new(Duration::ZERO);
         let s = t.create("A");
         assert!(t.get(&s.id).is_none());
-        assert!(set_cookie("x", "/qs400/", true).ends_with("; Secure"));
+        assert!(set_cookie("SID", "x", "/p/", true).ends_with("; Secure"));
     }
 }
