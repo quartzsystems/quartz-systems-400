@@ -494,7 +494,7 @@ pub fn fixture(ctx: &Ctx) -> Result<String> {
          its ESP is `{}` and its A/B record `{}`; its panel on the framebuffer, on \
          serial and on a console port, its mirrored set through ublk (a member removed, the server restarted, \
          the member rebuilt, the server killed under load and only the dirty regions \
-         copied) and its route held",
+         copied), its route, QSI paired over TLS and its web page over TLS held",
         &rev[..rev.len().min(9)],
         String::from_utf8_lossy(ESP_LABEL).trim_end(),
         String::from_utf8_lossy(&RECORD.magic)

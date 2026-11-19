@@ -43,6 +43,8 @@ static BRAND: Brand = Brand {
     nav_path: "/demo/shared/nav.js",
     cookie: "QSDEMOSID",
     signon_notice: "Authorized administrators only.",
+    notice_in_form: false,
+    user_max: 10,
     notauth_note: "Ask the console's administrator for this authority.",
     job_log: false,
 };

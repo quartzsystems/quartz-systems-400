@@ -327,6 +327,8 @@ struct SignonT<'a> {
     name: &'a str,
     release: String,
     notice2: &'a str,
+    notice_in_form: bool,
+    user_max: u32,
     footer: String,
 }
 
@@ -354,6 +356,8 @@ pub fn signon(
         name: product.brand.name,
         release: product.brand.release(),
         notice2: product.brand.signon_notice,
+        notice_in_form: product.brand.notice_in_form,
+        user_max: product.brand.user_max,
         footer: footer(product),
     }
     .render()
@@ -391,4 +395,63 @@ pub fn help(product: &Product, topic: &str, body: &str) -> String {
     }
     .render()
     .expect("help renders")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static CONSOLE: Brand = Brand {
+        name: "Demo MC",
+        vendor: "Example",
+        release: &"V1R0M0",
+        server: "DEMOMC",
+        css_path: "/s/site.css",
+        nav_path: "/s/nav.js",
+        cookie: "MCSID",
+        signon_notice: "",
+        notice_in_form: true,
+        user_max: 32,
+        notauth_note: "",
+        job_log: false,
+    };
+
+    static P: Product = Product {
+        brand: &CONSOLE,
+        wordmark: "Demo MC Console",
+        crumb_root: "Console",
+        prefix: "/mc",
+        nav: &[],
+        system_label: "Console",
+        nav_script: false,
+    };
+
+    #[test]
+    fn signon_as_the_brand_says() {
+        let page = signon(&P, "MC1", "", &[], Some("Use your console account."));
+        assert!(page.contains(
+            "<table class=\"signon\" cellspacing=\"0\">\n<tr><td colspan=\"2\"><p class=\"small\">Use your console account.</p></td></tr>\n<tr><td colspan=\"2\" class=\"signtitle\">Sign on</td></tr>"
+        ), "{page}");
+        assert!(page.contains("maxlength=\"32\""));
+        assert!(
+            page.contains("align=\"center\">(C) Example. Demo MC V1R0M0.</td></tr>"),
+            "{page}"
+        );
+        assert!(!page.contains("<br>"));
+        // The other way: the notice above the form, the second line.
+        static Q: Product = Product {
+            brand: &crate::brand::tests::TEST,
+            ..P
+        };
+        let page = signon(&Q, "S", "", &[], Some("Notice."));
+        assert!(
+            page.contains("<td valign=\"top\">\n<p>Notice.</p>\n<form"),
+            "{page}"
+        );
+        assert!(page.contains("maxlength=\"10\""));
+        assert!(
+            page.contains("Demo 1.0.<br>\nAuthorized users only.</td>"),
+            "{page}"
+        );
+    }
 }

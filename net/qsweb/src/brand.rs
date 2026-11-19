@@ -28,8 +28,15 @@ pub struct Brand {
     pub nav_path: &'static str,
     /// The session cookie's name.
     pub cookie: &'static str,
-    /// The sign-on page's line under the copyright.
+    /// The sign-on page's line under the copyright; empty, the
+    /// copyright line stands alone.
     pub signon_notice: &'static str,
+    /// Where a product's sign-on notice ([`crate::frame::signon`]'s
+    /// `notice`) goes: false above the form, true as the sign-on
+    /// table's first row.
+    pub notice_in_form: bool,
+    /// The most the sign-on page's User field takes.
+    pub user_max: u32,
     /// The Not authorized page's closing paragraph, HTML: whom to ask,
     /// where the attempt was recorded.
     pub notauth_note: &'static str,
@@ -79,6 +86,8 @@ pub(crate) mod tests {
         nav_path: "/s/nav.js",
         cookie: "DEMOSID",
         signon_notice: "Authorized users only.",
+        notice_in_form: false,
+        user_max: 10,
         notauth_note: "Ask the administrator.",
         job_log: false,
     };

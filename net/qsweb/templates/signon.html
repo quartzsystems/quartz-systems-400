@@ -15,16 +15,17 @@
   </tr></table>
 </td></tr>
 <tr><td valign="top">
-{% if let Some(n) = notice %}<p>{{ n }}</p>
-{% endif %}{{ messages|safe }}<form method="post" action="{{ action }}">
+{% if !notice_in_form %}{% if let Some(n) = notice %}<p>{{ n }}</p>
+{% endif %}{% endif %}{{ messages|safe }}<form method="post" action="{{ action }}">
 <table class="signon" cellspacing="0">
-<tr><td colspan="2" class="signtitle">Sign on</td></tr>
-<tr><th>User</th><td><input type="text" name="user" size="30" maxlength="10"{% if !user.is_empty() %} value="{{ user }}"{% endif %}></td></tr>
+{% if notice_in_form %}{% if let Some(n) = notice %}<tr><td colspan="2"><p class="small">{{ n }}</p></td></tr>
+{% endif %}{% endif %}<tr><td colspan="2" class="signtitle">Sign on</td></tr>
+<tr><th>User</th><td><input type="text" name="user" size="30" maxlength="{{ user_max }}"{% if !user.is_empty() %} value="{{ user }}"{% endif %}></td></tr>
 <tr><th>Password</th><td><input type="password" name="password" size="30"></td></tr>
 <tr><td>&nbsp;</td><td><input type="submit" value="Sign on"></td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr><td colspan="2" class="small grey" align="center">(C) {{ vendor }}. {{ name }} {{ release }}.<br>
-{{ notice2 }}</td></tr>
+<tr><td colspan="2" class="small grey" align="center">(C) {{ vendor }}. {{ name }} {{ release }}.{% if !notice2.is_empty() %}<br>
+{{ notice2 }}{% endif %}</td></tr>
 </table>
 </form>
 </td></tr>

@@ -105,6 +105,8 @@ pub static BRAND: Brand = Brand {
     nav_path: "/qs400/shared/qsnav.js",
     cookie: "QS400SID",
     signon_notice: "Unauthorized use of this system is prohibited. Sign-on attempts are logged to the audit journal.",
+    notice_in_form: false,
+    user_max: 10,
     notauth_note: "Contact the security officer (QSECOFR) if you need this authority. The attempt has been recorded in the audit journal (entry type AF).",
     job_log: true,
 };
