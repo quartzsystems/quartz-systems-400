@@ -38,6 +38,9 @@ qsipart = { git = "@REPO@", rev = "@REV@" }
 qsi = { git = "@REPO@", rev = "@REV@" }
 qsisess = { git = "@REPO@", rev = "@REV@" }
 qsitrust = { git = "@REPO@", rev = "@REV@" }
+# The web layer and the certificate kit (handoff 22).
+qsweb = { git = "@REPO@", rev = "@REV@" }
+x509kit = { git = "@REPO@", rev = "@REV@" }
 
 # What the pipeline's userland check asks of the image's binaries:
 # static (the musl target) and stripped.

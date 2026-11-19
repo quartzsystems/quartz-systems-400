@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Settings - QSDEMO Management Console</title>
+<link rel="stylesheet" type="text/css" href="/demo/shared/site.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QSDEMO Management Console</td>
+    <td class="hdrright">Console: <b>QSDEMOMC1</b> &nbsp;&nbsp; User: <b>ADMIN</b> &nbsp;&nbsp;
+      <a href="/demo/signoff">Sign off</a> &nbsp;&nbsp; <a href="/demo/help/settings" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="/demo/systems">[+]</a> <b>Systems</b></div>
+<div class="navgrp"><a class="glyph" href="/demo/settings">[-]</a> <b>Console</b></div>
+<div class="navitem"><a href="/demo/settings" class="navcur">Settings</a></div>
+<div class="navitem"><a href="/demo/certificate">Certificate</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Management Console &#62; Console &#62; Settings</div>
+<h1>Settings</h1>
+<div class="desc">The console&#39;s own name, shown beside the user on every page.</div>
+<table class="msg"><tr><td class="done"><a class="msgid" href="/demo/msg/QMC2001" target="_blank">QMC2001</a> - Console name changed to QSDEMOMC1.</td></tr></table>
+<form method="post"><input type="hidden" name="csrf" value="TOKEN"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Identification</td></tr>
+<tr><th>Console name</th><td><input type="text" name="name" value="QSDEMOMC1" size="20"></td></tr>
+<tr><th>Release</th><td>@RELEASE@</td></tr>
+</table>
+<div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QSDEMO @RELEASE@ · Example Systems</td></tr>
+</table>
+</body>
+</html>

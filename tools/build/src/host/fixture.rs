@@ -24,8 +24,12 @@
 //! under write load with both members active, after which the set's
 //! write-intent map (handoff 15) has less than the whole set copied and
 //! every file reads back; a route added through `netlink` under
-//! QSDEMO's own protocol number. And its PID 1 is built without the
-//! crates those must not bring.
+//! QSDEMO's own protocol number. QSI is paired and answered over TLS
+//! (handoff 18), and a web product of QSDEMO's own on `qsweb` (handoff
+//! 22) is served over TLS with a certificate `x509kit` made: signed on,
+//! a form posted with its CSRF token, a `QMC` message shown, and the
+//! page checked against the fixture's golden file. And its PID 1 is
+//! built without the crates those must not bring.
 //!
 //! Only committed work is seen: a git dependency is HEAD, not the
 //! working tree.
@@ -111,11 +115,18 @@ const PROOFS: &[(&str, &[&str])] = &[
     ("route", &["added with routing protocol 83"]),
     ("qsi", &["paired over TLS 1.3"]),
     ("qsi", &["identify answered pinned by QSDEMO"]),
+    ("web", &["CN=qsdemo.local P-256 self-signed"]),
+    ("web", &["served over TLSv1_3"]),
+    (
+        "web",
+        &["CSRF refused a forged form, message QMC2001 shown"],
+    ),
+    ("web", &["the settings page matches its golden file"]),
 ];
 /// Crates of this repository the fixture's PID 1 must not be built
 /// with: the neutral crates it takes bring none of them.
 const NOT_IN_INIT: &[&str] = &[
-    "release", "licpart", "store", "svctools", "tn5250", "ccsid", "slic",
+    "release", "licpart", "store", "svctools", "tn5250", "ccsid", "slic", "certs",
 ];
 
 /// Copy the tree `from` to `to`.

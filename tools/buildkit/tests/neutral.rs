@@ -7,8 +7,9 @@
 //! The same holds for the crates an appliance takes beside it (handoff
 //! 14): the console, the screen kit, the service tools user IDs, disk
 //! protection, the ublk server, the netlink client, (handoff 17) the
-//! partition service channel's protocol and (handoff 18) QSI's
-//! messages, session and trust rules.
+//! partition service channel's protocol, (handoff 18) QSI's
+//! messages, session and trust rules, and (handoff 22) the web layer
+//! and the certificate kit.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -148,12 +149,16 @@ fn the_appliance_crates_reach_no_product_crate() {
 /// The crates of this repository each protocol crate may reach: the
 /// partition service channel's takes `ipc` alone (handoff 17); QSI's
 /// messages add `qsipart`, its session `qsi`, and its trust rules take
-/// nothing of this repository (handoff 18).
+/// nothing of this repository (handoff 18). The web layer and the
+/// certificate kit take nothing of it either (handoff 22): not
+/// `release`, `licpart` or `certs`.
 const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("qsipart", &["qsipart", "ipc"]),
     ("qsi", &["qsi", "qsipart", "ipc"]),
     ("qsisess", &["qsisess", "qsi", "qsipart", "ipc"]),
     ("qsitrust", &["qsitrust"]),
+    ("qsweb", &["qsweb"]),
+    ("x509kit", &["x509kit"]),
 ];
 
 #[test]
@@ -188,6 +193,11 @@ fn the_protocol_crates_take_only_their_own() {
 /// Lines of a source file outside its tests that name the product:
 /// `QS400` in any case, or `QS/400`, in code or in documentation.
 fn product_lines(file: &Path, hits: &mut Vec<String>) {
+    product_lines_but(file, &[], hits);
+}
+
+/// [`product_lines`], lines holding one of `allowed` left out.
+fn product_lines_but(file: &Path, allowed: &[&str], hits: &mut Vec<String>) {
     let text = fs::read_to_string(file).unwrap();
     let code = text
         .split("#[cfg(test)]")
@@ -195,7 +205,9 @@ fn product_lines(file: &Path, hits: &mut Vec<String>) {
         .and_then(|t| t.split("#[cfg(all(test").next())
         .unwrap_or_default();
     for (n, line) in code.lines().enumerate() {
-        if line.to_ascii_lowercase().contains("qs400") || line.contains("QS/400") {
+        if (line.to_ascii_lowercase().contains("qs400") || line.contains("QS/400"))
+            && !allowed.iter().any(|a| line.contains(a))
+        {
             hits.push(format!("{}:{}: {}", file.display(), n + 1, line.trim()));
         }
     }
@@ -222,6 +234,38 @@ fn the_appliance_crates_name_no_product() {
     assert!(
         hits.is_empty(),
         "a product named in a crate an appliance takes:\n{}",
+        hits.join("\n")
+    );
+}
+
+/// The web layer and the certificate kit (handoff 22): their sources,
+/// templates and manifests name no product. The stylesheet keeps its
+/// file name (`qs400.css`) and its bytes, which nothing may change.
+#[test]
+fn the_web_crates_name_no_product() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut hits = Vec::new();
+    for dir in ["net/qsweb", "net/x509kit"] {
+        let dir = repo.join(dir);
+        let mut files = Vec::new();
+        sources(&dir.join("src"), &mut files);
+        assert!(
+            files.len() >= 5,
+            "{}: {} source files",
+            dir.display(),
+            files.len()
+        );
+        files.push(dir.join("Cargo.toml"));
+        if let Ok(rd) = fs::read_dir(dir.join("templates")) {
+            files.extend(rd.flatten().map(|e| e.path()));
+        }
+        for f in files {
+            product_lines_but(&f, &["\"../assets/qs400.css\""], &mut hits);
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "a product named in the web layer or the certificate kit:\n{}",
         hits.join("\n")
     );
 }
