@@ -426,6 +426,11 @@ mod tests {
         nav_script: false,
     };
 
+    static Q: Product = Product {
+        brand: &crate::brand::tests::TEST,
+        ..P
+    };
+
     #[test]
     fn signon_as_the_brand_says() {
         let page = signon(&P, "MC1", "", &[], Some("Use your console account."));
@@ -439,10 +444,6 @@ mod tests {
         );
         assert!(!page.contains("<br>"));
         // The other way: the notice above the form, the second line.
-        static Q: Product = Product {
-            brand: &crate::brand::tests::TEST,
-            ..P
-        };
         let page = signon(&Q, "S", "", &[], Some("Notice."));
         assert!(
             page.contains("<td valign=\"top\">\n<p>Notice.</p>\n<form"),
