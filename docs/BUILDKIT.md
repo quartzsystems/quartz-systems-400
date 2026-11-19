@@ -321,6 +321,8 @@ what names its owner from the caller; section 10 has the detail.
 | `ublk` | a kernel block device served by a process | the device behind it (a `Target`, or any `BlockDev`); whether it outlives its server |
 | `netlink` | rtnetlink, sock_diag, nftables, sysctl | the routing protocol number of its routes, the name of its nftables table |
 | `qsipart` | the partition service channel's protocol (handoff 17): frames, the service port's and the console port's messages, a peer's grid; `ipc` alone of this repository under it, which `neutral.rs` holds it to | nothing: the port names and the protocol are the partition scope of QSI, both sides' |
+| `qsweb` | the web layer (handoff 22, section 17): HTTP/1.1 over any stream, sessions and CSRF, the frame, the partials, the shared pages, golden comparison and the link check, WebSocket | its family (`Brand`: name, vendor, release, `Server` token, the stylesheet's and script's paths, the cookie, the shared pages' policy sentences), each product's wordmark, prefix, navigation tree, header label, routes, messages and help |
+| `x509kit` | certificates without a store (handoff 22): P-256, P-384 and RSA keys, self-signed and issued certificates, requests, what a certificate holds, PEM chains and keys matched, PKCS#12 read and written | the names, the validity, the passwords |
 
 ### Sets for a storage pool (handoff 15)
 
@@ -441,9 +443,10 @@ still does:
 
 ## 6. Crates another repository takes
 
-`build fixture` builds all nineteen as git dependencies, and its PID 1
-runs `console`, `scrkit`, `protect`, `ublk`, `netlink`, `qsipart`, and
-`qsi`, `qsisess` and `qsitrust` (a pairing over TLS and an `identify`).
+`build fixture` builds all twenty-one as git dependencies, and its PID 1
+runs `console`, `scrkit`, `protect`, `ublk`, `netlink`, `qsipart`,
+`qsi`, `qsisess` and `qsitrust` (a pairing over TLS and an `identify`),
+and `qsweb` and `x509kit` (a web product of its own over TLS).
 What an
 appliance should know of each:
 
@@ -467,6 +470,8 @@ appliance should know of each:
 | `qsi` | product-neutral: QSI's messages (`docs/QSI.md`): the hello, the families with their versions and capability bits, every request, reply and event, `qsi::any` by number, `qsi::samples`; `ipc` and `qsipart` of this repository under it (`neutral.rs`). QS/VS and QS/MC pin it |
 | `qsisess` | product-neutral: QSI's session as a state machine over any byte stream (handshake, requests with replies, events with a replay log, streams with credit, keep-alive, limits); no sockets, no TLS; `ipc`, `qsipart` and `qsi` under it; three fuzz targets (`qsisess-frames`, `-handshake`, `-streams`) |
 | `qsitrust` | product-neutral: QSI's trust rules: mutual TLS 1.3 over graviola with pinned self-signed Ed25519 certificates (QS/VS's identity, byte for byte), and pairing by SPAKE2 bound to both certificates and the connection; keeps no state (`Pins`, `pair::Guard` are the caller's); nothing of this repository under it |
+| `qsweb` | product-neutral (section 17): the web layer of QS/400's three web products and of QS/MC's; nothing of this repository under it (`neutral.rs`); the stylesheet keeps its file name `qs400.css` and its bytes |
+| `x509kit` | product-neutral (section 17): keys, certificates, requests, PEM bundles, PKCS#12; nothing of this repository under it. `certs`, QS/400's certificate store, is built on it and re-exports its modules |
 | `svctools` | QS/400's: the DST and installer screens, over `scrkit`, `svcusers`, `console`, `licpart`, `release` and `hwqual`. An appliance takes the three neutral ones, not this |
 
 They build from outside because cargo resolves a git dependency's
@@ -1572,3 +1577,64 @@ activation. No listener is added to QS/400.
 
 `fmtcheck` is green: the `qsi` draft's lock was updated (a draft needs
 no version bump; no file was added).
+
+## 17. Handoff 22: the web layer and certificates
+
+QS/MC's only management surface is a web UI in the design system of
+QS/400's three web products (`docs/WEB_STYLE.md`). `net/qsweb` was that
+layer already, but QS/400's: it depended on `release`, printed `QS/400`
+and fixed QS/400's paths. And a console needs to make and read
+certificates without QS/400's certificate store, which depends on
+`licpart`.
+
+| What | Where |
+|---|---|
+| The family a product belongs to: name, vendor, release, the `Server` token, the stylesheet's and the navigation script's paths, the session cookie's name, the sign-on notice and where a product's notice goes, the User field's length, the Not authorized page's note, whether the error page offers Job log | `qsweb::brand::Brand`; `frame::Product::brand`. QS/400's three products each declare `BRAND` with today's values; `qsweb` no longer depends on `release` |
+| The `Server` header from the caller | `Handler::server`; `Response::write` takes it; `httpd` passes `QS400/` and the release |
+| The session cookie by name | `Product::session_id`, `set_cookie`, `clear_cookie`; `session::set_cookie(name, id, path, secure)` |
+| A body streamed instead of held (added) | `Handler::streams` and `handle_stream`; `http::request::read_head`, `read_body`, `BodyStream` (length or chunked, no limit of the layer's); `http::multipart::Parts`, a form's parts one at a time; under `serve_guarded` the body reaches the request's thread through a channel the panic hook closes. Downloads already streamed (`Body::Stream`, `Body::Sized`) |
+| The limits, documented | `qsweb::http`'s module documentation: head 16 KiB, a body read whole 8 MiB, 200 requests a connection, time limits are the caller's socket timeouts |
+| Golden pages from outside | `golden::Normalize` takes the navigation script's path; `golden::crawl` and `resolve`, the link check over the caller's fetch |
+| Certificates without the store | `net/x509kit`: `crypto` (keys, randomness, hashes, PBKDF2, the PKCS#12 KDF), `x509` (`CertInfo`, `build`), `pem`, `pkcs12`, moved from `certs` unchanged but for the error type (`x509kit::Error`, the variants `certs::CertError` maps one to one); new `server::self_signed` (a P-256 key and a server certificate for the names and days given), `server::request`, `bundle::read_pem`, `read_pkcs12`, `key_matches`. `certs` keeps the store, the stash, the CA, the applications and AES-GCM and Argon2, and re-exports `x509`, `pem`, `pkcs12` and `crypto` so every path is as it was |
+
+**PKCS#12.** Yes: `x509kit::pkcs12` reads and writes PKCS#12 files in
+pure Rust (PBES2 with AES, and the legacy PKCS#12 ciphers 3DES and RC2
+through the RustCrypto `des` and `rc2` crates), and passes `deny`; it is
+what `certs` imports a PKCS#12 file with.
+`x509kit::bundle::read_pkcs12(data, password)` gives the certificate,
+its chain in order and the key, with the key matched.
+
+**The fixture.** Its PID 1 serves a web product of its own, `QSDEMO
+Management Console` in the family `QSDEMO`, over TLS 1.3 on a socket
+pair with a certificate `x509kit` made, and a client pinned to it signs
+on, has a forged form refused, posts the settings form with its CSRF
+token and gets the `QMC2001` message row; the page must match
+`init/golden/settings.html` (the release in it is `@RELEASE@`).
+`build fixture` asserts the four `QSDEMO web:` lines, and that the
+fixture's PID 1 is built without `certs` either.
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Every existing golden page and artifact hash is identical | The three products' golden and behaviour tests pass unchanged (`cargo test -p httpadmin -p navigator -p accessweb`). Beyond the goldens' token comparison, every response the three products' test browsers got (124,641: status, headers and body, session tokens blanked) was recorded at the base `423c65dea` and at `987fcf87c`, and again after the sign-on fields: 124,557 byte-identical; the 72 HTTP Server Administration responses that differ are identical once key material is masked (serial numbers, fingerprints, PEM and request bytes, PKCS#12 downloads of keys made in each run); Navigator's are all identical; Access for Web's 12 are one test that polls a background copy (`copy_to_table_and_back`), whose requests vary from run to run at the base too. Built in one directory with one build ID (`buildkit-baseline`): `instload` 586,040 `276b03e2…` at both; `slic` (49,603,304 `707ddb08…` to 49,651,432 `8b34aeb0…`) and `qsjob` (41,884,200 `5d26ee20…` to 41,926,088 `1858462a…`) differ because they link `certs`, `qsweb` and the three products, whose code moved or gained the brand; `Cargo.lock` gained `x509kit` and two edges, `NOTICES.txt` is current (no crate outside the tree was added). The pipeline's code (`buildkit`, `tools/build` but the fixture step) is unchanged |
+| 2 | `qsweb` builds without `release`; the certificate crate without `licpart` | `qsweb` depends on no crate of this repository, `x509kit` on none either (`neutral.rs`, `the_protocol_crates_take_only_their_own`) |
+| 3 | `build fixture` serves and checks its page over TLS with a certificate it made | passed at `987fcf87c`: `QSDEMO web:` the certificate (P-256, self-signed, made by `x509kit::server`), TLS 1.3 to a pinned client, sign-on, a forged form refused, `QMC2001` shown, the page matching `init/golden/settings.html`; the step asserts the four lines and that the fixture's PID 1 has no `certs` in its graph |
+| 4 | The neutrality test passes for both crates | `tools/buildkit/tests/neutral.rs`: `the_web_crates_name_no_product` (sources, templates and manifests; the one line allowed is `include_bytes!("../assets/qs400.css")`, the stylesheet's file name) and the dependency check above |
+| 5 | The PKCS#12 question is answered | yes, above: `x509kit::pkcs12::read` and `bundle::read_pkcs12` |
+
+Also: `cargo clippy` clean for every touched crate and for `slic` and
+`qsjob` on the musl target; `build deny` and `build notices --check`
+pass; `fmtcheck` green (no frozen format's file was touched: the
+certificate store's `store/format.rs` stays in `certs`). `textaudit` and
+`kcbuild notes` report the same as at the base (literals in `lic/` and
+the V1R1M0 marker inventory, neither from this work).
+
+**After the first cut** (QS/MC's sign-on golden): `Brand::user_max`
+(the User field's `maxlength`), `Brand::notice_in_form` (a product's
+notice as the sign-on table's first row instead of a `<p>` above the
+form), and an empty `signon_notice` leaving the `(C)` line alone. QS/400's
+three give `10`, `false` and their line, and HTTP Server
+Administration's recorded responses are again identical to the base's
+but for key material; `qsweb`'s `signon_as_the_brand_says` renders both
+forms.

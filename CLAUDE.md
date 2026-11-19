@@ -32,6 +32,7 @@ kernel is the only inherited component; every process above it is ours.
 | V1R2M0 | QSI's servicing (handoff 19): the `service` family (a managed system's problems: list, get, close; opened, seen, cleared, closed), `update` (code update of A/B slots: status, stage on a stream, discard, install, activate, cancel; staged, verified, progress, installed, activating, confirmed or rolled back) and base's own dumps behind bit 4 (`caps::SERVICING`, bits 2 to 4); capabilities checked by operation and events sent only where agreed; `EventLog::resume`, a log that numbers on after a restart | `QSI.md` §4, §7, §10, `BUILDKIT.md` §15 |
 | V1R2M0 | QSI's physical I/O and entitlement (handoff 20): a host's devices for physical I/O (released, assignable or why, the isolation group, the holder; released, taken back, assigned, returned, reset failed) and its physical tape drives in `vres` (a profile's tape device names a volume or `@` and a drive's location code) behind bit 17 (`caps::PHYSICAL_IO`); the partition family's version 2, a running shared partition's units, capping and weight, behind bit 18 (`caps::PARTITION_V2`); refusals `QSI13nn` and `QSI14nn` | `QSI.md` §5, §7, §9, §10, `BUILDKIT.md` §16 |
 | V1R2M0 | Tape in a QS/VS partition (handoff 21): a slow request is waited for (`stgsvc/stall.rs` the fault point `dbgstall`, step 200; `slic` logs how the service ended; `Close` from `slic` only); a blank volume is `*NL` (a read's unexplained EIO asked of the drive through `SG_IO`); the save, restore and media commands send their catalogue entries with IBM's identifiers and data layouts (`cpp/msgout.rs`, `stgsvc/media/fail.rs`, `medio::msg`, `saverst::msg`), captured from the primary (`tools/conformance/oracle/msgdata`) | `STORAGE_SERVICE.md` "Slow requests", `MEDIA.md`, `SAVE_FORMAT.md` §8 |
+| V1R2M0 | The web layer and certificates for QS/MC (handoff 22): `qsweb` takes its family from the caller (`brand::Brand`: name, release, `Server`, the stylesheet's and script's paths, the cookie; each product's `BRAND`), streams a large upload (`Handler::streams`, `BodyStream`, `multipart::Parts`), `golden::crawl`; `net/x509kit` keys, certificates, requests, PEM bundles and PKCS#12 without the store (`certs` over it); both neutral (`neutral.rs`); the fixture serves a web product of its own over TLS with a certificate it made and checks its page against its golden file | `WEB_STYLE.md` "A product outside QS/400", `BUILDKIT.md` §17 |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -578,7 +579,10 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 table, CHGTCPA, the QUSRSYS files, apply.rs to the kernel, the CFGTCP panels
   sockets/      IBM's socket API over Linux: constants, layouts, errno, port rules, resolver
   tls/          rustls over graviola, QSSLPCL/QSSLCSL policy, the GSKit and SSL_ APIs
-  certs/        the certificate store (DCM's equivalent): stores, CA, PKCS#12, X.509
+  certs/        the certificate store (DCM's equivalent): stores, CA, application IDs, over x509kit
+  x509kit/      certificates without a store, neutral: crypto/ keys and KDFs, x509/ (CertInfo,
+                build), pem.rs, pkcs12/, server.rs a key and a self-signed server certificate,
+                bundle.rs a PEM chain and key (or PKCS#12) read and matched
   regfac/       the registration facility: exit points and programs (QUSRSYS/QUSEXRGOBJ)
   hostsvr/      the host server datastream codec (docs/HOSTSVR.md), traces
   hostserver/   the host servers' request loops over backend traits the job implements
@@ -598,8 +602,9 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 SNDSMTPEMM commands) and the roles work/qsjob/src/work/telnet.rs
                 (QTVTELNET), httpadm.rs (ADMIN), ftp.rs (QTFTP00nnn), ntp.rs (QTOTNTP),
                 lpd.rs (QTLPD00001)
-  qsweb/        the web products' shared layer (docs/WEB_STYLE.md): src/http/ HTTP/1.1, forms,
-                multipart, responses; session.rs sessions and CSRF; frame.rs the frame, sign-on
+  qsweb/        the web layer of a family of products, neutral (docs/WEB_STYLE.md): brand.rs the
+                family the caller gives; src/http/ HTTP/1.1 over any stream, forms, multipart (whole
+                or streamed), responses; session.rs sessions and CSRF; frame.rs the frame, sign-on
                 and help (templates/); partials.rs; pages.rs; golden.rs; assets/qs400.css,
                 assets/qsnav.js (in-place navigation, every product)
   httpd/        the HTTP server's instances: src/conf/ httpd.conf (parse, rules, edit, print),
@@ -793,6 +798,7 @@ cargo test --release -p saverst --test media_bench -- --ignored --nocapture   # 
 cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sessions; report in target/conformance-ftp/
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 cargo test -p qsweb -p httpd -p httpadmin # web layer, httpd.conf, the admin pages against tests/golden/
+cargo test -p x509kit -p certs            # certificates without the store; the store over them
 cargo run -p httpadmin --bin httpadmin-demo [PORT]   # the admin over the fixture (QSECOFR / QS400)
 cargo test -p navigator                   # Navigator's pages against tests/golden/, the crawler
 cargo run -p navigator --bin navigator-demo [PORT]   # Navigator over the fixture (QSECOFR / QS400)

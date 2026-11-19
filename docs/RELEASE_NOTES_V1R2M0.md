@@ -296,6 +296,11 @@ dumps, each behind a capability bit of its own, and a host's physical
 I/O and physical tape drives and a running partition's entitlement,
 behind two more.
 
+The web layer of QS/400's three web products (`net/qsweb`) and the
+making and reading of certificates (`net/x509kit`, beneath the
+certificate store) are neutral crates QS/MC builds its web UI on
+(`BUILDKIT.md` section 17); QS/400's pages are unchanged.
+
 **Fixes since V1R1M0**
 
 - `ENDJOB`, `HLDJOB` and `RLSJOB` of a batch job a subsystem had just

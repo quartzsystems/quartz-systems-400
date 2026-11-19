@@ -83,6 +83,36 @@ QS/MC reuses the frame and all four patterns unchanged and adds **no lines to `s
 - **Reference codes** (`C6004031`, `A6005008`, `B6000100`, `00000000`) are Courier and links on every row, never hidden behind Properties.
 - **Verbs**: Activate / Shut down / Restart for partitions; Power on / Power off / Restart for managed systems; Load / Unload for optical media; Deploy for plans. Power off, Delete partition, Deploy, Install update and console shutdown always go through the confirmation page.
 
+## A product outside QS/400
+
+`net/qsweb` serves any family of products, not only QS/400's three; QS/MC builds its web UI on it (handoff 22). It depends on nothing of QS/400 (`tools/buildkit/tests/neutral.rs` holds it to that) and takes from the caller what is the caller's.
+
+**What the family supplies** (`qsweb::brand::Brand`, one `static` for all its products):
+
+| Field | QS/400's | What it is |
+|---|---|---|
+| `name` | `QS/400` | the shared pages' wordmark and title suffix (error, Not authorized), the help window's `QS/400 Help`, the footer's and the sign-on notice's first word |
+| `vendor` | `Quartz Systems` | the footer's last words, the sign-on page's `(C)` line |
+| `release` | `release::RELEASE` | anything `Display`: the footer, the sign-on line, `Server` |
+| `server` | `QS400` | the `Server` header is `server/release` (`QS400/V1R2M0`) |
+| `css_path`, `nav_path` | `/qs400/shared/qs400.css`, `/qs400/shared/qsnav.js` | where the product serves `qsweb::CSS` and `qsweb::NAV_JS` |
+| `cookie` | `QS400SID` | the session cookie's name; its path is each product's prefix |
+| `signon_notice` | `Unauthorized use ... audit journal.` | the line under the sign-on page's `(C)` line; empty, the `(C)` line stands alone with no `<br>` (QS/MC: `(C) Quartz Systems. QS/MC V1R0M0.`) |
+| `notice_in_form` | `false` | where a product's sign-on notice goes: `false` a `<p>` above the form; `true` the sign-on table's first row, `<tr><td colspan="2"><p class="small">...</p></td></tr>` (QS/MC) |
+| `user_max` | `10` | the sign-on page's User field's `maxlength` (QS/MC: 32) |
+| `notauth_note` | `Contact the security officer (QSECOFR) ...` | the Not authorized page's last paragraph (HTML) |
+| `job_log` | `true` | whether the error page offers `Job log` |
+
+**What each product supplies** (`qsweb::frame::Product`): its family, its wordmark (`QS/MC Management Console`), the breadcrumb's root, its route prefix, its navigation tree, the label on the header's right (`System`, `Console`) and whether pages carry the navigation script. Per request (`Ctx`), the value after that label (the system's or the console's name), the user and the CSRF token. Routes, message texts (`qsweb::msg::MessageText`) and help texts are the product's own; nothing in `qsweb` reads a message file. A message ID of any prefix (`CPF2204`, `HTP8001`, `QMC2001`) renders the same: Courier, a link to the product's `/msg/ID`.
+
+**What it may not change**: the stylesheet (served byte for byte; its file name and its first comment stay as they are), the frame's structure (`templates/frame.html`: header band, navigation column, content, footer), the sign-on page's form, and the patterns above (lists, properties, wizards, confirmation pages, message rows). A product adds pages built from `qsweb::partials`, never a stylesheet of its own.
+
+**What the HTTP layer gives it.** `qsweb::http::serve` (and `serve_guarded`, a thread per request so a panic answers one request with an error page) runs on any `Read + Write`, so the product brings its own TLS (rustls' `StreamOwned` over a socket) and sets the socket's timeouts, which are the only time limits. The layer enforces a head (request line and headers) of 16 KiB (431), a body read whole of 8 MiB (413), 200 requests a connection, HTTP/1.0 and 1.1. A large upload is streamed instead of read whole: the handler says so in `Handler::streams` and reads the body as it arrives in `Handler::handle_stream` (`http::BodyStream`, chunked or by length, no size limit of the layer's; `http::multipart::Parts` reads a form's parts one at a time); a body left unread closes the connection. A large download is `Body::Stream` (chunked) or `Body::Sized` (with its length), read a piece at a time. `Handler::server` gives the `Server` header.
+
+**Golden pages from another repository.** `qsweb::golden::diff` compares a served page with a prototype file after reducing both to tokens (whitespace, entity forms, attribute order and the CSRF field don't count); `Normalize` takes the caller's map from a served URL to the prototype's file and the navigation script's path. `golden::crawl` is the link check: from the start pages, every `GET` link fetched through the caller's function, redirects followed, links outside the product listed.
+
+**The worked example** is the fixture (`tools/buildkit/fixture/init/src/web.rs`): the family `QSDEMO` (its own release, `/demo/shared/site.css`, cookie `QSDEMOSID`), a product `QSDEMO Management Console` with two navigation groups and `Console:` on the header's right, a sign-on, a settings form with its CSRF token and a `QMC2001` message row after it is posted. A P-256 certificate made by `x509kit::server::self_signed` serves it over TLS 1.3 on a socket pair; a client pinned to that certificate signs on, has a forged form refused, posts the real one and checks the page against the fixture's own golden file (`init/golden/settings.html`). `build fixture` runs it in the fixture's guest.
+
 ## What not to do
 
 - No modals, no pop-up layers, no inline editing, no spinners, no toasts. Confirmation is a page; feedback is a message row after a reload.
