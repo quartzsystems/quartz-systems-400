@@ -494,6 +494,7 @@ dependencies = [
  "spki",
  "thiserror 2.0.21",
  "x509-cert",
+ "x509kit",
  "zeroize",
 ]
 
@@ -1799,6 +1800,7 @@ version = "0.1.0"
 dependencies = [
  "certs",
  "qsweb",
+ "release",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -3225,7 +3227,6 @@ dependencies = [
  "askama",
  "graviola",
  "hex",
- "release",
  "sha1",
  "thiserror 2.0.21",
 ]
@@ -4520,6 +4521,7 @@ dependencies = [
  "sha2 0.11.0",
  "thiserror 2.0.21",
  "x509-cert",
+ "x509kit",
 ]
 
 [[package]]
@@ -5139,6 +5141,29 @@ dependencies = [
  "signature",
  "spki",
  "tls_codec",
+]
+
+[[package]]
+name = "x509kit"
+version = "0.1.0"
+dependencies = [
+ "aes 0.9.3",
+ "cbc",
+ "cipher 0.5.2",
+ "der",
+ "des",
+ "graviola",
+ "hex",
+ "hmac 0.13.0",
+ "rc2",
+ "serde",
+ "sha1",
+ "sha2 0.11.0",
+ "signature",
+ "spki",
+ "thiserror 2.0.21",
+ "x509-cert",
+ "zeroize",
 ]
 
 [[package]]

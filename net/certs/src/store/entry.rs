@@ -67,7 +67,7 @@ pub struct Entry {
 impl Entry {
     /// The certificate's facts, if it has one.
     pub fn info(&self) -> Result<Option<CertInfo>> {
-        self.cert.as_deref().map(CertInfo::from_der).transpose()
+        Ok(self.cert.as_deref().map(CertInfo::from_der).transpose()?)
     }
 
     /// The private key.
@@ -76,7 +76,7 @@ impl Entry {
             .key
             .as_deref()
             .ok_or_else(|| CertError::NoPrivateKey(self.label.clone()))?;
-        PrivateKey::from_pkcs8_der(&Zeroizing::new(der.to_vec()))
+        Ok(PrivateKey::from_pkcs8_der(&Zeroizing::new(der.to_vec()))?)
     }
 
     /// Whether the entry can serve as a TLS identity.

@@ -4,7 +4,7 @@
 
 //! PEM: reading a bundle's blocks and writing them.
 
-use crate::error::{CertError, Result};
+use crate::error::{Error, Result};
 
 /// One PEM block.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,12 +42,10 @@ pub fn blocks(text: &str) -> Result<Vec<Block>> {
             body.push_str(l);
         }
         if !closed {
-            return Err(CertError::Malformed(format!(
-                "PEM block {label} is not closed"
-            )));
+            return Err(Error::Malformed(format!("PEM block {label} is not closed")));
         }
         let der = base64_decode(&body)
-            .ok_or_else(|| CertError::Malformed(format!("PEM block {label}: bad base64")))?;
+            .ok_or_else(|| Error::Malformed(format!("PEM block {label}: bad base64")))?;
         out.push(Block {
             label: label.to_string(),
             der,

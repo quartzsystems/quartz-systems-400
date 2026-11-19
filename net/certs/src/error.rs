@@ -70,5 +70,18 @@ impl From<graviola::Error> for CertError {
     }
 }
 
+impl From<x509kit::Error> for CertError {
+    fn from(e: x509kit::Error) -> Self {
+        match e {
+            x509kit::Error::Io(e) => CertError::Io(e),
+            x509kit::Error::BadPassword => CertError::BadPassword,
+            x509kit::Error::Malformed(s) => CertError::Malformed(s),
+            x509kit::Error::Crypto(s) => CertError::Crypto(s),
+            x509kit::Error::Unsupported(s) => CertError::Unsupported(s),
+            x509kit::Error::Invalid(s) => CertError::Invalid(s),
+        }
+    }
+}
+
 /// Short alias.
 pub type Result<T> = std::result::Result<T, CertError>;

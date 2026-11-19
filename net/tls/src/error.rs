@@ -43,5 +43,11 @@ pub enum TlsError {
     Closed,
 }
 
+impl From<x509kit::Error> for TlsError {
+    fn from(e: x509kit::Error) -> Self {
+        TlsError::Certs(e.into())
+    }
+}
+
 /// Short alias.
 pub type Result<T> = std::result::Result<T, TlsError>;

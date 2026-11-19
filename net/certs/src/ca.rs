@@ -110,7 +110,9 @@ pub fn sign_request(
     days: u32,
 ) -> Result<Vec<u8>> {
     let (ca_der, ca_key) = credentials(ca_store)?;
-    build::sign_request(csr_der, kind, now, days, &ca_der, &ca_key)
+    Ok(build::sign_request(
+        csr_der, kind, now, days, &ca_der, &ca_key,
+    )?)
 }
 
 /// Make `target` trust the local CA. Returns whether an entry was added.

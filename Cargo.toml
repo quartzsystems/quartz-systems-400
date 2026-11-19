@@ -128,6 +128,7 @@ members = [
     "net/drdar",
     "net/servers",
     "net/qsweb",
+    "net/x509kit",
     "net/httpd",
     "net/httpadmin",
     "net/navigator",

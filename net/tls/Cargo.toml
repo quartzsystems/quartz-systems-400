@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 thiserror.workspace = true
 certs = { path = "../../net/certs", version = "0.1.0" }
+x509kit = { path = "../../net/x509kit", version = "0.1.0" }
 rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }
 rustls-graviola = "0.4.0"
 webpki = { package = "rustls-webpki", version = "0.103.16", default-features = false, features = ["std"] }

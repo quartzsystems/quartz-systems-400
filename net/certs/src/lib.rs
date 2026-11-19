@@ -11,7 +11,8 @@
 //!   the LIC partition's key.
 //! - [`x509`]: certificate facts, self-signed and CA-issued certificates,
 //!   requests; [`crypto`]: the keys (RSA 2048/3072/4096, ECDSA P-256 and
-//!   P-384), AES-GCM, key derivation.
+//!   P-384), AES-GCM, key derivation. `x509`, `pem`, `pkcs12` and most of
+//!   `crypto` are the neutral `x509kit`'s, re-exported here.
 //! - [`ca`]: the local certificate authority.
 //! - [`admin`]: the `QS*` commands as library functions, the expiry
 //!   scan and the identity a server job gets for its application ID.
@@ -34,11 +35,9 @@ pub mod crypto;
 mod error;
 pub mod files;
 pub mod paths;
-pub mod pem;
-pub mod pkcs12;
 pub mod roots;
 pub mod stash;
 pub mod store;
-pub mod x509;
 
 pub use error::{CertError, Result};
+pub use x509kit::{pem, pkcs12, x509};

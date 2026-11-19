@@ -13,6 +13,8 @@ serde_json.workspace = true
 sha2.workspace = true
 hex.workspace = true
 licpart = { path = "../../lic/licpart", version = "0.1.0" }
+# Certificates, keys, PEM and PKCS#12 without the store.
+x509kit = { path = "../x509kit", version = "0.1.0" }
 # Keys, signatures, AES-GCM and randomness.
 graviola = "0.4.1"
 argon2 = { version = "=0.5.3", default-features = false, features = ["alloc"] }

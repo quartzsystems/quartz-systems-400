@@ -32,7 +32,7 @@ use super::signer::{DerSignature, Signer};
 use super::{CLIENT_AUTH, SERVER_AUTH};
 use crate::crypto::keys::PrivateKey;
 use crate::crypto::random;
-use crate::error::{CertError, Result};
+use crate::error::{Error, Result};
 
 /// The subject of a certificate, as the create command prompts it.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -79,10 +79,9 @@ impl Subject {
 
     fn name(&self) -> Result<Name> {
         if self.common_name.trim().is_empty() {
-            return Err(CertError::Invalid("a common name is required".into()));
+            return Err(Error::Invalid("a common name is required".into()));
         }
-        Name::from_str(&self.to_rfc4514())
-            .map_err(|e| CertError::Invalid(format!("subject name: {e}")))
+        Name::from_str(&self.to_rfc4514()).map_err(|e| Error::Invalid(format!("subject name: {e}")))
     }
 }
 
@@ -139,9 +138,7 @@ impl CertSpec {
 
     fn validity(&self) -> Result<Validity> {
         if self.days == 0 {
-            return Err(CertError::Invalid(
-                "validity must be at least one day".into(),
-            ));
+            return Err(Error::Invalid("validity must be at least one day".into()));
         }
         let from = Duration::from_secs(self.not_before);
         let to = from + Duration::from_secs(u64::from(self.days) * 86_400);
@@ -161,9 +158,10 @@ impl CertSpec {
             if let Ok(ip) = s.parse::<std::net::IpAddr>() {
                 names.push(GeneralName::from(ip));
             } else {
-                names.push(GeneralName::DnsName(Ia5String::new(s).map_err(|_| {
-                    CertError::Invalid(format!("alternative name {s}"))
-                })?));
+                names
+                    .push(GeneralName::DnsName(Ia5String::new(s).map_err(|_| {
+                        Error::Invalid(format!("alternative name {s}"))
+                    })?));
             }
         }
         Ok(names)
@@ -266,10 +264,10 @@ fn build(
         san: spec.general_names()?,
     };
     let builder = CertificateBuilder::new(profile, serial()?, spec.validity()?, spki)
-        .map_err(|e| CertError::Crypto(format!("certificate builder: {e}")))?;
+        .map_err(|e| Error::Crypto(format!("certificate builder: {e}")))?;
     let cert = builder
         .build::<_, DerSignature>(&Signer(signing_key))
-        .map_err(|e| CertError::Crypto(format!("signing: {e}")))?;
+        .map_err(|e| Error::Crypto(format!("signing: {e}")))?;
     Ok(cert.to_der()?)
 }
 
@@ -295,15 +293,15 @@ pub fn issue(
 /// A PKCS#10 request for `key`; the SAN travels as a requested extension.
 pub fn request(spec: &CertSpec, key: &PrivateKey) -> Result<Vec<u8>> {
     let mut b = RequestBuilder::new(spec.subject.name()?)
-        .map_err(|e| CertError::Crypto(format!("request builder: {e}")))?;
+        .map_err(|e| Error::Crypto(format!("request builder: {e}")))?;
     let san = spec.general_names()?;
     if !san.is_empty() {
         b.add_extension(&SubjectAltName(san))
-            .map_err(|e| CertError::Crypto(format!("request extension: {e}")))?;
+            .map_err(|e| Error::Crypto(format!("request extension: {e}")))?;
     }
     let req = b
         .build::<_, DerSignature>(&Signer(key))
-        .map_err(|e| CertError::Crypto(format!("signing: {e}")))?;
+        .map_err(|e| Error::Crypto(format!("signing: {e}")))?;
     Ok(req.to_der()?)
 }
 
@@ -394,10 +392,10 @@ pub fn sign_request(
         spec.validity()?,
         req.info.public_key.clone(),
     )
-    .map_err(|e| CertError::Crypto(format!("certificate builder: {e}")))?;
+    .map_err(|e| Error::Crypto(format!("certificate builder: {e}")))?;
     let cert = builder
         .build::<_, DerSignature>(&Signer(ca_key))
-        .map_err(|e| CertError::Crypto(format!("signing: {e}")))?;
+        .map_err(|e| Error::Crypto(format!("signing: {e}")))?;
     Ok(cert.to_der()?)
 }
 

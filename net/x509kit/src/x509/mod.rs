@@ -19,7 +19,7 @@ use x509_cert::ext::pkix::{BasicConstraints, ExtendedKeyUsage, KeyUsage, Subject
 
 use crate::crypto::keys::KeyAlgorithm;
 use crate::crypto::{sha1, sha256};
-use crate::error::{CertError, Result};
+use crate::error::{Error, Result};
 
 pub use signer::Signer;
 
@@ -253,7 +253,7 @@ pub fn pem_certificates(pem: &str) -> Result<Vec<Vec<u8>>> {
     for block in crate::pem::blocks(pem)? {
         if block.label == "CERTIFICATE" {
             Certificate::from_der(&block.der)
-                .map_err(|e| CertError::Malformed(format!("certificate: {e}")))?;
+                .map_err(|e| Error::Malformed(format!("certificate: {e}")))?;
             out.push(block.der);
         }
     }

@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use spki::AlgorithmIdentifierOwned;
 use zeroize::Zeroizing;
 
-use crate::error::{CertError, Result};
+use crate::error::{Error, Result};
 
 /// sha256WithRSAEncryption.
 pub const SHA256_WITH_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.11");
@@ -130,7 +130,7 @@ impl PrivateKey {
         if let Ok(k) = EcKey::<P384>::from_pkcs8_der(der) {
             return Ok(PrivateKey::P384(k));
         }
-        Err(CertError::Unsupported(
+        Err(Error::Unsupported(
             "private key: only RSA and ECDSA P-256/P-384 keys are supported".into(),
         ))
     }

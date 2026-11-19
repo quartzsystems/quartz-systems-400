@@ -1,0 +1,35 @@
+[package]
+name = "x509kit"
+description = "Certificates without a store: ECDSA and RSA keys, self-signed and issued certificates, requests, certificate facts, PEM bundles, PKCS#12"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+sha2.workspace = true
+hex.workspace = true
+# Keys, signatures and randomness.
+graviola = "0.4.1"
+# X.509 structures, the certificate and request builders, DER and PEM.
+x509-cert = { version = "0.3.0", features = ["builder", "pem"] }
+der = { version = "0.8.2", features = ["alloc", "derive", "oid", "pem"] }
+spki = { version = "0.8.1", features = ["alloc"] }
+signature = "3.0.0"
+# PKCS#12 and encrypted PKCS#8: PBES2 and the legacy PKCS#12 ciphers.
+aes = "0.9.3"
+cipher = { version = "0.5.2", features = ["block-padding", "alloc"] }
+cbc = { version = "0.2.1", features = ["alloc"] }
+des = "0.9.0"
+rc2 = "0.9.0"
+sha1 = "0.11.0"
+hmac = "0.13.0"
+zeroize = "1.9.1"
+
+[dev-dependencies]
+hex.workspace = true
+
+[lints]
+workspace = true

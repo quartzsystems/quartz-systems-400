@@ -186,7 +186,13 @@ impl CertStore {
         let e = self.get(label)?;
         let key = e.private_key()?;
         let chain = self.chain(label)?;
-        pkcs12::write(label, &key, &chain[0], &chain[1..], password)
+        Ok(pkcs12::write(
+            label,
+            &key,
+            &chain[0],
+            &chain[1..],
+            password,
+        )?)
     }
 }
 

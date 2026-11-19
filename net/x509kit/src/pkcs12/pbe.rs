@@ -16,7 +16,7 @@ use zeroize::Zeroizing;
 
 use crate::crypto::kdf::{self, P12Hash, P12Purpose, Prf};
 use crate::crypto::random;
-use crate::error::{CertError, Result};
+use crate::error::{Error, Result};
 
 /// PBES2.
 pub const PBES2: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.5.13");
@@ -82,8 +82,8 @@ type TdesDec = cbc::Decryptor<des::TdesEde3>;
 type Tdes2Dec = cbc::Decryptor<des::TdesEde2>;
 type Rc2Dec = cbc::Decryptor<rc2::Rc2>;
 
-fn bad() -> CertError {
-    CertError::BadPassword
+fn bad() -> Error {
+    Error::BadPassword
 }
 
 /// Decrypt `data` under the scheme `alg` names.
@@ -91,37 +91,34 @@ pub fn decrypt(alg: &AlgorithmIdentifierOwned, password: &str, data: &[u8]) -> R
     let params = alg
         .parameters
         .as_ref()
-        .ok_or_else(|| CertError::Malformed("PBE parameters".into()))?;
+        .ok_or_else(|| Error::Malformed("PBE parameters".into()))?;
     if alg.oid == PBES2 {
         let p: Pbes2Params = params.decode_as()?;
         if p.kdf.oid != PBKDF2 {
-            return Err(CertError::Unsupported(format!(
-                "key derivation {}",
-                p.kdf.oid
-            )));
+            return Err(Error::Unsupported(format!("key derivation {}", p.kdf.oid)));
         }
         let k: Pbkdf2Params = p
             .kdf
             .parameters
             .as_ref()
-            .ok_or_else(|| CertError::Malformed("PBKDF2 parameters".into()))?
+            .ok_or_else(|| Error::Malformed("PBKDF2 parameters".into()))?
             .decode_as()?;
         let prf = match k.prf.as_ref().map(|a| a.oid) {
             None => Prf::HmacSha1,
             Some(o) if o == HMAC_SHA1 => Prf::HmacSha1,
             Some(o) if o == HMAC_SHA256 => Prf::HmacSha256,
-            Some(o) => return Err(CertError::Unsupported(format!("PBKDF2 PRF {o}"))),
+            Some(o) => return Err(Error::Unsupported(format!("PBKDF2 PRF {o}"))),
         };
         let iv: OctetString = p
             .encryption
             .parameters
             .as_ref()
-            .ok_or_else(|| CertError::Malformed("cipher IV".into()))?
+            .ok_or_else(|| Error::Malformed("cipher IV".into()))?
             .decode_as()?;
         let key_len = match p.encryption.oid {
             o if o == AES128_CBC => 16,
             o if o == AES256_CBC => 32,
-            o => return Err(CertError::Unsupported(format!("cipher {o}"))),
+            o => return Err(Error::Unsupported(format!("cipher {o}"))),
         };
         let key = Zeroizing::new(kdf::pbkdf2(
             prf,
@@ -184,7 +181,7 @@ pub fn decrypt(alg: &AlgorithmIdentifierOwned, password: &str, data: &[u8]) -> R
                 .decrypt_padded_vec::<Pkcs7>(data)
                 .map_err(|_| bad())
         }
-        o => Err(CertError::Unsupported(format!("encryption scheme {o}"))),
+        o => Err(Error::Unsupported(format!("encryption scheme {o}"))),
     }
 }
 
@@ -201,7 +198,7 @@ pub fn encrypt(password: &str, data: &[u8]) -> Result<(AlgorithmIdentifierOwned,
         32,
     ));
     let ct = Aes256Enc::new_from_slices(&key, &iv)
-        .map_err(|_| CertError::Crypto("AES-CBC".into()))?
+        .map_err(|_| Error::Crypto("AES-CBC".into()))?
         .encrypt_padded_vec::<Pkcs7>(data);
     let params = Pbes2Params {
         kdf: AlgorithmIdentifierOwned {
@@ -267,7 +264,7 @@ mod tests {
         };
         assert!(matches!(
             decrypt(&alg, "x", &[0; 8]),
-            Err(CertError::Unsupported(_))
+            Err(Error::Unsupported(_))
         ));
     }
 }

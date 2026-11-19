@@ -24,7 +24,7 @@ use self::asn1::{
 use crate::crypto::kdf::{self, P12Hash, P12Purpose};
 use crate::crypto::keys::PrivateKey;
 use crate::crypto::random;
-use crate::error::{CertError, Result};
+use crate::error::{Error, Result};
 use crate::x509::CertInfo;
 
 /// A certificate read from a file.
@@ -90,7 +90,7 @@ impl Contents {
             }
         }
         let Some(at) = at else {
-            return Err(CertError::Invalid(
+            return Err(Error::Invalid(
                 "the file's private key has no matching certificate".into(),
             ));
         };
@@ -137,17 +137,15 @@ fn order_chain(leaf: &[u8], others: &mut Vec<Vec<u8>>) -> Result<()> {
 
 /// Read a PKCS#12 file.
 pub fn read(data: &[u8], password: &str) -> Result<Contents> {
-    let pfx = Pfx::from_der(data).map_err(|e| CertError::Malformed(format!("PKCS#12: {e}")))?;
+    let pfx = Pfx::from_der(data).map_err(|e| Error::Malformed(format!("PKCS#12: {e}")))?;
     if pfx.version != 3 {
-        return Err(CertError::Unsupported(format!(
+        return Err(Error::Unsupported(format!(
             "PKCS#12 version {}",
             pfx.version
         )));
     }
     if pfx.auth_safe.content_type != ID_DATA {
-        return Err(CertError::Unsupported(
-            "public-key protected PKCS#12".into(),
-        ));
+        return Err(Error::Unsupported("public-key protected PKCS#12".into()));
     }
     let auth_safe: OctetString = pfx.auth_safe.content.decode_as()?;
     let auth_safe = auth_safe.as_bytes();
@@ -165,14 +163,14 @@ pub fn read(data: &[u8], password: &str) -> Result<Contents> {
             let eci = ed.encrypted_content_info;
             let ct = eci
                 .encrypted_content
-                .ok_or_else(|| CertError::Malformed("encrypted content".into()))?;
+                .ok_or_else(|| Error::Malformed("encrypted content".into()))?;
             Zeroizing::new(pbe::decrypt(
                 &eci.content_encryption_algorithm,
                 password,
                 ct.as_bytes(),
             )?)
         } else {
-            return Err(CertError::Unsupported(format!(
+            return Err(Error::Unsupported(format!(
                 "PKCS#12 content {}",
                 ci.content_type
             )));
@@ -245,7 +243,7 @@ fn mac_hash(oid: der::asn1::ObjectIdentifier) -> Result<P12Hash> {
     match oid {
         o if o == SHA1 => Ok(P12Hash::Sha1),
         o if o == SHA256 => Ok(P12Hash::Sha256),
-        o => Err(CertError::Unsupported(format!("PKCS#12 MAC hash {o}"))),
+        o => Err(Error::Unsupported(format!("PKCS#12 MAC hash {o}"))),
     }
 }
 
@@ -296,7 +294,7 @@ fn verify_mac(mac: &MacData, data: &[u8], password: &str) -> Result<()> {
     if constant_eq(&got, mac.mac.digest.as_bytes()) {
         Ok(())
     } else {
-        Err(CertError::BadPassword)
+        Err(Error::BadPassword)
     }
 }
 
@@ -456,7 +454,7 @@ mod tests {
         assert_eq!(id.cert, leaf);
         assert_eq!(id.others, vec![ca]);
         assert_eq!(id.key.spki_der().unwrap(), key.spki_der().unwrap());
-        assert!(matches!(read(&p12, "bad"), Err(CertError::BadPassword)));
+        assert!(matches!(read(&p12, "bad"), Err(Error::BadPassword)));
         assert!(read(b"not a file", "pw").is_err());
     }
 }
