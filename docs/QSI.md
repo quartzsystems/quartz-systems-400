@@ -280,14 +280,28 @@ operation it does not know (`QSI0001`).
 | vres | `0x0018` | 16 |
 | physical I/O: host's operation `0x0010` and events `0x0010` to `0x0014`, vres's operation `0x0034` and event `0x000A` | `0x0010`, `0x0018` | 17 |
 | partition version 2: operation `0x0007` and the family's events | `0x0012` | 18 |
+| switches managed: vres's operations `0x0045` to `0x004A` | `0x0018` | 19 |
+| storage pools managed: vres's operations `0x0002` to `0x000A` | `0x0018` | 20 |
+| partition version 3: operations `0x0008` to `0x000A` | `0x0012` | 21 |
+| activation times: partitions' operation `0x0004`, profiles' `0x0007` | `0x0011`, `0x0013` | 22 |
+| a host's power-on settings: host's operations `0x0020` and `0x0021`, event `0x0020` | `0x0010` | 23 |
+| panel version 2: operation `0x0002` | `0x0014` | 24 |
+| service version 2: operations `0x0004` to `0x0006`, event `0x0005` | `0x0003` | 25 |
+| dump space: base's operation `0x0014` (with bit 4), dumps' `0x0005` | `0x0001`, `0x0016` | 26 |
+| the fix level: base's operation `0x0008` | `0x0001` | 27 |
 
 A console and a standalone system say `caps::MANAGED` (base and pair);
 a QS/VS host says `caps::HOST_V1`, base, pair and the nine host
 families. `caps::SERVICING` is bits 2 to 4 (problems, code update and
 the system's own dumps), said beside the rest by a managed side that
 answers them and by a console that asks them; `caps::PHYSICAL_IO`
-(bit 17) and `caps::PARTITION_V2` (bit 18) likewise. `HOST_V1` is
-unchanged.
+(bit 17) and `caps::PARTITION_V2` (bit 18) likewise, and bits 19 to 27
+(handoff 24) each the same way. `HOST_V1`, `SERVICING` and `MANAGED`
+are unchanged. `caps::STANDALONE` is what a standalone system will say
+(section 11): base and pair, service with its version 2 (bits 2 and
+25), the system's dumps and their space (4 and 26), the panel with its
+version 2 (12 and 24), the console (15) and the fix level (27); no code
+update and no other host family.
 
 A bit need not be a whole family: base's version 1 gained the system's
 own dumps as operations behind bit 4, the host and vres families gained
@@ -298,6 +312,21 @@ and its events behind bit 18. So what a request needs is
 operations) and what an event needs `caps::of_event(family, op)`. The
 session checks a request against them at both ends (`QSI0003`) and
 sends an event only to a console that has all of it (section 4).
+
+A family's later version is gated by its newest bit alone: partition
+version 3's operations need bits 10 and 21, not 18, so a side may have
+version 3's settings without version 2's entitlement. Base's dump
+space needs bits 0, 4 and 26: the system's dumps and their space.
+
+Every addition since version 1 is a new operation or event with types
+of its own, never a field added to a known body. `ipc::wire_struct!`
+reads fields in order and fails when the bytes run out, so a field
+added to a body a new reader expects is not there when an older side
+sends it; and a struct in a list or in the middle of a body cannot gain
+a trailing field at all, since what follows it is the next item. A
+field after the known ones of a whole body is passed over by an older
+reader, but a newer reader of an older side's body does not find it;
+so the families grow by operations, and their bodies stay as they are.
 
 ## 6. Limits
 
@@ -324,7 +353,8 @@ The families' own bounds (`check()` on each request) are in section 7.
 `qsi::service` and `qsi::update`, and base's system dumps, by any
 managed system that has them (a QS/VS host from its next phase; a
 standalone system later); the nine host families by a QS/VS host,
-with physical I/O and partition version 2 from its phase after that. Each is a `Family` with three
+with physical I/O and partition version 2 from its phase after that,
+and bits 19 to 27 as QS/VS and QS/MC come to them. Each is a `Family` with three
 enumerations (`Request`, `Reply`, `Event`) written by `messages!`;
 `qsi::any` holds them all by number, and `qsi::samples` has one value
 of every message, which the tests send through two sessions.
@@ -372,6 +402,24 @@ Bounds: a name and a kind's name, 64 bytes. Refusals of its own:
 identifier of its own), `QSI1202` `TAKING` (one is being taken: one at
 a time), `QSI1203` `NO_KIND` (a kind this system does not take). What a
 dump holds and its format are the managed side's.
+
+#### Dump space (bit 26, `caps::DUMP_SPACE`)
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0014` | `DumpSpace` (empty), bits 4 and 26 | `Space` {`bytes u64` (what the dumps take), `limit u64` (the most they may take; 0 for none), `dumps u32`, `max_dumps u32` (0 for none)}: the system's own dumps |
+
+The dumps family's `0x0005` gives the same of each partition's dumps.
+
+#### The fix level (bit 27, `caps::FIX_LEVEL`)
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0008` | `FixLevel` (empty) | `Level` {`level` (the cumulative fix level's name, the managed side's; empty for none), `date` (s; 0 when not known)} |
+
+A standalone system says its cumulative PTF package; a host answers
+with its own level if it has one. Base's `State` does not carry it: an
+older side's state has no such field (section 5).
 
 ### pair (`0x0002`)
 
@@ -422,6 +470,34 @@ Refusals of its own: `QSI1001` `STILL_HOLDS` (a close while the
 condition holds, without `anyway`), `QSI1002` `NO_PROBLEM` (no problem
 of that number, from a side with no identifier of its own), `QSI1003`
 `CLOSED` (closed already).
+
+#### Version 2 (bit 25, `caps::PROBLEM_NOTES`): notes and severity
+
+A person's notes in a problem's analysis log, and how grave a problem
+is. The severity is beside the summary, not in it: `Summary` is in a
+list (`Page`) and in the middle of `Problem` and `Noticed`, so it
+cannot gain a field; version 2's list and get carry it in types of
+their own, and version 1's are unchanged.
+
+| Type | Fields |
+|---|---|
+| `Severity` (open) | `Attention` 1, `Terminal` 2, `Information` 3 |
+| `Rated` | `severity`, `summary` |
+| `RatedPage` | `problems`: `Vec<Rated>` newest first, `more` |
+| `RatedProblem` | `severity`, `problem` |
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0004` | `Note` {`number`, `text` (1 to 256 bytes)}: the request's user is its author | `Line` as written into the analysis log, its text naming the author in the managed side's words |
+| `0x0005` | `ListRated` (`List`'s fields) | `RatedPage` |
+| `0x0006` | `GetRated` {`number`} | `RatedProblem` |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0005` | `Noted` {`number`, `line`, `by` (the request's user), `time`} | a note was added |
+
+Refusals: `QSI1002` (no problem), `QSI1003` (closed: a closed problem
+takes no note). `service::Service::VERSION` is 2.
 
 ### update (`0x0004`, bit 3)
 
@@ -501,11 +577,11 @@ dispatches), refused with `QSI0002` before the host acts:
 
 | Bound | Limit |
 |---|---|
-| a partition ID | 1 to 999 (0 only where a request says "every partition") |
+| a partition ID | 1 to 999 (0 only where a request says "every partition", and in the panel and console families, where 0 is the managed system itself) |
 | a name a console sends | 64 bytes |
-| a text a console sends (a backing, a location code) | 256 bytes |
+| a text a console sends (a backing, a location code, a partition's description, a problem's note: 1 to 256) | 256 bytes |
 | a list a console sends | 256 items |
-| a shut down's delay, base's power down's delay | 99999 seconds |
+| a shut down's delay, base's power down's delay, a partition's or a host's delay with the managed system's power off | 99999 seconds |
 | a panel function | 1 to 99 |
 | serial bytes in one piece of a console stream | 16 KiB (a piece is one frame) |
 
@@ -532,14 +608,25 @@ refuse with its own messages.
 | console | `0x0017` | 1 | `CONSOLE` | 15 |
 | vres | `0x0018` | 1 | `VRES` | 16 |
 | host's and vres's physical I/O | `0x0010`, `0x0018` | 1 | `PHYSICAL_IO` | 17 |
+| vres's switches managed | `0x0018` | 1 | `SWITCHES` | 19 |
+| vres's storage pools managed | `0x0018` | 1 | `POOLS` | 20 |
+| partition | `0x0012` | 3 | `PARTITION_V3` | 21 |
+| partitions' and profiles' activation times | `0x0011`, `0x0013` | 1 | `ACTIVATIONS` | 22 |
+| host's power-on settings | `0x0010` | 1 | `POWER_ON` | 23 |
+| panel | `0x0014` | 2 | `PANEL_FUNCTIONS` | 24 |
+| service | `0x0003` | 2 | `PROBLEM_NOTES` | 25 |
+| base's and dumps' dump space | `0x0001`, `0x0016` | 1 | `DUMP_SPACE` | 26 |
+| base's fix level | `0x0001` | 1 | `FIX_LEVEL` | 27 |
 
 A QS/VS host says `caps::HOST_V1`, bits 0, 1 and 8 to 16, and with its
 next phase `caps::SERVICING` (bits 2 to 4) beside it, then
-`PHYSICAL_IO` and `PARTITION_V2` (bits 17 and 18). A later version of a
-family has a bit of its own. A family's version 2 keeps every message
-of its version 1 unchanged, so a side with bit 10 and not bit 18 speaks
-the partition family as before; `partition::Partition::VERSION` is the
-highest this crate speaks, 2.
+`PHYSICAL_IO` and `PARTITION_V2` (bits 17 and 18), then whichever of
+bits 19 to 27 it answers. A later version of a family has a bit of its
+own. A family's later version keeps every message of the ones before it
+unchanged, so a side with bit 10 and not bit 18 speaks the partition
+family as before, and each later version's bit alone gates its own
+operations; `partition::Partition::VERSION` is the highest this crate
+speaks, 3, `panel::Panel::VERSION` and `service::Service::VERSION` 2.
 
 ### Shared types (`host::model`)
 
@@ -615,6 +702,26 @@ A host item's `owner` (`Partition` 5) and its `ItemChanged` event say
 the same of the device as before; these say what physical I/O needs
 beside it.
 
+#### Power-on settings (bit 23, `caps::POWER_ON`)
+
+What a host does with its partitions when it starts and when it powers
+off. Not its IPL side (changed only by an update's activation), its
+keylock or its boot mode.
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0020` | `PowerOn` (empty) | `PowerOn` {`start_partitions` (the partitions marked to start, each one's auto start, are started with the host), `power_off` (open `PowerOff`: `Delayed` 1, each shut down through its own system first and waited for `delay`; `Immediate` 2), `delay u32` (s, at most 99999)} |
+| `0x0021` | `SetPowerOn` (`PowerOn`) | empty |
+
+| Event | Body | When |
+|---|---|---|
+| `0x0020` | `PowerOnChanged` {`power_on`, `by` (the request's user), `time`} | the settings were changed |
+
+QS/VS maps `start_partitions` to its auto start at base ready, and
+`power_off` and `delay` to its end of every partition at a power down
+(the operating system's shut down, `host_timeout_secs`). Bounds: the
+delay (`QSI0002`).
+
 A profile's `physical_io` is the profiles family's as it was (the same
 `Profile`, the same put): with bit 17 the host acts on it, where before
 it kept such a profile and refused its activation. What QSI checks is
@@ -645,6 +752,15 @@ refused by name, the host's own identifiers after these:
 | `0x0002` | `ResourcesChanged` {`id`, `name`, `current`, `time`} | resources given at an activation or given back at an end, or a running partition's entitlement changed (partition version 2) |
 | `0x0003` | `Defined` {`id`, `name`, `exists`, `time`} | created, changed or deleted |
 | `0x0004` | `ChannelChanged` {`id`, `name`, `channel`, `time`} | the service channel came or went, stopped or started answering, or the system reported a change |
+
+#### Activation times (bit 22, `caps::ACTIVATIONS`)
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0004` | `Activations` (empty) | `Vec<Activation>` in ID order: `id`, `since` (an option: when the current activation began, s; none when not activated), `profile` (activated with) |
+
+The profiles family's `0x0007` gives when each profile was last
+activated; one bit for both, as physical I/O is.
 
 ### partition (`0x0012`)
 
@@ -693,6 +809,32 @@ profile has none. Refusals, the host's own identifiers after these:
 | `QSI1405` | `POOL_SHORT` | its pool has not that much left: the pool's available units and what it holds now together |
 | `QSI0361` | `NO_SUCH_VALUE` | a `sharing` this host does not have |
 
+#### Version 3 (bit 21, `caps::PARTITION_V3`): a partition's settings
+
+A definition is in the middle of `partitions::Partition` and `Change`,
+so it cannot gain fields; the new ones are a `Settings` of their own,
+read and changed apart from it, at any time, running or not.
+
+| Type | Fields |
+|---|---|
+| `WithHost` (open) | `Delayed` 1 (the system's controlled power down with `delay`), `Immediate` 2: how the partition is shut down when the managed system is powered off |
+| `Settings` | `description` (256 bytes at most), `panel` (control panel functions are allowed from a console), `with_host`, `delay u32` (s, at most 99999) |
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0008` | `CreateWith` {`id` (an option: none for the host to give one), `name`, `settings`} | `Definition`, with its ID and serial number |
+| `0x0009` | `GetSettings` {`id`} | `Settings` |
+| `0x000A` | `SetSettings` {`id`, `settings`} | empty |
+
+The partitions family's `Defined` follows a create or a change, as
+before. A host refuses panel functions from a console for a partition
+whose `panel` is false, with its own message; QSI does not interpret
+it. Bounds: an ID outside 1 to 999, a description over 256 bytes, a
+delay over 99999 (`QSI0002`). Refusals: `QSI0362` `ID_TAKEN` (another
+partition has the ID), `QSI0363` `ID_OUT_OF_RANGE` (within 1 to 999 but
+beyond the host's `max_partitions`). Version 3's operations need bit 21
+and not bit 18; `partition::Partition::VERSION` is 3. No new events.
+
 ### profiles (`0x0013`)
 
 A profile has a **revision**, a number the managed side gives it and
@@ -713,6 +855,10 @@ carries none is refused with `QSI0402` when the name is there.
 |---|---|---|
 | `0x0001` | `Changed` {`id`, `name`, `revision` or none when deleted, `default`, `time`} | a profile was created, changed or deleted, or the default moved |
 
+| Op | Request | Reply |
+|---|---|---|
+| `0x0007` | `Activated` {`id`}, bit 22 | `Vec<ProfileUse>` by name: `name`, `last` (an option: when last activated, s; none for never) |
+
 ### panel (`0x0014`)
 
 | Op | Request | Reply |
@@ -725,6 +871,25 @@ current code's words 1 to 9, 20 the type, serial and releases, 21
 dedicated service tools (the system's, over the service channel), 22
 dump and restart, 34 dump again from held memory. Which there are and
 which need manual is the host's (`docs/PANEL.md` in QS/VS). No events.
+
+**ID 0 is the managed system itself**, for the panel and console
+families, every operation of both (`model::SYSTEM_ID`): a standalone
+system answers its own panel and console at ID 0 and refuses any other
+ID (`QSI0331` `NO_PARTITION`); a host refuses ID 0 the same way. So
+these families' bounds allow 0 to 999; nothing on the wire changed.
+
+#### Version 2 (bit 24, `caps::PANEL_FUNCTIONS`): the functions a system has
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0002` | `Functions` {`id`} | `Vec<FunctionInfo>` by number: `function u8`, `text` (what it does, the system's words), `manual` (it needs the keylock in manual), `confirm` (a console asks the person first) |
+
+So a console shows what the system has, not a list of its own (QS/MC's
+open question 33). Refusals for a managed side with no identifiers of
+its own (a standalone system): `QSI0451` `NO_FUNCTION` (it has no such
+function), `QSI0452` `NEEDS_MANUAL` (the keylock is not in manual),
+`QSI0453` `NOT_NOW` (not in this state: before its IPL completes, for
+one). `panel::Panel::VERSION` is 2.
 
 ### refcodes (`0x0015`)
 
@@ -750,6 +915,10 @@ which need manual is the host's (`docs/PANEL.md` in QS/VS). No events.
 | `0x0001` | `Taken` {`id`, `name`, `dump`, `error` (a `Note`) or none, `time`} | a dump was written or could not be |
 | `0x0002` | `Removed` {`id`, `dump`, `time`} | a dump was deleted, or the oldest removed for the host's limits (`C2009060`) |
 
+| Op | Request | Reply |
+|---|---|---|
+| `0x0005` | `Space` {`id`, 0 for every partition}, bit 26 | `Vec<PartitionSpace>` in ID order: `id`, `space` (base's `Space`) |
+
 ### console (`0x0017`)
 
 | Op | Request | Reply |
@@ -766,7 +935,8 @@ the console, `In`: `1` `Key` (`qsipart::console::Key`), `2` `Refresh`,
 `3` `Bytes` (for the serial port). A tag a later version adds is kept
 as `Other(tag)` and the rest of its piece passed over. One viewer at a
 time: an attach without `take_over` is refused while another views (the
-host's `QVS2314`). Frames are checked with `qsipart`'s checks
+host's `QVS2314`; `QSI0601` `VIEWED` from a side with no identifiers of
+its own). ID 0 is the managed system's own console (panel, above). Frames are checked with `qsipart`'s checks
 (`Out::check`, `Capture::check`; an update against the last frame with
 `qsipart::console::Grid`). Closing the stream detaches. No events.
 
@@ -801,8 +971,88 @@ host's `QVS2314`). Frames are checked with `qsipart`'s checks
 | `0x0051` | `ProcPoolChange` (`ProcPoolSpec`): no partition runs in it | empty |
 | `0x0052` | `ProcPoolDelete` {`name`} | empty |
 
-Storage pools and switches are read only: they are made at the host.
-Shared processor pools are read in the host family's `Host`.
+Storage pools and switches are read in version 1; bits 20 and 19 make
+and change them (below). Shared processor pools are read in the host
+family's `Host`.
+
+**Storage pools managed** (bit 20, `caps::POOLS`): the pool service's
+requests 0 and 2 to 8. A disk is named as `Disks` names it (the host's
+name for it, its location code beside it).
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0002` | `Disks` (empty) | `Vec<PoolDisk>`: `name`, `serial`, `location`, `bytes`, `block_size u32`, `what` (the host's words), `pool` (empty for none), `free`, `foreign` |
+| `0x0003` | `PoolCreate` {`name`, `protection` (open `Protection`: `None` 1, `Mirrored` 2, `Raid5` 3, `Raid6` 4), `disks`, `spares`, `confirm` (the foreign disks' names, typed again)} | `StoragePool` |
+| `0x0004` | `PoolDelete` {`name`}: it holds no virtual disk or media | empty |
+| `0x0005` | `PoolRename` {`name`, `to`} | empty |
+| `0x0006` | `UnitReplace` {`pool`, `unit u32`, `disk`, `confirm`} | empty |
+| `0x0007` | `SpareAdd` {`pool`, `disk`, `confirm`} | empty |
+| `0x0008` | `SpareRemove` {`pool`, `disk`} | empty |
+| `0x0009` | `Designate` {`pool`, empty for no media repository} | empty |
+| `0x000A` | `PoolExtend` {`pool`, `disks`, `confirm`} | `StoragePool` |
+
+What follows is the existing `PoolChanged` (`0x0001`). A host whose
+pools cannot grow refuses `PoolExtend` with `QSI1616` `CANNOT_GROW`:
+QS/VS's, whose sets have a fixed size (QS/400's `protect` sets,
+`docs/BUILDKIT.md` section 12); it is in the family so a later host
+can. Bounds: names 64 bytes, lists 256 items (`QSI0002`). Refusals
+(`vres::pools`), the host's own identifiers after these:
+
+| Identifier | Name | When | QS/VS's |
+|---|---|---|---|
+| `QSI1601` | `BAD_NAME` | a pool's name not of the host's form | `QVS3001` |
+| `QSI1602` | `NAME_TAKEN` | another pool has it | `QVS3002` |
+| `QSI1603` | `NO_POOL` | no pool has it | `QVS3003` |
+| `QSI1604` | `DISK_COUNT` | not the protection's number of disks | `QVS3004` |
+| `QSI1605` | `NO_DISK` | no disk has the name | `QVS3005` |
+| `QSI1606` | `DISK_TAKEN` | the disk cannot be used | `QVS3006` |
+| `QSI1607` | `FOREIGN` | a foreign disk not confirmed | `QVS3007` |
+| `QSI1608` | `TOO_SMALL` | the disk is too small | `QVS3008` |
+| `QSI1609` | `BLOCK_SIZES` | the disks' block sizes differ | `QVS3009` |
+| `QSI1610` | `SPARES` | a hot spare the pool cannot have | `QVS3010`, `QVS3017` |
+| `QSI1611` | `TOO_LARGE` | larger than a pool may be | `QVS3011` |
+| `QSI1612` | `NOT_EMPTY` | it holds virtual disks or media | `QVS3012` |
+| `QSI1613` | `HELD` | a partition holds something in it | `QVS3013` |
+| `QSI1614` | `NOT_USABLE` | not in a state to be used | `QVS3014` |
+| `QSI1615` | `NOT_FAILED` | the unit is not failed or missing | `QVS3015` |
+| `QSI1616` | `CANNOT_GROW` | the host's pools have a fixed size | none |
+| `QSI1617` | `STEP_FAILED` | a step of making it failed | `QVS3016` |
+| `QSI1618` | `MEDIA_IN_USE` | the media repository's media are in use (designate) | `QVS3205` |
+
+**Switches managed** (bit 19, `caps::SWITCHES`): the switch service's
+requests 1 to 6.
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0045` | `SwitchCreate` (`SwitchSpec` {`name`, `vlans` (`Vec<u16>`), `mtu u32` (0: the host's default)}) | `Switch` |
+| `0x0046` | `SwitchChange` (`SwitchSpec`) | empty |
+| `0x0047` | `SwitchRename` {`name`, `to`} | empty |
+| `0x0048` | `SwitchDelete` {`name`, `force` (even when a profile names it)} | empty |
+| `0x0049` | `UplinkSet` {`switch`, `uplink` (`Uplink`, as `Switches` gives it)} | empty |
+| `0x004A` | `UplinkClear` {`switch`} | empty |
+
+What follows is the existing `SwitchChanged` (`0x0007`), which says
+what changed. Bounds: names 64 bytes, the VLANs and the interfaces 256
+items, each location code 256 bytes (`QSI0002`). Refusals
+(`vres::switches`), the host's own identifiers after these:
+
+| Identifier | Name | When | QS/VS's |
+|---|---|---|---|
+| `QSI1501` | `BAD_NAME` | a switch's name not of the host's form | `QVS4001` |
+| `QSI1502` | `NAME_TAKEN` | another switch has it | `QVS4002` |
+| `QSI1503` | `NO_SWITCH` | no switch has it | `QVS4003` |
+| `QSI1504` | `BAD_VLAN` | a VLAN not valid, or more than a switch carries | `QVS4004`, `QVS4005` |
+| `QSI1505` | `BAD_MTU` | an MTU not valid, or one an uplink cannot carry | `QVS4006`, `QVS4105` |
+| `QSI1506` | `TOO_MANY` | more switches than the host may have | `QVS4007` |
+| `QSI1507` | `NAMED` | a profile names it, or uses a VLAN taken away | `QVS4008`, `QVS4009` |
+| `QSI1508` | `PORTS_ON` | a running partition's port is on it | `QVS4015` |
+| `QSI1509` | `NO_INTERFACE` | no interface at the location | `QVS4101` |
+| `QSI1510` | `MANAGEMENT` | the management interface | `QVS4102` |
+| `QSI1511` | `OTHER_SWITCH` | in another switch's uplink | `QVS4103` |
+| `QSI1512` | `NO_BOND` | several interfaces and no bond | `QVS4104` |
+| `QSI1513` | `UPLINK_SIZE` | none, more than 8, or one named twice | `QVS4106`, `QVS4107` |
+| `QSI1514` | `NATIVE_NOT_CARRIED` | a native VLAN the switch does not carry | `QVS4010` |
+| `QSI1515` | `NOT_BUILT` | the kernel refused a step | `QVS4012` |
 
 **Physical tape drives** (bit 17, physical I/O's). The host's own tape
 drives are listed by `TapeDrives`, read only: a drive is released at
@@ -837,42 +1087,47 @@ host's identifiers (`QVSnnnn`); these are for what QSI itself refuses.
 |---|---|---|
 | `QSI0301`-`QSI0329` | host | `QSI0301` `SERVICE_DOWN`: the host's service that answers a request did not (its socket missing, no answer in time) |
 | `QSI0330`-`QSI0359` | partitions | `QSI0331` `NO_PARTITION`: no partition of that ID, from a managed side with no identifier of its own (a QS/VS host answers `QVS2001`) |
-| `QSI0360`-`QSI0399` | partition | `QSI0361` `NO_SUCH_VALUE`: an enumeration value this host does not have (a later version's shut down kind, IPL source, keylock) |
+| `QSI0360`-`QSI0399` | partition | `QSI0361` `NO_SUCH_VALUE`: an enumeration value this host does not have (a later version's shut down kind, IPL source, keylock); version 3's `QSI0362` `ID_TAKEN`, `QSI0363` `ID_OUT_OF_RANGE` |
 | `QSI0401`-`QSI0449` | profiles | `QSI0401` `CHANGED` (the revision conflict), `QSI0402` `EXISTS` (a name there, no revision), `QSI0403` `NOT_ACTIVE` (save current of a partition not activated) |
-| `QSI0450`-`QSI0499` | panel | none |
+| `QSI0450`-`QSI0499` | panel | for a side with no identifiers of its own: `QSI0451` `NO_FUNCTION`, `QSI0452` `NEEDS_MANUAL`, `QSI0453` `NOT_NOW` |
 | `QSI0501`-`QSI0549` | refcodes | none |
 | `QSI0550`-`QSI0599` | dumps | none |
-| `QSI0601`-`QSI0699` | console | none |
+| `QSI0601`-`QSI0699` | console | for a side with no identifiers of its own: `QSI0601` `VIEWED` |
 | `QSI0701`-`QSI0999` | vres | `QSI0701` `UPLOAD_LONG`, `QSI0702` `UPLOAD_CUT` |
 | `QSI1301`-`QSI1349` | physical I/O, host and vres (bit 17) | `QSI1301` to `QSI1307` (`host::physio`, above) |
 | `QSI1401`-`QSI1449` | partition version 2 (bit 18) | `QSI1401` to `QSI1405` (`partition::entitlement`, above) |
+| `QSI1501`-`QSI1549` | vres's switches managed (bit 19) | `QSI1501` to `QSI1515` (`vres::switches`, above) |
+| `QSI1601`-`QSI1649` | vres's storage pools managed (bit 20) | `QSI1601` to `QSI1618` (`vres::pools`, above) |
 
 ### Left for later versions
 
 Code update, problems and a system's own dumps, left here before, are
 the update and service families and base's bit 4 above; physical I/O,
 left here before too, is bit 17, and a running partition's entitlement
-is the partition family's version 2. What is still left will be a new
-capability bit (a new family, or a family's later version):
+is the partition family's version 2. Switch and pool management, kept
+at the host before, are bits 19 and 20, and a host's power-on settings
+bit 23. What is still left will be a new capability bit (a new family,
+or a family's later version):
 
-- releasing a device for partitions, and taking it back, from a console:
-  it is done at the host, where its isolation group and what the host
-  uses are seen;
 - changing a running partition's virtual processors, dedicated
   processors or memory: QS/VS gives them once, at activation.
 
-Kept at the host by decision rather than waiting on a version: changing
-the host's settings, storage pools, switches, uplinks and the switches'
-limits (section 8). A running partition's resources other than its
-entitlement do not change: QS/VS changes a running shared partition's
-processing units, capped or uncapped and weight (partition version 2),
-and nothing else.
+Kept at the host by decision rather than waiting on a version: the
+host's other settings (its partitions' most, the memory block, the
+reserve, the MAC prefix, the service's timeouts and dump limits), the
+switches' limits, importing an image from the host's own drive, and
+releasing a device for partitions (section 9). A running partition's
+resources other than its entitlement do not change: QS/VS changes a
+running shared partition's processing units, capped or uncapped and
+weight (partition version 2), and nothing else.
 
 ## 8. The mapping: QS/VS's local protocols
 
 Every request of `part/partd/src/proto.rs` (34), `stg/poold/src/proto.rs`
 (26) and `net/vswitchd/src/proto.rs` (17), by its name there, at QS/VS
-commit `cebf3d2`: 77 requests, 53 with a QSI message and 24 with none.
+commit `cebf3d2`: 77 requests, 66 with a QSI message and 11 with none
+(53 and 24 before bits 19 and 20 mapped the pool service's 2 to 8 and
+the switch service's 1 to 6).
 
 The service and update families and base's system dumps have no rows
 here: the local protocols they will be translated to (the host's problem
@@ -882,7 +1137,10 @@ Their mapping is QS/VS's to complete in its own documents
 for physical I/O (bit 17) and partition version 2 (bit 18): partd has
 no request for a host's devices, its physical tape drives or a running
 partition's entitlement at `cebf3d2`, and they are mapped there with
-the phase that adds them.
+the phase that adds them. Likewise partition version 3's settings
+(bit 21), activation times (22), the power-on settings (23, over
+partd's settings and its end of every partition), the panel's functions
+(24) and the dumps' space (26).
 
 ### partd: 34 requests, 32 mapped, 2 none
 
@@ -906,7 +1164,7 @@ the phase that adds them.
 | 15 | `DeletePool` | vres `0x0052` ProcPoolDelete |
 | 16 | `History` | refcodes `0x0001` History (paged by the QSI host server) |
 | 17 | `GetSettings` | host `0x0002` Settings |
-| 18 | `ChangeSettings` | **none**: the host's settings are changed at the host in version 1 |
+| 18 | `ChangeSettings` | **none**: the host's settings are changed at the host; host `0x0021` SetPowerOn (bit 23) carries the part a console changes, QS/VS's to map |
 | 19 | `EndAll` | **none**: PID 1's at the host's shut down; a console reaches it through base `0x0003` Power |
 | 20 | `Subscribe` | base `0x0005` Subscribe: `State`, `Resources`, `Defined`, `Channel` become partitions events `0x0001` to `0x0004`, `Code` refcodes `0x0001`, `Dump` dumps `0x0001` |
 | 21 | `LoadMedia` | vres `0x0025` Load |
@@ -923,19 +1181,19 @@ the phase that adds them.
 | 32 | `Console` | console `0x0001` Attach (its stream) |
 | 33 | `Screen` | console `0x0002` Screen |
 
-### The pool service: 26 requests, 14 mapped, 12 none
+### The pool service: 26 requests, 21 mapped, 5 none
 
 | # | Request | QSI |
 |---|---|---|
-| 0 | `Disks` | host `0x0003` Hardware (the disk items, owned by a pool, foreign or free) |
+| 0 | `Disks` | vres `0x0002` Disks (bit 20); host `0x0003` Hardware (the disk items, owned by a pool, foreign or free) |
 | 1 | `Pools` | vres `0x0001` Pools |
-| 2 | `CreatePool` | **none**: made at the host (it erases disks; a foreign disk is confirmed by typing its name) |
-| 3 | `DeletePool` | **none**: at the host |
-| 4 | `RenamePool` | **none**: at the host |
-| 5 | `ReplaceUnit` | **none**: at the host, where the disk is |
-| 6 | `AddSpare` | **none**: at the host |
-| 7 | `RemoveSpare` | **none**: at the host |
-| 8 | `Designate` | **none**: at the host |
+| 2 | `CreatePool` | vres `0x0003` PoolCreate (bit 20; a foreign disk is confirmed by typing its name) |
+| 3 | `DeletePool` | vres `0x0004` PoolDelete |
+| 4 | `RenamePool` | vres `0x0005` PoolRename |
+| 5 | `ReplaceUnit` | vres `0x0006` UnitReplace |
+| 6 | `AddSpare` | vres `0x0007` SpareAdd |
+| 7 | `RemoveSpare` | vres `0x0008` SpareRemove |
+| 8 | `Designate` | vres `0x0009` Designate |
 | 9 | `Vdisks` | vres `0x0010` Vdisks |
 | 10 | `CreateVdisk` | vres `0x0011` VdiskCreate |
 | 11 | `ResizeVdisk` | vres `0x0012` VdiskResize |
@@ -954,17 +1212,17 @@ the phase that adds them.
 | 24 | `Holders` | **none**: internal; each item's `holder` is in its list |
 | 25 | `StopAll` | **none**: PID 1's at the host's shut down |
 
-### The switch service: 17 requests, 7 mapped, 10 none
+### The switch service: 17 requests, 13 mapped, 4 none
 
 | # | Request | QSI |
 |---|---|---|
 | 0 | `Switches` | vres `0x0040` Switches |
-| 1 | `Create` | **none**: made at the host |
-| 2 | `Change` | **none**: at the host |
-| 3 | `Delete` | **none**: at the host |
-| 4 | `Rename` | **none**: at the host |
-| 5 | `SetUplink` | **none**: at the host, where the cables are |
-| 6 | `ClearUplink` | **none**: at the host |
+| 1 | `Create` | vres `0x0045` SwitchCreate (bit 19) |
+| 2 | `Change` | vres `0x0046` SwitchChange |
+| 3 | `Delete` | vres `0x0048` SwitchDelete |
+| 4 | `Rename` | vres `0x0047` SwitchRename |
+| 5 | `SetUplink` | vres `0x0049` UplinkSet |
+| 6 | `ClearUplink` | vres `0x004A` UplinkClear |
 | 7 | `Interfaces` | host `0x0003` Hardware (the interface items, owned by the host, a switch or none) |
 | 8 | `Ports` | vres `0x0041` Ports |
 | 9 | `Fdb` | vres `0x0042` Fdb |
@@ -994,7 +1252,10 @@ The QSI host server composes these:
   subscription; the host server sends them for what it changed and what
   it finds when it polls (the partition manager polls the pools every
   two seconds already);
-- dumps event `0x0002`: from `C2009060` in the history, and deletes.
+- dumps event `0x0002`: from `C2009060` in the history, and deletes;
+- vres `0x000A` PoolExtend: the pool service has no request to grow a
+  pool, and QS/VS's sets cannot, so its host server refuses it
+  (`QSI1616`).
 
 Left out as the host's alone: a partition's VMM process (`Status.pid`),
 a switch's bridge (`SwitchStatus.bridge`), a port's tap
@@ -1048,6 +1309,43 @@ a switch's bridge (`SwitchStatus.bridge`), a port's tap
 - **The entitlement's refusals** have a range of their own
   (`QSI1401`-`QSI1449`) beside the partition family's, as base's dumps
   have theirs; physical I/O's are `QSI1301`-`QSI1349`.
+- **New operations, not new fields** (handoff 24): every addition is an
+  operation or event with types of its own behind a bit of its own
+  (section 5). `ipc::wire_struct!` fails when the bytes run out, so a
+  field added to a known body breaks a new reader against an older
+  sender, and a struct in a list or mid-body cannot gain one at all.
+  So a partition's settings are `Settings` beside its `Definition`, a
+  problem's severity is beside its `Summary` (`Rated`, `RatedProblem`:
+  `Summary` is in a list and in the middle of `Problem` and `Noticed`),
+  activation times are lists of their own, and the fix level is not in
+  base's `State`.
+- **A later version's bit alone gates it**: partition version 3 needs
+  bits 10 and 21, not 18; a host may have its settings without the
+  entitlement, or the other way.
+- **ID 0 is the managed system itself** for the panel and console
+  families: a standalone system has one panel and one console, its own,
+  and answers them at 0, refusing any other ID with `QSI0331`; a host
+  refuses 0 the same way. Only the bounds changed; a host of before
+  refuses 0 with `QSI0002`.
+- **Panel and console refusals of QSI's own** (`QSI0451` to `QSI0453`,
+  `QSI0601`) are for a managed side with no identifiers of its own; a
+  host keeps its own (`QVS2306`, `QVS2314`).
+- **Extend is refused by name**: `PoolExtend` is in the family though
+  QS/VS's pools cannot grow (their sets have a fixed size), so a later
+  host can answer it and a console asks the same way of both;
+  `QSI1616` says why.
+- **One switch spec for create and change**, as `ProcPoolSpec` is: the
+  same three fields; the operation says which.
+- **The power-on settings are not the IPL's**: QSI sets which partitions
+  start with the host and how they end when it powers off; the host's
+  IPL side, keylock and boot mode stay as they are (QS/MC's open
+  question 30).
+- **A managed system's name** is set at the system: QSI never renames
+  it.
+- **A host's IPL side** changes only by an update's activation (the
+  update family).
+- **Releasing a device for partitions**, and taking it back, is done at
+  the host, where its isolation group and what the host uses are seen.
 
 ### Found in QS/VS that the handoff did not foresee
 
@@ -1085,12 +1383,14 @@ gives them. QSI's own (`qsi::msgid`, and each family's `msgid`):
 | `QSI0001` to `QSI0099` | shared with the partition scope: `QSI0001` an unknown family or operation, `QSI0002` a body that does not read or is out of bounds, `QSI0003` a family not agreed; `QSI0010` to `QSI0022` are the partition scope's (`docs/QSID.md` section 4) |
 | `QSI0101` to `QSI0112` | the session: `0101` not pinned, `0102` too many requests, `0103` too many streams, `0104` too long, `0105` no credit, `0106` no such stream, `0107` timed out, `0108` out of order, `0109` a bad frame, `0110` closing, `0111` no common version, `0112` the wrong kind of peer |
 | `QSI0201` to `QSI0204` | pairing (section 7, pair) |
-| `QSI0301` to `QSI0999` | the host families, a range each (section 7, "The families' message identifiers") |
+| `QSI0301` to `QSI0999` | the host families, a range each (section 7, "The families' message identifiers"): among them partition version 3's `0362` and `0363`, the panel's `0451` to `0453`, the console's `0601` |
 | `QSI1001` to `QSI1099` | service: `1001` the condition still holds, `1002` no such problem, `1003` closed already |
 | `QSI1101` to `QSI1199` | update: `1101` to `1105` an image refused by name (signature, damaged, product, older, this system's state), `1106` to `1114` the steps out of order or busy (section 7, update) |
 | `QSI1201` to `QSI1249` | base's system dumps: `1201` no such dump, `1202` one is being taken, `1203` a kind not taken |
 | `QSI1301` to `QSI1349` | physical I/O: `1301` no such location, `1302` not released, `1303` held by another partition, `1304` its group split, `1305` not assignable now, `1306` not a tape drive, `1307` a physical drive's slot loaded or unloaded |
 | `QSI1401` to `QSI1449` | a running partition's entitlement: `1401` not running, `1402` dedicated, `1403` outside its profile, `1404` not what its virtual processors need, `1405` the pool has not that much |
+| `QSI1501` to `QSI1549` | switches managed: `1501` to `1515` (section 7, vres) |
+| `QSI1601` to `QSI1649` | storage pools managed: `1601` to `1618` (section 7, vres) |
 
 ## 11. Later: a standalone QS/400's listener
 
@@ -1121,6 +1421,10 @@ these three crates unchanged. What it adds:
   (bits 2 to 4) fit a standalone system as well: its problem log
   (`service/prb`), its LIC's A/B slots and PTFs, its system dumps
   (`sysdump`); each is the listener's to answer, or to leave clear.
+  What it will say is `caps::STANDALONE`: base and pair, service with
+  its version 2 (bits 2 and 25), its dumps and their space (4 and 26),
+  its own panel and console at ID 0 with the panel's version 2 (12, 15
+  and 24) and its fix level (27); no code update.
 - **What each console may ask.** The request's user is a name for the
   log and grants nothing; what a console may do is the managed side's
   rule, by its pin.
@@ -1129,7 +1433,8 @@ these three crates unchanged. What it adds:
 
 **The messages.** `cargo test -p qsi`: every sample of every family
 (`qsi::samples`, every operation and event of base with its system
-dumps, pair, service, update and the nine host families) encoded and
+dumps, dump space and fix level, pair, service with its version 2,
+update and the nine host families with every later bit) encoded and
 decoded by number, and again with a later
 version's bytes after it; an unknown operation or family is `None`, a
 truncated or damaged body an error and never a panic, an enumeration
@@ -1137,7 +1442,13 @@ value a later version adds is kept; every request in bounds and each
 bound refused; the console stream's pieces split anywhere; each
 message's capabilities (`of_request`, `of_event`: bit 4 for base's
 dumps alone, bit 17 for the host's devices and vres's tape drives
-alone, bit 18 for the entitlement alone, `HOST_V1` as it was); a tape
+alone, bit 18 for the entitlement alone, each of bits 19 to 27 for its
+own and nothing else, base's dump space for bits 4 and 26 together,
+`HOST_V1`, `SERVICING` and `MANAGED` as they were, `STANDALONE`); each
+new request in bounds and out (ID 0 allowed to the panel and console
+families, a note of 1 to 256 bytes, a created partition's ID, a
+setting's delay and description, the pools' and switches' names, lists
+and location codes); every new open enumeration kept; a tape
 device that is a volume, a physical drive or empty, and a drive's
 location bounded as a text.
 
@@ -1145,14 +1456,15 @@ location bounded as a text.
 both ways; unequal peers (version 2 to 1, capabilities intersected, a
 family the other lacks refused `QSI0003`); every message of every
 family through a console session and a host session in pieces of 1,
-13 and 4096 bytes (`tests/samples.rs`: 76 exchanges and every event);
-peers of different ages (`tests/caps.rs`: a console never asks an older
-managed side the 16 new requests of bits 2 to 4, 17 and 18, a managed
-side refuses them `QSI0003` from a console that sends them anyway, an
-older console is sent none of the 20 new events and a newer one all,
-its replay counts only what it is sent; and each of the five bits
-alone, at the host or at the console, lets through its own requests
-and events and none of the others'); a
+13 and 4096 bytes (`tests/samples.rs`: 105 exchanges and every one of
+the 44 events); peers of different ages (`tests/caps.rs`: a console
+never asks an older managed side the 45 new requests of bits 2 to 4
+and 17 to 27, a managed side refuses them `QSI0003` from a console that
+sends them anyway, an older console is sent none of the 22 new events
+and a newer one all, its replay counts only what it is sent; and each
+of the fourteen bits alone (service's version 2 with service's own
+bit), at the host or at the console, lets through its own requests and
+events and none of the others'); a
 log taken up with `EventLog::resume` numbering on and replaying what it
 was given, and refusing events with a gap, out of order or not ending
 before its next number;
