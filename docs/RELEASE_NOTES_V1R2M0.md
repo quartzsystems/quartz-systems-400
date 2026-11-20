@@ -299,7 +299,11 @@ behind two more.
 The web layer of QS/400's three web products (`net/qsweb`) and the
 making and reading of certificates (`net/x509kit`, beneath the
 certificate store) are neutral crates QS/MC builds its web UI on
-(`BUILDKIT.md` section 17); QS/400's pages are unchanged.
+(`BUILDKIT.md` section 17); QS/400's pages are unchanged. So are the
+terminal's look, its script and the exchange the script speaks
+(`net/termlook`), which draw Access for Web's 5250 session and a
+partition's console alike, and the system's reference codes as data
+(`lic/srcdata`), which the IPL posts from (`BUILDKIT.md` section 18).
 
 **Fixes since V1R1M0**
 

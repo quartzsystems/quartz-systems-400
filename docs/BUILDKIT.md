@@ -323,6 +323,8 @@ what names its owner from the caller; section 10 has the detail.
 | `qsipart` | the partition service channel's protocol (handoff 17): frames, the service port's and the console port's messages, a peer's grid; `ipc` alone of this repository under it, which `neutral.rs` holds it to | nothing: the port names and the protocol are the partition scope of QSI, both sides' |
 | `qsweb` | the web layer (handoff 22, section 17): HTTP/1.1 over any stream, sessions and CSRF, the frame, the partials, the shared pages, golden comparison and the link check, WebSocket | its family (`Brand`: name, vendor, release, `Server` token, the stylesheet's and script's paths, the cookie, the shared pages' policy sentences), each product's wordmark, prefix, navigation tree, header label, routes, messages and help |
 | `x509kit` | certificates without a store (handoff 22): P-256, P-384 and RSA keys, self-signed and issued certificates, requests, what a certificate holds, PEM chains and keys matched, PKCS#12 read and written | the names, the validity, the passwords |
+| `termlook` | the terminal's look (handoff 23, section 18): the console's font and palette, its cell rules and status row, a screen drawn to PNG and Print Screen's PDF, fed from a 5250 screen or a partition console's `qsipart` grid; the page's script as bytes and the exchange it speaks on its socket, keys by name to `qsipart`'s; `qsipart` and `ipc` alone under it | the system's name on the status row, the connection's state and TLS, the scheme and scale, the PDF's producer, the keypad, the script element's paths |
+| `srcdata` | every reference code the system posts (handoff 23): family, phase, text, meaning, and cause and recovery where written (`gaps` counts the rest); `slic` posts from it; nothing under it | nothing: the codes are the system's |
 
 ### Sets for a storage pool (handoff 15)
 
@@ -443,10 +445,12 @@ still does:
 
 ## 6. Crates another repository takes
 
-`build fixture` builds all twenty-one as git dependencies, and its PID 1
+`build fixture` builds twenty-two of them as git dependencies (all but
+`srcdata`, data QS/MC takes and `slic` posts from), and its PID 1
 runs `console`, `scrkit`, `protect`, `ublk`, `netlink`, `qsipart`,
 `qsi`, `qsisess` and `qsitrust` (a pairing over TLS and an `identify`),
-and `qsweb` and `x509kit` (a web product of its own over TLS).
+and `qsweb`, `x509kit` and `termlook` (a web product of its own over
+TLS, with a terminal page).
 What an
 appliance should know of each:
 
@@ -472,6 +476,8 @@ appliance should know of each:
 | `qsitrust` | product-neutral: QSI's trust rules: mutual TLS 1.3 over graviola with pinned self-signed Ed25519 certificates (QS/VS's identity, byte for byte), and pairing by SPAKE2 bound to both certificates and the connection; keeps no state (`Pins`, `pair::Guard` are the caller's); nothing of this repository under it |
 | `qsweb` | product-neutral (section 17): the web layer of QS/400's three web products and of QS/MC's; nothing of this repository under it (`neutral.rs`); the stylesheet keeps its file name `qs400.css` and its bytes |
 | `x509kit` | product-neutral (section 17): keys, certificates, requests, PEM bundles, PKCS#12; nothing of this repository under it. `certs`, QS/400's certificate store, is built on it and re-exports its modules |
+| `termlook` | product-neutral (section 18): the look, the screen model with its two ways in, PNG and PDF, the script and its exchange; `qsipart` and `ipc` under it (`neutral.rs`); its one line naming QS/400 is the console font's file name it reads. Access for Web's `s5250::look` and `s5250::screen` re-export it |
+| `srcdata` | product-neutral (section 18): the reference codes as data; nothing of this repository under it. QS/MC explains a partition's code with it |
 | `svctools` | QS/400's: the DST and installer screens, over `scrkit`, `svcusers`, `console`, `licpart`, `release` and `hwqual`. An appliance takes the three neutral ones, not this |
 
 They build from outside because cargo resolves a git dependency's
@@ -1638,3 +1644,59 @@ three give `10`, `false` and their line, and HTTP Server
 Administration's recorded responses are again identical to the base's
 but for key material; `qsweb`'s `signon_as_the_brand_says` renders both
 forms.
+
+## 18. Handoff 23: the terminal's look and the reference codes
+
+QS/MC shows a partition's console in a browser, drawn exactly as Access
+for Web draws a 5250 session, and explains a partition's reference code.
+Access for Web's look was its own (`net/accessweb/src/s5250`, fed by a
+5250 data stream), and the codes were `slic`'s.
+
+| What | Where |
+|---|---|
+| The look | `net/termlook` (`look::font`, `look::render`, `file::{png, deflate, pdf}`), moved from Access for Web unchanged but for what a console cell has and no 5250 byte gives (yellow, high intensity, double width; `render::Width`, `Style::high`, `Scheme::foreground_of`) and the PDF's producer from the caller. Access for Web's `s5250::look` and `s5250::screen` re-export it |
+| One screen model | `termlook::screen::Screen`: size, cells (`Paint`), the cursor's shape, the status row (`Oia`), the look; `picture`, `png`, `print_screen`, `size`, `text_rows` |
+| Two ways in | `screen::s5250` (the 5250 screen and `View`, `Screen::from_buffer` the conversion the session job did itself) and `screen::grid` (a `qsipart::console::Grid` cell for cell; the attribute map is `ACCESSWEB.md` "The look for a product outside QS/400") |
+| The script and its exchange | `termlook::script` (`SOURCE`, `text(keypad)`), `assets/term.js`; `termlook::exchange` (`screen`, `status`, `closed`, `message`, `style_char`, `Input::parse`, `Input::console_keys`, `keys`). The script element's attributes and the exchange are documented in `ACCESSWEB.md`; without `data-socket` the script is Access for Web's page as before |
+| The reference codes | `lic/srcdata` (`Src` with `meaning`, `cause`, `recovery`; `Family`, `TABLE`, `lookup`, `gaps`); `slic`'s `src.rs` is `pub use srcdata::*` |
+
+**The codes without cause and recovery** (`srcdata::gaps`, asserted by
+its test; `PHASE1.md` "Reference codes as data"): 74 codes, every one
+with its meaning; 64 lack a cause, a recovery or both.
+
+| Family | Codes | Without cause | Without recovery |
+|---|---|---|---|
+| C1 | 15 | 8 | 15 |
+| C6 | 34 | 28 | 33 |
+| A6 | 12 | 0 | 7 |
+| B1 | 7 | 0 | 3 |
+| D1 | 6 | 6 | 6 |
+
+**The fixture.** Its web product gains `/demo/terminal`
+(`init/src/term.rs`): QSDEMO's menu drawn by the console's own `qsi`
+display into `qsipart` frames, the frames applied to a peer's `Grid`,
+the grid drawn by `termlook` as `screen.png`, which must be
+`init/golden/terminal.png` byte for byte (made from the same module, the
+fixture's own). The page carries the keypad form and the script's
+element (`data-socket`, `data-image`); `/demo/terminal/script.js` is
+`termlook::script::text`; the keypad's posted `F3` comes back as
+`Function(3)` in a `QMC2002` message row, and a socket's
+`{"t":"key","k":"Enter"}` decodes to `Key::Enter`. `build fixture`
+asserts the line `terminal: qsipart frames to a grid, the picture
+matches its golden PNG`.
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Every existing golden page, picture and artifact hash is identical | Access for Web's golden pages and its seven pictures pass unchanged (`cargo test -p accessweb`, `s5250_look` byte for byte); the session page's `<script>` element is as it was, so its golden pages did not change. Built in one directory with one build ID (`buildkit-baseline`) at the base `155aba213` and at `3fba6cf55`: `instload` 586,040 `276b03e2…` at both; `slic` (49,651,432 `8b34aeb0…` to 49,670,792 `7b7e4bae…`) differs because it posts from `srcdata`, whose codes now carry their meaning, cause and recovery, and `qsjob` (41,926,440 `3c4a5036…` to 41,938,088 `5a0be7e7…`) because it links Access for Web over `termlook` (the exchange, the new script). `Cargo.lock` gained `termlook` and `srcdata` and their edges; `NOTICES.txt` is current |
+| 2 | A `qsipart::Grid` draws through the look crate; the sign-on comparison is recorded | `accessweb/tests/console_look.rs`: `QDSIGNON` as one data stream, drawn as the session job draws it and as console frames into a grid, byte-identical pictures at scale 1 and 2, connected and off. QS/MC's `5250-24x80.png` is Access for Web's Work with Active Jobs with another user name; with it, all seven of QS/MC's pictures are drawn byte for byte (`ACCESSWEB.md`) |
+| 3 | The script's exchange is documented and Access for Web runs on it unchanged in behaviour | `termlook::exchange` and `ACCESSWEB.md`; Access for Web's server encodes and decodes through it, its WebSocket and script tests pass; the script's 5250 extras (keyboard map, hotspots, cursor placing, Copy and Paste) are on without `data-socket` as before and behind `data-5250` otherwise |
+| 4 | `slic` posts from the reference code crate; the count without cause and recovery is recorded | above; the code, text and phase of all 74 compared old to new, the serial line, the LIC history bytes and `srcs table` from the same `line`, `bytes` and `Phase` |
+| 5 | `build fixture` passes its terminal page; the neutrality test passes | `build fixture` passed at `4c0dec595` with the terminal line; `neutral.rs`: `termlook` reaches `qsipart` and `ipc` only, `srcdata` nothing; `the_look_and_the_codes_name_no_product` (the one line allowed is the console font's file name `termlook` reads) |
+
+Also: `cargo clippy` clean for `termlook`, `srcdata`, `accessweb`,
+`buildkit`'s tests and the fixture's PID 1, and for `slic` and `qsjob` on
+the musl target; `fmtcheck` green; `build notices --check` current.
+`kcbuild notes` reports the V1R1M0 marker inventory stale as at the base;
+this work moved one marker in `httpafw/s5250.rs` (line 734 to 716).

@@ -257,12 +257,15 @@ are real defects of the golden page, or data:
 
 ## 5250 session (steps 5-6b)
 
-- `s5250/look/`: the console's font (`lic/console/font/qs400-9x16.txt`,
-  compiled in), the palette and cell rules ported from the desktop's
-  `qsa-ui/src/console.rs` (`render.rs`), the PNG writer and its deflate,
-  and Print Screen (`pdf.rs`: one A4 landscape page, each run of lit
-  pixels a filled rectangle). `s5250/screen.rs`: the screen the pages
-  draw, its status row (`TLS`, `X SYSTEM`, `Not connected`, `RR/CCC`).
+- `s5250/look/` and `s5250/screen.rs` are `termlook`'s (handoff 23,
+  "The look for a product outside QS/400" below), re-exported so every
+  path is as it was: the console's font (`lic/console/font/qs400-9x16.txt`,
+  compiled in), the palette and cell rules the desktop's
+  `qsa-ui/src/console.rs` shares (`render.rs`), the PNG writer and its
+  deflate, and Print Screen (`pdf.rs`: one A4 landscape page, each run of
+  lit pixels a filled rectangle, `/Producer (QS/400 Access for Web)`
+  from the caller); the 5250 screen the pages draw, its status row
+  (`TLS`, `X SYSTEM`, `Not connected`, `RR/CCC`).
 - `s5250/files/`: the desktop's `.qsd`, `.qkm` and `.qsm` ported from
   `qsa-config` (TOML over `toml`, unknown keys kept), so a file downloaded
   here opens in the desktop and back. The macro editor shows a macro's
@@ -282,14 +285,16 @@ are real defects of the golden page, or data:
   Macros record (keys, typing, a `wait unlock` after each key that goes to
   the system; typing into a nondisplay field is kept as a prompt) and play
   on the server; a prompt step needs the script.
-- With script (`assets/s5250.js`):
+- With script (`termlook`'s `assets/term.js`, served after the font and
+  the keypad as `/5250/script.js`):
   the picture becomes a canvas of its size drawn with the same font and
   rules; keys go through the session's keyboard map; hotspots, selection,
   Copy and Paste; the menu bar and Scale switch in place, and the status
   bar's cursor follows the screen. Every other page of the product (and of HTTP Server Administration
-  and Navigator) moves in place through `qsweb`'s `qsnav.js` (`Product::nav_script`; WEB_STYLE.md). The WebSocket (`qsweb::ws`) carries the whole screen,
-  then the rows that changed, one style letter a cell; a nondisplay
-  field's characters never go out; no password crosses it.
+  and Navigator) moves in place through `qsweb`'s `qsnav.js` (`Product::nav_script`; WEB_STYLE.md). The WebSocket (`qsweb::ws`) speaks
+  `termlook`'s exchange (below): the whole screen, then the rows that
+  changed, one style character a cell; a nondisplay field's characters
+  never go out; no password crosses it.
 - Policies: `5250.start` for the area, `5250.save` for every change,
   `5250.autosignon` (the box disabled, a start without the ticket),
   `5250.print` for Print Screen.
@@ -330,6 +335,108 @@ Menu, prints the screen, disconnects (`QAD1006`), deletes (`XWA0011`).
 | `web/copy-import.html`, `web/copy-export.html` | the Table select lists `HLINV`'s six tables | data: the schema's tables (`web/tables.html`) |
 | `web/copy-import.html` | Copy, Preview 10 rows, Save request (.qdx), Cancel named `copy`, `preview`, `save`, `cancel` | four nameless buttons in one form cannot be told apart |
 | `web/copy-export.html` | one `<form>`, the buttons inside it, named `copy`, `save`, `cancel` | a form inside a form is not valid HTML; the buttons were outside both |
+
+### The look for a product outside QS/400 (handoff 23)
+
+The session's look, its screen model, its script and the script's
+exchange are `net/termlook`, a crate that names no product and takes
+only `qsipart` (and `ipc` under it) of this repository
+(`tools/buildkit/tests/neutral.rs`). QS/MC draws a partition's console
+with it exactly as this product draws a 5250 session.
+
+| Part | Where |
+|---|---|
+| The font, palette, cell rules, status row, `render` | `termlook::look` (`font`, `render`) |
+| The PNG and Print Screen's PDF (the producer is the caller's) | `termlook::file` (`png`, `deflate`, `pdf`) |
+| The screen drawn: size, each cell's character and style, the cursor and its shape (underline, block, hidden), the status row, the scheme, greyed when off | `termlook::screen::Screen` (`picture`, `png`, `print_screen`, `size`, `text_rows`) |
+| Way in from a 5250 session | `termlook::screen::s5250` (`Screen` with its attribute bytes, `from_buffer` a terminal's buffer, `from_text`; `View` the session's state), this product's |
+| Way in from a partition's console | `termlook::screen::grid`: a `qsipart::console::Grid`, cell for cell (`style`, `paint`, `View`) |
+| The script, as bytes | `termlook::script::SOURCE`; `text(keypad)` what a server sends: `QS_FONT`, `KEYPAD`, the script |
+| The exchange | `termlook::exchange`: `screen`, `status`, `closed`, `message` encoded from the neutral screen; `Input::parse`, `Input::console_keys`; `keys` (`KEYPAD`, `NAMES`, `console_key`, `name`, `keypad`) |
+
+**How a console cell's attributes draw** (`grid::style`, as `lic/console`'s
+framebuffer, `scale.rs` `cells_line`, reads them):
+
+| Bit (`qsipart::console::attr`) | Drawn |
+|---|---|
+| colour 0-6: green, white, red, blue, turquoise, pink, yellow | the console's palette; 7 (no colour) as green |
+| `HIGH` | the console's high-intensity colours: green and white as white, red `FF5050`, blue `80A8FF`, turquoise `40FFFF`, pink `FF80E0`, yellow `FFFF60` |
+| `REVERSE` | foreground and background swapped |
+| `UNDERLINE` | scanline 14 in the foreground |
+| `BLINK` | not drawn (the framebuffer does not blink either) |
+| `COLUMN_SEP` | dots at the cell's first and last pixel on every fourth scanline |
+| `NONDISPLAY` | no glyph (an underline still draws) |
+| `DOUBLE_WIDTH` | the glyph over two cells, each pixel two wide; the separators at the pair's ends |
+| `CONTINUATION` | not drawn (the cell before covers it) |
+| cursor `Underline`, `Block`, `Hidden` | the last scanline in white; the cell reversed; nothing |
+| indicators `INHIBITED`, `INSERT` | the status row's `X SYSTEM` and `INS`; before the first frame a blank 24x80 with `X SYSTEM` |
+
+**Where the two cannot look the same.** A 5250 attribute byte gives no
+yellow (turquoise and yellow share `0x30`-`0x37` and the console's 5250
+terminal draws turquoise), no high intensity but white, and no double
+width, so a console cell can show what no session screen does. The
+console marks a 5250 byte's white as white at high intensity; it draws
+the same pixel. The 5250 session's status row has the message light,
+operator error codes (`X II nnnn`) and the session's TLS from the
+connection; a console's has `X SYSTEM` when input is inhibited (the
+console shows its own operator errors on row 24), never `MW`, and the
+TLS of the caller's connection. The SRC the console sends beside a frame
+(`Status::src`) is not drawn: the control panel strip is the page's.
+Blink draws on neither.
+
+**The comparison.** `net/accessweb/tests/console_look.rs` writes the
+shipped `QDSIGNON`'s SIGNON format (`QSHQ400`, `QINTER`, `QPADEV0003`)
+as one 5250 data stream and draws it twice: as this product's session
+job does (a 3179-2 terminal, `s5250::Screen::from_buffer`), and as the
+console sends it on a partition's console port (`ConsoleTerminal`, the
+`qsi` display's frames, a peer's `Grid`, `grid::View`). The two pictures
+are byte-identical at scale 1 and 2, connected and with the screen off.
+QS/MC's `shared/img/5250-24x80.png` is this product's
+`5250-24x80.png` (Work with Active Jobs, `wrkactjob.txt`) with another
+user name in rows 14 and 20, a screen of the prototype's, not one the
+console sends; with that name in the fixture's text it draws byte for
+byte. QS/MC's other six pictures of the same names are this product's
+goldens: `5250-24x80-off`, `5250-signon` and `5250-wait` byte-identical;
+`-white`, `-x2` and `-27x132` with the same user name. All seven are
+checked by `the_management_console_pictures` in the same test file when
+`QSMC_IMG_DIR` (QS/MC's `shared/img`) and `QSMC_USER` (the name) are set.
+A console screen for QS/MC's terminal golden is the console's own data:
+the cells a partition sends, as the fixture's terminal page draws its
+menu (`docs/BUILDKIT.md` section 18).
+
+**The exchange.** JSON text messages on the page's WebSocket. The server
+sends `screen` (`v`, `rows`, `cols`, `cursor` `[row, col]` 1-based,
+`shape` when not an underline, `state`, `system`, `tls`, `kb`, `ins`,
+`mw`, and `cells`, `[row, text, styles]` every row from 0), `delta` (the
+same, the rows that changed), `status` (the cursor and indicators
+alone), `closed` (`reason`) and `message` (`id`, `text`). A style is one
+character, U+0100 plus the console's attribute bits (`exchange::style_char`);
+a nondisplay cell goes as a blank. The page sends `{"t":"key","k":NAME}`,
+`{"t":"type","s":TEXT}` and, with the 5250 extras,
+`{"t":"cursor","r":R,"c":C}`. Key names: `F:1` to `F:24`, then
+`Enter`, `Tab`, `BackTab`, `FieldExit`, `Backspace`, `Home`, `Insert`,
+`Delete`, `Attention`, `SysReq`, `Reset`, `Left`, `Right`, `Up`, `Down`,
+`PageUp`, `PageDown` (the console's set, `qsipart::console::Key`, one for
+one), and the 5250 session's own `FieldPlus`, `FieldMinus`, `Clear`,
+`Help`, `Print`, `RecordBackspace`, `NewLine`, `Dup`, `EraseInput`,
+`EraseEof`. The keypad a page posts without script keeps its labels
+(`k=F1` ... `F24`, `Enter`, `Reset`, `Attn`, `SysRq`, `PgUp`, `PgDn`,
+`FldExit`, `Field+`, `Field-`, `Help`, `Print`, `Clear`;
+`exchange::keys::KEYPAD`).
+
+**The script's element.** `data-socket` the socket's path (or a `ws:`
+or `wss:` URL), `data-session`, `data-scale`, `data-scheme` (`bw`),
+`data-image` the id of the picture it replaces, `data-5250` the 5250
+extras (hotspots, the cursor placed with the mouse, selection, Copy and
+Paste), `data-keymap` a keyboard map's address (JSON, key to name;
+without one the console's keys of `docs/PHASE1.md`). Without
+`data-socket` it is this product's page as before: the socket at
+`<base>/5250/ws/<session>`, the extras on, the map from
+`<base>/5250/<session>/keymap/json`; so the session page and its golden
+files did not change. This product's server speaks the same exchange
+(`routes/s5250/session.rs`); the style letters it sent before (`@` plus a
+5250 byte's low bits, `.` for an attribute byte) are now style
+characters, and the script draws the same cells.
 
 ## Database (steps 7-12)
 

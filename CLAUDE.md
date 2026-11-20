@@ -33,6 +33,7 @@ kernel is the only inherited component; every process above it is ours.
 | V1R2M0 | QSI's physical I/O and entitlement (handoff 20): a host's devices for physical I/O (released, assignable or why, the isolation group, the holder; released, taken back, assigned, returned, reset failed) and its physical tape drives in `vres` (a profile's tape device names a volume or `@` and a drive's location code) behind bit 17 (`caps::PHYSICAL_IO`); the partition family's version 2, a running shared partition's units, capping and weight, behind bit 18 (`caps::PARTITION_V2`); refusals `QSI13nn` and `QSI14nn` | `QSI.md` §5, §7, §9, §10, `BUILDKIT.md` §16 |
 | V1R2M0 | Tape in a QS/VS partition (handoff 21): a slow request is waited for (`stgsvc/stall.rs` the fault point `dbgstall`, step 200; `slic` logs how the service ended; `Close` from `slic` only); a blank volume is `*NL` (a read's unexplained EIO asked of the drive through `SG_IO`); the save, restore and media commands send their catalogue entries with IBM's identifiers and data layouts (`cpp/msgout.rs`, `stgsvc/media/fail.rs`, `medio::msg`, `saverst::msg`), captured from the primary (`tools/conformance/oracle/msgdata`) | `STORAGE_SERVICE.md` "Slow requests", `MEDIA.md`, `SAVE_FORMAT.md` §8 |
 | V1R2M0 | The web layer and certificates for QS/MC (handoff 22): `qsweb` takes its family from the caller (`brand::Brand`: name, release, `Server`, the stylesheet's and script's paths, the cookie; each product's `BRAND`), streams a large upload (`Handler::streams`, `BodyStream`, `multipart::Parts`), `golden::crawl`; `net/x509kit` keys, certificates, requests, PEM bundles and PKCS#12 without the store (`certs` over it); both neutral (`neutral.rs`); the fixture serves a web product of its own over TLS with a certificate it made and checks its page against its golden file | `WEB_STYLE.md` "A product outside QS/400", `BUILDKIT.md` §17 |
+| V1R2M0 | The terminal's look and the reference codes for QS/MC (handoff 23): `net/termlook` the console's font, palette and cell rules, a neutral screen drawn to PNG and PDF from a 5250 screen (Access for Web's, re-exported) or a `qsipart` grid cell for cell, the page script as bytes and its exchange (`screen`, `delta`, `status`, `closed`; keys by name to `qsipart::console::Key`); `lic/srcdata` every reference code with meaning, cause and recovery where written, `slic` posting from it; both neutral; the sign-on drawn both ways byte-identical; the fixture's terminal page from console frames against its golden PNG | `ACCESSWEB.md` "The look for a product outside QS/400", `WEB_STYLE.md`, `BUILDKIT.md` §18, `PHASE1.md` |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -269,6 +270,9 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
                 frame.rs the checked frames and the reader, service.rs the service port's
                 messages, console.rs the console port's cells, frames, updates and keys and a
                 peer's Grid, fuzzing.rs; console's side is lic/console/src/qsi.rs
+  srcdata/      every reference code the system posts, neutral (nothing under it; QS/MC takes
+                it): src/model/ Src, Phase, Family, src/table/ one file a family (TABLE, lookup),
+                gaps.rs the codes without cause or recovery; lic/slic/src/src.rs re-exports it
   blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
   osobjects/    the OS objects of QS00SS1 *BASE (message files, work management objects,
                 display files, panel groups and menus, regfac, commands, QSTRUP from
@@ -583,6 +587,11 @@ net/          TCP/IP: configuration, sockets, TLS, servers
   x509kit/      certificates without a store, neutral: crypto/ keys and KDFs, x509/ (CertInfo,
                 build), pem.rs, pkcs12/, server.rs a key and a self-signed server certificate,
                 bundle.rs a PEM chain and key (or PKCS#12) read and matched
+  termlook/     the terminal's look, neutral (qsipart only; docs/ACCESSWEB.md "The look for a
+                product outside QS/400"): src/look/ the console font and render.rs the cell rules
+                and status row, src/file/ PNG, deflate, Print Screen's PDF, src/screen/ the
+                neutral Screen, s5250.rs a 5250 screen, grid.rs a qsipart grid, src/exchange/ the
+                script's messages and keys, script.rs and assets/term.js the page's script
   regfac/       the registration facility: exit points and programs (QUSRSYS/QUSEXRGOBJ)
   hostsvr/      the host server datastream codec (docs/HOSTSVR.md), traces
   hostserver/   the host servers' request loops over backend traits the job implements
@@ -617,8 +626,8 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 tests/golden/ the approved pages, golden.rs, behavior.rs (crawler, PENDING)
   accessweb/    QS/400 Access for Web (QS00AFW) on 2003/2006 (docs/ACCESSWEB.md): src/env/ System,
                 policies, preferences and one trait per area, src/routes/ by area (s5250, db,
-                files, print, msgs, jobs, cmd, download, customize), src/s5250/ the 5250
-                renderer (PNG, PDF), the desktop's .qsd/.qkm/.qsm formats, src/fixture/;
+                files, print, msgs, jobs, cmd, download, customize), src/s5250/ the look and
+                screen (termlook's, re-exported), the desktop's .qsd/.qkm/.qsm formats, src/fixture/;
                 tests/golden/ the approved pages; the live job is work/qsjob/src/work/httpafw/
   ntp/          SNTP: src/packet/ the header and timestamps, client.rs one exchange,
                 adjust.rs MINADJ/ADJTHLD/MAXADJ, poll.rs a poll over RMTSYS, server.rs the
@@ -799,6 +808,8 @@ cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sess
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 cargo test -p qsweb -p httpd -p httpadmin # web layer, httpd.conf, the admin pages against tests/golden/
 cargo test -p x509kit -p certs            # certificates without the store; the store over them
+cargo test -p termlook -p srcdata         # the terminal's look, its exchange and script; the reference codes
+cargo test -p accessweb --test console_look   # the sign-on from a 5250 session and from console frames, one picture; QSMC_IMG_DIR + QSMC_USER also check QS/MC's pictures
 cargo run -p httpadmin --bin httpadmin-demo [PORT]   # the admin over the fixture (QSECOFR / QS400)
 cargo test -p navigator                   # Navigator's pages against tests/golden/, the crawler
 cargo run -p navigator --bin navigator-demo [PORT]   # Navigator over the fixture (QSECOFR / QS400)
@@ -925,7 +936,8 @@ first (`git ls-files -z | xargs -0 touch -c`).
 - Downloaded sources live under `target/src/` and are untrusted. Nothing is
   executed from there except the kernel's own `make` and `merge_config.sh`,
   always invoked with explicit paths.
-- SRC codes live in one table, `lic/slic/src/src.rs`; see docs/PHASE1.md.
+- SRC codes live in one table, `lic/srcdata` (`slic`'s `src.rs` re-exports
+  it); see docs/PHASE1.md.
 - Every string a user sees is Quartz-written; never reproduce IBM message
   or help text. IBM names (system values, SRC families, screen geometry,
   DST menu titles and option numbers) are the compatibility interface.

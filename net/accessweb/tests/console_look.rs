@@ -154,29 +154,27 @@ fn the_sign_on_draws_alike_from_both_ways_in() {
     assert!(last.png(1) == gone.png(1), "screen off");
 }
 
-/// QS/MC's prototype picture `shared/img/5250-24x80.png` is this
-/// product's Work with Active Jobs picture with another user name in
-/// two rows: with `QSMC_IMG` (its path) and `QSMC_USER` (that name,
-/// eight characters) the fixture screen with the name in place draws
-/// it byte for byte.
+/// QS/MC's prototype pictures (`shared/img/`) have the names of this
+/// product's seven: with `QSMC_IMG_DIR` (that directory) and `QSMC_USER`
+/// (the user name its Work with Active Jobs shows, eight characters),
+/// each of this product's views, that name in place of `TESTUSER`, draws
+/// QS/MC's picture byte for byte.
 #[test]
-fn the_management_console_picture() {
-    let (Some(img), Some(user)) = (
-        std::env::var_os("QSMC_IMG"),
+fn the_management_console_pictures() {
+    let (Some(dir), Some(user)) = (
+        std::env::var_os("QSMC_IMG_DIR"),
         std::env::var("QSMC_USER").ok(),
     ) else {
         return;
     };
-    let want = std::fs::read(img).unwrap();
-    let mut s = accessweb::fixture::session5250::wrkactjob(24, 80);
+    let dir = std::path::PathBuf::from(dir);
     let text = accessweb::fixture::session5250::WRKACTJOB.replace("TESTUSER", &user);
-    s.cells = s5250::Screen::from_text(&text, 24, 80, s.cursor).cells;
-    let v = s5250::View {
-        screen: s,
-        system: SYSTEM.into(),
-        connected: true,
-        tls: true,
-        scheme: Scheme::Console,
-    };
-    assert!(v.png(1) == want, "differs from QS/MC's picture");
+    for (name, mut v, scale) in accessweb::fixture::session5250::pictures() {
+        let s = &mut v.screen;
+        if s.text_rows().iter().any(|r| r.contains("TESTUSER")) {
+            s.cells = s5250::Screen::from_text(&text, s.rows, s.cols, s.cursor).cells;
+        }
+        let want = std::fs::read(dir.join(name)).unwrap();
+        assert!(v.png(scale) == want, "{name} differs from QS/MC's");
+    }
 }
