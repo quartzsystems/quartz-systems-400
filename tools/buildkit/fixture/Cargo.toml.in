@@ -43,6 +43,9 @@ qsweb = { git = "@REPO@", rev = "@REV@" }
 x509kit = { git = "@REPO@", rev = "@REV@" }
 # The terminal's look and the page script's exchange (handoff 23).
 termlook = { git = "@REPO@", rev = "@REV@" }
+# Downloads: the HTTP client and the update catalog's reader (handoff 24).
+httpc = { git = "@REPO@", rev = "@REV@" }
+updcat = { git = "@REPO@", rev = "@REV@" }
 
 # What the pipeline's userland check asks of the image's binaries:
 # static (the musl target) and stripped.

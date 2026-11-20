@@ -17,6 +17,7 @@
 //! console open as our standard output.
 
 mod mgmt;
+mod fetch;
 mod net;
 mod panel;
 mod raid;
@@ -113,6 +114,7 @@ fn main() {
     report("route", net::prove().map(|l| vec![l]));
     report("qsi", mgmt::prove());
     report("web", web::prove());
+    report("fetch", fetch::prove());
     let _ = std::io::stdout().flush();
     rustix::fs::sync();
     let _ = reboot(RebootCommand::PowerOff);

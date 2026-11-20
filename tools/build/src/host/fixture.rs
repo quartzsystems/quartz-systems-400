@@ -31,7 +31,11 @@
 //! page checked against the fixture's golden file; its terminal page
 //! (handoff 23) draws a grid fed from `qsipart` frames with `termlook`,
 //! checked against the fixture's golden picture, and decodes a posted
-//! key as the console's. And its PID 1 is
+//! key as the console's. A catalog it signed and an image are fetched
+//! from its own update service over TLS with `httpc` pinned to the
+//! certificate (handoff 24), the catalog verified by `updcat` and its
+//! latest cumulative level named, the image under a size limit, cut and
+//! resumed by range. And its PID 1 is
 //! built without the crates those must not bring.
 //!
 //! Only committed work is seen: a git dependency is HEAD, not the
@@ -129,11 +133,24 @@ const PROOFS: &[(&str, &[&str])] = &[
         "web",
         &["terminal: qsipart frames to a grid, the picture matches its golden PNG"],
     ),
+    (
+        "fetch",
+        &["pinned HTTPS GET of the catalog; a wrong pin refused"],
+    ),
+    (
+        "fetch",
+        &["catalog verified, latest cumulative C26100110 level 2 of 2026-04-10; another key refused"],
+    ),
+    (
+        "fetch",
+        &["download over its limit refused; cut at 4000 bytes and resumed by range to 10000"],
+    ),
 ];
 /// Crates of this repository the fixture's PID 1 must not be built
 /// with: the neutral crates it takes bring none of them.
 const NOT_IN_INIT: &[&str] = &[
-    "release", "licpart", "store", "svctools", "tn5250", "ccsid", "slic", "certs",
+    "release", "licpart", "store", "svctools", "tn5250", "ccsid", "slic", "certs", "tls", "ptf",
+    "ptf-update",
 ];
 
 /// Copy the tree `from` to `to`.
