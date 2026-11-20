@@ -13,7 +13,11 @@ pub const PANIC: Src = Src::new(
     Phase::Fatal,
     "The IPL program panicked.",
 )
-.cause("A fault in the IPL program; its message follows the code on serial and the console.");
+.cause("A fault in the IPL program; its message follows the code on serial and the console.")
+.recovery(
+    "Note the message that follows the code and report it with the code. Then IPL again: the store \
+     recovers from its log as after any crash.",
+);
 /// LIC partition not found.
 pub const LIC_NOT_FOUND: Src = Src::new(
     "B1001010",
@@ -30,7 +34,12 @@ pub const LIC_UNREADABLE: Src = Src::new(
     Phase::Fatal,
     "LIC record unreadable in both copies.",
 )
-.cause("Neither copy of the LIC record could be read, or the record could not be written.");
+.cause("Neither copy of the LIC record could be read, or the record could not be written.")
+.recovery(
+    "The load source may be failing. IPL from installation media in manual mode: with ASP 1 \
+     mirrored, option 4 of Install Licensed Internal Code puts a new load source in its place; \
+     otherwise option 2 installs a new system, to be recovered from the last system save.",
+);
 /// A disk unit the ASP needs is not there.
 pub const ASP_NOT_FOUND: Src = Src::new(
     "B1001030",
@@ -54,6 +63,11 @@ pub const ASP_UNUSABLE: Src = Src::new(
 .cause(
     "ASP 1 could not be formatted, opened or synchronized (C1001085 before it), or an \
      automatic operating system install failed; the serial log names the error.",
+)
+.recovery(
+    "Read the error in the serial log. IPL from installation media in manual mode and check the \
+     units in DST, Work with disk units; a store that still will not open is recovered from the \
+     last system save. After a failed automatic install, start the install again.",
 );
 /// The store belongs to another release.
 pub const ASP_WRONG_RELEASE: Src = Src::new(
