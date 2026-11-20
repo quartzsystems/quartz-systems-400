@@ -14,12 +14,13 @@ its reach. The library is `net/servers`; the job side is
 |---|---|
 | `net/servers/src/registry/` | `ServerSpec`, `JobSpec`, `Readiness`; the table of every server (`table.rs`) |
 | `net/servers/src/framework/` | `TcpServer` (the hooks), `Env` (the job's reach), `Framework`, `Starter` (the framework as `tcpcfg::server::ServerStarter`), the built-in hooks (`builtin.rs`) |
-| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `ftp.rs` (`CHGFTPA`), `http.rs` (the administration ports; `CHGHTTPA` sets only the autostart flag), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`) |
+| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `ftp.rs` (`CHGFTPA`), `http.rs` (the administration ports; `CHGHTTPA` sets only the autostart flag), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`), `qsi.rs` (`CHGQSIA`) |
 | `net/servers/src/listen.rs` | bind with retries, the accept loop with a stop flag, TLS handshake, `Service` |
 | `net/servers/src/http/` | the minimal HTTP/1.1 administration listener: request head parsing, responses, the page, `Date` |
 | `work/qsjob/src/command/tcpsvr.rs` | `JobEnv`, `STRTCPSVR`, `ENDTCPSVR`, `CHGTELNA`, `CHGFTPA`, `framework()` |
 | `work/qsjob/src/command/tcp.rs` | `STRTCP`/`ENDTCP` start and end the autostart servers through `Starter` |
 | `work/qsjob/src/work/telnet.rs` | role `TELNET`: `QTVTELNET` |
+| `work/qsjob/src/work/qsi/` | role `QSI`: `QSIDSRV`, the QSI listener (`net/qsisvr`, docs/QSID.md section 12) |
 | `work/qsjob/src/work/httpadm/` | role `HTTPADM`: `ADMIN` |
 | `work/qsjob/src/work/httpnav/` | role `HTTPNAV`: `NAVIGATOR` (Navigator, docs/NAVIGATOR.md) |
 | `work/qsjob/src/work/web/` | what both share: the job's thread and the bridge, sign-on, profiles, audit, message texts, commands as the web user, the job's loop |
@@ -50,6 +51,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 | `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | built |
 | `*LPD` | `QTLPD00nnn` (`QTMPLPD`, `QSYSWRK`) | 515 | `CHGLPDA` | `QS400_LPD_SERVER` | | built |
 | `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QS400_DDM_DRDA_SERVER` | | built (Phase 12; docs/DDM.md) |
+| `*QSI` | `QSIDSRV` (`QSYS`, `QSYSWRK`) | 2300 TLS (QSI's own, pinned certificates) | `CHGQSIA` | | | built (QS/400's; docs/QSID.md section 12) |
 | `*SMTP`, `*SNMP`, `*ROUTED`, `*BOOTP`, `*TFTP`, `*REXEC`, `*DHCP`, `*DNS`, `*POP` | | | | | | not planned (docs/PHASE10.md) |
 
 `Readiness::Slot` means the server is being built elsewhere and starts
@@ -241,6 +243,22 @@ pub trait Env {
     fn start_subsystem(&mut self, name: &str) -> Result<(), String>;
 }
 ```
+
+## `*QSI`
+
+`QSIDSRV` (`QSYS`, `QSYSWRK`; role `QSI`) answers management consoles
+over QSI (`docs/QSI.md`) on 2300, TLS 1.3 with pinned Ed25519
+certificates of its own, not the certificate store's
+(`servers::framework::Standard::of("*QSI")`: the job reads its own
+attributes). QS/400's: IBM i has no such server. Its autostart is on as
+shipped, so `STRTCP` starts it; `CHGQSIA AUTOSTART(*YES|*NO)
+PORT(n|*DFT)` changes the server table's flag and its bag's `PORT`.
+`STRTCPSVR SERVER(*QSI)` says `TCP1A80` with the port, `ENDTCPSVR` ends
+the job with `ENDJOB` as the others are: its sessions get a goodbye, its
+event log is kept. A start refused (no processor support for the
+cryptography, no identity, the port taken) is `TCP1A82` to `QSYSOPR`.
+The pairing commands (`STRQSIPAIR`, `WRKQSICSL`, `RMVQSICSL`), the
+limits, the identity and the families are `docs/QSID.md` section 12.
 
 ## `*NTP`
 

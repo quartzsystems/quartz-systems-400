@@ -331,8 +331,8 @@ keys, System Request and Attention are what they are at a keyboard.
 
 QSI over TCP is `docs/QSI.md` (handoff 18): its messages, session and
 trust rules are written, in `lic/qsi`, `lic/qsisess` and `lic/qsitrust`,
-and QS/VS listens with them; what a standalone QS/400's listener will
-add is that document's section 11. What follows is what this scope
+and QS/VS listens with them, as a standalone QS/400 now does (section 12;
+that document's section 11). What follows is what this scope
 said of it before.
 
 QS/MC will speak QSI to a standalone QS/400 over TCP; none of that is
@@ -417,3 +417,163 @@ All little-endian. A reader takes the fields it knows and passes over
 what a later layout adds after them; a layout byte of 0, or fewer than
 19 bytes, reads as no channel. The format freeze holds `channel.rs` as
 the draft `lic-service-channel` until QS/VS ships against it.
+
+## 12. The standalone listener: a QS/400 answers QSI
+
+A standalone QS/400 answers a management console (QS/MC) over QSI
+itself (`docs/QSI.md`), on the three neutral crates unchanged. This
+section is what the system does; QSI.md section 11 is what it says on
+the wire. Nothing here has an IBM i equivalent: the server, its
+commands, the DST option and the audit entry are QS/400's own.
+
+### The server
+
+`*QSI` is a TCP server of the servers framework (`docs/SERVERS.md`):
+job `QSIDSRV`, user `QSYS`, subsystem `QSYSWRK`, role `QSI`
+(`work/qsjob/src/work/qsi/`). It starts with TCP/IP (`STRTCP`; its
+autostart is on as shipped, `CHGQSIA AUTOSTART(*NO)` turns it off) and
+with `STRTCPSVR SERVER(*QSI)`, ends with `ENDTCPSVR SERVER(*QSI)`, and
+is listed with the other servers. It listens on port 2300 on every
+address, or `CHGQSIA PORT(n)`. The server's logic is the library
+`net/qsisvr`, tested in memory and over TLS on loopback; the job runs
+it over the storage service.
+
+The job, as it starts: refuses to start (`TCP1A82` to `QSYSOPR`) on a
+processor without AVX2, ADX, AES and PCLMULQDQ, which graviola's
+cryptography needs; takes the system's identity from the storage
+service, making it the first time (below); takes up the event log it
+kept; pushes what changed while it was away; binds the port
+(`TCP1A80`, the fingerprint in the job log). Each admitted connection
+is a thread with a link of its own to the storage service
+(`hello_thread`). The main thread, every half second, takes the pins
+and whether a pairing password is out from the service (what the TLS
+handshakes judge by), looks at the system for events, keeps the log
+when it changed, and writes the sessions' lines into the job log: each
+session opened and ended with its address and the console's name,
+every request with its family, operation and the user the console
+named, every pairing and its outcome, a connection turned away. Never
+a password, a key or a screen.
+
+The limits before authentication are a QS/VS host's (its
+`docs/QSISERVER.md`): six sessions at once, four handshakes under way,
+a handshake within ten seconds, and an address with ten failed
+handshakes or pairings within a minute turned away for a minute
+(`qsisvr::gate`). The session's own limits are `qsisess::Limits`.
+
+The request's user is a name for the job log and the problem log's
+notes; it grants nothing. The job acts with its own authority (`QSYS`):
+a paired console may do what the families offer.
+
+### The identity, the pins and the event log
+
+| What | Where | Format |
+|---|---|---|
+| the identity: an Ed25519 key and its self-signed certificate (`qsitrust::Identity::make` with the system's name and serial number) | `/QIBM/UserData/OS400/QSI/QSIIDENT` | `qsisvr::store::identity`: magic `QS400QSI`, version 1, the key slot's generation, then the certificate and key sealed with AES-256-GCM under the LIC partition's stash key (`docs/CERTS.md` "The stash and the LIC key slot"), the header as the additional data |
+| the consoles pinned: at most two, each its name, its certificate's SHA-256, when it paired, when it last had a session and from where | `/QIBM/UserData/OS400/QSI/QSICSL` | `qsisvr::store::consoles`: magic `QS400QSC`, version 1, the list in `ipc`'s wire form |
+| the event log, and what it last said of each thing | `/QIBM/UserData/OS400/QSI/QSIEVT` | `qsisvr::store::events`: magic `QS400QSE`, version 1, the next number, the events kept, the last code's number, the state, each problem's status and notes, each dump |
+| the pairing password | the storage service's memory | never written, never logged |
+| this IPL's reference codes | `/run/qs400/srchist` (memory) | `qsisvr::history`: one line a code, written whole by `slic` at each code it posts |
+
+The directory and its files are the system's (`QSYS`), owner-only; the
+storage service reads and writes them for the server job, which holds
+the identity in memory only. The identity is made by the server job
+the first time it starts, which, with its autostart, is the first IPL
+after install: graviola's key generation runs in the job, not in the
+service, so a processor that lacks what it needs never reaches the
+service. A copied disk without its LIC partition does not open it, as
+the certificate stores' stashes. The three formats are in the format
+freeze as the draft `qsi-server`.
+
+A code's number is the IPL's count in the LIC record shifted 24 bits,
+plus its place in that IPL: never reused, ascending across IPLs.
+`refcodes` pages this IPL's codes, newest first.
+
+### Who may ask what of the storage service
+
+`stg` request 1600 (`stg::qsi::QsiOp`):
+
+| Who | May |
+|---|---|
+| the server job (`QSIDSRV` as `QSYS`) | the identity, the password for one attempt, an attempt's outcome, the pins, contact times, the event log, and what a console asks of the system: identify, time, fix level, power, the problem log, the dumps |
+| a job whose profile has `*ALLOBJ` and `*SECADM` (the commands) | make and end a password, remove a console, the consoles, the fingerprint, the time |
+| `slic`, for the service tools | the same as a security officer |
+
+### Pairing
+
+A pairing password (`qsitrust::pair::one_time_password`, sixteen
+characters in four groups) is good for one pairing, fifteen minutes and
+five attempts; a new one replaces any out; none is made while two
+consoles are paired (`TCP1A84`) or before the identity exists
+(`TCP1A85`). Each attempt takes the password from the storage service
+once, which counts it. A console that starts and goes away without
+confirming (as one does when the system's answer does not hold: a wrong
+password) is a failed pairing, as is a confirmation that does not hold;
+both count against the address as failed handshakes do. When a console
+confirms, the service pins it and retires the password, and the
+session's thread pins it for the handshakes at once.
+
+- **`STRQSIPAIR`** (Start QSI Pairing; `*ALLOBJ` and `*SECADM`; a job
+  with a display, else `CPF9B71`, so the password is never in a job
+  log): makes the password and shows it once with the system's
+  fingerprint, until when and the attempts (panel group `QSQSICSL`,
+  panel `QSIPAIR`). Enter or F3 leave it out (`TCP1A83`); F12 ends it
+  (`TCP1A88`).
+- **`WRKQSICSL`** (Work with QSI Consoles): the fingerprint and the
+  consoles, when each paired and last had a session; option 4 removes
+  one. Without a display, the same as text.
+- **`RMVQSICSL CONSOLE()`** (Remove QSI Console): by its name, its
+  fingerprint or its place (1, 2); `TCP1A87`. A session it has ends
+  within a second.
+- **`CHGQSIA AUTOSTART() PORT()`**: the server's attributes, kept in the
+  TCP/IP server table in `QUSRSYS`.
+- **DST**: option 5 (Work with DST environment), then 6 (Management
+  consoles), with the security privilege: the fingerprint, the list,
+  option 4 to remove (confirmed with F10), F6 to make a pairing
+  password, shown once (F12 there ends it). It reaches the storage
+  service, so it works on a running system (control panel function 21,
+  over QSI from a console already paired, or from the partition service
+  channel) and says so before the IPL is complete. The option is in the
+  DST environment menu, where the service tools' device IDs are, since
+  the DST main menu's fourteen options fill its screen; that menu's
+  golden changed by the added line alone.
+
+Every pairing, failed or not, every removal and every password made or
+ended is a `QI` entry in the audit journal (`docs/SECURITY.md` section 7,
+`AuditQI`): who, from where (DST, a command, the network), the console's
+name, fingerprint and address, and a failure's reason.
+
+### The families
+
+The hello says `caps::STANDALONE`, kind standalone, the system's name,
+release and serial number. Until a console is pinned it is answered for
+pairing alone (`QSI0101`).
+
+| Family | Answered from |
+|---|---|
+| base `identify` | the system name, release, `QSRLNBR`, `QMODEL`, the build |
+| base `state` | `slic`'s state file (`guestagent::status`): `starting` during the IPL, `running` once complete, `ending` in a power down, `halted`; the current code from the history; the keylock as the IPL read it (normal or manual) and the IPL side (`A`, `B`, `D` from media) |
+| base `power` | as `PWRDWNSYS` from a job: the job's `*JOBCTL`, refused while one is under way; controlled with its delay or immediate, restart or not |
+| base `refcodes` | this IPL's history (above) |
+| base `time` | the clock, `QUTCOFFSET`, `QTIMZON` |
+| base `FixLevel` | the cumulative PTF package installed, read the first time it is asked after the IPL |
+| base dumps, dump space | the system dumps (`sysdump`, `QSYS/QSDnnnnnnn`) as service data, their text's length; taking one is synchronous; a download streams the dump's text |
+| service | the problem log: a problem's number is its ten-digit identifier, open until closed, its severity from the log's (1 terminal, 2 attention, else information), its notes as its analysis log; a note is written as `QSI` and the request's user, so the event names its author; a close notes who closed it |
+| panel at ID 0 | `qsisvr::families::panel`: 01, 11 to 19 and 20 at any time; 03 (end at once and IPL), 08 (power off at once), 21 (dedicated service tools on the console) and 22 (a system dump) with the keylock in manual (`QSI0452`) and the IPL complete (`QSI0453`); any other function `QSI0451` |
+| console at ID 0 | the console's source (`work/qsjob/src/work/qsi/console.rs`) |
+| anything else | not agreed (`QSI0003`); update stays clear: the system takes fixes by PTF |
+
+Function 21 asks `slic` as a power down does: the job leaves
+`/run/qs400/qsipanel` and sends `SIGUSR1`; `slic` shows DST on the
+console exactly as for the partition service channel's function 21 and
+writes `/run/qs400/qsipanel.answer`. A second function 21 while DST
+shows is refused at once (`QSI0453`).
+
+The events, compared every half second (problems and dumps every two
+seconds) with what the log last said: each code posted (base `Refcode`),
+a change of state (base `State`), a dump taken or removed, a problem
+opened, noted or closed. A server started for the first time pushes the
+IPL's codes and the state, and takes the problems and dumps there as
+said; started again, it takes up its log (`EventLog::resume`) and
+pushes what changed, so a console that reconnects after an IPL is given
+the IPL's codes. The power down's own codes come after the server has
+ended and are not events.

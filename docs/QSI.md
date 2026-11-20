@@ -1,7 +1,7 @@
 # QSI: the management protocol
 
 QSI is the protocol a management console (QS/MC) speaks to what it
-manages: a QS/VS host now, a standalone QS/400 later. Its partition
+manages: a QS/VS host or a standalone QS/400. Its partition
 scope, the channel between a partition and its hypervisor, is
 `docs/QSID.md` (`lic/qsipart`). This document is the rest: the
 transport, the session, pairing, and every family's messages.
@@ -18,7 +18,7 @@ same trust rules, so they live here and QS/VS and QS/MC pin them:
 All three are neutral (`tools/buildkit/tests/neutral.rs`: they reach
 no other crate of this repository and their code names no product),
 and `build fixture` builds them from outside as git dependencies.
-QS/400 itself runs no QSI listener yet (section 11).
+A standalone QS/400 runs its own listener (section 11, `docs/QSID.md` section 12).
 
 Handoff 24's messages (bits 19 to 27, section 5) are in `lic/qsi` from
 commit `fb85e1480`; QS/VS and QS/MC move their pins to `5a5b7e29f`,
@@ -302,7 +302,7 @@ the system's own dumps), said beside the rest by a managed side that
 answers them and by a console that asks them; `caps::PHYSICAL_IO`
 (bit 17) and `caps::PARTITION_V2` (bit 18) likewise, and bits 19 to 27
 (handoff 24) each the same way. `HOST_V1`, `SERVICING` and `MANAGED`
-are unchanged. `caps::STANDALONE` is what a standalone system will say
+are unchanged. `caps::STANDALONE` is what a standalone system says
 (section 11): base and pair, service with its version 2 (bits 2 and
 25), the system's dumps and their space (4 and 26), the panel with its
 version 2 (12 and 24), the console (15) and the fix level (27); no code
@@ -357,7 +357,7 @@ The families' own bounds (`check()` on each request) are in section 7.
 `qsi::base` and `qsi::pair` are answered by any managed system;
 `qsi::service` and `qsi::update`, and base's system dumps, by any
 managed system that has them (a QS/VS host from its next phase; a
-standalone system later); the nine host families by a QS/VS host,
+standalone system: service, its dumps and their space, section 11); the nine host families by a QS/VS host,
 with physical I/O and partition version 2 from its phase after that,
 and bits 19 to 27 as QS/VS and QS/MC come to them. Each is a `Family` with three
 enumerations (`Request`, `Reply`, `Event`) written by `messages!`;
@@ -1397,42 +1397,62 @@ gives them. QSI's own (`qsi::msgid`, and each family's `msgid`):
 | `QSI1501` to `QSI1549` | switches managed: `1501` to `1515` (section 7, vres) |
 | `QSI1601` to `QSI1649` | storage pools managed: `1601` to `1618` (section 7, vres) |
 
-## 11. Later: a standalone QS/400's listener
+## 11. A standalone QS/400's listener
 
-None of this runs in QS/400 yet: no listener, no identity, no pins.
-A later handoff puts `qsid` on TCP for a standalone system, built on
-these three crates unchanged. What it adds:
+A standalone QS/400 answers QSI itself, on these three crates
+unchanged: the server job `QSIDSRV` (`*QSI`, port 2300), its library
+`net/qsisvr`, and the storage service's side. `docs/QSID.md` section 12
+is the system's side in full: the server, its commands and the DST
+option, what is kept where, the audit entries. This is what a console
+sees of it.
 
-- **The identity.** An Ed25519 key and certificate made once at the
-  first IPL after install, as a QS/VS host makes its own, kept where
-  the system keeps its secrets (sealed by a LIC key slot, as the
-  certificate stores' stashes are), and shown with its fingerprint to
-  the operator.
-- **The pins and the password.** The consoles pinned, with their names
-  and when they paired, in the object store; a pairing password asked
-  for at the console or by a command, shown once, with its expiry and
-  attempts (the `Guard`), and every pairing, failed or not, in the
-  audit journal. Removing a console's pin is a command too.
-- **The listener.** A server job of its own, started with TCP/IP, on
-  port 2300 unless configured otherwise, as many consoles at a time as
-  it allows, each session in its own thread over the storage service.
-- **The families it answers.** Base (`identify`, `state` from the IPL
-  and the reference codes `slic` posts, `power` through `PWRDWNSYS`,
-  `refcodes` from the history the service console shows, `events`,
-  `time`), and later families of its own for what a standalone system
-  is (its jobs, its messages), each with its capability bit; a QS/VS
-  host's families are not a standalone system's to answer, and their
-  bits stay clear in its hello. Service, update and the system's dumps
-  (bits 2 to 4) fit a standalone system as well: its problem log
-  (`service/prb`), its LIC's A/B slots and PTFs, its system dumps
-  (`sysdump`); each is the listener's to answer, or to leave clear.
-  What it will say is `caps::STANDALONE`: base and pair, service with
-  its version 2 (bits 2 and 25), its dumps and their space (4 and 26),
-  its own panel and console at ID 0 with the panel's version 2 (12, 15
-  and 24) and its fix level (27); no code update.
+- **The transport and trust** are sections 1 to 3 as they are: TLS 1.3
+  with graviola, the system's Ed25519 identity made once (at the first
+  IPL after install, by the server's first start) and kept sealed by
+  the LIC's key slot, at most two consoles pinned by fingerprint,
+  pairing by a one-time password the system's operator asks for at DST
+  or with `STRQSIPAIR` (shown once, fifteen minutes, five attempts).
+  Before a console is pinned it is answered for pairing alone
+  (`QSI0101`). A console removed (`RMVQSICSL`, DST) loses its session
+  within a second.
+- **The limits before authentication** are a QS/VS host's: six
+  sessions, four handshakes under way, ten seconds a handshake, an
+  address with ten failures in a minute turned away for a minute.
+- **The hello** says kind standalone, the system's name, release and
+  serial number, and `caps::STANDALONE`: base and pair, service with its
+  version 2 (bits 2 and 25), the system's dumps and their space (4 and
+  26), its own panel and console at ID 0 with the panel's version 2
+  (12, 15 and 24) and its fix level (27). No code update (bit 3 clear:
+  the system takes fixes by PTF) and no other host family; a request
+  of either is `QSI0003`.
+- **Base.** `Identify` (kind standalone; the model is `QMODEL`);
+  `State` from the IPL and the codes `slic` posts (`starting`,
+  `running`, `ending`, `halted`; the keylock normal or manual as the
+  IPL read it; the slot `A`, `B` or `D`); `Power` as `PWRDWNSYS`
+  (controlled with its delay or immediate, restart or not; refused
+  while one is under way); `Refcodes` of this IPL, each numbered by the
+  IPL's count and its place, so never reused; `Subscribe` and the
+  events (each code posted, a change of state, a dump taken or
+  removed), the log kept on disk and taken up again with
+  `EventLog::resume`, so a console that reconnects after an IPL is
+  given the IPL's codes; `Time`; `FixLevel`, the cumulative PTF package;
+  the system's dumps (one kind, service data) with their space.
+- **Service** is the problem log: a problem's number is its ten-digit
+  identifier; its severity from the log's; `Note` writes into the
+  problem's notes naming the request's user, `Close` notes who closed
+  it; a problem's condition is not tracked, so `holds` is false and
+  `QSI1001` is not given. Events: opened, noted, closed.
+- **Panel** at ID 0, with the functions a standalone system carries
+  out (`Functions` lists them): 01, 11 to 19 and 20 at any time; 03, 08,
+  21 (dedicated service tools on the console) and 22 (a system dump)
+  with the keylock in manual (`QSI0452`) and the IPL complete
+  (`QSI0453`, also while the service tools show); any other
+  `QSI0451`. Any other ID is `QSI0331`.
+- **Console** at ID 0: the system's console as `qsipart`'s frames and
+  keys, the local display showing the same (`docs/QSID.md` section 12).
 - **What each console may ask.** The request's user is a name for the
-  log and grants nothing; what a console may do is the managed side's
-  rule, by its pin.
+  job log and the problem log's notes, and grants nothing; a paired
+  console may do what the families above offer.
 
 ## 12. Proof
 

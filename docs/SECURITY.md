@@ -347,6 +347,14 @@ decides and a refusal is audited like any other:
   `ACTION(*DISABLE *PWDEXP)`, disables them or expires the password.
 - `DSPUSRPRF` of another user needs `*READ` and `*OBJOPR` to its
   profile (`usrprf.display`), as `QSYRUSRI` does.
+- The QSI server's commands, QS/400's (`docs/QSID.md` section 12):
+  `STRQSIPAIR`, `WRKQSICSL` and `RMVQSICSL` need `*ALLOBJ` and
+  `*SECADM` together (`CPF222E` otherwise), checked by the storage
+  service, whatever authority the job has to the `*CMD` objects;
+  `STRQSIPAIR` shows its password only on a display. At DST, option 5
+  then 6 needs the security privilege. Each pairing (failed or not),
+  removal and password made or ended is a `QI` entry (section 7).
+  `CHGQSIA` changes the server table as the other `CHG*A` commands do.
 
 ## 4. The authority search
 
@@ -1235,7 +1243,8 @@ version 1 payloads read unchanged and are written back as version 2,
 `tests/netsvr.rs` reading a payload V1R1M0 wrote
 (`tests/fixtures/usrprf-v1r1m0.bin`). The audit layouts are version 2
 (`AuditVP`; `VP` selected by `*AUTFAIL`; `AuditDI`, `DI` selected by
-its operation); the entries of version 1 are unchanged. Both were
+its operation; `AuditQI`, `QI` selected by `*SECCFG`, a refused pairing by
+`*AUTFAIL`); the entries of version 1 are unchanged. All three were
 added inside version 2 before V1R2M0 shipped, `fmtcheck update --force`
 re-locking the hash.
 
