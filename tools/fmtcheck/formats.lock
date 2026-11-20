@@ -147,7 +147,7 @@ hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 [format.qsi]
 frozen_at = "V1R2M0"
 version = "1"
-hash = "6bf94e5862bcfa48730d281d35f3cf2bf6de0f2f48ea0df5596a6b3bd63dc2f2"
+hash = "07520075b104cc476cc97b79c74e88416f19cc350931b2d3a83e841d1edf011c"
 
 [format.qsi-pairing]
 frozen_at = "V1R2M0"
