@@ -3189,6 +3189,7 @@ dependencies = [
  "qsh-job",
  "qsh-utils",
  "qshterm",
+ "qsi",
  "qsname",
  "qsweb",
  "regfac",

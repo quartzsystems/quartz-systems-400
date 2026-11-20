@@ -30,6 +30,7 @@ pub mod nsadmin;
 pub mod ntp;
 pub mod pwdpgm;
 pub mod qap;
+pub mod qsi;
 pub mod scheduler;
 pub mod spawn;
 pub mod sqlsrvr;
