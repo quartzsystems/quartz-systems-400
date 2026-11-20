@@ -375,13 +375,18 @@ struct HelpT<'a> {
     print: &'a str,
     body: &'a str,
     footer: String,
-    /// Close window's link; its script goes back, or closes a window
-    /// of its own.
-    close: &'a str,
+    /// Close window's link.
+    close: String,
+    /// Whether Close window carries its script (back, or close a
+    /// window of its own).
+    script: bool,
 }
 
-/// The help window for `topic`, its body HTML.
+/// The help window for `topic`, its body HTML. Close window goes back
+/// by script when the product serves script ([`Product::nav_script`]);
+/// otherwise it is a plain link to the product's start.
 pub fn help(product: &Product, topic: &str, body: &str) -> String {
+    let script = product.nav_script;
     HelpT {
         topic,
         name: product.brand.name,
@@ -391,7 +396,8 @@ pub fn help(product: &Product, topic: &str, body: &str) -> String {
         print: "#",
         body,
         footer: footer(product),
-        close: "#",
+        close: if script { "#".into() } else { product.url("/") },
+        script,
     }
     .render()
     .expect("help renders")
@@ -454,5 +460,23 @@ mod tests {
             page.contains("Demo 1.0.<br>\nAuthorized users only.</td>"),
             "{page}"
         );
+    }
+
+    #[test]
+    fn help_closes_by_script_only_with_script() {
+        static S: Product = Product {
+            nav_script: true,
+            ..P
+        };
+        let plain = help(&P, "Topic", "<p>x</p>");
+        assert!(
+            plain.contains("<a href=\"/mc/\">Close window</a>"),
+            "{plain}"
+        );
+        assert!(!plain.contains("onclick"));
+        let scripted = help(&S, "Topic", "<p>x</p>");
+        assert!(scripted.contains(
+            "<a href=\"#\" onclick=\"if (history.length > 1) { history.back(); } else { window.close(); } return false;\">Close window</a>"
+        ));
     }
 }

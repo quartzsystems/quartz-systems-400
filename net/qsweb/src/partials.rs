@@ -228,6 +228,12 @@ pub struct List {
 
 /// Render a list table.
 pub fn list_table(l: &List) -> String {
+    list_table_with(l, &esc(&l.empty))
+}
+
+/// [`list_table`] with the empty row's content as HTML, a link in it
+/// (`No managed systems. <a href="...">Add managed system</a>.`).
+pub fn list_table_with(l: &List, empty_html: &str) -> String {
     let mut s = String::from(
         "<table class=\"list\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n",
     );
@@ -258,7 +264,7 @@ pub fn list_table(l: &List) -> String {
             s,
             "<tr><td class=\"empty\" colspan=\"{}\">{}</td></tr>",
             l.cols.len(),
-            esc(&l.empty)
+            empty_html
         );
     }
     for (i, row) in l.rows.iter().enumerate() {
@@ -663,6 +669,53 @@ pub fn select(name: &str, options: &[&str], chosen: &str) -> String {
     s
 }
 
+/// The per-list action `<select>` beside Go: `prompt` first, then the
+/// ungrouped actions, then each group of actions as an `<optgroup>`
+/// (`Operations`, `Configuration`), the way task menus grouped them.
+pub fn action_select(
+    name: &str,
+    prompt: &str,
+    plain: &[&str],
+    groups: &[(&str, &[&str])],
+) -> String {
+    let mut s = format!(
+        "<select name=\"{}\"><option>{}</option>",
+        esc(name),
+        esc(prompt)
+    );
+    for o in plain {
+        let _ = write!(s, "<option>{}</option>", esc(o));
+    }
+    for (label, items) in groups {
+        let _ = write!(s, "<optgroup label=\"{}\">", esc(label));
+        for o in *items {
+            let _ = write!(s, "<option>{}</option>", esc(o));
+        }
+        s.push_str("</optgroup>");
+    }
+    s.push_str("</select>");
+    s
+}
+
+/// A hidden field.
+pub fn hidden(name: &str, value: &str) -> String {
+    format!(
+        "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+        esc(name),
+        esc(value)
+    )
+}
+
+/// The fields `names` of a posted form as hidden fields, so a wizard's
+/// next step or a confirmation page sends again what was chosen
+/// before (a field not posted is carried empty).
+pub fn carry(form: &crate::http::Form, names: &[&str]) -> String {
+    names
+        .iter()
+        .map(|n| hidden(n, form.get(n).unwrap_or("")))
+        .collect()
+}
+
 /// A `<span class="mono">`.
 pub fn mono(s: &str) -> String {
     format!("<span class=\"mono\">{}</span>", esc(s))
@@ -745,5 +798,44 @@ mod tests {
         ));
         assert!(w.contains("<div class=\"wstep done\">1. One</div><div class=\"wstep cur\">2. Two</div><div class=\"wstep \">3. Three</div>"));
         assert!(w.contains("<input type=\"submit\" name=\"next\" value=\"Next &gt;\">"));
+    }
+
+    #[test]
+    fn empty_row_as_html() {
+        let l = List {
+            cols: vec![Col::plain("A"), Col::plain("B")],
+            empty: "a <b>".into(),
+            ..List::default()
+        };
+        assert!(list_table(&l).contains(">a &lt;b&gt;</td>"));
+        assert!(
+            list_table_with(&l, "None. <a href=\"add\">Add</a>.")
+                .contains("<td class=\"empty\" colspan=\"2\">None. <a href=\"add\">Add</a>.</td>")
+        );
+    }
+
+    #[test]
+    fn grouped_actions() {
+        let s = action_select(
+            "act",
+            "--Select action--",
+            &["Properties"],
+            &[("Operations", &["Power on", "Power off"]), ("R&D", &["X"])],
+        );
+        assert_eq!(
+            s,
+            "<select name=\"act\"><option>--Select action--</option><option>Properties</option><optgroup label=\"Operations\"><option>Power on</option><option>Power off</option></optgroup><optgroup label=\"R&amp;D\"><option>X</option></optgroup></select>"
+        );
+    }
+
+    #[test]
+    fn carried_fields() {
+        let f = crate::http::Form::new(crate::http::form::parse_pairs(
+            "ip=10.0.0.1&dns=a%22b&other=x",
+        ));
+        assert_eq!(
+            carry(&f, &["ip", "dns", "mask"]),
+            "<input type=\"hidden\" name=\"ip\" value=\"10.0.0.1\"><input type=\"hidden\" name=\"dns\" value=\"a&quot;b\"><input type=\"hidden\" name=\"mask\" value=\"\">"
+        );
     }
 }
