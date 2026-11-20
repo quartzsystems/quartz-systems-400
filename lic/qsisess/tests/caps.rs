@@ -4,9 +4,11 @@
 
 //! The bits added since `HOST_V1` between peers of different ages:
 //! problems, code update and the system's own dumps (handoff 19),
-//! physical I/O and partition version 2 (handoff 20). A peer without a
-//! capability bit is never asked its messages and never sent its
-//! events, and the rest goes on.
+//! physical I/O and partition version 2 (handoff 20), switches and pools
+//! managed, partition version 3, activation times, a host's power-on
+//! settings, panel version 2, service version 2, dump space and the fix
+//! level (handoff 24). A peer without a capability bit is never asked
+//! its messages and never sent its events, and the rest goes on.
 
 mod common;
 
@@ -33,16 +35,36 @@ fn older_host() -> Hello {
     }
 }
 
+/// The bits of handoff 24.
+const H24: u64 = caps::SWITCHES
+    | caps::POOLS
+    | caps::PARTITION_V3
+    | caps::ACTIVATIONS
+    | caps::POWER_ON
+    | caps::PANEL_FUNCTIONS
+    | caps::PROBLEM_NOTES
+    | caps::DUMP_SPACE
+    | caps::FIX_LEVEL;
+
 /// Every bit added beside `HOST_V1`.
-const NEW: u64 = caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2;
+const NEW: u64 = caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2 | H24;
 
 /// Each of them alone.
-const BITS: [u64; 5] = [
+const BITS: [u64; 14] = [
     caps::SERVICE,
     caps::UPDATE,
     caps::SYSTEM_DUMPS,
     caps::PHYSICAL_IO,
     caps::PARTITION_V2,
+    caps::SWITCHES,
+    caps::POOLS,
+    caps::PARTITION_V3,
+    caps::ACTIVATIONS,
+    caps::POWER_ON,
+    caps::PANEL_FUNCTIONS,
+    caps::PROBLEM_NOTES,
+    caps::DUMP_SPACE,
+    caps::FIX_LEVEL,
 ];
 
 /// The requests that need any of `bits`.
@@ -77,11 +99,13 @@ fn pair(console: Hello, managed: Hello) -> Loopback {
 #[test]
 fn the_new_messages_are_these() {
     let q = requests_of(caps::SERVICING);
-    // Base's four dumps, service's three, update's six.
-    assert_eq!(q.len(), 13);
-    assert_eq!(q.iter().filter(|q| q.family() == family::BASE).count(), 4);
-    // Base's two, service's four, update's seven.
-    assert_eq!(events_of(caps::SERVICING).len(), 13);
+    // Base's four dumps and its dump space, service's three and its
+    // version 2's three, update's six.
+    assert_eq!(q.len(), 17);
+    assert_eq!(q.iter().filter(|q| q.family() == family::BASE).count(), 5);
+    // Base's two, service's four and its version 2's one, update's
+    // seven.
+    assert_eq!(events_of(caps::SERVICING).len(), 14);
     // The host's devices and vres's tape drives; the host's five events
     // and the drive's.
     let q = requests_of(caps::PHYSICAL_IO);
@@ -91,8 +115,28 @@ fn the_new_messages_are_these() {
     // The entitlement and its event.
     assert_eq!(requests_of(caps::PARTITION_V2).len(), 1);
     assert_eq!(events_of(caps::PARTITION_V2).len(), 1);
-    assert_eq!(new_requests().len(), 16);
-    assert_eq!(new_events().len(), 20);
+    // Handoff 24: six switch requests, nine of pools, three of partition
+    // version 3, two activation times, two power-on and its event, the
+    // panel's functions, three of service version 2 and its event, two
+    // dump spaces, the fix level.
+    for (bit, requests, events) in [
+        (caps::SWITCHES, 6, 0),
+        (caps::POOLS, 9, 0),
+        (caps::PARTITION_V3, 3, 0),
+        (caps::ACTIVATIONS, 2, 0),
+        (caps::POWER_ON, 2, 1),
+        (caps::PANEL_FUNCTIONS, 1, 0),
+        (caps::PROBLEM_NOTES, 3, 1),
+        (caps::DUMP_SPACE, 2, 0),
+        (caps::FIX_LEVEL, 1, 0),
+    ] {
+        assert_eq!(requests_of(bit).len(), requests, "{bit:#x}");
+        assert_eq!(events_of(bit).len(), events, "{bit:#x}");
+    }
+    assert_eq!(requests_of(H24).len(), 29);
+    assert_eq!(events_of(H24).len(), 2);
+    assert_eq!(new_requests().len(), 45);
+    assert_eq!(new_events().len(), 22);
 }
 
 #[test]
@@ -188,11 +232,7 @@ fn events_go_only_where_agreed() {
         every
     );
     for (_, e) in &to_older {
-        assert_eq!(
-            caps::of_event(e.family(), e.op()) & NEW,
-            0,
-            "{e:?}"
-        );
+        assert_eq!(caps::of_event(e.family(), e.op()) & NEW, 0, "{e:?}");
     }
     // The older console's numbers rise and skip the ones it was not sent.
     assert!(to_older.windows(2).all(|w| w[0].0 < w[1].0));
@@ -230,7 +270,8 @@ fn service_and_update_need_only_their_own_bits() {
     let mut l = pair(console_hello(), host);
     for q in new_requests() {
         let r = l.console.request_any("U", &q);
-        if q.family() == family::SERVICE {
+        let v2 = caps::of_request(q.family(), q.op()) & caps::PROBLEM_NOTES != 0;
+        if q.family() == family::SERVICE && !v2 {
             assert!(r.is_ok(), "{q:?}");
         } else {
             assert!(matches!(r, Err(Error::NotAgreed { .. })), "{q:?}");
@@ -238,30 +279,46 @@ fn service_and_update_need_only_their_own_bits() {
     }
 }
 
+/// The new bit a bit needs beside it: a family's later version needs
+/// the family's own bit, which is new itself for service.
+fn beside(bit: u64) -> u64 {
+    if bit == caps::PROBLEM_NOTES {
+        caps::SERVICE
+    } else {
+        0
+    }
+}
+
 #[test]
 fn each_bit_alone() {
     for bit in BITS {
+        let has = caps::HOST_V1 | bit | beside(bit);
         let with = Hello {
-            caps: caps::HOST_V1 | bit,
+            caps: has,
             ..host_hello()
         };
         let console = Hello {
-            caps: caps::HOST_V1 | bit,
+            caps: has,
             ..console_hello()
         };
         // A host with the bit alone, a newer console; then the other way.
         for (c, h) in [(console_hello(), with.clone()), (console, host_hello())] {
             let mut l = pair(c, h);
-            assert_eq!(l.console.agreed().unwrap().caps, caps::HOST_V1 | bit);
+            assert_eq!(l.console.agreed().unwrap().caps, has);
+            let mut own = 0;
             for q in new_requests() {
                 let need = caps::of_request(q.family(), q.op());
                 let r = l.console.request_any("U", &q);
-                if need & NEW & !bit == 0 {
+                if need & NEW & !has == 0 {
                     assert!(r.is_ok(), "{bit:#x}: {q:?}");
+                    own += usize::from(need & bit != 0);
                 } else {
                     assert!(matches!(r, Err(Error::NotAgreed { .. })), "{bit:#x}: {q:?}");
                 }
             }
+            // At least one of its own goes (base's dump space needs the
+            // system's dumps too; the dumps family's does not).
+            assert!(own > 0 || requests_of(bit).is_empty(), "{bit:#x}");
         }
 
         // Events: a console with the bit alone is sent its events and none
@@ -269,7 +326,7 @@ fn each_bit_alone() {
         let limits = Limits::default();
         let mut log = EventLog::new(&limits);
         let console = Hello {
-            caps: caps::HOST_V1 | bit,
+            caps: has,
             ..console_hello()
         };
         let mut l = pair(console, host_hello());
@@ -298,11 +355,17 @@ fn each_bit_alone() {
             })
             .collect();
         assert_eq!(got.len(), sent);
+        // Its own (and its family's, beside it) that need nothing else new.
+        let own = events_of(bit | beside(bit))
+            .iter()
+            .filter(|e| caps::of_event(e.family(), e.op()) & NEW & !has == 0)
+            .count();
+        assert!(own > 0 || events_of(bit).is_empty(), "{bit:#x}");
         let old = samples::events().len() - new_events().len();
-        assert_eq!(sent, old + events_of(bit).len(), "{bit:#x}");
+        assert_eq!(sent, old + own, "{bit:#x}");
         for e in &got {
             let need = caps::of_event(e.family(), e.op());
-            assert_eq!(need & NEW & !bit, 0, "{bit:#x}: {e:?}");
+            assert_eq!(need & NEW & !has, 0, "{bit:#x}: {e:?}");
         }
     }
 }

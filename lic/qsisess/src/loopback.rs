@@ -11,12 +11,27 @@ use qsi::{Hello, PeerKind, caps};
 
 use crate::{Error, Incoming, Limits, Role, Session};
 
+/// What the test hellos say: every capability bit `qsi` has.
+pub const CAPS: u64 = caps::HOST_V1
+    | caps::SERVICING
+    | caps::PHYSICAL_IO
+    | caps::PARTITION_V2
+    | caps::SWITCHES
+    | caps::POOLS
+    | caps::PARTITION_V3
+    | caps::ACTIVATIONS
+    | caps::POWER_ON
+    | caps::PANEL_FUNCTIONS
+    | caps::PROBLEM_NOTES
+    | caps::DUMP_SPACE
+    | caps::FIX_LEVEL;
+
 /// A console's hello for tests.
 #[must_use]
 pub fn console_hello() -> Hello {
     Hello {
         version: qsi::VERSION,
-        caps: caps::HOST_V1 | caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2,
+        caps: CAPS,
         kind: PeerKind::Console,
         name: "MC01".into(),
         release: "V1R1M0".into(),
@@ -29,7 +44,7 @@ pub fn console_hello() -> Hello {
 pub fn host_hello() -> Hello {
     Hello {
         version: qsi::VERSION,
-        caps: caps::HOST_V1 | caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2,
+        caps: CAPS,
         kind: PeerKind::Host,
         name: "VS01".into(),
         release: "V1R2M0".into(),
