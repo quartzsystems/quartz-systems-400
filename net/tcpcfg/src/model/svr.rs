@@ -205,9 +205,14 @@ mod tests {
         let mut s = Servers::default();
         assert_eq!(
             s.autostart(),
-            vec!["*TELNET".to_string(), "*FTP".to_string()]
+            vec![
+                "*TELNET".to_string(),
+                "*FTP".to_string(),
+                "*QSI".to_string()
+            ]
         );
         s.get_mut("*ftp").autostart = false;
+        s.get_mut("*qsi").autostart = false;
         s.get_mut("*NEWSVR").set("port", "9999");
         assert_eq!(s.get("*NEWSVR").unwrap().get("PORT"), Some("9999"));
         s.add_user(UserServer {
