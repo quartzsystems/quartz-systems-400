@@ -130,15 +130,61 @@ fn out_of_service(s: UnitState) -> bool {
     )
 }
 
+/// A member's own map as the set opens: idle while it is in service,
+/// else the map kept for it, or one started now when `start` (it was
+/// in step at a clean stop and is absent since, so it lacks nothing
+/// yet), else given up.
+fn away_at_open(
+    store: Option<Box<dyn IntentStore>>,
+    magic: [u8; 8],
+    (id, uuid, blocks, rb): ([u8; 16], [u8; 16], u64, u64),
+    state: UnitState,
+    start: bool,
+    i: usize,
+) -> Away {
+    let mut s = match store {
+        None => return Away::None,
+        Some(s) if !out_of_service(state) => return Away::Idle(s),
+        Some(s) => s,
+    };
+    let m = s
+        .read_all()
+        .ok()
+        .and_then(|b| IntentMap::decode(&magic, &b));
+    match m {
+        Some(m)
+            if matches!(m.kind, MapKind::Away | MapKind::AwayResuming)
+                && m.fits(id, uuid, blocks, rb) =>
+        {
+            Away::Keeping(m, s)
+        }
+        _ if start => {
+            let m = IntentMap::new(MapKind::Away, id, uuid, blocks, rb);
+            match s.write(0, &m.encode(&magic)) {
+                Ok(()) => Away::Keeping(m, s),
+                Err(e) => {
+                    warn!("mirrored set: no map kept for absent member {i}: {e}");
+                    Away::Lost(s)
+                }
+            }
+        }
+        _ => {
+            warn!("mirrored set: member {i} has no map of its own kept");
+            Away::Lost(s)
+        }
+    }
+}
+
 impl Tracker {
     /// The map of a set of `blocks` blocks whose members are `members`
-    /// (identity and state after open's checks); `active` members are
-    /// active and attached.
+    /// (identity and state after open's checks, and whether it was
+    /// recorded in step but is absent); `active` members are active and
+    /// attached.
     pub(crate) fn open(
         id: [u8; 16],
         blocks: u64,
         mut intent: Intent,
-        members: &[([u8; 16], UnitState)],
+        members: &[([u8; 16], UnitState, bool)],
         active: usize,
     ) -> io::Result<Self> {
         let rb = intent.region_blocks;
@@ -187,30 +233,17 @@ impl Tracker {
             }
         }
         let mut away = Vec::with_capacity(members.len());
-        for (i, &(uuid, state)) in members.iter().enumerate() {
+        for (i, &(uuid, state, absent)) in members.iter().enumerate() {
             let store = intent.away.get_mut(i).and_then(Option::take);
-            away.push(match store {
-                None => Away::None,
-                Some(s) if !out_of_service(state) => Away::Idle(s),
-                Some(mut s) => {
-                    let m = s
-                        .read_all()
-                        .ok()
-                        .and_then(|b| IntentMap::decode(&magic, &b));
-                    match m {
-                        Some(m)
-                            if matches!(m.kind, MapKind::Away | MapKind::AwayResuming)
-                                && m.fits(id, uuid, blocks, rb) =>
-                        {
-                            Away::Keeping(m, s)
-                        }
-                        _ => {
-                            warn!("mirrored set: member {i} has no map of its own kept");
-                            Away::Lost(s)
-                        }
-                    }
-                }
-            });
+            let clean = crash.is_empty();
+            away.push(away_at_open(
+                store,
+                magic,
+                (id, uuid, blocks, rb),
+                state,
+                absent && clean,
+                i,
+            ));
         }
         let stats = IntentStats {
             regions: map.regions,

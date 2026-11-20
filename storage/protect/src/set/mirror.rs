@@ -170,7 +170,10 @@ impl MirrorSet {
     /// is given. Regions the kept map has set are copied from the first
     /// active member to the other active ones by
     /// [`resync_step`](Self::resync_step); until a region is, it is read
-    /// from that member only.
+    /// from that member only. A member recorded active whose device is
+    /// not found, when the kept map has no region set (the set was
+    /// stopped cleanly), gets a map of its own from here, as if it had
+    /// left now: it comes back by what is written while it is away.
     pub fn open_with(
         id: [u8; 16],
         blocks: u64,
@@ -184,10 +187,14 @@ impl MirrorSet {
             )));
         }
         let mut events = Vec::new();
+        // Members recorded in step and not found now: absent since the
+        // set last ran.
+        let mut absent = vec![false; members.len()];
         for (i, m) in members.iter_mut().enumerate() {
             match (&m.dev, m.state) {
                 (None, UnitState::Missing) => {}
-                (None, _) => {
+                (None, was) => {
+                    absent[i] = was == UnitState::Active;
                     m.state = UnitState::Missing;
                     events.push(SetEvent::Missing { member: i });
                 }
@@ -221,8 +228,11 @@ impl MirrorSet {
                         "a region of {rb} blocks; a region is a multiple of {RESUME_CHUNK}"
                     )));
                 }
-                let info: Vec<([u8; 16], UnitState)> =
-                    members.iter().map(|m| (m.uuid, m.state)).collect();
+                let info: Vec<([u8; 16], UnitState, bool)> = members
+                    .iter()
+                    .zip(&absent)
+                    .map(|(m, &gone)| (m.uuid, m.state, gone))
+                    .collect();
                 Some(Tracker::open(id, blocks, intent, &info, active).map_err(SetError::Intent)?)
             }
         };

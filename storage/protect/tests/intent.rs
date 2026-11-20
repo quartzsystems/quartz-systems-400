@@ -362,3 +362,103 @@ fn a_resume_cut_by_a_stop_copies_again_what_was_written_since() {
     while !set.resume_step(&mut r, &mut journal, 4).unwrap().complete {}
     assert_eq!(a.flushed_image(), b.flushed_image());
 }
+
+fn absent_open(a: &Arc<blockdev::MemBlockDev>, blocks: u64, intent: Intent) -> MirrorSet {
+    MirrorSet::open_with(
+        SET,
+        blocks,
+        vec![
+            member(Box::new(Arc::clone(a)), 1, UnitState::Active),
+            protect::set::MirrorMember {
+                uuid: [2; 16],
+                state: UnitState::Active,
+                dev: None,
+            },
+        ],
+        Some(intent),
+    )
+    .unwrap()
+}
+
+#[test]
+fn a_member_absent_after_a_clean_stop_comes_back_by_what_was_written() {
+    let blocks = 8 * REGION;
+    let (a, b) = pair(blocks);
+    let store = MemIntentStore::new();
+    let away = [MemIntentStore::new(), MemIntentStore::new()];
+    let set = open(&a, &b, blocks, away_intent(&store, true, &away));
+    set.write(1, &block(1)).unwrap();
+    set.close().unwrap();
+    drop(set);
+
+    // Assembled with the second member's disk gone: its map starts here.
+    let set = absent_open(&a, blocks, away_intent(&store, false, &away));
+    assert_eq!(set.members()[1].state, UnitState::Missing);
+    let kept = IntentMap::decode(&MAGIC, &away[1].bytes()).unwrap();
+    assert_eq!((kept.kind, kept.count()), (MapKind::Away, 0));
+    for r in [2, 5] {
+        set.write(r * REGION + 3, &block(20 + u32::try_from(r).unwrap()))
+            .unwrap();
+    }
+    set.flush().unwrap();
+    assert!(set.dirty_regions().is_empty());
+
+    // Back while the set runs: two regions, four chunks.
+    set.reattach(1, Box::new(Arc::clone(&b))).unwrap();
+    let mut journal = MemJournal::default();
+    let writes = b.stats().writes;
+    assert_eq!(resume_all(&set, 1, &mut journal), 4);
+    assert_eq!(b.stats().writes - writes, 4);
+    assert_eq!(a.flushed_image(), b.flushed_image());
+    set.close().unwrap();
+    drop(set);
+
+    // Absent again at an open, and back at the next one, recorded
+    // missing: the map kept across the stop is what is copied.
+    let set = absent_open(&a, blocks, away_intent(&store, false, &away));
+    set.write(7 * REGION, &block(70)).unwrap();
+    set.close().unwrap();
+    drop(set);
+    let set = absent_open(&a, blocks, away_intent(&store, false, &away));
+    set.write(6 * REGION, &block(60)).unwrap();
+    set.close().unwrap();
+    drop(set);
+    let kept = IntentMap::decode(&MAGIC, &away[1].bytes()).unwrap();
+    assert_eq!(
+        kept.dirty().collect::<Vec<_>>(),
+        [6, 7],
+        "a second open with it absent keeps what the first wrote"
+    );
+    let set = MirrorSet::open_with(
+        SET,
+        blocks,
+        vec![
+            member(Box::new(Arc::clone(&a)), 1, UnitState::Active),
+            member(Box::new(Arc::clone(&b)), 2, UnitState::Missing),
+        ],
+        Some(away_intent(&store, false, &away)),
+    )
+    .unwrap();
+    assert_eq!(set.members()[1].state, UnitState::Suspended);
+    assert_eq!(resume_all(&set, 1, &mut journal), 4);
+    assert_eq!(a.flushed_image(), b.flushed_image());
+}
+
+#[test]
+fn a_member_absent_after_an_unclean_stop_is_copied_whole() {
+    let blocks = 8 * REGION;
+    let (a, b) = pair(blocks);
+    let store = MemIntentStore::new();
+    let away = [MemIntentStore::new(), MemIntentStore::new()];
+    let set = open(&a, &b, blocks, away_intent(&store, true, &away));
+    set.write(1, &block(1)).unwrap();
+    // Stopped with the write's region still set.
+    drop(set);
+    let set = absent_open(&a, blocks, away_intent(&store, false, &away));
+    set.write(2 * REGION, &block(2)).unwrap();
+    set.flush().unwrap();
+    set.reattach(1, Box::new(Arc::clone(&b))).unwrap();
+    let mut journal = MemJournal::default();
+    assert_eq!(resume_all(&set, 1, &mut journal), 16, "every chunk");
+    assert_eq!(a.flushed_image(), b.flushed_image());
+}
