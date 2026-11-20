@@ -115,6 +115,14 @@ related = []
 - `sequence` is the anti-rollback counter: `QSCHKUPD` keeps the highest
   it has seen and refuses a catalog with a lower one (`CPF8C32`).
 
+A product's stream index in the catalog's form (QS/VS's `qsvs` stream:
+`stream = "qsvs"`, one `[[release]]` entry a release) may carry two
+keys in each release entry beside its own: `released`, the release's
+date as `YYYY-MM-DD`, and `notes`, the file name of its release notes
+in the stream's directory beside the index. They are signed with the
+rest of the bytes; a reader that does not know them passes over them.
+QS/400's own catalog (frozen at V1R1M0) is unchanged: it has neither.
+
 ## 4. Orders
 
 An order names PTFs, groups, `*CUMPKG` or `*HIPER` and asks the
