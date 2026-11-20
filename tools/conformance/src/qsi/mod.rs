@@ -676,6 +676,33 @@ impl Suite {
     fn qsi_problems(&self, _s: &mut Session) -> Result<String, String> {
         with(|st| {
             let mut c = st.mc01.connect(st.port)?;
+            let list = |c: &mut qsisvr::client::Client| -> Result<service::RatedPage, String> {
+                match ask(
+                    c,
+                    &AnyRequest::Service(service::Request::ListRated(service::List {
+                        filter: service::Filter {
+                            status: Some(service::ProblemStatus::Open),
+                            ..service::Filter::default()
+                        },
+                        before: None,
+                        limit: 10,
+                    })),
+                )? {
+                    Ok(AnyReply::Service(service::Reply::ListRated(p))) => Ok(p),
+                    other => Err(format!("list: {other:?}")),
+                }
+            };
+            // The problem log notes a repeat in the open problem of the same
+            // dump's name: what step 202's dump opened is closed first.
+            for p in list(&mut c)?.problems {
+                let _ = ask(
+                    &mut c,
+                    &AnyRequest::Service(service::Request::Close(service::Close {
+                        number: p.summary.number,
+                        anyway: true,
+                    })),
+                )?;
+            }
             base(
                 &mut c,
                 qsi::base::Request::Subscribe(qsi::base::Subscribe { since: None }),
@@ -694,22 +721,6 @@ impl Suite {
             }) {
                 return Err(format!("no Opened event: {seen:?}"));
             }
-            let list = |c: &mut qsisvr::client::Client| -> Result<service::RatedPage, String> {
-                match ask(
-                    c,
-                    &AnyRequest::Service(service::Request::ListRated(service::List {
-                        filter: service::Filter {
-                            status: Some(service::ProblemStatus::Open),
-                            ..service::Filter::default()
-                        },
-                        before: None,
-                        limit: 10,
-                    })),
-                )? {
-                    Ok(AnyReply::Service(service::Reply::ListRated(p))) => Ok(p),
-                    other => Err(format!("list: {other:?}")),
-                }
-            };
             let page = list(&mut c)?;
             let first = page.problems.first().ok_or("no open problem")?.clone();
             let number = first.summary.number;
