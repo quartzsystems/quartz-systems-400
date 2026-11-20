@@ -71,20 +71,22 @@ Every code the system posts lives in `lic/srcdata`, a crate with no
 dependencies, so `slic` and a management console that explains a
 partition's code read the same table. Each code has its family (its
 first two characters: `C1`, `C6`, `A6`, `B1`, `D1`), its text, its
-phase, its meaning, and a cause and a recovery where the docs or the
-code that posts it already said one; elsewhere they are `None`.
-`srcdata::gaps()` counts what is missing and `tests/table.rs` asserts
-the counts, so writing one shows there:
+phase, its meaning, the cause it is posted for and the recovery, in
+Quartz's words and true of what the code that posts it does (handoff
+23 wrote the first; handoff 24 the rest). A progress code's recovery
+is `None.` or what to look at when it stays up. `srcdata::gaps()`
+counts codes without a cause or a recovery, and `tests/table.rs`
+asserts zero in every family, so a new code comes with both:
 
 | Family | Codes | Without cause | Without recovery |
 |---|---|---|---|
-| C1 | 15 | 8 | 15 |
-| C6 | 34 | 28 | 33 |
-| A6 | 12 | 0 | 7 |
-| B1 | 7 | 0 | 3 |
-| D1 | 6 | 6 | 6 |
+| C1 | 15 | 0 | 0 |
+| C6 | 34 | 0 | 0 |
+| A6 | 12 | 0 | 0 |
+| B1 | 7 | 0 | 0 |
+| D1 | 6 | 0 | 0 |
 
-64 of the 74 codes lack a cause, a recovery or both.
+Every one of the 74 codes is explained.
 
 ### Abnormal IPL
 
