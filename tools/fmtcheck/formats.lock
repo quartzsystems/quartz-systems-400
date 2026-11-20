@@ -2,7 +2,7 @@
 [format.audit]
 frozen_at = "V1R1M0"
 version = "2"
-hash = "db51d166e843f6df8efef3fa9beb0094c2bf9a68e684385086fa92f3282e89f2"
+hash = "ca53058947d09706ea6b05a6f6ab7ab0aedbc21aa8ce45ac1132f6e5fe68cc77"
 
 [format.authority]
 frozen_at = "V1R1M0"
@@ -158,6 +158,11 @@ hash = "c85d1240541ac9175a8186f1483d37be65b9583183a1a318ab4837235aeb6bab"
 frozen_at = "V1R2M0"
 version = "1"
 hash = "5cff1dd4fad85da37841101bf0cf1c0d566b389caa46e5738a6e110edd7b9937"
+
+[format.qsi-server]
+frozen_at = "V1R2M0"
+version = "1/1/1"
+hash = "6c097ea22c162266d987a0ba1f15270677977bb7289d41bfbeb1e404611c2f1e"
 
 [format.qsi-session]
 frozen_at = "V1R2M0"

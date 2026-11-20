@@ -489,6 +489,25 @@ files = [
     "net/netsvrcfg/src/file/shr.rs",
 ]
 
+# The QSI server's files under /QIBM/UserData/OS400/QSI: the consoles
+# pinned, the identity sealed, the event log (docs/QSID.md section 12).
+[[format]]
+name = "qsi-server"
+frozen_at = "V1R2M0"
+doc = "docs/QSID.md"
+draft = true
+version = [
+    "net/qsisvr/src/store/consoles.rs::FORMAT_VERSION",
+    "net/qsisvr/src/store/identity.rs::FORMAT_VERSION",
+    "net/qsisvr/src/store/events.rs::FORMAT_VERSION",
+]
+files = [
+    "net/qsisvr/src/store/mod.rs",
+    "net/qsisvr/src/store/consoles.rs",
+    "net/qsisvr/src/store/identity.rs",
+    "net/qsisvr/src/store/events.rs",
+]
+
 # A directory server instance's entry store, *DIRDB (docs/DIRSRV.md 5.2).
 [[format]]
 name = "dirdb"
