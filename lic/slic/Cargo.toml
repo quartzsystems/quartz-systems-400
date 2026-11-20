@@ -12,6 +12,7 @@ licpart = { path = "../../lic/licpart", version = "0.1.0" }
 sysval = { path = "../../lic/sysval", version = "0.1.0" }
 console = { path = "../../lic/console", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+srcdata = { path = "../../lic/srcdata", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }

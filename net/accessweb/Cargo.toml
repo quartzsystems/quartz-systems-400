@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 qsweb = { path = "../qsweb", version = "0.1.0" }
+termlook = { path = "../termlook", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 qsh-utils = { path = "../../qsh/qsh-utils", version = "0.1.0" }
@@ -18,6 +19,10 @@ toml = { version = "1.1.8", default-features = false, features = ["parse", "serd
 
 [dev-dependencies]
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+console = { path = "../../lic/console", version = "0.1.0" }
+qsipart = { path = "../../lic/qsipart", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
 
 [lints]
 workspace = true

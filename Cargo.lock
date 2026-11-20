@@ -17,13 +17,18 @@ name = "accessweb"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "console",
+ "dspf",
  "msgf",
  "qsh-utils",
+ "qsipart",
  "qsweb",
  "release",
  "serde",
  "spool",
+ "termlook",
  "thiserror 2.0.21",
+ "tn5250",
  "toml",
 ]
 
@@ -4035,6 +4040,7 @@ dependencies = [
  "sockets",
  "spool",
  "sql",
+ "srcdata",
  "stg",
  "store",
  "svctools",
@@ -4199,6 +4205,10 @@ dependencies = [
  "sql",
  "store",
 ]
+
+[[package]]
+name = "srcdata"
+version = "0.1.0"
 
 [[package]]
 name = "sshd"
@@ -4435,6 +4445,13 @@ dependencies = [
  "ipc",
  "netlink",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "termlook"
+version = "0.1.0"
+dependencies = [
+ "qsipart",
 ]
 
 [[package]]

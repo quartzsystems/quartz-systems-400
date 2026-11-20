@@ -1,0 +1,13 @@
+[package]
+name = "termlook"
+description = "The terminal's look for any product: the console's font and palette, the drawing rules, a screen drawn to PNG and PDF from a 5250 screen or a partition console's grid, and the page script's exchange"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qsipart = { path = "../../lic/qsipart", version = "0.1.0" }
+
+[lints]
+workspace = true
