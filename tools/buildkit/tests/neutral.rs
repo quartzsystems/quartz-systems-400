@@ -8,8 +8,9 @@
 //! 14): the console, the screen kit, the service tools user IDs, disk
 //! protection, the ublk server, the netlink client, (handoff 17) the
 //! partition service channel's protocol, (handoff 18) QSI's
-//! messages, session and trust rules, and (handoff 22) the web layer
-//! and the certificate kit.
+//! messages, session and trust rules, (handoff 22) the web layer and
+//! the certificate kit, and (handoff 23) the terminal's look and the
+//! reference codes.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -151,7 +152,9 @@ fn the_appliance_crates_reach_no_product_crate() {
 /// messages add `qsipart`, its session `qsi`, and its trust rules take
 /// nothing of this repository (handoff 18). The web layer and the
 /// certificate kit take nothing of it either (handoff 22): not
-/// `release`, `licpart` or `certs`.
+/// `release`, `licpart` or `certs`. The terminal's look takes the
+/// partition service channel's protocol for its grid, and the reference
+/// codes nothing (handoff 23): not `accessweb`, `tn5250` or `slic`.
 const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("qsipart", &["qsipart", "ipc"]),
     ("qsi", &["qsi", "qsipart", "ipc"]),
@@ -159,6 +162,8 @@ const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("qsitrust", &["qsitrust"]),
     ("qsweb", &["qsweb"]),
     ("x509kit", &["x509kit"]),
+    ("termlook", &["termlook", "qsipart", "ipc"]),
+    ("srcdata", &["srcdata"]),
 ];
 
 #[test]
@@ -266,6 +271,38 @@ fn the_web_crates_name_no_product() {
     assert!(
         hits.is_empty(),
         "a product named in the web layer or the certificate kit:\n{}",
+        hits.join("\n")
+    );
+}
+
+/// The terminal's look and the reference codes (handoff 23): their
+/// sources, the page's script and their manifests name no product. The
+/// look reads the console's font file, whose name it keeps.
+#[test]
+fn the_look_and_the_codes_name_no_product() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut hits = Vec::new();
+    for dir in ["net/termlook", "lic/srcdata"] {
+        let dir = repo.join(dir);
+        let mut files = Vec::new();
+        sources(&dir.join("src"), &mut files);
+        assert!(
+            files.len() >= 5,
+            "{}: {} source files",
+            dir.display(),
+            files.len()
+        );
+        files.push(dir.join("Cargo.toml"));
+        if let Ok(rd) = fs::read_dir(dir.join("assets")) {
+            files.extend(rd.flatten().map(|e| e.path()));
+        }
+        for f in files {
+            product_lines_but(&f, &["/lic/console/font/qs400-9x16.txt\")"], &mut hits);
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "a product named in the look or the reference codes:\n{}",
         hits.join("\n")
     );
 }
