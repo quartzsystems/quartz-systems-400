@@ -240,7 +240,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     loop {
         refresh(link, &pins);
         let all = looked.elapsed() >= LOOK;
-        if look(link, &log, &mut said, all) > 0 || all {
+        if look(link, &log, &mut said, all) > 0 {
             keep(link, &log, &said);
         }
         if all {
