@@ -142,6 +142,7 @@ members = [
     "net/mail",
     "net/ftp",
     "net/qapd",
+    "net/qsisvr",
     "net/xdrgen",
     "net/nfs",
     "net/ldap",

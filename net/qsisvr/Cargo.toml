@@ -1,0 +1,18 @@
+[package]
+name = "qsisvr"
+description = "QS/400's QSI server: limits before authentication, a console's connection and pairing, the families a standalone system answers over a Host, the files it keeps"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+qsi = { path = "../../lic/qsi", version = "0.1.0" }
+qsipart = { path = "../../lic/qsipart", version = "0.1.0" }
+qsisess = { path = "../../lic/qsisess", version = "0.1.0" }
+qsitrust = { path = "../../lic/qsitrust", version = "0.1.0" }
+rustls = { version = "0.23.46", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

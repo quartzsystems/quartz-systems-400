@@ -3120,6 +3120,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "qsisvr"
+version = "0.1.0"
+dependencies = [
+ "ipc",
+ "qsi",
+ "qsipart",
+ "qsisess",
+ "qsitrust",
+ "rustls",
+]
+
+[[package]]
 name = "qsitrust"
 version = "0.1.0"
 dependencies = [
