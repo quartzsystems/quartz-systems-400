@@ -402,6 +402,13 @@ fn tls_records(data: &[u8]) {
     }
 }
 
+/// A certificate import: a PKCS#12 file, or a PEM bundle with an
+/// encrypted key, under the password the seeds use.
+fn pkcs12(data: &[u8]) {
+    let _ = x509kit::bundle::read_pkcs12(data, "fuzz");
+    let _ = x509kit::bundle::read_pem(&text(data), Some("fuzz"));
+}
+
 fn ebcdic(data: &[u8]) {
     let _ = ccsid::from_ebcdic(data);
     let _ = ccsid::to_ebcdic(&text(data));
@@ -593,6 +600,19 @@ pub const TARGETS: &[Target] = &[
         seeds: &[b"\x16\x03\x03\x00\x04\x02\x00\x00\x00"],
         dict: &[b"\x16\x03\x03", b"\x15\x03\x03", b"\x17\x03\x03", b"\x14\x03\x03\x00\x01\x01"],
         max_len: 16384,
+    },
+    Target {
+        name: "pkcs12",
+        what: "certificate imports: PKCS#12 files (MAC, safes, bags, iteration counts) and PEM bundles",
+        run: pkcs12,
+        // A file as written here, and the same file whose MAC asks for
+        // four billion iterations (refused past the reader's bound).
+        seeds: &[
+            include_bytes!("../seeds/pkcs12.p12"),
+            include_bytes!("../seeds/pkcs12-iterations.p12"),
+        ],
+        dict: &[b"\x02\x04\xff\xff\xff\xff", b"\x02\x03\x0f\x42\x40", b"\x02\x02\x08\x00"],
+        max_len: 8192,
     },
     Target {
         name: "ebcdic",

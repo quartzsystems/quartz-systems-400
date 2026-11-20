@@ -288,7 +288,7 @@ fn verify_mac(mac: &MacData, data: &[u8], password: &str) -> Result<()> {
         hash,
         password,
         mac.mac_salt.as_bytes(),
-        mac.iterations.max(1),
+        pbe::iterations("the MAC", mac.iterations)?,
         data,
     );
     if constant_eq(&got, mac.mac.digest.as_bytes()) {
@@ -456,5 +456,63 @@ mod tests {
         assert_eq!(id.key.spki_der().unwrap(), key.spki_der().unwrap());
         assert!(matches!(read(&p12, "bad"), Err(Error::BadPassword)));
         assert!(read(b"not a file", "pw").is_err());
+    }
+
+    /// `p12` with the MAC's count set to `mac` (the MAC dropped when
+    /// `None`) and the encrypted safe's PBKDF2 count set to `kdf`.
+    fn with_counts(p12: &[u8], mac: Option<u32>, kdf: u32) -> Vec<u8> {
+        let mut pfx = Pfx::from_der(p12).unwrap();
+        let auth: OctetString = pfx.auth_safe.content.decode_as().unwrap();
+        let mut safes: Vec<ContentInfo> = Vec::from_der(auth.as_bytes()).unwrap();
+        let mut ed: EncryptedData = safes[0].content.decode_as().unwrap();
+        let alg = &mut ed.encrypted_content_info.content_encryption_algorithm;
+        let mut p: pbe::Pbes2Params = alg.parameters.as_ref().unwrap().decode_as().unwrap();
+        let mut k: pbe::Pbkdf2Params = p.kdf.parameters.as_ref().unwrap().decode_as().unwrap();
+        k.iteration_count = kdf;
+        p.kdf.parameters = Some(Any::encode_from(&k).unwrap());
+        alg.parameters = Some(Any::encode_from(&p).unwrap());
+        safes[0].content = Any::encode_from(&ed).unwrap();
+        let auth = safes.to_der().unwrap();
+        pfx.auth_safe = data_content(&auth).unwrap();
+        pfx.mac_data = mac.map(|n| {
+            let mut m = pfx.mac_data.clone().unwrap();
+            m.iterations = n;
+            m.digest_for(&auth);
+            m
+        });
+        pfx.to_der().unwrap()
+    }
+
+    impl MacData {
+        /// Recompute the digest for `data` under "pw".
+        fn digest_for(&mut self, data: &[u8]) {
+            let n = self.iterations.min(pbe::MAX_ITERATIONS);
+            let d = compute_mac(P12Hash::Sha256, "pw", self.mac_salt.as_bytes(), n, data);
+            self.mac.digest = OctetString::new(d).unwrap();
+        }
+    }
+
+    #[test]
+    fn iteration_counts_past_the_bound_are_refused() {
+        let key = PrivateKey::generate(KeyAlgorithm::EcdsaP256).unwrap();
+        let cert = build::self_signed(&CertSpec::server("h", 1_700_000_000, 10), &key).unwrap();
+        let p12 = write("c", &key, &cert, &[], "pw").unwrap();
+        // Counts at the writer's own value read as before.
+        let same = with_counts(&p12, Some(pbe::ITERATIONS), pbe::ITERATIONS);
+        assert_eq!(read(&same, "pw").unwrap().certs.len(), 1);
+        // The MAC asks for four billion: refused before any work.
+        let huge = with_counts(&p12, Some(u32::MAX), pbe::ITERATIONS);
+        let e = read(&huge, "pw").err().unwrap();
+        assert!(
+            matches!(&e, Error::Unsupported(s) if s.contains("the MAC asks for 4294967295")),
+            "{e}"
+        );
+        // No MAC, and the certificates' safe asks for one more than the bound.
+        let huge = with_counts(&p12, None, pbe::MAX_ITERATIONS + 1);
+        let e = read(&huge, "pw").err().unwrap();
+        assert!(
+            matches!(&e, Error::Unsupported(s) if s.contains("the key derivation asks for 1000001")),
+            "{e}"
+        );
     }
 }

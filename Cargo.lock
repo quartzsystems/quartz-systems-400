@@ -1524,6 +1524,7 @@ dependencies = [
  "sys-cpps",
  "tls",
  "tn5250",
+ "x509kit",
 ]
 
 [[package]]

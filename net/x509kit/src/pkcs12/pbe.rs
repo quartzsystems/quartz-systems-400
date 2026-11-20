@@ -44,6 +44,24 @@ pub const PBE_SHA1_RC2_40: ObjectIdentifier =
 /// Iterations used when writing.
 pub const ITERATIONS: u32 = 2048;
 
+/// The most iterations a reader runs for one key derivation or MAC.
+/// Exporters use 1 to 10,000 (OpenSSL 2048, Windows 2000 to 10,000,
+/// Java 10,000) and OWASP's advice for PBKDF2-HMAC-SHA256 is 600,000;
+/// a million covers that with room and bounds what one count costs
+/// (about a second). A file asking for more is refused, not run.
+pub const MAX_ITERATIONS: u32 = 1_000_000;
+
+/// `count` as a reader runs it: at least 1, refused past
+/// [`MAX_ITERATIONS`]. `what` names the count in the error.
+pub fn iterations(what: &str, count: u32) -> Result<u32> {
+    if count > MAX_ITERATIONS {
+        return Err(Error::Unsupported(format!(
+            "{what} asks for {count} iterations, more than the {MAX_ITERATIONS} allowed"
+        )));
+    }
+    Ok(count.max(1))
+}
+
 /// PBES2-params.
 #[derive(Clone, Debug, Sequence)]
 pub struct Pbes2Params {
@@ -124,7 +142,7 @@ pub fn decrypt(alg: &AlgorithmIdentifierOwned, password: &str, data: &[u8]) -> R
             prf,
             password.as_bytes(),
             k.salt.as_bytes(),
-            k.iteration_count.max(1),
+            iterations("the key derivation", k.iteration_count)?,
             key_len,
         ));
         return if key_len == 16 {
@@ -141,7 +159,7 @@ pub fn decrypt(alg: &AlgorithmIdentifierOwned, password: &str, data: &[u8]) -> R
     }
     let p: Pkcs12PbeParams = params.decode_as()?;
     let pw = kdf::bmp_password(password);
-    let iters = p.iterations.max(1);
+    let iters = iterations("the key derivation", p.iterations)?;
     let derive = |purpose, len| {
         Zeroizing::new(kdf::pkcs12(
             P12Hash::Sha1,
@@ -266,5 +284,25 @@ mod tests {
             decrypt(&alg, "x", &[0; 8]),
             Err(Error::Unsupported(_))
         ));
+    }
+
+    #[test]
+    fn counts_past_the_bound_are_refused() {
+        assert_eq!(iterations("x", 0).unwrap(), 1);
+        assert_eq!(iterations("x", MAX_ITERATIONS).unwrap(), MAX_ITERATIONS);
+        assert!(iterations("x", MAX_ITERATIONS + 1).is_err());
+        // A legacy PKCS#12 scheme asking for four billion.
+        let alg = AlgorithmIdentifierOwned {
+            oid: PBE_SHA1_3DES,
+            parameters: Some(
+                der::Any::encode_from(&Pkcs12PbeParams {
+                    salt: OctetString::new(vec![1; 8]).unwrap(),
+                    iterations: u32::MAX,
+                })
+                .unwrap(),
+            ),
+        };
+        let e = decrypt(&alg, "x", &[0; 8]).unwrap_err();
+        assert!(e.to_string().contains("4294967295 iterations"), "{e}");
     }
 }
