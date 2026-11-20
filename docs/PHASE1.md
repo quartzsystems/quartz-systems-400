@@ -58,11 +58,33 @@ used once, else normal.
 | D1001007 | power down | System jobs ended (Phase 5) |
 | D1001090 | power down | Power down complete |
 
-The table is [lic/slic/src/src.rs](../lic/slic/src/src.rs). Every transition prints
+The table is [lic/srcdata](../lic/srcdata) (see "Reference codes as data"
+below); `slic`'s `src` module re-exports it. Every transition prints
 `SRC <code>  <text>` on serial and `/dev/console`, updates the SRC display,
 and is kept in an in-memory log (`srcs` on the service console). Fatal
 codes write a history record with outcome Failed and park; nothing reboots
 on its own in Phase 1.
+
+### Reference codes as data
+
+Every code the system posts lives in `lic/srcdata`, a crate with no
+dependencies, so `slic` and a management console that explains a
+partition's code read the same table. Each code has its family (its
+first two characters: `C1`, `C6`, `A6`, `B1`, `D1`), its text, its
+phase, its meaning, and a cause and a recovery where the docs or the
+code that posts it already said one; elsewhere they are `None`.
+`srcdata::gaps()` counts what is missing and `tests/table.rs` asserts
+the counts, so writing one shows there:
+
+| Family | Codes | Without cause | Without recovery |
+|---|---|---|---|
+| C1 | 15 | 8 | 15 |
+| C6 | 34 | 28 | 33 |
+| A6 | 12 | 0 | 7 |
+| B1 | 7 | 0 | 3 |
+| D1 | 6 | 6 | 6 |
+
+64 of the 74 codes lack a cause, a recovery or both.
 
 ### Abnormal IPL
 
