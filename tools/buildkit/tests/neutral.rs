@@ -9,8 +9,8 @@
 //! protection, the ublk server, the netlink client, (handoff 17) the
 //! partition service channel's protocol, (handoff 18) QSI's
 //! messages, session and trust rules, (handoff 22) the web layer and
-//! the certificate kit, and (handoff 23) the terminal's look and the
-//! reference codes.
+//! the certificate kit, (handoff 23) the terminal's look and the
+//! reference codes, and (handoff 24) the update catalog's reader.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -154,7 +154,9 @@ fn the_appliance_crates_reach_no_product_crate() {
 /// certificate kit take nothing of it either (handoff 22): not
 /// `release`, `licpart` or `certs`. The terminal's look takes the
 /// partition service channel's protocol for its grid, and the reference
-/// codes nothing (handoff 23): not `accessweb`, `tn5250` or `slic`.
+/// codes nothing (handoff 23): not `accessweb`, `tn5250` or `slic`. The
+/// update catalog's reader takes nothing of it (handoff 24): not `ptf`,
+/// `ptf-update` or `release`.
 const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("qsipart", &["qsipart", "ipc"]),
     ("qsi", &["qsi", "qsipart", "ipc"]),
@@ -164,6 +166,7 @@ const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("x509kit", &["x509kit"]),
     ("termlook", &["termlook", "qsipart", "ipc"]),
     ("srcdata", &["srcdata"]),
+    ("updcat", &["updcat"]),
 ];
 
 #[test]
@@ -303,6 +306,34 @@ fn the_look_and_the_codes_name_no_product() {
     assert!(
         hits.is_empty(),
         "a product named in the look or the reference codes:\n{}",
+        hits.join("\n")
+    );
+}
+
+/// The update catalog's reader (handoff 24): its sources and manifest
+/// name no product.
+#[test]
+fn the_download_crates_name_no_product() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut hits = Vec::new();
+    for dir in ["net/updcat"] {
+        let dir = repo.join(dir);
+        let mut files = Vec::new();
+        sources(&dir.join("src"), &mut files);
+        assert!(
+            files.len() >= 3,
+            "{}: {} source files",
+            dir.display(),
+            files.len()
+        );
+        files.push(dir.join("Cargo.toml"));
+        for f in files {
+            product_lines(&f, &mut hits);
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "a product named in a download crate:\n{}",
         hits.join("\n")
     );
 }

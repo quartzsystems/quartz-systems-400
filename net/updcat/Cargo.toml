@@ -1,0 +1,16 @@
+[package]
+name = "updcat"
+description = "The update service's signed catalog: read, verified against the caller's keys, written and signed; the latest cumulative level of a release"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+ed25519-dalek = "3.0.0"
+
+[lints]
+workspace = true

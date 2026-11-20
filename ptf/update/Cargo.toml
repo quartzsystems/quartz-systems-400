@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 ptf = { path = "../ptf", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+updcat = { path = "../../net/updcat", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }
 thiserror.workspace = true
 serde.workspace = true

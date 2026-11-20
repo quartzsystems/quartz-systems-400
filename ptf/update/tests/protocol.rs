@@ -84,7 +84,7 @@ fn the_catalog_round_trips_signed() {
     // Another key, or one changed byte, does not verify.
     let other = [SigningKey::from_bytes(&[6; 32]).verifying_key().to_bytes()];
     assert_eq!(
-        Catalog::parse(&text, &other).unwrap_err().msgid(),
+        ptf_update::Error::from(Catalog::parse(&text, &other).unwrap_err()).msgid(),
         "CPF8C32"
     );
     let tampered = text.replace("sequence = 3", "sequence = 9");
@@ -92,6 +92,12 @@ fn the_catalog_round_trips_signed() {
     assert!(Catalog::parse(&c.encode(), &trusted).is_err());
     assert_eq!(c.cumulative("V1R0M0").unwrap().name, "C26300110");
     assert_eq!(c.hiper("V1R0M0").unwrap().name, "QS99100");
+    // The neutral reader names cumulative packages as `release` does.
+    for name in ["C26300110", "C24366110", "C01001110", "C26000110", "QS99001"] {
+        let ours = name.parse::<release::Cumulative>().map(|c| (c.year, c.day));
+        let neutral = name.parse::<updcat::Cumulative>().map(|c| (c.year, c.day));
+        assert_eq!(ours.ok(), neutral.ok(), "{name}");
+    }
 }
 
 fn req(items: &[&str], order: OrderMode, have: &[&str], reorder: bool) -> OrderRequest {

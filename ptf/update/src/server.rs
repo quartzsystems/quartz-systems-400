@@ -151,7 +151,7 @@ impl Server {
         };
         let cat = match Catalog::parse_unverified(&text) {
             Ok(c) => c,
-            Err(e) => return Response::text(500, &e.to_string()),
+            Err(e) => return Response::text(500, &crate::Error::from(e).to_string()),
         };
         let o = match OrderRequest::decode(&String::from_utf8_lossy(&req.body)) {
             Ok(o) => o,

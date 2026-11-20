@@ -37,6 +37,15 @@ pub enum Error {
     Ptf(#[from] ptf::Error),
 }
 
+impl From<updcat::Error> for Error {
+    fn from(e: updcat::Error) -> Self {
+        match e {
+            updcat::Error::Verify(s) => Self::Verify(s),
+            updcat::Error::Parse(s) => Self::Protocol(s),
+        }
+    }
+}
+
 impl Error {
     /// The message identifier a command sends for it.
     #[must_use]

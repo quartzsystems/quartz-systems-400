@@ -171,6 +171,10 @@ files = [
     "save/savfmt/src/outfile.rs",
 ]
 
+# The signed text and the catalog moved to net/updcat (handoff 24), the
+# neutral reader QS/MC takes; both formats were re-locked without a bump:
+# the bytes written and read are unchanged (ptf-update's tests sign and
+# read the same catalogs and manifests as before).
 [[format]]
 name = "ptf"
 frozen_at = "V1R1M0"
@@ -181,15 +185,16 @@ files = [
     "ptf/ptf/src/package.rs",
     "ptf/ptf/src/manifest.rs",
     "ptf/ptf/src/group.rs",
+    "net/updcat/src/signed.rs",
 ]
 
 [[format]]
 name = "update-protocol"
 frozen_at = "V1R1M0"
 doc = "docs/UPDATE_PROTOCOL.md"
-version = ["ptf/update/src/catalog.rs::FORMAT"]
+version = ["net/updcat/src/catalog.rs::FORMAT"]
 files = [
-    "ptf/update/src/catalog.rs",
+    "net/updcat/src/catalog.rs",
     "ptf/update/src/order.rs",
 ]
 

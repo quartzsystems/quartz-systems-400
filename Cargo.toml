@@ -115,6 +115,7 @@ members = [
     "net/certs",
     "net/tls",
     "net/httpc",
+    "net/updcat",
     "net/sockets",
     "net/regfac",
     "net/cmncfg",

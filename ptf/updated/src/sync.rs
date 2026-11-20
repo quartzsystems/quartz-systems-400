@@ -57,11 +57,12 @@ fn put(path: &Path, bytes: &[u8]) -> Result<()> {
 }
 
 fn parse(text: &str, trusted: &[[u8; 32]]) -> Result<Catalog> {
-    if trusted.is_empty() {
-        Ok(Catalog::parse_unverified(text)?)
+    let c = if trusted.is_empty() {
+        Catalog::parse_unverified(text)
     } else {
-        Ok(Catalog::parse(text, trusted)?)
-    }
+        Catalog::parse(text, trusted)
+    };
+    Ok(c.map_err(ptf_update::Error::from)?)
 }
 
 /// One pass over `dir`: the catalog, then what it lists.

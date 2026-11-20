@@ -64,14 +64,7 @@ impl GroupStatus {
 /// `# signature <hex>`, signing the text before it.
 #[must_use]
 pub fn sign_manifest(toml_text: &str, key: &SigningKey) -> String {
-    use ed25519_dalek::Signer;
-    let sig = key.sign(toml_text.as_bytes()).to_bytes();
-    let hex = sig.iter().fold(String::new(), |mut s, b| {
-        use std::fmt::Write as _;
-        let _ = write!(s, "{b:02x}");
-        s
-    });
-    format!("{toml_text}\n# signature {hex}\n")
+    updcat::signed::sign(toml_text, key)
 }
 
 /// Parse a signed manifest; `verified` is whether one of `trusted`
@@ -100,23 +93,7 @@ pub fn manifest_text(g: &Group) -> String {
 /// A TOML basic string.
 #[must_use]
 pub fn quote(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + 2);
-    out.push('"');
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\t' => out.push_str("\\t"),
-            c if c.is_control() => {
-                use std::fmt::Write as _;
-                let _ = write!(out, "\\u{:04X}", u32::from(c));
-            }
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
+    updcat::signed::quote(s)
 }
 
 /// Split signed text (a body, then a line `# signature <hex>` signing
@@ -124,28 +101,7 @@ pub fn quote(s: &str) -> String {
 /// signed it. Catalogs and group manifests are signed this way.
 #[must_use]
 pub fn verify_signed<'a>(text: &'a str, trusted: &[[u8; 32]]) -> (&'a str, bool) {
-    let (body, sig) = match text.rfind("\n# signature ") {
-        Some(at) => (&text[..at], Some(text[at + 13..].trim())),
-        None => (text, None),
-    };
-    let verified = sig
-        .and_then(|h| {
-            let bytes: Vec<u8> = (0..h.len())
-                .step_by(2)
-                .map(|i| u8::from_str_radix(h.get(i..i + 2)?, 16).ok())
-                .collect::<Option<_>>()?;
-            <[u8; 64]>::try_from(bytes).ok()
-        })
-        .is_some_and(|s| {
-            trusted.iter().any(|k| {
-                use ed25519_dalek::Verifier;
-                ed25519_dalek::VerifyingKey::from_bytes(k).is_ok_and(|vk| {
-                    vk.verify(body.as_bytes(), &ed25519_dalek::Signature::from_bytes(&s))
-                        .is_ok()
-                })
-            })
-        });
-    (body, verified)
+    updcat::signed::verify(text, trusted)
 }
 
 /// A group's status from the PTF database.
