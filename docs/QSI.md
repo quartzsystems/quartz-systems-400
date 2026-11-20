@@ -1530,6 +1530,17 @@ finding:
 | `qsisess-handshake` | 300,085 | 447 | 608 |
 | `qsisess-streams` | 186,675 | 958 | 1,219 |
 
+With bits 19 to 27 (handoff 24; the loopback hellos say every bit,
+`qsisess::loopback::CAPS`, and the frames corpus gained a seed of each
+of the 29 new requests and 2 new events), again 60 seconds each, no
+finding:
+
+| Target | Runs | Corpus | Edges |
+|---|---|---|---|
+| `qsisess-frames` | 268,254 | 936 | 2,099 |
+| `qsisess-handshake` | 286,261 | 450 | 607 |
+| `qsisess-streams` | 163,123 | 952 | 1,219 |
+
 **Neutral.** `tools/buildkit/tests/neutral.rs`: `qsi` reaches `ipc` and
 `qsipart` of this repository, `qsisess` those and `qsi`, `qsitrust`
 nothing (for the host and the musl target), and none names the product.
