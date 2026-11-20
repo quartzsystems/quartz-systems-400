@@ -819,6 +819,22 @@ pub const TARGETS: &[Target] = &[
         dict: &[],
         max_len: 4096,
     },
+    Target {
+        name: "qsisvr-preauth",
+        what: "the QSI server before authentication: a console not pinned, a pairing password out; request scripts, raw frames, pairings right and wrong",
+        run: qsisvr::fuzzing::pre_auth,
+        seeds: qsisvr::fuzzing::SEEDS,
+        dict: qsisvr::fuzzing::DICT,
+        max_len: 8192,
+    },
+    Target {
+        name: "qsisvr-postauth",
+        what: "the QSI server after authentication: a pinned console's requests of every family over a system in memory, raw frames, events",
+        run: qsisvr::fuzzing::post_auth,
+        seeds: qsisvr::fuzzing::SEEDS,
+        dict: qsisvr::fuzzing::DICT,
+        max_len: 8192,
+    },
 ];
 
 /// The target named `name`.

@@ -1513,6 +1513,7 @@ dependencies = [
  "qapd",
  "qsipart",
  "qsisess",
+ "qsisvr",
  "qsname",
  "rpgfront",
  "savfmt",
