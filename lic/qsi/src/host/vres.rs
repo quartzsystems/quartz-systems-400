@@ -3,21 +3,24 @@
 // root directory of this project.
 
 //! The virtual resources family: a host's storage pools and their units
-//! (read: pools are made at the host), virtual disks, the media library
-//! (optical images and tape volumes, an upload stream, load and unload
-//! into a partition's optical and tape devices), virtual switches with
-//! their ports, counters and forwarding tables (read: switches are made
-//! at the host), and shared processor pools.
+//! (read; made and changed behind [`crate::caps::POOLS`]), virtual
+//! disks, the media library (optical images and tape volumes, an upload
+//! stream, load and unload into a partition's optical and tape
+//! devices), virtual switches with their ports, counters and forwarding
+//! tables (read; made and changed behind [`crate::caps::SWITCHES`]),
+//! and shared processor pools.
 //!
-//! Operation numbers go by area: storage pools from `0x0001`, virtual
+//! Operation numbers go by area: storage pools from `0x0001` (managing
+//! them, `0x0002` to `0x000A`, behind [`crate::caps::POOLS`]), virtual
 //! disks from `0x0010`, the media library and a partition's drives from
 //! `0x0020`, tape volumes from `0x0030` (and the host's physical tape
 //! drives, `0x0034`, behind [`crate::caps::PHYSICAL_IO`]), switches from
-//! `0x0040`, shared processor pools from `0x0050`.
+//! `0x0040` (managing them, `0x0045` to `0x004A`, behind
+//! [`crate::caps::SWITCHES`]), shared processor pools from `0x0050`.
 
 use ipc::wire_struct;
 
-use super::model::{Holder, Note, PartitionId, check_id, check_items, check_name};
+use super::model::{Holder, Note, PartitionId, check_id, check_items, check_name, check_text};
 use crate::message::Empty;
 use crate::{Family, family, messages, open_enum};
 
@@ -99,6 +102,173 @@ wire_struct!(StoragePool {
 
 /// Ask for every storage pool.
 pub type Pools = Empty;
+
+// Managing storage pools ([`crate::caps::POOLS`]).
+
+open_enum! {
+    /// A storage pool's protection, as a console asks for it.
+    Protection {
+        /// One disk.
+        None = 1,
+        /// Two disks, each a copy.
+        Mirrored = 2,
+        /// Three or more, one parity a stripe.
+        Raid5 = 3,
+        /// Four or more, two parities a stripe.
+        Raid6 = 4,
+    }
+}
+
+/// Ask for the host's whole disks, for a pool.
+pub type Disks = Empty;
+
+/// A whole disk of the host, as a pool sees it. A request names a disk
+/// by its `name`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PoolDisk {
+    /// Its name, the host's for it (the kernel's).
+    pub name: String,
+    /// Its serial number.
+    pub serial: String,
+    /// Its location code.
+    pub location: String,
+    /// Its size, bytes.
+    pub bytes: u64,
+    /// Its logical block size, bytes.
+    pub block_size: u32,
+    /// What it is, in the host's words (`Load source`, `POOL1 unit 2,
+    /// Active`, `Not configured`).
+    pub what: String,
+    /// The pool it is a unit or a hot spare of; empty for none.
+    pub pool: String,
+    /// A pool may be made of it without a confirmation.
+    pub free: bool,
+    /// It holds what is not this host's: it is taken only when its name
+    /// is typed again to confirm.
+    pub foreign: bool,
+}
+wire_struct!(PoolDisk {
+    name,
+    serial,
+    location,
+    bytes,
+    block_size,
+    what,
+    pool,
+    free,
+    foreign
+});
+
+/// Make a storage pool. Its disks are erased.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PoolCreate {
+    /// Its name.
+    pub name: String,
+    /// Its protection.
+    pub protection: Protection,
+    /// Its members, by disk name.
+    pub disks: Vec<String>,
+    /// Its hot spares, by disk name.
+    pub spares: Vec<String>,
+    /// The foreign disks' names, typed again: what is on them may be
+    /// erased.
+    pub confirm: Vec<String>,
+}
+wire_struct!(PoolCreate {
+    name,
+    protection,
+    disks,
+    spares,
+    confirm
+});
+
+/// Delete a storage pool that holds no virtual disk and no media.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PoolDelete {
+    /// Its name.
+    pub name: String,
+}
+wire_struct!(PoolDelete { name });
+
+/// Rename a storage pool.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PoolRename {
+    /// Its name.
+    pub name: String,
+    /// Its new name.
+    pub to: String,
+}
+wire_struct!(PoolRename { name, to });
+
+/// Put a disk in the place of a failed or missing unit and rebuild it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UnitReplace {
+    /// The pool.
+    pub pool: String,
+    /// The unit's number.
+    pub unit: u32,
+    /// The disk.
+    pub disk: String,
+    /// The disk is foreign and what is on it may be erased.
+    pub confirm: bool,
+}
+wire_struct!(UnitReplace {
+    pool,
+    unit,
+    disk,
+    confirm
+});
+
+/// Give a pool a hot spare.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SpareAdd {
+    /// The pool.
+    pub pool: String,
+    /// The disk.
+    pub disk: String,
+    /// The disk is foreign and what is on it may be erased.
+    pub confirm: bool,
+}
+wire_struct!(SpareAdd {
+    pool,
+    disk,
+    confirm
+});
+
+/// Take a hot spare from a pool.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SpareRemove {
+    /// The pool.
+    pub pool: String,
+    /// The disk.
+    pub disk: String,
+}
+wire_struct!(SpareRemove { pool, disk });
+
+/// Make a pool the media repository.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Designate {
+    /// The pool; empty for no media repository.
+    pub pool: String,
+}
+wire_struct!(Designate { pool });
+
+/// Grow a pool with more disks. A host whose pools have a fixed size
+/// refuses it ([`pools::CANNOT_GROW`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PoolExtend {
+    /// The pool.
+    pub pool: String,
+    /// The disks added.
+    pub disks: Vec<String>,
+    /// The foreign disks' names, typed again.
+    pub confirm: Vec<String>,
+}
+wire_struct!(PoolExtend {
+    pool,
+    disks,
+    confirm
+});
 
 // Virtual disks.
 
@@ -688,6 +858,58 @@ wire_struct!(VlanUse {
     ports
 });
 
+// Managing switches ([`crate::caps::SWITCHES`]).
+
+/// A switch as made or changed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SwitchSpec {
+    /// Its name.
+    pub name: String,
+    /// The VLANs it carries.
+    pub vlans: Vec<u16>,
+    /// Its MTU; 0 for the host's default.
+    pub mtu: u32,
+}
+wire_struct!(SwitchSpec { name, vlans, mtu });
+
+/// Rename a switch no profile names.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SwitchRename {
+    /// Its name.
+    pub name: String,
+    /// Its new name.
+    pub to: String,
+}
+wire_struct!(SwitchRename { name, to });
+
+/// Delete a switch no running partition's port is on.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SwitchDelete {
+    /// Its name.
+    pub name: String,
+    /// Even when a profile names it.
+    pub force: bool,
+}
+wire_struct!(SwitchDelete { name, force });
+
+/// Give a switch an uplink, or change it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UplinkSet {
+    /// The switch.
+    pub switch: String,
+    /// Its uplink.
+    pub uplink: Uplink,
+}
+wire_struct!(UplinkSet { switch, uplink });
+
+/// Take a switch's uplink away: it is internal after.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UplinkClear {
+    /// The switch.
+    pub switch: String,
+}
+wire_struct!(UplinkClear { switch });
+
 /// Ask for the switches' limits.
 pub type GetLimits = Empty;
 
@@ -887,6 +1109,24 @@ wire_struct!(PortChanged {
 pub mod op {
     /// [`super::Pools`].
     pub const POOLS: u16 = 0x0001;
+    /// [`super::Disks`] ([`crate::caps::POOLS`]).
+    pub const DISKS: u16 = 0x0002;
+    /// [`super::PoolCreate`] ([`crate::caps::POOLS`]).
+    pub const POOL_CREATE: u16 = 0x0003;
+    /// [`super::PoolDelete`] ([`crate::caps::POOLS`]).
+    pub const POOL_DELETE: u16 = 0x0004;
+    /// [`super::PoolRename`] ([`crate::caps::POOLS`]).
+    pub const POOL_RENAME: u16 = 0x0005;
+    /// [`super::UnitReplace`] ([`crate::caps::POOLS`]).
+    pub const UNIT_REPLACE: u16 = 0x0006;
+    /// [`super::SpareAdd`] ([`crate::caps::POOLS`]).
+    pub const SPARE_ADD: u16 = 0x0007;
+    /// [`super::SpareRemove`] ([`crate::caps::POOLS`]).
+    pub const SPARE_REMOVE: u16 = 0x0008;
+    /// [`super::Designate`] ([`crate::caps::POOLS`]).
+    pub const DESIGNATE: u16 = 0x0009;
+    /// [`super::PoolExtend`] ([`crate::caps::POOLS`]).
+    pub const POOL_EXTEND: u16 = 0x000A;
     /// [`super::Vdisks`].
     pub const VDISKS: u16 = 0x0010;
     /// [`super::VdiskCreate`].
@@ -931,6 +1171,18 @@ pub mod op {
     pub const VLANS: u16 = 0x0043;
     /// [`super::GetLimits`].
     pub const LIMITS: u16 = 0x0044;
+    /// [`super::SwitchSpec`], made ([`crate::caps::SWITCHES`]).
+    pub const SWITCH_CREATE: u16 = 0x0045;
+    /// [`super::SwitchSpec`], changed ([`crate::caps::SWITCHES`]).
+    pub const SWITCH_CHANGE: u16 = 0x0046;
+    /// [`super::SwitchRename`] ([`crate::caps::SWITCHES`]).
+    pub const SWITCH_RENAME: u16 = 0x0047;
+    /// [`super::SwitchDelete`] ([`crate::caps::SWITCHES`]).
+    pub const SWITCH_DELETE: u16 = 0x0048;
+    /// [`super::UplinkSet`] ([`crate::caps::SWITCHES`]).
+    pub const UPLINK_SET: u16 = 0x0049;
+    /// [`super::UplinkClear`] ([`crate::caps::SWITCHES`]).
+    pub const UPLINK_CLEAR: u16 = 0x004A;
     /// [`super::ProcPoolSpec`], made.
     pub const PROC_POOL_CREATE: u16 = 0x0050;
     /// [`super::ProcPoolSpec`], changed.
@@ -943,6 +1195,20 @@ pub mod op {
     #[must_use]
     pub fn is_physical_io(op: u16) -> bool {
         op == TAPE_DRIVES
+    }
+
+    /// Whether `op` manages switches, which needs
+    /// [`crate::caps::SWITCHES`].
+    #[must_use]
+    pub fn is_switches(op: u16) -> bool {
+        (SWITCH_CREATE..=UPLINK_CLEAR).contains(&op)
+    }
+
+    /// Whether `op` manages storage pools, which needs
+    /// [`crate::caps::POOLS`].
+    #[must_use]
+    pub fn is_pools(op: u16) -> bool {
+        (DISKS..=POOL_EXTEND).contains(&op)
     }
 }
 
@@ -985,11 +1251,111 @@ pub mod msgid {
     pub const UPLOAD_CUT: &str = "QSI0702";
 }
 
+/// The refusals of managing switches (`QSI1501` to `QSI1549`,
+/// [`crate::caps::SWITCHES`]). A host with identifiers of its own gives
+/// them after these.
+pub mod switches {
+    /// A switch's name is not of the host's form.
+    pub const BAD_NAME: &str = "QSI1501";
+    /// Another switch has the name.
+    pub const NAME_TAKEN: &str = "QSI1502";
+    /// No switch has the name.
+    pub const NO_SWITCH: &str = "QSI1503";
+    /// A VLAN outside the host's range or named twice, or more of them
+    /// than a switch may carry.
+    pub const BAD_VLAN: &str = "QSI1504";
+    /// An MTU outside the host's range, or one an uplink's interface
+    /// cannot carry.
+    pub const BAD_MTU: &str = "QSI1505";
+    /// More switches than the host may have.
+    pub const TOO_MANY: &str = "QSI1506";
+    /// A profile names the switch, or uses a VLAN taken away.
+    pub const NAMED: &str = "QSI1507";
+    /// A running partition's port is on the switch, or on a VLAN taken
+    /// away.
+    pub const PORTS_ON: &str = "QSI1508";
+    /// No network interface of the host has the location code.
+    pub const NO_INTERFACE: &str = "QSI1509";
+    /// The interface is the host's management interface.
+    pub const MANAGEMENT: &str = "QSI1510";
+    /// The interface is in another switch's uplink.
+    pub const OTHER_SWITCH: &str = "QSI1511";
+    /// Several interfaces and no bond.
+    pub const NO_BOND: &str = "QSI1512";
+    /// An uplink of no interfaces, of more than 8, or one named twice.
+    pub const UPLINK_SIZE: &str = "QSI1513";
+    /// The native VLAN is not one the switch carries.
+    pub const NATIVE_NOT_CARRIED: &str = "QSI1514";
+    /// The host's kernel refused a step; nothing was changed.
+    pub const NOT_BUILT: &str = "QSI1515";
+}
+
+/// The refusals of managing storage pools (`QSI1601` to `QSI1649`,
+/// [`crate::caps::POOLS`]). A host with identifiers of its own gives
+/// them after these.
+pub mod pools {
+    /// A pool's name is not of the host's form.
+    pub const BAD_NAME: &str = "QSI1601";
+    /// Another pool has the name.
+    pub const NAME_TAKEN: &str = "QSI1602";
+    /// No pool has the name.
+    pub const NO_POOL: &str = "QSI1603";
+    /// Not the number of disks the protection takes.
+    pub const DISK_COUNT: &str = "QSI1604";
+    /// No disk of the host has the name.
+    pub const NO_DISK: &str = "QSI1605";
+    /// The disk cannot be used: the load source, another pool's, in use.
+    pub const DISK_TAKEN: &str = "QSI1606";
+    /// The disk is foreign and was not confirmed.
+    pub const FOREIGN: &str = "QSI1607";
+    /// The disk is too small.
+    pub const TOO_SMALL: &str = "QSI1608";
+    /// The disks have different logical block sizes.
+    pub const BLOCK_SIZES: &str = "QSI1609";
+    /// A hot spare the pool cannot have: too small, too many, none
+    /// without protection, not one of its spares.
+    pub const SPARES: &str = "QSI1610";
+    /// The pool would be larger than the host's largest.
+    pub const TOO_LARGE: &str = "QSI1611";
+    /// The pool holds virtual disks or media.
+    pub const NOT_EMPTY: &str = "QSI1612";
+    /// A partition holds something in the pool.
+    pub const HELD: &str = "QSI1613";
+    /// The pool is not in a state to be used.
+    pub const NOT_USABLE: &str = "QSI1614";
+    /// The unit is not failed or missing.
+    pub const NOT_FAILED: &str = "QSI1615";
+    /// The host's pools have a fixed size: none grows.
+    pub const CANNOT_GROW: &str = "QSI1616";
+    /// A step of making the pool failed.
+    pub const STEP_FAILED: &str = "QSI1617";
+    /// The media repository's media are in use.
+    pub const MEDIA_IN_USE: &str = "QSI1618";
+}
+
 messages! {
     /// What a console asks.
     pub enum Request: family::VRES => {
         /// Every storage pool.
         0x0001 => Pools(Pools),
+        /// The host's disks.
+        0x0002 => Disks(Disks),
+        /// Make a pool.
+        0x0003 => PoolCreate(PoolCreate),
+        /// Delete one.
+        0x0004 => PoolDelete(PoolDelete),
+        /// Rename one.
+        0x0005 => PoolRename(PoolRename),
+        /// Replace a unit.
+        0x0006 => UnitReplace(UnitReplace),
+        /// Add a hot spare.
+        0x0007 => SpareAdd(SpareAdd),
+        /// Remove one.
+        0x0008 => SpareRemove(SpareRemove),
+        /// Designate the media repository.
+        0x0009 => Designate(Designate),
+        /// Grow a pool.
+        0x000A => PoolExtend(PoolExtend),
         /// A pool's virtual disks.
         0x0010 => Vdisks(Vdisks),
         /// Make a virtual disk.
@@ -1034,6 +1400,18 @@ messages! {
         0x0043 => Vlans(Vlans),
         /// The switches' limits.
         0x0044 => Limits(GetLimits),
+        /// Make a switch.
+        0x0045 => SwitchCreate(SwitchSpec),
+        /// Change one.
+        0x0046 => SwitchChange(SwitchSpec),
+        /// Rename one.
+        0x0047 => SwitchRename(SwitchRename),
+        /// Delete one.
+        0x0048 => SwitchDelete(SwitchDelete),
+        /// Set its uplink.
+        0x0049 => UplinkSet(UplinkSet),
+        /// Clear it.
+        0x004A => UplinkClear(UplinkClear),
         /// Make a shared processor pool.
         0x0050 => ProcPoolCreate(ProcPoolSpec),
         /// Change one.
@@ -1048,6 +1426,24 @@ messages! {
     pub enum Reply: family::VRES => {
         /// The pools.
         0x0001 => Pools(Vec<StoragePool>),
+        /// The disks.
+        0x0002 => Disks(Vec<PoolDisk>),
+        /// The pool made.
+        0x0003 => PoolCreate(StoragePool),
+        /// Deleted.
+        0x0004 => PoolDelete(Empty),
+        /// Renamed.
+        0x0005 => PoolRename(Empty),
+        /// The rebuild began.
+        0x0006 => UnitReplace(Empty),
+        /// Added.
+        0x0007 => SpareAdd(Empty),
+        /// Removed.
+        0x0008 => SpareRemove(Empty),
+        /// Designated.
+        0x0009 => Designate(Empty),
+        /// The pool grown.
+        0x000A => PoolExtend(StoragePool),
         /// The virtual disks.
         0x0010 => Vdisks(Vec<Vdisk>),
         /// The disk made.
@@ -1092,6 +1488,18 @@ messages! {
         0x0043 => Vlans(Vec<VlanUse>),
         /// The limits.
         0x0044 => Limits(Limits),
+        /// The switch made.
+        0x0045 => SwitchCreate(Switch),
+        /// Changed.
+        0x0046 => SwitchChange(Empty),
+        /// Renamed.
+        0x0047 => SwitchRename(Empty),
+        /// Deleted.
+        0x0048 => SwitchDelete(Empty),
+        /// Set.
+        0x0049 => UplinkSet(Empty),
+        /// Cleared.
+        0x004A => UplinkClear(Empty),
         /// Made.
         0x0050 => ProcPoolCreate(Empty),
         /// Changed.
@@ -1132,6 +1540,7 @@ impl Request {
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
             Self::Pools(_)
+            | Self::Disks(_)
             | Self::Images(_)
             | Self::Volumes(_)
             | Self::TapeDrives(_)
@@ -1145,7 +1554,11 @@ impl Request {
             | Self::Ports(Ports { switch: n })
             | Self::Fdb(Fdb { switch: n })
             | Self::ProcPoolDelete(ProcPoolDelete { name: n })
-            | Self::ImageUpload(ImageUpload { name: n, .. }) => check_name(n),
+            | Self::ImageUpload(ImageUpload { name: n, .. })
+            | Self::PoolDelete(PoolDelete { name: n })
+            | Self::Designate(Designate { pool: n })
+            | Self::SwitchDelete(SwitchDelete { name: n, .. })
+            | Self::UplinkClear(UplinkClear { switch: n }) => check_name(n),
             Self::VdiskCreate(VdiskCreate { pool, name, .. })
             | Self::VdiskResize(VdiskResize { pool, name, .. })
             | Self::VdiskDelete(VdiskDelete { pool, name, .. })
@@ -1153,9 +1566,45 @@ impl Request {
                 check_name(pool)?;
                 check_name(name)
             }
-            Self::ImageRename(ImageRename { name, to }) => {
+            Self::ImageRename(ImageRename { name, to })
+            | Self::PoolRename(PoolRename { name, to })
+            | Self::SwitchRename(SwitchRename { name, to })
+            | Self::UnitReplace(UnitReplace {
+                pool: name,
+                disk: to,
+                ..
+            })
+            | Self::SpareAdd(SpareAdd {
+                pool: name,
+                disk: to,
+                ..
+            })
+            | Self::SpareRemove(SpareRemove {
+                pool: name,
+                disk: to,
+            }) => {
                 check_name(name)?;
                 check_name(to)
+            }
+            Self::PoolCreate(p) => {
+                check_name(&p.name)?;
+                check_names(&p.disks)?;
+                check_names(&p.spares)?;
+                check_names(&p.confirm)
+            }
+            Self::PoolExtend(p) => {
+                check_name(&p.pool)?;
+                check_names(&p.disks)?;
+                check_names(&p.confirm)
+            }
+            Self::SwitchCreate(w) | Self::SwitchChange(w) => {
+                check_name(&w.name)?;
+                check_items(&w.vlans)
+            }
+            Self::UplinkSet(u) => {
+                check_name(&u.switch)?;
+                check_items(&u.uplink.interfaces)?;
+                u.uplink.interfaces.iter().try_for_each(|i| check_text(i))
             }
             Self::Drives(Drives { id }) | Self::Unload(Unload { id, .. }) => check_id(*id),
             Self::Load(l) => {
@@ -1172,6 +1621,13 @@ impl Request {
             }
         }
     }
+}
+
+/// A list of names: no more items than a list's bound, each no longer
+/// than a name.
+fn check_names(names: &[String]) -> Result<(), &'static str> {
+    check_items(names)?;
+    names.iter().try_for_each(|n| check_name(n))
 }
 
 /// The virtual resources family.

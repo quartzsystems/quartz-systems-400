@@ -77,7 +77,8 @@ pub mod family {
 }
 
 /// Capability bits, as each side's hello says them: a family's version
-/// 1 is its bit here; a later version will have a bit of its own.
+/// 1 is its bit here; a later version, or operations added to a family
+/// behind a bit, has a bit of its own.
 pub mod caps {
     /// [`super::family::BASE`] version 1.
     pub const BASE: u64 = 1 << 0;
@@ -115,6 +116,34 @@ pub mod caps {
     /// [`super::family::PARTITION`] version 2: a running partition's
     /// entitlement (operation `0x0007`, the family's events).
     pub const PARTITION_V2: u64 = 1 << 18;
+    /// Switches managed from a console: vres's operations `0x0045` to
+    /// `0x004A` (make, change, rename, delete, an uplink set and
+    /// cleared).
+    pub const SWITCHES: u64 = 1 << 19;
+    /// Storage pools managed from a console: vres's operations `0x0002`
+    /// to `0x000A` (the disks, make, delete, rename, a unit replaced,
+    /// hot spares, the media repository, extend).
+    pub const POOLS: u64 = 1 << 20;
+    /// [`super::family::PARTITION`] version 3: a partition's settings
+    /// (operations `0x0008` to `0x000A`).
+    pub const PARTITION_V3: u64 = 1 << 21;
+    /// Activation times: the partitions family's operation `0x0004` and
+    /// the profiles family's `0x0007`.
+    pub const ACTIVATIONS: u64 = 1 << 22;
+    /// A host's power-on settings: the host family's operations
+    /// `0x0020` and `0x0021` and its event `0x0020`.
+    pub const POWER_ON: u64 = 1 << 23;
+    /// [`super::family::PANEL`] version 2: the functions a system has
+    /// (operation `0x0002`).
+    pub const PANEL_FUNCTIONS: u64 = 1 << 24;
+    /// [`super::family::SERVICE`] version 2: problem notes and severity
+    /// (operations `0x0004` to `0x0006`, event `0x0005`).
+    pub const PROBLEM_NOTES: u64 = 1 << 25;
+    /// Dump space: base's operation `0x0014` (with
+    /// [`SYSTEM_DUMPS`]) and the dumps family's `0x0005`.
+    pub const DUMP_SPACE: u64 = 1 << 26;
+    /// The cumulative fix level: base's operation `0x0008`.
+    pub const FIX_LEVEL: u64 = 1 << 27;
 
     /// What every managed system and console has.
     pub const MANAGED: u64 = BASE | PAIR;
@@ -132,6 +161,20 @@ pub mod caps {
     /// Problems, code update and the system's own dumps, which a
     /// managed system says beside the rest of what it answers.
     pub const SERVICING: u64 = SERVICE | UPDATE | SYSTEM_DUMPS;
+    /// What a standalone system will say: base and pair, its problems
+    /// with their notes, its own dumps and their space, its control
+    /// panel and its functions, its console, its fix level. No code
+    /// update (its LIC's slots are changed by PTFs) and no other host
+    /// family.
+    pub const STANDALONE: u64 = MANAGED
+        | SERVICE
+        | SYSTEM_DUMPS
+        | PANEL
+        | CONSOLE
+        | PROBLEM_NOTES
+        | DUMP_SPACE
+        | PANEL_FUNCTIONS
+        | FIX_LEVEL;
 
     /// The capability of a family's version 1, by the family's number;
     /// 0 for a family this crate does not know.
@@ -162,12 +205,24 @@ pub mod caps {
     #[must_use]
     pub fn of_request(family: u16, op: u16) -> u64 {
         use super::family as f;
-        use crate::host::{host, partition, vres};
+        use crate::base::op as b;
+        use crate::host::{dumps, host, panel, partition, partitions, profiles, vres};
         match family {
-            f::BASE if crate::base::op::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::BASE if b::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::BASE if b::is_dump_space(op) => BASE | SYSTEM_DUMPS | DUMP_SPACE,
+            f::BASE if b::is_fix_level(op) => BASE | FIX_LEVEL,
+            f::SERVICE if crate::service::op::is_v2(op) => SERVICE | PROBLEM_NOTES,
             f::HOST if host::op::is_physical_io(op) => HOST | PHYSICAL_IO,
-            f::VRES if vres::op::is_physical_io(op) => VRES | PHYSICAL_IO,
+            f::HOST if host::op::is_power_on(op) => HOST | POWER_ON,
+            f::PARTITIONS if partitions::op::is_activations(op) => PARTITIONS | ACTIVATIONS,
             f::PARTITION if partition::op::is_v2(op) => PARTITION | PARTITION_V2,
+            f::PARTITION if partition::op::is_v3(op) => PARTITION | PARTITION_V3,
+            f::PROFILES if profiles::op::is_activations(op) => PROFILES | ACTIVATIONS,
+            f::PANEL if panel::op::is_v2(op) => PANEL | PANEL_FUNCTIONS,
+            f::DUMPS if dumps::op::is_space(op) => DUMPS | DUMP_SPACE,
+            f::VRES if vres::op::is_physical_io(op) => VRES | PHYSICAL_IO,
+            f::VRES if vres::op::is_switches(op) => VRES | SWITCHES,
+            f::VRES if vres::op::is_pools(op) => VRES | POOLS,
             _ => of(family),
         }
     }
@@ -181,7 +236,9 @@ pub mod caps {
         use crate::host::{host, partition, vres};
         match family {
             f::BASE if crate::base::event::is_dump(op) => BASE | SYSTEM_DUMPS,
+            f::SERVICE if crate::service::event::is_v2(op) => SERVICE | PROBLEM_NOTES,
             f::HOST if host::event::is_physical_io(op) => HOST | PHYSICAL_IO,
+            f::HOST if host::event::is_power_on(op) => HOST | POWER_ON,
             f::VRES if vres::event::is_physical_io(op) => VRES | PHYSICAL_IO,
             f::PARTITION if partition::event::is_v2(op) => PARTITION | PARTITION_V2,
             _ => of(family),

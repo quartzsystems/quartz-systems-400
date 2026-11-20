@@ -8,6 +8,9 @@
 //! gives it and changes whenever the profile does: a put carries the
 //! revision it was read at and is refused with [`msgid::CHANGED`] when
 //! the profile changed meanwhile.
+//!
+//! Behind [`crate::caps::ACTIVATIONS`]: when each profile was last
+//! activated ([`Activated`]).
 
 use ipc::wire_struct;
 
@@ -143,6 +146,26 @@ wire_struct!(Changed {
     time
 });
 
+/// Ask when each of a partition's profiles was last activated
+/// ([`crate::caps::ACTIVATIONS`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Activated {
+    /// The partition.
+    pub id: PartitionId,
+}
+wire_struct!(Activated { id });
+
+/// When a profile was last activated.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProfileUse {
+    /// The profile.
+    pub name: String,
+    /// When it was last activated, seconds since the epoch; `None` when
+    /// never.
+    pub last: Option<u64>,
+}
+wire_struct!(ProfileUse { name, last });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::List`].
@@ -157,6 +180,15 @@ pub mod op {
     pub const SET_DEFAULT: u16 = 0x0005;
     /// [`super::SaveCurrent`].
     pub const SAVE_CURRENT: u16 = 0x0006;
+    /// [`super::Activated`] ([`crate::caps::ACTIVATIONS`]).
+    pub const ACTIVATED: u16 = 0x0007;
+
+    /// Whether `op` is the activation times', which needs
+    /// [`crate::caps::ACTIVATIONS`].
+    #[must_use]
+    pub fn is_activations(op: u16) -> bool {
+        op == ACTIVATED
+    }
 }
 
 /// Event numbers.
@@ -192,6 +224,8 @@ messages! {
         0x0005 => SetDefault(SetDefault),
         /// Save the current configuration.
         0x0006 => SaveCurrent(SaveCurrent),
+        /// When each profile was last activated.
+        0x0007 => Activated(Activated),
     }
 }
 
@@ -210,6 +244,8 @@ messages! {
         0x0005 => SetDefault(Empty),
         /// The saved profile's revision.
         0x0006 => SaveCurrent(Saved),
+        /// The profiles, by name.
+        0x0007 => Activated(Vec<ProfileUse>),
     }
 }
 
@@ -225,7 +261,7 @@ impl Request {
     /// The protocol's bounds.
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
-            Self::List(l) => check_id(l.id),
+            Self::List(List { id }) | Self::Activated(Activated { id }) => check_id(*id),
             Self::Get(Get { id, name })
             | Self::Delete(Delete { id, name })
             | Self::SetDefault(SetDefault { id, name })

@@ -20,6 +20,10 @@ pub type PartitionId = u32;
 
 /// The highest partition ID.
 pub const MAX_ID: u32 = 999;
+/// The managed system itself, where the panel and console families
+/// name a partition: a standalone system answers its own panel and
+/// console at this ID and refuses any other, a host refuses it.
+pub const SYSTEM_ID: PartitionId = 0;
 /// The longest name a console sends: a partition's, a profile's, a
 /// pool's, a disk's, an image's, a switch's.
 pub const MAX_NAME: usize = 64;
@@ -33,6 +37,15 @@ pub const MAX_ITEMS: usize = 256;
 pub(crate) fn check_id(id: PartitionId) -> Result<(), &'static str> {
     if id == 0 || id > MAX_ID {
         return Err("a partition ID outside 1 to 999");
+    }
+    Ok(())
+}
+
+/// A partition ID in range, or 0: [`SYSTEM_ID`], or every partition,
+/// as the request says.
+pub(crate) fn check_target(id: PartitionId) -> Result<(), &'static str> {
+    if id > MAX_ID {
+        return Err("a partition ID over 999");
     }
     Ok(())
 }

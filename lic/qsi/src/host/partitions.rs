@@ -8,6 +8,9 @@
 //! the virtual Ethernet adapters of their profiles. The events keep a
 //! console current without polling: a state, the resources, a
 //! definition, a channel.
+//!
+//! Behind [`crate::caps::ACTIVATIONS`]: when each partition's current
+//! activation began, and with which profile ([`Activations`]).
 
 use ipc::wire_struct;
 
@@ -218,6 +221,23 @@ wire_struct!(ChannelChanged {
     time
 });
 
+/// Ask when each partition was activated
+/// ([`crate::caps::ACTIVATIONS`]).
+pub type Activations = Empty;
+
+/// A partition's current activation.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Activation {
+    /// The partition.
+    pub id: PartitionId,
+    /// When its current activation began, seconds since the epoch;
+    /// `None` when it is not activated.
+    pub since: Option<u64>,
+    /// The profile it was activated with; empty when never.
+    pub profile: String,
+}
+wire_struct!(Activation { id, since, profile });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::List`].
@@ -226,6 +246,15 @@ pub mod op {
     pub const GET: u16 = 0x0002;
     /// [`super::Adapters`].
     pub const ADAPTERS: u16 = 0x0003;
+    /// [`super::Activations`] ([`crate::caps::ACTIVATIONS`]).
+    pub const ACTIVATIONS: u16 = 0x0004;
+
+    /// Whether `op` is the activation times', which needs
+    /// [`crate::caps::ACTIVATIONS`].
+    #[must_use]
+    pub fn is_activations(op: u16) -> bool {
+        op == ACTIVATIONS
+    }
 }
 
 /// Event numbers.
@@ -256,6 +285,8 @@ messages! {
         0x0002 => Get(Get),
         /// The Ethernet adapters of its profiles.
         0x0003 => Adapters(Adapters),
+        /// When each was activated.
+        0x0004 => Activations(Activations),
     }
 }
 
@@ -268,6 +299,8 @@ messages! {
         0x0002 => Get(Partition),
         /// The adapters.
         0x0003 => Adapters(Vec<Adapter>),
+        /// Each partition's activation, in ID order.
+        0x0004 => Activations(Vec<Activation>),
     }
 }
 
@@ -289,7 +322,7 @@ impl Request {
     /// The protocol's bounds.
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
-            Self::List(_) => Ok(()),
+            Self::List(_) | Self::Activations(_) => Ok(()),
             Self::Get(g) => check_id(g.id),
             Self::Adapters(a) if a.id == 0 => Ok(()),
             Self::Adapters(a) => check_id(a.id),

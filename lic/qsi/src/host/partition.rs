@@ -10,10 +10,19 @@
 //!
 //! Version 2 ([`crate::caps::PARTITION_V2`]) changes a running shared
 //! partition's entitlement: its units, capped or uncapped, its weight.
+//!
+//! Version 3 ([`crate::caps::PARTITION_V3`]) adds a partition's
+//! settings beside its definition ([`Settings`]: a description, panel
+//! functions from a console, how it is shut down with the managed
+//! system), and a create that names its ID and settings. A definition
+//! is in the middle of other bodies and cannot gain fields, so the
+//! settings are a body of their own.
 
 use ipc::wire_struct;
 
-use super::model::{Current, Definition, IplSource, PartitionId, Sharing, check_id, check_name};
+use super::model::{
+    Current, Definition, IplSource, PartitionId, Sharing, check_id, check_name, check_text,
+};
 use crate::base::Keylock;
 use crate::message::Empty;
 use crate::{Family, family, messages, open_enum};
@@ -166,6 +175,81 @@ wire_struct!(EntitlementChanged {
     time
 });
 
+open_enum! {
+    /// How a partition is shut down when the managed system powers off
+    /// (version 3).
+    WithHost {
+        /// The system's controlled power down with the settings' delay.
+        Delayed = 1,
+        /// At once.
+        Immediate = 2,
+    }
+}
+
+/// A partition's settings beside its definition (version 3). They may
+/// be changed whether it runs or not.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Settings {
+    /// What it is for, in a person's words; 256 bytes at most.
+    pub description: String,
+    /// Control panel functions are allowed from a console. A host
+    /// refuses them with its own message when not; QSI does not
+    /// interpret it.
+    pub panel: bool,
+    /// How it is shut down with the managed system.
+    pub with_host: WithHost,
+    /// A delayed shut down's delay, seconds, at most [`MAX_DELAY`].
+    pub delay: u32,
+}
+wire_struct!(Settings {
+    description,
+    panel,
+    with_host,
+    delay
+});
+
+impl Settings {
+    /// The protocol's bounds.
+    pub fn check(&self) -> Result<(), &'static str> {
+        check_text(&self.description)?;
+        if self.delay > MAX_DELAY {
+            return Err("a delay over 99999 seconds");
+        }
+        Ok(())
+    }
+}
+
+/// Create a partition with its settings and, when given, its ID
+/// (version 3). Its serial number is the host's to assign.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateWith {
+    /// Its ID; `None` for the host to give one.
+    pub id: Option<PartitionId>,
+    /// Its name.
+    pub name: String,
+    /// Its settings.
+    pub settings: Settings,
+}
+wire_struct!(CreateWith { id, name, settings });
+
+/// Ask for a partition's settings (version 3).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GetSettings {
+    /// The partition.
+    pub id: PartitionId,
+}
+wire_struct!(GetSettings { id });
+
+/// Change a partition's settings, running or not (version 3).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SetSettings {
+    /// The partition.
+    pub id: PartitionId,
+    /// Its settings.
+    pub settings: Settings,
+}
+wire_struct!(SetSettings { id, settings });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::Create`].
@@ -182,12 +266,25 @@ pub mod op {
     pub const RESTART: u16 = 0x0006;
     /// [`super::Entitlement`] ([`crate::caps::PARTITION_V2`]).
     pub const ENTITLEMENT: u16 = 0x0007;
+    /// [`super::CreateWith`] ([`crate::caps::PARTITION_V3`]).
+    pub const CREATE_WITH: u16 = 0x0008;
+    /// [`super::GetSettings`] ([`crate::caps::PARTITION_V3`]).
+    pub const GET_SETTINGS: u16 = 0x0009;
+    /// [`super::SetSettings`] ([`crate::caps::PARTITION_V3`]).
+    pub const SET_SETTINGS: u16 = 0x000A;
 
     /// Whether `op` is version 2's, which needs
     /// [`crate::caps::PARTITION_V2`].
     #[must_use]
     pub fn is_v2(op: u16) -> bool {
         op == ENTITLEMENT
+    }
+
+    /// Whether `op` is version 3's, which needs
+    /// [`crate::caps::PARTITION_V3`] (and not version 2's bit).
+    #[must_use]
+    pub fn is_v3(op: u16) -> bool {
+        (CREATE_WITH..=SET_SETTINGS).contains(&op)
     }
 }
 
@@ -208,6 +305,11 @@ pub mod msgid {
     /// A value of an enumeration this host does not have (a shut down
     /// kind, an IPL source, a keylock position of a later version).
     pub const NO_SUCH_VALUE: &str = "QSI0361";
+    /// A create with an ID another partition has (version 3).
+    pub const ID_TAKEN: &str = "QSI0362";
+    /// A create with an ID within 1 to 999 but beyond the host's most
+    /// partitions (version 3).
+    pub const ID_OUT_OF_RANGE: &str = "QSI0363";
 }
 
 /// Version 2's refusals of an entitlement (`QSI1401` to `QSI1449`). A
@@ -243,6 +345,12 @@ messages! {
         0x0006 => Restart(Restart),
         /// Change a running partition's entitlement.
         0x0007 => Entitlement(Entitlement),
+        /// Create a partition with its ID and settings.
+        0x0008 => CreateWith(CreateWith),
+        /// Its settings.
+        0x0009 => GetSettings(GetSettings),
+        /// Change them.
+        0x000A => SetSettings(SetSettings),
     }
 }
 
@@ -263,6 +371,12 @@ messages! {
         0x0006 => Restart(Empty),
         /// What it holds now.
         0x0007 => Entitlement(Current),
+        /// The definition, with its ID and serial number.
+        0x0008 => CreateWith(Definition),
+        /// The settings.
+        0x0009 => GetSettings(Settings),
+        /// Changed.
+        0x000A => SetSettings(Empty),
     }
 }
 
@@ -282,7 +396,20 @@ impl Request {
         match self {
             Self::Create(c) => check_name(&c.name),
             Self::Change(c) => c.definition.check(),
-            Self::Delete(Delete { id, .. }) | Self::Restart(Restart { id }) => check_id(*id),
+            Self::Delete(Delete { id, .. })
+            | Self::Restart(Restart { id })
+            | Self::GetSettings(GetSettings { id }) => check_id(*id),
+            Self::CreateWith(c) => {
+                if let Some(id) = c.id {
+                    check_id(id)?;
+                }
+                check_name(&c.name)?;
+                c.settings.check()
+            }
+            Self::SetSettings(s) => {
+                check_id(s.id)?;
+                s.settings.check()
+            }
             Self::Activate(a) => {
                 check_id(a.id)?;
                 check_name(&a.profile)
@@ -309,14 +436,16 @@ impl Request {
 }
 
 /// The partition family. Version 2 ([`crate::caps::PARTITION_V2`]) adds
-/// a running partition's entitlement and its event; version 1 is
-/// [`crate::caps::PARTITION`].
+/// a running partition's entitlement and its event, version 3
+/// ([`crate::caps::PARTITION_V3`]) a partition's settings; version 1 is
+/// [`crate::caps::PARTITION`]. Each later version's bit alone gates its
+/// operations.
 #[derive(Debug)]
 pub struct Partition;
 
 impl Family for Partition {
     const ID: u16 = family::PARTITION;
-    const VERSION: u16 = 2;
+    const VERSION: u16 = 3;
     const CAP: u64 = crate::caps::PARTITION;
     type Request = Request;
     type Reply = Reply;

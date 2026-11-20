@@ -12,6 +12,11 @@
 //! I/O sees them (released, assignable or why not, the isolation group,
 //! who holds each), and their events. A device is released at the host;
 //! a profile's `physical_io` gives it to a partition at activation.
+//!
+//! Behind [`crate::caps::POWER_ON`]: the host's power-on settings, read
+//! and changed (whether partitions marked to start are started with the
+//! host, and how they are ended when it powers off). Not its IPL side,
+//! keylock or boot mode.
 
 use ipc::wire_struct;
 
@@ -402,6 +407,52 @@ wire_struct!(ResetFailed {
     time
 });
 
+/// The longest delay of a delayed power off, seconds.
+pub const MAX_DELAY: u32 = 99_999;
+
+open_enum! {
+    /// How the host ends its partitions when it powers off.
+    PowerOff {
+        /// Each is shut down through its own system first, and waited
+        /// for up to the delay.
+        Delayed = 1,
+        /// Each is ended at once.
+        Immediate = 2,
+    }
+}
+
+/// Ask for the host's power-on settings ([`crate::caps::POWER_ON`]).
+pub type GetPowerOn = Empty;
+
+/// The host's power-on settings ([`crate::caps::POWER_ON`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PowerOn {
+    /// The partitions marked to start (each one's auto start) are
+    /// started when the host has started.
+    pub start_partitions: bool,
+    /// How partitions are ended when the host powers off.
+    pub power_off: PowerOff,
+    /// A delayed power off's wait, seconds, at most [`MAX_DELAY`].
+    pub delay: u32,
+}
+wire_struct!(PowerOn {
+    start_partitions,
+    power_off,
+    delay
+});
+
+/// The host's power-on settings were changed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PowerOnChanged {
+    /// The settings now.
+    pub power_on: PowerOn,
+    /// The console's user who changed them.
+    pub by: String,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(PowerOnChanged { power_on, by, time });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::GetHost`].
@@ -412,12 +463,23 @@ pub mod op {
     pub const HARDWARE: u16 = 0x0003;
     /// [`super::GetDevices`] ([`crate::caps::PHYSICAL_IO`]).
     pub const DEVICES: u16 = 0x0010;
+    /// [`super::GetPowerOn`] ([`crate::caps::POWER_ON`]).
+    pub const POWER_ON: u16 = 0x0020;
+    /// [`super::PowerOn`], changed ([`crate::caps::POWER_ON`]).
+    pub const SET_POWER_ON: u16 = 0x0021;
 
     /// Whether `op` is physical I/O's, which needs
     /// [`crate::caps::PHYSICAL_IO`].
     #[must_use]
     pub fn is_physical_io(op: u16) -> bool {
         op == DEVICES
+    }
+
+    /// Whether `op` is the power-on settings', which needs
+    /// [`crate::caps::POWER_ON`].
+    #[must_use]
+    pub fn is_power_on(op: u16) -> bool {
+        op == POWER_ON || op == SET_POWER_ON
     }
 }
 
@@ -439,12 +501,21 @@ pub mod event {
     pub const RETURNED: u16 = 0x0013;
     /// A device did not reset ([`crate::caps::PHYSICAL_IO`]).
     pub const RESET_FAILED: u16 = 0x0014;
+    /// The power-on settings were changed ([`crate::caps::POWER_ON`]).
+    pub const POWER_ON: u16 = 0x0020;
 
     /// Whether `op` is an event of physical I/O, which needs
     /// [`crate::caps::PHYSICAL_IO`].
     #[must_use]
     pub fn is_physical_io(op: u16) -> bool {
         (RELEASED..=RESET_FAILED).contains(&op)
+    }
+
+    /// Whether `op` is the power-on settings' event, which needs
+    /// [`crate::caps::POWER_ON`].
+    #[must_use]
+    pub fn is_power_on(op: u16) -> bool {
+        op == POWER_ON
     }
 }
 
@@ -505,6 +576,10 @@ messages! {
         0x0003 => Hardware(GetHardware),
         /// Its devices for physical I/O.
         0x0010 => Devices(GetDevices),
+        /// Its power-on settings.
+        0x0020 => PowerOn(GetPowerOn),
+        /// Change them.
+        0x0021 => SetPowerOn(PowerOn),
     }
 }
 
@@ -519,6 +594,10 @@ messages! {
         0x0003 => Hardware(Hardware),
         /// Its devices, by location code.
         0x0010 => Devices(Vec<Device>),
+        /// Its power-on settings.
+        0x0020 => PowerOn(PowerOn),
+        /// Changed.
+        0x0021 => SetPowerOn(Empty),
     }
 }
 
@@ -539,13 +618,18 @@ messages! {
         0x0013 => Returned(DeviceHeld),
         /// A device did not reset.
         0x0014 => ResetFailed(ResetFailed),
+        /// The power-on settings were changed.
+        0x0020 => PowerOn(PowerOnChanged),
     }
 }
 
 impl Request {
-    /// The protocol's bounds: these requests have no fields.
+    /// The protocol's bounds: a power off's delay.
     pub fn check(&self) -> Result<(), &'static str> {
-        Ok(())
+        match self {
+            Self::SetPowerOn(p) if p.delay > MAX_DELAY => Err("a delay over 99999 seconds"),
+            _ => Ok(()),
+        }
     }
 }
 

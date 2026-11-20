@@ -13,17 +13,21 @@
 //! time: a second attach is refused unless it takes over, and the one
 //! it displaces is sent [`Out::Ended`] and its stream closed. A
 //! [`Screen`] is the whole frame alone, without a stream.
+//!
+//! ID 0 ([`super::model::SYSTEM_ID`]) is the managed system itself: a
+//! standalone system answers its own console there and refuses any
+//! other ID, a host refuses 0.
 
 use ipc::{Dec, Wire, WireError, wire_struct};
 use qsipart::console::{Frame, Key, Update};
 
-use super::model::{PartitionId, check_id};
+use super::model::{PartitionId, check_target};
 use crate::{Family, family, messages};
 
 /// Attach to a partition's console.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Attach {
-    /// The partition.
+    /// The partition, or 0 for the managed system itself.
     pub id: PartitionId,
     /// Take it over from another viewer.
     pub take_over: bool,
@@ -41,7 +45,7 @@ wire_struct!(Attached { serial });
 /// Ask for the console's screen as it is now.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Screen {
-    /// The partition.
+    /// The partition, or 0 for the managed system itself.
     pub id: PartitionId,
 }
 wire_struct!(Screen { id });
@@ -266,9 +270,14 @@ pub mod op {
     pub const SCREEN: u16 = 0x0002;
 }
 
-/// The family's own refusals (`QSI0601` to `QSI0699`): none in
-/// version 1; a host refuses with its own.
-pub mod msgid {}
+/// The family's own refusals (`QSI0601` to `QSI0699`), for a managed
+/// side with no identifiers of its own (a standalone system); a host
+/// refuses with its own (`QVS2314`).
+pub mod msgid {
+    /// Another viewer has the console and this attach did not take it
+    /// over.
+    pub const VIEWED: &str = "QSI0601";
+}
 
 messages! {
     /// What a console asks.
@@ -299,7 +308,7 @@ impl Request {
     /// The protocol's bounds.
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
-            Self::Attach(Attach { id, .. }) | Self::Screen(Screen { id }) => check_id(*id),
+            Self::Attach(Attach { id, .. }) | Self::Screen(Screen { id }) => check_target(*id),
         }
     }
 }

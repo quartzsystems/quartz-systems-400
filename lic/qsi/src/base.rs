@@ -8,7 +8,9 @@
 //! ([`Refcodes`]), events ([`Subscribe`]) and its clock ([`GetTime`]).
 //! Behind a capability bit of their own ([`crate::caps::SYSTEM_DUMPS`]),
 //! the system's own dumps: list, take, delete and download
-//! ([`TakeDump`]).
+//! ([`TakeDump`]), and the space they take ([`Space`],
+//! [`crate::caps::DUMP_SPACE`]). Behind [`crate::caps::FIX_LEVEL`], the
+//! cumulative fix level it runs ([`Level`]).
 //!
 //! Every identifier a console shows (a state's words, a reference code,
 //! its text) is the managed side's, passed through as it gives it.
@@ -352,6 +354,45 @@ pub struct DumpRemoved {
 }
 wire_struct!(DumpRemoved { name, time });
 
+/// Ask how much space the system's own dumps take
+/// ([`crate::caps::DUMP_SPACE`]).
+pub type GetDumpSpace = Empty;
+
+/// The space dumps take, and the limits on it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Space {
+    /// Bytes the dumps take.
+    pub bytes: u64,
+    /// The most bytes they may take; 0 for no limit.
+    pub limit: u64,
+    /// How many dumps there are.
+    pub dumps: u32,
+    /// The most dumps kept; 0 for no limit.
+    pub max_dumps: u32,
+}
+wire_struct!(Space {
+    bytes,
+    limit,
+    dumps,
+    max_dumps
+});
+
+/// Ask for the cumulative fix level the system runs
+/// ([`crate::caps::FIX_LEVEL`]). The state ([`State`]) does not carry
+/// it: an older managed side's state has no such field, and a reader
+/// that expects one fails when the bytes run out.
+pub type GetFixLevel = Empty;
+
+/// A cumulative fix level.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Level {
+    /// The level's name, the managed side's; empty for none.
+    pub level: String,
+    /// Its date, seconds since the epoch; 0 when not known.
+    pub date: u64,
+}
+wire_struct!(Level { level, date });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::Identify`].
@@ -368,6 +409,8 @@ pub mod op {
     pub const UNSUBSCRIBE: u16 = 0x0006;
     /// [`super::GetTime`].
     pub const TIME: u16 = 0x0007;
+    /// [`super::GetFixLevel`] ([`crate::caps::FIX_LEVEL`]).
+    pub const FIX_LEVEL: u16 = 0x0008;
     /// [`super::ListDumps`] ([`crate::caps::SYSTEM_DUMPS`]).
     pub const DUMPS: u16 = 0x0010;
     /// [`super::TakeDump`] ([`crate::caps::SYSTEM_DUMPS`]).
@@ -376,12 +419,29 @@ pub mod op {
     pub const DELETE_DUMP: u16 = 0x0012;
     /// [`super::DownloadDump`] ([`crate::caps::SYSTEM_DUMPS`]).
     pub const DOWNLOAD_DUMP: u16 = 0x0013;
+    /// [`super::GetDumpSpace`] ([`crate::caps::SYSTEM_DUMPS`] and
+    /// [`crate::caps::DUMP_SPACE`]).
+    pub const DUMP_SPACE: u16 = 0x0014;
 
     /// Whether `op` is one of the system's dumps, which need
     /// [`crate::caps::SYSTEM_DUMPS`].
     #[must_use]
     pub fn is_dump(op: u16) -> bool {
         (DUMPS..=DOWNLOAD_DUMP).contains(&op)
+    }
+
+    /// Whether `op` is the dumps' space, which needs
+    /// [`crate::caps::SYSTEM_DUMPS`] and [`crate::caps::DUMP_SPACE`].
+    #[must_use]
+    pub fn is_dump_space(op: u16) -> bool {
+        op == DUMP_SPACE
+    }
+
+    /// Whether `op` is the fix level's, which needs
+    /// [`crate::caps::FIX_LEVEL`].
+    #[must_use]
+    pub fn is_fix_level(op: u16) -> bool {
+        op == FIX_LEVEL
     }
 }
 
@@ -434,6 +494,8 @@ messages! {
         0x0006 => Unsubscribe(Unsubscribe),
         /// The clock.
         0x0007 => Time(GetTime),
+        /// The cumulative fix level.
+        0x0008 => FixLevel(GetFixLevel),
         /// The system's own dumps.
         0x0010 => Dumps(ListDumps),
         /// Take one now.
@@ -442,6 +504,8 @@ messages! {
         0x0012 => DeleteDump(DeleteDump),
         /// Download one.
         0x0013 => DownloadDump(DownloadDump),
+        /// The space they take.
+        0x0014 => DumpSpace(GetDumpSpace),
     }
 }
 
@@ -462,6 +526,8 @@ messages! {
         0x0006 => Unsubscribe(Empty),
         /// The clock.
         0x0007 => Time(Time),
+        /// The fix level.
+        0x0008 => FixLevel(Level),
         /// The dumps, oldest first.
         0x0010 => Dumps(Vec<SystemDump>),
         /// Begun.
@@ -470,6 +536,8 @@ messages! {
         0x0012 => DeleteDump(Empty),
         /// The stream is open.
         0x0013 => DownloadDump(DumpDownloading),
+        /// The space.
+        0x0014 => DumpSpace(Space),
     }
 }
 

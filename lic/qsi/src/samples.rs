@@ -27,6 +27,7 @@ pub fn exchanges() -> Vec<(AnyRequest, AnyReply)> {
     out.extend(base_exchanges());
     out.extend(pair_exchanges());
     out.extend(service_exchanges());
+    out.extend(service_v2_exchanges());
     out.extend(update_exchanges());
     out.extend(host_exchanges());
     out.extend(partitions_exchanges());
@@ -511,6 +512,13 @@ fn base_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 zone: s("America/New_York"),
             }),
         ),
+        w(
+            Q::FixLevel(Empty),
+            P::FixLevel(base::Level {
+                level: s("C6305110"),
+                date: T - 86_400 * 4,
+            }),
+        ),
         w(Q::Dumps(Empty), P::Dumps(vec![system_dump()])),
         w(
             Q::TakeDump(base::TakeDump {
@@ -536,7 +544,19 @@ fn base_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 bytes: 41_943_040,
             }),
         ),
+        w(Q::DumpSpace(Empty), P::DumpSpace(space())),
     ]
+}
+
+/// The system's own dumps' space: one dump of three, under a 4 GiB
+/// limit.
+fn space() -> base::Space {
+    base::Space {
+        bytes: 41_943_040,
+        limit: 4_294_967_296,
+        dumps: 1,
+        max_dumps: 3,
+    }
 }
 
 fn system_dump() -> base::SystemDump {
@@ -621,14 +641,7 @@ fn problem_summary() -> service::Summary {
 fn service_exchanges() -> Vec<(AnyRequest, AnyReply)> {
     use service::{Reply as P, Request as Q};
     let w = |q, p| (AnyRequest::Service(q), AnyReply::Service(p));
-    let closed = service::Summary {
-        status: service::ProblemStatus::Closed,
-        holds: false,
-        closed_by: s("OPERATOR"),
-        closed_at: T + 60,
-        source: source_partition(),
-        ..problem_summary()
-    };
+    let closed = closed_summary();
     vec![
         w(
             Q::List(service::List {
@@ -685,6 +698,72 @@ fn service_exchanges() -> Vec<(AnyRequest, AnyReply)> {
     ]
 }
 
+/// A problem closed by a person.
+fn closed_summary() -> service::Summary {
+    service::Summary {
+        status: service::ProblemStatus::Closed,
+        holds: false,
+        closed_by: s("OPERATOR"),
+        closed_at: T + 60,
+        source: source_partition(),
+        ..problem_summary()
+    }
+}
+
+/// Version 2: notes and severity.
+fn service_v2_exchanges() -> Vec<(AnyRequest, AnyReply)> {
+    use service::{Reply as P, Request as Q};
+    let w = |q, p| (AnyRequest::Service(q), AnyReply::Service(p));
+    vec![
+        w(
+            Q::Note(service::Note {
+                number: 27,
+                text: s("Replacement disk ordered"),
+            }),
+            P::Note(note_line()),
+        ),
+        w(
+            Q::ListRated(service::List {
+                filter: service::Filter::default(),
+                before: Some(28),
+                limit: 2,
+            }),
+            P::ListRated(service::RatedPage {
+                problems: vec![
+                    service::Rated {
+                        severity: service::Severity::Attention,
+                        summary: problem_summary(),
+                    },
+                    service::Rated {
+                        severity: service::Severity::Information,
+                        summary: closed_summary(),
+                    },
+                ],
+                more: None,
+            }),
+        ),
+        w(
+            Q::GetRated(service::Get { number: 27 }),
+            P::GetRated(service::RatedProblem {
+                severity: service::Severity::Terminal,
+                problem: service::Problem {
+                    summary: problem_summary(),
+                    resources: Vec::new(),
+                    log: vec![note_line()],
+                },
+            }),
+        ),
+    ]
+}
+
+/// A person's note as the analysis log keeps it.
+fn note_line() -> service::Line {
+    service::Line {
+        time: T + 30,
+        text: s("Note by OPERATOR: Replacement disk ordered"),
+    }
+}
+
 fn service_events() -> Vec<AnyEvent> {
     use service::Event as E;
     let at = |problem| service::Noticed { problem, time: T };
@@ -706,6 +785,12 @@ fn service_events() -> Vec<AnyEvent> {
         E::Seen(at(problem_summary())),
         E::Cleared(at(cleared)),
         E::Closed(at(closed)),
+        E::Noted(service::Noted {
+            number: 27,
+            line: note_line(),
+            by: s("OPERATOR"),
+            time: T + 30,
+        }),
     ]
     .into_iter()
     .map(AnyEvent::Service)
@@ -938,7 +1023,25 @@ fn host_exchanges() -> Vec<(AnyRequest, AnyReply)> {
             Q::Devices(Empty),
             P::Devices(vec![device(), blocked_device()]),
         ),
+        w(Q::PowerOn(Empty), P::PowerOn(power_on())),
+        w(
+            Q::SetPowerOn(host::PowerOn {
+                start_partitions: false,
+                power_off: host::PowerOff::Immediate,
+                delay: 0,
+            }),
+            P::SetPowerOn(Empty),
+        ),
     ]
+}
+
+/// A host that starts its partitions and gives each ten minutes to end.
+fn power_on() -> host::PowerOn {
+    host::PowerOn {
+        start_partitions: true,
+        power_off: host::PowerOff::Delayed,
+        delay: 600,
+    }
 }
 
 fn holder() -> host::DeviceHolder {
@@ -1035,6 +1138,11 @@ fn host_events() -> Vec<AnyEvent> {
             },
             time: T,
         }),
+        E::PowerOn(host::PowerOnChanged {
+            power_on: power_on(),
+            by: s("OPER1"),
+            time: T,
+        }),
     ]
     .into_iter()
     .map(AnyEvent::Host)
@@ -1066,6 +1174,21 @@ fn partitions_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 mac: s("02:5a:3c:00:03:05"),
                 required: true,
             }]),
+        ),
+        w(
+            Q::Activations(Empty),
+            P::Activations(vec![
+                partitions::Activation {
+                    id: 3,
+                    since: Some(T - 3600),
+                    profile: s("NORMAL"),
+                },
+                partitions::Activation {
+                    id: 4,
+                    since: None,
+                    profile: s("INSTALL"),
+                },
+            ]),
         ),
     ]
 }
@@ -1159,7 +1282,46 @@ fn partition_exchanges() -> Vec<(AnyRequest, AnyReply)> {
             }),
             P::Entitlement(entitled()),
         ),
+        w(
+            Q::CreateWith(partition::CreateWith {
+                id: Some(3),
+                name: s("PROD"),
+                settings: settings(),
+            }),
+            P::CreateWith(Definition {
+                default_profile: String::new(),
+                auto_start: AutoStart::default(),
+                ..definition()
+            }),
+        ),
+        w(
+            Q::GetSettings(partition::GetSettings { id: 3 }),
+            P::GetSettings(settings()),
+        ),
+        w(
+            Q::SetSettings(partition::SetSettings {
+                id: 3,
+                settings: partition::Settings {
+                    panel: false,
+                    with_host: partition::WithHost::Immediate,
+                    delay: 0,
+                    ..settings()
+                },
+            }),
+            P::SetSettings(Empty),
+        ),
     ]
+}
+
+/// A partition's settings: its panel open to consoles, ended with the
+/// host after a controlled power down of up to ten minutes.
+fn settings() -> partition::Settings {
+    partition::Settings {
+        description: s("Production: order entry and warehouse"),
+        panel: true,
+        with_host: partition::WithHost::Delayed,
+        delay: 600,
+    }
 }
 
 /// [`current`] after its entitlement was changed to 2.50 units, capped.
@@ -1244,6 +1406,19 @@ fn profiles_exchanges() -> Vec<(AnyRequest, AnyReply)> {
             }),
             P::SaveCurrent(profiles::Saved { revision: 1 }),
         ),
+        w(
+            Q::Activated(profiles::Activated { id: 3 }),
+            P::Activated(vec![
+                profiles::ProfileUse {
+                    name: s("INSTALL"),
+                    last: None,
+                },
+                profiles::ProfileUse {
+                    name: s("NORMAL"),
+                    last: Some(T - 3600),
+                },
+            ]),
+        ),
     ]
 }
 
@@ -1262,20 +1437,36 @@ fn profiles_events() -> Vec<AnyEvent> {
 fn panel_exchanges() -> Vec<(AnyRequest, AnyReply)> {
     use panel::{Reply as P, Request as Q};
     let w = |q, p| (AnyRequest::Panel(q), AnyReply::Panel(p));
-    vec![w(
-        Q::Function(panel::Function {
-            id: 3,
-            function: panel::function::SELECT_IPL,
-            args: panel::PanelArgs {
-                source: Some(IplSource::D),
-                ipl_type: Some(IplType::Attended),
-                keylock: None,
-            },
-        }),
-        P::Function(panel::Shown {
-            text: s("02  IPL source D, IPL type attended, keylock manual"),
-        }),
-    )]
+    let info = |function, text: &str, manual, confirm| panel::FunctionInfo {
+        function,
+        text: s(text),
+        manual,
+        confirm,
+    };
+    vec![
+        w(
+            Q::Function(panel::Function {
+                id: 3,
+                function: panel::function::SELECT_IPL,
+                args: panel::PanelArgs {
+                    source: Some(IplSource::D),
+                    ipl_type: Some(IplType::Attended),
+                    keylock: None,
+                },
+            }),
+            P::Function(panel::Shown {
+                text: s("02  IPL source D, IPL type attended, keylock manual"),
+            }),
+        ),
+        w(
+            Q::Functions(panel::Functions { id: 0 }),
+            P::Functions(vec![
+                info(1, "Display the IPL source, type and keylock", false, false),
+                info(3, "Restart the IPL", true, true),
+                info(21, "Dedicated service tools", true, false),
+            ]),
+        ),
+    ]
 }
 
 fn refcodes_exchanges() -> Vec<(AnyRequest, AnyReply)> {
@@ -1358,6 +1549,28 @@ fn dumps_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 name,
                 bytes: 8_590_000_128,
             }),
+        ),
+        w(
+            Q::Space(dumps::GetSpace { id: 0 }),
+            P::Space(vec![
+                dumps::PartitionSpace {
+                    id: 3,
+                    space: base::Space {
+                        bytes: 568_000_000,
+                        limit: 274_877_906_944,
+                        dumps: 1,
+                        max_dumps: 3,
+                    },
+                },
+                dumps::PartitionSpace {
+                    id: 4,
+                    space: base::Space {
+                        limit: 274_877_906_944,
+                        max_dumps: 3,
+                        ..base::Space::default()
+                    },
+                },
+            ]),
         ),
     ]
 }
@@ -1450,9 +1663,183 @@ pub fn console_in() -> Vec<console::In> {
 
 fn vres_exchanges() -> Vec<(AnyRequest, AnyReply)> {
     let mut out = vres_storage();
+    out.extend(vres_pools());
     out.extend(vres_media());
     out.extend(vres_network());
+    out.extend(vres_switches());
     out
+}
+
+/// Managing storage pools.
+fn vres_pools() -> Vec<(AnyRequest, AnyReply)> {
+    use vres::{Reply as P, Request as Q};
+    let w = |q, p| (AnyRequest::Vres(q), AnyReply::Vres(p));
+    let pool2 = || vres::StoragePool {
+        name: s("POOL2"),
+        protection: s("raid5"),
+        state: s("Active"),
+        work: String::new(),
+        work_unit: 0,
+        percent: 0,
+        allocated: 0,
+        provisioned: 0,
+        repository: false,
+        ..storage_pool()
+    };
+    let disks = || vec![s("nvme2n1"), s("nvme3n1"), s("nvme4n1")];
+    vec![
+        w(Q::Disks(Empty), P::Disks(pool_disks())),
+        w(
+            Q::PoolCreate(vres::PoolCreate {
+                name: s("POOL2"),
+                protection: vres::Protection::Raid5,
+                disks: disks(),
+                spares: vec![s("nvme5n1")],
+                confirm: vec![s("nvme4n1")],
+            }),
+            P::PoolCreate(pool2()),
+        ),
+        w(
+            Q::PoolDelete(vres::PoolDelete { name: s("OLDPOOL") }),
+            P::PoolDelete(Empty),
+        ),
+        w(
+            Q::PoolRename(vres::PoolRename {
+                name: s("POOL2"),
+                to: s("DATA"),
+            }),
+            P::PoolRename(Empty),
+        ),
+        w(
+            Q::UnitReplace(vres::UnitReplace {
+                pool: s("POOL1"),
+                unit: 2,
+                disk: s("nvme6n1"),
+                confirm: false,
+            }),
+            P::UnitReplace(Empty),
+        ),
+        w(
+            Q::SpareAdd(vres::SpareAdd {
+                pool: s("POOL1"),
+                disk: s("nvme7n1"),
+                confirm: true,
+            }),
+            P::SpareAdd(Empty),
+        ),
+        w(
+            Q::SpareRemove(vres::SpareRemove {
+                pool: s("POOL1"),
+                disk: s("nvme7n1"),
+            }),
+            P::SpareRemove(Empty),
+        ),
+        w(
+            Q::Designate(vres::Designate { pool: s("POOL2") }),
+            P::Designate(Empty),
+        ),
+        w(
+            Q::PoolExtend(vres::PoolExtend {
+                pool: s("POOL2"),
+                disks: vec![s("nvme8n1")],
+                confirm: Vec::new(),
+            }),
+            P::PoolExtend(pool2()),
+        ),
+    ]
+}
+
+/// A disk of a pool and a foreign one.
+fn pool_disks() -> Vec<vres::PoolDisk> {
+    vec![
+        vres::PoolDisk {
+            name: s("nvme0n1"),
+            serial: s("S5GXNF0R401234"),
+            location: s("SM-2-SLOT-1-N1"),
+            bytes: 1_920_383_410_176,
+            block_size: 512,
+            what: s("POOL1 unit 1, Active"),
+            pool: s("POOL1"),
+            free: false,
+            foreign: false,
+        },
+        vres::PoolDisk {
+            name: s("nvme4n1"),
+            serial: s("S5GXNF0R409999"),
+            location: s("SM-2-SLOT-5-N1"),
+            bytes: 1_920_383_410_176,
+            block_size: 512,
+            what: s("Foreign: an xfs file system"),
+            pool: String::new(),
+            free: false,
+            foreign: true,
+        },
+    ]
+}
+
+/// Managing switches.
+fn vres_switches() -> Vec<(AnyRequest, AnyReply)> {
+    use vres::{Reply as P, Request as Q};
+    let w = |q, p| (AnyRequest::Vres(q), AnyReply::Vres(p));
+    vec![
+        w(
+            Q::SwitchCreate(vres::SwitchSpec {
+                name: s("TESTNET"),
+                vlans: vec![30],
+                mtu: 0,
+            }),
+            P::SwitchCreate(vres::Switch {
+                name: s("TESTNET"),
+                id: 2,
+                vlans: vec![30],
+                mtu: 1500,
+                uplink: None,
+                uplink_state: s("None"),
+                members: Vec::new(),
+                ports: 0,
+                failure: String::new(),
+            }),
+        ),
+        w(
+            Q::SwitchChange(vres::SwitchSpec {
+                name: s("TESTNET"),
+                vlans: vec![30, 31],
+                mtu: 9000,
+            }),
+            P::SwitchChange(Empty),
+        ),
+        w(
+            Q::SwitchRename(vres::SwitchRename {
+                name: s("TESTNET"),
+                to: s("DEVNET"),
+            }),
+            P::SwitchRename(Empty),
+        ),
+        w(
+            Q::SwitchDelete(vres::SwitchDelete {
+                name: s("OLDNET"),
+                force: true,
+            }),
+            P::SwitchDelete(Empty),
+        ),
+        w(
+            Q::UplinkSet(vres::UplinkSet {
+                switch: s("DEVNET"),
+                uplink: vres::Uplink {
+                    interfaces: vec![s("SPCIE-SLOT-6-E0")],
+                    bond: None,
+                    native_vlan: Some(30),
+                },
+            }),
+            P::UplinkSet(Empty),
+        ),
+        w(
+            Q::UplinkClear(vres::UplinkClear {
+                switch: s("DEVNET"),
+            }),
+            P::UplinkClear(Empty),
+        ),
+    ]
 }
 
 fn vres_storage() -> Vec<(AnyRequest, AnyReply)> {

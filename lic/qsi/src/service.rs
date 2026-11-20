@@ -11,11 +11,16 @@
 //!
 //! The guided text for a reference code is not QSI's: it is the
 //! console's.
+//!
+//! Version 2 ([`crate::caps::PROBLEM_NOTES`]) adds a person's notes to
+//! a problem's analysis log, and its severity: a list and a get of
+//! their own that carry it beside the summary ([`Rated`]), since
+//! [`Summary`] is in a list and cannot gain a field.
 
 use ipc::wire_struct;
 
 use crate::base::Refcode;
-use crate::host::model::{MAX_ID, check_name};
+use crate::host::model::{MAX_ID, MAX_TEXT, check_name};
 use crate::{Family, family, messages, open_enum};
 
 open_enum! {
@@ -233,6 +238,88 @@ pub struct Noticed {
 }
 wire_struct!(Noticed { problem, time });
 
+open_enum! {
+    /// How grave a problem is (version 2).
+    Severity {
+        /// Someone should act: the system goes on, short of something.
+        Attention = 1,
+        /// The system, or the part of it named, stopped.
+        Terminal = 2,
+        /// For the record: nothing needs doing.
+        Information = 3,
+    }
+}
+
+/// A problem as a list shows it, with its severity (version 2).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Rated {
+    /// How grave it is.
+    pub severity: Severity,
+    /// The rest, as version 1's list shows it.
+    pub summary: Summary,
+}
+wire_struct!(Rated { severity, summary });
+
+/// A page of problems with their severities (version 2).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RatedPage {
+    /// The problems, newest first.
+    pub problems: Vec<Rated>,
+    /// Where the next page starts (`before`), when there is one.
+    pub more: Option<u64>,
+}
+wire_struct!(RatedPage { problems, more });
+
+/// A problem whole, with its severity (version 2).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RatedProblem {
+    /// How grave it is.
+    pub severity: Severity,
+    /// The problem.
+    pub problem: Problem,
+}
+wire_struct!(RatedProblem { severity, problem });
+
+/// List problems with their severities: as [`List`] (version 2).
+pub type ListRated = List;
+
+/// Get one problem whole with its severity: as [`Get`] (version 2).
+pub type GetRated = Get;
+
+/// The longest note, bytes.
+pub const MAX_NOTE: usize = MAX_TEXT;
+
+/// Add a note to a problem's analysis log (version 2). The request's
+/// user is its author; a closed problem takes none
+/// ([`msgid::CLOSED`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Note {
+    /// The problem's number.
+    pub number: u64,
+    /// The note, 1 to [`MAX_NOTE`] bytes.
+    pub text: String,
+}
+wire_struct!(Note { number, text });
+
+/// A note was added to a problem (version 2).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Noted {
+    /// The problem's number.
+    pub number: u64,
+    /// The line as written into its analysis log.
+    pub line: Line,
+    /// The console's user who wrote it.
+    pub by: String,
+    /// When, seconds since the epoch.
+    pub time: u64,
+}
+wire_struct!(Noted {
+    number,
+    line,
+    by,
+    time
+});
+
 /// Operation numbers.
 pub mod op {
     /// [`super::List`].
@@ -241,6 +328,19 @@ pub mod op {
     pub const GET: u16 = 0x0002;
     /// [`super::Close`].
     pub const CLOSE: u16 = 0x0003;
+    /// [`super::Note`] ([`crate::caps::PROBLEM_NOTES`]).
+    pub const NOTE: u16 = 0x0004;
+    /// [`super::ListRated`] ([`crate::caps::PROBLEM_NOTES`]).
+    pub const LIST_RATED: u16 = 0x0005;
+    /// [`super::GetRated`] ([`crate::caps::PROBLEM_NOTES`]).
+    pub const GET_RATED: u16 = 0x0006;
+
+    /// Whether `op` is version 2's, which needs
+    /// [`crate::caps::PROBLEM_NOTES`].
+    #[must_use]
+    pub fn is_v2(op: u16) -> bool {
+        (NOTE..=GET_RATED).contains(&op)
+    }
 }
 
 /// Event numbers.
@@ -253,6 +353,15 @@ pub mod event {
     pub const CLEARED: u16 = 0x0003;
     /// A problem was closed.
     pub const CLOSED: u16 = 0x0004;
+    /// A note was added ([`crate::caps::PROBLEM_NOTES`]).
+    pub const NOTED: u16 = 0x0005;
+
+    /// Whether `op` is version 2's, which needs
+    /// [`crate::caps::PROBLEM_NOTES`].
+    #[must_use]
+    pub fn is_v2(op: u16) -> bool {
+        op == NOTED
+    }
 }
 
 /// The family's own refusals (`QSI1001` to `QSI1099`).
@@ -262,7 +371,7 @@ pub mod msgid {
     /// No problem of that number, from a managed side with no
     /// identifier of its own.
     pub const NO_PROBLEM: &str = "QSI1002";
-    /// A close of a problem closed already.
+    /// A close of a problem closed already, or a note to one.
     pub const CLOSED: &str = "QSI1003";
 }
 
@@ -275,6 +384,12 @@ messages! {
         0x0002 => Get(Get),
         /// Close one.
         0x0003 => Close(Close),
+        /// Add a note to one.
+        0x0004 => Note(Note),
+        /// A page of problems with their severities.
+        0x0005 => ListRated(ListRated),
+        /// One problem whole with its severity.
+        0x0006 => GetRated(GetRated),
     }
 }
 
@@ -287,6 +402,12 @@ messages! {
         0x0002 => Get(Problem),
         /// Closed: the problem as it is now.
         0x0003 => Close(Summary),
+        /// The line as written into the analysis log.
+        0x0004 => Note(Line),
+        /// A page of problems with their severities.
+        0x0005 => ListRated(RatedPage),
+        /// The problem with its severity.
+        0x0006 => GetRated(RatedProblem),
     }
 }
 
@@ -301,6 +422,8 @@ messages! {
         0x0003 => Cleared(Noticed),
         /// It was closed.
         0x0004 => Closed(Noticed),
+        /// A note was added to it.
+        0x0005 => Noted(Noted),
     }
 }
 
@@ -308,26 +431,34 @@ impl Request {
     /// The protocol's bounds.
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
-            Self::List(l) => match &l.filter.source {
+            Self::List(l) | Self::ListRated(l) => match &l.filter.source {
                 Some(s) if s.id > MAX_ID => Err("a partition ID over 999"),
                 Some(s) => check_name(&s.name),
                 None => Ok(()),
             },
-            Self::Get(Get { number }) | Self::Close(Close { number, .. }) if *number == 0 => {
+            Self::Get(Get { number })
+            | Self::GetRated(Get { number })
+            | Self::Close(Close { number, .. })
+            | Self::Note(Note { number, .. })
+                if *number == 0 =>
+            {
                 Err("problem 0")
             }
-            Self::Get(_) | Self::Close(_) => Ok(()),
+            Self::Note(n) if n.text.is_empty() => Err("an empty note"),
+            Self::Note(n) if n.text.len() > MAX_NOTE => Err("a note longer than 256 bytes"),
+            Self::Get(_) | Self::GetRated(_) | Self::Close(_) | Self::Note(_) => Ok(()),
         }
     }
 }
 
-/// The service family.
+/// The service family. Version 2 ([`crate::caps::PROBLEM_NOTES`]) adds
+/// notes and severity; version 1 is [`crate::caps::SERVICE`].
 #[derive(Debug)]
 pub struct Service;
 
 impl Family for Service {
     const ID: u16 = family::SERVICE;
-    const VERSION: u16 = 1;
+    const VERSION: u16 = 2;
     const CAP: u64 = crate::caps::SERVICE;
     type Request = Request;
     type Reply = Reply;

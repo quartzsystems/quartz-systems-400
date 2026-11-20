@@ -27,8 +27,13 @@ fn ops<F: Family>() -> Ops {
     assert_eq!(<F::Request as Message>::FAMILY, F::ID);
     assert_eq!(<F::Reply as Message>::FAMILY, F::ID);
     assert_eq!(<F::Event as Message>::FAMILY, F::ID);
-    // Partition is at version 2 (a running partition's entitlement).
-    let version = if F::ID == qsi::family::PARTITION { 2 } else { 1 };
+    // Partition is at version 3 (the entitlement, then its settings),
+    // panel and service at 2 (the functions; notes and severity).
+    let version = match F::ID {
+        qsi::family::PARTITION => 3,
+        qsi::family::PANEL | qsi::family::SERVICE => 2,
+        _ => 1,
+    };
     assert_eq!(F::VERSION, version);
     Ops {
         id: F::ID,
@@ -154,6 +159,87 @@ fn every_operation_and_event_has_a_sample() {
     );
 }
 
+/// Every bit of operations (not a family's version 1), with which of a
+/// family's requests and events need it.
+#[allow(clippy::type_complexity)]
+fn bits() -> Vec<(u64, fn(u16, u16) -> bool, fn(u16, u16) -> bool)> {
+    use qsi::family::{BASE, DUMPS, HOST, PANEL, PARTITION, PARTITIONS, PROFILES, SERVICE, VRES};
+    vec![
+        (
+            caps::SYSTEM_DUMPS,
+            |f, op| f == BASE && (base::op::is_dump(op) || base::op::is_dump_space(op)),
+            |f, op| f == BASE && base::event::is_dump(op),
+        ),
+        (
+            caps::PHYSICAL_IO,
+            |f, op| {
+                (f == HOST && host::op::is_physical_io(op))
+                    || (f == VRES && vres::op::is_physical_io(op))
+            },
+            |f, op| {
+                (f == HOST && host::event::is_physical_io(op))
+                    || (f == VRES && vres::event::is_physical_io(op))
+            },
+        ),
+        (
+            caps::PARTITION_V2,
+            |f, op| f == PARTITION && partition::op::is_v2(op),
+            |f, op| f == PARTITION && partition::event::is_v2(op),
+        ),
+        (
+            caps::SWITCHES,
+            |f, op| f == VRES && vres::op::is_switches(op),
+            |_, _| false,
+        ),
+        (
+            caps::POOLS,
+            |f, op| f == VRES && vres::op::is_pools(op),
+            |_, _| false,
+        ),
+        (
+            caps::PARTITION_V3,
+            |f, op| f == PARTITION && partition::op::is_v3(op),
+            |_, _| false,
+        ),
+        (
+            caps::ACTIVATIONS,
+            |f, op| {
+                (f == PARTITIONS && partitions::op::is_activations(op))
+                    || (f == PROFILES && profiles::op::is_activations(op))
+            },
+            |_, _| false,
+        ),
+        (
+            caps::POWER_ON,
+            |f, op| f == HOST && host::op::is_power_on(op),
+            |f, op| f == HOST && host::event::is_power_on(op),
+        ),
+        (
+            caps::PANEL_FUNCTIONS,
+            |f, op| f == PANEL && panel::op::is_v2(op),
+            |_, _| false,
+        ),
+        (
+            caps::PROBLEM_NOTES,
+            |f, op| f == SERVICE && service::op::is_v2(op),
+            |f, op| f == SERVICE && service::event::is_v2(op),
+        ),
+        (
+            caps::DUMP_SPACE,
+            |f, op| {
+                (f == BASE && base::op::is_dump_space(op))
+                    || (f == DUMPS && dumps::op::is_space(op))
+            },
+            |_, _| false,
+        ),
+        (
+            caps::FIX_LEVEL,
+            |f, op| f == BASE && base::op::is_fix_level(op),
+            |_, _| false,
+        ),
+    ]
+}
+
 #[test]
 fn the_families_and_their_capabilities() {
     let families = every_family();
@@ -163,58 +249,107 @@ fn the_families_and_their_capabilities() {
         assert_eq!(caps::of(f.id), f.cap);
         assert_eq!((caps::HOST_V1 | caps::SERVICING) & f.cap, f.cap);
     }
-    let extra = caps::SYSTEM_DUMPS | caps::PHYSICAL_IO | caps::PARTITION_V2;
+    let extra = bits().iter().fold(0, |a, (b, _, _)| {
+        assert_eq!(a & b, 0, "two groups share a bit");
+        assert_eq!(b.count_ones(), 1);
+        a | b
+    });
     let all = families.iter().fold(0, |a, f| {
         assert_eq!(a & f.cap, 0, "two families share a bit");
         a | f.cap
     });
     assert_eq!(all & extra, 0, "a bit of operations is no family's");
     assert_eq!(all | caps::SYSTEM_DUMPS, caps::HOST_V1 | caps::SERVICING);
-    // HOST_V1 is what it was: the new bits are beside it.
+    // HOST_V1, SERVICING and MANAGED are what they were: the new bits
+    // are beside them.
     assert_eq!(caps::HOST_V1 & caps::SERVICING, 0);
-    assert_eq!(caps::HOST_V1 & (caps::PHYSICAL_IO | caps::PARTITION_V2), 0);
+    assert_eq!(caps::HOST_V1 & extra, 0);
     assert_eq!(caps::HOST_V1, 0x1_ff03);
+    assert_eq!(caps::SERVICING, 0x1c);
+    assert_eq!(caps::MANAGED, 0x3);
     assert_eq!(caps::PHYSICAL_IO | caps::PARTITION_V2, 0x6_0000);
+    // Bits 19 to 27 (handoff 24).
+    assert_eq!(
+        extra & !(caps::SYSTEM_DUMPS | caps::PHYSICAL_IO | caps::PARTITION_V2),
+        0x0ff8_0000
+    );
+    // What a standalone system will say: no code update, no host family
+    // but its panel and console.
+    let standalone = caps::MANAGED
+        | caps::SERVICE
+        | caps::SYSTEM_DUMPS
+        | caps::PANEL
+        | caps::CONSOLE
+        | caps::PROBLEM_NOTES
+        | caps::DUMP_SPACE
+        | caps::PANEL_FUNCTIONS
+        | caps::FIX_LEVEL;
+    assert_eq!(caps::STANDALONE, standalone);
+    assert_eq!(caps::STANDALONE & caps::UPDATE, 0);
+    assert_eq!(
+        caps::STANDALONE & caps::HOST_V1 & !(caps::MANAGED | caps::PANEL | caps::CONSOLE),
+        0
+    );
 }
 
 #[test]
 fn what_each_message_needs() {
     use qsi::family::{BASE, HOST, PARTITION, VRES};
-    let mut physical = (0, 0);
-    let mut v2 = (0, 0);
+    let bits = bits();
+    let mut counts = vec![(0usize, 0usize); bits.len()];
     for (q, p) in samples::exchanges() {
         let (f, op) = (q.family(), q.op());
         let need = caps::of_request(f, op);
-        assert_eq!(need & caps::of(f), caps::of(f));
-        let dump = f == BASE && base::op::is_dump(op);
-        assert_eq!(need & caps::SYSTEM_DUMPS != 0, dump, "{q:?}");
-        let phys = (f == HOST && host::op::is_physical_io(op))
-            || (f == VRES && vres::op::is_physical_io(op));
-        assert_eq!(need & caps::PHYSICAL_IO != 0, phys, "{q:?}");
-        let ent = f == PARTITION && partition::op::is_v2(op);
-        assert_eq!(need & caps::PARTITION_V2 != 0, ent, "{q:?}");
-        assert_eq!(need.count_ones(), 1 + u32::from(dump || phys || ent));
-        physical.0 += usize::from(phys);
-        v2.0 += usize::from(ent);
+        let mut want = caps::of(f);
+        for (n, (bit, req, _)) in bits.iter().enumerate() {
+            if req(f, op) {
+                want |= bit;
+                counts[n].0 += 1;
+            }
+        }
+        assert_eq!(need, want, "{q:?}");
         assert_eq!(caps::of_request(p.family(), p.op()), need);
     }
     for e in samples::events() {
         let (f, op) = (e.family(), e.op());
-        let need = caps::of_event(f, op);
-        let dump = f == BASE && base::event::is_dump(op);
-        assert_eq!(need & caps::SYSTEM_DUMPS != 0, dump, "{e:?}");
-        let phys = (f == HOST && host::event::is_physical_io(op))
-            || (f == VRES && vres::event::is_physical_io(op));
-        assert_eq!(need & caps::PHYSICAL_IO != 0, phys, "{e:?}");
-        let ent = f == PARTITION && partition::event::is_v2(op);
-        assert_eq!(need & caps::PARTITION_V2 != 0, ent, "{e:?}");
-        physical.1 += usize::from(phys);
-        v2.1 += usize::from(ent);
+        let mut want = caps::of(f);
+        for (n, (bit, _, ev)) in bits.iter().enumerate() {
+            if ev(f, op) {
+                want |= bit;
+                counts[n].1 += 1;
+            }
+        }
+        assert_eq!(caps::of_event(f, op), want, "{e:?}");
     }
-    // Devices and tape drives; their five events and the drive's.
-    assert_eq!(physical, (2, 6));
-    // The entitlement and its event.
-    assert_eq!(v2, (1, 1));
+    let counted: Vec<(u64, (usize, usize))> = bits.iter().map(|(b, _, _)| *b).zip(counts).collect();
+    assert_eq!(
+        counted,
+        vec![
+            // Base's four dumps and the dump space; their two events.
+            (caps::SYSTEM_DUMPS, (5, 2)),
+            // Devices and tape drives; the host's five events and the
+            // drive's.
+            (caps::PHYSICAL_IO, (2, 6)),
+            // The entitlement and its event.
+            (caps::PARTITION_V2, (1, 1)),
+            (caps::SWITCHES, (6, 0)),
+            (caps::POOLS, (9, 0)),
+            (caps::PARTITION_V3, (3, 0)),
+            // The partitions' and the profiles'.
+            (caps::ACTIVATIONS, (2, 0)),
+            (caps::POWER_ON, (2, 1)),
+            (caps::PANEL_FUNCTIONS, (1, 0)),
+            (caps::PROBLEM_NOTES, (3, 1)),
+            // Base's and the dumps family's.
+            (caps::DUMP_SPACE, (2, 0)),
+            (caps::FIX_LEVEL, (1, 0)),
+        ]
+    );
+    // Base's dump space needs both its bits.
+    assert_eq!(
+        caps::of_request(BASE, base::op::DUMP_SPACE),
+        caps::BASE | caps::SYSTEM_DUMPS | caps::DUMP_SPACE
+    );
     // Version 1's operations need their family alone.
     for op in 1..=3 {
         assert_eq!(caps::of_request(HOST, op), caps::HOST);
@@ -222,13 +357,18 @@ fn what_each_message_needs() {
     for op in 1..=6 {
         assert_eq!(caps::of_request(PARTITION, op), caps::PARTITION);
     }
-    for op in [0x0024, 0x0025, 0x0033, 0x0040] {
+    for op in [0x0001, 0x0024, 0x0025, 0x0033, 0x0040, 0x0044] {
         assert_eq!(caps::of_request(VRES, op), caps::VRES);
     }
     // Base's version 1 operations need base alone.
     for op in 1..=7 {
-        assert_eq!(caps::of_request(qsi::family::BASE, op), caps::BASE);
+        assert_eq!(caps::of_request(BASE, op), caps::BASE);
     }
+    // A later version's bit alone, not the one before it.
+    assert_eq!(
+        caps::of_request(PARTITION, partition::op::SET_SETTINGS),
+        caps::PARTITION | caps::PARTITION_V3
+    );
     assert_eq!(caps::of_request(0x7777, 1), 0);
 }
 
@@ -322,7 +462,13 @@ fn an_unknown_enumeration_value_is_kept() {
         assert_eq!(update::Attempt::from_u8(b).as_u8(), b);
         assert_eq!(base::DumpKind::from_u8(b).as_u8(), b);
         assert_eq!(host::Blocker::from_u8(b).as_u8(), b);
+        assert_eq!(vres::Protection::from_u8(b).as_u8(), b);
+        assert_eq!(service::Severity::from_u8(b).as_u8(), b);
+        assert_eq!(partition::WithHost::from_u8(b).as_u8(), b);
+        assert_eq!(host::PowerOff::from_u8(b).as_u8(), b);
     }
+    assert_eq!(vres::Protection::from_u8(4), vres::Protection::Raid6);
+    assert_eq!(service::Severity::from_u8(9), service::Severity::Other(9));
     assert_eq!(vres::DriveKind::from_u8(3), vres::DriveKind::PhysicalTape);
     // A resource of a kind a later version adds is kept.
     let r = service::Resource {
@@ -440,6 +586,183 @@ fn the_samples_are_in_bounds_and_out_of_bounds_is_refused() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)] // one list of bounds, read straight down
+fn the_new_requests_are_bounded() {
+    let settings = partition::Settings {
+        description: String::new(),
+        panel: true,
+        with_host: partition::WithHost::Delayed,
+        delay: partition::MAX_DELAY,
+    };
+    let names = |n: usize, len: usize| vec!["D".repeat(len); n];
+    let bad = [
+        // Partition version 3.
+        AnyRequest::Partition(partition::Request::CreateWith(partition::CreateWith {
+            id: Some(0),
+            name: "P".into(),
+            settings: settings.clone(),
+        })),
+        AnyRequest::Partition(partition::Request::CreateWith(partition::CreateWith {
+            id: Some(1000),
+            name: "P".into(),
+            settings: settings.clone(),
+        })),
+        AnyRequest::Partition(partition::Request::CreateWith(partition::CreateWith {
+            id: None,
+            name: "P".into(),
+            settings: partition::Settings {
+                delay: partition::MAX_DELAY + 1,
+                ..settings.clone()
+            },
+        })),
+        AnyRequest::Partition(partition::Request::SetSettings(partition::SetSettings {
+            id: 3,
+            settings: partition::Settings {
+                description: "X".repeat(model::MAX_TEXT + 1),
+                ..settings.clone()
+            },
+        })),
+        AnyRequest::Partition(partition::Request::SetSettings(partition::SetSettings {
+            id: 0,
+            settings: settings.clone(),
+        })),
+        AnyRequest::Partition(partition::Request::GetSettings(partition::GetSettings {
+            id: 0,
+        })),
+        // Activations, power on, panel, dumps.
+        AnyRequest::Profiles(profiles::Request::Activated(profiles::Activated { id: 0 })),
+        AnyRequest::Host(host::Request::SetPowerOn(host::PowerOn {
+            start_partitions: true,
+            power_off: host::PowerOff::Delayed,
+            delay: host::MAX_DELAY + 1,
+        })),
+        AnyRequest::Panel(panel::Request::Functions(panel::Functions { id: 1000 })),
+        AnyRequest::Panel(panel::Request::Function(panel::Function {
+            id: 1000,
+            function: 1,
+            args: panel::PanelArgs::default(),
+        })),
+        AnyRequest::Console(console::Request::Attach(console::Attach {
+            id: 1000,
+            take_over: false,
+        })),
+        AnyRequest::Dumps(dumps::Request::Space(dumps::GetSpace { id: 1000 })),
+        // Notes.
+        AnyRequest::Service(service::Request::Note(service::Note {
+            number: 27,
+            text: String::new(),
+        })),
+        AnyRequest::Service(service::Request::Note(service::Note {
+            number: 27,
+            text: "N".repeat(service::MAX_NOTE + 1),
+        })),
+        AnyRequest::Service(service::Request::Note(service::Note {
+            number: 0,
+            text: "N".into(),
+        })),
+        AnyRequest::Service(service::Request::GetRated(service::Get { number: 0 })),
+        // Pools and switches.
+        AnyRequest::Vres(vres::Request::PoolCreate(vres::PoolCreate {
+            name: "P".into(),
+            protection: vres::Protection::Mirrored,
+            disks: names(2, model::MAX_NAME + 1),
+            spares: Vec::new(),
+            confirm: Vec::new(),
+        })),
+        AnyRequest::Vres(vres::Request::PoolCreate(vres::PoolCreate {
+            name: "P".into(),
+            protection: vres::Protection::Mirrored,
+            disks: names(2, 4),
+            spares: names(model::MAX_ITEMS + 1, 4),
+            confirm: Vec::new(),
+        })),
+        AnyRequest::Vres(vres::Request::PoolExtend(vres::PoolExtend {
+            pool: "P".into(),
+            disks: names(1, 4),
+            confirm: names(1, model::MAX_NAME + 1),
+        })),
+        AnyRequest::Vres(vres::Request::UnitReplace(vres::UnitReplace {
+            pool: "P".into(),
+            unit: 2,
+            disk: "D".repeat(model::MAX_NAME + 1),
+            confirm: false,
+        })),
+        AnyRequest::Vres(vres::Request::Designate(vres::Designate {
+            pool: "P".repeat(model::MAX_NAME + 1),
+        })),
+        AnyRequest::Vres(vres::Request::SwitchCreate(vres::SwitchSpec {
+            name: "S".into(),
+            vlans: vec![1; model::MAX_ITEMS + 1],
+            mtu: 0,
+        })),
+        AnyRequest::Vres(vres::Request::SwitchRename(vres::SwitchRename {
+            name: "S".into(),
+            to: "S".repeat(model::MAX_NAME + 1),
+        })),
+        AnyRequest::Vres(vres::Request::UplinkSet(vres::UplinkSet {
+            switch: "S".into(),
+            uplink: vres::Uplink {
+                interfaces: vec!["L".repeat(model::MAX_TEXT + 1)],
+                bond: None,
+                native_vlan: None,
+            },
+        })),
+        AnyRequest::Vres(vres::Request::UplinkSet(vres::UplinkSet {
+            switch: "S".into(),
+            uplink: vres::Uplink {
+                interfaces: names(model::MAX_ITEMS + 1, 4),
+                bond: None,
+                native_vlan: None,
+            },
+        })),
+    ];
+    for q in bad {
+        assert!(q.check().is_err(), "{q:?}");
+    }
+    // ID 0 is the managed system itself to the panel and console
+    // families, and every partition to a dump space; a create may leave
+    // its ID to the host; an interface's location is a text.
+    let good = [
+        AnyRequest::Panel(panel::Request::Function(panel::Function {
+            id: model::SYSTEM_ID,
+            function: 21,
+            args: panel::PanelArgs::default(),
+        })),
+        AnyRequest::Console(console::Request::Attach(console::Attach {
+            id: model::SYSTEM_ID,
+            take_over: true,
+        })),
+        AnyRequest::Console(console::Request::Screen(console::Screen {
+            id: model::SYSTEM_ID,
+        })),
+        AnyRequest::Dumps(dumps::Request::Space(dumps::GetSpace { id: 999 })),
+        AnyRequest::Partition(partition::Request::CreateWith(partition::CreateWith {
+            id: None,
+            name: "P".into(),
+            settings,
+        })),
+        AnyRequest::Service(service::Request::Note(service::Note {
+            number: 1,
+            text: "N".repeat(service::MAX_NOTE),
+        })),
+        AnyRequest::Vres(vres::Request::UplinkSet(vres::UplinkSet {
+            switch: "S".into(),
+            uplink: vres::Uplink {
+                interfaces: vec!["L".repeat(model::MAX_NAME + 1)],
+                bond: None,
+                native_vlan: None,
+            },
+        })),
+        AnyRequest::Vres(vres::Request::Designate(vres::Designate {
+            pool: String::new(),
+        })),
+    ];
+    for q in good {
+        assert_eq!(q.check(), Ok(()), "{q:?}");
+    }
+}
+
+#[test]
 fn a_tape_device_is_a_volume_or_a_physical_drive() {
     use model::{MediaDevice, TapeSource};
     let d = MediaDevice::drive(6, "SPCIE-SLOT-4-T0.0.3.0");
@@ -463,7 +786,12 @@ fn a_tape_device_is_a_volume_or_a_physical_drive() {
     else {
         panic!("no put sample")
     };
-    let sources: Vec<_> = put.profile.tape.iter().map(MediaDevice::tape_source).collect();
+    let sources: Vec<_> = put
+        .profile
+        .tape
+        .iter()
+        .map(MediaDevice::tape_source)
+        .collect();
     assert!(sources.contains(&TapeSource::Empty));
     assert!(sources.iter().any(|s| matches!(s, TapeSource::Drive(_))));
 }

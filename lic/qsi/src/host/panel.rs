@@ -8,10 +8,15 @@
 //! does over its service channel; which functions there are, and which
 //! need the keylock in manual, is the host's to say (a function it does
 //! not offer is refused with its own message).
+//!
+//! ID 0 ([`super::model::SYSTEM_ID`]) is the managed system itself: a
+//! standalone system answers its own panel there and refuses any other
+//! ID, a host refuses 0. Version 2 ([`crate::caps::PANEL_FUNCTIONS`])
+//! says which functions a system has ([`Functions`]).
 
 use ipc::wire_struct;
 
-use super::model::{IplSource, IplType, PartitionId, check_id};
+use super::model::{IplSource, IplType, PartitionId, check_target};
 use crate::base::Keylock;
 use crate::{Family, family, messages};
 
@@ -64,7 +69,7 @@ wire_struct!(PanelArgs {
 /// Carry out a function.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Function {
-    /// The partition.
+    /// The partition, or 0 for the managed system itself.
     pub id: PartitionId,
     /// The function's number ([`function`]).
     pub function: u8,
@@ -81,21 +86,67 @@ pub struct Shown {
 }
 wire_struct!(Shown { text });
 
+/// Ask which functions a system's panel has (version 2).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Functions {
+    /// The partition, or 0 for the managed system itself.
+    pub id: PartitionId,
+}
+wire_struct!(Functions { id });
+
+/// A function a panel has (version 2).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct FunctionInfo {
+    /// Its number ([`function`]).
+    pub function: u8,
+    /// What it does, in the system's words.
+    pub text: String,
+    /// It needs the keylock in manual.
+    pub manual: bool,
+    /// A console asks the person before it sends it.
+    pub confirm: bool,
+}
+wire_struct!(FunctionInfo {
+    function,
+    text,
+    manual,
+    confirm
+});
+
 /// Operation numbers.
 pub mod op {
     /// [`super::Function`].
     pub const FUNCTION: u16 = 0x0001;
+    /// [`super::Functions`] ([`crate::caps::PANEL_FUNCTIONS`]).
+    pub const FUNCTIONS: u16 = 0x0002;
+
+    /// Whether `op` is version 2's, which needs
+    /// [`crate::caps::PANEL_FUNCTIONS`].
+    #[must_use]
+    pub fn is_v2(op: u16) -> bool {
+        op == FUNCTIONS
+    }
 }
 
-/// The family's own refusals (`QSI0450` to `QSI0499`): none in
-/// version 1; a host refuses with its own.
-pub mod msgid {}
+/// The family's own refusals (`QSI0450` to `QSI0499`), for a managed
+/// side with no identifiers of its own (a standalone system); a host
+/// refuses with its own.
+pub mod msgid {
+    /// The system has no such function.
+    pub const NO_FUNCTION: &str = "QSI0451";
+    /// The function needs the keylock in manual, and it is not.
+    pub const NEEDS_MANUAL: &str = "QSI0452";
+    /// Not in this state: before the IPL completes, for one.
+    pub const NOT_NOW: &str = "QSI0453";
+}
 
 messages! {
     /// What a console asks.
     pub enum Request: family::PANEL => {
         /// Carry out a function.
         0x0001 => Function(Function),
+        /// The functions the panel has.
+        0x0002 => Functions(Functions),
     }
 }
 
@@ -104,6 +155,8 @@ messages! {
     pub enum Reply: family::PANEL => {
         /// What it displays.
         0x0001 => Function(Shown),
+        /// The functions, by number.
+        0x0002 => Functions(Vec<FunctionInfo>),
     }
 }
 
@@ -116,22 +169,27 @@ messages! {
 impl Request {
     /// The protocol's bounds.
     pub fn check(&self) -> Result<(), &'static str> {
-        let Self::Function(f) = self;
-        check_id(f.id)?;
-        if f.function == 0 || f.function > MAX_FUNCTION {
-            return Err("a function outside 1 to 99");
+        match self {
+            Self::Function(f) => {
+                check_target(f.id)?;
+                if f.function == 0 || f.function > MAX_FUNCTION {
+                    return Err("a function outside 1 to 99");
+                }
+                Ok(())
+            }
+            Self::Functions(Functions { id }) => check_target(*id),
         }
-        Ok(())
     }
 }
 
-/// The panel family.
+/// The panel family. Version 2 ([`crate::caps::PANEL_FUNCTIONS`]) says
+/// which functions a panel has; version 1 is [`crate::caps::PANEL`].
 #[derive(Debug)]
 pub struct Panel;
 
 impl Family for Panel {
     const ID: u16 = family::PANEL;
-    const VERSION: u16 = 1;
+    const VERSION: u16 = 2;
     const CAP: u64 = crate::caps::PANEL;
     type Request = Request;
     type Reply = Reply;

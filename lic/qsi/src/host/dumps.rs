@@ -7,10 +7,14 @@
 //! written as an ELF core). List, take, delete, and download: the
 //! download's reply opens a stream of the dump's bytes, host to
 //! console, which ends after the last of them.
+//!
+//! Behind [`crate::caps::DUMP_SPACE`]: the space each partition's dumps
+//! take ([`GetSpace`]).
 
 use ipc::wire_struct;
 
-use super::model::{Note, PartitionId, check_id, check_name};
+use super::model::{Note, PartitionId, check_id, check_name, check_target};
+use crate::base::Space;
 use crate::message::Empty;
 use crate::{Family, family, messages};
 
@@ -130,6 +134,25 @@ pub struct Removed {
 }
 wire_struct!(Removed { id, dump, time });
 
+/// Ask how much space partitions' dumps take
+/// ([`crate::caps::DUMP_SPACE`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GetSpace {
+    /// The partition; 0 for every partition.
+    pub id: PartitionId,
+}
+wire_struct!(GetSpace { id });
+
+/// The space one partition's dumps take.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PartitionSpace {
+    /// The partition.
+    pub id: PartitionId,
+    /// Its dumps' space and limits.
+    pub space: Space,
+}
+wire_struct!(PartitionSpace { id, space });
+
 /// Operation numbers.
 pub mod op {
     /// [`super::List`].
@@ -140,6 +163,15 @@ pub mod op {
     pub const DELETE: u16 = 0x0003;
     /// [`super::Download`].
     pub const DOWNLOAD: u16 = 0x0004;
+    /// [`super::GetSpace`] ([`crate::caps::DUMP_SPACE`]).
+    pub const SPACE: u16 = 0x0005;
+
+    /// Whether `op` is the dumps' space, which needs
+    /// [`crate::caps::DUMP_SPACE`].
+    #[must_use]
+    pub fn is_space(op: u16) -> bool {
+        op == SPACE
+    }
 }
 
 /// Event numbers.
@@ -165,6 +197,8 @@ messages! {
         0x0003 => Delete(Delete),
         /// Download one.
         0x0004 => Download(Download),
+        /// The space dumps take.
+        0x0005 => Space(GetSpace),
     }
 }
 
@@ -179,6 +213,8 @@ messages! {
         0x0003 => Delete(Empty),
         /// The stream is open.
         0x0004 => Download(Downloading),
+        /// Each partition's, in ID order.
+        0x0005 => Space(Vec<PartitionSpace>),
     }
 }
 
@@ -197,6 +233,7 @@ impl Request {
     pub fn check(&self) -> Result<(), &'static str> {
         match self {
             Self::List(List { id }) | Self::Take(Take { id }) => check_id(*id),
+            Self::Space(GetSpace { id }) => check_target(*id),
             Self::Delete(Delete { id, name }) | Self::Download(Download { id, name }) => {
                 check_id(*id)?;
                 check_name(name)
