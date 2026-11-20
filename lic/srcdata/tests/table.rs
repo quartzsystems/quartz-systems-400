@@ -55,15 +55,15 @@ fn line_and_bytes() {
     assert_eq!(srcdata::IPL_COMPLETE.bytes(), *b"C6001090");
 }
 
-/// A change to what is explained shows here.
+/// Every code has its cause and recovery; a new code must bring both.
 #[test]
-fn codes_without_cause_or_recovery() {
+fn every_code_is_explained() {
     let want = [
-        (Family::C1, 15, 8, 15),
-        (Family::C6, 34, 28, 33),
-        (Family::A6, 12, 0, 7),
-        (Family::B1, 7, 0, 3),
-        (Family::D1, 6, 6, 6),
+        (Family::C1, 15, 0, 0),
+        (Family::C6, 34, 0, 0),
+        (Family::A6, 12, 0, 0),
+        (Family::B1, 7, 0, 0),
+        (Family::D1, 6, 0, 0),
     ];
     let got: Vec<_> = gaps()
         .iter()
@@ -71,5 +71,6 @@ fn codes_without_cause_or_recovery() {
         .collect();
     assert_eq!(got, want);
     assert_eq!(gaps().iter().map(|g| g.codes).sum::<usize>(), TABLE.len());
-    assert_eq!(unexplained().count(), 64);
+    let missing: Vec<_> = unexplained().map(|s| s.code).collect();
+    assert!(missing.is_empty(), "unexplained: {missing:?}");
 }

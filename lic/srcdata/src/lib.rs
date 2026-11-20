@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The system reference codes as data: every code the system posts, its
-//! family and text, and its meaning, cause and recovery where written.
+//! family and text, and its meaning, cause and recovery.
 //!
 //! Families: `C1` LIC init, `C6` OS init and install, `A6` attention
 //! (non-fatal), `B1` fatal, `D1` power down.

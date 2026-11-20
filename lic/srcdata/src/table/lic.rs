@@ -8,10 +8,7 @@ use crate::model::{Phase, Src};
 
 /// IPL started.
 pub const IPL_STARTED: Src = Src::new("C1001000", "IPL started", Phase::Lic, "IPL started.")
-    .cause(
-        "The IPL program started; every IPL posts this first, from the disk or from installation \
-     media.",
-    )
+    .cause("The IPL program started; every IPL posts this first, from disk or from media.")
     .recovery("None.");
 /// LIC partition located.
 pub const LIC_LOCATED: Src = Src::new(
