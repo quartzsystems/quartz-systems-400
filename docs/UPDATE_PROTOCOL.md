@@ -6,8 +6,11 @@ own protocol over HTTPS, spoken by `SNDPTFORD`, `QSCHKUPD`,
 IBM's Electronic Customer Support; QS/400 reaches a Quartz update
 service instead, and the commands keep IBM's parameters. The client,
 the codec and a reference server are `ptf/update`; the commands are
-`lic/slic/src/cpp/updcmd.rs`. The real service is operated later; the
-reference server stands in for it in the tests and the harness.
+`lic/slic/src/cpp/updcmd.rs`. The catalog (§3) is read, verified and
+written by `net/updcat`, a crate without the rest of QS/400 that a
+management console takes too; `ptf/update` re-exports it. The real
+service is operated later; the reference server stands in for it in
+the tests and the harness.
 
 ## 1. Trust
 
