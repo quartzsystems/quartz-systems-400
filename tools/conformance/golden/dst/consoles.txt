@@ -1,0 +1,24 @@
+                         Work with Management Consoles                          
+                                                                 System:  QS400 
+                                                                                
+ Type options, press Enter.  4=Remove                                           
+                                                                                
+ Opt  Console               Paired          Last session    Fingerprint         
+     QS/MC on mc01         01/01/26 00:05  01/01/26 00:10  e6d5c4b3a291807f     
+     QS/MC on mc02         01/01/26 00:07                  aaaaaaaaaaaaaaaa     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ System's QSI fingerprint:                                                      
+   3f1c9a0b7e2d4c6a8b0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e             
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F6=Make a pairing password   F12=Cancel                              
+                                                                                

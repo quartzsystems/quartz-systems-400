@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The small servers' commands and their clients, run in the job:
-//! `CHGNTPA`, `CHGLPDA`, `CHGQAPA`, `CHGHTTPA` and `CHGSMTPA` keep their
+//! `CHGNTPA`, `CHGLPDA`, `CHGQAPA`, `CHGQSIA`, `CHGHTTPA` and `CHGSMTPA` keep their
 //! attributes in the TCP/IP server table (`servers::attrs`); `CHGHTTPA`
 //! sets only the table's autostart flag. `SNDTCPSPLF` and `LPR` read
 //! a spooled file through the service and send it with `work/print`'s
@@ -24,6 +24,7 @@ use servers::attrs::is_same;
 use servers::attrs::lpd::LpdAttrs;
 use servers::attrs::ntp::{self as ntpa, NtpAttrs};
 use servers::attrs::qap::{self as qapa, QapAttrs};
+use servers::attrs::qsi::{self as qsia, QsiAttrs};
 use servers::attrs::smtp::{self as smtpa, SmtpAttrs, SmtpTls};
 use servers::msg;
 use stg::remote::RemoteIfs;
@@ -147,6 +148,24 @@ fn chgqapa(host: &Host, r: &Resolved) -> Result<String, Fail> {
         host,
         "*QAP",
         "QAP",
+        yes_no(&parms.name("AUTOSTART")),
+        a.to_bag(),
+    )
+}
+
+/// `CHGQSIA`.
+fn chgqsia(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let parms = parms_of(r);
+    let mut a = QsiAttrs::from_bag(&netsvc::bag(&host.link, "*QSI"));
+    for kwd in qsia::KEYWORDS {
+        if let Some(v) = parms.get(kwd) {
+            a.set(kwd, &text_of(v)).map_err(|e| bad(&e))?;
+        }
+    }
+    store(
+        host,
+        "*QSI",
+        "QSI",
         yes_no(&parms.name("AUTOSTART")),
         a.to_bag(),
     )
@@ -529,6 +548,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
         "CHGNTPA" => chgntpa(host, r),
         "CHGLPDA" => chglpda(host, r),
         "CHGQAPA" => chgqapa(host, r),
+        "CHGQSIA" => chgqsia(host, r),
         "CHGHTTPA" => chghttpa(host, r),
         "CHGSMTPA" => chgsmtpa(host, r),
         "SNDTCPSPLF" | "LPR" => sndtcpsplf(job, host, r),

@@ -248,3 +248,19 @@ RTVRPCREG = "Whether the binder starts with the registrations it saved in /etc/R
 
 [ENDRPCBIND]
 about = "Use the End RPC Binder Daemon (ENDRPCBIND) command to end the binder. Its registrations are saved in /etc/RPCBTAB for the next start. You need *IOSYSCFG special authority."
+
+[CHGQSIA]
+about = "Use the Change QSI Attributes (CHGQSIA) command to change the attributes of the QSI server, which answers management consoles: whether it starts with TCP/IP and the port it listens on. They are kept in the TCP/IP server table in QUSRSYS and read when the server starts. The command is QS/400's own."
+AUTOSTART = "Whether STRTCP starts the QSI server. The server is shipped to start."
+PORT = "The TCP port the QSI server listens on. *DFT is 2300, as a QS/VS host's."
+
+[STRQSIPAIR]
+about = "Use the Start QSI Pairing (STRQSIPAIR) command to make a one-time pairing password for a management console and show it once. The password is good for one pairing, for 15 minutes and for five attempts; a new one replaces any out. It is kept only in the storage service's memory, never written or logged. The making, every pairing attempt and its outcome are entries of type QI in the audit journal. You need *ALLOBJ and *SECADM special authority, and a display. The command is QS/400's own. The service tools offer the same: option 5 of Use Dedicated Service Tools, then option 6."
+notes = "Enter or F3 leave the password out until it is used or expires. F12 ends it at once."
+
+[RMVQSICSL]
+about = "Use the Remove QSI Console (RMVQSICSL) command to remove a management console's pin. A session the console has ends within a second, and it cannot connect again until it is paired again. The removal is an entry of type QI in the audit journal. You need *ALLOBJ and *SECADM special authority. The command is QS/400's own."
+CONSOLE = "The console removed: its name as it gave it when it paired, its fingerprint (64 hexadecimal digits), or its place in the list WRKQSICSL shows (1 or 2)."
+
+[WRKQSICSL]
+about = "Use the Work with QSI Consoles (WRKQSICSL) command to show the system's QSI fingerprint and the management consoles paired with the system, at most two, with when each paired and when it last had a session. Option 4 removes a console, as RMVQSICSL does. Without a display the list is shown as text. You need *ALLOBJ and *SECADM special authority. The command is QS/400's own."

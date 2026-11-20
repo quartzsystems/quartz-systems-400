@@ -648,6 +648,36 @@ and read when the server starts.
 :PD.Type a whole number. The value must be from 60 to 86400.
 :EPARML.
 :EHELP.
+:HELP NAME=CHGQSIA.Change QSI Attributes (CHGQSIA)
+:P.Use the Change QSI Attributes (CHGQSIA) command to change the
+attributes of the QSI server, which answers management consoles&colon.
+whether it starts with TCP/IP and the port it listens on. They are kept
+in the TCP/IP server table in QUSRSYS and read when the server starts.
+The command is QS/400's own.
+:EHELP.
+:HELP NAME='CHGQSIA/AUTOSTART'.Autostart server (AUTOSTART)
+:P.Whether STRTCP starts the QSI server. The server is shipped to start.
+:PARML.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGQSIA/PORT'.Port (PORT)
+:P.The TCP port the QSI server listens on. *DFT is 2300, as a QS/VS
+host's.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*DFT:EPK.
+:PD.The default value.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65535.
+:EPARML.
+:EHELP.
 :HELP NAME=CHGTCPA.Change TCP/IP Attributes (CHGTCPA)
 :P.The Change TCP/IP Attributes (CHGTCPA) command works with the stack's
 attributes.
@@ -1870,6 +1900,23 @@ protocol from the protocol table.
 :PD.Type up to 32 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=RMVQSICSL.Remove QSI Console (RMVQSICSL)
+:P.Use the Remove QSI Console (RMVQSICSL) command to remove a management
+console's pin. A session the console has ends within a second, and it
+cannot connect again until it is paired again. The removal is an entry
+of type QI in the audit journal. You need *ALLOBJ and *SECADM special
+authority. The command is QS/400's own.
+:EHELP.
+:HELP NAME='RMVQSICSL/CONSOLE'.Console (CONSOLE)
+:P.The console removed&colon. its name as it gave it when it paired, its
+fingerprint (64 hexadecimal digits), or its place in the list WRKQSICSL
+shows (1 or 2).
+:P.A value is required.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 64 characters.
+:EPARML.
+:EHELP.
 :HELP NAME=RMVSRVTBLE.Remove Service Table Entry (RMVSRVTBLE)
 :P.Use the Remove Service Table Entry (RMVSRVTBLE) command to remove a
 service from the services table.
@@ -2106,6 +2153,20 @@ host table entry to a new address.
 :PD.Type up to 45 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=STRQSIPAIR.Start QSI Pairing (STRQSIPAIR)
+:P.Use the Start QSI Pairing (STRQSIPAIR) command to make a one-time
+pairing password for a management console and show it once. The password
+is good for one pairing, for 15 minutes and for five attempts; a new one
+replaces any out. It is kept only in the storage service's memory, never
+written or logged. The making, every pairing attempt and its outcome are
+entries of type QI in the audit journal. You need *ALLOBJ and *SECADM
+special authority, and a display. The command is QS/400's own. The
+service tools offer the same&colon. option 5 of Use Dedicated Service
+Tools, then option 6.
+:P.Enter or F3 leave the password out until it is used or expires. F12
+ends it at once.
+:P.The command has no parameters.
+:EHELP.
 :HELP NAME=STRTCP.Start TCP/IP (STRTCP)
 :P.Use the Start TCP/IP (STRTCP) command to start TCP/IP&colon. the
 interfaces, routes and servers that start with it.
@@ -2172,6 +2233,15 @@ with the network table.
 :HELP NAME=WRKPCLTBLE.Work with Protocol Table Entries (WRKPCLTBLE)
 :P.Use the Work with Protocol Table Entries (WRKPCLTBLE) command to work
 with the protocol table.
+:P.The command has no parameters.
+:EHELP.
+:HELP NAME=WRKQSICSL.Work with QSI Consoles (WRKQSICSL)
+:P.Use the Work with QSI Consoles (WRKQSICSL) command to show the
+system's QSI fingerprint and the management consoles paired with the
+system, at most two, with when each paired and when it last had a
+session. Option 4 removes a console, as RMVQSICSL does. Without a
+display the list is shown as text. You need *ALLOBJ and *SECADM special
+authority. The command is QS/400's own.
 :P.The command has no parameters.
 :EHELP.
 :HELP NAME=WRKSRVTBLE.Work with Service Table Entries (WRKSRVTBLE)

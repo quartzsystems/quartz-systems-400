@@ -93,9 +93,15 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             }
         }
         // --- SNTP, LPD, LPR and mail out (command/netcmd.rs)
-        "CHGNTPA" | "CHGLPDA" | "CHGQAPA" | "CHGHTTPA" | "CHGSMTPA" | "SNDTCPSPLF" | "LPR"
-        | "SNDSMTPEMM" => {
+        "CHGNTPA" | "CHGLPDA" | "CHGQAPA" | "CHGQSIA" | "CHGHTTPA" | "CHGSMTPA" | "SNDTCPSPLF"
+        | "LPR" | "SNDSMTPEMM" => {
             if let Some(res) = super::netcmd::run(job, host, r) {
+                return res;
+            }
+        }
+        // --- the QSI server's consoles (command/qsicmd.rs)
+        "STRQSIPAIR" | "RMVQSICSL" | "WRKQSICSL" => {
+            if let Some(res) = super::qsicmd::run(host, r) {
                 return res;
             }
         }

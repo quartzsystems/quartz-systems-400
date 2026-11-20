@@ -3,7 +3,8 @@
 // root directory of this project.
 
 //! `Work with DST environment`: active service tools, system devices,
-//! service tools user IDs, and the LIC-side system values.
+//! service tools user IDs, the LIC-side system values, the service tools
+//! device IDs, and the management consoles (QS/400's, `consoles`).
 
 use console::Screen;
 
@@ -19,6 +20,7 @@ use crate::users::{Privilege, ServiceUser};
 pub fn work_with_dst_environment(privileges: Privilege) -> Submenu {
     let can_users = privileges.has(Privilege::USER_IDS);
     let can_sysvals = privileges.has(Privilege::SYSTEM_VALUES);
+    let can_security = privileges.has(Privilege::SECURITY);
     Submenu::new(
         "dst-env",
         "Work with DST Environment",
@@ -82,6 +84,17 @@ pub fn work_with_dst_environment(privileges: Privilege) -> Submenu {
                 Some(Box::new(move |env| {
                     if can_users {
                         Flow::Push(Box::new(device_ids(env, "dst-device-ids")))
+                    } else {
+                        Flow::Error(NOT_AUTHORIZED.into())
+                    }
+                })),
+            ),
+            (
+                6,
+                "Management consoles",
+                Some(Box::new(move |_env| {
+                    if can_security {
+                        Flow::Push(Box::new(crate::dst::consoles::Consoles))
                     } else {
                         Flow::Error(NOT_AUTHORIZED.into())
                     }

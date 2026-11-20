@@ -21,6 +21,7 @@ pub mod netcmd;
 pub mod nettools;
 pub mod nfs;
 pub mod prompt;
+pub mod qsicmd;
 pub mod rcvjrne;
 pub mod tcp;
 pub mod tcpsvr;

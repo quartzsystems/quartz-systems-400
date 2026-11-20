@@ -78,6 +78,7 @@ pub fn request(system: &mut System, ctx: &JobCtx, op: QsiOp) -> QsiReply {
         QsiOp::Fingerprint if officer || server => keep::fingerprint(system),
         QsiOp::Consoles if officer || server => keep::consoles(system),
         QsiOp::Pairing if officer || server => keep::pairing(),
+        QsiOp::Time if officer || server => system::time(system),
         QsiOp::StartPairing { by } if officer => keep::start_pairing(system, who, &by, &job_user),
         QsiOp::EndPairing { by } if officer => keep::end_pairing(who, &by, &job_user),
         QsiOp::Remove { console, by } if officer => {

@@ -1,0 +1,143 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QSQSICSL: the QSI server's management consoles (docs/QSID.md section
+.* 12). STRQSIPAIR's pairing password, shown once, and WRKQSICSL's list
+.* of the consoles paired. QS/400's own displays, laid out as the
+.* system's others are.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=HALFCL BASETYPE='CHAR 32'.
+:ECLASS.
+:CLASS NAME=PWDCL BASETYPE='CHAR 19'.
+:ECLASS.
+:CLASS NAME=STAMPCL BASETYPE='CHAR 18'.
+:ECLASS.
+:CLASS NAME=NUMCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 20'.
+:ECLASS.
+:CLASS NAME=DATECL BASETYPE='CHAR 14'.
+:ECLASS.
+:CLASS NAME=SHORTCL BASETYPE='CHAR 16'.
+:ECLASS.
+:CLASS NAME=FULLCL BASETYPE='CHAR 64'.
+:ECLASS.
+:VAR NAME=FPRINT1 CLASS=HALFCL.
+:VAR NAME=FPRINT2 CLASS=HALFCL.
+:VAR NAME=PASSWORD CLASS=PWDCL.
+:VAR NAME=UNTIL CLASS=STAMPCL.
+:VAR NAME=ATTEMPTS CLASS=NUMCL.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=CNAME CLASS=NAMECL.
+:VAR NAME=PAIRED CLASS=DATECL.
+:VAR NAME=LASTSES CLASS=DATECL.
+:VAR NAME=FPSHORT CLASS=SHORTCL.
+:VAR NAME=FPFULL CLASS=FULLCL.
+:LISTDEF NAME=CONSOLES VARS='OPT CNAME PAIRED LASTSES FPSHORT FPFULL'.
+:KEYL NAME=PAIRKEYS HELP=PAIRKEYH.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=End the password
+:EKEYL.
+:KEYL NAME=CSLKEYS HELP=CSLKEYH.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=QSIPAIR KEYL=PAIRKEYS HELP=QSIPAIRH ENTER='RETURN 0' TOPSEP=SYSNAM.Start QSI Pairing
+:DATA DEPTH=6.
+:DATACOL WIDTH=36.
+:DATACOL WIDTH=78.
+:DATAI VAR=FPRINT1 USAGE=OUTPUT HELP='FLD/FPRINT'.System's QSI fingerprint
+:DATAI VAR=FPRINT2 USAGE=OUTPUT HELP='FLD/FPRINT'.
+:DATAI VAR=PASSWORD USAGE=OUTPUT HELP='FLD/PASSWORD'.Pairing password
+:DATAI VAR=UNTIL USAGE=OUTPUT HELP='FLD/UNTIL'.Good until
+:DATAI VAR=ATTEMPTS USAGE=OUTPUT HELP='FLD/ATTEMPTS'.Attempts
+:EDATA.
+:BOTINST.Type the password at the management console. It is shown once.
+:EPANEL.
+:PANEL NAME=QSICSL KEYL=CSLKEYS HELP=QSICSLH ENTER='RETURN 0' TOPSEP=SYSNAM.Work with QSI Consoles
+:DATA DEPTH=2.
+:DATACOL WIDTH=36.
+:DATACOL WIDTH=78.
+:DATAI VAR=FPRINT1 USAGE=OUTPUT HELP='FLD/FPRINT'.System's QSI fingerprint
+:DATAI VAR=FPRINT2 USAGE=OUTPUT HELP='FLD/FPRINT'.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=CONSOLES SCROLL=YES MAXHEAD=2.(No consoles are paired)
+:LISTACT OPTION=4 ENTER='CMD RMVQSICSL CONSOLE(&FPFULL.)' HELP='QSICSL/OPTIONS'.4=Remove
+:LISTCOL VAR=OPT USAGE=INPUT HELP='QSICSL/OPT'.Opt
+:LISTCOL VAR=CNAME USAGE=OUTPUT HELP='FLD/CNAME'.Console
+:LISTCOL VAR=PAIRED USAGE=OUTPUT HELP='FLD/PAIRED'.Paired
+:LISTCOL VAR=LASTSES USAGE=OUTPUT HELP='FLD/LASTSES'.Last session
+:LISTCOL VAR=FPSHORT USAGE=OUTPUT HELP='FLD/FPSHORT'.Fingerprint
+:ELIST.
+:EPANEL.
+:HELP NAME=QSIPAIRH.Start QSI Pairing - Help
+:P.A one-time pairing password for a management console, shown on
+this display and nowhere else. Type it at the console as it pairs with
+this system; the console checks the fingerprint shown here. The
+password is good for one pairing, for the time shown and for the
+attempts shown; a new one replaces it. This display is QS/400's own.
+:EHELP.
+:HELP NAME=PAIRKEYH.Function keys - Help
+:P.Enter and F3 leave the password out until it is used or it
+expires. F12 ends it at once.
+:EHELP.
+:HELP NAME=QSICSLH.Work with QSI Consoles - Help
+:P.The management consoles paired with this system, at most two, and
+the system's own fingerprint, which a console shows as it pairs. A
+console is trusted by its certificate's fingerprint and nothing else.
+This display is QS/400's own.
+:EHELP.
+:HELP NAME=CSLKEYH.Function keys - Help
+:P.F3 and F12 leave, F5 reads the list again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/FPRINT'.System's QSI fingerprint
+:P.The SHA-256 of the system's QSI certificate, in hexadecimal, made
+the first time the QSI server started. A console shows it as it pairs:
+compare the two before typing the password.
+:EHELP.
+:HELP NAME='FLD/PASSWORD'.Pairing password
+:P.Sixteen characters in four groups. Dashes and spaces do not matter
+when typed, nor upper or lower case.
+:EHELP.
+:HELP NAME='FLD/UNTIL'.Good until
+:P.When the password expires, fifteen minutes after it was made.
+:EHELP.
+:HELP NAME='FLD/ATTEMPTS'.Attempts
+:P.How many tries the password is good for; a wrong one uses a try.
+:EHELP.
+:HELP NAME='QSICSL/OPT'.Opt
+:P.Type the number of an option next to a console and press Enter.
+:EHELP.
+:HELP NAME='QSICSL/OPTIONS'.Options
+:P.4=Remove removes the console's pin, as RMVQSICSL does: a session it
+has ends and it cannot connect again until it is paired again.
+:EHELP.
+:HELP NAME='FLD/CNAME'.Console
+:P.The name the console gave when it paired.
+:EHELP.
+:HELP NAME='FLD/PAIRED'.Paired
+:P.When the console paired.
+:EHELP.
+:HELP NAME='FLD/LASTSES'.Last session
+:P.When the console last had a session with this system.
+:EHELP.
+:HELP NAME='FLD/FPSHORT'.Fingerprint
+:P.The first sixteen hexadecimal digits of the console's certificate's
+fingerprint; RMVQSICSL takes the whole of it.
+:EHELP.
+:EPNLGRP.

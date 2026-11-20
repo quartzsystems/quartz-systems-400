@@ -8,11 +8,14 @@
 use std::sync::mpsc::Receiver;
 
 use licpart::{ConsoleMode, TAG_CONSOLE_MODE};
+use stg::qsi::{QsiOp, QsiReply};
 use store::asp::parity::Level;
 use store::{Refusal, StoreError};
 pub use svctools::Outcome;
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
-use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags};
+use svctools::env::{
+    DiskUnit, LogEntry, NonConfigured, ParityUnit, QsiConsoleRow, ResourceRow, SecurityFlags,
+};
 use svctools::install::lic::{LicEvent, LicKind};
 use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
 use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
@@ -95,6 +98,8 @@ fn kept_or_fail(what: &'static str) -> impl FnOnce(String) -> String {
 pub struct Env<'a> {
     pub(crate) system: &'a mut System,
     users: UserDb,
+    /// The service tools user signed on, for the audit journal.
+    who: String,
 }
 
 impl<'a> Env<'a> {
@@ -117,11 +122,23 @@ impl<'a> Env<'a> {
             );
             db
         };
-        let mut env = Self { system, users };
+        let mut env = Self {
+            system,
+            users,
+            who: String::new(),
+        };
         if loaded_none(&env) {
             let _ = env.save_users();
         }
         env
+    }
+
+    /// A QSI operation through the storage service; none before it runs.
+    fn qsi(&mut self, op: QsiOp) -> Result<QsiReply, String> {
+        let Some(stg) = self.system.procs.stg.as_mut() else {
+            return Err(svctools::env::QSI_NOT_HERE.into());
+        };
+        stg::Client::qsi(stg, op).map_err(|e| e.to_string())
     }
 
     /// The store, opened on demand on a D IPL.
@@ -315,6 +332,9 @@ impl DstEnv for Env<'_> {
     }
 
     fn audit(&mut self, kind: &str, code: &str, user: &str) {
+        if kind == "ST" {
+            self.who = user.to_string();
+        }
         self.system
             .audit_lic
             .push((kind.into(), code.into(), user.into()));
@@ -1026,6 +1046,63 @@ impl DstEnv for Env<'_> {
             .map_err(fail("Reading the object header"))
     }
 
+    fn qsi_fingerprint(&mut self) -> Result<Option<String>, String> {
+        match self.qsi(QsiOp::Fingerprint)? {
+            QsiReply::Fingerprint { hex, .. } => Ok(Some(hex)),
+            QsiReply::NoIdentity => Ok(None),
+            r => Err(qsi_text(r)),
+        }
+    }
+
+    fn qsi_consoles(&mut self) -> Result<Vec<QsiConsoleRow>, String> {
+        match self.qsi(QsiOp::Consoles)? {
+            QsiReply::Consoles { list } => Ok(list
+                .into_iter()
+                .map(|c| QsiConsoleRow {
+                    name: c.name,
+                    fingerprint: c.fingerprint,
+                    paired: qsi_when(c.paired, false),
+                    last: qsi_when(c.last_contact, false),
+                })
+                .collect()),
+            r => Err(qsi_text(r)),
+        }
+    }
+
+    fn qsi_start_pairing(&mut self) -> Result<(String, String, u32), String> {
+        let by = self.who.clone();
+        match self.qsi(QsiOp::StartPairing { by })? {
+            QsiReply::Password {
+                text,
+                until,
+                attempts,
+            } => Ok((text, qsi_when(until, true), attempts)),
+            r => Err(qsi_text(r)),
+        }
+    }
+
+    fn qsi_end_pairing(&mut self) -> Result<(), String> {
+        let by = self.who.clone();
+        match self.qsi(QsiOp::EndPairing { by })? {
+            QsiReply::Done => Ok(()),
+            r => Err(qsi_text(r)),
+        }
+    }
+
+    fn qsi_remove(&mut self, fingerprint: &str) -> Result<String, String> {
+        let by = self.who.clone();
+        let op = QsiOp::Remove {
+            console: fingerprint.to_string(),
+            by,
+        };
+        match self.qsi(op)? {
+            QsiReply::Removed { console } => {
+                Ok(format!("Management console {} removed", console.name))
+            }
+            r => Err(qsi_text(r)),
+        }
+    }
+
     fn security_flags(&mut self) -> SecurityFlags {
         self.system
             .lic
@@ -1234,5 +1311,30 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) -> Outcome {
             env.system.out.serial(&format!("slic: DST ended: {o:?}\n"));
             return o;
         }
+    }
+}
+
+/// A QSI refusal's first message.
+fn qsi_text(r: QsiReply) -> String {
+    match r {
+        QsiReply::Refused { notes } => notes
+            .into_iter()
+            .next()
+            .map_or_else(|| "Refused".into(), |(_, t)| t),
+        other => format!("An answer not expected: {other:?}"),
+    }
+}
+
+/// A moment as the service tools show it, UTC: `MM/DD/YY HH:MM`, with
+/// the seconds or not; empty for never.
+fn qsi_when(secs: u64, seconds: bool) -> String {
+    if secs == 0 {
+        return String::new();
+    }
+    let (y, mo, d, hh, mm, ss) = crate::platform::rtc::unix_to_civil(secs);
+    if seconds {
+        format!("{mo:02}/{d:02}/{:02}  {hh:02}:{mm:02}:{ss:02}", y % 100)
+    } else {
+        format!("{mo:02}/{d:02}/{:02} {hh:02}:{mm:02}", y % 100)
     }
 }

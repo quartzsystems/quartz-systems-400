@@ -29,6 +29,7 @@ pub mod ifs;
 pub mod info;
 pub mod licpgm;
 pub mod objects;
+pub mod qsi;
 pub mod system;
 pub mod system2;
 pub mod tcp;
@@ -323,6 +324,10 @@ pub fn run(
     }
     // --- the displays the CPP audit gave panels (info.rs)
     if let Some(res) = info::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
+    // --- the QSI server's displays (qsi.rs)
+    if let Some(res) = qsi::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     // --- the IFS displays (ifs.rs)

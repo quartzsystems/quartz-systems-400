@@ -235,6 +235,24 @@ pub const NOT_HERE: &str = "Not available until the system is running; use STRSS
 /// What an environment without the hardware qualification run answers.
 pub const NOT_AVAILABLE_HERE: &str = "The hardware qualification run is not available here";
 
+/// The management consoles where the system cannot reach them (before
+/// its IPL is complete).
+pub const QSI_NOT_HERE: &str =
+    "Management consoles can be worked with once the system's IPL is complete";
+
+/// A management console as the service tools show it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct QsiConsoleRow {
+    /// The name it gave.
+    pub name: String,
+    /// Its certificate's fingerprint, 64 hexadecimal digits.
+    pub fingerprint: String,
+    /// When it paired, as shown.
+    pub paired: String,
+    /// When it last had a session, as shown; empty for never.
+    pub last: String,
+}
+
 /// The system behind the service tools.
 pub trait DstEnv {
     /// The system name for the top line.
@@ -720,6 +738,28 @@ pub trait DstEnv {
     fn security_flags(&mut self) -> SecurityFlags {
         SecurityFlags::default()
     }
+    /// The system's QSI fingerprint; none made yet is `Ok(None)`.
+    fn qsi_fingerprint(&mut self) -> Result<Option<String>, String> {
+        Err(QSI_NOT_HERE.into())
+    }
+    /// The management consoles paired.
+    fn qsi_consoles(&mut self) -> Result<Vec<QsiConsoleRow>, String> {
+        Err(QSI_NOT_HERE.into())
+    }
+    /// Make a pairing password: its text, until when (as shown) and
+    /// its attempts. Shown once.
+    fn qsi_start_pairing(&mut self) -> Result<(String, String, u32), String> {
+        Err(QSI_NOT_HERE.into())
+    }
+    /// End the pairing password out.
+    fn qsi_end_pairing(&mut self) -> Result<(), String> {
+        Err(QSI_NOT_HERE.into())
+    }
+    /// Remove the console with this fingerprint; the message to show.
+    fn qsi_remove(&mut self, fingerprint: &str) -> Result<String, String> {
+        let _ = fingerprint;
+        Err(QSI_NOT_HERE.into())
+    }
     /// Change the security flags.
     fn set_security_flags(&mut self, flags: SecurityFlags) -> Result<(), String> {
         let _ = flags;
@@ -782,6 +822,9 @@ pub struct MemEnv {
     pub qual: Vec<String>,
     /// Where a USB write of the report goes; `None` when no stick is in.
     pub usb: Option<String>,
+    /// The QSI fingerprint, the consoles and whether a pairing password
+    /// is out.
+    pub qsi: (Option<String>, Vec<QsiConsoleRow>, bool),
     seed: u64,
 }
 
@@ -801,6 +844,36 @@ impl MemEnv {
 }
 
 impl DstEnv for MemEnv {
+    fn qsi_fingerprint(&mut self) -> Result<Option<String>, String> {
+        Ok(self.qsi.0.clone())
+    }
+    fn qsi_consoles(&mut self) -> Result<Vec<QsiConsoleRow>, String> {
+        Ok(self.qsi.1.clone())
+    }
+    fn qsi_start_pairing(&mut self) -> Result<(String, String, u32), String> {
+        if self.qsi.1.len() >= 2 {
+            return Err("Two management consoles are paired already; remove one first".into());
+        }
+        self.qsi.2 = true;
+        self.actions.push("qsi pairing".into());
+        Ok(("7K3Q-9VNM-2HXD-PW4T".into(), "01/01/26  00:15:00".into(), 5))
+    }
+    fn qsi_end_pairing(&mut self) -> Result<(), String> {
+        self.qsi.2 = false;
+        self.actions.push("qsi end pairing".into());
+        Ok(())
+    }
+    fn qsi_remove(&mut self, fingerprint: &str) -> Result<String, String> {
+        let at = self
+            .qsi
+            .1
+            .iter()
+            .position(|c| c.fingerprint == fingerprint)
+            .ok_or("No such management console")?;
+        let c = self.qsi.1.remove(at);
+        self.actions.push(format!("qsi remove {}", c.name));
+        Ok(format!("Management console {} removed", c.name))
+    }
     fn system_name(&self) -> String {
         if self.name.is_empty() {
             "QS400".into()

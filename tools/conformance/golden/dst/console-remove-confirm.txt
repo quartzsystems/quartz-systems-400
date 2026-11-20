@@ -1,0 +1,24 @@
+                      Confirm Remove of Management Console                      
+                                                                 System:  QS400 
+                                                                                
+ Management console QS/MC on mc02 will be removed:                              
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa             
+                                                                                
+ A session it has ends, and it cannot connect again until                       
+ it is paired again.                                                            
+                                                                                
+ Press F10 to remove it, F12 to keep it.                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

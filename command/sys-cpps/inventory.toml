@@ -522,6 +522,22 @@ note = "kept in the TCP/IP server table in QUSRSYS"
 site = "job"
 note = "kept in the TCP/IP server table in QUSRSYS"
 
+[cmd.CHGQSIA]
+site = "job"
+note = "kept in the TCP/IP server table in QUSRSYS; QS/400's (docs/QSID.md section 12)"
+
+[cmd.STRQSIPAIR]
+site = "job"
+note = "the password on a panel, shown once; a job without a display is refused (CPF9B71); QS/400's"
+
+[cmd.RMVQSICSL]
+site = "job"
+note = "the service removes the pin and writes the QI audit entry; QS/400's"
+
+[cmd.WRKQSICSL]
+site = "job"
+note = "a panel at a display, option 4 removes; the list as text otherwise; QS/400's"
+
 [cmd.CHGHTTPA]
 site = "job"
 note = "kept in the TCP/IP server table in QUSRSYS; AUTOSTART only (STRTCP starts the administration instance)"

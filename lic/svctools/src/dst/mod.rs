@@ -10,6 +10,7 @@ pub mod answers;
 pub mod capacity;
 pub mod common;
 pub mod console_mode;
+pub mod consoles;
 pub mod disk;
 pub mod environment;
 pub mod lic;

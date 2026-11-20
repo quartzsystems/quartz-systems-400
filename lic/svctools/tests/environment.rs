@@ -389,3 +389,63 @@ fn every_option_has_a_panel_or_an_answer() {
     r.enter(&f(&[]), &mut e);
     assert_eq!(r.top(), "dst-main");
 }
+
+/// `Work with Management Consoles` (option 6 of the DST environment,
+/// QS/400's): the list, a removal confirmed, the pairing password and
+/// its end, and none paired.
+#[test]
+fn management_consoles() {
+    use svctools::env::QsiConsoleRow;
+    let mut e = env();
+    let fp = "3f1c9a0b7e2d4c6a8b0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e";
+    e.qsi.0 = Some(fp.into());
+    e.qsi.1 = vec![
+        QsiConsoleRow {
+            name: "QS/MC on mc01".into(),
+            fingerprint: fp.chars().rev().collect(),
+            paired: "01/01/26 00:05".into(),
+            last: "01/01/26 00:10".into(),
+        },
+        QsiConsoleRow {
+            name: "QS/MC on mc02".into(),
+            fingerprint: "a".repeat(64),
+            paired: "01/01/26 00:07".into(),
+            last: String::new(),
+        },
+    ];
+    walk(&mut e, &["5", "6"], "consoles");
+    // Full: no password is made.
+    let mut r = walk(&mut e, &["5", "6"], "consoles");
+    r.function(6, &mut e);
+    assert!(r.screen(&mut e).dump().contains("remove one first"));
+    // Option 4 on the second, confirmed with F10.
+    let mut r = runner();
+    r.enter(&f(&["5"]), &mut e);
+    r.enter(&f(&["6"]), &mut e);
+    r.enter(&f(&["", "4"]), &mut e);
+    check("console-remove-confirm", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert!(r.screen(&mut e).dump().contains("QS/MC on mc02 removed"));
+    assert_eq!(e.qsi.1.len(), 1);
+    // F6: the password, shown once; F12 ends it.
+    r.function(6, &mut e);
+    check("console-pairing", &r.screen(&mut e).dump());
+    assert!(e.qsi.2);
+    r.function(12, &mut e);
+    assert!(!e.qsi.2);
+    assert!(r.screen(&mut e).dump().contains("ended"));
+    e.qsi.1.clear();
+    walk(&mut e, &["5", "6"], "consoles-none");
+    // A user without the security privilege is refused.
+    let mut r = Runner::new(Box::new(svctools::dst::menu::MainMenu::new(
+        "22222222".into(),
+        Privilege::IPL,
+    )));
+    r.enter(&f(&["5"]), &mut e);
+    r.enter(&f(&["6"]), &mut e);
+    assert!(
+        r.screen(&mut e)
+            .dump()
+            .contains(svctools::dst::NOT_AUTHORIZED)
+    );
+}
