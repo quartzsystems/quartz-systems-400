@@ -138,7 +138,13 @@ impl<'a> Env<'a> {
         let Some(stg) = self.system.procs.stg.as_mut() else {
             return Err(svctools::env::QSI_NOT_HERE.into());
         };
-        stg::Client::qsi(stg, op).map_err(|e| e.to_string())
+        let r = stg::Client::qsi(stg, op);
+        r.map_err(|e| {
+            self.system
+                .out
+                .serial(&format!("slic: QSI request: {e}\n"));
+            svctools::dst::failed("The request to the storage service")
+        })
     }
 
     /// The store, opened on demand on a D IPL.

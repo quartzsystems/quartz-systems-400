@@ -824,6 +824,8 @@ impl Suite {
         #[cfg(unix)]
         reports.extend(self.partition_steps()?);
         #[cfg(unix)]
+        reports.extend(self.qsi_steps()?);
+        #[cfg(unix)]
         reports.extend(self.two_guest_steps()?);
         reports.extend(self.nfs_pair_steps()?);
         #[cfg(unix)]

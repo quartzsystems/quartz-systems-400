@@ -28,7 +28,7 @@ pub fn ask(host: &Host, op: QsiOp) -> QsiReply {
 pub fn fail(r: QsiReply) -> Fail {
     match r {
         QsiReply::Refused { notes } => notes.into_iter().next().map_or_else(
-            || Fail::new("CPF9898", "Refused."),
+            || Fail::check("", "a refusal without a message"),
             |(id, t)| Fail::new(&id, t),
         ),
         other => Fail::check("", format!("unexpected answer {other:?}")),

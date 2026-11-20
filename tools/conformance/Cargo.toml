@@ -30,6 +30,10 @@ ed25519-dalek = "3.0.0"
 diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
 licpart = { path = "../../lic/licpart", version = "0.1.0" }
 qsipart = { path = "../../lic/qsipart", version = "0.1.0" }
+qsi = { path = "../../lic/qsi", version = "0.1.0" }
+qsisess = { path = "../../lic/qsisess", version = "0.1.0" }
+qsisvr = { path = "../../net/qsisvr", version = "0.1.0" }
+qsitrust = { path = "../../lic/qsitrust", version = "0.1.0" }
 hwqual = { path = "../../lic/hwqual", version = "0.1.0" }
 optical = { path = "../../media/optical", version = "0.1.0" }
 instmedia = { path = "../../media/instmedia", version = "0.1.0" }

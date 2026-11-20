@@ -10,7 +10,8 @@
                           MIN(1) MAX(80) SNGVAL((*ALL)) VALUES(AD AF AP +
                           AU AX CA CD CO CP CQ CU CV CY DI DO DS EV GR +
                           GS IM IP IR IS JD JS KF LD ML NA ND NE OM OR +
-                          OW O1 O2 O3 PA PF PG PO PS PW RA RJ RO RP RQ +
+                          OW O1 O2 O3 PA PF PG PO PS PW QI RA RJ RO RP +
+                          RQ +
                           RU RZ SD SE SF SG SK SM SO ST SV VA VC VF VL +
                           VN VO VP VR VS VU VV X0 X1 X2 YC YR ZC ZR) +
                           PROMPT('Entry types')
