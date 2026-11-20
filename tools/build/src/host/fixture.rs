@@ -28,7 +28,10 @@
 //! (handoff 18), and a web product of QSDEMO's own on `qsweb` (handoff
 //! 22) is served over TLS with a certificate `x509kit` made: signed on,
 //! a form posted with its CSRF token, a `QMC` message shown, and the
-//! page checked against the fixture's golden file. And its PID 1 is
+//! page checked against the fixture's golden file; its terminal page
+//! (handoff 23) draws a grid fed from `qsipart` frames with `termlook`,
+//! checked against the fixture's golden picture, and decodes a posted
+//! key as the console's. And its PID 1 is
 //! built without the crates those must not bring.
 //!
 //! Only committed work is seen: a git dependency is HEAD, not the
@@ -122,6 +125,10 @@ const PROOFS: &[(&str, &[&str])] = &[
         &["CSRF refused a forged form, message QMC2001 shown"],
     ),
     ("web", &["the settings page matches its golden file"]),
+    (
+        "web",
+        &["terminal: qsipart frames to a grid, the picture matches its golden PNG"],
+    ),
 ];
 /// Crates of this repository the fixture's PID 1 must not be built
 /// with: the neutral crates it takes bring none of them.
@@ -494,7 +501,7 @@ pub fn fixture(ctx: &Ctx) -> Result<String> {
          its ESP is `{}` and its A/B record `{}`; its panel on the framebuffer, on \
          serial and on a console port, its mirrored set through ublk (a member removed, the server restarted, \
          the member rebuilt, the server killed under load and only the dirty regions \
-         copied), its route, QSI paired over TLS and its web page over TLS held",
+         copied), its route, QSI paired over TLS and its web page and terminal over TLS held",
         &rev[..rev.len().min(9)],
         String::from_utf8_lossy(ESP_LABEL).trim_end(),
         String::from_utf8_lossy(&RECORD.magic)
