@@ -75,6 +75,8 @@ fn probe(listen: &str) -> Result<()> {
         method: "GET".into(),
         url: format!("http://127.0.0.1:{port}/healthz"),
         timeout: 5,
+        trust: sync::trust(),
+        agent: "QS400-SQL".into(),
         ..httpc::Request::default()
     })?;
     if r.status != 200 {

@@ -4,20 +4,20 @@
 
 //! One request and its redirects.
 
-use std::io::{Read, Write};
+use std::io::{BufReader, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
-use std::sync::Arc;
 use std::time::Duration;
 
-use tls::rustls::ClientConfig;
-use tls::stream::TlsStream;
+use rustls::pki_types::ServerName;
+use rustls::{ClientConnection, StreamOwned};
 
+use crate::trust::Trust;
 use crate::url::Url;
-use crate::wire;
+use crate::wire::{self, Head};
 use crate::{Error, Result};
 
 /// A request.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default)]
 pub struct Request {
     /// `GET`, `POST` ...
     pub method: String,
@@ -31,8 +31,10 @@ pub struct Request {
     pub timeout: u32,
     /// Redirects to follow.
     pub redirects: u32,
-    /// Accept any server certificate.
-    pub tolerate: bool,
+    /// What an `https://` connection trusts.
+    pub trust: Trust,
+    /// The `User-Agent` sent when `headers` have none; none when empty.
+    pub agent: String,
 }
 
 /// A response.
@@ -46,9 +48,10 @@ pub struct Response {
     pub body: Vec<u8>,
 }
 
-enum Conn {
+/// A connection.
+pub(crate) enum Conn {
     Plain(TcpStream),
-    Tls(Box<TlsStream<TcpStream>>),
+    Tls(Box<StreamOwned<ClientConnection, TcpStream>>),
 }
 
 impl Read for Conn {
@@ -76,26 +79,16 @@ impl Write for Conn {
     }
 }
 
-/// The client configuration: the shipped roots, or any certificate.
-fn config(tolerate: bool) -> Result<Arc<ClientConfig>> {
-    let mut roots = tls::rustls::RootCertStore::empty();
-    for r in certs::roots::roots() {
-        let _ = roots.add(tls::rustls::pki_types::CertificateDer::from(r.der.clone()));
+/// A TLS failure as the client reports it: rustls's own error when the
+/// I/O error carries one.
+fn tls_error(e: std::io::Error) -> Error {
+    match e.get_ref().and_then(|i| i.downcast_ref::<rustls::Error>()) {
+        Some(r) => Error::Tls(r.to_string()),
+        None => Error::Io(e),
     }
-    let mode = if tolerate {
-        tls::config::ServerAuthMode::Passthru
-    } else {
-        tls::config::ServerAuthMode::Full
-    };
-    Ok(tls::config::client_config(
-        &tls::policy::TlsPolicy::opsys(),
-        roots,
-        None,
-        mode,
-    )?)
 }
 
-fn connect(url: &Url, timeout: Duration, tolerate: bool) -> Result<Conn> {
+fn connect(url: &Url, timeout: Duration, trust: &Trust) -> Result<Conn> {
     let mut last = None;
     let mut tcp = None;
     for addr in (url.host.as_str(), url.port).to_socket_addrs()? {
@@ -107,7 +100,7 @@ fn connect(url: &Url, timeout: Duration, tolerate: bool) -> Result<Conn> {
             Err(e) => last = Some(e),
         }
     }
-    let tcp = tcp.ok_or_else(|| {
+    let mut tcp = tcp.ok_or_else(|| {
         last.map_or_else(
             || Error::Url(format!("{}: no address", url.host)),
             Error::Io,
@@ -118,23 +111,35 @@ fn connect(url: &Url, timeout: Duration, tolerate: bool) -> Result<Conn> {
     if !url.tls {
         return Ok(Conn::Plain(tcp));
     }
-    let name = tls::config::server_name(&url.host)?;
-    Ok(Conn::Tls(Box::new(TlsStream::connect(
-        config(tolerate)?,
-        name,
-        tcp,
-    )?)))
+    let name = ServerName::try_from(url.host.clone())
+        .map_err(|_| Error::Tls(format!("server name {} is not valid", url.host)))?;
+    let mut conn =
+        ClientConnection::new(trust.config()?, name).map_err(|e| Error::Tls(e.to_string()))?;
+    // The handshake now, so a refused certificate fails the connection.
+    while conn.is_handshaking() {
+        conn.complete_io(&mut tcp).map_err(tls_error)?;
+    }
+    Ok(Conn::Tls(Box::new(StreamOwned::new(conn, tcp))))
 }
 
-/// Send `req`, following up to `req.redirects` redirects (a 303, and a
-/// 301 or 302 of a `POST`, become a `GET`).
-pub fn send(req: &Request) -> Result<Response> {
+/// A response whose head is read; its body comes next on `reader`.
+pub(crate) struct Opened {
+    pub reader: BufReader<Conn>,
+    pub head: Head,
+    /// The method the last request was sent with.
+    pub method: String,
+}
+
+/// Send `req` with `extra` headers, following up to `req.redirects`
+/// redirects (a 303, and a 301 or 302 of a `POST`, become a `GET`).
+pub(crate) fn open(req: &Request, extra: &[(String, String)]) -> Result<Opened> {
     let timeout = Duration::from_secs(u64::from(if req.timeout == 0 { 60 } else { req.timeout }));
     let mut url = Url::parse(&req.url)?;
     let mut method = req.method.clone();
     let mut body = req.body.clone();
     for _ in 0..=req.redirects {
         let mut headers = req.headers.clone();
+        headers.extend(extra.iter().cloned());
         if let Some(u) = &url.userinfo
             && !headers
                 .iter()
@@ -145,38 +150,51 @@ pub fn send(req: &Request) -> Result<Response> {
                 format!("Basic {}", b64(u.as_bytes())),
             ));
         }
-        let mut c = connect(&url, timeout, req.tolerate)?;
+        let mut c = connect(&url, timeout, &req.trust)?;
         wire::write_request(
             &mut c,
             &method,
             &url.target,
             &url.authority(),
+            &req.agent,
             &headers,
             &body,
         )?;
-        let (status, headers, rbody) = wire::read_response(&mut c, &method)?;
-        let location = headers
-            .iter()
-            .find(|(k, _)| k.eq_ignore_ascii_case("Location"))
-            .map(|(_, v)| v.clone());
-        match (status, location) {
+        let mut reader = BufReader::new(c);
+        let head = wire::read_head(&mut reader)?;
+        let location = wire::header(&head.1, "Location").map(str::to_string);
+        match (head.0, location) {
             (301 | 302 | 303 | 307 | 308, Some(loc)) if req.redirects > 0 => {
+                wire::read_body(&mut reader, &method, &head)?;
                 url = url.join(&loc)?;
-                if status == 303 || (matches!(status, 301 | 302) && method == "POST") {
+                if head.0 == 303 || (matches!(head.0, 301 | 302) && method == "POST") {
                     method = "GET".into();
                     body.clear();
                 }
             }
             _ => {
-                return Ok(Response {
-                    status,
-                    headers,
-                    body: rbody,
+                return Ok(Opened {
+                    reader,
+                    head,
+                    method,
                 });
             }
         }
     }
     Err(Error::Redirects(req.redirects))
+}
+
+/// Send `req` and read the whole answer, following up to
+/// `req.redirects` redirects (a 303, and a 301 or 302 of a `POST`,
+/// become a `GET`).
+pub fn send(req: &Request) -> Result<Response> {
+    let mut o = open(req, &[])?;
+    let body = wire::read_body(&mut o.reader, &o.method, &o.head)?;
+    Ok(Response {
+        status: o.head.0,
+        headers: o.head.1,
+        body,
+    })
 }
 
 fn b64(b: &[u8]) -> String {

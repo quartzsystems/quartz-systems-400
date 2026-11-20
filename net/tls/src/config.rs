@@ -179,6 +179,22 @@ pub fn client_config(
     Ok(Arc::new(config))
 }
 
+/// The client configuration of the system's own HTTP requests (the
+/// `QSYS2.HTTP_*` functions, the update mirror): the shipped roots and
+/// the name checked, or any certificate when the caller tolerates it.
+pub fn http_client_config(tolerate: bool) -> Result<Arc<ClientConfig>> {
+    let mut roots = RootCertStore::empty();
+    for r in certs::roots::roots() {
+        let _ = roots.add(CertificateDer::from(r.der.clone()));
+    }
+    let mode = if tolerate {
+        ServerAuthMode::Passthru
+    } else {
+        ServerAuthMode::Full
+    };
+    client_config(&TlsPolicy::opsys(), roots, None, mode)
+}
+
 /// A client configuration for a connection over the loopback to a
 /// privileged port of this system, which only the system's own server
 /// can hold: whatever certificate it presents is accepted (it may be

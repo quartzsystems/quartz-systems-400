@@ -45,6 +45,14 @@ fn with_system<T>(f: impl FnOnce(&mut System) -> T) -> Option<T> {
     .flatten()
 }
 
+/// What the `QSYS2.HTTP_*` functions trust: the shipped roots, or any
+/// certificate when tolerated; a configuration made for each connection.
+fn system_trust(tolerate: bool) -> httpc::Trust {
+    httpc::Trust::Make(std::sync::Arc::new(move || {
+        tls::config::http_client_config(tolerate).map_err(|e| e.to_string())
+    }))
+}
+
 fn group_name(g: sysval::Group) -> String {
     format!("*{g:?}").to_ascii_uppercase()
 }
@@ -129,7 +137,8 @@ impl SystemHost for SqlHost {
                 req.timeout.min(300)
             },
             redirects: req.redirects,
-            tolerate: req.tolerate,
+            trust: system_trust(req.tolerate),
+            agent: "QS400-SQL".into(),
         });
         Some(
             r.map(|r| HttpResponse {

@@ -33,6 +33,13 @@ pub struct Pass {
     pub changed: bool,
 }
 
+/// What the mirror's requests trust: the shipped roots, by name.
+pub fn trust() -> httpc::Trust {
+    httpc::Trust::Make(std::sync::Arc::new(|| {
+        tls::config::http_client_config(false).map_err(|e| e.to_string())
+    }))
+}
+
 fn get(url: &str) -> Result<Vec<u8>> {
     let r = httpc::send(&httpc::Request {
         method: "GET".into(),
@@ -40,6 +47,7 @@ fn get(url: &str) -> Result<Vec<u8>> {
         headers: vec![("User-Agent".into(), "qs400-updated".into())],
         timeout: 120,
         redirects: 5,
+        trust: trust(),
         ..httpc::Request::default()
     })
     .with_context(|| url.to_string())?;

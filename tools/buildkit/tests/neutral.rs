@@ -10,7 +10,8 @@
 //! partition service channel's protocol, (handoff 18) QSI's
 //! messages, session and trust rules, (handoff 22) the web layer and
 //! the certificate kit, (handoff 23) the terminal's look and the
-//! reference codes, and (handoff 24) the update catalog's reader.
+//! reference codes, and (handoff 24) the update catalog's reader and
+//! the HTTP client.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -155,8 +156,8 @@ fn the_appliance_crates_reach_no_product_crate() {
 /// `release`, `licpart` or `certs`. The terminal's look takes the
 /// partition service channel's protocol for its grid, and the reference
 /// codes nothing (handoff 23): not `accessweb`, `tn5250` or `slic`. The
-/// update catalog's reader takes nothing of it (handoff 24): not `ptf`,
-/// `ptf-update` or `release`.
+/// update catalog's reader and the HTTP client take nothing of it
+/// (handoff 24): not `ptf`, `tls` or `certs`.
 const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("qsipart", &["qsipart", "ipc"]),
     ("qsi", &["qsi", "qsipart", "ipc"]),
@@ -167,6 +168,7 @@ const PROTOCOL_CRATES: &[(&str, &[&str])] = &[
     ("termlook", &["termlook", "qsipart", "ipc"]),
     ("srcdata", &["srcdata"]),
     ("updcat", &["updcat"]),
+    ("httpc", &["httpc"]),
 ];
 
 #[test]
@@ -310,13 +312,13 @@ fn the_look_and_the_codes_name_no_product() {
     );
 }
 
-/// The update catalog's reader (handoff 24): its sources and manifest
-/// name no product.
+/// The update catalog's reader and the HTTP client (handoff 24): their
+/// sources and manifests name no product.
 #[test]
 fn the_download_crates_name_no_product() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut hits = Vec::new();
-    for dir in ["net/updcat"] {
+    for dir in ["net/updcat", "net/httpc"] {
         let dir = repo.join(dir);
         let mut files = Vec::new();
         sources(&dir.join("src"), &mut files);
