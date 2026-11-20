@@ -643,7 +643,12 @@ impl Suite {
             return Err(format!("DST's fingerprint is not the system's:\n{shown}"));
         }
         with(|st| st.mc02.pair(port, &password).map(|_| ()))?;
-        s.command("key enter", CMD)?;
+        // F3 leaves the password display for DST's main menu.
+        s.command("key f3", CMD)?;
+        screen_wait(s, "Use Dedicated Service Tools (DST)")?;
+        enter(s, "5")?;
+        screen_wait(s, "Work with DST Environment")?;
+        enter(s, "6")?;
         let list = screen_wait(s, "Work with Management Consoles")?;
         if !list.contains("MC02") {
             return Err(format!("DST does not list MC02 after its pairing:\n{list}"));

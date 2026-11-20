@@ -185,15 +185,16 @@ impl Panel for Pairing {
         s.put(
             r + 9,
             c,
-            "Press Enter to leave it out, F12 to end it now.",
+            "Press F3 to leave it out until it is used, F12 to end it now.",
             Attr::GREEN,
         );
-        ui::keys(&mut s, "Enter=Continue   F3=Exit   F12=End the password");
+        ui::keys(&mut s, "F3=Exit   F12=End the password");
         s
     }
 
+    // A display without fields: its keys are all it takes.
     fn enter(&mut self, _fields: &[String], _env: &mut dyn DstEnv) -> Flow {
-        Flow::Unwind(1, Some(("The pairing password is out.".into(), false)))
+        Flow::Stay
     }
 
     fn function(&mut self, key: u8, env: &mut dyn DstEnv) -> Flow {

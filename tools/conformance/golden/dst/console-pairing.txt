@@ -10,7 +10,7 @@
                                                                                 
  Type the password at the management console. It is good for                    
  one pairing and is shown on this display and nowhere else.                     
- Press Enter to leave it out, F12 to end it now.                                
+ Press F3 to leave it out until it is used, F12 to end it now.                  
                                                                                 
                                                                                 
                                                                                 
@@ -20,5 +20,5 @@
                                                                                 
                                                                                 
                                                                                 
- Enter=Continue   F3=Exit   F12=End the password                                
+ F3=Exit   F12=End the password                                                 
                                                                                 
