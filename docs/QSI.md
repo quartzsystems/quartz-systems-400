@@ -20,6 +20,11 @@ no other crate of this repository and their code names no product),
 and `build fixture` builds them from outside as git dependencies.
 QS/400 itself runs no QSI listener yet (section 11).
 
+Handoff 24's messages (bits 19 to 27, section 5) are in `lic/qsi` from
+commit `fb85e1480`; QS/VS and QS/MC move their pins to `5a5b7e29f`,
+the last of Part A (the tests, the fuzz seeds, the format lock and this
+document).
+
 ## 1. The transport
 
 QSI runs over TCP; QS/VS listens on port 2300. On the connection, TLS
