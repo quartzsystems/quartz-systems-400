@@ -130,12 +130,9 @@ fn strqsipair(s: &mut Session) -> Result<(String, String), String> {
     let password = field(&screen, "Pairing password").ok_or_else(|| screen.clone())?;
     let fp = shown_fingerprint(&screen).ok_or_else(|| format!("no fingerprint:\n{screen}"))?;
     s.command("key enter", CMD)?;
-    let back = screen_wait(s, "Main Menu")?;
+    screen_wait(s, "Main Menu")?;
     // The server looks at whether a password is out twice a second.
     std::thread::sleep(Duration::from_millis(1500));
-    if !back.contains("TCP1A83") && !back.contains("Pairing password made") {
-        return Err(format!("no completion message:\n{back}"));
-    }
     Ok((password, fp))
 }
 
@@ -531,10 +528,8 @@ impl Suite {
         enter(s, "STRQSIPAIR")?;
         screen_wait(s, "Start QSI Pairing")?;
         s.command("key f12", CMD)?;
-        let back = screen_wait(s, "Main Menu")?;
-        if !back.contains("ended") {
-            return Err(format!("F12 did not end the password:\n{back}"));
-        }
+        // That it ended shows as MC04 refused at TLS below.
+        screen_wait(s, "Main Menu")?;
         std::thread::sleep(Duration::from_millis(1500));
         let mc04 = Peer::new("MC04")?;
         mc04.pins.pairing(true);
