@@ -22,7 +22,14 @@ pub const CONSOLE_MISSING: Src = Src::new(
     Phase::Attention,
     "Console not found; the IPL continues on serial.",
 )
-.cause("No display, or a mode that is not drawn (only 16, 24 and 32 bits per pixel are).");
+.cause(
+    "No display, or a mode that is not drawn (only 16, 24 and 32 bits per pixel are); in a \
+     partition, no console port.",
+)
+.recovery(
+    "The serial console shows every screen meanwhile. Attach a display that is drawn, or choose \
+     the serial console in DST (Select DST console mode), and IPL again.",
+);
 /// Half of a mirrored pair was not found; the pair runs on one half.
 pub const MIRROR_MISSING: Src = Src::new(
     "A6001255",
@@ -77,7 +84,11 @@ pub const IFS_MISSING: Src = Src::new(
     Phase::Attention,
     "No IFS partition on any disk; the IPL goes on without the IFS.",
 )
-.cause("A store from before the IFS moved into ASP 1 lost its IFS partition.");
+.cause("A store from before the IFS moved into ASP 1 lost its IFS partition.")
+.recovery(
+    "The IPL makes a new IFS in ASP 1 in its place (C6001011); restore its directories from the \
+     last save with RST.",
+);
 /// ASP 1 has no room for the IFS volume; the IPL goes on without it.
 pub const IFS_NOT_CREATED: Src = Src::new(
     "A6001271",
@@ -85,7 +96,11 @@ pub const IFS_NOT_CREATED: Src = Src::new(
     Phase::Attention,
     "ASP 1 has no room for the IFS volume; the IPL goes on without it.",
 )
-.cause("ASP 1 cannot hold the IFS volume's first 64 MiB.");
+.cause("ASP 1 cannot hold the IFS volume's first 64 MiB.")
+.recovery(
+    "Free space in ASP 1, or add disk units to it in DST, then IPL again; the IPL makes the IFS \
+     once it fits.",
+);
 /// The IFS would not mount; the IPL goes on without it.
 pub const IFS_MOUNT_FAILED: Src = Src::new(
     "A6001275",
@@ -93,7 +108,11 @@ pub const IFS_MOUNT_FAILED: Src = Src::new(
     Phase::Attention,
     "The IFS would not mount; the IPL goes on without it.",
 )
-.cause("The kernel refused to mount the IFS volume; the serial log names the error.");
+.cause("The kernel refused to mount the IFS volume; the serial log names the error.")
+.recovery(
+    "Note the error and IPL again. If it fails again, report the problem with the serial log; \
+     until then the IFS, QSH and the file servers are unavailable.",
+);
 /// The IFS volume's block device could not be served.
 pub const IFS_NOT_SERVED: Src = Src::new(
     "A6001276",
@@ -101,7 +120,11 @@ pub const IFS_NOT_SERVED: Src = Src::new(
     Phase::Attention,
     "The IFS volume's block device could not be served; the IPL goes on without the IFS.",
 )
-.cause("The IFS volume's block device would not start; the serial log names the error.");
+.cause("The IFS volume's block device would not start; the serial log names the error.")
+.recovery(
+    "Note the error and IPL again. If it fails again, report the problem with the serial log; \
+     until then the IFS, QSH and the file servers are unavailable.",
+);
 /// A tape or optical device failed; its resource is in the log entry.
 pub const DEVICE_ERROR: Src = Src::new(
     "A6006300",
@@ -109,7 +132,11 @@ pub const DEVICE_ERROR: Src = Src::new(
     Phase::Attention,
     "A tape or optical device failed; its resource is in the log entry.",
 )
-.cause("A drive or media changer failed; the operator is told and a problem is logged.");
+.cause("A drive or media changer failed; the operator is told and a problem is logged.")
+.recovery(
+    "Read the message in QSYSOPR and the problem in WRKPRB. Check the drive, its cabling and \
+     cleaning, vary it off and on with VRYCFG, then run the operation again.",
+);
 /// A volume could not be read or written.
 pub const MEDIA_ERROR: Src = Src::new(
     "A6006310",
@@ -117,4 +144,8 @@ pub const MEDIA_ERROR: Src = Src::new(
     Phase::Attention,
     "A volume could not be read or written.",
 )
-.cause("A volume's labels, frames or image are damaged; a problem is logged.");
+.cause("A volume's labels, frames or image are damaged; a problem is logged.")
+.recovery(
+    "Read the message in QSYSOPR and the problem in WRKPRB. Run the operation again on another \
+     volume, or clean the drive; saves on a damaged volume may not restore.",
+);
