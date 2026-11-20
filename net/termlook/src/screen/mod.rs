@@ -106,6 +106,24 @@ impl Screen {
             })
             .collect()
     }
+
+    /// Copy without script: the text of the rectangle `from` to `to`
+    /// (row and column, 1-based, inclusive), one line a row, trailing
+    /// blanks dropped, as the script's Copy gives a selection.
+    pub fn copy(&self, from: (usize, usize), to: (usize, usize)) -> String {
+        let (r0, c0) = (from.0.max(1), from.1.max(1));
+        let (r1, c1) = (to.0.min(self.rows), to.1.min(self.cols));
+        self.text_rows()
+            .iter()
+            .take(r1)
+            .skip(r0 - 1)
+            .map(|row| {
+                let cut: String = row.chars().take(c1).skip(c0 - 1).collect();
+                cut.trim_end().to_string()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 }
 
 /// Width and height of a picture of `rows` by `cols` and its status
@@ -113,4 +131,39 @@ impl Screen {
 pub fn size(rows: usize, cols: usize, scale: usize) -> (usize, usize) {
     let s = scale.max(1);
     (cols * font::GLYPH_W * s, (rows + 1) * font::GLYPH_H * s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::look::render::{BLANK, Style};
+
+    #[test]
+    fn copy_takes_the_rectangle_without_nondisplay() {
+        let text = ["AB CD ", "EF GH "];
+        let mut cells = Vec::new();
+        for (r, row) in text.iter().enumerate() {
+            for (c, ch) in row.chars().enumerate() {
+                cells.push(Paint {
+                    ch,
+                    style: Style {
+                        nondisplay: r == 1 && c == 4,
+                        ..BLANK
+                    },
+                    cursor: false,
+                    selected: false,
+                });
+            }
+        }
+        let s = Screen {
+            rows: 2,
+            cols: 6,
+            cells,
+            shape: Shape::Underline,
+            status: Oia::default(),
+            look: Look::default(),
+        };
+        assert_eq!(s.copy((1, 1), (2, 6)), "AB CD\nEF G");
+        assert_eq!(s.copy((1, 2), (9, 4)), "B C\nF G");
+    }
 }

@@ -427,9 +427,12 @@ one), and the 5250 session's own `FieldPlus`, `FieldMinus`, `Clear`,
 **The script's element.** `data-socket` the socket's path (or a `ws:`
 or `wss:` URL), `data-session`, `data-scale`, `data-scheme` (`bw`),
 `data-image` the id of the picture it replaces, `data-5250` the 5250
-extras (hotspots, the cursor placed with the mouse, selection, Copy and
-Paste), `data-keymap` a keyboard map's address (JSON, key to name;
-without one the console's keys of `docs/PHASE1.md`). Without
+extras (hotspots, the cursor placed with the mouse, Paste),
+`data-keypad` the id of the page's keypad, which the toolbar's Keypad
+shows and hides in place, `data-keymap` a keyboard map's address (JSON,
+key to name; without one the console's keys of `docs/PHASE1.md`).
+On every page a drag over the screen selects cells and Copy copies
+them. Without
 `data-socket` it is this product's page as before: the socket at
 `<base>/5250/ws/<session>`, the extras on, the map from
 `<base>/5250/<session>/keymap/json`; so the session page and its golden
@@ -437,6 +440,20 @@ files did not change. This product's server speaks the same exchange
 (`routes/s5250/session.rs`); the style letters it sent before (`@` plus a
 5250 byte's low bits, `.` for an attribute byte) are now style
 characters, and the script draws the same cells.
+
+**The toolbar on a console's screen** (handoff 24). What the session
+page's toolbar offers beyond the keys, and whether a page of a
+partition's console (a `qsipart` grid) can have it:
+
+| Item | A console grid | With script | Without script |
+|---|---|---|---|
+| Copy | yes: its cells are text, and a nondisplay cell is sent as a blank, so a password is never copied | a drag selects cells and Copy writes them to the clipboard, on every page | the product's own page of the text: `Screen::copy(from, to)` gives the rectangle as the script's Copy does (this product's Copy page stays `s5250::Screen::copy`) |
+| Keypad (show or hide) | yes: the keypad's keys are the console's (`exchange::keys::KEYPAD`, `console_key`) | `data-keypad` names the keypad's element; Keypad shows and hides it in place | the product keeps the choice and draws the page without it (this product: the `kp` preference) |
+| Paste | could (typed text reaches a console as its character keys), but the console has no fields: a paste is typed wherever the cursor is and on across protected positions, so it stays the 5250 session's | with `data-5250` only | this product's Paste page |
+| Keyboard Map | the script takes any `data-keymap`, but a map's functions are the 5250 session's (`FieldPlus`, `Dup`, `EraseEof`, ... have no console key) and its files and editor (`.qkm`, `/5250/ID/keymap`) are this product's; a console's keys are its own (`docs/PHASE1.md`), so it stays the 5250 session's | `data-keymap` | this product's keyboard map pages |
+
+Without `data-socket` the script is this product's page as before; the
+session page names no `data-keypad`, so its Keypad posts as it did.
 
 ## Database (steps 7-12)
 

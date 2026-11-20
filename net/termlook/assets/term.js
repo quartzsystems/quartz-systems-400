@@ -6,7 +6,8 @@
 // src/exchange/, the drawing rules src/look/render.rs). It opens the
 // page's WebSocket, draws each screen into a canvas of the picture's
 // exact size with the console's font and rules, and sends keys by name.
-// Without it the page works by posting the keypad.
+// Without it the page works by posting the keypad. On every page a
+// drag selects cells and the toolbar's Copy copies them.
 //
 // Its <script> element says where things are:
 //   data-socket    the socket's path (or a ws:/wss: URL); without it the
@@ -20,7 +21,9 @@
 //   data-image     the id of the picture the canvas replaces (else the
 //                  img alt="5250 screen")
 //   data-5250      the 5250 extras: hotspots, the cursor placed with the
-//                  mouse, selection with Copy and Paste
+//                  mouse, Paste
+//   data-keypad    the id of the keypad's element, which the toolbar's
+//                  Keypad shows and hides in place
 //   data-keymap    a keyboard map's address (JSON, key name to function);
 //                  without one the console's own keys
 (function () {
@@ -246,35 +249,37 @@
     };
     sock.onclose = function () { closed(""); };
     canvas.addEventListener("keydown", onKey);
-    if (extras) {
-      canvas.addEventListener("mousedown", function (e) { drag = at(e); sel = null; });
-      canvas.addEventListener("mousemove", function (e) {
-        var p = at(e);
-        if (drag && p && (p[0] !== drag[0] || p[1] !== drag[1])) { sel = [Math.min(drag[0], p[0]), Math.min(drag[1], p[1]), Math.max(drag[0], p[0]), Math.max(drag[1], p[1])]; draw(); }
-        canvas.style.cursor = p && hotspot(p) ? "pointer" : "default";
-      });
-      canvas.addEventListener("mouseup", function (e) {
-        var p = at(e);
-        if (drag && p && !sel) { var k = hotspot(p); if (k) { send({ t: "key", k: k }); } else { send({ t: "cursor", r: p[0] + 1, c: p[1] + 1 }); } }
-        drag = null; canvas.focus();
-      });
-    }
+    canvas.addEventListener("mousedown", function (e) { drag = at(e); sel = null; });
+    canvas.addEventListener("mousemove", function (e) {
+      var p = at(e);
+      if (drag && p && (p[0] !== drag[0] || p[1] !== drag[1])) { sel = [Math.min(drag[0], p[0]), Math.min(drag[1], p[1]), Math.max(drag[0], p[0]), Math.max(drag[1], p[1])]; draw(); }
+      if (extras) { canvas.style.cursor = p && hotspot(p) ? "pointer" : "default"; }
+    });
+    canvas.addEventListener("mouseup", function (e) {
+      var p = at(e);
+      if (extras && drag && p && !sel) { var k = hotspot(p); if (k) { send({ t: "key", k: k }); } else { send({ t: "cursor", r: p[0] + 1, c: p[1] + 1 }); } }
+      drag = null; canvas.focus();
+    });
     if (keymapAt) {
       var x = new XMLHttpRequest();
       x.open("GET", keymapAt);
       x.onload = function () { try { keymap = JSON.parse(x.responseText); } catch (err) { keymap = {}; } };
       x.send();
     }
-    // The keypad (and with the 5250 extras Copy and Paste) go over the
-    // socket while it is open; the menu bar and Scale switch in place.
+    // The keypad goes over the socket while it is open, Copy takes the
+    // selection, Keypad shows or hides a keypad the page names (with
+    // the 5250 extras, Paste types the clipboard); the menu bar and
+    // Scale switch in place. Anything else posts as without script.
+    var padAt = me.getAttribute("data-keypad"), pad = padAt ? document.getElementById(padAt) : null;
     document.addEventListener("click", function (e) {
       var t = e.target;
       var a = t && t.closest ? t.closest("a[href]") : null;
       if (a && sock && sock.readyState === 1 && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.button === 0 && inPlace(a)) { e.preventDefault(); return; }
       if (!t || t.tagName !== "INPUT" || t.type !== "submit") { return; }
       if (t.name === "k" && send({ t: "key", k: KEYPAD[t.value] || t.value })) { e.preventDefault(); canvas.focus(); }
-      if (!extras) { return; }
       if (t.name === "tb" && t.value === "Copy" && navigator.clipboard && sel) { e.preventDefault(); navigator.clipboard.writeText(selectedText()); }
+      if (t.name === "tb" && t.value === "Keypad" && pad) { e.preventDefault(); pad.style.display = pad.style.display === "none" ? "" : "none"; canvas.focus(); }
+      if (!extras) { return; }
       if (t.name === "tb" && t.value === "Paste" && navigator.clipboard && navigator.clipboard.readText) {
         e.preventDefault(); navigator.clipboard.readText().then(function (s) { send({ t: "type", s: s.replace(/[\r\n]/g, "") }); });
       }
