@@ -213,6 +213,10 @@ impl Conn {
                     self.config.address,
                     if pinned { "pinned" } else { "to pair" }
                 ));
+                if pinned {
+                    self.keeper
+                        .contact(&self.config.peer.fingerprint, &self.config.address);
+                }
             }
             Incoming::Request(r) => self.request(&r),
             Incoming::Data { stream, bytes } => self.data(stream, &bytes),

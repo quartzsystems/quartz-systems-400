@@ -247,7 +247,7 @@ fn strtcp_and_endtcp_through_the_starter() {
     let fw = Framework::standard();
     let mut env = Fake::default();
     let autostart = env.cfg.autostart();
-    assert_eq!(autostart, ["*TELNET", "*FTP"]);
+    assert_eq!(autostart, ["*TELNET", "*FTP", "*QSI"]);
     {
         let mut s = servers::framework::Starter::new(&fw, &mut env);
         let r = start_all(&mut s, &autostart);

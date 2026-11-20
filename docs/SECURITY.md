@@ -556,6 +556,7 @@ failure) is audited too. An event is written when:
 | `PG` | `*SECRUN` | an object's primary group changes |
 | `PS` | `*SECVFY` | a profile handle is obtained, used to swap, or released |
 | `PW` | `*AUTFAIL` | a sign-on or API names a user that does not exist (`U`), a wrong password (`P`), a service tools user ID or password that is wrong (`X`) |
+| `QI` | `*SECCFG`, `*AUTFAIL` for `F` | QS/400's: a management console pairs (`P`) or an attempt is refused (`F`), a console is removed (`R`), a pairing password is made (`I`) or ended unused (`E`) (`docs/QSID.md` section 12) |
 | `SE` | `*SECCFG` | a routing entry is added, changed or removed |
 | `SF` | `*SPLFDTA` | a spooled file is read, held, released, changed or deleted |
 | `ST` | `*SERVICE` | DST or the service console is signed on to |
@@ -914,6 +915,22 @@ Password or user not valid.
 | 0 | 1 | PWETYP | `P` password, `U` user, `A` other, `X` service tools user |
 | 1 | 10 | PWUSRP | user named |
 | 11 | 10 | PWDEVN | device |
+
+### `AuditQI` (187 bytes)
+
+A management console and the QSI server (`docs/QSID.md` section 12):
+QS/400's entry, as IBM i has no such server. Selected by `*SECCFG`, a
+refused attempt (`F`) by `*AUTFAIL`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | QIETYP | `P` a console paired, `F` a pairing attempt refused, `R` a console removed, `I` a pairing password made, `E` one ended before it was used |
+| 1 | 1 | QIWHER | where: `D` the service tools (DST), `C` a command, `N` the network (the server) |
+| 2 | 1 | QIFAIL | an `F` entry's reason: `N` no password out or none left, `C` a confirmation that did not hold, `A` the console stopped before confirming, `K` the pin not kept |
+| 3 | 64 | QICNAM | the console's name, as it gave it |
+| 67 | 64 | QIFPRT | its certificate's SHA-256, hexadecimal |
+| 131 | 46 | QIADDR | the address it connected from |
+| 177 | 10 | QIUSRP | who made the password or removed the console: the profile, or the service tools user at DST |
 
 ### `AuditSE` (85 bytes)
 

@@ -536,6 +536,69 @@ help = "A domain name is labels of letters, digits and hyphens separated by peri
 # The certificate commands' messages (QS* commands, Quartz extensions;
 # lic/slic/src/cpp/certcmd.rs). The TCP1Cxx family is ours.
 [[msg]]
+id = "TCP1A80"
+sev = 0
+text = "QSI server started on port &1."
+help = "The QSI listener QSIDSRV in QSYSWRK answers management consoles on this port, over TLS with the consoles paired with the system. WRKQSICSL shows them; STRQSIPAIR pairs another."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "TCP1A81"
+sev = 0
+text = "QSI server ended."
+help = "The QSI listener ended; its sessions were told and closed. A management console connects again when the server is started."
+vars = []
+
+[[msg]]
+id = "TCP1A82"
+sev = 40
+text = "QSI server could not be started: &1."
+help = "The QSI listener ended at once for the reason shown. Correct it, then start the server again with STRTCPSVR SERVER(*QSI)."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1A83"
+sev = 0
+text = "Pairing password made: good for one pairing until &1."
+help = "The password is shown once, on the display that asked for it, and kept nowhere but in the storage service's memory. Type it at the management console within the time shown; five wrong tries end it. F12 on that display ends it at once."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "TCP1A84"
+sev = 40
+text = "Two management consoles are paired with this system already."
+help = "A system pins at most two management consoles. Remove one with RMVQSICSL or WRKQSICSL option 4, then make the pairing password again."
+vars = []
+
+[[msg]]
+id = "TCP1A85"
+sev = 40
+text = "The system has no QSI identity yet."
+help = "The QSI server makes the system's identity the first time it starts. Start it with STRTCPSVR SERVER(*QSI), then try again."
+vars = []
+
+[[msg]]
+id = "TCP1A86"
+sev = 40
+text = "Management console &1 is not paired with this system."
+help = "Name a console as WRKQSICSL shows it: by its name, its fingerprint or its place in the list."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "TCP1A87"
+sev = 0
+text = "Management console &1 removed."
+help = "The console's pin was removed: a session it has ends within a second and it cannot connect again until it is paired again."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "TCP1A88"
+sev = 0
+text = "Pairing password ended."
+help = "No pairing password is out now; a console that tries to pair is refused until another is made."
+vars = []
+
+[[msg]]
 id = "TCP1C00"
 sev = 0
 text = "Certificate store &1 created."

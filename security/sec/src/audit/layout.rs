@@ -11,7 +11,7 @@ use crate::audit::kind::Kind;
 use crate::rec::{Layout, field};
 
 /// The version of these layouts (frozen at V1R1M0, `docs/SECURITY.md` §7;
-/// version 2 adds `VP` and `DI`).
+/// version 2 adds `VP`, `DI` and `QI`).
 pub const FORMAT_VERSION: u16 = 2;
 
 /// `AF`: authority failure.
@@ -322,6 +322,23 @@ pub static VP: Layout = Layout {
     ],
 };
 
+/// `QI`: a management console paired, an attempt refused, a console
+/// removed, a pairing password made or ended (QS/400's; IBM has no
+/// such entry).
+pub static QI: Layout = Layout {
+    name: "AuditQI",
+    size: Some(187),
+    fields: &[
+        field("QIETYP", 0, 1),
+        field("QIWHER", 1, 1),
+        field("QIFAIL", 2, 1),
+        field("QICNAM", 3, 64),
+        field("QIFPRT", 67, 64),
+        field("QIADDR", 131, 46),
+        field("QIUSRP", 177, 10),
+    ],
+};
+
 /// `SE`: subsystem routing changed.
 pub static SE: Layout = Layout {
     name: "AuditSE",
@@ -434,6 +451,7 @@ pub fn of(kind: Kind) -> Option<&'static Layout> {
         Kind::Ps => &PS,
         Kind::Pw => &PW,
         Kind::Vp => &VP,
+        Kind::Qi => &QI,
         Kind::Se => &SE,
         Kind::Sf => &SF,
         Kind::St => &ST,
@@ -448,7 +466,7 @@ pub fn of(kind: Kind) -> Option<&'static Layout> {
 #[must_use]
 pub fn all() -> Vec<&'static Layout> {
     vec![
-        &AF, &AD, &AU, &CA, &CO, &CP, &DI, &DO, &DS, &GR, &JD, &JS, &OM, &OW, &PA, &PG, &PS, &PW, &SE,
-        &SF, &ST, &SV, &VP, &ZC, &ZR,
+        &AF, &AD, &AU, &CA, &CO, &CP, &DI, &DO, &DS, &GR, &JD, &JS, &OM, &OW, &PA, &PG, &PS, &PW,
+        &QI, &SE, &SF, &ST, &SV, &VP, &ZC, &ZR,
     ]
 }

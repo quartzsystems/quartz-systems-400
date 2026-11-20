@@ -2657,6 +2657,11 @@ impl Service for Served<'_> {
         super::netsvr::call(self.system, &me, 37, &api, &parms)
     }
 
+    fn qsi(&mut self, op: stg::qsi::QsiOp) -> stg::qsi::QsiReply {
+        self.system.current_job = self.ctx.job.number;
+        super::qsi::request(self.system, self.ctx, op)
+    }
+
     fn netsvr(&mut self, op: stg::netsvr::NsOp) -> stg::netsvr::NsReply {
         let job = self.ctx.job.clone();
         self.system.current_job = job.number;

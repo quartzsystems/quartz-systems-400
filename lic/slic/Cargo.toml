@@ -56,6 +56,9 @@ ipc = { path = "../../work/ipc", version = "0.1.0" }
 hwrsrc = { path = "../../lic/hwrsrc", version = "0.1.0" }
 guestagent = { path = "../../lic/guestagent", version = "0.1.0" }
 qsipart = { path = "../../lic/qsipart", version = "0.1.0" }
+qsi = { path = "../../lic/qsi", version = "0.1.0" }
+qsisvr = { path = "../../net/qsisvr", version = "0.1.0" }
+qsitrust = { path = "../../lic/qsitrust", version = "0.1.0" }
 hwqual = { path = "../../lic/hwqual", version = "0.1.0" }
 stg = { path = "../../work/stg", version = "0.1.0" }
 ifs = { path = "../../ifs/ifs", version = "0.1.0" }

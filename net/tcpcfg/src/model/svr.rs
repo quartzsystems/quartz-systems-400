@@ -33,6 +33,7 @@ pub const STANDARD: &[(&str, bool)] = &[
     ("*SSHD", false),
     ("*HOSTSVR", false),
     ("*QAP", false),
+    ("*QSI", true),
     ("*NETSVR", false),
     ("*DIRSRV", false),
 ];

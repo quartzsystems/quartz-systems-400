@@ -12,6 +12,7 @@ pub mod http;
 pub mod lpd;
 pub mod ntp;
 pub mod qap;
+pub mod qsi;
 pub mod smtp;
 pub mod telnet;
 

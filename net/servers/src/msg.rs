@@ -71,6 +71,24 @@ pub const QAP_SPLF_IN_USE: &str = "TCP1A57";
 pub const QAP_SIGNED_OFF_ELSEWHERE: &str = "TCP1A58";
 /// `QAP session of &1 has as many connections as it may have.`
 pub const QAP_SESSION_FULL: &str = "TCP1A59";
+/// `QSI server started on port &1.`
+pub const QSI_STARTED: &str = "TCP1A80";
+/// `QSI server ended.`
+pub const QSI_ENDED: &str = "TCP1A81";
+/// `QSI server could not be started: &1.`
+pub const QSI_NOT_STARTED: &str = "TCP1A82";
+/// `Pairing password made: good for one pairing until &1.`
+pub const QSI_PASSWORD: &str = "TCP1A83";
+/// `Two management consoles are paired with this system already.`
+pub const QSI_FULL: &str = "TCP1A84";
+/// `The system has no QSI identity yet.`
+pub const QSI_NO_IDENTITY: &str = "TCP1A85";
+/// `Management console &1 is not paired with this system.`
+pub const QSI_NO_CONSOLE: &str = "TCP1A86";
+/// `Management console &1 removed.`
+pub const QSI_REMOVED: &str = "TCP1A87";
+/// `Pairing password ended.`
+pub const QSI_PASSWORD_ENDED: &str = "TCP1A88";
 /// `&1 server TLS port &2 not started: &3.`
 pub const TLS_NOT_STARTED: &str = "TCP1A63";
 /// `Automatic sign-on of &1 at device &2 refused: &3.`
@@ -110,6 +128,15 @@ pub const ALL: &[&str] = &[
     QAP_SPLF_IN_USE,
     QAP_SIGNED_OFF_ELSEWHERE,
     QAP_SESSION_FULL,
+    QSI_STARTED,
+    QSI_ENDED,
+    QSI_NOT_STARTED,
+    QSI_PASSWORD,
+    QSI_FULL,
+    QSI_NO_IDENTITY,
+    QSI_NO_CONSOLE,
+    QSI_REMOVED,
+    QSI_PASSWORD_ENDED,
     TLS_NOT_STARTED,
     AUTO_SIGNON_REFUSED,
 ];

@@ -73,6 +73,10 @@ pub trait Keeper: Send + Sync {
     /// An attempt succeeded: pin the console and retire the password.
     /// `false` when it could not be kept.
     fn paired(&self, attempt: &Attempt) -> bool;
+    /// A pinned console had a session from `address`.
+    fn contact(&self, fingerprint: &Fingerprint, address: &str) {
+        let _ = (fingerprint, address);
+    }
 }
 
 #[derive(Debug, Default)]

@@ -11,6 +11,7 @@ pub mod console;
 pub mod guest;
 pub mod hwr;
 pub mod qsid;
+pub mod qsipanel;
 pub mod spawn;
 pub mod stg;
 pub mod svcjob;

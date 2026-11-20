@@ -173,6 +173,7 @@ fn text(s: &ServerSpec) -> String {
         "*SSHD" => "SSH server".into(),
         "*HOSTSVR" => "Host servers".into(),
         "*QAP" => "QAP server (QS/400 Access)".into(),
+        "*QSI" => "QSI server (management consoles)".into(),
         _ => format!("{} server", s.name),
     }
 }

@@ -53,6 +53,7 @@ pub(crate) mod prtdev;
 pub(crate) mod prtf;
 pub(crate) mod qap;
 pub(crate) mod qsh;
+pub(crate) mod qsi;
 pub(crate) mod regfac;
 pub(crate) mod sbs;
 pub(crate) mod security;

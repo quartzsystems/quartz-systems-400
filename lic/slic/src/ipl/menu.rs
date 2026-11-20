@@ -62,6 +62,12 @@ pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
         // Function 21's service tools run over a complete system: what
         // they do not take waits for the run loop.
         if system.panel_dst
+            && matches!(&event, Ok(Event::Signal(s)) if *s == sys::HANDLED[1])
+            && crate::procs::qsipanel::refuse_busy()
+        {
+            continue;
+        }
+        if system.panel_dst
             && let Ok(e) = &event
             && !matches!(e, Event::Console(_) | Event::Line(_) | Event::Qsid(_))
         {

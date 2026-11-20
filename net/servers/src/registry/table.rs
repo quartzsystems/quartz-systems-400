@@ -6,7 +6,7 @@
 //! oracle's (pub400, V7R5M0, `docs/NET_OPEN_QUESTIONS.md` "Server jobs
 //! and subsystems") except `QTLPD00nnn`, which no oracle runs (IBM's
 //! documentation names it; it runs as `QTMPLPD`, the profile LPD
-//! spooled files belong to), `*QAP`, ours (docs/QAP.md), and
+//! spooled files belong to), `*QAP` and `*QSI`, ours (docs/QAP.md, docs/QSID.md), and
 //! `*DIRSRV`, the primary's (one job per instance, named after it;
 //! docs/DIRSRV.md section 4).
 
@@ -322,6 +322,18 @@ pub static SPECS: &[ServerSpec] = &[
         attrs_cmd: Some("CHGQAPA"),
         app_id: Some("QS400_ACCESS_SERVER"),
         exit_points: &["QS400_QAP_MGMT"],
+        start_subsystem: false,
+        instances: &[],
+        readiness: Readiness::Built,
+    },
+    ServerSpec {
+        special: "*QSI",
+        name: "QSI",
+        jobs: &[job("QSIDSRV", "QSYS", "QSYSWRK", JobKind::Listener, "QSI")],
+        ports: &[tcp(2300, true)],
+        attrs_cmd: Some("CHGQSIA"),
+        app_id: None,
+        exit_points: &[],
         start_subsystem: false,
         instances: &[],
         readiness: Readiness::Built,

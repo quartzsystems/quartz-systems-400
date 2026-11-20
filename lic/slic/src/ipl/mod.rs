@@ -876,7 +876,11 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                 let pids = sys::reap_with_status();
                 reaped(system, &pids, tx);
             }
-            Ok(Event::Signal(s)) if s == libc_sigusr1() => power::requested(system),
+            Ok(Event::Signal(s)) if s == libc_sigusr1() => match procs::qsipanel::take() {
+                // The QSI server asks for function 21; else a power down.
+                Some(_) => panel_dst(system, rx, &mut |_, r| procs::qsipanel::answer(r)),
+                None => power::requested(system),
+            },
             // SIGTERM and SIGINT are ignored by PID 1; the reaper restarts
             // a job whose channel closed.
             Ok(
@@ -903,28 +907,34 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                     .out
                     .serial(&format!("slic: console: no session yet: {e}\n"));
             }
-            Ok(Event::Qsid(guestagent::qsid::Ask::Dst { id })) => panel_dst(system, rx, id),
+            Ok(Event::Qsid(guestagent::qsid::Ask::Dst { id })) => {
+                panel_dst(system, rx, &mut |s, r| procs::qsid::answer(s, id, r));
+            }
             Err(mpsc::RecvTimeoutError::Disconnected) => park(),
         }
     }
 }
 
+/// How function 21 is answered: to the partition service channel or to
+/// the QSI server.
+type PanelAnswer<'a> = dyn FnMut(&mut System, Option<(&str, &str)>) + 'a;
+
 /// Control panel function 21 from the hypervisor: dedicated service
 /// tools on the console, as the IPL menu offers them at a manual IPL.
 /// The console's session waits behind them and comes back after; what
 /// the service tools' screens do not take waits for the run loop.
-fn panel_dst(system: &mut System, rx: &mpsc::Receiver<Event>, id: u32) {
+fn panel_dst(system: &mut System, rx: &mpsc::Receiver<Event>, answer: &mut PanelAnswer<'_>) {
     use guestagent::qsid::text;
     use qsipart::service::msgid;
     if system.mode != IplMode::Manual {
-        procs::qsid::answer(system, id, Some((msgid::NOT_MANUAL, text::NOT_MANUAL)));
+        answer(system, Some((msgid::NOT_MANUAL, text::NOT_MANUAL)));
         return;
     }
     if !system.complete {
-        procs::qsid::answer(system, id, Some((msgid::DST_BUSY, text::DST_IPL)));
+        answer(system, Some((msgid::DST_BUSY, text::DST_IPL)));
         return;
     }
-    procs::qsid::answer(system, id, None);
+    answer(system, None);
     system
         .out
         .serial("slic: control panel function 21: service tools on the console\n");

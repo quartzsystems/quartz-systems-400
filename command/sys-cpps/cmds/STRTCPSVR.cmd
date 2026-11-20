@@ -14,7 +14,7 @@
                           (*FTP) (*SMTP) (*LPD) (*HTTP) (*SNMP) +
                           (*ROUTED) (*BOOTP) (*TFTP) (*REXEC) (*DHCP) +
                           (*DNS) (*POP) (*DDM) (*NTP) (*SSHD) +
-                          (*HOSTSVR) (*QAP) (*NETSVR) (*DIRSRV)) +
+                          (*HOSTSVR) (*QAP) (*QSI) (*NETSVR) (*DIRSRV)) +
                           MAX(300) CHOICE('*ALL, *AUTOSTART...') +
                           PROMPT('Server application')
              PARM       KWD(RESTART) TYPE(*CHAR) LEN(10) DFT(*NONE) +

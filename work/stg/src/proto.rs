@@ -1080,6 +1080,10 @@ ipc::rpc! {
     1571 => fn dirpub_events / DirpubEvents (agent: String, since: crate::dirpub::PubCursor, status: crate::dirpub::PubStatus) -> Result<crate::dirpub::PubChanges, String>;
     /// Every object agent `agent` publishes, and the cursor of the list.
     1572 => fn dirpub_list / DirpubList (agent: String) -> Result<crate::dirpub::PubListing, String>;
+    // --- the QSI server (1600-1609, docs/QSID.md section 12)
+    /// One QSI operation (`crate::qsi`): the identity, the pins and the
+    /// pairing password, the system a console asks about.
+    1600 => fn qsi / Qsi (op: crate::qsi::QsiOp) -> crate::qsi::QsiReply;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

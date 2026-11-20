@@ -268,6 +268,7 @@ impl System {
             return;
         }
         self.log.push(src);
+        self.write_history();
         self.out.both(&src.line());
         let severity = match src.phase {
             crate::src::Phase::Attention => Some(licpart::Severity::Attention),
@@ -296,6 +297,30 @@ impl System {
         // Each code stays up long enough to be read.
         if !self.pace.is_zero() {
             std::thread::sleep(self.pace);
+        }
+    }
+
+    /// Rewrite this IPL's codes for the QSI server (`qsisvr::history`):
+    /// each numbered by the IPL's count and its place, at the time it was
+    /// posted (the start time is right once the clock is).
+    pub fn write_history(&self) {
+        use qsisvr::history;
+        let ipl = self.lic.as_ref().map_or(0, |(_, r)| r.header.ipl_count);
+        let mut text = String::new();
+        for (i, e) in self.log.entries().enumerate() {
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let at = (e.at * 1000.0) as u64;
+            let ms = self.start_time.saturating_mul(1000).saturating_add(at);
+            text.push_str(&history::line(
+                history::seq(ipl, i),
+                ms,
+                e.src.code,
+                e.src.text,
+            ));
+        }
+        let tmp = format!("{}.new", history::PATH);
+        if std::fs::write(&tmp, text).is_ok() {
+            let _ = std::fs::rename(&tmp, history::PATH);
         }
     }
 

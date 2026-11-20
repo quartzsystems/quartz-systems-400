@@ -36,6 +36,9 @@ pub fn framework() -> Framework {
         servers::framework::Standard::of("*QAP").expect("in the registry"),
     ));
     f.register(Box::new(
+        servers::framework::Standard::of("*QSI").expect("in the registry"),
+    ));
+    f.register(Box::new(
         servers::framework::Standard::of("*DDM").expect("in the registry"),
     ));
     f.register(Box::new(servers::framework::NetSvr));

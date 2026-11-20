@@ -98,6 +98,8 @@ impl Event {
     pub fn category(&self) -> Option<&'static str> {
         if self.kind == Kind::Di {
             di::category(self.get("OPER"))
+        } else if self.kind == Kind::Qi && self.get("ETYP") == "F" {
+            Some("*AUTFAIL")
         } else {
             self.kind.category()
         }

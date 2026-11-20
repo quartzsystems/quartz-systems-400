@@ -33,6 +33,10 @@ netserver = { path = "../../net/netserver", version = "0.1.0" }
 qapd = { path = "../../net/qapd", version = "0.1.0" }
 qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
 qsi = { path = "../../lic/qsi", version = "0.1.0" }
+qsisess = { path = "../../lic/qsisess", version = "0.1.0" }
+qsisvr = { path = "../../net/qsisvr", version = "0.1.0" }
+qsitrust = { path = "../../lic/qsitrust", version = "0.1.0" }
+guestagent = { path = "../../lic/guestagent", version = "0.1.0" }
 sql = { path = "../../database/sql", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }

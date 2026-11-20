@@ -82,6 +82,7 @@ pub fn run() -> ! {
         "FTP" => crate::work::ftp::run(ctl, &link, &start),
         "FTPSESS" => crate::work::ftp::session(ctl, &link, &start),
         "QAP" => crate::work::qap::listener::run(ctl, &link, &start),
+        "QSI" => crate::work::qsi::listener::run(ctl, &link, &start),
         crate::work::netsvr::ROLE => crate::work::netsvr::server::role(ctl, &link, &start),
         crate::work::dirsrv::instance::ROLE => {
             crate::work::dirsrv::instance::run(ctl, &link, &start)

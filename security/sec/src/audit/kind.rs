@@ -56,6 +56,8 @@ pub enum Kind {
     Ru,
     /// Primary group changed by a restore.
     Rz,
+    /// A management console paired, refused or removed (QSI; QS/400's).
+    Qi,
     /// Subsystem routing changed.
     Se,
     /// Spooled file action.
@@ -87,7 +89,7 @@ pub enum Kind {
 }
 
 /// Every kind, in code order.
-pub const ALL: [Kind; 38] = [
+pub const ALL: [Kind; 39] = [
     Kind::Ad,
     Kind::Af,
     Kind::Au,
@@ -107,6 +109,7 @@ pub const ALL: [Kind; 38] = [
     Kind::Pg,
     Kind::Ps,
     Kind::Pw,
+    Kind::Qi,
     Kind::Ra,
     Kind::Ro,
     Kind::Rp,
@@ -152,6 +155,7 @@ impl Kind {
             Self::Pg => "PG",
             Self::Ps => "PS",
             Self::Pw => "PW",
+            Self::Qi => "QI",
             Self::Ra => "RA",
             Self::Ro => "RO",
             Self::Rp => "RP",
@@ -188,7 +192,7 @@ impl Kind {
             Self::Af | Self::Pw | Self::Vp => "*AUTFAIL",
             Self::Co => "*CREATE",
             Self::Do => "*DELETE",
-            Self::Ad | Self::Cp | Self::Ds | Self::Sv | Self::Se | Self::Au => "*SECCFG",
+            Self::Ad | Self::Cp | Self::Ds | Self::Sv | Self::Se | Self::Au | Self::Qi => "*SECCFG",
             Self::Ca | Self::Ow | Self::Pg | Self::Pa | Self::Jd | Self::Gr => "*SECRUN",
             Self::Ps | Self::X1 => "*SECVFY",
             Self::Js => "*JOBBAS",
