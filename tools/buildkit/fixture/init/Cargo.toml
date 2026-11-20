@@ -1,6 +1,6 @@
 [package]
 name = "qsdemo-init"
-description = "QSDEMO's PID 1: its release, its A/B record, a panel, a protected set, a route, QSI paired, a web page over TLS; then it powers off"
+description = "QSDEMO's PID 1: its release, its A/B record, a panel, a protected set, a route, QSI paired, a web page over TLS with a terminal; then it powers off"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -23,6 +23,7 @@ qsisess.workspace = true
 qsitrust.workspace = true
 qsweb.workspace = true
 x509kit.workspace = true
+termlook.workspace = true
 rustls = { version = "0.23.46", default-features = false, features = ["std"] }
 rustls-graviola = "0.4.0"
 uuid = "1.23.3"

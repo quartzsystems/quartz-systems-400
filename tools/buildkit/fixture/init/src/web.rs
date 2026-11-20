@@ -8,7 +8,9 @@
 //! with a `QMC`-style identifier. A certificate made here (P-256,
 //! self-signed) serves it over TLS 1.3 on a socket pair; a client
 //! pinned to that certificate signs on, posts the form and fetches the
-//! page, which must match the fixture's golden file.
+//! page, which must match the fixture's golden file. Then the terminal
+//! page ([`crate::term`]): its picture must be the golden picture, its
+//! script the look crate's, and a posted key the console's key.
 
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::sync::Arc;
@@ -32,6 +34,9 @@ use rustls::{SignatureScheme, StreamOwned};
 
 /// The page the client ends on, as it must be.
 const GOLDEN: &str = include_str!("../golden/settings.html");
+
+/// The terminal page's picture, as it must be.
+const GOLDEN_PNG: &[u8] = include_bytes!("../golden/terminal.png");
 
 /// QSDEMO's family of web products.
 static BRAND: Brand = Brand {
@@ -117,6 +122,69 @@ impl Console {
         };
         Response::html(200, frame::render(&ctx, &page))
     }
+
+    /// `/terminal`, its picture, its script and its keypad's posts.
+    fn terminal(&self, req: &Request, s: &session::Session) -> Response {
+        let here = req.path.strip_prefix(PRODUCT.prefix).unwrap_or("");
+        match (req.method.as_str(), here) {
+            ("GET", "/terminal/screen.png") => match crate::term::png() {
+                Ok(png) => Response::new(200, "image/png", png),
+                Err(e) => qsweb::http::plain(500, &e),
+            },
+            ("GET", "/terminal/script.js") => Response::new(
+                200,
+                "text/javascript; charset=utf-8",
+                crate::term::script().into_bytes(),
+            ),
+            ("POST", "/terminal/key") => {
+                let f = req.form();
+                if !session::csrf_ok(s, f.get(session::CSRF_FIELD).unwrap_or("")) {
+                    return qsweb::http::plain(403, "The form has expired.");
+                }
+                let label = f.get("k").unwrap_or("");
+                let m = match crate::term::posted(label) {
+                    Some(k) => Message::new(
+                        Kind::Done,
+                        "QMC2002",
+                        &format!("Key {label} sent to the console as {k:?}."),
+                    ),
+                    None => Message::new(
+                        Kind::Error,
+                        "QMC0002",
+                        &format!("Key {label} is not a console key."),
+                    ),
+                };
+                self.sessions.flash(&s.id, m);
+                Response::redirect(&PRODUCT.url("/terminal"))
+            }
+            ("GET", "/terminal") => {
+                let mut messages = Vec::new();
+                if let Some(m) = self.sessions.take_flash(&s.id) {
+                    messages.push(m);
+                }
+                let ctx = Ctx {
+                    product: &PRODUCT,
+                    system: self.name.lock().expect("name").clone(),
+                    user: s.user.clone(),
+                    csrf: s.csrf.clone(),
+                    open: None,
+                    here: frame::here(req),
+                };
+                let page = Page {
+                    title: "Terminal".into(),
+                    crumb: vec!["Systems".into(), "Terminal".into()],
+                    h1: "Terminal".into(),
+                    messages,
+                    body: crate::term::body(&|p| PRODUCT.url(p), session::CSRF_FIELD, &s.csrf),
+                    help: "terminal".into(),
+                    nav: Some(("Systems", None)),
+                    ..Page::default()
+                };
+                Response::html(200, frame::render(&ctx, &page))
+            }
+            _ => qsweb::http::plain(404, "There is no such page."),
+        }
+    }
 }
 
 impl Handler for Console {
@@ -154,6 +222,9 @@ impl Handler for Console {
         let Some(s) = PRODUCT.session_id(req).and_then(|id| self.sessions.get(id)) else {
             return Response::redirect(&PRODUCT.url("/signon"));
         };
+        if req.path.starts_with(&PRODUCT.url("/terminal")) {
+            return self.terminal(req, &s);
+        }
         if req.path != PRODUCT.url("/settings") {
             return qsweb::http::plain(404, "There is no such page.");
         }
@@ -267,6 +338,7 @@ struct Got {
     status: u16,
     headers: Vec<(String, String)>,
     body: String,
+    raw: Vec<u8>,
 }
 
 impl Got {
@@ -338,6 +410,7 @@ impl<S: Read + Write> Client<S> {
             status,
             headers,
             body: String::new(),
+            raw: Vec::new(),
         };
         let len: usize = got
             .header("Content-Length")
@@ -345,7 +418,8 @@ impl<S: Read + Write> Client<S> {
             .ok_or_else(|| format!("{path}: no Content-Length"))?;
         let mut b = vec![0u8; len];
         self.conn.read_exact(&mut b).map_err(|e| e.to_string())?;
-        got.body = String::from_utf8(b).map_err(|e| e.to_string())?;
+        got.body = String::from_utf8_lossy(&b).into_owned();
+        got.raw = b;
         if let Some(c) = got.header("Set-Cookie") {
             let v = c
                 .split(';')
@@ -478,6 +552,49 @@ pub fn run() -> Result<(Vec<String>, String, Option<String>), String> {
     let r = c.send("GET", "/demo/settings", &[])?;
     expect(&r, 200, "settings after the form")?;
     let page = r.body;
+
+    // The terminal page on the look crate.
+    let r = c.send("GET", "/demo/terminal", &[])?;
+    expect(&r, 200, "terminal page")?;
+    for want in [
+        "id=\"term\"",
+        "src=\"/demo/terminal/screen.png\"",
+        "data-socket=\"/demo/terminal/ws\"",
+        "name=\"k\" value=\"Field+\"",
+    ] {
+        if !r.body.contains(want) {
+            return Err(format!("the terminal page has no {want}"));
+        }
+    }
+    let token = csrf_of(&r.body).ok_or("no CSRF field on the keypad")?;
+    let png = c.send("GET", "/demo/terminal/screen.png", &[])?;
+    expect(&png, 200, "the terminal's picture")?;
+    if png.raw != GOLDEN_PNG {
+        return Err(format!(
+            "the terminal's picture ({} bytes) is not the golden picture ({} bytes)",
+            png.raw.len(),
+            GOLDEN_PNG.len()
+        ));
+    }
+    let js = c.send("GET", "/demo/terminal/script.js", &[])?;
+    expect(&js, 200, "the terminal's script")?;
+    if !js.body.starts_with("var QS_FONT = {") || !js.body.contains("data-socket") {
+        return Err("the terminal's script is not the look crate's".into());
+    }
+    let r = c.send(
+        "POST",
+        "/demo/terminal/key",
+        &[("csrf", &token), ("k", "F3")],
+    )?;
+    expect(&r, 303, "a keypad post")?;
+    let r = c.send("GET", "/demo/terminal", &[])?;
+    if !r.body.contains("QMC2002") || !r.body.contains("Function(3)") {
+        return Err("the posted F3 was not decoded as the console's F3".into());
+    }
+    let keys = crate::term::from_socket("{\"t\":\"key\",\"k\":\"Enter\"}");
+    if keys != [qsipart::console::Key::Enter] {
+        return Err(format!("a socket's Enter decoded as {keys:?}"));
+    }
     drop(c);
     served
         .join()
@@ -504,6 +621,10 @@ pub fn run() -> Result<(Vec<String>, String, Option<String>), String> {
     ));
     said.push("signed on, CSRF refused a forged form, message QMC2001 shown".into());
     said.push("the settings page matches its golden file".into());
+    said.push(
+        "terminal: qsipart frames to a grid, the picture matches its golden PNG, F3 posted and decoded"
+            .into(),
+    );
     Ok((said, page, differs))
 }
 

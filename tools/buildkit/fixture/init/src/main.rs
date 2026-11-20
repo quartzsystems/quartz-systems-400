@@ -9,7 +9,8 @@
 //! mirrored set served through ublk with an xfs on it ([`raid`]), a
 //! route under its own protocol number ([`net`]), QSI paired and
 //! answered over TLS ([`mgmt`]), and a web product of its own on the
-//! shared web layer over TLS with a certificate made here ([`web`]).
+//! shared web layer over TLS with a certificate made here ([`web`]),
+//! with a terminal page drawn by the look crate ([`term`]).
 //! Each prints `QSDEMO <what>: ...` when it held and
 //! `QSDEMO <what> FAILED: ...`
 //! when it did not, and the system powers off. The kernel has the
@@ -19,6 +20,7 @@ mod mgmt;
 mod net;
 mod panel;
 mod raid;
+mod term;
 mod web;
 
 use std::ffi::CStr;
