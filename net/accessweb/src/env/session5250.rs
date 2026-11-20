@@ -75,16 +75,8 @@ pub struct Live {
     pub version: u64,
 }
 
-/// What the user does to a live session.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Input {
-    /// A 5250 function by its keyboard-map name (`Enter`, `F:3`, ...).
-    Key(String),
-    /// Characters typed at the cursor.
-    Text(String),
-    /// The cursor moved to a 1-based row and column.
-    Cursor(usize, usize),
-}
+/// What the user does to a live session: the exchange's input.
+pub use termlook::exchange::Input;
 
 /// 5250 sessions.
 pub trait Session5250: Send + Sync {

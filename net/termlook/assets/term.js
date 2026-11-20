@@ -2,12 +2,27 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-// The 5250 display page's script. It opens the session's WebSocket,
-// draws each screen into a canvas of the picture's exact size with the console's font and rules
-// (the server's render() in net/accessweb/src/s5250/look/render.rs),
-// maps keys through the session's keyboard map, and handles the mouse:
-// hotspots, cursor placing, rectangle selection, Copy and Paste.
-// Without it the page works by posting the keypad and toolbar.
+// The terminal page's script (net/termlook: the exchange is
+// src/exchange/, the drawing rules src/look/render.rs). It opens the
+// page's WebSocket, draws each screen into a canvas of the picture's
+// exact size with the console's font and rules, and sends keys by name.
+// Without it the page works by posting the keypad.
+//
+// Its <script> element says where things are:
+//   data-socket    the socket's path (or a ws:/wss: URL); without it the
+//                  script runs as the 5250 session page it was first
+//                  written for: the socket at <base>/5250/ws/<session>,
+//                  the 5250 extras on, the keyboard map from
+//                  <base>/5250/<session>/keymap/json
+//   data-session   the session's identifier
+//   data-scale     the integer scale (1)
+//   data-scheme    "bw" for black on white
+//   data-image     the id of the picture the canvas replaces (else the
+//                  img alt="5250 screen")
+//   data-5250      the 5250 extras: hotspots, the cursor placed with the
+//                  mouse, selection with Copy and Paste
+//   data-keymap    a keyboard map's address (JSON, key name to function);
+//                  without one the console's own keys
 (function () {
   "use strict";
   var me = document.currentScript;
@@ -15,23 +30,36 @@
   var scale = parseInt(me.getAttribute("data-scale") || "1", 10);
   // The product's path: me.src is absolute, the socket's URL wants a path.
   var base = new URL(me.src, location.href).pathname.replace(/\/5250\/script\.js.*$/, "");
-  var PAL = { bg: "#000000", green: "#33cc33", white: "#e6e6e6", red: "#e03030", blue: "#5080ff", turq: "#20c8c8", pink: "#e060c0" };
+  var socketAt = me.getAttribute("data-socket");
+  var legacy = socketAt === null;
+  var extras = legacy || me.hasAttribute("data-5250");
+  var keymapAt = legacy ? base + "/5250/" + id + "/keymap/json" : me.getAttribute("data-keymap");
+  if (legacy) { socketAt = base + "/5250/ws/" + id; }
+  var PAL = { bg: "#000000", green: "#33cc33", white: "#e6e6e6", red: "#e03030", blue: "#5080ff", turq: "#20c8c8", pink: "#e060c0", yellow: "#e6e040",
+    redhi: "#ff5050", bluehi: "#80a8ff", turqhi: "#40ffff", pinkhi: "#ff80e0", yellowhi: "#ffff60" };
+  var COLORS = ["green", "white", "red", "blue", "turq", "pink", "yellow", "green"];
+  // The console's own keys, when no keyboard map is given.
+  var CONSOLE_KEYS = { Enter: "Enter", Tab: "Tab", "Shift+Tab": "BackTab", "Right Ctrl": "FieldExit", "Keypad +": "FieldExit",
+    "Keypad Enter": "Enter", Backspace: "Backspace", Home: "Home", Insert: "Insert", Delete: "Delete", Esc: "Attention",
+    "Shift+Esc": "SysReq", "Ctrl+Left": "Reset", Left: "Left", Right: "Right", Up: "Up", Down: "Down",
+    "Page Up": "PageUp", "Page Down": "PageDown" };
+  for (var f = 1; f <= 12; f++) { CONSOLE_KEYS["F" + f] = "F:" + f; CONSOLE_KEYS["Shift+F" + f] = "F:" + (f + 12); }
   var W = 9, H = 16;
-  var screen = null, keymap = {}, sock = null, img = null, canvas = null, ctx = null;
+  var screen = null, keymap = keymapAt ? {} : CONSOLE_KEYS, sock = null, img = null, canvas = null, ctx = null;
   var sel = null, drag = null, bw = false;
 
-  function style(a) {
-    var c;
-    switch (a & 0x18) {
-      case 0x00: c = (a & 0x02) ? "white" : "green"; break;
-      case 0x08: c = "red"; break;
-      case 0x10: c = "turq"; break;
-      default: c = (a & 0x02) ? "blue" : "pink";
-    }
-    var nd = (a & 0x07) === 0x07;
-    return { color: c, reverse: !nd && (a & 0x01) !== 0, underline: !nd && (a & 0x04) !== 0, sep: a >= 0x30 && a <= 0x37, nd: nd };
+  // A cell's style: its character code less 0x100 holds the bits.
+  function style(code) {
+    var b = code - 0x100;
+    return { color: COLORS[b & 7], high: (b & 8) !== 0, reverse: (b & 16) !== 0, underline: (b & 32) !== 0,
+      sep: (b & 128) !== 0, nd: (b & 256) !== 0, cont: (b & 512) !== 0, dbl: (b & 1024) !== 0 && (b & 512) === 0 };
   }
-  function fg(c) { return bw && (c === "green" || c === "white") ? PAL.bg : PAL[c]; }
+  function plain(color) { return { color: color, high: false, reverse: false, underline: false, sep: false, nd: false, cont: false, dbl: false }; }
+  function fg(st) {
+    var c = st.color;
+    if (st.high) { c = (c === "green" || c === "white") ? "white" : c + "hi"; }
+    return bw && (c === "green" || c === "white") ? PAL.bg : PAL[c];
+  }
   function back() { return bw ? PAL.white : PAL.bg; }
   function grey(hex) {
     var b = parseInt(back().slice(1), 16), v = parseInt(hex.slice(1), 16), o = 0;
@@ -42,35 +70,36 @@
   // copied after; each cell is repainted only when what it shows changed.
   var glyphs = {}, drawn = [];
   function glyph(ch, st, f, b, cur, cursor) {
-    var k = ch + "|" + f + "|" + b + "|" + (st.nd ? 1 : 0) + (st.underline ? 1 : 0) + (st.sep ? 1 : 0) + "|" + (cursor ? cur : "");
+    var k = ch + "|" + f + "|" + b + "|" + (st.nd ? 1 : 0) + (st.underline ? 1 : 0) + (st.sep ? 1 : 0) + (st.dbl ? 1 : 0) + "|" + (cursor ? cur : "");
     var g = glyphs[k];
     if (g) { return g; }
+    var n = st.dbl ? 2 : 1, w = W * n;
     g = document.createElement("canvas");
-    g.width = W * scale; g.height = H * scale;
+    g.width = w * scale; g.height = H * scale;
     var x = g.getContext("2d");
     x.fillStyle = b; x.fillRect(0, 0, g.width, g.height);
     var rows = st.nd ? null : (QS_FONT[ch.charCodeAt(0)] || QS_FONT.box);
     x.fillStyle = f;
     for (var gy = 0; gy < H; gy++) {
-      if (cursor && gy === H - 1) { x.fillStyle = cur; x.fillRect(0, gy * scale, W * scale, scale); x.fillStyle = f; continue; }
-      if (st.underline && gy === H - 2) { x.fillRect(0, gy * scale, W * scale, scale); continue; }
-      var bits = rows ? rows[gy] : 0;
-      if (st.sep && gy % 4 === 0) { bits |= 0x101; }
-      for (var gx = 0; gx < W; gx++) {
-        if (bits & (1 << (W - 1 - gx))) { x.fillRect(gx * scale, gy * scale, scale, scale); }
+      if (cursor && gy === H - 1) { x.fillStyle = cur; x.fillRect(0, gy * scale, w * scale, scale); x.fillStyle = f; continue; }
+      if (st.underline && gy === H - 2) { x.fillRect(0, gy * scale, w * scale, scale); continue; }
+      var bits = rows ? rows[gy] : 0, sep = st.sep && gy % 4 === 0;
+      for (var gx = 0; gx < w; gx++) {
+        if ((bits & (1 << (W - 1 - Math.floor(gx / n)))) || (sep && (gx === 0 || gx === w - 1))) { x.fillRect(gx * scale, gy * scale, scale, scale); }
       }
     }
     glyphs[k] = g;
     return g;
   }
   function cell(r, c, ch, st, cursor, selected, off) {
-    var f = fg(st.color), b = back();
+    var i = r * 1000 + c;
+    if (st.cont) { drawn[i] = null; return; }
+    var f = fg(st), b = back();
     if (st.reverse) { var t = f; f = b; b = t; }
     if (selected) { var u = f; f = b; b = u; }
     var cur = bw ? PAL.bg : PAL.white;
     if (off) { f = grey(f); if (b !== back()) { b = grey(b); } cur = grey(cur); }
     var g = glyph(ch, st, f, b, cur, cursor);
-    var i = r * 1000 + c;
     if (drawn[i] === g) { return; }
     drawn[i] = g;
     ctx.drawImage(g, c * W * scale, r * H * scale);
@@ -92,26 +121,35 @@
     for (var r = 0; r < screen.rows; r++) {
       var row = screen.cells[r];
       for (var c = 0; c < screen.cols; c++) {
-        var code = row[1].charCodeAt(c);
-        var st = row[1][c] === "." ? style(0x20) : style(0x20 | (code - 64));
+        var st = style(row[1].charCodeAt(c));
         var isSel = sel && r >= sel[0] && r <= sel[2] && c >= sel[1] && c <= sel[3];
-        cell(r, c, row[1][c] === "." ? " " : row[0][c], st, r === screen.cursor[0] - 1 && c === screen.cursor[1] - 1, isSel, off);
+        var here = r === screen.cursor[0] - 1 && c === screen.cursor[1] - 1;
+        if (here && screen.shape === "block") { isSel = !isSel; }
+        cell(r, c, row[0][c], st, here && screen.shape !== "block" && screen.shape !== "hidden", isSel, off);
       }
     }
     var st = oia(screen);
-    for (var i = 0; i < st.length; i++) { cell(screen.rows, i, st[i][0], style(st[i][1] === "white" ? 0x22 : 0x20), false, false, off); }
+    for (var i = 0; i < st.length; i++) { cell(screen.rows, i, st[i][0], plain(st[i][1]), false, false, off); }
   }
   function apply(m) {
     if (m.t === "screen" || !screen) {
+      if (m.t !== "screen" && m.t !== "delta") { return; }
       screen = { rows: m.rows, cols: m.cols, cells: [] };
-      for (var r = 0; r < m.rows; r++) { screen.cells.push([new Array(m.cols + 1).join(" "), new Array(m.cols + 1).join("@")]); }
+      for (var r = 0; r < m.rows; r++) { screen.cells.push([new Array(m.cols + 1).join(" "), new Array(m.cols + 1).join("Ā")]); }
       size(m.rows, m.cols);
     }
-    for (var i = 0; i < m.cells.length; i++) { screen.cells[m.cells[i][0]] = [m.cells[i][1], m.cells[i][2]]; }
-    screen.cursor = m.cursor; screen.state = m.state; screen.system = m.system; screen.tls = m.tls;
+    var rows = m.cells || [];
+    for (var i = 0; i < rows.length; i++) { screen.cells[rows[i][0]] = [rows[i][1], rows[i][2]]; }
+    screen.cursor = m.cursor; screen.shape = m.shape || "underline"; screen.state = m.state; screen.system = m.system; screen.tls = m.tls;
     screen.kb = m.kb; screen.ins = m.ins; screen.mw = m.mw;
     draw();
     status();
+  }
+  function closed(reason) {
+    if (!screen) { return; }
+    screen.state = "disconnected";
+    if (reason) { canvas.title = reason; }
+    draw();
   }
   // The status bar's cursor indicator, as the server would write it.
   function status() {
@@ -119,7 +157,7 @@
     var num = bar && bar.querySelector("td.num");
     if (!num || screen.state === "disconnected") { return; }
     var rc = ("0" + screen.cursor[0]).slice(-2) + "/" + ("00" + screen.cursor[1]).slice(-3);
-    num.textContent = (screen.tls ? "TLS   " : "") + rc;
+    num.textContent = (screen.tls ? "TLS   " : "") + rc;
   }
   // Menu names and Scale fetch their page and swap only what changed,
   // so the screen and its socket stay; anything else navigates.
@@ -191,7 +229,8 @@
     return out.join("\n");
   }
   function start() {
-    img = document.querySelector("img[alt='5250 screen']");
+    var named = me.getAttribute("data-image");
+    img = named ? document.getElementById(named) : document.querySelector("img[alt='5250 screen']");
     if (!img || !window.WebSocket) { return; }
     canvas = document.createElement("canvas");
     canvas.width = img.width; canvas.height = img.height;
@@ -199,34 +238,42 @@
     canvas.style.display = "block"; canvas.style.outline = "none";
     ctx = canvas.getContext("2d");
     var proto = location.protocol === "https:" ? "wss:" : "ws:";
-    sock = new WebSocket(proto + "//" + location.host + base + "/5250/ws/" + id);
+    sock = new WebSocket(/^wss?:/.test(socketAt) ? socketAt : proto + "//" + location.host + socketAt);
     sock.onopen = function () { img.parentNode.replaceChild(canvas, img); canvas.focus(); };
-    sock.onmessage = function (ev) { var m = JSON.parse(ev.data); if (m.t === "screen" || m.t === "delta") { apply(m); } };
-    sock.onclose = function () { if (screen) { screen.state = "disconnected"; draw(); } };
+    sock.onmessage = function (ev) {
+      var m = JSON.parse(ev.data);
+      if (m.t === "screen" || m.t === "delta" || m.t === "status") { apply(m); } else if (m.t === "closed") { closed(m.reason); }
+    };
+    sock.onclose = function () { closed(""); };
     canvas.addEventListener("keydown", onKey);
-    canvas.addEventListener("mousedown", function (e) { drag = at(e); sel = null; });
-    canvas.addEventListener("mousemove", function (e) {
-      var p = at(e);
-      if (drag && p && (p[0] !== drag[0] || p[1] !== drag[1])) { sel = [Math.min(drag[0], p[0]), Math.min(drag[1], p[1]), Math.max(drag[0], p[0]), Math.max(drag[1], p[1])]; draw(); }
-      canvas.style.cursor = p && hotspot(p) ? "pointer" : "default";
-    });
-    canvas.addEventListener("mouseup", function (e) {
-      var p = at(e);
-      if (drag && p && !sel) { var k = hotspot(p); if (k) { send({ t: "key", k: k }); } else { send({ t: "cursor", r: p[0] + 1, c: p[1] + 1 }); } }
-      drag = null; canvas.focus();
-    });
-    var x = new XMLHttpRequest();
-    x.open("GET", base + "/5250/" + id + "/keymap/json");
-    x.onload = function () { try { keymap = JSON.parse(x.responseText); } catch (err) { keymap = {}; } };
-    x.send();
-    // The keypad and Copy and Paste go over the socket while it is open;
-    // the menu bar and Scale switch in place.
+    if (extras) {
+      canvas.addEventListener("mousedown", function (e) { drag = at(e); sel = null; });
+      canvas.addEventListener("mousemove", function (e) {
+        var p = at(e);
+        if (drag && p && (p[0] !== drag[0] || p[1] !== drag[1])) { sel = [Math.min(drag[0], p[0]), Math.min(drag[1], p[1]), Math.max(drag[0], p[0]), Math.max(drag[1], p[1])]; draw(); }
+        canvas.style.cursor = p && hotspot(p) ? "pointer" : "default";
+      });
+      canvas.addEventListener("mouseup", function (e) {
+        var p = at(e);
+        if (drag && p && !sel) { var k = hotspot(p); if (k) { send({ t: "key", k: k }); } else { send({ t: "cursor", r: p[0] + 1, c: p[1] + 1 }); } }
+        drag = null; canvas.focus();
+      });
+    }
+    if (keymapAt) {
+      var x = new XMLHttpRequest();
+      x.open("GET", keymapAt);
+      x.onload = function () { try { keymap = JSON.parse(x.responseText); } catch (err) { keymap = {}; } };
+      x.send();
+    }
+    // The keypad (and with the 5250 extras Copy and Paste) go over the
+    // socket while it is open; the menu bar and Scale switch in place.
     document.addEventListener("click", function (e) {
       var t = e.target;
       var a = t && t.closest ? t.closest("a[href]") : null;
       if (a && sock && sock.readyState === 1 && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.button === 0 && inPlace(a)) { e.preventDefault(); return; }
       if (!t || t.tagName !== "INPUT" || t.type !== "submit") { return; }
       if (t.name === "k" && send({ t: "key", k: KEYPAD[t.value] || t.value })) { e.preventDefault(); canvas.focus(); }
+      if (!extras) { return; }
       if (t.name === "tb" && t.value === "Copy" && navigator.clipboard && sel) { e.preventDefault(); navigator.clipboard.writeText(selectedText()); }
       if (t.name === "tb" && t.value === "Paste" && navigator.clipboard && navigator.clipboard.readText) {
         e.preventDefault(); navigator.clipboard.readText().then(function (s) { send({ t: "type", s: s.replace(/[\r\n]/g, "") }); });

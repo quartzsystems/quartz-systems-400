@@ -18,7 +18,7 @@
 use std::fmt::Write as _;
 
 use super::deflate;
-use super::render::Canvas;
+use crate::look::render::Canvas;
 
 /// A4 landscape, in points.
 const PAGE: (f64, f64) = (842.0, 595.0);
@@ -26,8 +26,8 @@ const PAGE: (f64, f64) = (842.0, 595.0);
 const MARGIN: f64 = 36.0;
 
 /// The picture `c` (drawn at scale 1, background `bg`) as a PDF titled
-/// `title`.
-pub fn print_screen(c: &Canvas, bg: u32, title: &str) -> Vec<u8> {
+/// `title`, `producer` the product that made it.
+pub fn print_screen(c: &Canvas, bg: u32, title: &str, producer: &str) -> Vec<u8> {
     let k = ((PAGE.0 - 2.0 * MARGIN) / c.w as f64).min((PAGE.1 - 2.0 * MARGIN) / c.h as f64);
     let (w, h) = (c.w as f64 * k, c.h as f64 * k);
     let (x0, y0) = ((PAGE.0 - w) / 2.0, (PAGE.1 - h) / 2.0);
@@ -70,7 +70,7 @@ pub fn print_screen(c: &Canvas, bg: u32, title: &str) -> Vec<u8> {
             s.extend_from_slice(b"\nendstream");
             s
         },
-        format!("<< /Title ({}) /Producer (QS/400 Access for Web) >>", pdf_text(title)).into_bytes(),
+        format!("<< /Title ({}) /Producer ({}) >>", pdf_text(title), pdf_text(producer)).into_bytes(),
     ];
     let mut out = b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n".to_vec();
     let mut offsets = Vec::new();
@@ -113,7 +113,7 @@ mod tests {
     fn one_landscape_page() {
         let mut c = Canvas::new(18, 16, 0);
         c.fill(2, 3, 4, 1, 0x0033_CC33);
-        let p = print_screen(&c, 0, "QSHQ400 (x)");
+        let p = print_screen(&c, 0, "QSHQ400 (x)", "Web");
         let t = String::from_utf8_lossy(&p);
         assert!(t.starts_with("%PDF-1.4") && t.ends_with("%%EOF\n"));
         assert!(

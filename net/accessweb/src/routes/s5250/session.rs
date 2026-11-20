@@ -18,55 +18,21 @@ use qsweb::html::{esc, query};
 use qsweb::http::Response;
 use qsweb::msg::{Kind, Message};
 use qsweb::ws::{self, Socket};
+use termlook::exchange;
 
 use super::{GROUP, ITEM, Rq, saved, start_policy};
 use crate::env::session5250::{Input, Live, Saved, State};
 use crate::policy;
 use crate::s5250::files::qsd::ColorMap;
 use crate::s5250::files::qsm::{Action, MacroFile, Step};
-use crate::s5250::look::pdf;
 use crate::s5250::look::render::Scheme;
 use crate::s5250::screen::{Screen, View};
 
+/// Print Screen's PDF names its producer.
+const PRODUCER: &str = "QS/400 Access for Web";
+
 /// The keypad: label and the 5250 function it sends.
-pub const KEYPAD: &[(&str, &str)] = &[
-    ("F1", "F:1"),
-    ("F2", "F:2"),
-    ("F3", "F:3"),
-    ("F4", "F:4"),
-    ("F5", "F:5"),
-    ("F6", "F:6"),
-    ("F7", "F:7"),
-    ("F8", "F:8"),
-    ("F9", "F:9"),
-    ("F10", "F:10"),
-    ("F11", "F:11"),
-    ("F12", "F:12"),
-    ("F13", "F:13"),
-    ("F14", "F:14"),
-    ("F15", "F:15"),
-    ("F16", "F:16"),
-    ("F17", "F:17"),
-    ("F18", "F:18"),
-    ("F19", "F:19"),
-    ("F20", "F:20"),
-    ("F21", "F:21"),
-    ("F22", "F:22"),
-    ("F23", "F:23"),
-    ("F24", "F:24"),
-    ("Enter", "Enter"),
-    ("Reset", "Reset"),
-    ("Attn", "Attention"),
-    ("SysRq", "SysReq"),
-    ("PgUp", "PageUp"),
-    ("PgDn", "PageDown"),
-    ("FldExit", "FieldExit"),
-    ("Field+", "FieldPlus"),
-    ("Field-", "FieldMinus"),
-    ("Help", "Help"),
-    ("Print", "Print"),
-    ("Clear", "Clear"),
-];
+pub use termlook::exchange::keys::KEYPAD;
 
 /// The functions that send the screen to the system.
 pub fn is_aid(f: &str) -> bool {
@@ -769,11 +735,9 @@ pub fn part(rq: &Rq<'_>, id: u32, rest: &str) -> Response {
                 .chars()
                 .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
                 .collect();
-            let pdf = pdf::print_screen(
-                &v.picture(1),
-                v.scheme.background(),
-                &format!("{title}: 5250 screen"),
-            );
+            let pdf = v
+                .shown()
+                .print_screen(&format!("{title}: 5250 screen"), PRODUCER);
             Response::download(&format!("{name}.pdf"), "application/pdf", pdf)
         }
         "key" => {
@@ -854,132 +818,20 @@ fn paste(rq: &Rq<'_>, s: &Saved) -> Response {
     })
 }
 
-/// One row of the screen for the script: its text and a style letter
-/// per cell (`.` an attribute byte's cell, else `@` + the attribute's
-/// low five bits). A field that does not display goes as blanks.
-pub fn row_json(s: &Screen, r: usize) -> String {
-    let cells = &s.cells[r * s.cols..(r + 1) * s.cols];
-    let text: String = cells
-        .iter()
-        .map(|c| {
-            if c.is_attr || crate::s5250::look::render::style(c.attr).nondisplay {
-                ' '
-            } else {
-                c.ch
-            }
-        })
-        .collect();
-    let styles: String = cells
-        .iter()
-        .map(|c| {
-            if c.is_attr {
-                '.'
-            } else {
-                char::from(b'@' + (c.attr & 0x1F))
-            }
-        })
-        .collect();
-    format!("[{r},{},{}]", json(&text), json(&styles))
-}
-
-fn json(s: &str) -> String {
-    let mut o = String::from("\"");
-    for c in s.chars() {
-        match c {
-            '"' => o.push_str("\\\""),
-            '\\' => o.push_str("\\\\"),
-            c if (c as u32) < 0x20 => {
-                let _ = write!(o, "\\u{:04x}", c as u32);
-            }
-            c => o.push(c),
-        }
-    }
-    o.push('"');
-    o
-}
-
-/// A screen message for the script: every row when `prev` is `None`,
-/// else the rows that changed.
+/// A screen message for the script (`termlook::exchange`): every row
+/// when `prev` is `None`, else the rows that changed.
 pub fn screen_message(l: &Live, prev: Option<&Live>) -> String {
-    let s = &l.view.screen;
-    let same_shape =
-        prev.is_some_and(|p| p.view.screen.rows == s.rows && p.view.screen.cols == s.cols);
-    let rows: Vec<String> = (0..s.rows)
-        .filter(|r| {
-            !same_shape
-                || prev.is_some_and(|p| {
-                    p.view.screen.cells[r * s.cols..(r + 1) * s.cols]
-                        != s.cells[r * s.cols..(r + 1) * s.cols]
-                })
-        })
-        .map(|r| row_json(s, r))
-        .collect();
-    let o = l.view.oia();
-    let kb = match o.keyboard {
-        Some(crate::s5250::look::render::Keyboard::System) => "X SYSTEM".to_string(),
-        Some(crate::s5250::look::render::Keyboard::HostError) => "X II".to_string(),
-        Some(crate::s5250::look::render::Keyboard::OperatorError(c)) => format!("X II {c:04}"),
-        _ => String::new(),
-    };
-    format!(
-        "{{\"t\":\"{}\",\"v\":{},\"rows\":{},\"cols\":{},\"cursor\":[{},{}],\"state\":\"{}\",\"system\":{},\"tls\":{},\"kb\":{},\"ins\":{},\"mw\":{},\"cells\":[{}]}}",
-        if same_shape { "delta" } else { "screen" },
+    let before = prev.map(|p| p.view.shown());
+    exchange::screen(
+        &l.view.shown(),
+        before.as_ref(),
         l.version,
-        s.rows,
-        s.cols,
-        s.cursor.0,
-        s.cursor.1,
         match l.state {
             State::Connected => "connected",
             State::SigningOn => "signing-on",
             State::Disconnected => "disconnected",
         },
-        json(&o.system),
-        o.tls,
-        json(&kb),
-        o.insert,
-        o.message_waiting,
-        rows.join(",")
     )
-}
-
-/// What the script sends: `{"t":"key","k":"F:3"}`, `{"t":"type","s":".."}`,
-/// `{"t":"cursor","r":5,"c":10}`.
-pub fn parse_input(msg: &str) -> Option<Input> {
-    let field = |name: &str| -> Option<String> {
-        let at = msg.find(&format!("\"{name}\":"))? + name.len() + 3;
-        let rest = msg[at..].trim_start();
-        if let Some(body) = rest.strip_prefix('"') {
-            let mut out = String::new();
-            let mut it = body.chars();
-            while let Some(c) = it.next() {
-                match c {
-                    '\\' => match it.next()? {
-                        'n' => out.push('\n'),
-                        'u' => {
-                            let h: String = it.by_ref().take(4).collect();
-                            out.push(char::from_u32(u32::from_str_radix(&h, 16).ok()?)?);
-                        }
-                        c => out.push(c),
-                    },
-                    '"' => return Some(out),
-                    c => out.push(c),
-                }
-            }
-            None
-        } else {
-            Some(rest.chars().take_while(char::is_ascii_digit).collect())
-        }
-    };
-    match field("t")?.as_str() {
-        "key" => Some(Input::Key(field("k")?)),
-        "type" => Some(Input::Text(field("s")?)),
-        "cursor" => Some(Input::Cursor(
-            field("r")?.parse().ok()?,
-            field("c")?.parse().ok()?,
-        )),
-        _ => None,
-    }
 }
 
 /// `GET /5250/ws/<id>`: the WebSocket. Screens go out as the whole
@@ -1021,14 +873,10 @@ pub fn ws(rq: &Rq<'_>, id: u32) -> Response {
                         // Recording needs the page's own posts; the
                         // socket only types and presses keys.
                         let _ = recording;
-                        if let Some(input) = parse_input(&t)
+                        if let Some(input) = Input::parse(&t)
                             && let Err(m) = env.input(&user, id, input)
                         {
-                            let _ = sock.send(&format!(
-                                "{{\"t\":\"message\",\"id\":{},\"text\":{}}}",
-                                json(&m.id),
-                                json(&m.text)
-                            ));
+                            let _ = sock.send(&exchange::message(&m.id, &m.text));
                         }
                     }
                     Ok(Some(_)) => {}

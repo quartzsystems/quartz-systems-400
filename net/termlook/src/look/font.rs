@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The console's 9×16 bitmap font (`lic/console/font/qs400-9x16.txt`):
-//! blocks of a `# U+XXXX name` line and 16 rows of nine `#` or `.`.
+//! The console's 9×16 bitmap font (the one `.txt` file of
+//! `lic/console/font/`): blocks of a `# U+XXXX name` line and 16 rows of nine `#` or `.`.
 //! A character the font lacks draws as the console's hollow box.
 
 use std::sync::OnceLock;
@@ -14,7 +14,7 @@ pub const GLYPH_W: usize = 9;
 pub const GLYPH_H: usize = 16;
 
 /// The font's text, as the console compiles it.
-pub const SOURCE: &str = include_str!("../../../../../lic/console/font/qs400-9x16.txt");
+pub const SOURCE: &str = include_str!("../../../../lic/console/font/qs400-9x16.txt");
 
 /// The 5250 column separator glyph (private use).
 pub const COLUMN_SEPARATOR: char = '\u{e000}';

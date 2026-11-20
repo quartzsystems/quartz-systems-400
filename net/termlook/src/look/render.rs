@@ -2,10 +2,12 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The console's look for a 5250 screen: its palette, its attribute
-//! rules and its way of drawing a cell, as QS/400 Access for Desktop
-//! reproduces them (`qsa-ui/src/console.rs`): the same values, so the
-//! browser, the desktop and the console show one picture. [`render`] is
+//! The console's look: its palette, its attribute rules and its way of
+//! drawing a cell (`lic/console`'s framebuffer, `scale.rs`), the values
+//! the desktop client reproduces too, so the browser, the desktop and
+//! the console show one picture. A 5250 attribute byte maps through
+//! [`style`]; a console cell's attributes also have yellow, high
+//! intensity and double width, which no 5250 byte gives. [`render`] is
 //! pure; the PNG, Print Screen and the page's script share its rules.
 
 // Bit, byte and pixel arithmetic on values the formats bound.
@@ -35,9 +37,21 @@ pub mod palette {
     pub const TURQUOISE: u32 = 0x0020_C8C8;
     /// Pink.
     pub const PINK: u32 = 0x00E0_60C0;
+    /// Yellow.
+    pub const YELLOW: u32 = 0x00E6_E040;
+    /// Red at high intensity.
+    pub const RED_HI: u32 = 0x00FF_5050;
+    /// Blue at high intensity.
+    pub const BLUE_HI: u32 = 0x0080_A8FF;
+    /// Turquoise at high intensity.
+    pub const TURQUOISE_HI: u32 = 0x0040_FFFF;
+    /// Pink at high intensity.
+    pub const PINK_HI: u32 = 0x00FF_80E0;
+    /// Yellow at high intensity.
+    pub const YELLOW_HI: u32 = 0x00FF_FF60;
 }
 
-/// A 5250 colour as the console knows them.
+/// A colour as the console knows them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Color {
     /// Green.
@@ -52,6 +66,21 @@ pub enum Color {
     Turquoise,
     /// Pink.
     Pink,
+    /// Yellow: a console cell only.
+    Yellow,
+}
+
+/// How wide a cell draws.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Width {
+    /// One cell.
+    #[default]
+    Single,
+    /// The first half of a double-width character: it draws over the
+    /// next cell too, each glyph pixel two wide.
+    Double,
+    /// The second half: not drawn.
+    Continuation,
 }
 
 /// How an attribute draws.
@@ -68,9 +97,13 @@ pub struct Style {
     pub column_sep: bool,
     /// Nondisplay.
     pub nondisplay: bool,
+    /// High intensity (a console cell; a 5250 byte gives white instead).
+    pub high: bool,
+    /// Its width.
+    pub width: Width,
 }
 
-/// The style of attribute byte `a` (`fb_attr` in the console).
+/// The style of 5250 attribute byte `a` (`fb_attr` in the console).
 pub fn style(a: u8) -> Style {
     let color = match a & 0x18 {
         0x00 if a & 0x02 != 0 => Color::White,
@@ -88,6 +121,8 @@ pub fn style(a: u8) -> Style {
         underline: a & 0x04 != 0 && !nd,
         column_sep: (0x30..=0x37).contains(&a),
         nondisplay: nd,
+        high: false,
+        width: Width::Single,
     }
 }
 
@@ -98,6 +133,8 @@ pub const BLANK: Style = Style {
     underline: false,
     column_sep: false,
     nondisplay: false,
+    high: false,
+    width: Width::Single,
 };
 
 /// Colour scheme.
@@ -129,6 +166,23 @@ impl Scheme {
             (_, Color::Blue) => palette::BLUE,
             (_, Color::Turquoise) => palette::TURQUOISE,
             (_, Color::Pink) => palette::PINK,
+            (_, Color::Yellow) => palette::YELLOW,
+        }
+    }
+
+    /// A style's foreground: [`Scheme::foreground`], brighter at high
+    /// intensity as the console's `palette::rgb` (green becomes white).
+    pub fn foreground_of(self, s: Style) -> u32 {
+        if !s.high {
+            return self.foreground(s.color);
+        }
+        match s.color {
+            Color::Green | Color::White => self.foreground(Color::White),
+            Color::Red => palette::RED_HI,
+            Color::Blue => palette::BLUE_HI,
+            Color::Turquoise => palette::TURQUOISE_HI,
+            Color::Pink => palette::PINK_HI,
+            Color::Yellow => palette::YELLOW_HI,
         }
     }
 
@@ -252,7 +306,7 @@ impl Canvas {
 /// The colours a cell draws with: foreground, background, cursor.
 pub fn colors(p: Paint, look: Look) -> (u32, u32, u32) {
     let scheme = look.scheme;
-    let mut fg = scheme.foreground(p.style.color);
+    let mut fg = scheme.foreground_of(p.style);
     let mut bg = scheme.background();
     if p.style.reverse {
         (fg, bg) = (bg, fg);
@@ -279,17 +333,23 @@ pub fn scanline(p: Paint, gy: usize) -> (u16, Option<Line>) {
     if p.style.underline && gy == GLYPH_H - 2 {
         return (0, Some(Line::Foreground));
     }
-    let row = if p.style.nondisplay {
+    let sep = if separator(p, gy) { 0x101 } else { 0 };
+    (glyph_line(p, gy) | sep, None)
+}
+
+/// The glyph's own pixels of scanline `gy`, none when nondisplay.
+pub fn glyph_line(p: Paint, gy: usize) -> u16 {
+    if p.style.nondisplay {
         0
     } else {
         glyph(p.ch)[gy]
-    };
-    let sep = if p.style.column_sep && gy.is_multiple_of(4) {
-        0x101
-    } else {
-        0
-    };
-    (row | sep, None)
+    }
+}
+
+/// Whether scanline `gy` has the column separators' dots, at the
+/// cell's first and last pixel.
+pub fn separator(p: Paint, gy: usize) -> bool {
+    p.style.column_sep && gy.is_multiple_of(4)
 }
 
 /// A scanline drawn whole.
@@ -303,7 +363,13 @@ pub enum Line {
 
 /// Draw one cell with its top-left glyph pixel at (x, y), each glyph
 /// pixel an s×s block: the console's `cells_line`, scanline by scanline.
+/// A continuation cell draws nothing; a double-width one draws two cells.
 pub fn paint_cell(c: &mut Canvas, x: usize, y: usize, s: usize, p: Paint, look: Look) {
+    match p.style.width {
+        Width::Single => {}
+        Width::Continuation => return,
+        Width::Double => return paint_double(c, x, y, s, p, look),
+    }
     let (fg, bg, cursor) = colors(p, look);
     for gy in 0..GLYPH_H {
         match scanline(p, gy) {
@@ -317,6 +383,27 @@ pub fn paint_cell(c: &mut Canvas, x: usize, y: usize, s: usize, p: Paint, look: 
                     c.fill(x + gx * s, y + gy * s, s, s, if lit { fg } else { bg });
                 }
             }
+        }
+    }
+}
+
+/// A double-width cell: each glyph pixel two wide, the separators'
+/// dots at the first and last pixel of the pair, as the console.
+fn paint_double(c: &mut Canvas, x: usize, y: usize, s: usize, p: Paint, look: Look) {
+    let (fg, bg, cursor) = colors(p, look);
+    let w = 2 * GLYPH_W;
+    for gy in 0..GLYPH_H {
+        if let (_, Some(line)) = scanline(p, gy) {
+            let color = if line == Line::Cursor { cursor } else { fg };
+            c.fill(x, y + gy * s, w * s, s, color);
+            continue;
+        }
+        let bits = glyph_line(p, gy);
+        let sep = separator(p, gy);
+        for gx in 0..w {
+            let lit =
+                bits & (1 << (GLYPH_W - 1 - gx / 2)) != 0 || (sep && (gx == 0 || gx == w - 1));
+            c.fill(x + gx * s, y + gy * s, s, s, if lit { fg } else { bg });
         }
     }
 }

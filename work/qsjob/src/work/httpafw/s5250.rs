@@ -28,7 +28,7 @@ use accessweb::s5250::files::keymap::KeyMap;
 use accessweb::s5250::files::qkm::KeymapFile;
 use accessweb::s5250::files::qsd::{ColorMap, SessionFile};
 use accessweb::s5250::files::qsm::MacroFile;
-use accessweb::s5250::look::render::{Cell, Keyboard, Scheme};
+use accessweb::s5250::look::render::{Keyboard, Scheme};
 use accessweb::s5250::screen::{Screen, View};
 use ifs::client::{IfsClient, read_all, write_all};
 use ifs::ops::OpenArgs;
@@ -713,31 +713,8 @@ impl Conn {
         let mut l = self.live.lock().unwrap_or_else(PoisonError::into_inner);
         let rows = t.rows();
         let cols = t.cols();
-        let cells = t.cells();
-        let mut s = Screen::blank(rows, cols);
-        let mut a = cells
-            .iter()
-            .rev()
-            .copied()
-            .find(|b| attr::is_attr(*b))
-            .unwrap_or(0x20);
-        for (i, &b) in cells.iter().enumerate().take(rows * cols) {
-            s.cells[i] = if attr::is_attr(b) {
-                a = b;
-                Cell {
-                    ch: ' ',
-                    attr: b,
-                    is_attr: true,
-                }
-            } else {
-                Cell {
-                    // BLOCKED(rel): the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only.
-                    ch: if b == 0 { ' ' } else { ccsid::char_of(b) },
-                    attr: a,
-                    is_attr: false,
-                }
-            };
-        }
+        // BLOCKED(rel): the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only.
+        let mut s = Screen::from_buffer(rows, cols, t.cells(), attr::is_attr, ccsid::char_of);
         s.cursor = t.cursor();
         s.keyboard = match (t.error(), t.is_locked()) {
             (Some(code), _) => Keyboard::OperatorError(code),

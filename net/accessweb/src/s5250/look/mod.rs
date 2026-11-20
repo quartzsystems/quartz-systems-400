@@ -3,10 +3,7 @@
 // root directory of this project.
 
 //! The console's look: the font, the drawing rules, and the files a
-//! screen becomes (PNG, Print Screen's PDF).
+//! screen becomes (PNG, Print Screen's PDF), from `termlook`.
 
-pub mod deflate;
-pub mod font;
-pub mod pdf;
-pub mod png;
-pub mod render;
+pub use termlook::file::{deflate, pdf, png};
+pub use termlook::look::{font, render};
