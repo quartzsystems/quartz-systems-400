@@ -1158,7 +1158,7 @@ const MESSAGES: &[Desc] = &[
         "GLD0123",
         0,
         "Directory server instance &1 changed.",
-        "The new values are in the instance's configuration file. A new administrator password is used at once; the other values when the instance next starts.",
+        "The new values are in the instance's configuration file. A new administrator password is used at once; the rest at the instance's next start.",
         "Restart the instance to use the new values now.",
     ),
     (

@@ -519,7 +519,7 @@ Every marker left in the tree, generated from it.
 | `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:27` | Dell PowerEdge with PERC H330 in HBA mode, 4 x 1 TB SSD (reference physical target, `HARDWARE_NOTES.md`) \| UEFI \| MegaRAID (`megaraid_sas`) \| the board's Broadcom or Intel ports \| iDRAC/Matrox VGA thr |
 | `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:149` | hypervisor checklists |
 | `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:204` | the Dell with the PERC H330 |
-| `NEEDS-CODY` | `docs/SECURITY.md:597` | with directory auditing on for a test instance on the |
+| `NEEDS-CODY` | `docs/SECURITY.md:606` | with directory auditing on for a test instance on the |
 | `NEEDS-CODY` | `docs/SQL.md:57` | `sql::objects` |
 | `BLOCKED(rel)` | `docs/SQL.md:60` | when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column \| primary \| `integrity/CSTALTER`, `integrity/IDENTITY` |
 | `BLOCKED(rel)` | `docs/SQL.md:88` | none \| |
@@ -572,14 +572,14 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `lic/slic/src/cpp/jrncmd.rs:58` | CMPJRNIMG's entry selection (sequence numbers, |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/jrncmd.rs:64` | a receiver range other than *CURRENT is not taken. |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/rpg/mod.rs:352` | CRTPGM does not carry a module's statements. |
-| `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1654` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
+| `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1658` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:87` | the plan cache (`sql::exec::plan::cache`) keeps |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:98` | a package's statements are kept (`db::sqlpkg`) |
 | `NEEDS-CODY` | `lic/slic/src/stgsvc/nfs/mod.rs:71` | IBM's, |
-| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:119` | the request holds the service until it answers |
-| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:305` | commands whose processing program runs in the |
-| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:470` | the job's own variables live in the job; the |
-| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:554` | the lookup holds the service until the resolver |
+| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:127` | the request holds the service until it answers |
+| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:314` | commands whose processing program runs in the |
+| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:479` | the job's own variables live in the job; the |
+| `BLOCKED(rel)` | `lic/slic/src/stgsvc/sqlhost.rs:563` | the lookup holds the service until the resolver |
 | `BLOCKED(rel)` | `lic/slic/src/svc/db/trgout.rs:180` | the other DSPFD outfile formats (QAFDBASI, QAFDMBR, |
 | `NEEDS-CODY` | `lic/svctools/src/dst/partitions.rs:9` | the primary's own panel |
 | `BLOCKED(rel)` | `licpgm/lpstore/src/savfile.rs:157` | the system's own directories exist already. |
@@ -622,7 +622,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/msgs.rs:40` | the sender is the qualified job; a message a user typed here names |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/print.rs:192` | no command or service request a web job may use puts a spooled file at the top of a queue (QAP's move does, on its own connection job only); refused with XWA0099. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:321` | a session to another system goes through that system's own Access for Web; refused with QAD1002. |
-| `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:734` | the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:716` | the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/system.rs:186` | the password approval program (QPWDVLDPGM) is not called from a web job; refused with CPF22D3 while one is set. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpsvr.rs:67` | validation lists (*VLDL) do not exist; a PasswdFile |
 | `BLOCKED(rel)` | `work/qsjob/src/work/qap/debug/own.rs:79` | stops are breakpoints, steps and entry points only; the |

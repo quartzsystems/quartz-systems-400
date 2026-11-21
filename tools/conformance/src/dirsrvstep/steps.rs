@@ -392,9 +392,9 @@ impl Suite {
             let _ = s.command(&format!("DLTUSRPRF USRPRF({name}) OWNOBJOPT(*DLT)"), CMD);
             clean(
                 s,
-                &format!(
-                    "CRTUSRPRF USRPRF({name}) PASSWORD('{pw}') PWDEXP(*NO) TEXT('Step 188 {name}'){extra}"
-                ),
+                &(format!(
+                    "CRTUSRPRF USRPRF({name}) PASSWORD('{pw}') PWDEXP(*NO) TEXT('Step 188 {name}')"
+                ) + extra),
                 CMD,
             )?;
         }
