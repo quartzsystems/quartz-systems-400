@@ -307,8 +307,9 @@ identity and state with the keylock and IPL side, power down by
 `PWRDWNSYS`, this IPL's reference codes, events kept on disk and resumed
 after an IPL, the time, the fix level, the system's dumps and their
 space, the problem log with notes and severity, and the control panel
-and the console at ID 0, the console shown at the console and the
-management console both. The system's Ed25519 identity is made at the
+and the console at ID 0: a paired console views and types on the
+system's console, one viewer at a time with take over, while the local
+display keeps working. The system's Ed25519 identity is made at the
 server's first start and sealed under the LIC's stash key; at most two
 consoles are pinned. A one-time pairing password (15 minutes, five
 attempts, kept only in memory) comes from `STRQSIPAIR` or from DST
@@ -316,7 +317,7 @@ attempts, kept only in memory) comes from `STRQSIPAIR` or from DST
 and `RMVQSICSL` list and remove consoles. Every pairing, refusal,
 removal and password made is a `QI` audit entry. These are QS/400's own:
 IBM i has no QSI server, commands, DST option or audit entry
-(`QSID.md` section 12, `SECURITY.md`).
+(`QSID.md` section 12, `SECURITY.md`; QEMU steps 201 to 210).
 
 The web layer of QS/400's three web products (`net/qsweb`) and the
 making and reading of certificates (`net/x509kit`, beneath the
