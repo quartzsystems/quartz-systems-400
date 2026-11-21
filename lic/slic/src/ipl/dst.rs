@@ -140,9 +140,7 @@ impl<'a> Env<'a> {
         };
         let r = stg::Client::qsi(stg, op);
         r.map_err(|e| {
-            self.system
-                .out
-                .serial(&format!("slic: QSI request: {e}\n"));
+            self.system.out.serial(&format!("slic: QSI request: {e}\n"));
             svctools::dst::failed("The request to the storage service")
         })
     }

@@ -46,14 +46,23 @@ fn verified_against_the_callers_keys() {
     assert_eq!(c.encode(), catalog().encode());
     // Another key, a changed byte, no signature: refused.
     let other = [SigningKey::from_bytes(&[12; 32]).verifying_key().to_bytes()];
-    assert!(matches!(Catalog::parse(&text, &other), Err(Error::Verify(_))));
+    assert!(matches!(
+        Catalog::parse(&text, &other),
+        Err(Error::Verify(_))
+    ));
     assert!(Catalog::parse(&text, &[]).is_err());
     let tampered = text.replace("sequence = 7", "sequence = 8");
-    assert!(matches!(Catalog::parse(&tampered, &trusted), Err(Error::Verify(_))));
+    assert!(matches!(
+        Catalog::parse(&tampered, &trusted),
+        Err(Error::Verify(_))
+    ));
     assert!(Catalog::parse(&catalog().encode(), &trusted).is_err());
     // Signed, but not a catalog of this format.
     let wrong = updcat::signed::sign("format = 2\nsequence = 1\ngenerated = 0\n", &key);
-    assert!(matches!(Catalog::parse(&wrong, &trusted), Err(Error::Parse(_))));
+    assert!(matches!(
+        Catalog::parse(&wrong, &trusted),
+        Err(Error::Parse(_))
+    ));
 }
 
 #[test]

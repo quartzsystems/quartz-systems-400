@@ -131,7 +131,6 @@ impl InstanceList {
     }
 }
 
-
 /// The instances' container entry.
 pub const CONTAINER: &str = "CN=IDS INSTANCES";
 
@@ -141,7 +140,12 @@ pub const CONTAINER: &str = "CN=IDS INSTANCES";
 #[must_use]
 pub fn with_autostart(text: &str, name: &str, on: bool) -> Option<String> {
     let dn = format!("cn={},{CONTAINER}", name.trim());
-    super::edit::set(text, &dn, "ids-instanceAutostart", &[if on { "1" } else { "0" }])
+    super::edit::set(
+        text,
+        &dn,
+        "ids-instanceAutostart",
+        &[if on { "1" } else { "0" }],
+    )
 }
 #[cfg(test)]
 mod tests {

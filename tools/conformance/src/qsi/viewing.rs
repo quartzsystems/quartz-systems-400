@@ -105,7 +105,12 @@ fn sign_on(v: &mut View) -> Result<(), String> {
         v.key(Key::FieldExit)?;
         v.key(Key::Enter)?;
         let (i, _) = v.wait_any(
-            &["===>", "Change Password", "not correct", "Sign-on Information"],
+            &[
+                "===>",
+                "Change Password",
+                "not correct",
+                "Sign-on Information",
+            ],
             CMD,
         )?;
         match i {

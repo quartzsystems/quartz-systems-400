@@ -116,8 +116,9 @@ fn viewers(system: &mut System, con: &mut console::Console, tx: &mpsc::Sender<Co
     });
     match tee::listen(&hub, path, poke) {
         Ok(()) => con.add_display(Box::new(hub.display(wm::dev::QSI_CONSOLE))),
-        Err(e) => system.out.serial(&format!("slic: {}: {e}
-", path.display())),
+        Err(e) => system
+            .out
+            .serial(&format!("slic: {}: {e}\n", path.display())),
     }
 }
 

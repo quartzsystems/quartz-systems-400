@@ -5,7 +5,11 @@
 //! Access control and password policy through the operations, and the
 //! service's hooks (identity, audit, configuration) with test doubles.
 
-#![allow(clippy::many_single_char_names, clippy::similar_names, clippy::too_many_lines)]
+#![allow(
+    clippy::many_single_char_names,
+    clippy::similar_names,
+    clippy::too_many_lines
+)]
 
 mod harness;
 

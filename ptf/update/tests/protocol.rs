@@ -93,7 +93,13 @@ fn the_catalog_round_trips_signed() {
     assert_eq!(c.cumulative("V1R0M0").unwrap().name, "C26300110");
     assert_eq!(c.hiper("V1R0M0").unwrap().name, "QS99100");
     // The neutral reader names cumulative packages as `release` does.
-    for name in ["C26300110", "C24366110", "C01001110", "C26000110", "QS99001"] {
+    for name in [
+        "C26300110",
+        "C24366110",
+        "C01001110",
+        "C26000110",
+        "QS99001",
+    ] {
         let ours = name.parse::<release::Cumulative>().map(|c| (c.year, c.day));
         let neutral = name.parse::<updcat::Cumulative>().map(|c| (c.year, c.day));
         assert_eq!(ours.ok(), neutral.ok(), "{name}");

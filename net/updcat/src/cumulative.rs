@@ -45,7 +45,20 @@ impl Cumulative {
     pub fn date(self) -> Option<Date> {
         let year = 2000 + u16::from(self.year);
         let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-        let months = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let months = [
+            31,
+            if leap { 29 } else { 28 },
+            31,
+            30,
+            31,
+            30,
+            31,
+            31,
+            30,
+            31,
+            30,
+            31,
+        ];
         let mut left = self.day;
         for (m, len) in (1u8..).zip(months) {
             if left <= len {
@@ -98,13 +111,25 @@ mod tests {
         assert_eq!(c, Cumulative { year: 26, day: 300 });
         assert_eq!(c.to_string(), "C26300110");
         assert_eq!(c.date().unwrap().to_string(), "2026-10-27");
-        let d = |s: &str| s.parse::<Cumulative>().unwrap().date().map(|d| d.to_string());
+        let d = |s: &str| {
+            s.parse::<Cumulative>()
+                .unwrap()
+                .date()
+                .map(|d| d.to_string())
+        };
         assert_eq!(d("C24060110").as_deref(), Some("2024-02-29"));
         assert_eq!(d("C25060110").as_deref(), Some("2025-03-01"));
         assert_eq!(d("C24366110").as_deref(), Some("2024-12-31"));
         assert_eq!(d("C25366110"), None);
         assert_eq!(d("C25001110").as_deref(), Some("2025-01-01"));
-        for bad in ["C2630011", "X26300110", "C26000110", "C26367110", "C2a300110", "QS99001"] {
+        for bad in [
+            "C2630011",
+            "X26300110",
+            "C26000110",
+            "C26367110",
+            "C2a300110",
+            "QS99001",
+        ] {
             assert!(bad.parse::<Cumulative>().is_err(), "{bad}");
         }
     }

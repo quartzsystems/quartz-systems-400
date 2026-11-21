@@ -274,7 +274,13 @@ impl ConsolePeer {
 /// `golden/<dir>/<name>.txt` against the grid, every line with its
 /// trailing blanks dropped; `skip` lines (1-based) are not compared, nor
 /// any after line `upto` when it is not 0.
-pub(crate) fn golden(dir: &str, name: &str, grid: &str, skip: &[usize], upto: usize) -> Result<(), String> {
+pub(crate) fn golden(
+    dir: &str,
+    name: &str,
+    grid: &str,
+    skip: &[usize],
+    upto: usize,
+) -> Result<(), String> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("golden")
         .join(dir)

@@ -610,7 +610,10 @@ mod tests {
             "GLD0202"
         );
         set_admin(&mut c, "QUSRDIR", &AdminChange::Password, "secret").unwrap();
-        assert!(crate::pwd::verify(c.admin_pw().unwrap().as_bytes(), b"secret"));
+        assert!(crate::pwd::verify(
+            c.admin_pw().unwrap().as_bytes(),
+            b"secret"
+        ));
         assert_eq!(
             set_admin(
                 &mut c,

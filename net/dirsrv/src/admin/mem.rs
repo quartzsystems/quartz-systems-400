@@ -17,7 +17,6 @@
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard};
 
-
 use super::{
     Access, AdminChange, AdminError, AdminInfo, AgentKind, AgentStatus, Counters, DirAdmin,
     ErrorKind, Index, InstanceInfo, InstanceState, Properties, PublishAgent, Result, SchemaKind,

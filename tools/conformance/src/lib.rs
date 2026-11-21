@@ -78,11 +78,11 @@ mod phase9;
 mod png;
 mod ptfstep;
 mod qap;
-#[cfg(unix)]
-mod qsi;
 mod qemu;
 pub mod qir;
 mod qsh;
+#[cfg(unix)]
+mod qsi;
 mod relitems;
 mod restricted;
 pub mod rpg;

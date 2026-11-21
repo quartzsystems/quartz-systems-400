@@ -39,8 +39,10 @@ pub fn verify<'a>(text: &'a str, trusted: &[[u8; 32]]) -> (&'a str, bool) {
         })
         .is_some_and(|s| {
             trusted.iter().any(|k| {
-                VerifyingKey::from_bytes(k)
-                    .is_ok_and(|vk| vk.verify(body.as_bytes(), &Signature::from_bytes(&s)).is_ok())
+                VerifyingKey::from_bytes(k).is_ok_and(|vk| {
+                    vk.verify(body.as_bytes(), &Signature::from_bytes(&s))
+                        .is_ok()
+                })
             })
         });
     (body, verified)

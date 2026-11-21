@@ -113,7 +113,9 @@ impl<C: Conn> Viewer<C> {
                 Err(e) => return Err(e),
             };
             if f.kind == kind::ENDED {
-                return Ok(Some(Seen::Ended(String::from_utf8_lossy(&f.body).into_owned())));
+                return Ok(Some(Seen::Ended(
+                    String::from_utf8_lossy(&f.body).into_owned(),
+                )));
             }
             match FromSystem::decode(&f) {
                 Ok(Some(FromSystem::Frame(m))) => return Ok(Some(Seen::Frame(m))),

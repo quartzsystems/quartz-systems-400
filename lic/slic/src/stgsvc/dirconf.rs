@@ -178,7 +178,13 @@ pub fn write_instances(system: &mut System, text: &str) -> Result<(), String> {
     )
 }
 
-fn replace(system: &mut System, path: &str, text: &str, mode: u32, ccsid: u32) -> Result<(), String> {
+fn replace(
+    system: &mut System,
+    path: &str,
+    text: &str,
+    mode: u32,
+    ccsid: u32,
+) -> Result<(), String> {
     super::certs::as_system(system, |c| {
         let tmp = format!("{path}.new");
         let fd = c

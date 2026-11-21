@@ -492,7 +492,9 @@ mod tests {
         let got = decode(&s.notice(Notice::Changed {
             status: status("ipl", "C1001000", "normal"),
         }));
-        assert!(matches!(&got[0], FromSystem::Hello(h) if h.system == "QSHQ400" && h.keylock == Keylock::Normal));
+        assert!(
+            matches!(&got[0], FromSystem::Hello(h) if h.system == "QSHQ400" && h.keylock == Keylock::Normal)
+        );
         // The same facts: no second hello.
         let got = decode(&s.notice(Notice::Posted {
             status: status("ipl", "C1001010", "normal"),

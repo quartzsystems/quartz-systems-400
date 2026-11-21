@@ -5,7 +5,11 @@
 //! Writes, binds, extended operations, controls, referrals, aliases,
 //! the change log and persistent search against a directory in memory.
 
-#![allow(clippy::many_single_char_names, clippy::similar_names, clippy::too_many_lines)]
+#![allow(
+    clippy::many_single_char_names,
+    clippy::similar_names,
+    clippy::too_many_lines
+)]
 
 mod harness;
 
@@ -1250,9 +1254,8 @@ fn false_assertions_leave_the_store_whole() {
             text("sn", &["one"]),
         ],
     );
-    let assert = |f: &str| {
-        vec![ldap::control::Assertion(ldap::Filter::parse(f).unwrap()).to_control(true)]
-    };
+    let assert =
+        |f: &str| vec![ldap::control::Assertion(ldap::Filter::parse(f).unwrap()).to_control(true)];
     let o = t.run(
         &a,
         ProtocolOp::ModifyRequest {
@@ -1303,7 +1306,13 @@ fn anonymous_searches_get_continuation_references() {
         ],
     );
     let anon = dirsrv::ops::Session::anonymous();
-    let r = t.search(&anon, "ou=Sb,o=Acme", Scope::Sub, "(objectClass=*)", &["1.1"]);
+    let r = t.search(
+        &anon,
+        "ou=Sb,o=Acme",
+        Scope::Sub,
+        "(objectClass=*)",
+        &["1.1"],
+    );
     assert!(
         r.iter()
             .any(|x| matches!(&x.op, ProtocolOp::SearchResultReference(_))),

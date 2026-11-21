@@ -139,7 +139,9 @@ const PROOFS: &[(&str, &[&str])] = &[
     ),
     (
         "fetch",
-        &["catalog verified, latest cumulative C26100110 level 2 of 2026-04-10; another key refused"],
+        &[
+            "catalog verified, latest cumulative C26100110 level 2 of 2026-04-10; another key refused",
+        ],
     ),
     (
         "fetch",
@@ -149,7 +151,16 @@ const PROOFS: &[(&str, &[&str])] = &[
 /// Crates of this repository the fixture's PID 1 must not be built
 /// with: the neutral crates it takes bring none of them.
 const NOT_IN_INIT: &[&str] = &[
-    "release", "licpart", "store", "svctools", "tn5250", "ccsid", "slic", "certs", "tls", "ptf",
+    "release",
+    "licpart",
+    "store",
+    "svctools",
+    "tn5250",
+    "ccsid",
+    "slic",
+    "certs",
+    "tls",
+    "ptf",
     "ptf-update",
 ];
 

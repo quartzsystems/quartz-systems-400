@@ -270,7 +270,13 @@ impl Hub {
         conn.close();
     }
 
-    fn attach<C: Conn>(self: &Arc<Self>, mut conn: C, frames: Reader, take_over: bool, poke: &Poke) {
+    fn attach<C: Conn>(
+        self: &Arc<Self>,
+        mut conn: C,
+        frames: Reader,
+        take_over: bool,
+        poke: &Poke,
+    ) {
         let Ok(writer) = conn.try_clone() else {
             return conn.close();
         };

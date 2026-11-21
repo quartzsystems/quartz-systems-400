@@ -128,7 +128,8 @@ pub fn frame(method: &str, (status, headers): &Head) -> Result<Frame> {
     if method == "HEAD" || *status == 204 || *status == 304 {
         return Ok(Frame::Empty);
     }
-    if header(headers, "Transfer-Encoding").is_some_and(|t| t.to_ascii_lowercase().contains("chunked"))
+    if header(headers, "Transfer-Encoding")
+        .is_some_and(|t| t.to_ascii_lowercase().contains("chunked"))
     {
         return Ok(Frame::Chunked);
     }
@@ -155,7 +156,9 @@ impl std::error::Error for Proto {}
 
 /// An I/O error from a [`Body`] as the client's error.
 pub fn from_io(e: io::Error) -> Error {
-    if e.get_ref().is_some_and(<dyn std::error::Error + Send + Sync>::is::<Proto>) {
+    if e.get_ref()
+        .is_some_and(<dyn std::error::Error + Send + Sync>::is::<Proto>)
+    {
         let inner = e.into_inner().expect("checked above");
         return Error::Protocol(inner.to_string());
     }
@@ -231,7 +234,9 @@ impl<R: BufRead> Read for Body<'_, R> {
             }
             self.left = n;
         }
-        let want = usize::try_from(self.left).unwrap_or(usize::MAX).min(buf.len());
+        let want = usize::try_from(self.left)
+            .unwrap_or(usize::MAX)
+            .min(buf.len());
         let n = self.r.read(&mut buf[..want])?;
         if n == 0 {
             return Err(io::ErrorKind::UnexpectedEof.into());
@@ -297,9 +302,13 @@ mod tests {
     #[test]
     fn cut_and_bad_bodies() {
         let t = b"HTTP/1.1 200 OK\r\nContent-Length: 9\r\n\r\nshort";
-        assert!(matches!(read_response(&t[..], "GET"), Err(Error::Io(e)) if e.kind() == io::ErrorKind::UnexpectedEof));
+        assert!(
+            matches!(read_response(&t[..], "GET"), Err(Error::Io(e)) if e.kind() == io::ErrorKind::UnexpectedEof)
+        );
         let t = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n";
-        assert!(matches!(read_response(&t[..], "GET"), Err(Error::Protocol(s)) if s.contains("chunk size")));
+        assert!(
+            matches!(read_response(&t[..], "GET"), Err(Error::Protocol(s)) if s.contains("chunk size"))
+        );
         let t = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nab";
         assert!(read_response(&t[..], "GET").is_err());
         let t = b"HTTP/1.1 200 OK\r\n\r\nto the close";

@@ -651,12 +651,7 @@ pub fn dirsrv(instances: &[DirFacts]) -> Vec<Finding> {
                 "TRUE: anyone may search without signing on",
             )
         } else {
-            f(
-                "DIRSRV",
-                item("ibm-slapdAllowAnon"),
-                Status::Pass,
-                "FALSE",
-            )
+            f("DIRSRV", item("ibm-slapdAllowAnon"), Status::Pass, "FALSE")
         });
         out.push(if d.security.trim().eq_ignore_ascii_case("none") {
             f(
@@ -770,7 +765,9 @@ mod tests {
     #[test]
     fn directory_server() {
         let d = admin_defaults("QUSRDIR");
-        for w in ["secret", "SECRET", "Secret", "qsecofr", "QUSRDIR", "qusrdir", "Qusrdir"] {
+        for w in [
+            "secret", "SECRET", "Secret", "qsecofr", "QUSRDIR", "qusrdir", "Qusrdir",
+        ] {
             assert!(d.contains(&w.to_string()), "{w}");
         }
         let shipped = DirFacts {

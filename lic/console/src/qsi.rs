@@ -30,9 +30,9 @@ use crate::scale::Cells;
 use crate::screen::{Attr, Color};
 
 pub mod tee;
-pub mod viewer;
 #[cfg(test)]
 mod tee_tests;
+pub mod viewer;
 
 /// What the display and the port's reader share.
 #[derive(Debug, Default)]

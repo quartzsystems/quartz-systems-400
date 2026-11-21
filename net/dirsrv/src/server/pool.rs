@@ -154,7 +154,11 @@ impl<L: Links> Pool<L> {
         for t in self.threads {
             let _ = t.join();
         }
-        let rx = self.shared.rx.lock().unwrap_or_else(PoisonError::into_inner);
+        let rx = self
+            .shared
+            .rx
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         while let Ok((s, _)) = rx.try_recv() {
             refuse(s);
         }
@@ -203,11 +207,10 @@ fn wait(s: &Shared) -> Option<Work> {
         if s.stop.load(Ordering::Relaxed) {
             break None;
         }
-        let r = s
-            .rx
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .recv_timeout(IDLE_EXIT);
+        let r =
+            s.rx.lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .recv_timeout(IDLE_EXIT);
         match r {
             Ok(w) => {
                 s.pending.fetch_sub(1, Ordering::SeqCst);

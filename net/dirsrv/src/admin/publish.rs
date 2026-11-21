@@ -170,7 +170,8 @@ pub fn apply(c: &mut PublishConfig, to: &PublishAgent) -> Result<(), AdminError>
     a.resync = to.resync;
     a.publisher = Some(to.publisher.trim().to_string()).filter(|p| !p.is_empty());
     // The format's own reader is the last word on what the file takes.
-    config::parse(config::write(&next).as_bytes()).map_err(|e| bad_value("publish.conf", &e.to_string()))?;
+    config::parse(config::write(&next).as_bytes())
+        .map_err(|e| bad_value("publish.conf", &e.to_string()))?;
     *c = next;
     Ok(())
 }
@@ -220,7 +221,13 @@ mod tests {
         let c = PublishConfig::default();
         let a = agents(&c)[1].clone();
         let code = |to: PublishAgent| check(&to).unwrap_err().msgid;
-        assert_eq!(code(PublishAgent { port: 0, ..a.clone() }), "GLD0204");
+        assert_eq!(
+            code(PublishAgent {
+                port: 0,
+                ..a.clone()
+            }),
+            "GLD0204"
+        );
         assert_eq!(
             code(PublishAgent {
                 server: "a b".into(),
@@ -235,8 +242,20 @@ mod tests {
             }),
             "GLD0224"
         );
-        assert_eq!(code(PublishAgent { retry: 5, ..a.clone() }), "GLD0232");
-        assert_eq!(code(PublishAgent { resync: 30, ..a.clone() }), "GLD0232");
+        assert_eq!(
+            code(PublishAgent {
+                retry: 5,
+                ..a.clone()
+            }),
+            "GLD0232"
+        );
+        assert_eq!(
+            code(PublishAgent {
+                resync: 30,
+                ..a.clone()
+            }),
+            "GLD0232"
+        );
         let mut c = c;
         let mut with_pw = c.clone();
         with_pw.agent_mut(Kind::Printers).bind_dn = Some("cn=x".into());

@@ -207,7 +207,11 @@ fn keys_from_the_viewer_reach_the_console() {
     let mut v = viewer::attach(r.conn(), false).unwrap();
     let mut g = Grid::default();
     until(&mut v, &mut g, &sign_on().dump());
-    for k in [wire::Key::Char('Q'), wire::Key::Char('S'), wire::Key::Function(25)] {
+    for k in [
+        wire::Key::Char('Q'),
+        wire::Key::Char('S'),
+        wire::Key::Function(25),
+    ] {
         v.send(&ToSystem::Key(k)).unwrap();
     }
     v.send(&ToSystem::Key(wire::Key::FieldExit)).unwrap();
@@ -318,7 +322,10 @@ fn a_zero_wait_takes_what_is_there_and_never_waits() {
         assert!(std::time::Instant::now() < end, "nothing at a zero wait");
         let t = std::time::Instant::now();
         let got = v.recv(Duration::ZERO).unwrap();
-        assert!(t.elapsed() < Duration::from_millis(100), "a zero wait waited");
+        assert!(
+            t.elapsed() < Duration::from_millis(100),
+            "a zero wait waited"
+        );
         match got {
             Some(Seen::Frame(f)) => grid.apply(&FromSystem::Frame(f)).unwrap(),
             Some(Seen::Update(u)) => grid.apply(&FromSystem::Update(u)).unwrap(),

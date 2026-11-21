@@ -368,7 +368,10 @@ fn freed_pages_below_the_front_are_taken_first() {
     let devs = devices(&[8192], 3);
     let mut asp = Asp::format(boxed(&devs), &params(1)).unwrap();
     let runs: Vec<_> = (0..3000).map(|_| asp.alloc(1).unwrap()).collect();
-    assert!(runs.windows(2).all(|w| w[0].start < w[1].start), "ascending");
+    assert!(
+        runs.windows(2).all(|w| w[0].start < w[1].start),
+        "ascending"
+    );
     // A page given back below the front is the next one handed out.
     let low = runs[10].start;
     asp.allocator_mut().rollback_alloc(low, 1);

@@ -78,7 +78,13 @@ pub fn download(req: &Request, from: u64, limit: u64, out: &mut impl Write) -> R
     };
     match status {
         200 if from > 0 => return Err(Error::RangeIgnored),
-        200 => f.total = if let Frame::Length(n) = frame { Some(n) } else { None },
+        200 => {
+            f.total = if let Frame::Length(n) = frame {
+                Some(n)
+            } else {
+                None
+            }
+        }
         206 => {
             let Some((Some(first), total)) = range else {
                 return Err(Error::Protocol("a partial answer without its range".into()));

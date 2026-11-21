@@ -481,11 +481,9 @@ fn write_access(inst: &mut Instance, host: &mut SystemHost<'_>, a: &Access) -> R
     if !o.succeeded() {
         let r = o.replies.iter().find_map(|r| r.op.result().cloned());
         return Err(match r {
-            Some(r) if r.code == ResultCode::NoSuchObject => refusal(
-                ErrorKind::NotFound,
-                NO_ENTRY,
-                vec![a.dn.trim().into()],
-            ),
+            Some(r) if r.code == ResultCode::NoSuchObject => {
+                refusal(ErrorKind::NotFound, NO_ENTRY, vec![a.dn.trim().into()])
+            }
             Some(r) => refusal(ErrorKind::Invalid, "CPF9898", vec![r.message]),
             None => refusal(ErrorKind::Failed, "CPF9898", Vec::new()),
         });
@@ -537,8 +535,7 @@ impl DirAdmin for SvcAdmin<'_> {
             .unwrap_or_else(|| config::shipped::INSTANCES.to_string());
         let text = config::instances::with_autostart(&text, &inst.name, on)
             .ok_or_else(|| cfg(ConfigError::NoInstance(inst.name.clone())))?;
-        dirconf::write_instances(&mut self.sys(), &text)
-            .map_err(|why| file(config::INSTANCES, why))
+        dirconf::write_instances(&mut self.sys(), &text).map_err(|why| file(config::INSTANCES, why))
     }
 
     fn start(&self, _user: &str, instance: &str) -> Result<()> {
@@ -666,7 +663,9 @@ impl DirAdmin for SvcAdmin<'_> {
             a.acl.iter().try_for_each(|v| acl_check::check_acl(v))?;
         }
         if a.explicit_owner {
-            a.owners.iter().try_for_each(|v| acl_check::check_owner(v))?;
+            a.owners
+                .iter()
+                .try_for_each(|v| acl_check::check_owner(v))?;
         }
         let inst = self.listed(instance)?;
         self.open(&inst.name, |i, h| write_access(i, h, a))
@@ -733,11 +732,7 @@ impl DirAdmin for SvcAdmin<'_> {
 impl SvcAdmin<'_> {
     /// Change instance `name`'s schema with `f` and write its additions:
     /// the open instance's schema, or the shipped one with them.
-    fn change_schema(
-        &self,
-        name: &str,
-        f: impl FnOnce(&mut Schema) -> Result<()>,
-    ) -> Result<()> {
+    fn change_schema(&self, name: &str, f: impl FnOnce(&mut Schema) -> Result<()>) -> Result<()> {
         self.change()?;
         let inst = self.listed(name)?;
         let c = self.conf(&inst)?;

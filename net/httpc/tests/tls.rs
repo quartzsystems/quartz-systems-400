@@ -52,8 +52,13 @@ fn pki() -> Pki {
         .unwrap()
         .with_no_client_auth()
         .with_single_cert(
-            vec![CertificateDer::from(leaf.clone()), CertificateDer::from(ca.clone())],
-            PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(key.to_pkcs8_der().unwrap().to_vec())),
+            vec![
+                CertificateDer::from(leaf.clone()),
+                CertificateDer::from(ca.clone()),
+            ],
+            PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(
+                key.to_pkcs8_der().unwrap().to_vec(),
+            )),
         )
         .unwrap();
     Pki {
@@ -190,7 +195,10 @@ fn what_a_connection_trusts() {
     // Another pin, the CA's own: refused.
     let ca_pin = Trust::sha256(&p.ca);
     let e = httpc::send(&get(url.clone(), Trust::Pinned(ca_pin))).unwrap_err();
-    assert!(matches!(&e, Error::Tls(s) if s.contains("not the one pinned")), "{e}");
+    assert!(
+        matches!(&e, Error::Tls(s) if s.contains("not the one pinned")),
+        "{e}"
+    );
     // The CA given as a root: accepted.
     let r = httpc::send(&get(url.clone(), Trust::Roots(vec![p.ca.clone()]))).unwrap();
     assert_eq!(r.body, b"hello");
@@ -254,11 +262,17 @@ fn a_cut_download_resumes_by_range() {
     let req = get(format!("http://127.0.0.1:{port}/file"), Trust::default());
     // Cut after 4000 bytes: an error, what came is kept.
     let e = httpc::download_file(&req, &path, 1 << 20).unwrap_err();
-    assert!(matches!(&e, Error::Io(io) if io.kind() == std::io::ErrorKind::UnexpectedEof), "{e}");
+    assert!(
+        matches!(&e, Error::Io(io) if io.kind() == std::io::ErrorKind::UnexpectedEof),
+        "{e}"
+    );
     assert_eq!(std::fs::metadata(&path).unwrap().len(), 4000);
     // Again: the rest by range.
     let f = httpc::download_file(&req, &path, 1 << 20).unwrap();
-    assert_eq!((f.status, f.start, f.written, f.total), (206, 4000, 6000, Some(10_000)));
+    assert_eq!(
+        (f.status, f.start, f.written, f.total),
+        (206, 4000, 6000, Some(10_000))
+    );
     assert_eq!(std::fs::read(&path).unwrap(), file());
     // Once more: nothing is left (416 for a range at the end).
     let f = httpc::download_file(&req, &path, 1 << 20).unwrap();
@@ -276,7 +290,10 @@ fn a_server_that_ignores_ranges() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("file");
     let _ = std::fs::remove_file(&path);
-    let req = get(format!("http://127.0.0.1:{port}/noranges"), Trust::default());
+    let req = get(
+        format!("http://127.0.0.1:{port}/noranges"),
+        Trust::default(),
+    );
     assert!(httpc::download_file(&req, &path, 1 << 20).is_err());
     assert_eq!(std::fs::metadata(&path).unwrap().len(), 4000);
     // To a writer: refused, nothing written.
