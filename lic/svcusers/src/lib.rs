@@ -28,7 +28,8 @@ pub use store::{FileStore, UserStore};
 
 /// Wrong passwords before an ID is disabled.
 pub const MAX_FAILURES: u8 = 3;
-/// Longest user name.
+/// Longest user name, unless the caller sets another
+/// ([`UserDb::with_name_len`]).
 pub const NAME_LEN: usize = 10;
 /// Longest password.
 pub const PASSWORD_LEN: usize = 128;
@@ -36,7 +37,8 @@ pub const PASSWORD_LEN: usize = 128;
 /// One user.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceUser {
-    /// Upper-case name, at most ten characters.
+    /// Upper-case name, letters and digits, at most the database's
+    /// limit ([`NAME_LEN`] unless the caller set another).
     pub name: String,
     /// What the user may do.
     pub privileges: Privilege,
@@ -106,9 +108,28 @@ impl SignOnError {
 }
 
 /// Every user.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Eq)]
 pub struct UserDb {
     users: Vec<ServiceUser>,
+    /// Longest name [`UserDb::create`] takes: the caller's rule, not
+    /// kept with the users.
+    name_len: usize,
+}
+
+impl Default for UserDb {
+    fn default() -> Self {
+        Self {
+            users: Vec::new(),
+            name_len: NAME_LEN,
+        }
+    }
+}
+
+/// Two databases are equal when they hold the same users.
+impl PartialEq for UserDb {
+    fn eq(&self, other: &Self) -> bool {
+        self.users == other.users
+    }
 }
 
 /// Hash a password with a fresh salt.
@@ -153,6 +174,22 @@ pub fn normalize_name(name: &str) -> String {
 }
 
 impl UserDb {
+    /// The same users, with names up to `n` characters for
+    /// [`create`](Self::create) (at least 1). The limit is not kept in
+    /// the encoded bytes: a caller sets it again after
+    /// [`decode`](Self::decode).
+    #[must_use]
+    pub fn with_name_len(mut self, n: usize) -> Self {
+        self.name_len = n.max(1);
+        self
+    }
+
+    /// The longest name [`create`](Self::create) takes.
+    #[must_use]
+    pub fn name_len(&self) -> usize {
+        self.name_len
+    }
+
     /// The same users with no password hashes: what a display needs,
     /// for a process that has no business holding the hashes.
     #[must_use]
@@ -161,7 +198,10 @@ impl UserDb {
         for u in &mut users {
             u.hash.clear();
         }
-        Self { users }
+        Self {
+            users,
+            name_len: self.name_len,
+        }
     }
 
     /// Add a user as given, after the others: how a caller makes the
@@ -248,7 +288,8 @@ impl UserDb {
         Ok(())
     }
 
-    /// Create a user with an expired password.
+    /// Create a user with an expired password. The name is 1 to
+    /// [`name_len`](Self::name_len) letters or digits.
     pub fn create(
         &mut self,
         name: &str,
@@ -260,12 +301,13 @@ impl UserDb {
     ) -> Result<(), SignOnError> {
         let name = normalize_name(name);
         if name.is_empty()
-            || name.len() > NAME_LEN
+            || name.len() > self.name_len
             || !name.bytes().all(|b| b.is_ascii_alphanumeric())
         {
-            return Err(SignOnError::BadPassword(
-                "user ID must be 1 to 10 letters or digits".into(),
-            ));
+            return Err(SignOnError::BadPassword(format!(
+                "user ID must be 1 to {} letters or digits",
+                self.name_len
+            )));
         }
         valid_password(password)?;
         if self.get(&name).is_some() {
@@ -397,7 +439,10 @@ impl UserDb {
                 text,
             });
         }
-        Some(Self { users })
+        Some(Self {
+            users,
+            name_len: NAME_LEN,
+        })
     }
 
     /// The users a store holds; `None` when it holds none it can read.
@@ -546,6 +591,50 @@ mod tests {
         assert!(UserDb::decode(&bytes[..10]).is_none());
         // No hashes for a process that only shows the users.
         assert!(db.without_hashes().list().iter().all(|u| u.hash.is_empty()));
+    }
+
+    #[test]
+    fn the_caller_sets_the_longest_user_id() {
+        let long = "A".repeat(31) + "1";
+        let mut db = shipped().with_name_len(32);
+        assert_eq!(db.name_len(), 32);
+        db.create(&long, "pw", Privilege::ALL, "Long", 5, salt())
+            .unwrap();
+        db.change_password(&long, "pw", "Quartz1", 6, salt())
+            .unwrap();
+        assert_eq!(
+            db.sign_on(&long.to_lowercase(), "Quartz1").unwrap().name,
+            long
+        );
+        assert_eq!(
+            db.create(&"B".repeat(33), "pw", Privilege::NONE, "", 5, salt()),
+            Err(SignOnError::BadPassword(
+                "user ID must be 1 to 32 letters or digits".into()
+            ))
+        );
+        assert_eq!(
+            db.create("LONG.NAME", "pw", Privilege::NONE, "", 5, salt()),
+            Err(SignOnError::BadPassword(
+                "user ID must be 1 to 32 letters or digits".into()
+            ))
+        );
+        // Long IDs come back from their bytes the same.
+        let back = UserDb::decode(&db.encode()).unwrap();
+        assert_eq!(back.list(), db.list());
+        assert_eq!(back.get(&long).unwrap().text, "Long");
+        assert_eq!(back.name_len(), NAME_LEN, "the limit is the caller's");
+        assert_eq!(db.without_hashes().name_len(), 32);
+        // The default stays 10.
+        let mut db = shipped();
+        assert_eq!(db.name_len(), NAME_LEN);
+        db.create("ABCDEFGHIJ", "pw", Privilege::NONE, "", 5, salt())
+            .unwrap();
+        assert_eq!(
+            db.create("ABCDEFGHIJK", "pw", Privilege::NONE, "", 5, salt()),
+            Err(SignOnError::BadPassword(
+                "user ID must be 1 to 10 letters or digits".into()
+            ))
+        );
     }
 
     #[test]
