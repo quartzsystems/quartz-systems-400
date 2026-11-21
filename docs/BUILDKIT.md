@@ -644,7 +644,9 @@ caller makes the users it ships (`UserDb::push`) and keeps the bytes of
 (written beside, flushed, renamed). `svctools::users` is now QS/400's
 part only: `LicUsers::defaults` (`QSECOFR`, `QSRV`, `11111111`,
 `22222222`), `reset_secofr`, and `load`/`store` in TLV `0x0102` of the
-LIC record. The bytes are the same.
+LIC record. The bytes are the same. The longest name `UserDb::create` takes is the
+caller's (`UserDb::with_name_len`, `NAME_LEN` 10 by default, which
+`svctools` keeps); it is not kept in the bytes.
 
 **`protect`.** Over `blockdev` and nothing else of this repository:
 
@@ -1795,3 +1797,40 @@ answered in `QSI.md` section 9: it does not.
   from its pin.
 - Part C's `QI` audit entry, commands, DST option and server are
   QS/400's own; IBM i has none of them.
+
+## 20. Handoff 25: a pointer in the console, and the user ID limit
+
+QS/VS's local console asked for service tools user IDs of up to 32
+characters and for a click that puts the cursor in a field, on the
+framebuffer and on a serial terminal. Both are opt-in: QS/400's
+screens, serial output and user IDs do not change.
+
+| What | Where |
+|---|---|
+| The longest user ID | `svcusers::UserDb::with_name_len(n)` and `name_len()`; `NAME_LEN` (10) stays the default, which `svctools` and SST keep. The refusal names the limit given. Letters and digits only, as before (Cody, 2026-11-21). The limit is the caller's rule, not kept in the encoded bytes, so `decode` gives the default and two databases with the same users are equal. `ced38983c` |
+| A click | `console::Key::Pointer { row, col }` (0-based cell, `u16`). The editor puts the cursor there inside an input field (`Edited`), presses a key's label outside one (`editor::hot_spot`: `F1=` to `F24=` and `Enter=`), else `Ignored`. A session's terminal moves its cursor anywhere or presses a label outside its fields. `2f7f45556` |
+| The display's pointer | `console::Command::Pointer(console::PointerEvent)` (`Move`, `Absolute` as a share of the axis, `Button`, `Wheel`); `console::keyboard::decode(raw, &ranges)` one raw `input_event` to a `Command`, `console::keyboard::abs_ranges(&File)` the device's `ABS_X` and `ABS_Y` (`EVIOCGABS`, in `keyboard/raw.rs`), the pure parts in `console::pointer`. `spawn_readers` forwards the pointer too. The position is kept in pixels, clamped and carried across a mode change; a mouse's cell shows in reverse video |
+| The terminal's pointer | `AnsiDisplay` asks for SGR mouse reports when the pointer is on and turns them off when it goes off or the display drops (`ansi::POINTER_ON`, `POINTER_OFF`); `KeyDecoder` reads a left press as `Key::Pointer`, buttons 64 and 65 as Page Up and Page Down |
+| Turning it on | `Console::set_pointer(true)`: pointer commands are taken and every display gets `Display::set_pointer` (a new trait method, a no-op by default), a display added later too. Off (the default) pointer commands are ignored |
+| Both options | In, at Cody's word (2026-11-21): hot spots on the keys' labels, and the wheel as Page Up and Page Down |
+
+The handoff had `spawn_readers` and `AnsiDisplay` report the pointer
+unasked. QS/400's `slic` calls `spawn_readers`, and QEMU's default
+machine has a PS/2 mouse, so the pointer is one switch on the console
+instead; QS/VS calls `set_pointer(true)` beside passing 32 to
+`with_name_len`.
+
+### Acceptance
+
+| # | Check | Result |
+|---|---|---|
+| 1 | QS/400 unchanged | Nothing in `slic` or `svctools` calls the new API; without `set_pointer` the console ignores pointer events and `AnsiDisplay` sends what it did. `textaudit`: no new text |
+| 2 | Tests | `cargo test -p console` (with and without `session`), `-p svcusers`, `-p scrkit`, `-p svctools`, `-p buildkit --test neutral` pass; clippy clean on the host and, for `console`, `svcusers`, `scrkit`, `slic` and `svctools`, on the musl target |
+| 3 | The handoff's cases | The editor: a click in a field, outside one, past the grid, while locked, on the last cell of a deep field, on labels. `KeyDecoder`: a press, a release, a move, the wheel, numbers too large, a sequence cut short, a click over several `feed` calls. `Layout::cell_at` at the grid's edges and outside it at scales 1 and 2. `AnsiDisplay`: reporting on and off. The position clamped across a mode change |
+
+### Not done
+
+- The partition's console port (`qsipart::console::Key`) has no click:
+  QS/VS's console there is QS/MC's, and the protocol is pinned.
+- No QEMU step clicks; the pointer is still to be tried on real
+  hardware and on a management controller's virtual mouse.

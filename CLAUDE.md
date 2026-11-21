@@ -35,6 +35,7 @@ kernel is the only inherited component; every process above it is ours.
 | V1R2M0 | The web layer and certificates for QS/MC (handoff 22): `qsweb` takes its family from the caller (`brand::Brand`: name, release, `Server`, the stylesheet's and script's paths, the cookie; each product's `BRAND`), streams a large upload (`Handler::streams`, `BodyStream`, `multipart::Parts`), `golden::crawl`; `net/x509kit` keys, certificates, requests, PEM bundles and PKCS#12 without the store (`certs` over it); both neutral (`neutral.rs`); the fixture serves a web product of its own over TLS with a certificate it made and checks its page against its golden file | `WEB_STYLE.md` "A product outside QS/400", `BUILDKIT.md` §17 |
 | V1R2M0 | The terminal's look and the reference codes for QS/MC (handoff 23): `net/termlook` the console's font, palette and cell rules, a neutral screen drawn to PNG and PDF from a 5250 screen (Access for Web's, re-exported) or a `qsipart` grid cell for cell, the page script as bytes and its exchange (`screen`, `delta`, `status`, `closed`; keys by name to `qsipart::console::Key`); `lic/srcdata` every reference code with meaning, cause and recovery where written, `slic` posting from it; both neutral; the sign-on drawn both ways byte-identical; the fixture's terminal page from console frames against its golden PNG | `ACCESSWEB.md` "The look for a product outside QS/400", `WEB_STYLE.md`, `BUILDKIT.md` §18, `PHASE1.md` |
 | V1R2M0 | What QS/MC's remaining phases need (handoff 24): QSI bits 19 to 27 (switches and storage pools managed, partition version 3's settings, activation times, a host's power-on settings, the panel functions a system has, problem notes and severity, dump space, the fix level; ID 0 the managed system itself; `caps::STANDALONE`); `httpc` neutral with the caller's trust and streamed downloads, `net/updcat` the update catalog's reader, every reference code explained, `qsweb`'s help close and grouped actions, PKCS#12 iterations bounded, a clean-absent mirror member's map, `termlook`'s Copy and keypad; a standalone QS/400 answers QSI: `QSIDSRV` (`*QSI`, port 2300, `CHGQSIA`) over `net/qsisvr`, the identity sealed under the LIC's stash key, two pinned consoles, `STRQSIPAIR`, `WRKQSICSL`, `RMVQSICSL` and the DST option, `QI` audit entries, the console tee (`/run/qs400/qsicons.sock`); QEMU steps 201 to 210 | `QSI.md` §5, §7, §11, `QSID.md` §12, `BUILDKIT.md` §5, §19 |
+| V1R2M0 | QS/VS's console (handoff 25): `svcusers`' longest user ID from the caller (`UserDb::with_name_len`, 10 by default); a pointer in `console`, opt-in (`Console::set_pointer`): `Key::Pointer` puts the cursor in a field or presses a key's label, the wheel pages, mice and tablets from the event devices (`keyboard::decode`, `keyboard::abs_ranges`), SGR mouse reports on a serial terminal | `CONSOLE.md` "The pointer", `BUILDKIT.md` §20 |
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
@@ -220,7 +221,7 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   release/      QS/400's VxRyMz identity, build ID, product IDs, PTF names (one source of truth)
   vrm/          release identity for any product: Release, build.rs's capture (VERSION, the
                 build ID from git, under the product's environment prefix), release_from_env!
-  console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens; display.rs the
+  console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, pointer.rs, screens; display.rs the
                 Display trait (the framebuffer's renderer, ansi.rs the serial terminal and its
                 keys); service.rs takes its Identity (banner, ready code) from the caller; the
                 feature `session` (default) is the sign-on display and the 5250 terminal
@@ -917,6 +918,7 @@ first (`git ls-files -z | xargs -0 touch -c`).
 - Every `unsafe` block has a `// SAFETY:` comment. `unsafe` lives only in
   `lic/slic/src/platform/sys.rs` (signals), `lic/slic/src/platform/rtc.rs` (one
   ioctl), `lic/console/src/fb/raw.rs` (framebuffer ioctls),
+  `lic/console/src/keyboard/raw.rs` (`EVIOCGABS`, a tablet's axes),
   `lic/slic/src/platform/blk.rs` (BLKRRPART), `lic/blockdev/src/aligned.rs`
   (aligned buffer views), `lic/blockdev/src/linux.rs` (BLKDISCARD),
   `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call),
