@@ -97,6 +97,11 @@ pub trait Conn: Read + Write + Send + Sized + 'static {
     /// # Errors
     /// The stream refused it.
     fn set_write_timeout(&self, d: Option<Duration>) -> io::Result<()>;
+    /// Reads that return at once rather than wait.
+    ///
+    /// # Errors
+    /// The stream refused it.
+    fn set_nonblocking(&self, on: bool) -> io::Result<()>;
     /// Close both ways.
     fn close(&self);
 }
@@ -110,6 +115,9 @@ impl Conn for TcpStream {
     }
     fn set_write_timeout(&self, d: Option<Duration>) -> io::Result<()> {
         TcpStream::set_write_timeout(self, d)
+    }
+    fn set_nonblocking(&self, on: bool) -> io::Result<()> {
+        TcpStream::set_nonblocking(self, on)
     }
     fn close(&self) {
         let _ = self.shutdown(Shutdown::Both);
@@ -127,6 +135,9 @@ impl Conn for std::os::unix::net::UnixStream {
     fn set_write_timeout(&self, d: Option<Duration>) -> io::Result<()> {
         Self::set_write_timeout(self, d)
     }
+    fn set_nonblocking(&self, on: bool) -> io::Result<()> {
+        Self::set_nonblocking(self, on)
+    }
     fn close(&self) {
         let _ = self.shutdown(Shutdown::Both);
     }
@@ -141,7 +152,9 @@ pub(crate) fn timed_out(e: &io::Error) -> bool {
     matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut)
 }
 
-/// The next frame from `conn` by `deadline`; `None` when none came.
+/// The next frame from `conn` by `deadline`; `None` when none came. A
+/// deadline already past still reads once what the stream holds,
+/// without waiting.
 ///
 /// # Errors
 /// The stream ended or failed.
@@ -150,17 +163,28 @@ pub(crate) fn read_frame<C: Conn>(
     frames: &mut Reader,
     deadline: Instant,
 ) -> io::Result<Option<RawFrame>> {
-    let mut buf = [0u8; 4096];
+    let mut buf = [0u8; 16 * 1024];
+    let mut read = false;
     loop {
         if let Some(f) = frames.next_frame() {
             return Ok(Some(f));
         }
         let left = deadline.saturating_duration_since(Instant::now());
-        if left.is_zero() {
+        let now = left.is_zero();
+        if now && read {
             return Ok(None);
         }
-        conn.set_read_timeout(Some(left.max(Duration::from_millis(1))))?;
-        match conn.read(&mut buf) {
+        read = true;
+        let got = if now {
+            conn.set_nonblocking(true)?;
+            let got = conn.read(&mut buf);
+            conn.set_nonblocking(false)?;
+            got
+        } else {
+            conn.set_read_timeout(Some(left))?;
+            conn.read(&mut buf)
+        };
+        match got {
             Ok(0) => return Err(ErrorKind::UnexpectedEof.into()),
             Ok(n) => frames.push(&buf[..n]),
             Err(e) if timed_out(&e) => {}

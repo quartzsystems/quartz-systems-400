@@ -308,6 +308,27 @@ fn a_slow_viewer_never_holds_the_console_up() {
 }
 
 #[test]
+fn a_zero_wait_takes_what_is_there_and_never_waits() {
+    let rig = rig();
+    rig.show(&sign_on());
+    let mut v = viewer::attach(rig.conn(), false).unwrap();
+    let mut grid = Grid::default();
+    let end = std::time::Instant::now() + WAIT;
+    while grid.text() != sign_on().dump() {
+        assert!(std::time::Instant::now() < end, "nothing at a zero wait");
+        let t = std::time::Instant::now();
+        let got = v.recv(Duration::ZERO).unwrap();
+        assert!(t.elapsed() < Duration::from_millis(100), "a zero wait waited");
+        match got {
+            Some(Seen::Frame(f)) => grid.apply(&FromSystem::Frame(f)).unwrap(),
+            Some(Seen::Update(u)) => grid.apply(&FromSystem::Update(u)).unwrap(),
+            Some(Seen::Ended(why)) => panic!("{why}"),
+            None => std::thread::sleep(Duration::from_millis(20)),
+        }
+    }
+}
+
+#[test]
 fn nothing_goes_out_with_no_viewer() {
     let hub = Hub::new();
     let mut tee = hub.display("test");
