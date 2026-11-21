@@ -577,3 +577,51 @@ said; started again, it takes up its log (`EventLog::resume`) and
 pushes what changed, so a console that reconnects after an IPL is given
 the IPL's codes. The power down's own codes come after the server has
 ended and are not events.
+
+### Proof
+
+**In memory and on loopback.** `cargo test -p qsisvr`: the gate's
+limits; a pinned console answered by every family over a system in
+memory (identify, refcodes paged, a dump taken, downloaded on a stream
+and refused of another kind, a note, a close and `QSI1003`, the console
+of partition 1 `QSI0331`, a second pairing `QSI0203`); events from the
+shared log to a subscriber; an unpinned console answered only for
+pairing, a confirmation before a start `QSI0204`, a wrong password
+recorded as abandoned, then a pairing; five attempts and `QSI0201`; the
+panel's functions and their refusals by keylock and state; the events
+of what changed, pushed once; the three files' formats; and over real
+TLS on loopback through the listener, a console that pairs, connects
+again pinned, is answered and sent an event, loses its session within a
+second when its pin is removed and its next handshake; a wrong
+password, a good exchange replayed on another connection (`QSI0202`),
+and a console with no password out refused at TLS. `cargo test -p
+svctools` (the DST option's screens, `tools/conformance/golden/dst/`
+`consoles`, `consoles-none`, `console-pairing`,
+`console-remove-confirm`, and `env` with its new line), `-p uim`
+(`QSQSICSL`'s two displays, `ui/uim/tests/golden/qsi/`), `-p sec`
+(`AuditQI` against section 7's table), `-p servers` and `-p tcpcfg`
+(`*QSI` and its autostart).
+
+**Fuzzing.** `cargo run -p build -- fuzz --target T --secs 60`, no
+finding:
+
+| Target | What | Runs | Corpus | Edges |
+|---|---|---|---|---|
+| `qsisvr-preauth` | a console not pinned with a password out: request scripts, raw frames, pairings right and wrong | 88,954 | 1,039 | 3,072 |
+| `qsisvr-postauth` | a pinned console: every family over a system in memory, raw frames, events | 133,892 | 1,127 | 3,192 |
+
+**Under QEMU.** `tools/conformance/src/qsi/`, a guest of its own on a
+copy of the main guest's disk, the consoles on the host (`peer.rs`, the
+console's steps use it too):
+
+| Step | What it shows |
+|---|---|
+| 201 pairing from the command | the server made its identity and listens; `STRQSIPAIR` at the console display shows the password and the fingerprint `WRKQSICSL` gives; `identify` refused `QSI0101` before the pin; MC01 pairs, the fingerprint the one shown, connects again pinned and is answered; `WRKQSICSL` lists it; its `QI` entries |
+| 202 base requests | the hello agrees on `caps::STANDALONE`; state (running, keylock normal), this IPL's codes with `C6001090`, time, fix level; function 01, 21 and 08 `QSI0452`, 34 `QSI0451`, partition 1 `QSI0331`, the functions listed; a dump taken, listed with its space, downloaded whole, deleted, with `DumpTaken` and `DumpRemoved` |
+| 203 pairing refused | five wrong passwords, then `QSI0201`; a good exchange replayed on a new connection `QSI0202`; MC03 removed by `RMVQSICSL`, its open session ended; a password ended with F12; a console nobody pinned refused at TLS; the `QI` entries (made, paired, refused with their reasons, removed) |
+| 204 an IPL, function 21 | a controlled restart asked over QSI into a manual IPL; MC01 reconnects and is resumed with the IPL's codes from `C1001000` to `C6001090`; the keylock manual; function 21 shows DST on the console and a second is refused `QSI0453`; DST option 5, then 6, lists MC01, F6 makes a password and MC02 pairs with it; MC02 answered pinned |
+| 205 problems | a dump opens a problem (`Opened`); a note by the console's user (`Noted`, naming it); the problem read with its note and severity; closed (`Closed`, `closed_by` the console's user) and `QSI1003` closed again |
+| 206 controlled power down | power off, controlled with a delay of 10, asked over QSI: `D1001000` to `D1001090`, the guest off |
+
+All six pass, with step 1 (`cargo run -p conformance -- --only
+201,202,203,204,205,206`).
