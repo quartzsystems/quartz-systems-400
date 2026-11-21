@@ -13,6 +13,9 @@
 //! peer, or a peer too slow to take a frame, nothing is kept: the next
 //! draw it sees is a whole frame. [`Link`] is what the display and the
 //! port's reader (`spawn_reader`, Linux) share.
+//!
+//! The same frames go to a local viewer beside the console's own
+//! displays ([`tee`], the viewer's side [`viewer`]).
 
 use std::io::{self, ErrorKind, Write};
 use std::path::Path;
@@ -25,6 +28,11 @@ use crate::display::{Display, View};
 use crate::keyboard::map::Key;
 use crate::scale::Cells;
 use crate::screen::{Attr, Color};
+
+pub mod tee;
+pub mod viewer;
+#[cfg(test)]
+mod tee_tests;
 
 /// What the display and the port's reader share.
 #[derive(Debug, Default)]

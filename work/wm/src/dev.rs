@@ -18,6 +18,11 @@ pub const DIR: &str = "/run/qs400/dev";
 /// framebuffer console's terminal (telnet framing, no TCP).
 pub const CONSOLE_TERMINAL: &str = "/run/qs400/console";
 
+/// The console's socket for one viewer beside the local display:
+/// `slic`, which owns the console, listens (`console::qsi::tee`); the
+/// QSI server's console family connects (`qsjob`'s `work::qsi::console`).
+pub const QSI_CONSOLE: &str = "/run/qs400/qsicons.sock";
+
 /// The console job's name.
 pub const CONSOLE_JOB: &str = "QCONSOLE";
 

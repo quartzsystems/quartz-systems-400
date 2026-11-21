@@ -52,6 +52,8 @@ pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
                 status = Err(format!("no console port {}", qsipart::CONSOLE_PORT));
             }
         }
+    } else {
+        viewers(system, &mut con, &tx);
     }
     system
         .out
@@ -95,6 +97,27 @@ pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
             system.out.serial(&format!("slic: {e}\n"));
             system.emit(&src::CONSOLE_MISSING);
         }
+    }
+}
+
+/// Beside the local display, the console for one viewer at
+/// `wm::dev::QSI_CONSOLE` (the QSI server's console family): the same
+/// frames, its keys as the keyboard's.
+fn viewers(system: &mut System, con: &mut console::Console, tx: &mpsc::Sender<Command>) {
+    use console::qsi::tee::{self, Ask, Poke};
+    let hub = tee::Hub::new();
+    let path = std::path::Path::new(wm::dev::QSI_CONSOLE);
+    let tx = tx.clone();
+    let poke: Poke = std::sync::Arc::new(move |a| {
+        let _ = tx.send(match a {
+            Ask::Key(k) => Command::Virtual(k),
+            Ask::Redraw => Command::Redraw,
+        });
+    });
+    match tee::listen(&hub, path, poke) {
+        Ok(()) => con.add_display(Box::new(hub.display(wm::dev::QSI_CONSOLE))),
+        Err(e) => system.out.serial(&format!("slic: {}: {e}
+", path.display())),
     }
 }
 

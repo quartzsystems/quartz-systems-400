@@ -263,7 +263,7 @@ impl Host for JobHost {
     }
 
     fn screen(&mut self) -> Result<Capture, Refusal> {
-        console::screen().map_err(|r| refusal(&r.msgid, &r.text))
+        console::screen().map_err(|r| refusal(r.msgid, &r.text))
     }
 }
 
@@ -376,7 +376,7 @@ impl JobOpener {
 
 impl Opener for JobOpener {
     fn console(&mut self, take_over: bool) -> Result<Box<dyn Pipe>, Refusal> {
-        let viewer = console::attach(take_over).map_err(|r| refusal(&r.msgid, &r.text))?;
+        let viewer = console::attach(take_over).map_err(|r| refusal(r.msgid, &r.text))?;
         Ok(Box::new(ConsolePipe {
             viewer,
             pieces: Pieces::default(),
