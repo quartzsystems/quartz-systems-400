@@ -595,33 +595,37 @@ refuse with its own messages.
 
 ### Capability bits and versions
 
-| Family | Number | Version | Capability (`caps::`) | Bit |
-|---|---|---|---|---|
-| base | `0x0001` | 1 | `BASE` | 0 |
-| pair | `0x0002` | 1 | `PAIR` | 1 |
-| service | `0x0003` | 1 | `SERVICE` | 2 |
-| update | `0x0004` | 1 | `UPDATE` | 3 |
-| base's system dumps | `0x0001` | 1 | `SYSTEM_DUMPS` | 4 |
-| host | `0x0010` | 1 | `HOST` | 8 |
-| partitions | `0x0011` | 1 | `PARTITIONS` | 9 |
-| partition | `0x0012` | 1 | `PARTITION` | 10 |
-| partition | `0x0012` | 2 | `PARTITION_V2` | 18 |
-| profiles | `0x0013` | 1 | `PROFILES` | 11 |
-| panel | `0x0014` | 1 | `PANEL` | 12 |
-| refcodes | `0x0015` | 1 | `REFCODES` | 13 |
-| dumps | `0x0016` | 1 | `DUMPS` | 14 |
-| console | `0x0017` | 1 | `CONSOLE` | 15 |
-| vres | `0x0018` | 1 | `VRES` | 16 |
-| host's and vres's physical I/O | `0x0010`, `0x0018` | 1 | `PHYSICAL_IO` | 17 |
-| vres's switches managed | `0x0018` | 1 | `SWITCHES` | 19 |
-| vres's storage pools managed | `0x0018` | 1 | `POOLS` | 20 |
-| partition | `0x0012` | 3 | `PARTITION_V3` | 21 |
-| partitions' and profiles' activation times | `0x0011`, `0x0013` | 1 | `ACTIVATIONS` | 22 |
-| host's power-on settings | `0x0010` | 1 | `POWER_ON` | 23 |
-| panel | `0x0014` | 2 | `PANEL_FUNCTIONS` | 24 |
-| service | `0x0003` | 2 | `PROBLEM_NOTES` | 25 |
-| base's and dumps' dump space | `0x0001`, `0x0016` | 1 | `DUMP_SPACE` | 26 |
-| base's fix level | `0x0001` | 1 | `FIX_LEVEL` | 27 |
+"Answered by" is the managed side that answers the bit: a QS/VS host,
+a standalone QS/400 (`caps::STANDALONE`, section 11), or both; a
+console asks each of them.
+
+| Family | Number | Version | Capability (`caps::`) | Bit | Answered by |
+|---|---|---|---|---|---|
+| base | `0x0001` | 1 | `BASE` | 0 | both |
+| pair | `0x0002` | 1 | `PAIR` | 1 | both |
+| service | `0x0003` | 1 | `SERVICE` | 2 | both |
+| update | `0x0004` | 1 | `UPDATE` | 3 | host |
+| base's system dumps | `0x0001` | 1 | `SYSTEM_DUMPS` | 4 | both |
+| host | `0x0010` | 1 | `HOST` | 8 | host |
+| partitions | `0x0011` | 1 | `PARTITIONS` | 9 | host |
+| partition | `0x0012` | 1 | `PARTITION` | 10 | host |
+| partition | `0x0012` | 2 | `PARTITION_V2` | 18 | host |
+| profiles | `0x0013` | 1 | `PROFILES` | 11 | host |
+| panel | `0x0014` | 1 | `PANEL` | 12 | both (a standalone system at ID 0) |
+| refcodes | `0x0015` | 1 | `REFCODES` | 13 | host |
+| dumps | `0x0016` | 1 | `DUMPS` | 14 | host |
+| console | `0x0017` | 1 | `CONSOLE` | 15 | both (a standalone system at ID 0) |
+| vres | `0x0018` | 1 | `VRES` | 16 | host |
+| host's and vres's physical I/O | `0x0010`, `0x0018` | 1 | `PHYSICAL_IO` | 17 | host |
+| vres's switches managed | `0x0018` | 1 | `SWITCHES` | 19 | host |
+| vres's storage pools managed | `0x0018` | 1 | `POOLS` | 20 | host |
+| partition | `0x0012` | 3 | `PARTITION_V3` | 21 | host |
+| partitions' and profiles' activation times | `0x0011`, `0x0013` | 1 | `ACTIVATIONS` | 22 | host |
+| host's power-on settings | `0x0010` | 1 | `POWER_ON` | 23 | host |
+| panel | `0x0014` | 2 | `PANEL_FUNCTIONS` | 24 | both |
+| service | `0x0003` | 2 | `PROBLEM_NOTES` | 25 | both |
+| base's and dumps' dump space | `0x0001`, `0x0016` | 1 | `DUMP_SPACE` | 26 | both (a standalone system has base's `0x0014`, a host dumps' `0x0005` too) |
+| base's fix level | `0x0001` | 1 | `FIX_LEVEL` | 27 | standalone (a host with a level of its own may) |
 
 A QS/VS host says `caps::HOST_V1`, bits 0, 1 and 8 to 16, and with its
 next phase `caps::SERVICING` (bits 2 to 4) beside it, then
@@ -1351,6 +1355,13 @@ a switch's bridge (`SwitchStatus.bridge`), a port's tap
   update family).
 - **Releasing a device for partitions**, and taking it back, is done at
   the host, where its isolation group and what the host uses are seen.
+- **A pin does not expire.** It is the SHA-256 of a public key, and
+  nothing secret is kept beside it that could age: the pairing password
+  is good for one pairing and gone. Each side keeps when it paired
+  (a standalone QS/400 shows it in `WRKQSICSL`), so a console may show
+  a pin's age; a pin ends only when it is removed (`RMVQSICSL`, the DST
+  option, or the console's own reset) and the two sides pair again
+  (QS/MC's open question 31).
 
 ### Found in QS/VS that the handoff did not foresee
 
