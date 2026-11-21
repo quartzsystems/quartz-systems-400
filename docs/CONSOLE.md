@@ -124,3 +124,46 @@ every pixel outside the grid dark. Both images are written beside the
 suite's output as `display-WxH.png` and `display-WxH-golden.png`. First
 run (2026-10-30, KVM): scale 2 at 1920×1080 and 1 at 1024×768, 1880
 cells exact and 40 underlined (the input fields) of 1920 each.
+
+## The pointer
+
+A caller may take a pointer (`Console::set_pointer(true)`); QS/400 does
+not, so its screens and its serial output are as before. With it on, a
+click puts the cursor on an input field's cell, as a 5250 emulator does;
+a click outside every field on a key's label (`F3=Exit`, `F11=Display
+names only`, `Enter=Continue`: `F1=` to `F24=` or `Enter=` at the start
+of a word, up to the next label or two blanks) presses that key; any
+other click does nothing. The wheel is Page Up and Page Down. While the
+keyboard is locked a click is ignored like any key. As a 5250 session's
+terminal, a click puts the terminal's cursor on the cell wherever it is,
+or presses a label's key outside its input fields.
+
+A click is `Key::Pointer { row, col }`, a 0-based cell, from either
+display:
+
+- **The framebuffer.** `keyboard::spawn_readers` forwards the pointer's
+  events with the keys (a mouse's and a tablet's buttons make them
+  key-capable devices): relative moves (`REL_X`, `REL_Y`, a USB mouse),
+  absolute positions (`ABS_X`, `ABS_Y`, scaled by the ranges
+  `EVIOCGABS` gives: a management controller's virtual mouse, QEMU's
+  `usb-tablet`), the left button and `REL_WHEEL`. A caller with a reader
+  of its own forwards the same with `keyboard::decode` (one raw
+  `input_event` to a `Command`) and `keyboard::abs_ranges` (a device's
+  axes). The console keeps the position in pixels, clamped to the mode
+  and carried to a new mode in proportion; a left press becomes the cell
+  under it through the grid's layout (`Layout::cell_at`), and a press
+  outside the grid does nothing. A mouse's cell is drawn in reverse
+  video; a tablet's is not, since its host shows a pointer of its own.
+- **A serial terminal.** `AnsiDisplay` asks for xterm's mouse reports in
+  their SGR form (`ESC[?1000h ESC[?1006h`) with its next draw and turns
+  them off (`ESC[?1000l ESC[?1006l`) when the pointer goes off or the
+  display is dropped. `KeyDecoder` reads a left press `ESC[<b;x;yM` as
+  the cell `(y-1, x-1)`, buttons 64 and 65 as Page Up and Page Down, and
+  drops a release, a move, another button and numbers over five digits or
+  past 65535. A sequence longer than 16 bytes is swallowed up to its final
+  byte rather than typed. PuTTY, Windows Terminal and xterm report in this
+  form; a terminal that does not sends nothing.
+
+No coordinate indexes past the grid: a device's are clamped to the mode,
+a terminal's bounded before they are parsed, and the editor drops a cell
+outside 24 by 80.

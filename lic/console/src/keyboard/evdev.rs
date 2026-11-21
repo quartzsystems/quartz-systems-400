@@ -3,7 +3,9 @@
 // root directory of this project.
 
 //! Reading `struct input_event` from every `/dev/input/event*` that
-//! reports keys. One thread per device.
+//! reports keys (a mouse's and a tablet's buttons are keys too). One
+//! thread per device. A caller with a reader of its own decodes its
+//! events with [`decode`] and the axes of [`abs_ranges`].
 
 use std::fs::{self, File};
 use std::io::Read;
@@ -11,15 +13,12 @@ use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::thread;
 
-use crate::keyboard::KeyEvent;
+use crate::keyboard::raw;
+use crate::pointer::{AbsRanges, AxisRange, DeviceEvent, EVENT_LEN, decode_raw};
 use crate::service::Command;
 
-/// `struct input_event` on `x86_64`: timeval (16) + type (2) + code (2) + value (4).
-const EVENT_LEN: usize = 24;
-const EV_KEY: u16 = 1;
-
-/// Open every key-capable event device and forward its key events.
-/// Returns how many devices are being read.
+/// Open every key-capable event device and forward its key and pointer
+/// events. Returns how many devices are being read.
 pub fn spawn_readers(tx: &Sender<Command>) -> usize {
     let mut count = 0;
     let Ok(dir) = fs::read_dir("/sys/class/input") else {
@@ -51,20 +50,43 @@ fn reports_keys(sys: &Path) -> bool {
     u64::from_str_radix(ev.trim(), 16).is_ok_and(|bits| bits & 0b10 != 0)
 }
 
+/// The ranges of an event device's `ABS_X` and `ABS_Y` (`EVIOCGABS`); an
+/// axis it lacks, or one with no range, is `None`.
+#[must_use]
+pub fn abs_ranges(file: &File) -> AbsRanges {
+    let axis = |y| {
+        raw::abs_info(file, y)
+            .ok()
+            .filter(|a| a.maximum > a.minimum)
+            .map(|a| AxisRange {
+                min: a.minimum,
+                max: a.maximum,
+            })
+    };
+    AbsRanges {
+        x: axis(false),
+        y: axis(true),
+    }
+}
+
+/// The console's command for one raw `struct input_event` of a device
+/// with these axes: a key, the pointer, or `None`.
+#[must_use]
+pub fn decode(raw: &[u8], ranges: &AbsRanges) -> Option<Command> {
+    Some(match decode_raw(raw, ranges)? {
+        DeviceEvent::Key(k) => Command::Key(k),
+        DeviceEvent::Pointer(p) => Command::Pointer(p),
+    })
+}
+
 fn pump(mut file: File, tx: &Sender<Command>) {
+    let ranges = abs_ranges(&file);
     let mut buf = [0u8; EVENT_LEN];
     while file.read_exact(&mut buf).is_ok() {
-        let kind = u16::from_ne_bytes([buf[16], buf[17]]);
-        if kind != EV_KEY {
+        let Some(cmd) = decode(&buf, &ranges) else {
             continue;
-        }
-        let code = u16::from_ne_bytes([buf[18], buf[19]]);
-        let value = i32::from_ne_bytes([buf[20], buf[21], buf[22], buf[23]]);
-        let ev = KeyEvent {
-            code,
-            pressed: value != 0,
         };
-        if tx.send(Command::Key(ev)).is_err() {
+        if tx.send(cmd).is_err() {
             break;
         }
     }

@@ -6,7 +6,8 @@
 //! on every command, answers `Dump`, and reports Enter and function
 //! keys on screens whose meaning belongs to its caller. Runs on its own
 //! thread. What names the product on its screens is the caller's
-//! ([`Identity`]).
+//! ([`Identity`]). A pointer is the caller's choice too
+//! ([`Console::set_pointer`]).
 
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -15,8 +16,9 @@ use crate::editor::{self, Outcome};
 use crate::fb::{FbError, Framebuffer};
 use crate::keyboard::KeyEvent;
 use crate::keyboard::map::{Key, Modifiers, translate, update_modifiers};
+use crate::pointer::{PointerEvent, Position};
 use crate::render::Renderer;
-use crate::scale::Scale;
+use crate::scale::{Layout, Scale};
 use crate::screen::{Attr, COLS, ROWS, Screen};
 use crate::screens;
 
@@ -69,6 +71,10 @@ pub enum Command {
     },
     /// A key from a keyboard reader.
     Key(KeyEvent),
+    /// A mouse or a tablet on the framebuffer display, from an event
+    /// device reader ([`crate::keyboard::decode`]); ignored unless the
+    /// pointer is on.
+    Pointer(PointerEvent),
     /// A key from elsewhere (a service console's `key` and `type`, a
     /// serial terminal), already a 5250 key.
     Virtual(Key),
@@ -123,6 +129,18 @@ enum Kind {
     Terminal,
 }
 
+/// The pointer on the framebuffer display.
+#[derive(Debug, Default)]
+struct PointerState {
+    /// Pointer events are taken.
+    on: bool,
+    /// Where it is, once it reported.
+    at: Option<Position>,
+    /// The cell under it is marked: a mouse moved it (a tablet's host
+    /// shows a pointer of its own).
+    shown: bool,
+}
+
 /// The console state.
 pub struct Console {
     identity: Identity,
@@ -150,6 +168,11 @@ pub struct Console {
     pending: Option<Command>,
     /// The session waits behind the console's own screens.
     interrupted: bool,
+    /// The pointer, when the caller wants one.
+    pointer: PointerState,
+    /// The display's size and grid, for tests without a framebuffer.
+    #[cfg(test)]
+    geometry: Option<((usize, usize), Layout)>,
 }
 
 impl Console {
@@ -206,13 +229,32 @@ impl Console {
             #[cfg(feature = "session")]
             pending: None,
             interrupted: false,
+            pointer: PointerState::default(),
+            #[cfg(test)]
+            geometry: None,
         }
     }
 
     /// Show the screens on another display too (a serial terminal), from
     /// the next redraw on. Its keys come in as [`Command::Virtual`].
-    pub fn add_display(&mut self, display: Box<dyn Display>) {
+    pub fn add_display(&mut self, mut display: Box<dyn Display>) {
+        display.set_pointer(self.pointer.on);
         self.displays.push(display);
+    }
+
+    /// Take a pointer, or not (the default). On, [`Command::Pointer`] moves
+    /// and clicks on the framebuffer, a mouse's cell shown in reverse
+    /// video, and the other displays ask their terminals for the mouse
+    /// ([`Display::set_pointer`]); a click is [`Key::Pointer`] and the
+    /// wheel Page Up and Page Down. Off, pointer events are ignored.
+    pub fn set_pointer(&mut self, on: bool) {
+        self.pointer.on = on;
+        if !on {
+            self.pointer.shown = false;
+        }
+        for d in &mut self.displays {
+            d.set_pointer(on);
+        }
     }
 
     /// Whether the console is a session's terminal.
@@ -305,11 +347,9 @@ impl Console {
             Command::Message { text, error } => {
                 screens::set_message(&mut self.screen, &text, error);
             }
-            Command::Key(ev) => {
-                if !self.key(ev) {
-                    return;
-                }
-            }
+            Command::Key(ev) if !self.key(ev) => return,
+            Command::Pointer(ev) if !self.pointer(ev) => return,
+            Command::Key(_) | Command::Pointer(_) => {}
             Command::Virtual(key) => {
                 if !self.apply(key) {
                     return;
@@ -433,6 +473,73 @@ impl Console {
         self.apply(key)
     }
 
+    /// The display's size in pixels and where the grid sits on it.
+    fn geometry(&self) -> Option<((usize, usize), Layout)> {
+        #[cfg(test)]
+        if self.geometry.is_some() {
+            return self.geometry;
+        }
+        let r = self.renderer.as_ref()?;
+        let m = r.mode();
+        Some(((m.xres, m.yres), r.layout()))
+    }
+
+    /// The pointer, fitted to the display as it is now.
+    fn pointer_here(&self) -> Option<(Position, Layout)> {
+        let ((w, h), layout) = self.geometry()?;
+        let at = self
+            .pointer
+            .at
+            .unwrap_or_else(|| Position::new(w, h))
+            .fitted(w, h);
+        Some((at, layout))
+    }
+
+    /// The cell to mark under a mouse's pointer, 0-based.
+    fn pointer_mark(&self) -> Option<(usize, usize)> {
+        if !(self.pointer.on && self.pointer.shown) {
+            return None;
+        }
+        let (at, layout) = self.pointer_here()?;
+        let (row, col) = at.cell(&layout)?;
+        Some((usize::from(row), usize::from(col)))
+    }
+
+    /// Handle a pointer event. Returns whether the screen changed.
+    fn pointer(&mut self, ev: PointerEvent) -> bool {
+        if !self.pointer.on {
+            return false;
+        }
+        if let PointerEvent::Wheel { up } = ev {
+            return self.apply(if up { Key::PageUp } else { Key::PageDown });
+        }
+        let Some((mut at, layout)) = self.pointer_here() else {
+            return false;
+        };
+        let before = (self.pointer.shown, at.cell(&layout));
+        match ev {
+            PointerEvent::Move { dx, dy } => {
+                at.moved(dx, dy);
+                self.pointer.shown = true;
+            }
+            PointerEvent::Absolute { axis, at: v } => {
+                at.place(axis, v);
+                self.pointer.shown = false;
+            }
+            PointerEvent::Button { pressed } => {
+                self.pointer.at = Some(at);
+                // A press outside the grid does nothing.
+                return pressed
+                    && at
+                        .cell(&layout)
+                        .is_some_and(|(row, col)| self.apply(Key::Pointer { row, col }));
+            }
+            PointerEvent::Wheel { .. } => {}
+        }
+        self.pointer.at = Some(at);
+        (self.pointer.shown, at.cell(&layout)) != before
+    }
+
     /// Apply a 5250 key. Returns whether the screen changed.
     fn apply(&mut self, key: Key) -> bool {
         #[cfg(feature = "session")]
@@ -531,8 +638,12 @@ impl Console {
     }
 
     fn redraw(&mut self) {
+        let mark = self.pointer_mark();
         if let Some(r) = self.renderer.as_mut() {
-            let _ = r.draw(&self.screen);
+            let _ = match mark {
+                Some((row, col)) => r.draw(&marked(&self.screen, row, col)),
+                None => r.draw(&self.screen),
+            };
         }
         if self.displays.is_empty() {
             return;
@@ -563,6 +674,14 @@ impl Console {
             session,
         }
     }
+}
+
+/// The screen with one cell in reverse video: the pointer's.
+fn marked(screen: &Screen, row: usize, col: usize) -> Screen {
+    let mut s = screen.clone();
+    let cell = s.cell_mut(row, col);
+    cell.attr.reverse = !cell.attr.reverse;
+    s
 }
 
 #[cfg(test)]
@@ -737,6 +856,198 @@ mod tests {
         c.handle(Command::ShowScreen(Screen::new()));
         c.handle(Command::Virtual(Key::Enter));
         assert!(rx.try_recv().is_err());
+    }
+
+    /// A screen with two fields and a keys line, its fields reported.
+    fn fields_screen(c: &mut Console) -> std::sync::mpsc::Receiver<Input> {
+        let (tx, rx) = std::sync::mpsc::channel();
+        c.out = Some(tx);
+        let mut s = Screen::new();
+        s.field(5, 10, 10, false);
+        s.field(6, 10, 10, false);
+        s.put(23, 2, "F3=Exit   Enter=Continue", Attr::GREEN);
+        c.handle(Command::ShowScreen(s));
+        rx
+    }
+
+    #[test]
+    fn a_click_from_a_terminal_moves_the_cursor_or_presses_a_label() {
+        let mut c = console();
+        let rx = fields_screen(&mut c);
+        c.handle(Command::Virtual(Key::Pointer { row: 5, col: 12 }));
+        assert_eq!(c.screen().cursor, (5, 12));
+        c.handle(Command::Virtual(Key::Char('x')));
+        assert_eq!(c.screen().field_text(&c.screen().fields[1]), "   x");
+        c.handle(Command::Virtual(Key::Pointer { row: 22, col: 3 }));
+        assert_eq!(
+            rx.try_recv(),
+            Ok(Input::Function(3, vec![String::new(), "   x".into()]))
+        );
+        c.handle(Command::Virtual(Key::Pointer { row: 22, col: 15 }));
+        assert_eq!(
+            rx.try_recv(),
+            Ok(Input::Enter(vec![String::new(), "   x".into()]))
+        );
+        // Off the fields and the labels: nothing.
+        c.handle(Command::Virtual(Key::Pointer { row: 0, col: 0 }));
+        assert_eq!(c.screen().cursor, (5, 13));
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "session")]
+    fn a_click_while_the_keyboard_is_locked_does_nothing() {
+        let mut c = console();
+        complete(&mut c);
+        c.handle(sign_on());
+        press(&mut c, 28); // Enter: locked
+        assert!(c.locked());
+        let before = c.screen().cursor;
+        let f = c.screen().fields[1];
+        let (row, col) = (
+            u16::try_from(f.row - 1).unwrap(),
+            u16::try_from(f.col).unwrap(),
+        );
+        c.handle(Command::Virtual(Key::Pointer { row, col }));
+        assert_eq!(c.screen().cursor, before);
+    }
+
+    /// 1024 by 768: scale 1, the grid from (152, 192).
+    fn with_display(c: &mut Console) -> Layout {
+        let l = Layout::compute(1024, 768, ROWS, COLS, Scale::Auto);
+        c.geometry = Some(((1024, 768), l));
+        l
+    }
+
+    fn pointer(c: &mut Console, ev: PointerEvent) {
+        c.handle(Command::Pointer(ev));
+    }
+
+    #[test]
+    fn the_pointer_is_off_until_the_caller_turns_it_on() {
+        let mut c = console();
+        let rx = fields_screen(&mut c);
+        with_display(&mut c);
+        pointer(&mut c, PointerEvent::Move { dx: 5, dy: 5 });
+        pointer(&mut c, PointerEvent::Button { pressed: true });
+        pointer(&mut c, PointerEvent::Wheel { up: true });
+        assert_eq!(c.pointer.at, None);
+        assert_eq!(c.pointer_mark(), None);
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn a_mouse_moves_shows_and_clicks_through_the_layout() {
+        let mut c = console();
+        let rx = fields_screen(&mut c);
+        let l = with_display(&mut c);
+        c.set_pointer(true);
+        // To the top left corner, then onto row 6 (0-based 5), column 13.
+        pointer(
+            &mut c,
+            PointerEvent::Move {
+                dx: -5000,
+                dy: -5000,
+            },
+        );
+        assert_eq!(c.pointer_mark(), None, "outside the grid");
+        let (x, y) = (l.x0 + 12 * 9 + 4, l.y0 + 5 * 16 + 8);
+        pointer(
+            &mut c,
+            PointerEvent::Move {
+                dx: i32::try_from(x).unwrap(),
+                dy: i32::try_from(y).unwrap(),
+            },
+        );
+        assert_eq!(c.pointer_mark(), Some((5, 12)));
+        assert!(marked(c.screen(), 5, 12).cell(5, 12).attr.reverse);
+        pointer(&mut c, PointerEvent::Button { pressed: true });
+        assert_eq!(c.screen().cursor, (5, 12));
+        pointer(&mut c, PointerEvent::Button { pressed: false });
+        assert_eq!(c.screen().cursor, (5, 12));
+        // A tablet places it absolutely, and the host shows its own.
+        pointer(
+            &mut c,
+            PointerEvent::Absolute {
+                axis: crate::pointer::Axis::Y,
+                at: crate::pointer::ABS_FULL,
+            },
+        );
+        assert_eq!(c.pointer_mark(), None);
+        pointer(&mut c, PointerEvent::Button { pressed: true });
+        assert_eq!(c.screen().cursor, (5, 12), "below the grid: nothing");
+        // Onto F3=Exit, absolutely.
+        let share = |px: usize, n: usize| {
+            u16::try_from(px * usize::from(crate::pointer::ABS_FULL) / (n - 1) + 1).unwrap()
+        };
+        let (x, y) = (l.x0 + 3 * 9 + 2, l.y0 + 22 * 16 + 2);
+        for (axis, at) in [
+            (crate::pointer::Axis::X, share(x, 1024)),
+            (crate::pointer::Axis::Y, share(y, 768)),
+        ] {
+            pointer(&mut c, PointerEvent::Absolute { axis, at });
+        }
+        pointer(&mut c, PointerEvent::Button { pressed: true });
+        assert_eq!(
+            rx.try_recv(),
+            Ok(Input::Function(3, vec![String::new(), String::new()]))
+        );
+        // A mode change keeps the pointer on the display.
+        c.geometry = Some((
+            (640, 480),
+            Layout::compute(640, 480, ROWS, COLS, Scale::Auto),
+        ));
+        pointer(&mut c, PointerEvent::Move { dx: 9999, dy: 9999 });
+        assert_eq!(c.pointer.at.unwrap().xy(), (639, 479));
+        assert_eq!(c.pointer.at.unwrap().size(), (640, 480));
+        // Off again: the mark goes.
+        c.set_pointer(false);
+        assert_eq!(c.pointer_mark(), None);
+    }
+
+    #[test]
+    #[cfg(feature = "session")]
+    fn the_wheel_pages() {
+        use tn5250::ds::attr;
+        use tn5250::ds::field::Ffw;
+        use tn5250::record::Record;
+        use tn5250::screen::{Read, ScreenModel};
+        let mut c = console();
+        complete(&mut c);
+        let (link, records) = std::sync::mpsc::channel();
+        c.handle(Command::Attach(link));
+        let mut m = ScreenModel::new(false);
+        m.field(6, 53, 10, attr::GREEN_UL, "", Ffw::default(), &[]);
+        let out = m.render(Read::MdtFields);
+        c.handle(Command::Record(Record::new(out.opcode, out.data).encode()));
+        // Off: the wheel is nothing.
+        pointer(&mut c, PointerEvent::Wheel { up: false });
+        assert!(records.try_recv().is_err());
+        // On: Page Down (Roll Up) goes to the host.
+        c.set_pointer(true);
+        pointer(&mut c, PointerEvent::Wheel { up: false });
+        assert!(records.try_recv().is_ok());
+    }
+
+    #[test]
+    fn a_serial_display_is_asked_for_the_mouse_with_the_pointer() {
+        let serial = Shared::default();
+        let mut c = console();
+        c.add_display(Box::new(crate::ansi::AnsiDisplay::new(serial.clone())));
+        c.handle(Command::Redraw);
+        assert!(!String::from_utf8_lossy(&serial.0.lock().unwrap()).contains("\x1b[?1000h"));
+        c.set_pointer(true);
+        c.handle(Command::Redraw);
+        assert!(
+            String::from_utf8_lossy(&serial.0.lock().unwrap()).contains(crate::ansi::POINTER_ON)
+        );
+        // A display added later is asked too.
+        let later = Shared::default();
+        c.add_display(Box::new(crate::ansi::AnsiDisplay::new(later.clone())));
+        c.handle(Command::Redraw);
+        assert!(
+            String::from_utf8_lossy(&later.0.lock().unwrap()).starts_with(crate::ansi::POINTER_ON)
+        );
     }
 
     /// A writer the test keeps a hold of.

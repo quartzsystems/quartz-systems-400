@@ -205,6 +205,15 @@ impl Layout {
     pub fn height(&self) -> usize {
         self.rows * GLYPH_H * self.scale
     }
+
+    /// The 0-based cell under a pixel; `None` outside the grid.
+    #[must_use]
+    pub fn cell_at(&self, x: usize, y: usize) -> Option<(usize, usize)> {
+        let scale = self.scale.max(1);
+        let col = x.checked_sub(self.x0)? / (GLYPH_W * scale);
+        let row = y.checked_sub(self.y0)? / (GLYPH_H * scale);
+        (row < self.rows && col < self.cols).then_some((row, col))
+    }
 }
 
 /// What a grid to draw offers: the console's screen, or a terminal's.

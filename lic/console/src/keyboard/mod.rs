@@ -2,15 +2,17 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Keyboard input: Linux evdev readers and the 5250 key map.
+//! Keyboard and pointer input: Linux evdev readers and the 5250 key map.
 
 pub mod map;
 
 #[cfg(target_os = "linux")]
 mod evdev;
+#[cfg(target_os = "linux")]
+mod raw;
 
 #[cfg(target_os = "linux")]
-pub use evdev::spawn_readers;
+pub use evdev::{abs_ranges, decode, spawn_readers};
 
 /// One key press or release, as a Linux key code.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -26,7 +26,8 @@ pub struct ConsoleTerminal {
     term: Terminal,
 }
 
-/// The console key as the terminal takes it.
+/// The console key as the terminal takes it; `None` for a click, which
+/// is no key to the terminal ([`ConsoleTerminal::key`] places it).
 #[must_use]
 pub fn term_key(key: Key) -> Option<TermKey> {
     Some(match key {
@@ -49,6 +50,7 @@ pub fn term_key(key: Key) -> Option<TermKey> {
         Key::Down => TermKey::Down,
         Key::PageUp => TermKey::PageUp,
         Key::PageDown => TermKey::PageDown,
+        Key::Pointer { .. } => return None,
     })
 }
 
@@ -105,13 +107,33 @@ impl ConsoleTerminal {
         let _ = self.term.apply(rec);
     }
 
-    /// A key from the operator: the records it produced, encoded.
+    /// A key from the operator: the records it produced, encoded. A
+    /// click outside the input fields on a key's label presses it;
+    /// any other click puts the cursor on its cell, as 5250 allows.
     pub fn key(&mut self, key: Key) -> Vec<Vec<u8>> {
+        if let Key::Pointer { row, col } = key {
+            return self.click(usize::from(row), usize::from(col));
+        }
         let Some(k) = term_key(key) else {
             return Vec::new();
         };
         let _ = self.term.key(k);
         self.term.take_outbox().iter().map(Record::encode).collect()
+    }
+
+    /// A click on a 0-based cell.
+    fn click(&mut self, row: usize, col: usize) -> Vec<Vec<u8>> {
+        let (rows, cols) = (self.term.rows().min(ROWS), self.term.cols().min(COLS));
+        if row >= rows || col >= cols || self.locked() {
+            return Vec::new();
+        }
+        let at = row * self.term.cols() + col;
+        let in_field = self.term.fields().iter().any(|f| f.contains(at));
+        if !in_field && let Some(k) = crate::editor::hot_spot(&self.screen(), row, col) {
+            return self.key(k);
+        }
+        self.term.set_cursor(row + 1, col + 1);
+        Vec::new()
     }
 
     /// Whether the keyboard is locked.
@@ -220,6 +242,34 @@ mod tests {
         assert!(t.locked());
         assert!(t.text_rows()[23].starts_with("X II"));
         assert!(t.text_rows()[5].contains("CODY"));
+    }
+
+    #[test]
+    fn a_click_places_the_cursor_or_presses_a_label() {
+        let mut m = ScreenModel::new(false);
+        m.put(1, 36, "Sign On", attr::WHITE);
+        m.field(6, 53, 10, attr::GREEN_UL, "", Ffw::default(), &[]);
+        m.put(23, 2, "F3=Exit", attr::BLUE);
+        let out = m.render(Read::MdtFields);
+        let mut t = ConsoleTerminal::new();
+        t.apply(&Record::new(out.opcode, out.data));
+        let click =
+            |t: &mut ConsoleTerminal, r: u16, c: u16| t.key(Key::Pointer { row: r, col: c });
+        assert!(click(&mut t, 5, 55).is_empty());
+        assert_eq!(t.screen().cursor, (5, 55));
+        // Outside a field, on no label: the cursor goes there too.
+        assert!(click(&mut t, 10, 3).is_empty());
+        assert_eq!(t.screen().cursor, (10, 3));
+        // Past the grid: nothing.
+        assert!(click(&mut t, 24, 0).is_empty());
+        assert!(click(&mut t, u16::MAX, u16::MAX).is_empty());
+        assert_eq!(t.screen().cursor, (10, 3));
+        // On F3=Exit: F3 goes to the host, and the keyboard locks.
+        assert_eq!(click(&mut t, 22, 4).len(), 1);
+        assert!(t.locked());
+        // Locked: a click does nothing.
+        assert!(click(&mut t, 5, 53).is_empty());
+        assert_ne!(t.screen().cursor, (5, 53));
     }
 
     /// The pixel row of a cell's underline.

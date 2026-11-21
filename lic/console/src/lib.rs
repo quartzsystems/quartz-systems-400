@@ -7,13 +7,15 @@
 //! serial terminal with ANSI sequences ([`ansi`]); both are a
 //! [`Display`], or sent as cells over a partition's console port
 //! ([`qsi`]). The SRC display, evdev keyboards and 5250 field
-//! editing. What names a product on a screen comes from the caller
-//! ([`Identity`]).
+//! editing; a pointer that clicks into fields, on the framebuffer and on
+//! a serial terminal ([`mod@pointer`], opt-in). What names a product on a
+//! screen comes from the caller ([`Identity`]).
 //!
 //! The feature `session` (on by default) adds the sign-on display and
 //! the console as the terminal of a 5250 session.
 //!
-//! `unsafe` lives only in `fb::raw` (two ioctls).
+//! `unsafe` lives only in `fb::raw` (the framebuffer's ioctls) and
+//! `keyboard::raw` (`EVIOCGABS`).
 
 #![deny(unsafe_code)]
 
@@ -23,6 +25,7 @@ pub mod editor;
 pub mod font;
 pub mod keyboard;
 pub mod palette;
+pub mod pointer;
 pub mod qsi;
 pub mod scale;
 pub mod screen;
@@ -42,5 +45,6 @@ pub use service::{Command, Console, INHIBITED, Identity, Input};
 
 pub use display::{Display, View};
 pub use keyboard::map::Key;
+pub use pointer::PointerEvent;
 pub use scale::Scale;
 pub use screen::{Attr, COLS, Cell, Color, Field, ROWS, Screen};

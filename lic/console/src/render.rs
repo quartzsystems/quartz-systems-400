@@ -9,7 +9,7 @@ use std::io;
 
 use crate::display::Display;
 use crate::fb::Framebuffer;
-use crate::scale::{Canvas, Cells, Scale};
+use crate::scale::{Canvas, Cells, Layout, Mode, Scale};
 
 /// Draws a grid onto a framebuffer.
 pub struct Renderer {
@@ -24,6 +24,16 @@ impl Renderer {
         let r = Self { fb, canvas };
         r.fb.write_span(r.canvas.frame(), 0)?;
         Ok(r)
+    }
+
+    /// The framebuffer's mode as last queried.
+    pub fn mode(&self) -> Mode {
+        self.canvas.mode()
+    }
+
+    /// Where the grid sits.
+    pub fn layout(&self) -> Layout {
+        self.canvas.layout()
     }
 
     /// One line for the IPL log and `svc.hw`.

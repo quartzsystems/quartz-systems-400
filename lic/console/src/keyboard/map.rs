@@ -47,6 +47,13 @@ pub enum Key {
     PageUp,
     /// Page Down (Roll Up).
     PageDown,
+    /// A click of the pointer on a 0-based cell of the grid.
+    Pointer {
+        /// Row, from 0.
+        row: u16,
+        /// Column, from 0.
+        col: u16,
+    },
 }
 
 /// Modifier state tracked from press and release events.

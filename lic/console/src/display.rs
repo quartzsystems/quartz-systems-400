@@ -29,6 +29,13 @@ pub trait Display: Send {
         let _ = view;
         self.draw(cells)
     }
+
+    /// Report a pointer from the next draw on, or stop: a display whose
+    /// device has one (a terminal's mouse) asks it to; the others
+    /// ignore this.
+    fn set_pointer(&mut self, on: bool) {
+        let _ = on;
+    }
 }
 
 /// What the console knows beside its cells.

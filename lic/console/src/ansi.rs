@@ -11,6 +11,10 @@
 //! them (F13 to F24 as Shift+F1 to Shift+F12) or as Esc and a key of
 //! the top row: Esc 1 to Esc 9, Esc 0, Esc -, Esc = for F1 to F12, the
 //! same with Shift held for F13 to F24.
+//!
+//! With the pointer on ([`Display::set_pointer`]) the display asks the
+//! terminal to report the mouse in xterm's SGR form, and a left click
+//! becomes [`Key::Pointer`], the wheel Page Up and Page Down.
 
 use std::fmt::Write as _;
 use std::io::{self, Write};
@@ -28,7 +32,16 @@ pub struct AnsiDisplay<W: Write + Send> {
     size: (usize, usize),
     /// What the caller calls it, for the log.
     name: String,
+    /// Mouse reports wanted.
+    pointer: bool,
+    /// Mouse reports turned on at the terminal.
+    reporting: bool,
 }
+
+/// Mouse reporting on: button events, SGR form.
+pub const POINTER_ON: &str = "\x1b[?1000h\x1b[?1006h";
+/// Mouse reporting off.
+pub const POINTER_OFF: &str = "\x1b[?1000l\x1b[?1006l";
 
 /// The SGR parameters of an attribute.
 fn sgr(a: Attr) -> String {
@@ -90,6 +103,8 @@ impl<W: Write + Send> AnsiDisplay<W> {
             shown: None,
             size: (0, 0),
             name: "ansi".to_string(),
+            pointer: false,
+            reporting: false,
         }
     }
 
@@ -105,6 +120,7 @@ impl<W: Write + Send> AnsiDisplay<W> {
     /// (the terminal was cleared, or another one was plugged in).
     pub fn invalidate(&mut self) {
         self.shown = None;
+        self.reporting = false;
     }
 
     /// The writer.
@@ -120,6 +136,14 @@ impl<W: Write + Send> AnsiDisplay<W> {
             self.size = (rows, cols);
         }
         let mut out = String::new();
+        if self.pointer != self.reporting {
+            out.push_str(if self.pointer {
+                POINTER_ON
+            } else {
+                POINTER_OFF
+            });
+            self.reporting = self.pointer;
+        }
         // The cursor stays out of sight while the cells change.
         out.push_str("\x1b[?25l");
         if self.shown.is_none() {
@@ -186,6 +210,20 @@ impl<W: Write + Send> Display for AnsiDisplay<W> {
         let (rows, cols) = self.size;
         format!("{} {cols}x{rows}", self.name)
     }
+
+    fn set_pointer(&mut self, on: bool) {
+        self.pointer = on;
+    }
+}
+
+impl<W: Write + Send> Drop for AnsiDisplay<W> {
+    /// The terminal's mouse back to itself.
+    fn drop(&mut self) {
+        if self.reporting {
+            let _ = self.out.write_all(POINTER_OFF.as_bytes());
+            let _ = self.out.flush();
+        }
+    }
 }
 
 /// Turns the bytes a terminal sends into keys.
@@ -196,6 +234,43 @@ pub struct KeyDecoder {
     /// The last byte was a carriage return: a line feed after it is the
     /// same Enter.
     after_cr: bool,
+    /// A sequence too long to be one of ours: its bytes are dropped up
+    /// to its final byte.
+    discard: bool,
+}
+
+/// Bytes of a sequence held at most, from its Esc.
+const SEQUENCE_MAX: usize = 16;
+
+/// The key of a mouse report, `CSI < b ; x ; y M` or `m`: a left press
+/// is a click on cell `(y-1, x-1)`, the wheel Page Up and Page Down;
+/// a release, a move or another button is nothing.
+fn mouse(params: &str, last: u8) -> Option<Key> {
+    if last != b'M' {
+        return None;
+    }
+    let num = |p: Option<&str>| -> Option<u16> {
+        let p = p?;
+        if p.is_empty() || p.len() > 5 || !p.bytes().all(|b| b.is_ascii_digit()) {
+            return None;
+        }
+        p.parse().ok()
+    };
+    let mut parts = params.split(';');
+    let (b, x, y) = (num(parts.next())?, num(parts.next())?, num(parts.next())?);
+    if parts.next().is_some() {
+        return None;
+    }
+    // Shift, Meta and Ctrl do not matter.
+    match b & !(4 | 8 | 16) {
+        0 => Some(Key::Pointer {
+            row: y.checked_sub(1)?,
+            col: x.checked_sub(1)?,
+        }),
+        64 => Some(Key::PageUp),
+        65 => Some(Key::PageDown),
+        _ => None,
+    }
 }
 
 /// F1 to F12 from the key of the top row, F13 to F24 with Shift.
@@ -273,12 +348,22 @@ impl KeyDecoder {
     pub fn flush(&mut self) -> Option<Key> {
         let lone = self.pending == [0x1b];
         self.pending.clear();
+        self.discard = false;
         lone.then_some(Key::Attention)
     }
 
     /// One byte from the terminal; the key it completes, if any.
     pub fn feed(&mut self, b: u8) -> Option<Key> {
         let after_cr = std::mem::replace(&mut self.after_cr, false);
+        if self.discard {
+            if (0x20..=0x3f).contains(&b) {
+                return None;
+            }
+            self.discard = false;
+            if (0x40..=0x7e).contains(&b) {
+                return None;
+            }
+        }
         if self.pending.first() == Some(&0x1b) {
             return self.escape(b);
         }
@@ -341,13 +426,18 @@ impl KeyDecoder {
             };
         }
         if (0x40..=0x7e).contains(&b) {
+            let csi = self.pending[1] == b'[';
             let params = String::from_utf8_lossy(&self.pending[2..]).into_owned();
             self.pending.clear();
+            if csi && let Some(report) = params.strip_prefix('<') {
+                return mouse(report, b);
+            }
             return sequence(&params, b);
         }
         self.pending.push(b);
-        if self.pending.len() > 16 {
+        if self.pending.len() > SEQUENCE_MAX {
             self.pending.clear();
+            self.discard = true;
         }
         None
     }
@@ -425,6 +515,108 @@ mod tests {
             "{out:?}"
         );
         assert!(out.contains("\x1b[4;2Hleft\x1b[4;40Hright"), "{out:?}");
+    }
+
+    /// A writer the test keeps a hold of.
+    #[derive(Clone, Default)]
+    struct Shared(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+
+    impl Write for Shared {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn mouse_reporting_goes_on_with_the_pointer_and_off_at_the_end() {
+        let out = Shared::default();
+        let sent = |o: &Shared| text(&std::mem::take(&mut *o.0.lock().unwrap()));
+        let s = Screen::new();
+        // Without the pointer: never asked for.
+        let mut d = AnsiDisplay::new(out.clone());
+        d.draw(&s).unwrap();
+        drop(d);
+        let plain = sent(&out);
+        assert!(!plain.contains("\x1b[?1000"), "{plain:?}");
+        // With it: on before the first frame, once.
+        let mut d = AnsiDisplay::new(out.clone());
+        d.set_pointer(true);
+        d.draw(&s).unwrap();
+        assert!(sent(&out).starts_with("\x1b[?1000h\x1b[?1006h\x1b[?25l"));
+        d.draw(&s).unwrap();
+        assert!(!sent(&out).contains("\x1b[?1000"));
+        // A new terminal on the line is asked again.
+        d.invalidate();
+        d.draw(&s).unwrap();
+        assert!(sent(&out).starts_with(POINTER_ON));
+        // Off at the end.
+        drop(d);
+        assert_eq!(sent(&out), POINTER_OFF);
+        // Turned off while running: off with the next frame, not again
+        // at the end.
+        let mut d = AnsiDisplay::new(out.clone());
+        d.set_pointer(true);
+        d.draw(&s).unwrap();
+        d.set_pointer(false);
+        sent(&out);
+        d.draw(&s).unwrap();
+        assert!(sent(&out).starts_with(POINTER_OFF));
+        drop(d);
+        assert_eq!(sent(&out), "");
+    }
+
+    #[test]
+    fn mouse_reports_of_a_terminal() {
+        let mut d = KeyDecoder::new();
+        let at = |row, col| Key::Pointer { row, col };
+        assert_eq!(keys(&mut d, b"\x1b[<0;1;1M"), [at(0, 0)]);
+        assert_eq!(keys(&mut d, b"\x1b[<0;80;24M"), [at(23, 79)]);
+        // Shift or Ctrl held: still a click.
+        assert_eq!(
+            keys(&mut d, b"\x1b[<4;10;5M\x1b[<16;10;5M"),
+            [at(4, 9), at(4, 9)]
+        );
+        // A release, a move, the right button: nothing.
+        assert!(keys(&mut d, b"\x1b[<0;10;5m\x1b[<32;10;5M\x1b[<2;10;5M").is_empty());
+        // The wheel pages.
+        assert_eq!(
+            keys(&mut d, b"\x1b[<64;10;5M\x1b[<65;10;5M\x1b[<64;10;5m"),
+            [Key::PageUp, Key::PageDown]
+        );
+        // Numbers too large, zero, or not numbers at all: nothing, and what
+        // follows is read as ever.
+        assert_eq!(keys(&mut d, b"\x1b[<0;65536;1Ma"), [Key::Char('a')]);
+        assert_eq!(keys(&mut d, b"\x1b[<0;0;1Mb"), [Key::Char('b')]);
+        assert_eq!(keys(&mut d, b"\x1b[<0;1;1;1Mc"), [Key::Char('c')]);
+        assert_eq!(keys(&mut d, b"\x1b[<;1;1Md"), [Key::Char('d')]);
+        assert_eq!(keys(&mut d, b"\x1b[<0;1M"), []);
+        // The largest that fits is a click far past the grid: the editor
+        // drops it.
+        assert_eq!(keys(&mut d, b"\x1b[<0;65535;65535M"), [at(65534, 65534)]);
+        // Longer than any sequence of ours: swallowed to its end.
+        assert_eq!(
+            keys(&mut d, b"\x1b[<0;123456789012;99999999M e"),
+            [Key::Char(' '), Key::Char('e')]
+        );
+        // Cut short: held, then dropped when the line goes quiet.
+        assert!(keys(&mut d, b"\x1b[<0;12").is_empty());
+        assert!(d.pending());
+        assert_eq!(d.flush(), None);
+        assert_eq!(keys(&mut d, b"x"), [Key::Char('x')]);
+    }
+
+    #[test]
+    fn a_click_spread_over_several_reads() {
+        let mut d = KeyDecoder::new();
+        let mut got = Vec::new();
+        for part in [&b"\x1b"[..], b"[<", b"0;3", b"5;1", b"2", b"M"] {
+            got.extend(keys(&mut d, part));
+        }
+        assert_eq!(got, [Key::Pointer { row: 11, col: 34 }]);
     }
 
     fn keys(d: &mut KeyDecoder, bytes: &[u8]) -> Vec<Key> {
