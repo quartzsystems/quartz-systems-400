@@ -29,8 +29,10 @@ pub const SYSTEM_LIBRARIES: &[&str] = &[
     "QRPG",
     "QSPL",
     "QSYS",
+    "QSYSINC",
     "QSYS2",
     "QSYS2924",
+    "QUSRDIRDB",
     "QUSRSYS",
 ];
 
