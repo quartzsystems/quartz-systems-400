@@ -50,6 +50,8 @@ const ROOT: &str = "/www/accessweb/sessions";
 const OWN: &str = "accessweb";
 /// How long a connection may take.
 const CONNECT: Duration = Duration::from_secs(15);
+/// How long Disconnect waits for the session to end.
+const END_WAIT: Duration = Duration::from_secs(5);
 /// How long the connection waits for the system before it takes the
 /// page's input: short, so a key or click shows at once.
 const POLL: Duration = Duration::from_millis(10);
@@ -681,8 +683,17 @@ impl Conn {
             .clone()
     }
 
+    /// Ask the session's thread to end and wait (a few seconds at most)
+    /// until it has: the page after Disconnect shows it gone.
     fn end(&self) {
-        let _ = self.tx.send(Cmd::End);
+        if self.tx.send(Cmd::End).is_err() {
+            return;
+        }
+        let g = self.live.lock().unwrap_or_else(PoisonError::into_inner);
+        let _ = self
+            .changed
+            .wait_timeout_while(g, END_WAIT, |l| l.state != State::Disconnected)
+            .unwrap_or_else(PoisonError::into_inner);
     }
 
     /// The connection is gone: the last screen stays, greyed.
