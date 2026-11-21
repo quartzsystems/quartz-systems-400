@@ -23,9 +23,12 @@
 //!   they show; a second console paired from DST's new option.
 //! - 205: a problem opened (by a dump), noted, listed with its severity
 //!   and closed, with its events.
-//! - 206: a controlled power down asked over QSI.
+//! - 206: a controlled power down asked over QSI, after the console's
+//!   steps 207 to 210 (`viewing.rs`).
 
 mod peer;
+mod view;
+mod viewing;
 
 pub(crate) use peer::{Peer, WAIT, ask, base, refused};
 
@@ -173,6 +176,7 @@ impl Suite {
         if let Some(only) = &self.only
             && !NAMES
                 .iter()
+                .chain(viewing::NAMES.iter())
                 .any(|n| only.iter().any(|p| n.starts_with(p.as_str())))
         {
             return Ok(Vec::new());
@@ -201,6 +205,11 @@ impl Suite {
                 self.step(&mut s, NAMES[2], Self::qsi_refused)?,
                 self.step(&mut s, NAMES[3], Self::qsi_ipl_and_dst)?,
                 self.step(&mut s, NAMES[4], Self::qsi_problems)?,
+                // The console's steps before the power down ends the guest.
+                self.step(&mut s, viewing::NAMES[0], Self::qsi_console_frames)?,
+                self.step(&mut s, viewing::NAMES[1], Self::qsi_console_keys)?,
+                self.step(&mut s, viewing::NAMES[2], Self::qsi_console_take_over)?,
+                self.step(&mut s, viewing::NAMES[3], Self::qsi_console_screen)?,
                 self.step(&mut s, NAMES[5], Self::qsi_power_down)?,
             ])
         })();

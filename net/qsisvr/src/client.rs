@@ -255,6 +255,25 @@ impl Client {
         self.events()
     }
 
+    /// Send `bytes` on `stream`, as far as its credit goes; how much went.
+    ///
+    /// # Errors
+    /// The stream is not open this way.
+    pub fn send_on(&mut self, stream: qsisess::StreamId, bytes: &[u8]) -> Result<usize, String> {
+        let n = self.sess.send(stream, bytes).map_err(|e| e.to_string())?;
+        self.step();
+        Ok(n)
+    }
+
+    /// Give the system `n` bytes more credit on `stream`: that much was
+    /// taken.
+    ///
+    /// # Errors
+    /// The stream is not open.
+    pub fn grant(&mut self, stream: qsisess::StreamId, n: u32) -> Result<(), String> {
+        self.sess.grant(stream, n).map_err(|e| e.to_string())
+    }
+
     /// The session's own goodbye, then the connection's end.
     pub fn close(mut self) {
         self.sess.close("done");
