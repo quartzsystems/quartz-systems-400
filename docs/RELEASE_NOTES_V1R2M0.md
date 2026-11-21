@@ -290,11 +290,33 @@ The system says in its LIC record that it has the channel (TLV
 (`QSI.md`), is three neutral crates QS/VS and QS/MC pin: its messages
 (`lic/qsi`), its session (`lic/qsisess`) and its trust rules, mutual
 TLS 1.3 with pinned certificates and pairing by one-time password
-(`lic/qsitrust`). QS/400 runs no QSI listener yet. QSI also carries a
-managed system's problems, code update of its A/B slots and its own
-dumps, each behind a capability bit of its own, and a host's physical
-I/O and physical tape drives and a running partition's entitlement,
-behind two more.
+(`lic/qsitrust`). QSI also carries a managed system's problems, code
+update of its A/B slots and its own dumps, each behind a capability bit
+of its own; a host's physical I/O and physical tape drives and a running
+partition's entitlement, behind two more; and, behind bits 19 to 27, a
+host's switches and storage pools, a partition's settings, activation
+times, a host's power-on settings, the panel functions a system has,
+problem notes and severity, dump space and the fix level
+(`QSI.md` section 5).
+
+**A standalone QS/400 answers QSI.** The server `QSIDSRV` (`*QSI` in
+`QSYSWRK`, port 2300, started with TCP/IP; `CHGQSIA` changes its port
+and whether it starts, `STRTCPSVR` and `ENDTCPSVR` start and end it)
+answers a paired management console with `caps::STANDALONE`: the system's
+identity and state with the keylock and IPL side, power down by
+`PWRDWNSYS`, this IPL's reference codes, events kept on disk and resumed
+after an IPL, the time, the fix level, the system's dumps and their
+space, the problem log with notes and severity, and the control panel
+and the console at ID 0, the console shown at the console and the
+management console both. The system's Ed25519 identity is made at the
+server's first start and sealed under the LIC's stash key; at most two
+consoles are pinned. A one-time pairing password (15 minutes, five
+attempts, kept only in memory) comes from `STRQSIPAIR` or from DST
+(Work with DST environment, option 6, Management consoles); `WRKQSICSL`
+and `RMVQSICSL` list and remove consoles. Every pairing, refusal,
+removal and password made is a `QI` audit entry. These are QS/400's own:
+IBM i has no QSI server, commands, DST option or audit entry
+(`QSID.md` section 12, `SECURITY.md`).
 
 The web layer of QS/400's three web products (`net/qsweb`) and the
 making and reading of certificates (`net/x509kit`, beneath the
@@ -303,7 +325,11 @@ certificate store) are neutral crates QS/MC builds its web UI on
 terminal's look, its script and the exchange the script speaks
 (`net/termlook`), which draw Access for Web's 5250 session and a
 partition's console alike, and the system's reference codes as data
-(`lic/srcdata`), which the IPL posts from (`BUILDKIT.md` section 18).
+(`lic/srcdata`), which the IPL posts from (`BUILDKIT.md` section 18):
+every code now has its cause and recovery. The HTTP client (`net/httpc`)
+and the update catalog's reader (`net/updcat`) are neutral too, the
+client trusting what its caller gives and streaming a download
+(`BUILDKIT.md` section 5).
 
 **Fixes since V1R1M0**
 
@@ -343,6 +369,8 @@ partition's console alike, and the system's reference codes as data
   is `CPA4088`/`CPA4089` (was `CPA4075`), a write over an active file
   `CPA6754` and `INZTAP CHECK(*YES)` on one `CPF6754` (was `CPA4036`);
   the rest are listed in `MEDIA.md` and `SAVE_FORMAT.md`.
+- A PKCS#12 file asking for more than 1,000,000 key derivation
+  iterations is refused instead of being worked through.
 
 ## Deliberately not in V1R2M0
 
