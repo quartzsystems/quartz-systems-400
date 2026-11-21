@@ -169,6 +169,8 @@ pub(super) struct Core {
     pub cv: Condvar,
     pub events: Option<Events>,
     pub responding: AtomicBool,
+    /// When the server last answered; held while `responding` changes.
+    pub last_answer: Mutex<Instant>,
     pub cfg: RemoteConfig,
     pub statfs: Mutex<Option<(RResult<FsStat>, Instant)>>,
     pub calls: AtomicU64,
@@ -178,6 +180,12 @@ pub(super) struct Core {
 impl Core {
     pub(super) fn cache(&self) -> MutexGuard<'_, Cache> {
         self.cache.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    pub(super) fn last_answer(&self) -> MutexGuard<'_, Instant> {
+        self.last_answer
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
     }
 
     pub(super) fn queue(&self) -> MutexGuard<'_, Queue> {
@@ -266,6 +274,7 @@ impl RemoteMount {
             cv: Condvar::new(),
             events,
             responding: AtomicBool::new(true),
+            last_answer: Mutex::new(Instant::now()),
             cfg,
             statfs: Mutex::new(None),
             calls: AtomicU64::new(0),

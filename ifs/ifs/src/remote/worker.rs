@@ -74,7 +74,8 @@ pub(super) fn serve(core: &Arc<Core>, n: usize) {
 }
 
 /// The watchdog: a call running past `slow_after` makes the mount not
-/// responding (reported once).
+/// responding (reported once), unless another call was answered within
+/// `slow_after` (the late one waits out a retry, the server is back).
 pub(super) fn watch(core: &Arc<Core>) {
     loop {
         std::thread::sleep(Duration::from_millis(100));
@@ -104,9 +105,15 @@ pub(super) fn watch(core: &Arc<Core>) {
         }
         if let Some(t) = oldest
             && t.elapsed() >= core.info.slow_after
-            && core.responding.swap(false, Ordering::Relaxed)
         {
-            emit(core, false);
+            let down = {
+                let last = core.last_answer();
+                last.elapsed() >= core.info.slow_after
+                    && core.responding.swap(false, Ordering::Relaxed)
+            };
+            if down {
+                emit(core, false);
+            }
         }
     }
 }
@@ -127,7 +134,15 @@ fn emit(core: &Core, up: bool) {
 
 /// A call came back: answered by the server, or not (`TimedOut`).
 pub(super) fn answered_now(core: &Core, answered: bool) {
-    if answered && !core.responding.swap(true, Ordering::Relaxed) {
+    if !answered {
+        return;
+    }
+    let was = {
+        let mut last = core.last_answer();
+        *last = Instant::now();
+        core.responding.swap(true, Ordering::Relaxed)
+    };
+    if !was {
         emit(core, true);
     }
 }
