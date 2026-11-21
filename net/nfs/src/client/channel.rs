@@ -10,7 +10,8 @@
 //! out the attempt and connects again. After `retrans`
 //! retransmissions (a major timeout) a `soft` call fails `TimedOut`; a
 //! `hard` one reports the server not responding (once for the mount)
-//! and goes on. `intr`: [`Status::interrupt`] ends the calls waiting.
+//! and goes on; not when another call had a reply while this attempt
+//! was out (its timeout is stale). `intr`: [`Status::interrupt`] ends the calls waiting.
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -27,12 +28,19 @@ use crate::rpc::client::results;
 use crate::rpc::{AcceptError, ClientConfig, Credential, Denied, Proto, RpcClient, RpcError};
 use crate::xdr::{Decoder, Encoder, ProcBody};
 
+/// Whether the server is down, and the replies so far.
+#[derive(Debug, Default)]
+struct Seen {
+    down: bool,
+    replies: u64,
+}
+
 /// A mount's view of its server, shared by its channels: whether it
 /// answers, the hooks, and the flags of the calls in progress.
 pub struct Status {
     hooks: Hooks,
     intr: bool,
-    down: AtomicBool,
+    seen: Mutex<Seen>,
     stopped: AtomicBool,
     next: AtomicU64,
     calls: Mutex<HashMap<u64, Arc<AtomicBool>>>,
@@ -41,7 +49,7 @@ pub struct Status {
 impl std::fmt::Debug for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Status")
-            .field("down", &self.down.load(Ordering::Relaxed))
+            .field("down", &!self.responding())
             .field("intr", &self.intr)
             .finish_non_exhaustive()
     }
@@ -54,7 +62,7 @@ impl Status {
         Arc::new(Self {
             hooks,
             intr,
-            down: AtomicBool::new(false),
+            seen: Mutex::new(Seen::default()),
             stopped: AtomicBool::new(false),
             next: AtomicU64::new(1),
             calls: Mutex::new(HashMap::new()),
@@ -63,20 +71,41 @@ impl Status {
 
     /// Whether the server is answering.
     pub fn responding(&self) -> bool {
-        !self.down.load(Ordering::Relaxed)
+        !self.seen().down
     }
 
-    fn not_responding(&self) {
-        if !self.down.swap(true, Ordering::Relaxed) {
-            tracing::warn!("NFS server not responding, still trying");
-            if let Some(h) = &self.hooks.not_responding {
-                h();
+    fn seen(&self) -> std::sync::MutexGuard<'_, Seen> {
+        self.seen.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// The replies so far.
+    fn replies(&self) -> u64 {
+        self.seen().replies
+    }
+
+    /// A major timeout of an attempt begun after `since` replies: down,
+    /// unless a reply came meanwhile.
+    fn not_responding(&self, since: u64) {
+        {
+            let mut s = self.seen();
+            if s.down || s.replies != since {
+                return;
             }
+            s.down = true;
+        }
+        tracing::warn!("NFS server not responding, still trying");
+        if let Some(h) = &self.hooks.not_responding {
+            h();
         }
     }
 
     fn answered(&self) {
-        if self.down.swap(false, Ordering::Relaxed) {
+        let was = {
+            let mut s = self.seen();
+            s.replies = s.replies.wrapping_add(1);
+            std::mem::take(&mut s.down)
+        };
+        if was {
             tracing::info!("NFS server responding again");
             if let Some(h) = &self.hooks.responding {
                 h();
@@ -303,6 +332,7 @@ impl Channel {
         loop {
             let wait = self.policy.wait(n);
             let start = Instant::now();
+            let since = self.status.replies();
             match c.attempt(xid, &msg, wait) {
                 Ok(reply) => {
                     self.status.answered();
@@ -323,7 +353,7 @@ impl Channel {
                         if self.policy.soft {
                             return Err(RemoteError::TimedOut);
                         }
-                        self.status.not_responding();
+                        self.status.not_responding(since);
                     }
                 }
                 Err(e) => return Err(rpc_errno(&e)),
