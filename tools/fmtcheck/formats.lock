@@ -112,7 +112,7 @@ hash = "ce3db903b1de4eacb6d5dca4cd25579de14f9c3940dfd3cf9a66822ee1296b3c"
 [format.ptf]
 frozen_at = "V1R1M0"
 version = "1"
-hash = "2bae4301fadd86deafe6f5d10d959adcc907015a6db7e32a47944384022aaf18"
+hash = "3a89519d4f443a699ed464834b2a6c613723604c08745989bba65cbcbee4ad86"
 
 [format.qap]
 frozen_at = "V1R1M0"
