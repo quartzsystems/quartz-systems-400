@@ -1516,6 +1516,14 @@ its own certificate on each leg, passes every message through and knows
 the password) all end in `QSI0202` with nothing pinned; once the
 password is retired, a console nobody pinned gets no session.
 
+**A standalone QS/400.** `docs/QSID.md` section 12 "Proof": `qsisvr`'s
+connection, pairing and families in memory and over TLS on loopback,
+its two fuzz targets, and QEMU steps 201 to 206 (pairing from the
+command and from DST, every base request, an IPL's codes replayed
+after a reconnect, function 21, a problem opened, noted and closed, a
+wrong password five times, a replayed exchange and an unpinned console
+refused, a controlled power down).
+
 **From outside.** `cargo run -p build -- fixture`: the fixture's PID 1
 takes the three crates as git dependencies, makes two identities,
 pairs a console with a managed side over TLS on a socket pair, connects
