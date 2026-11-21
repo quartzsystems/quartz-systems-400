@@ -1460,7 +1460,12 @@ sees of it.
   (`QSI0453`, also while the service tools show); any other
   `QSI0451`. Any other ID is `QSI0331`.
 - **Console** at ID 0: the system's console as `qsipart`'s frames and
-  keys, the local display showing the same (`docs/QSID.md` section 12).
+  keys, the local display showing the same and taking keys too
+  (`docs/QSID.md` section 12, "The console's viewer"). One viewer at a
+  time: a second attach is `QSI0601` unless it takes over, and the one
+  displaced is sent `Ended` and its stream closed. `Screen` is the
+  whole frame alone; never serial. The console's source not there is
+  `QSI0301`.
 - **What each console may ask.** The request's user is a name for the
   job log and the problem log's notes, and grants nothing; a paired
   console may do what the families above offer.
@@ -1529,11 +1534,13 @@ password is retired, a console nobody pinned gets no session.
 
 **A standalone QS/400.** `docs/QSID.md` section 12 "Proof": `qsisvr`'s
 connection, pairing and families in memory and over TLS on loopback,
-its two fuzz targets, and QEMU steps 201 to 206 (pairing from the
+its two fuzz targets, and QEMU steps 201 to 210 (pairing from the
 command and from DST, every base request, an IPL's codes replayed
 after a reconnect, function 21, a problem opened, noted and closed, a
 wrong password five times, a replayed exchange and an unpinned console
-refused, a controlled power down).
+refused, a controlled power down; and the console: the sign-on display
+received as frames equal to its golden while the local display shows
+it, a sign-on typed from the console, a take over, the screen alone).
 
 **From outside.** `cargo run -p build -- fixture`: the fixture's PID 1
 takes the three crates as git dependencies, makes two identities,

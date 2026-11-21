@@ -568,6 +568,37 @@ console exactly as for the partition service channel's function 21 and
 writes `/run/qs400/qsipanel.answer`. A second function 21 while DST
 shows is refused at once (`QSI0453`).
 
+### The console's viewer
+
+`slic` owns the console, so `slic` serves its viewer: beside the local
+display (framebuffer, keyboards, the serial echo, all unchanged) the
+console has one more display, `console::qsi::tee::Tee`, drawing the
+same `QsiDisplay` frames as a partition's console port, and listens on
+`/run/qs400/qsicons.sock` (`wm::dev::QSI_CONSOLE`, owner-only). In the
+partition mode the console port is the console's route and there is no
+socket. The console family's source, `work/qsjob/src/work/qsi/console.rs`,
+connects for each attach or screen. Every frame on the socket is
+`qsipart`'s; the stream's own kinds:
+
+| Kind | From | What |
+|---|---|---|
+| `0x0501` | viewer | attach; one byte, 1 to take over |
+| `0x0502` | viewer | the screen alone |
+| `0x0511` | console | accepted: the console port's stream follows (hello, a whole frame, updates; keys and refreshes back, section 5) |
+| `0x0512` | console | refused; one byte, 1: another viewer has the console (`QSI0601`) |
+| `0x0513` | console | ended; the reason as text (`Out::Ended`), then the stream closes |
+
+The screen alone is answered with one whole frame taken at the
+console's next draw, then closed. One viewer at a time: a second attach
+is refused unless it takes over, and the one it displaces is sent what
+was queued for it, then ended. With no viewer nothing is sent or kept.
+A viewer that does not take its frames never holds the console up: it
+has a queue of eight, a frame with no room is dropped and the next is
+whole. Keys from the viewer go to the console as the keyboard's keys
+after its mapping (`console::Command::Virtual`), so the local display
+and the viewer show the same console and both take keys. No socket, or
+no answer, is `QSI0301` to the console.
+
 The events, compared every half second (problems and dumps every two
 seconds) with what the log last said: each code posted (base `Refcode`),
 a change of state (base `State`), a dump taken or removed, a problem
@@ -621,7 +652,15 @@ console's steps use it too):
 | 203 pairing refused | five wrong passwords, then `QSI0201`; a good exchange replayed on a new connection `QSI0202`; MC03 removed by `RMVQSICSL`, its open session ended; a password ended with F12; a console nobody pinned refused at TLS; the `QI` entries (made, paired, refused with their reasons, removed) |
 | 204 an IPL, function 21 | a controlled restart asked over QSI into a manual IPL; MC01 reconnects and is resumed with the IPL's codes from `C1001000` to `C6001090`; the keylock manual; function 21 shows DST on the console and a second is refused `QSI0453`; DST option 5, then 6, lists MC01, F6 makes a password and MC02 pairs with it; MC02 answered pinned |
 | 205 problems | a dump opens a problem (`Opened`); a note by the console's user (`Noted`, naming it); the problem read with its note and severity; closed (`Closed`, `closed_by` the console's user) and `QSI1003` closed again |
-| 206 controlled power down | power off, controlled with a delay of 10, asked over QSI: `D1001000` to `D1001090`, the guest off |
+| 207 console sign-on frames | MC01 attaches to the console at ID 0: a whole frame first, the sign-on display as `golden/signon/sign-on`, and the local display (`screen`) the same row for row |
+| 208 console sign-on by keys | QSECOFR signed on by the viewer's keys to the main menu, which the local display shows too |
+| 209 console take over | MC02 refused `QSI0601` without take over; with it MC01 is sent `Ended` and its stream closes; MC02's keys run `DSPLIBL`, on the local display too |
+| 210 console screen | the screen alone, without attaching: its frame and text equal to the local display; the viewer attached stays attached |
+| 206 controlled power down | power off, controlled with a delay of 10, asked over QSI: `D1001000` to `D1001090`, the guest off (run after 207 to 210) |
 
 All six pass, with step 1 (`cargo run -p conformance -- --only
-201,202,203,204,205,206`).
+201,202,203,204,205,206`). The console's steps need 201's pairing:
+`--only 201,207,208,209,210` (209 pairs MC02 itself when 204 did not
+run). All ten pass in order (`--only
+201,202,203,204,205,206,207,208,209,210`; the console's steps run
+before 206), and 207 to 210 pass after 201 alone.
