@@ -1705,6 +1705,13 @@ ifs/ifscmd/src/text.rs	 Primary group  . . . . . . . . :   {}
 ifs/ifscmd/src/text.rs	 Type . . . . . . . . . . . . . :   {}
 ifs/ifscmd/src/text.rs	 User        Authority  Exist  Mgt  Alter  Ref
 lic/console/src/fb/mod.rs	frame buffer
+lic/console/src/qsi.rs	console port {}
+lic/console/src/qsi/tee.rs	Another viewer took the console over.
+lic/console/src/qsi/tee.rs	console viewer at {}
+lic/console/src/qsi/tee_tests.rs	Sign On
+lic/console/src/qsi/tee_tests.rs	User . . . . . .
+lic/console/src/qsi/viewer.rs	the console did not answer
+lic/console/src/qsi/viewer.rs	the console refused the viewer
 lic/console/src/render.rs	still bound
 lic/console/src/render.rs	{}x{} at {} bpp (r{}/{} g{}/{} b{}/{}), stride {}, {}x{} grid at scale {} from ({}, {}), fbcon {}
 lic/console/src/screens.rs	Current library . . . . . . . . .
@@ -2217,27 +2224,6 @@ lic/slic/src/cpp/rpg/rpg3.rs	{out}QRG9001 Program {name} was not created in libr
 lic/slic/src/cpp/rpg/rpg3.rs	{} product {PRODUCT} option *BASE is not installed
 lic/slic/src/cpp/rpg/rpg3.rs	{} {:02} statement {}: {}
 lic/slic/src/cpp/savcmd.rs	Attribute
-lic/slic/src/cpp/savcmd.rs	CPD0094 ALWOBJDIF(*ALL) must be the only value
-lic/slic/src/cpp/savcmd.rs	CPD3768 ALWOBJDIF(*ALL) needs MBROPT(*ALL)
-lic/slic/src/cpp/savcmd.rs	CPF2189 not authorized to save file {file}
-lic/slic/src/cpp/savcmd.rs	CPF2189 not authorized to save file {file}
-lic/slic/src/cpp/savcmd.rs	CPF2189 not authorized to save file {}
-lic/slic/src/cpp/savcmd.rs	CPF2189 not authorized to save file {}
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not initialized
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not initialized
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not initialized
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not initialized
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not initialized
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not open
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not open
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not open
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not open
-lic/slic/src/cpp/savcmd.rs	CPF3700 object store not open
-lic/slic/src/cpp/savcmd.rs	CPF3700 the integrated file system is not available
-lic/slic/src/cpp/savcmd.rs	CPF3700 the integrated file system is not available
-lic/slic/src/cpp/savcmd.rs	CPF3743 the save is for a later release
-lic/slic/src/cpp/savcmd.rs	CPF3780 no library saves on device {}
-lic/slic/src/cpp/savcmd.rs	CPF3780 nothing to restore
 lic/slic/src/cpp/savcmd.rs	Command
 lic/slic/src/cpp/savcmd.rs	Data compressed
 lic/slic/src/cpp/savcmd.rs	Library
@@ -2250,48 +2236,22 @@ lic/slic/src/cpp/savcmd.rs	Records
 lic/slic/src/cpp/savcmd.rs	Release level
 lic/slic/src/cpp/savcmd.rs	Save command
 lic/slic/src/cpp/savcmd.rs	Save date/time
-lic/slic/src/cpp/savcmd.rs	Saved as file {} sequence {} on volume(s) {}\n
-lic/slic/src/cpp/savcmd.rs	Saved as {} on volume {}\n
 lic/slic/src/cpp/savcmd.rs	Size
 lic/slic/src/cpp/savcmd.rs	System serial number
 lic/slic/src/cpp/savcmd.rs	Target release
+lic/slic/src/cpp/savcmd.rs	The save is for release V{}R{}M{}.
 lic/slic/src/cpp/savcmd.rs	Type
 lic/slic/src/cpp/savcmd.rs	Yes
-lic/slic/src/cpp/savcmd.rs	a damaged link
+lic/slic/src/cpp/savcmd.rs	no library saves on device {}
 lic/slic/src/cpp/savcmd.rs	restore authority
 lic/slic/src/cpp/savcmd.rs	restore user profiles
 lic/slic/src/cpp/savcmd.rs	save security data
+lic/slic/src/cpp/savcmd.rs	the integrated file system
+lic/slic/src/cpp/savcmd.rs	the integrated file system
+lic/slic/src/cpp/savcmd.rs	the object store is not initialized
+lic/slic/src/cpp/savcmd.rs	the object store is not open
+lic/slic/src/cpp/savcmd.rs	the saved link is damaged
 lic/slic/src/cpp/savcmd.rs	{:<10} {:<10} {:<10} {:<10} {:>12}  Text
-lic/slic/src/cpp/savcmd.rs	{BAD_TGTRLS} target release {tgtrls} is not valid
-lic/slic/src/cpp/savcmd.rs	{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file
-lic/slic/src/cpp/savcmd.rs	{NOT_AVAILABLE} SAVACT({savact}) is not available
-lic/slic/src/cpp/savcmd.rs	{NO_DEVICE} device {} not found
-lic/slic/src/cpp/savcmd.rs	{NO_DEVICE} device {} not found
-lic/slic/src/cpp/savcmd.rs	{NO_DEVICE} device {} not found
-lic/slic/src/cpp/savcmd.rs	{NO_DEVICE} device {} not found
-lic/slic/src/cpp/savcmd.rs	{NO_DEVICE} device {} not found
-lic/slic/src/cpp/savcmd.rs	{NO_DEVICE} device {} not found
-lic/slic/src/cpp/savcmd.rs	{NO_SAVF} save file {}/{name} not found
-lic/slic/src/cpp/savcmd.rs	{RESTORED_LINKS_PARTIAL} not restored: {e}
-lic/slic/src/cpp/savcmd.rs	{SAVED_LINKS_PARTIAL} not saved: {e}
-lic/slic/src/cpp/savcmd.rs	{SAVED_SECDTA} {n} profiles and authorization lists saved\n{written}
-lic/slic/src/cpp/savcmd.rs	{SAVF_EMPTY} save file {} is empty
-lic/slic/src/cpp/savcmd.rs	{SAVF_EMPTY} save file {} is empty
-lic/slic/src/cpp/savcmd.rs	{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C
-lic/slic/src/cpp/savcmd.rs	{id} {n} objects restored to {lib}, {not} not restored
-lic/slic/src/cpp/savcmd.rs	{id} {t} not selected
-lic/slic/src/cpp/savcmd.rs	{id} {t}: saved without its data
-lic/slic/src/cpp/savcmd.rs	{id} {} in {} not restored
-lic/slic/src/cpp/savcmd.rs	{id} {} in {} not saved
-lic/slic/src/cpp/savcmd.rs	{id} {} not restored
-lic/slic/src/cpp/savcmd.rs	{n} objects restored, {k} not restored
-lic/slic/src/cpp/savcmd.rs	{n} objects saved, {not} not saved
-lic/slic/src/cpp/savcmd.rs	{n} spooled files restored to {lib}/{q}
-lic/slic/src/cpp/savcmd.rs	{n} user profiles restored, {not} not; {} authorization lists restored
-lic/slic/src/cpp/savcmd.rs	{} authorities restored for {}, {} not
-lic/slic/src/cpp/savcmd.rs	{} {n} is not in the save
-lic/slic/src/cpp/savcmd.rs	{} {n} security or data format changes
-lic/slic/src/cpp/savcmd.rs	{} {} objects saved from library {}
 lic/slic/src/cpp/savout.rs	CPD0071 OUTFILE is required with OUTPUT(*OUTFILE)
 lic/slic/src/cpp/savout.rs	Outfile {l}/{n} created in the model format.\n{}
 lic/slic/src/cpp/savout.rs	{} records written to {lib}/{name}.\n
@@ -2299,13 +2259,12 @@ lic/slic/src/cpp/savsys.rs	CPF3700 object store not initialized
 lic/slic/src/cpp/savsys.rs	CPF3700 object store not initialized
 lic/slic/src/cpp/savsys.rs	CPF3700 object store not open
 lic/slic/src/cpp/savsys.rs	CPF3700 object store not open
-lic/slic/src/cpp/savsys.rs	CPF3785 not all subsystems ended: {sbs} is active; end them with ENDSBS SBS(*ALL)
 lic/slic/src/cpp/savsys.rs	CRTDEVTAP DEVD({RCY_DEV}) RSRCNAME(*VRT) TEXT(\'Recovery\')
 lic/slic/src/cpp/savsys.rs	CRTIMGCLG IMGCLG({RCY_CLG}) DIR(\'{RCY_DIR}\') TYPE(*TAP) CRTDIR(*YES) TEXT(\'Recovery\')
 lic/slic/src/cpp/savsys.rs	RSTAUT: authorities restored for {} profiles
 lic/slic/src/cpp/savsys.rs	RSTCFG: {} configuration objects restored
 lic/slic/src/cpp/savsys.rs	RSTUSRPRF: {} user profiles restored, {} not; {} authorization lists
-lic/slic/src/cpp/savsys.rs	not restored:
+lic/slic/src/cpp/savsys.rs	Subsystem {sbs} is active; end it with ENDSBS SBS(*ALL).
 lic/slic/src/cpp/savsys.rs	recovery: object store not initialized
 lic/slic/src/cpp/savsys.rs	recovery: object store not open
 lic/slic/src/cpp/savsys.rs	recovery: user data from {} ({} files)
@@ -2316,8 +2275,6 @@ lic/slic/src/cpp/savsys.rs	the operating system\'s product QS00SS1 is not instal
 lic/slic/src/cpp/savsys.rs	user data on {}: {PENDING}: {e}
 lic/slic/src/cpp/savsys.rs	user data: {} files after the system save on {}; RSTLIB and RST run when the storage service starts
 lic/slic/src/cpp/savsys.rs	volume {} of {dev}: {n} bytes copied to {path}
-lic/slic/src/cpp/savsys.rs	{NO_DEVICE} device {dev} not found
-lic/slic/src/cpp/savsys.rs	{SAVED_SYSTEM} system saved to {}: {what}
 lic/slic/src/cpp/savsys.rs	{n} files on tape volume {vol}
 lic/slic/src/cpp/savsys.rs	{path} on the ESP: {e}
 lic/slic/src/cpp/savsys.rs	{} device {dev}: no image catalog is loaded
@@ -2638,6 +2595,8 @@ lic/slic/src/stgsvc/dumps.rs	object {id} page {page} offset {offset} {} bytes
 lic/slic/src/stgsvc/dumps.rs	page type not known
 lic/slic/src/stgsvc/dumps.rs	{} the dump was not copied
 lic/slic/src/stgsvc/exec.rs	CPF9898 hardware resource service: {e}\n
+lic/slic/src/stgsvc/exec.rs	dbgstall REQ(name|IFSDEV) MS(n) [COUNT(n)]\n
+lic/slic/src/stgsvc/exec.rs	fault point: {count} {req} request(s) wait {ms} ms\n
 lic/slic/src/stgsvc/exec.rs	{word} is answered by the console, not the storage service\n
 lic/slic/src/stgsvc/hist.rs	     A            QHDATE         7A         TEXT(\'Date, CYYMMDD\')
 lic/slic/src/stgsvc/hist.rs	     A            QHDTA        512A         TEXT(\'Message data\')
@@ -2905,6 +2864,31 @@ lic/slic/src/stgsvc/qsh.rs	There is no environment variable {name} at level *SYS
 lic/slic/src/stgsvc/qsh.rs	There is no environment variable {} at level *SYS.
 lic/slic/src/stgsvc/qsh.rs	User {} may not change system-level environment variables.
 lic/slic/src/stgsvc/qsh.rs	change system-level environment variables
+lic/slic/src/stgsvc/qsi/keep.rs	No management console {want} is paired with this system.
+lic/slic/src/stgsvc/qsi/keep.rs	Not an Ed25519 identity.
+lic/slic/src/stgsvc/qsi/keep.rs	Not an event log.
+lic/slic/src/stgsvc/qsi/keep.rs	The system has a QSI identity already.
+lic/slic/src/stgsvc/qsi/keep.rs	The system has no QSI identity yet: start the QSI server with STRTCPSVR SERVER(*QSI) first.
+lic/slic/src/stgsvc/qsi/keep.rs	Two management consoles are paired with this system already; remove one first.
+lic/slic/src/stgsvc/qsi/keep.rs	no random source
+lic/slic/src/stgsvc/qsi/keep.rs	the LIC has no stash key
+lic/slic/src/stgsvc/qsi/keep.rs	the LIC has no stash key
+lic/slic/src/stgsvc/qsi/mod.rs	Only the QSI server job QSIDSRV may ask for this.
+lic/slic/src/stgsvc/qsi/mod.rs	Special authority *ALLOBJ and *SECADM are needed to {what}.
+lic/slic/src/stgsvc/qsi/mod.rs	end a pairing password
+lic/slic/src/stgsvc/qsi/mod.rs	make a pairing password
+lic/slic/src/stgsvc/qsi/mod.rs	remove a management console
+lic/slic/src/stgsvc/qsi/mod.rs	work with the management consoles
+lic/slic/src/stgsvc/qsi/system.rs	: closed from a management console
+lic/slic/src/stgsvc/qsi/system.rs	A power down of the system has already started.
+lic/slic/src/stgsvc/qsi/system.rs	No problem {n:010} is in the problem log.
+lic/slic/src/stgsvc/qsi/system.rs	No system dump {name} is on the system.
+lic/slic/src/stgsvc/qsi/system.rs	Problem {id} is closed already.
+lic/slic/src/stgsvc/qsi/system.rs	Problem {id} is closed: it takes no note.
+lic/slic/src/stgsvc/qsi/system.rs	Problem {n:010} not found in the problem log.
+lic/slic/src/stgsvc/qsi/system.rs	System dump {name} not found.
+lic/slic/src/stgsvc/qsi/system.rs	The request does not read.
+lic/slic/src/stgsvc/qsi/system.rs	power down the system
 lic/slic/src/stgsvc/regfac.rs	Exit point            Format    Registered  Programs  Text\n
 lic/slic/src/stgsvc/regfac.rs	Exit program {n} removed from exit point {point} format {format}.\n
 lic/slic/src/stgsvc/regfac.rs	Exit program {shown} added to exit point {point} format {format} as number {n}.\n
@@ -2962,6 +2946,7 @@ lic/slic/src/stgsvc/served.rs	object store not initialized
 lic/slic/src/stgsvc/served.rs	object store not initialized
 lic/slic/src/stgsvc/served.rs	object store not open
 lic/slic/src/stgsvc/served.rs	object store not open
+lic/slic/src/stgsvc/served.rs	only slic closes the store
 lic/slic/src/stgsvc/served.rs	only slic closes the store
 lic/slic/src/stgsvc/served.rs	storage service closed the store at generation {generation}
 lic/slic/src/stgsvc/served.rs	the object store is not available
@@ -3420,6 +3405,14 @@ work/qsjob/src/command/nettools.rs	User
 work/qsjob/src/command/nettools.rs	unexpected answer {other:?}
 work/qsjob/src/command/nettools.rs	{addr} is not an address of the version {} asks for.
 work/qsjob/src/command/nettools.rs	{t} is not a local internet address.
+work/qsjob/src/command/qsicmd.rs	(none yet)
+work/qsjob/src/command/qsicmd.rs	No management consoles are paired.\n
+work/qsjob/src/command/qsicmd.rs	System\'s QSI fingerprint: {fp}\n
+work/qsjob/src/command/qsicmd.rs	The system has no QSI identity yet.
+work/qsjob/src/command/qsicmd.rs	a refusal without a message
+work/qsjob/src/command/qsicmd.rs	unexpected answer {other:?}
+work/qsjob/src/command/qsicmd.rs	{} Management console {} removed.\n
+work/qsjob/src/command/qsicmd.rs	{}. {}  paired {}  last session {}  from {}  fingerprint {}
 work/qsjob/src/command/tcp.rs	unexpected answer {other:?}
 work/qsjob/src/command/tcp.rs	unexpected answer {other:?}
 work/qsjob/src/command/tcp.rs	unexpected answer {other:?}
@@ -3600,6 +3593,9 @@ work/qsjob/src/panels/objects/msgs.rs	Message identifier {id} not found in messa
 work/qsjob/src/panels/objects/msgs.rs	Notify
 work/qsjob/src/panels/objects/msgs.rs	Reply
 work/qsjob/src/panels/objects/msgs.rs	Sender copy
+work/qsjob/src/panels/qsi.rs	panel {panel}: {e}
+work/qsjob/src/panels/qsi.rs	{} Pairing password ended.\n
+work/qsjob/src/panels/qsi.rs	{} Pairing password made: good for one pairing until {time}.\n
 work/qsjob/src/panels/system/security.rs	Current receiver
 work/qsjob/src/panels/system/security.rs	Security journal
 work/qsjob/src/panels/system/sysval.rs	Coded character set ID
