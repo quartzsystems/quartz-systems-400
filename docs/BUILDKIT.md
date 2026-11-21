@@ -324,7 +324,34 @@ what names its owner from the caller; section 10 has the detail.
 | `qsweb` | the web layer (handoff 22, section 17): HTTP/1.1 over any stream, sessions and CSRF, the frame, the partials, the shared pages, golden comparison and the link check, WebSocket | its family (`Brand`: name, vendor, release, `Server` token, the stylesheet's and script's paths, the cookie, the shared pages' policy sentences), each product's wordmark, prefix, navigation tree, header label, routes, messages and help |
 | `x509kit` | certificates without a store (handoff 22): P-256, P-384 and RSA keys, self-signed and issued certificates, requests, what a certificate holds, PEM chains and keys matched, PKCS#12 read and written | the names, the validity, the passwords |
 | `termlook` | the terminal's look (handoff 23, section 18): the console's font and palette, its cell rules and status row, a screen drawn to PNG and Print Screen's PDF, fed from a 5250 screen or a partition console's `qsipart` grid; the page's script as bytes and the exchange it speaks on its socket, keys by name to `qsipart`'s; `qsipart` and `ipc` alone under it | the system's name on the status row, the connection's state and TLS, the scheme and scale, the PDF's producer, the keypad, the script element's paths |
-| `srcdata` | every reference code the system posts (handoff 23): family, phase, text, meaning, and cause and recovery where written (`gaps` counts the rest); `slic` posts from it; nothing under it | nothing: the codes are the system's |
+| `srcdata` | every reference code the system posts (handoff 23): family, phase, text, meaning, and cause and recovery (handoff 24: every code has all three; `gaps` is empty); `slic` posts from it; nothing under it | nothing: the codes are the system's |
+| `httpc` | an HTTP/1.1 client, http and https (handoff 24): one request a connection, redirects followed, a body read whole or streamed to a writer under a size limit and resumed by range | the trust (`Trust`: roots it gives, one certificate pinned by its SHA-256, or a TLS configuration of its own), the size limit |
+| `updcat` | the update catalog's reader (handoff 24): the signed catalog verified before it is parsed; products, PTFs and groups; a release's newest cumulative package and its date; the publisher's canonical text and signature | the keys it trusts |
+
+### Handoff 24's items
+
+What QS/MC's remaining phases asked of QS/400 (section 19), item by item.
+
+| Item | What | Commits |
+|---|---|---|
+| A1 | vres: switches managed, bit 19 (`SWITCHES`, operations `0x0045` to `0x004A`, `QSI1501` to `QSI1515`) | `fb85e1480` |
+| A2 | vres: storage pools managed, bit 20 (`POOLS`, operations `0x0002` to `0x000A`; extend refused `QSI1616`) | `fb85e1480` |
+| A3 to A5 | partition version 3, bit 21 (`PARTITION_V3`: create with settings, get and set settings) | `fb85e1480` |
+| A6 | activation times, bit 22 (`ACTIVATIONS`: partitions' `0x0004`, profiles' `0x0007`) | `fb85e1480` |
+| A7 | a host's power-on settings, bit 23 (`POWER_ON`: host's `0x0020`, `0x0021`, event `0x0020`) | `fb85e1480` |
+| A8 | the panel functions a system has, bit 24 (`PANEL_FUNCTIONS`, panel version 2); ID 0 the system itself | `fb85e1480` |
+| A9 | problem notes and severity, bit 25 (`PROBLEM_NOTES`, service version 2) | `fb85e1480` |
+| A10 | dump space, bit 26 (`DUMP_SPACE`: base's `0x0014`, dumps' `0x0005`) | `fb85e1480` |
+| A11 | release dates and notes in a stream's index (`UPDATE_PROTOCOL.md` section 3) | `2f69716ab` |
+| A, also | the fix level, bit 27 (`FIX_LEVEL`), `caps::STANDALONE`; the tests at both ends, the fuzz seeds, the format lock, `QSI.md` | `723a2bf98`, `9f5cf7dca`, `e96bba90e`, `cd58d7ac2`, `5a5b7e29f`; recorded in `QSI.md` by `7cc714a1f` |
+| B1 | `httpc` neutral: the caller's trust, a streamed download checked by its digest | `108adc963` |
+| B2 | `net/updcat`, the update catalog's neutral reader; the fixture fetches a pinned download and reads a signed catalog | `c9767c80f`, `4f3647ef2`, `89519193d` |
+| B3 | every reference code with its cause and recovery; `srcdata::gaps` empty | `6ed8f50b9`, `957fa91f6`, `d95c1d926`, `cab5265ec`, `73d5cdb03`, `c2bb4c96b` |
+| B4 | `qsweb`: help's plain close, grouped actions, fields carried across a page | `8d69937bb` |
+| B5 | `x509kit`: PKCS#12 iteration counts bounded (1,000,000); fuzz target `pkcs12` | `4c4f5102d`, `7a7455f9a` |
+| B6 | `protect`: a member absent at a clean open keeps a map (section 11) | `7e65f618e` |
+| B7 | `termlook`: Copy and the keypad's toggle on every page | `e8ae3dde1` |
+| B8 | QS/MC's open questions marked QS/400: 13 is B6, 22 B4, 26 B1, 27 B5, 30 A7, 33 A8, 32 B7 and Part C; 31 (a pin's expiry) answered in `QSI.md` section 9; 29 and 34 are not QS/400's | this table, `QSI.md` |
 
 ### Sets for a storage pool (handoff 15)
 
@@ -946,6 +973,12 @@ unclean stop also copies again the regions the set's map had at open.
 A member with no store, a store that held no valid map, or a map that
 could not be written, comes back by a full copy, as before. `replace`
 (another disk) gives the member's map up.
+
+A member recorded active whose device is not found at an open after a
+clean stop (the set's map has no region set) gets a map of its own
+from that open, as if it had left then (handoff 24, QS/MC's open
+question 13): it lacked nothing when the set stopped, so it comes back
+by what is written while it is away, not by a full copy.
 
 ### Proof
 
@@ -1662,7 +1695,9 @@ Access for Web's look was its own (`net/accessweb/src/s5250`, fed by a
 
 **The codes without cause and recovery** (`srcdata::gaps`, asserted by
 its test; `PHASE1.md` "Reference codes as data"): 74 codes, every one
-with its meaning; 64 lack a cause, a recovery or both.
+with its meaning; 64 lacked a cause, a recovery or both at handoff 23.
+Handoff 24 (B3) wrote the rest: every code has its cause and recovery,
+and `gaps` is empty.
 
 | Family | Codes | Without cause | Without recovery |
 |---|---|---|---|
