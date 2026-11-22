@@ -99,6 +99,9 @@ jobs:
           QS400_SB_CERT="$KEYDIR/qs400-db.cer" \
           SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
             cargo run -q -p build -- ptf "ptf/fixes/$PTF.toml"
+      # The PTF against the frozen save format, read apart from savfmt.
+      - name: fmtcheck savf
+        run: cargo run -q -p fmtcheck -- savf "$QS400_TARGET_DIR/images/ptf/$PTF.savf"
       # The update service's directory as last published, this PTF added.
       - name: The catalog so far
         run: |

@@ -23,6 +23,7 @@ ed25519-dalek = "3.0.0"
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+fmtcheck = { path = "../../tools/fmtcheck", version = "0.1.0" }
 
 [lints]
 workspace = true

@@ -23,6 +23,8 @@ use quote::ToTokens;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+pub mod savf;
+
 /// The manifest, relative to the repository root.
 pub const MANIFEST: &str = "tools/fmtcheck/formats.toml";
 /// The lock, relative to the repository root.

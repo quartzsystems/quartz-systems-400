@@ -118,6 +118,9 @@ pub fn ptf(ctx: &Ctx, manifest: &Path) -> Result<PathBuf> {
     // What a system trusting this key will load.
     ptf::package::open(&built.stream, &[key.verifying_key().to_bytes()])
         .map_err(|e| anyhow::anyhow!("the PTF does not open: {e}"))?;
+    // And what the frozen save format says, read apart from savfmt.
+    fmtcheck::savf::check(&built.stream)
+        .map_err(|v| anyhow::anyhow!("the PTF is not the frozen save format: {v}"))?;
     let out = ctx.paths.images().join("ptf");
     fs::create_dir_all(&out)?;
     let path = out.join(format!("{}.savf", built.ptf));
@@ -154,6 +157,9 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
         let bytes = fs::read(f)?;
         let p = ptf::package::open(&bytes, &trusted)
             .map_err(|e| anyhow::anyhow!("{}: {e}", f.display()))?;
+        fmtcheck::savf::check(&bytes).map_err(|v| {
+            anyhow::anyhow!("{}: not the frozen save format: {v}", f.display())
+        })?;
         if p.header.release != release::RELEASE.to_string() {
             bail!(
                 "{}: release {}, this build is {}",

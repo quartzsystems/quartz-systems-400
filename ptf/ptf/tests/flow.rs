@@ -148,6 +148,9 @@ fn the_stream_id_names_the_ptf() {
     assert_eq!(&h.stream_id[8..], &NOW.to_be_bytes());
     // Whole save file records, so a file transfer into a *SAVF takes it.
     assert!(savfmt::pad::whole(&one), "{} bytes", one.len());
+    // The frozen save format, read apart from savfmt.
+    let sum = fmtcheck::savf::check(&one).unwrap();
+    assert_eq!((sum.kind, sum.objects), (fmtcheck::savf::KIND_PTF, 2));
 }
 
 #[test]
@@ -284,6 +287,7 @@ fn delayed_ptfs_wait_for_the_ipl() {
         system: "QSBUILD".into(),
     };
     let bytes = package::build(&mut b, bq, &build, NOW).unwrap();
+    fmtcheck::savf::check(&bytes).unwrap();
     let pkg = package::open(&bytes, &trusted()).unwrap();
     assert_eq!(pkg.lic_b.as_deref(), Some(&b"new kernel image B"[..]));
     assert_eq!(pkg.lic.as_deref(), Some(&b"new kernel image"[..]));
