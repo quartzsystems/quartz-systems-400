@@ -175,6 +175,16 @@ pub(super) fn read_ptf(system: &mut System, savf_q: &str) -> Result<Vec<u8>, Str
             .map_err(|_| format!("CPF9812 save file {lib}/{name} not found"))?;
         savf::read(txn, id).map_err(|e| e.to_string())
     })
+    .and_then(|b| ptf_stream(savf_q, b))
+}
+
+/// `bytes` when they are a save stream this release reads, else
+/// `CPF3598` saying why.
+pub(super) fn ptf_stream(what: &str, bytes: Vec<u8>) -> Result<Vec<u8>, String> {
+    match savfmt::check::stream(&bytes) {
+        Ok(_) => Ok(bytes),
+        Err(r) => Err(format!("CPF3598 {what}: {r}")),
+    }
 }
 
 /// Every PTF save file in `QGPL` (`SELECT(*ALL)`).
@@ -234,7 +244,8 @@ fn lodptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
                 m,
                 Some(p),
                 optical::volume::layout::SaveTarget::Library(p),
-            )?,
+            )
+            .and_then(|b| ptf_stream(p, b))?,
             None => read_ptf(system, p)?,
         };
         let pkg = package::open(&bytes, &keys).map_err(|e| format!("{} {p}: {e}", e.msgid()))?;

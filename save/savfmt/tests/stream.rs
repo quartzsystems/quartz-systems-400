@@ -427,3 +427,39 @@ fn pad_refuses_what_is_not_a_stream() {
         Err(Error::NotSave)
     ));
 }
+
+#[test]
+fn every_refusal_says_why() {
+    use savfmt::check::{self, Reject};
+    let mut rng = Rng(5);
+    let s = write(&corpus(&mut rng, 3), Compression::Low);
+    assert!(check::stream(&s).is_ok());
+    // The media header's CRC made good after a patch.
+    let patched = |at: usize, v: u8| {
+        let mut b = s.clone();
+        b[at] = v;
+        let c = savfmt::record::crc32c(&b[..124]);
+        b[124..128].copy_from_slice(&c.to_be_bytes());
+        b
+    };
+    assert_eq!(check::stream(b"PK\x03\x04 a zip file, not a save").unwrap_err(), Reject::Magic);
+    assert_eq!(check::stream(b"QS400S").unwrap_err(), Reject::Short(6));
+    assert_eq!(check::stream(&patched(9, 7)).unwrap_err(), Reject::Version(7));
+    let e = check::stream(&patched(11, 8)).unwrap_err();
+    assert_eq!(e, Reject::Flags(8));
+    assert_eq!(e.to_string(), "unknown media header flags X'0008'");
+    let e = check::stream(&patched(19, 40)).unwrap_err();
+    assert!(e.to_string().starts_with("field mismatch at offset 19:"), "{e}");
+    let mut crc = s.clone();
+    crc[124] ^= 1;
+    assert!(matches!(check::stream(&crc).unwrap_err(), Reject::Field { offset: 124, .. }));
+    // Cut short, or bytes after the trailer: the trailer is not at the end.
+    let short = &s[..s.len() - 10];
+    let Reject::Field { offset, .. } = check::stream(short).unwrap_err() else {
+        panic!("truncated")
+    };
+    assert_eq!(offset, (short.len() - 88) as u64);
+    let mut long = s.clone();
+    long.extend_from_slice(&[0; 12]);
+    assert!(check::stream(&long).unwrap_err().to_string().contains("no trailer record"));
+}

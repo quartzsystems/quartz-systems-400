@@ -3240,8 +3240,8 @@ vars = ["*CHAR 10", "*CHAR 7", "*CHAR 10"]
 [[msg]]
 id = "CPF3743"
 sev = 30
-text = "The save cannot be restored, displayed or listed here."
-help = "It was made for a later release, or the data is not a save this release can read. &1"
+text = "The save cannot be restored, displayed or listed here: &1"
+help = "It was made for a later release, or the data is not a save this release can read. The text says what is wrong with it: bad magic, a format version or media header flags this release does not know, or the first field that does not match, with its offset in the stream."
 vars = ["*CHAR 364"]
 
 [[msg]]

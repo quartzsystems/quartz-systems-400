@@ -162,7 +162,7 @@ pub fn put(
             }
             // A save stream is as long as its records, not whole 528-byte
             // records (docs/SAVE_FORMAT.md "Whole records").
-            if let Err(e) = savfmt::MediaHeader::decode(data) {
+            if let Err(e) = savfmt::check::stream(data) {
                 return Err(format!("the data is not a save file: {e}"));
             }
             objects::write_bytes(host.ifs(), path, data, How::Replace(xlate::BINARY_CCSID))

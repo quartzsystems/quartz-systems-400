@@ -618,6 +618,12 @@ primary oracle's `DSPMSGD` (`tools/conformance/oracle/msgdata/fields.txt`);
 holds the catalogue to IBM's layouts and `save/saverst/tests/messages.rs`
 the data to the catalogue.
 
+- Data refused as a save stream says why (`savfmt::check`): bad magic,
+  a format version this release does not read, unknown media header
+  flags with their value, or the first field that does not match, with
+  its stream offset (`field mismatch at offset N: ...`). `RST*` and
+  `DSPSAVF` send it as `CPF3743`'s `&1`, `LODPTF` and `INSPTF` as
+  `CPF3598`'s, the FTP server in its `426` reply.
 - A save to a save file ends `CPC3722` (`CPF3701` when objects were not
   saved), to media `CPC3701` (`CPF3771`); several libraries end
   `CPF3777` when not all were saved; nothing saved is `CPF3770`.

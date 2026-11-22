@@ -1382,6 +1382,7 @@ fn restore_stream(
     let jobh = job(system);
     let (store, qsys) = storage(system)?;
     let hooks = SvcHooks::new(qsys);
+    readable(stream)?;
     let mut reader = Reader::new(Cursor::new(stream)).map_err(bad_save)?;
     let r = reader.header().target;
     let cur = release::RELEASE;
@@ -1432,6 +1433,11 @@ fn restore_stream(
 /// fills the message's `&1`.
 fn bad_save(why: impl Display) -> Fail {
     Fail::new(BAD_SAVE, &[Field::Char(&why.to_string(), 364)])
+}
+
+/// `CPF3743` saying why, unless the stream is one this release reads.
+fn readable(stream: &[u8]) -> Result<(), Fail> {
+    savfmt::check::stream(stream).map(drop).map_err(bad_save)
 }
 
 /// The save file a restore read, blank for media.
@@ -1787,6 +1793,7 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
     let jobh = job(system);
     let (store, qsys) = storage(system)?;
     let hooks = SvcHooks::new(qsys);
+    readable(&stream)?;
     let mut reader = Reader::new(Cursor::new(stream.as_slice())).map_err(bad_save)?;
     let rep = sec::guard::as_system(|| {
         saverst::secdta::restore_profiles(store, jobh, &hooks, qsys, &mut reader, &opts)
@@ -2234,6 +2241,7 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> Result<CmdReply, Fail> {
         old_only: option == "*OLD",
         private_auth: parms.text("PVTAUT") == "*YES",
     };
+    readable(&stream)?;
     let mut reader = Reader::new(Cursor::new(stream.as_slice())).map_err(bad_save)?;
     let mut links = Vec::new();
     loop {
@@ -2330,6 +2338,7 @@ pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
 
 fn listing(stream: &[u8]) -> Result<SavfListing, Fail> {
     let mut cur = Cursor::new(stream);
+    readable(stream)?;
     let (head, trailer, index) = savfmt::read_index(&mut cur).map_err(bad_save)?;
     let parameters = Reader::new(Cursor::new(stream))
         .ok()

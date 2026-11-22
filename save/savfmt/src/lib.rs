@@ -12,6 +12,7 @@ mod be;
 mod codec;
 mod digest;
 mod error;
+pub mod check;
 pub mod header;
 pub mod object;
 pub mod outfile;

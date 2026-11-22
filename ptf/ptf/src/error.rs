@@ -46,7 +46,8 @@ impl Error {
     pub fn msgid(&self) -> &'static str {
         match self {
             Self::Refused { msgid, .. } => msgid,
-            Self::NotPtf(_) => "CPF3598",
+            // A stream that does not read is not a PTF, not a bad signer.
+            Self::NotPtf(_) | Self::Stream(_) => "CPF3598",
             _ => "CPF3586",
         }
     }

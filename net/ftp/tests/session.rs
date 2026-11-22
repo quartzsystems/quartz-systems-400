@@ -347,3 +347,27 @@ fn a_save_file_takes_a_stream_of_any_length() {
     assert_eq!(r.last().unwrap().code, 426, "{r:?}");
     assert_eq!(t.get("RETR S1"), padded);
 }
+
+#[test]
+fn a_refused_save_file_says_why() {
+    let mut t = T::new(world(), FtpAttrs::default());
+    t.login();
+    assert_eq!(t.code("RCMD CRTSAVF FILE(BOBLIB/S1)"), 250);
+    assert_eq!(t.code("TYPE I"), 200);
+    let why = |t: &mut T, data: &[u8]| -> String {
+        let r = t.put("STOR S1", data);
+        r.iter().flat_map(|r| r.lines.clone()).collect::<Vec<_>>().join("\n")
+    };
+    assert!(why(&mut t, b"PK\x03\x04 not a save").contains("bad magic"));
+    let mut v = stream();
+    v[9] = 9;
+    assert!(why(&mut t, &v).contains("version 9 is not supported"));
+    let mut f = stream();
+    f[11] = 2;
+    let c = savfmt::record::crc32c(&f[..124]);
+    f[124..128].copy_from_slice(&c.to_be_bytes());
+    assert!(why(&mut t, &f).contains("flags X'0002'"));
+    let mut cut = stream();
+    cut.truncate(cut.len() - 1);
+    assert!(why(&mut t, &cut).contains("field mismatch at offset"));
+}
