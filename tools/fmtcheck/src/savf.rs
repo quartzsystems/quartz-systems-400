@@ -83,7 +83,11 @@ pub fn crc32c(b: &[u8]) -> u32 {
     for &x in b {
         c ^= u32::from(x);
         for _ in 0..8 {
-            c = if c & 1 == 1 { (c >> 1) ^ 0x82F6_3B78 } else { c >> 1 };
+            c = if c & 1 == 1 {
+                (c >> 1) ^ 0x82F6_3B78
+            } else {
+                c >> 1
+            };
         }
     }
     !c
@@ -122,7 +126,10 @@ fn record(s: &[u8], at: usize) -> Check<Rec<'_>> {
     }
     let codec = h[3];
     if codec > 2 || (codec != 0 && kind != 0x12) {
-        return bad(at + 3, format!("codec {codec} on a record of kind 0x{kind:02X}"));
+        return bad(
+            at + 3,
+            format!("codec {codec} on a record of kind 0x{kind:02X}"),
+        );
     }
     let stored = u32_at(h, 8);
     let raw_len = u32_at(h, 12);
@@ -233,7 +240,10 @@ pub fn check(s: &[u8]) -> Check<Summary> {
                 }
                 let want = objects.len() as u32;
                 if u32_at(p, 0) != want {
-                    return bad(base, format!("object index {} where {want} was due", u32_at(p, 0)));
+                    return bad(
+                        base,
+                        format!("object index {} where {want} was due", u32_at(p, 0)),
+                    );
                 }
                 let owner = u32_at(p, 4);
                 if owner != u32::MAX && owner >= want {
@@ -244,7 +254,10 @@ pub fn check(s: &[u8]) -> Check<Summary> {
                 zero(p, base, 272, 240, "descriptor reserved3")?;
                 let tail = usize::from(u16_at(p, 266));
                 if p.len() != DESCRIPTOR + tail {
-                    return bad(base + 266, format!("tail_len {tail} does not fill the record"));
+                    return bad(
+                        base + 266,
+                        format!("tail_len {tail} does not fill the record"),
+                    );
                 }
                 let flags = u16_at(p, 10);
                 if flags >> 6 != 0 {
@@ -299,7 +312,10 @@ pub fn check(s: &[u8]) -> Check<Summary> {
                 }
                 let e = o.parts.entry(part).or_insert((0, len));
                 if e.1 != len || offset != e.0 || offset + chunk > len {
-                    return bad(base + 8, format!("part {part}'s chunk at {offset} is out of order"));
+                    return bad(
+                        base + 8,
+                        format!("part {part}'s chunk at {offset} is out of order"),
+                    );
                 }
                 e.0 += chunk;
             }
@@ -318,11 +334,17 @@ pub fn check(s: &[u8]) -> Check<Summary> {
                 }
                 let parts = o.parts.len();
                 if usize::from(u16_at(p, 4)) != parts || usize::from(o.part_count) != parts {
-                    return bad(base + 4, format!("{parts} parts, the descriptor says {}", o.part_count));
+                    return bad(
+                        base + 4,
+                        format!("{parts} parts, the descriptor says {}", o.part_count),
+                    );
                 }
                 let bytes: u64 = o.parts.values().map(|v| v.1).sum();
                 if u64_at(p, 8) != bytes || o.size != bytes {
-                    return bad(base + 8, format!("{bytes} part bytes, the descriptor says {}", o.size));
+                    return bad(
+                        base + 8,
+                        format!("{bytes} part bytes, the descriptor says {}", o.size),
+                    );
                 }
                 if o.flags & 1 << 1 != 0 {
                     sig_due = Some((o.index, p[16..48].try_into().expect("32 bytes")));
@@ -360,7 +382,17 @@ pub fn check(s: &[u8]) -> Check<Summary> {
                 if open.is_some() {
                     return bad(r.at + 2, "the trailer comes inside an object");
                 }
-                trailer(p, base, r.at, seq, &objects, &index, index_at, index_records, stream_id)?;
+                trailer(
+                    p,
+                    base,
+                    r.at,
+                    seq,
+                    &objects,
+                    &index,
+                    index_at,
+                    index_records,
+                    stream_id,
+                )?;
                 let end = base + p.len();
                 if end != s.len() {
                     return bad(end, format!("{} bytes after the trailer", s.len() - end));
@@ -405,39 +437,92 @@ fn trailer(
         return bad(base, "the trailer is not 64 bytes");
     }
     if u32_at(p, 0) as usize != objects.len() {
-        return bad(base, format!("trailer says {} objects, the stream has {}", u32_at(p, 0), objects.len()));
+        return bad(
+            base,
+            format!(
+                "trailer says {} objects, the stream has {}",
+                u32_at(p, 0),
+                objects.len()
+            ),
+        );
     }
     if index.len() != objects.len() {
-        return bad(index_at, format!("{} index entries for {} objects", index.len(), objects.len()));
+        return bad(
+            index_at,
+            format!(
+                "{} index entries for {} objects",
+                index.len(),
+                objects.len()
+            ),
+        );
     }
     for (i, (e, (obj_at, ty, flags))) in index.iter().zip(objects).enumerate() {
         let e_at = index_at + RECORD + i * INDEX_ENTRY;
         if u32_at(e, 0) as usize != i {
-            return bad(e_at, format!("index entry {i} names object {}", u32_at(e, 0)));
+            return bad(
+                e_at,
+                format!("index entry {i} names object {}", u32_at(e, 0)),
+            );
         }
         if u64_at(e, 8) != *obj_at as u64 {
-            return bad(e_at + 8, format!("index entry {i} points at {}, the object is at {obj_at}", u64_at(e, 8)));
+            return bad(
+                e_at + 8,
+                format!(
+                    "index entry {i} points at {}, the object is at {obj_at}",
+                    u64_at(e, 8)
+                ),
+            );
         }
         if u16_at(e, 16) != *ty || u16_at(e, 18) != *flags {
-            return bad(e_at + 16, format!("index entry {i} differs from its descriptor"));
+            return bad(
+                e_at + 16,
+                format!("index entry {i} differs from its descriptor"),
+            );
         }
         zero(e, e_at, 50, 6, "index reserved")?;
     }
     let want_index = if index.is_empty() { 0 } else { index_at as u64 };
     if u64_at(p, 8) != want_index {
-        return bad(base + 8, format!("index_offset {}, the index is at {want_index}", u64_at(p, 8)));
+        return bad(
+            base + 8,
+            format!(
+                "index_offset {}, the index is at {want_index}",
+                u64_at(p, 8)
+            ),
+        );
     }
     if u32_at(p, 16) != seq {
-        return bad(base + 16, format!("trailer counts {} records, {seq} came before it", u32_at(p, 16)));
+        return bad(
+            base + 16,
+            format!(
+                "trailer counts {} records, {seq} came before it",
+                u32_at(p, 16)
+            ),
+        );
     }
     if u32_at(p, 20) != index_records {
-        return bad(base + 20, format!("trailer counts {} index records, {index_records} came", u32_at(p, 20)));
+        return bad(
+            base + 20,
+            format!(
+                "trailer counts {} index records, {index_records} came",
+                u32_at(p, 20)
+            ),
+        );
     }
     if u64_at(p, 24) != at as u64 {
-        return bad(base + 24, format!("trailer says {} bytes before it, there are {at}", u64_at(p, 24)));
+        return bad(
+            base + 24,
+            format!(
+                "trailer says {} bytes before it, there are {at}",
+                u64_at(p, 24)
+            ),
+        );
     }
     if p[32..48] != stream_id {
-        return bad(base + 32, "the trailer's stream_id is not the media header's");
+        return bad(
+            base + 32,
+            "the trailer's stream_id is not the media header's",
+        );
     }
     zero(p, base, 48, 16, "trailer reserved")
 }

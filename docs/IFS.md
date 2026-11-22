@@ -1587,6 +1587,16 @@ gets the service's text forms (`ifscmd::text`).
 | `RTVCURDIR` | job | `getcwd` through the job's link into `RTNDIR` and `DIRNAMLEN` | |
 | `CPYTOSTMF`, `CPYFRMSTMF` | service | `ifscmd::stmf` (`lic/slic/src/cpp/stmfcmd.rs`) | `CPCA082`, `CPCA081`; `CPFA097`, `CPFA095`, `CPFA096`; `CPDA08x` |
 
+`CPYFRMSTMF` into `TOMBR('/QSYS.LIB/LIB.LIB/NAME.FILE')`, where NAME is a
+save file, fills the save file with the stream file's bytes as they
+are (whatever `CVTDTA` says), as IBM i does: a save file copied to the
+IFS and back, or a PTF sent to `/tmp` first. The data must be a save
+stream this release reads; otherwise `CPF3743` says why (`savfmt::check`)
+before `CPFA095`, and the save file is not changed. `MBROPT(*REPLACE)`
+replaces what is there, `*NONE` fills only an empty save file
+(`CPDA089`), `*ADD` is refused (`CPDA082`). `CPCA081` counts the save
+file's 528-byte records.
+
 An `errno` becomes its `CPFA0xx` escape (`Errno::command_message`,
 the table above) with the path as IBM's `*CCHAR *VARY 4`, which
 `QCPFMSG` declares as `*CHAR *VARY 4`. IBM sends no completion message

@@ -68,20 +68,29 @@ pub fn header(b: &[u8]) -> Result<MediaHeader, Reject> {
         return Err(Reject::Version(version));
     }
     if crc32c(&b[..124]) != get32(b, 124) {
-        return Err(field(124, "the media header's CRC does not match its bytes"));
+        return Err(field(
+            124,
+            "the media header's CRC does not match its bytes",
+        ));
     }
     let flags = get16(b, 10);
     if flags != 0 {
         return Err(Reject::Flags(flags));
     }
     if b[18] > 3 {
-        return Err(field(18, format!("compression {} is not a known code", b[18])));
+        return Err(field(
+            18,
+            format!("compression {} is not a known code", b[18]),
+        ));
     }
     if b[19] > 9 {
         return Err(field(19, format!("kind {} is not a known code", b[19])));
     }
     if let Some(i) = (20..24).chain(86..124).find(|&i| b[i] != 0) {
-        return Err(field(i as u64, "a reserved byte of the media header is not zero"));
+        return Err(field(
+            i as u64,
+            "a reserved byte of the media header is not zero",
+        ));
     }
     MediaHeader::decode(b).map_err(|e| of_error(&e))
 }
@@ -124,10 +133,16 @@ pub fn of_error(e: &Error) -> Reject {
         Error::NotSave => Reject::Magic,
         Error::Version(v) => Reject::Version(*v),
         Error::HeaderDamaged => Reject::Damaged("the media header is damaged".into()),
-        Error::Damaged { offset } => field(*offset, "a record header is damaged or out of sequence"),
-        Error::BadCrc { seq } => Reject::Damaged(format!("record {seq}'s payload does not match its CRC")),
+        Error::Damaged { offset } => {
+            field(*offset, "a record header is damaged or out of sequence")
+        }
+        Error::BadCrc { seq } => {
+            Reject::Damaged(format!("record {seq}'s payload does not match its CRC"))
+        }
         Error::Truncated => Reject::Damaged("the stream ends before its trailer".into()),
-        Error::ObjectDamaged { index } => Reject::Damaged(format!("saved object {index} is damaged")),
+        Error::ObjectDamaged { index } => {
+            Reject::Damaged(format!("saved object {index} is damaged"))
+        }
         Error::Codec => Reject::Damaged("compressed data does not decompress to its length".into()),
         Error::Io(e) => Reject::Damaged(format!("the medium failed: {e}")),
         Error::Misuse(m) => Reject::Damaged(format!("the stream is misused: {m}")),

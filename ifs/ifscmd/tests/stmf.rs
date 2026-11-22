@@ -522,3 +522,64 @@ fn import_files_through_the_ifs() {
             .unwrap_err();
     assert_eq!(m.id, "CPFA0A9");
 }
+
+/// A small save stream, not whole 528-byte records.
+fn save_stream() -> Vec<u8> {
+    let h = savfmt::MediaHeader {
+        release: (1, 1, 0),
+        target: (1, 1, 0),
+        compression: savfmt::Compression::None,
+        kind: savfmt::SaveKind::Ptf,
+        created: 1_793_000_000,
+        stream_id: *b"QS00001 \0\0\0\0\0\0\0\0",
+        system: "QS400".into(),
+        serial: String::new(),
+        command: "QSCRTPTF".into(),
+        user: "QSYS".into(),
+    };
+    let mut w = savfmt::Writer::new(Vec::new(), &h).unwrap();
+    w.parameters("QSCRTPTF PTF(QS00001)").unwrap();
+    w.finish(0).unwrap().1
+}
+
+#[test]
+fn a_stream_file_fills_a_save_file() {
+    let s = sys();
+    s.q.add_obj("QGPL", "QS00001", "*SAVF", "SAVF", "QSYS");
+    let save = save_stream();
+    put(&s, "/tmp/QS00001.savf", &save, 65535);
+    let to = "/QSYS.LIB/QGPL.LIB/QS00001.FILE";
+    // Into an empty save file with the defaults; the bytes as they are.
+    let r = from(&s, "/tmp/QS00001.savf", to, |_| {});
+    assert!(r.escape.is_none(), "{r:?}");
+    assert_eq!(r.messages[0].1.id, "CPCA081");
+    assert_eq!(s.q.read_stream("QGPL", "QS00001", "*SAVF").unwrap(), save);
+    // Again: *NONE keeps it, *REPLACE replaces it, *ADD is refused.
+    refused(
+        &from(&s, "/tmp/QS00001.savf", to, |_| {}),
+        "CPFA095",
+        "CPDA089",
+    );
+    let r = from(&s, "/tmp/QS00001.savf", to, |a| a.mbropt = Opt::Replace);
+    assert!(r.escape.is_none(), "{r:?}");
+    let add = from(&s, "/tmp/QS00001.savf", to, |a| a.mbropt = Opt::Add);
+    refused(&add, "CPFA095", "CPDA082");
+    // Not a save stream: refused, saying why; the save file kept.
+    put(&s, "/tmp/notes.txt", b"just some text, not a save", 819);
+    let r = from(&s, "/tmp/notes.txt", to, |a| a.mbropt = Opt::Replace);
+    refused(&r, "CPFA095", "CPF3743");
+    let why = ccsid::decode_trimmed(&r.messages[0].1.data);
+    assert!(why.starts_with("bad magic"), "{why}");
+    assert_eq!(s.q.read_stream("QGPL", "QS00001", "*SAVF").unwrap(), save);
+    // A *FILE that is no save file is still not a member.
+    refused(
+        &from(
+            &s,
+            "/tmp/QS00001.savf",
+            "/QSYS.LIB/QGPL.LIB/DATA.FILE",
+            |_| {},
+        ),
+        "CPFA095",
+        "CPDA082",
+    );
+}

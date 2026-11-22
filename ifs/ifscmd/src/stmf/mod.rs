@@ -240,6 +240,80 @@ pub fn member_of(c: &dyn IfsClient, path: &str) -> Result<(String, String, Strin
     }
 }
 
+/// The library and name of the save file a `/QSYS.LIB` path names
+/// (`/QSYS.LIB/LIB.LIB/NAME.FILE`), when it names one.
+fn savf_of(c: &dyn IfsClient, q: &dyn QsysView, path: &str) -> Option<(String, String)> {
+    let full = absolute(&c.getcwd().unwrap_or_else(|_| "/".into()), path);
+    let comps: Vec<String> = full
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect();
+    let (first, rest) = comps.split_first()?;
+    if !first.eq_ignore_ascii_case("QSYS.LIB") {
+        return None;
+    }
+    match node_of(rest).ok()? {
+        QsysNode::Obj(lib, name, kind)
+            if kind == "*FILE" && q.object(&lib, &name, "*SAVF").is_ok() =>
+        {
+            Some((lib, name))
+        }
+        _ => None,
+    }
+}
+
+/// `CPYFRMSTMF` into a save file: the stream file's bytes as they are,
+/// when they are a save stream this release reads. `MBROPT(*ADD)` is
+/// refused (a save stream cannot be added to), `*NONE` only fills an
+/// empty save file. The count is the save file's 528-byte records.
+fn to_savf(
+    c: &dyn IfsClient,
+    q: &dyn QsysView,
+    who: &Principal,
+    a: &FrmStmf,
+    lib: &str,
+    name: &str,
+) -> Reply {
+    let fail = |m: Msg| Reply::fail(Msg::paths("CPFA095", &[&a.fromstmf, &a.tombr])).diag(m);
+    if a.mbropt == Opt::Add {
+        return fail(Msg::path("CPDA082", &a.tombr));
+    }
+    let data = match read_stream(c, &a.fromstmf) {
+        Ok((d, _)) => d,
+        Err(e) => return fail(Msg::errno(e, &a.fromstmf)),
+    };
+    let need = if a.mbropt == Opt::Replace {
+        Auth::parse(&["*OBJOPR", "*ADD", "*DLT"], false)
+    } else {
+        Auth::parse(&["*OBJOPR", "*ADD"], false)
+    }
+    .unwrap_or(Auth::ALL);
+    match q.authority(lib, name, "*SAVF", who) {
+        Ok(have) if have.has(need) => {}
+        Ok(_) => return fail(Msg::errno(Errno::EACCES, &a.tombr)),
+        Err(e) => return fail(Msg::errno(e, &a.tombr)),
+    }
+    if a.mbropt == Opt::None
+        && q.read_stream(lib, name, "*SAVF")
+            .is_ok_and(|b| !b.is_empty())
+    {
+        return fail(Msg::paths("CPDA089", &[&a.fromstmf, &a.tombr]));
+    }
+    // Why the data is refused, as every save file refusal says it.
+    if let Err(r) = savfmt::check::stream(&data) {
+        return fail(Msg::new("CPF3743").chars(&r.to_string(), 364));
+    }
+    if let Err(e) = q.write_stream(lib, name, "*SAVF", &data) {
+        return fail(Msg::errno(e, &a.tombr));
+    }
+    let records = data.len().div_ceil(SAVF_RECORD);
+    Reply::done(Msg::paths("CPCA081", &[&a.fromstmf, &a.tombr]).bin4(n64(records)))
+}
+
+/// Bytes per save file record, as `DSPFD` counts them.
+const SAVF_RECORD: usize = 528;
+
 /// The checks both commands make on `CVTDTA`, `TBL` and the two CCSID
 /// parameters.
 fn check(c: &Common) -> Option<Msg> {
@@ -386,6 +460,9 @@ pub fn cpyfrmstmf(c: &dyn IfsClient, q: &dyn QsysView, who: &Principal, a: &FrmS
         return fail(m);
     }
     let Ok((lib, file, mbr)) = member_of(c, &a.tombr) else {
+        if let Some((lib, name)) = savf_of(c, q, &a.tombr) {
+            return to_savf(c, q, who, a, &lib, &name);
+        }
         return fail(Msg::path("CPDA082", &a.tombr));
     };
     let (data, tag) = match read_stream(c, &a.fromstmf) {

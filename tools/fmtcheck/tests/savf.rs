@@ -106,11 +106,20 @@ fn reserved_and_damaged_fields_are_named() {
     let v = savf::check(&patched(s.clone(), 11, 1)).unwrap_err();
     assert_eq!(v.offset, 10, "{v}");
     assert!(v.what.contains("0x0001"), "{v}");
-    assert_eq!(savf::check(&patched(s.clone(), 9, 3)).unwrap_err().offset, 8);
-    assert_eq!(savf::check(&patched(s.clone(), 100, 1)).unwrap_err().offset, 86);
+    assert_eq!(
+        savf::check(&patched(s.clone(), 9, 3)).unwrap_err().offset,
+        8
+    );
+    assert_eq!(
+        savf::check(&patched(s.clone(), 100, 1)).unwrap_err().offset,
+        86
+    );
     let mut magic = s.clone();
     magic[0] = b'X';
-    assert_eq!(savf::check(&magic).unwrap_err().what, "magic is not QS400SAV");
+    assert_eq!(
+        savf::check(&magic).unwrap_err().what,
+        "magic is not QS400SAV"
+    );
     // A payload byte: its record's CRC.
     let mut torn = s.clone();
     torn[128 + 24] ^= 1;
@@ -118,5 +127,10 @@ fn reserved_and_damaged_fields_are_named() {
     // Bytes after the trailer.
     let mut long = s;
     long.push(0);
-    assert!(savf::check(&long).unwrap_err().what.contains("after the trailer"));
+    assert!(
+        savf::check(&long)
+            .unwrap_err()
+            .what
+            .contains("after the trailer")
+    );
 }

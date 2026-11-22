@@ -10,6 +10,7 @@ publish.workspace = true
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 ifs = { path = "../ifs", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
+savfmt = { path = "../../save/savfmt", version = "0.1.0" }
 
 [dev-dependencies]
 store = { path = "../../storage/store", version = "0.1.0" }

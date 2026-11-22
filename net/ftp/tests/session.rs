@@ -356,7 +356,10 @@ fn a_refused_save_file_says_why() {
     assert_eq!(t.code("TYPE I"), 200);
     let why = |t: &mut T, data: &[u8]| -> String {
         let r = t.put("STOR S1", data);
-        r.iter().flat_map(|r| r.lines.clone()).collect::<Vec<_>>().join("\n")
+        r.iter()
+            .flat_map(|r| r.lines.clone())
+            .collect::<Vec<_>>()
+            .join("\n")
     };
     assert!(why(&mut t, b"PK\x03\x04 not a save").contains("bad magic"));
     let mut v = stream();

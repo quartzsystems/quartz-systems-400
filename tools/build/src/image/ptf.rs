@@ -317,7 +317,10 @@ pub fn repad(dir: &Path) -> Result<()> {
         let name = format!("{}.savf", h.ptf);
         let sum = sha256_bytes(&new);
         fs::write(f, &new)?;
-        fs::write(dir.join(format!("{name}.sha256")), format!("{sum}  {name}\n"))?;
+        fs::write(
+            dir.join(format!("{name}.sha256")),
+            format!("{sum}  {name}\n"),
+        )?;
         let notes = install_notes(&h.ptf, release::product_id(&h.product), h.lic);
         fs::write(
             dir.join(format!("{}.txt", h.ptf)),
