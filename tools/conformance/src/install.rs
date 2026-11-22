@@ -46,7 +46,7 @@ qstrup = QSYS/QSTRUP
 ";
 
 /// A FAT32 stick with the media's tree and a response file.
-fn rsp_stick(iso: &[u8], rsp: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn rsp_stick(iso: &[u8], rsp: &str) -> Result<Vec<u8>, String> {
     let mut files = crate::media::iso_files(iso)?;
     files.retain(|(p, _)| !p.eq_ignore_ascii_case("QS400/INSTALL.RSP"));
     files.push(("QS400/INSTALL.RSP".into(), rsp.as_bytes().to_vec()));

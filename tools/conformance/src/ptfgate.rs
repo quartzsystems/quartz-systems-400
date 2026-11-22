@@ -26,7 +26,7 @@ use crate::phase5::SECOFR_PASSWORD;
 use crate::phase8::{connect, run, secofr};
 use crate::qemu::Launch;
 use crate::qemu::session::Session;
-use crate::steps::{SRC_IPL_COMPLETE, SRC_SEQUENCE_MEDIA, Suite};
+use crate::steps::{SRC_IPL_COMPLETE, Suite};
 use crate::tcp::{GUEST, forward_port};
 
 /// A disk for the installed system.
@@ -218,17 +218,34 @@ impl Suite {
         fs::copy(&template, &vars)?;
         let disk = self.out_dir.join(format!("gate-{}.img", ptf.id));
         crate::install::blank(&disk, DISK)?;
+        // The release media as a stick with a response file: an address
+        // for telnet and FTP, the security officer's password.
+        let media = match fs::read(&iso)
+            .map_err(|e| e.to_string())
+            .and_then(|b| crate::install::rsp_stick(&b, &rsp()))
+        {
+            Ok(m) => m,
+            Err(e) => return Ok(report(false, format!("the media: {e}"), String::new())),
+        };
+        let stick = self.out_dir.join(format!("gate-{}-media.img", ptf.id));
+        fs::write(&stick, media)?;
         let launch = Launch {
             vars: Some(vars),
-            image: Some(disk),
-            cdrom: Some(iso),
-            cdrom_first: true,
-            extra_disks: Vec::new(),
+            image: Some(stick),
+            cdrom: None,
+            cdrom_first: false,
+            extra_disks: vec![disk.clone()],
             ..self.launch.clone()
+        };
+        // After the install the media comes out: the disk alone from then on.
+        let installed = Launch {
+            image: Some(disk),
+            extra_disks: Vec::new(),
+            ..launch.clone()
         };
         let mut s = Session::spawn(&launch)?;
         let mut log = Log::default();
-        let r = self.gate_steps(&mut s, &ptf, &mut log);
+        let r = self.gate_steps(&mut s, &installed, &ptf, &mut log);
         s.kill();
         let mut detail = log.lines.join("; ");
         let passed = r.is_ok();
@@ -252,16 +269,40 @@ impl Suite {
         ))
     }
 
-    fn gate_steps(&self, s: &mut Session, p: &Ptf, log: &mut Log) -> Result<(), String> {
+    fn gate_steps(
+        &self,
+        s: &mut Session,
+        installed: &Launch,
+        p: &Ptf,
+        log: &mut Log,
+    ) -> Result<(), String> {
         let install_wait = self.boot_timeout * 10;
-        // The media's automatic install, then the IPL from the disk.
-        s.expect_in_order(SRC_SEQUENCE_MEDIA, install_wait)?;
-        s.expect("Selection", install_wait)?;
-        s.send("4")?;
+        // The response file's install, then the IPL from the disk.
+        s.expect(
+            "slic: install: answers from the response file",
+            install_wait,
+        )?;
         s.expect("SRC C6004100", install_wait)?;
+        s.expect("slic: install: response file applied", install_wait)?;
         s.expect(SRC_IPL_COMPLETE, install_wait)?;
         log.ok("release installed from its media");
+        // The media out, as after any install: down, then up from the disk.
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
+        self.ftp_up(port)?;
+        let mut f = self.ftp_signed_on()?;
+        let down = "PWRDWNSYS OPTION(*IMMED) RESTART(*NO) CONFIRM(*NO)";
+        let _ = f.cmd(&format!("RCMD {down}"), 250);
+        drop(f);
+        if s.expect("SRC D1001000", self.boot_timeout).is_err() {
+            // The session ends as the system goes down.
+            let _ = Tn::open(port)?.command(down);
+        }
+        s.expect("SRC D1001090", self.boot_timeout * 4)?;
+        s.wait_exit(Duration::from_secs(60));
+        s.kill();
+        *s = Session::spawn(installed).map_err(|e| e.to_string())?;
+        s.expect(SRC_IPL_COMPLETE, install_wait)?;
+        log.ok("media removed, IPL from the disk");
 
         self.ftp_up(port)?;
         let mut f = self.ftp_signed_on()?;
@@ -315,7 +356,20 @@ impl Suite {
         f.cmd(&format!("RCMD APYPTF {lp} APY(*PERM)"), 250)?;
         drop(f);
         self.gate_ipl(s, port, p.lic)?;
-        let shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
+        let mut shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
+        // A removed LIC PTF comes back temporarily applied first; a second
+        // APY(*PERM) makes it permanent, at once or at the next IPL.
+        if !shown.contains("Permanently applied") && shown.contains("Temporarily applied") {
+            self.ftp_up(port)?;
+            let mut f = self.ftp_signed_on()?;
+            f.cmd(&format!("RCMD APYPTF {lp} APY(*PERM)"), 250)?;
+            drop(f);
+            shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
+            if !shown.contains("Permanently applied") {
+                self.gate_ipl(s, port, false)?;
+                shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
+            }
+        }
         want(&shown, "DSPPTF after APY(*PERM)", &["Permanently applied"])?;
         log.ok("APYPTF APY(*PERM), IPL, DSPPTF: permanently applied");
         Ok(())
@@ -347,12 +401,19 @@ impl Suite {
 
     /// An IPL by `PWRDWNSYS` over FTP; a LIC PTF's posts its slot switch.
     fn gate_ipl(&self, s: &mut Session, port: u16, switch: bool) -> Result<(), String> {
-        let _ = port;
+        const CMD: &str = "PWRDWNSYS OPTION(*IMMED) RESTART(*YES) CONFIRM(*NO)";
         let mut f = self.ftp_signed_on()?;
         // The connection may end before the reply: the system is going down.
-        let _ = f.cmd("RCMD PWRDWNSYS OPTION(*IMMED) RESTART(*YES)", 250);
+        let rcmd = f.cmd(&format!("RCMD {CMD}"), 250).unwrap_or_else(|e| e);
         drop(f);
-        s.expect("SRC D1001000", self.boot_timeout * 4)?;
+        if s.expect("SRC D1001000", self.boot_timeout).is_err() {
+            // Not over FTP: at a display, as an operator would.
+            let shown = Tn::open(port)?.command(CMD).unwrap_or_else(|e| e);
+            s.expect("SRC D1001000", self.boot_timeout * 4)
+                .map_err(|e| {
+                    format!("{e}; RCMD answered:\n{rcmd}\nthe display showed:\n{shown}")
+                })?;
+        }
         if switch {
             s.expect(SRC_SLOT_SWITCH, self.boot_timeout * 10)?;
         }
@@ -367,4 +428,29 @@ fn want(shown: &str, what: &str, needles: &[&str]) -> Result<(), String> {
     } else {
         Err(format!("{what}: expected {needles:?} on:\n{shown}"))
     }
+}
+
+/// The gate's response file: one blank disk, the network the harness
+/// forwards to, the harness's security officer password.
+fn rsp() -> String {
+    format!(
+        "QS400-INSTALL-RSP 1
+# the PTF gate's install
+lic-option = 2
+load-source = vdb
+language = 2924
+system-name = QSGATE
+ip = 10.0.2.15/24
+gateway = 10.0.2.2
+date = *CURRENT
+time = *CURRENT
+qsecofr-password = {SECOFR_PASSWORD}
+licpgm = *ALL
+start-print-writers = N
+auto-configure = Y
+device-naming = *NORMAL
+special-environment = *NONE
+qstrup = QSYS/QSTRUP
+"
+    )
 }
