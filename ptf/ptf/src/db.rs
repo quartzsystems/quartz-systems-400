@@ -12,6 +12,9 @@ use std::fmt::Write as _;
 use crate::header::PtfRef;
 use crate::status::{Action, Status};
 
+/// The prefix of a load time's line, after the records.
+const LOADED: &str = "LOADED\t";
+
 /// One object an apply replaced: where it was, and its name in
 /// `QRPLOBJ` while the PTF is temporarily applied.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -111,9 +114,11 @@ impl PtfDb {
                 Action::ApplyAtIpl => "APPLY",
                 Action::RemoveAtIpl => "REMOVE",
             };
+            // Fourteen fields, as V1R1M0 reads them: a LIC from before the
+            // load time is IPLed again after RMVPTF and must keep every record.
             let _ = writeln!(
                 out,
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 r.ptf,
                 r.product,
                 r.option,
@@ -127,9 +132,12 @@ impl PtfDb {
                 refs(&r.prereqs),
                 refs(&r.coreqs),
                 replaced,
-                r.changed,
-                r.loaded
+                r.changed
             );
+        }
+        // The load times apart, two fields a line: an older reader skips them.
+        for r in self.ptfs.values() {
+            let _ = writeln!(out, "{LOADED}{}\t{}", r.ptf, r.loaded);
         }
         out
     }
@@ -140,11 +148,16 @@ impl PtfDb {
     #[must_use]
     pub fn decode(text: &str) -> Self {
         let mut db = Self::default();
+        let mut loaded = BTreeMap::new();
         for line in text.lines().skip(1) {
+            if let Some((p, t)) = line.strip_prefix(LOADED).and_then(|l| l.split_once('\t')) {
+                loaded.insert(p.to_string(), t.parse::<u64>().unwrap_or(0));
+                continue;
+            }
             let f: Vec<&str> = line.split('\t').collect();
-            // Fifteen fields since the load time; fourteen before it.
-            // Fifteen fields since the load time; a record from before
-            // it has fourteen and reads its last change as the load.
+            // Fourteen fields; fifteen (the load time last) as QS00002 to
+            // QS00004 wrote them. A record with no load time reads its last
+            // change as the load.
             if f.len() != 14 && f.len() != 15 {
                 continue;
             }
@@ -186,6 +199,11 @@ impl PtfDb {
                 loaded: f.get(14).unwrap_or(&f[13]).parse().unwrap_or(0),
             };
             db.ptfs.insert(r.ptf.clone(), r);
+        }
+        for (p, t) in loaded {
+            if let Some(r) = db.ptfs.get_mut(&p) {
+                r.loaded = t;
+            }
         }
         db
     }
@@ -237,13 +255,19 @@ mod tests {
         assert_eq!(r.prereqs[0].product, "QS00SS1");
         assert_eq!(db.of_product("QS00SS1").count(), 1);
         assert_eq!((r.changed, r.loaded), (7, 5));
-        // A record written before the load time was kept.
-        let mut short = String::new();
-        for l in old.encode().lines() {
-            short.push_str(l.rsplit_once('\t').map_or(l, |x| x.0));
-            short.push('\n');
-        }
-        let r = PtfDb::decode(&short).ptfs.remove("QS00001").unwrap();
+        let text = old.encode();
+        // V1R1M0 keeps only lines of exactly fourteen fields: every record
+        // is one, so an IPL back to its LIC after RMVPTF loses none.
+        let v1r1 = text.lines().skip(1).filter(|l| l.split('\t').count() == 14);
+        assert_eq!(v1r1.count(), old.ptfs.len());
+        // Fifteen fields, as QS00002 to QS00004 wrote them.
+        let record = text.lines().nth(1).unwrap();
+        let fifteen = format!("QS400PTFDB 1\n{record}\t5\n");
+        let r = PtfDb::decode(&fifteen).ptfs.remove("QS00001").unwrap();
+        assert_eq!((r.changed, r.loaded), (7, 5));
+        // No load time: the last change stands for it.
+        let none = format!("QS400PTFDB 1\n{record}\n");
+        let r = PtfDb::decode(&none).ptfs.remove("QS00001").unwrap();
         assert_eq!(r.loaded, 7);
     }
 }
