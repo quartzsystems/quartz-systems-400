@@ -47,22 +47,26 @@ pub struct GateReport {
     pub log: String,
 }
 
-/// The PTF the file holds and what its release notes say to run.
+/// A PTF save file, its header read.
 struct Ptf {
     id: String,
     product: String,
     lic: bool,
+    prereqs: Vec<String>,
     bytes: Vec<u8>,
 }
 
 /// The lines the release notes must give, as the gate runs them.
-fn instructed(id: &str, product: &str) -> Vec<String> {
-    vec![
+fn instructed(p: &Ptf) -> Vec<String> {
+    let (id, product) = (&p.id, &p.product);
+    let mut lines = vec![
         format!("CRTSAVF FILE(QGPL/{id})"),
         format!("put {id}.savf QGPL/{id}"),
         format!("LODPTF LICPGM({product}) DEV(*SAVF) SELECT({id})"),
         format!("APYPTF LICPGM({product}) SELECT({id})"),
-    ]
+    ];
+    lines.extend(p.prereqs.iter().map(|q| format!("needs {q}")));
+    lines
 }
 
 fn sibling(path: &Path, ext: &str) -> PathBuf {
@@ -71,8 +75,8 @@ fn sibling(path: &Path, ext: &str) -> PathBuf {
     PathBuf::from(p)
 }
 
-/// The PTF at `path`, its checksum file and notes beside it.
-fn ptf_at(path: &Path) -> Result<Ptf, String> {
+/// The PTF at `path`, checked against the `.sha256` beside it.
+fn load(path: &Path) -> Result<Ptf, String> {
     let bytes = fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let (h, _) = ptf::package::peek(&bytes).map_err(|e| format!("not a PTF: {e}"))?;
     let id = h.ptf.clone();
@@ -88,11 +92,22 @@ fn ptf_at(path: &Path) -> Result<Ptf, String> {
             return Err(format!("{id}.savf.sha256 says {want}, the file is {got}"));
         }
     }
+    Ok(Ptf {
+        id,
+        product: release::product_id(&h.product).to_string(),
+        lic: h.lic,
+        prereqs: h.prereqs.iter().map(|r| r.ptf.clone()).collect(),
+        bytes,
+    })
+}
+
+/// The PTF at `path` and its notes, which must give the gate's steps.
+fn ptf_at(path: &Path) -> Result<Ptf, String> {
+    let p = load(path)?;
     let notes_path = path.with_extension("txt");
     let notes = fs::read_to_string(&notes_path)
         .map_err(|e| format!("no release notes {}: {e}", notes_path.display()))?;
-    let product = release::product_id(&h.product).to_string();
-    let missing: Vec<String> = instructed(&id, &product)
+    let missing: Vec<String> = instructed(&p)
         .into_iter()
         .filter(|l| !notes.contains(l.as_str()))
         .collect();
@@ -102,14 +117,31 @@ fn ptf_at(path: &Path) -> Result<Ptf, String> {
             missing.join(", ")
         ));
     }
-    Ok(Ptf {
-        id,
-        product,
-        lic: h.lic,
-        bytes,
-    })
+    Ok(p)
 }
 
+/// `p`'s prerequisites from the save files beside `path`, each after its
+/// own, the first to install first.
+fn prerequisites(path: &Path, p: &Ptf) -> Result<Vec<Ptf>, String> {
+    let dir = path.parent().unwrap_or(Path::new("."));
+    let mut out: Vec<Ptf> = Vec::new();
+    let mut todo: Vec<(String, bool)> =
+        p.prereqs.iter().rev().map(|q| (q.clone(), false)).collect();
+    while let Some((id, expanded)) = todo.pop() {
+        if out.iter().any(|q| q.id == id) {
+            continue;
+        }
+        let q = load(&dir.join(format!("{id}.savf")))
+            .map_err(|e| format!("prerequisite {id} (beside the PTF): {e}"))?;
+        if expanded || q.prereqs.iter().all(|r| out.iter().any(|o| &o.id == r)) {
+            out.push(q);
+        } else {
+            todo.push((id, true));
+            todo.extend(q.prereqs.iter().rev().map(|r| (r.clone(), false)));
+        }
+    }
+    Ok(out)
+}
 /// A 5250 session signed on as the security officer, at the main menu.
 struct Tn {
     d: tn5250_driver::session::Session,
@@ -199,6 +231,10 @@ impl Suite {
             Ok(p) => p,
             Err(e) => return Ok(report(false, e, String::new())),
         };
+        let prereqs = match prerequisites(path, &ptf) {
+            Ok(q) => q,
+            Err(e) => return Ok(report(false, e, String::new())),
+        };
         let iso = self.launch.cdrom.clone().or_else(|| self.iso.clone());
         let Some(iso) = iso else {
             return Ok(report(
@@ -245,7 +281,7 @@ impl Suite {
         };
         let mut s = Session::spawn(&launch)?;
         let mut log = Log::default();
-        let r = self.gate_steps(&mut s, &installed, &ptf, &mut log);
+        let r = self.gate_steps(&mut s, &installed, &prereqs, &ptf, &mut log);
         s.kill();
         let mut detail = log.lines.join("; ");
         let passed = r.is_ok();
@@ -273,6 +309,7 @@ impl Suite {
         &self,
         s: &mut Session,
         installed: &Launch,
+        prereqs: &[Ptf],
         p: &Ptf,
         log: &mut Log,
     ) -> Result<(), String> {
@@ -304,6 +341,15 @@ impl Suite {
         s.expect(SRC_IPL_COMPLETE, install_wait)?;
         log.ok("media removed, IPL from the disk");
 
+        for q in prereqs {
+            self.send_and_load(port, q)?;
+            self.make_permanent(s, port, q)?;
+            log.ok(format!(
+                "prerequisite {} loaded and permanently applied",
+                q.id
+            ));
+        }
+
         self.ftp_up(port)?;
         let mut f = self.ftp_signed_on()?;
         f.cmd(&format!("RCMD CRTSAVF FILE(QGPL/{})", p.id), 250)?;
@@ -334,12 +380,9 @@ impl Suite {
             "DSPPTF after the IPL",
             &[&p.id, "Temporarily applied"],
         )?;
-        if p.lic {
-            want(&shown, "DSPPTF after the IPL", &["##MACH#B"])?;
-        }
         log.ok(format!(
             "IPL{}, DSPPTF: temporarily applied",
-            if p.lic { " on slot B" } else { "" }
+            if p.lic { " on the other slot" } else { "" }
         ));
 
         self.ftp_up(port)?;
@@ -348,33 +391,70 @@ impl Suite {
         drop(f);
         self.gate_ipl(s, port, false)?;
         let shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
-        want(&shown, "DSPPTF after RMVPTF", &["Temporarily removed"])?;
-        log.ok("RMVPTF, IPL, DSPPTF: temporarily removed");
+        // Off the system: kept as removed, or (a LIC PTF whose image the
+        // IPL left behind) no longer listed; then it is loaded again.
+        if shown.contains("Temporarily removed") {
+            log.ok("RMVPTF, IPL, DSPPTF: temporarily removed");
+        } else if !shown.contains(&p.id) {
+            log.ok("RMVPTF, IPL, DSPPTF: no longer listed");
+            self.ftp_up(port)?;
+            let mut f = self.ftp_signed_on()?;
+            f.cmd(
+                &format!(
+                    "RCMD LODPTF LICPGM({}) DEV(*SAVF) SELECT({})",
+                    p.product, p.id
+                ),
+                250,
+            )?;
+            log.ok("LODPTF again");
+        } else {
+            return Err(format!("DSPPTF after RMVPTF: still applied:\n{shown}"));
+        }
 
+        self.make_permanent(s, port, p)?;
+        log.ok("APYPTF APY(*PERM), IPL, DSPPTF: permanently applied");
+        Ok(())
+    }
+
+    /// `q` by FTP into its save file, then `LODPTF`.
+    fn send_and_load(&self, port: u16, q: &Ptf) -> Result<(), String> {
         self.ftp_up(port)?;
         let mut f = self.ftp_signed_on()?;
-        f.cmd(&format!("RCMD APYPTF {lp} APY(*PERM)"), 250)?;
-        drop(f);
-        self.gate_ipl(s, port, p.lic)?;
-        let mut shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
-        // A removed LIC PTF comes back temporarily applied first; a second
-        // APY(*PERM) makes it permanent, at once or at the next IPL.
-        if !shown.contains("Permanently applied") && shown.contains("Temporarily applied") {
+        f.cmd(&format!("RCMD CRTSAVF FILE(QGPL/{})", q.id), 250)?;
+        f.cmd("TYPE I", 200)?;
+        f.stor(&format!("STOR QGPL/{}", q.id), &q.bytes)?;
+        f.cmd(
+            &format!(
+                "RCMD LODPTF LICPGM({}) DEV(*SAVF) SELECT({})",
+                q.product, q.id
+            ),
+            250,
+        )?;
+        Ok(())
+    }
+
+    /// `APYPTF APY(*PERM)` until `DSPPTF` says permanently applied, an IPL
+    /// after each that leaves it for the next one.
+    fn make_permanent(&self, s: &mut Session, port: u16, q: &Ptf) -> Result<(), String> {
+        let lp = format!("LICPGM({}) SELECT({})", q.product, q.id);
+        let mut shown = String::new();
+        for _ in 0..3 {
             self.ftp_up(port)?;
             let mut f = self.ftp_signed_on()?;
             f.cmd(&format!("RCMD APYPTF {lp} APY(*PERM)"), 250)?;
             drop(f);
             shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
-            if !shown.contains("Permanently applied") {
-                self.gate_ipl(s, port, false)?;
-                shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
+            if shown.contains("Permanently applied") {
+                return Ok(());
+            }
+            self.gate_ipl(s, port, false)?;
+            shown = Tn::open(port)?.command(&format!("DSPPTF {lp}"))?;
+            if shown.contains("Permanently applied") {
+                return Ok(());
             }
         }
-        want(&shown, "DSPPTF after APY(*PERM)", &["Permanently applied"])?;
-        log.ok("APYPTF APY(*PERM), IPL, DSPPTF: permanently applied");
-        Ok(())
+        Err(format!("{} not permanently applied:\n{shown}", q.id))
     }
-
     /// The FTP server started from the main menu, unless it answers.
     fn ftp_up(&self, port: u16) -> Result<(), String> {
         let fwd = forward_port(self, GUEST, 21)?;

@@ -125,7 +125,12 @@ pub fn ptf(ctx: &Ctx, manifest: &Path) -> Result<PathBuf> {
     fs::create_dir_all(&out)?;
     let path = out.join(format!("{}.savf", built.ptf));
     fs::write(&path, &built.stream)?;
-    let notes = install_notes(&built.ptf, release::product_id(&m.product), lic.is_some());
+    let notes = install_notes(
+        &built.ptf,
+        release::product_id(&m.product),
+        lic.is_some(),
+        &m.prereqs,
+    );
     fs::write(
         out.join(format!("{}.txt", built.ptf)),
         format!("{}\n\n{notes}", cover.trim()),
@@ -231,7 +236,16 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
 /// How to install a PTF, after its cover letter in the release notes.
 /// Every step works on the release the PTF is for, as shipped.
 #[must_use]
-pub fn install_notes(ptf: &str, product: &str, lic: bool) -> String {
+pub fn install_notes(ptf: &str, product: &str, lic: bool, prereqs: &[String]) -> String {
+    let first = if prereqs.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "This PTF needs {}: install {} first, the same way.\n",
+            prereqs.join(", needs "),
+            if prereqs.len() == 1 { "it" } else { "them" }
+        )
+    };
     let ipl = if lic {
         "   The PTF replaces the Licensed Internal Code: APYPTF puts the new\n   \
          image in the slot not in use, and the next IPL starts from it:\n\n   \
@@ -241,6 +255,7 @@ pub fn install_notes(ptf: &str, product: &str, lic: bool) -> String {
     };
     format!(
         "Installing this PTF:
+{first}
 1. Check the download: sha256sum -c {ptf}.savf.sha256
 2. Make a save file for it on the system:
 
@@ -321,7 +336,8 @@ pub fn repad(dir: &Path) -> Result<()> {
             dir.join(format!("{name}.sha256")),
             format!("{sum}  {name}\n"),
         )?;
-        let notes = install_notes(&h.ptf, release::product_id(&h.product), h.lic);
+        let prereqs: Vec<String> = h.prereqs.iter().map(|r| r.ptf.clone()).collect();
+        let notes = install_notes(&h.ptf, release::product_id(&h.product), h.lic, &prereqs);
         fs::write(
             dir.join(format!("{}.txt", h.ptf)),
             format!("{}\n\n{notes}", cover.trim()),
