@@ -136,8 +136,10 @@ ports; any when empty) ride in the same bag; no command sets them.
   in the CCSID `CRTCCSID` says (`*CALC` is the job's EBCDIC CCSID). A
   member not in an existing file is added. Lines longer than the
   records are cut and the transfer ends in `426`.
-- Save files go in `TYPE I` only (`504` otherwise); data that is not
-  whole 528-byte records is refused (`426`).
+- Save files go in `TYPE I` only (`504` otherwise); data that is not a
+  QS/400 save stream is refused (`426`, with the reason). A stream is as
+  long as its records, so its length need not be whole 528-byte records
+  (docs/SAVE_FORMAT.md "Whole records").
 - `STOU` adds 1, 2, ... to a name in use. `APPE` adds records or bytes.
 - A missing member of an existing file answers `426`, a missing file or
   library `550`; a directory parent that is not there `426`.

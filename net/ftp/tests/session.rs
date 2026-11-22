@@ -308,3 +308,42 @@ fn listing_in_ebcdic_ends_lines_with_nl() {
     assert_eq!(l, ccsid::to_ebcdic("QCLSRC.HELLO\u{85}").unwrap());
     assert_eq!(t.s.host.job_ccsid(), 37);
 }
+
+/// A small save stream whose length is not whole 528-byte records.
+fn stream() -> Vec<u8> {
+    let h = savfmt::MediaHeader {
+        release: (1, 1, 0),
+        target: (1, 1, 0),
+        compression: savfmt::Compression::None,
+        kind: savfmt::SaveKind::Library,
+        created: 1_793_000_000,
+        stream_id: *b"0123456789abcdef",
+        system: "QS400T".into(),
+        serial: String::new(),
+        command: "SAVLIB".into(),
+        user: "BOB".into(),
+    };
+    let mut w = savfmt::Writer::new(Vec::new(), &h).unwrap();
+    w.parameters("SAVLIB LIB(BOBLIB) DEV(*SAVF)").unwrap();
+    w.finish(0).unwrap().1
+}
+
+#[test]
+fn a_save_file_takes_a_stream_of_any_length() {
+    let mut t = T::new(world(), FtpAttrs::default());
+    t.login();
+    assert_eq!(t.code("RCMD CRTSAVF FILE(BOBLIB/S1)"), 250);
+    assert_eq!(t.code("TYPE I"), 200);
+    let s = stream();
+    assert!(!s.len().is_multiple_of(528));
+    assert_eq!(t.put("STOR S1", &s).last().unwrap().code, 226);
+    assert_eq!(t.get("RETR S1"), s);
+    // Padded to whole records, as a PTF is: taken too.
+    let padded = savfmt::pad::pad(&s, 528).unwrap();
+    assert_eq!(t.put("STOR S1", &padded).last().unwrap().code, 226);
+    assert_eq!(t.get("RETR S1"), padded);
+    // Not a save stream: refused, the stream kept.
+    let r = t.put("STOR S1", &[0u8; 528]);
+    assert_eq!(r.last().unwrap().code, 426, "{r:?}");
+    assert_eq!(t.get("RETR S1"), padded);
+}

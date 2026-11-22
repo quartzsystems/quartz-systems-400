@@ -1433,6 +1433,7 @@ dependencies = [
  "ifs",
  "regfac",
  "release",
+ "savfmt",
  "sec",
  "servers",
  "thiserror 2.0.21",

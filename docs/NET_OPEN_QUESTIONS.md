@@ -875,8 +875,9 @@ has the dialect as built.
    (its allocation); ours is as long as its data (0). Left out of the
    replay (`gaps.txt`).
 5. **Save file data.** IBM refuses data that is not a save file with
-   `CPE3101` at close; ours checks only that the data is whole 528-byte
-   records. A real save file's layout check waits for `SAVOBJ`/`RSTOBJ`.
+   `CPE3101` at close; ours checks the save stream's media header and says
+   what is wrong with it. It once required whole 528-byte records, which
+   QS/400 streams are not, and refused every PTF (V1R1M0).
 6. **`MODE B` and `STRU R`.** IBM accepts both and then refuses a stream
    file transfer in them (`504`); whether block mode works for members
    could not be recorded (the recorder speaks stream mode only). Ours

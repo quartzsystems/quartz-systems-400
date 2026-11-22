@@ -13,6 +13,7 @@ regfac = { path = "../../net/regfac", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+savfmt = { path = "../../save/savfmt", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }
 thiserror.workspace = true

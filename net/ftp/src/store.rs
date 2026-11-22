@@ -20,8 +20,6 @@ use crate::xlate::{self, Codes, Rep};
 
 /// The record length of a file binary data makes.
 pub const BINARY_RCDLEN: usize = 512;
-/// A save file's record length: its data comes in whole records.
-pub const SAVF_RECORD: usize = 528;
 
 /// How a transfer's data looks.
 #[derive(Clone, Copy, Debug)]
@@ -162,8 +160,10 @@ pub fn put(
             if rep != Rep::Image {
                 return Err("a save file takes binary data (TYPE I)".into());
             }
-            if !data.len().is_multiple_of(SAVF_RECORD) {
-                return Err("the data is not a save file".into());
+            // A save stream is as long as its records, not whole 528-byte
+            // records (docs/SAVE_FORMAT.md "Whole records").
+            if let Err(e) = savfmt::MediaHeader::decode(data) {
+                return Err(format!("the data is not a save file: {e}"));
             }
             objects::write_bytes(host.ifs(), path, data, How::Replace(xlate::BINARY_CCSID))
                 .map(|()| false)
