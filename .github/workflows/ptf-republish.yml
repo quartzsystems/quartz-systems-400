@@ -1,0 +1,162 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# A tag ptf-republish-N republishes, under their own IDs, the PTFs listed
+# in ptf/republish.txt at the tagged commit (docs/releasing.md,
+# "Republishing a PTF"). Each published save file is padded to whole
+# 528-byte records (build ptf-repad: its objects and signatures byte for
+# byte as signed, so no key signs them again), its .sha256 and notes are
+# written again, each goes through the PTF gate on the release it is for,
+# and only then are the releases' files replaced and the update service's
+# catalog signed again with the `release` environment's key (its
+# deployment rule admits ptf-* tags).
+
+name: ptf-republish
+
+on:
+  push:
+    tags: ["ptf-republish-*"]
+
+permissions:
+  contents: read
+
+# With ptf.yml: each run takes the catalog one sequence further.
+concurrency:
+  group: ptf
+  cancel-in-progress: false
+
+jobs:
+  repad:
+    name: pad the published PTFs
+    runs-on: ubuntu-24.04
+    outputs:
+      ptfs: ${{ steps.list.outputs.ptfs }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          ptfs=$(grep -Eo '^QS[0-9]{5}' ptf/republish.txt | sort -u)
+          [ -n "$ptfs" ] || { echo "ptf/republish.txt names no PTF" >&2; exit 1; }
+          echo "ptfs=$(echo "$ptfs" | jq -Rnc '[inputs]')" >> "$GITHUB_OUTPUT"
+          mkdir -p dist
+          for p in $ptfs; do
+            gh release download "ptf-$p" -D dist -p "$p.savf" -p "$p.savf.sha256" -p "$p.txt"
+            (cd dist && sha256sum -c "$p.savf.sha256")
+          done
+      - uses: ./.github/actions/qs400-host
+      - name: build ptf-repad
+        run: |
+          cargo run -q -p build -- ptf-repad dist
+          cargo run -q -p fmtcheck -- savf dist/*.savf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repadded
+          path: dist/
+
+  gate:
+    name: gate ${{ matrix.ptf }}
+    needs: repad
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        ptf: ${{ fromJSON(needs.repad.outputs.ptfs) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
+      - uses: actions/download-artifact@v4
+        with:
+          name: repadded
+          path: dist
+      - name: The released media
+        run: ci/gate-media.sh media
+      - name: The gate
+        run: |
+          cargo run -q --release -p conformance -- --media iso \
+            --iso media/QS400-*.iso --ptf-gate "dist/${{ matrix.ptf }}.savf"
+      - name: Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-logs-${{ matrix.ptf }}
+          path: target/conformance/
+          if-no-files-found: ignore
+
+  catalog:
+    name: sign the catalog again
+    needs: [repad, gate]
+    runs-on: ubuntu-24.04
+    environment: release
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: repadded
+          path: dist
+      - name: The catalog so far, the padded PTFs in it
+        run: |
+          mkdir -p pub/ptf pub/group prev
+          gh release download ptf-catalog -D prev
+          mv prev/*.savf pub/ptf/ 2>/dev/null || true
+          mv prev/C*.toml pub/group/ 2>/dev/null || true
+          [ ! -f prev/catalog.toml ] || mv prev/catalog.toml pub/
+          cp dist/*.savf pub/ptf/
+      - uses: ./.github/actions/qs400-host
+      - name: Release key from the release environment
+        env:
+          SIGNING_KEY: ${{ secrets.QS400_SIGNING_KEY }}
+        run: |
+          [ -n "$SIGNING_KEY" ] || { echo "QS400_SIGNING_KEY is missing in the release environment" >&2; exit 1; }
+          umask 077
+          dir=$(mktemp -d)
+          printf '%s' "$SIGNING_KEY" > "$dir/release.ed25519"
+          echo "KEYDIR=$dir" >> "$GITHUB_ENV"
+      - name: build ptf-catalog (signed)
+        run: |
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+            cargo run -q -p build -- ptf-catalog pub
+      - name: Remove the key
+        if: always()
+        run: '[ -z "${KEYDIR:-}" ] || rm -rf "$KEYDIR"'
+      - run: |
+          mkdir -p catalog
+          cp pub/catalog.toml pub/ptf/*.savf pub/group/*.toml catalog/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalog
+          path: catalog/
+
+  publish:
+    name: replace the published files
+    needs: [repad, gate, catalog]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: repadded
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: catalog
+      - name: Each PTF's release, under its own ID
+        run: |
+          for p in $(echo '${{ needs.repad.outputs.ptfs }}' | jq -r '.[]'); do
+            gh release upload "ptf-$p" "dist/$p.savf" "dist/$p.savf.sha256" "dist/$p.txt" --clobber
+            gh release edit "ptf-$p" --notes-file "dist/$p.txt"
+          done
+      - name: The update service's directory
+        run: gh release upload ptf-catalog catalog/* --clobber

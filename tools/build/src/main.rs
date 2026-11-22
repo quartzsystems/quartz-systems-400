@@ -74,6 +74,14 @@ enum Command {
         #[arg(long)]
         hiper: Vec<String>,
     },
+    /// Pad every `QSnnnnn.savf` in `DIR` to whole 528-byte records, its
+    /// objects and signatures unchanged, and write its `.sha256` and its
+    /// notes (the cover letter and how to install it) again: a PTF
+    /// published before PTFs were padded, republished under its own ID.
+    PtfRepad {
+        /// The directory.
+        dir: std::path::PathBuf,
+    },
     /// Run the whole pipeline.
     All {
         /// Omit the serial service console (`qs400.svc=1`).
@@ -166,6 +174,7 @@ fn main() -> Result<()> {
                 | Command::Fuzz { .. }
                 | Command::Kc
                 | Command::PtfCatalog { .. }
+                | Command::PtfRepad { .. }
                 | Command::Bench { .. }
         )
     {
@@ -200,6 +209,9 @@ fn main() -> Result<()> {
         }
         Command::Ptf { manifest } => {
             image::ptf::ptf(&ctx, &manifest)?;
+        }
+        Command::PtfRepad { dir } => {
+            image::ptf::repad(&dir)?;
         }
         Command::PtfCatalog { dir, hiper } => {
             image::ptf::catalog(&ctx, &dir, &hiper)?;

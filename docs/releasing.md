@@ -173,3 +173,15 @@ On a system the PTF arrives with `SNDPTFORD PTFID((QSnnnnn))`, or by FTP
 into a save file as its notes say (`CRTSAVF FILE(QGPL/QSnnnnn)`, then
 `put QSnnnnn.savf QGPL/QSnnnnn` in binary); then `LODPTF LICPGM(QS00SS1)
 DEV(*SAVF) SELECT(QSnnnnn)`, `APYPTF` and, for a LIC PTF, an IPL.
+
+### Republishing a PTF
+
+A published PTF that fails the gate is republished under its own ID, not
+built again: list it in `ptf/republish.txt` and push a tag
+`ptf-republish-N` (`.github/workflows/ptf-republish.yml`). The workflow
+downloads each PTF's release, pads it to whole 528-byte records with
+`cargo run -p build -- ptf-repad DIR` (its object records byte for byte
+as signed, so the signatures hold and no key signs it again; its
+`.sha256` and notes written again), runs the gate on each, and only
+then signs the catalog again with the `release` environment's key and
+replaces the files on each `ptf-QSnnnnn` release and on `ptf-catalog`.

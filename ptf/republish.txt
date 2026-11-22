@@ -1,0 +1,8 @@
+# PTFs a tag ptf-republish-N republishes under their own IDs
+# (.github/workflows/ptf-republish.yml, docs/releasing.md).
+# 2026-11-22: published before PTFs were whole 528-byte records and
+# before their notes said how to install them; refused by FTP into a *SAVF.
+QS00001
+QS00002
+QS00003
+QS00004

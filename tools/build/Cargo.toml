@@ -41,6 +41,7 @@ fmtcheck = { path = "../fmtcheck", version = "0.1.0" }
 kcbuild = { path = "../kcbuild", version = "0.1.0" }
 ptf-update = { path = "../../ptf/update", version = "0.1.0" }
 ptf = { path = "../../ptf/ptf", version = "0.1.0" }
+savfmt = { path = "../../save/savfmt", version = "0.1.0" }
 ptfbuild = { path = "../../ptf/ptfbuild", version = "0.1.0" }
 helpaudit = { path = "../helpaudit", version = "0.1.0" }
 textaudit = { path = "../textaudit", version = "0.1.0" }

@@ -157,9 +157,8 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
         let bytes = fs::read(f)?;
         let p = ptf::package::open(&bytes, &trusted)
             .map_err(|e| anyhow::anyhow!("{}: {e}", f.display()))?;
-        fmtcheck::savf::check(&bytes).map_err(|v| {
-            anyhow::anyhow!("{}: not the frozen save format: {v}", f.display())
-        })?;
+        fmtcheck::savf::check(&bytes)
+            .map_err(|v| anyhow::anyhow!("{}: not the frozen save format: {v}", f.display()))?;
         if p.header.release != release::RELEASE.to_string() {
             bail!(
                 "{}: release {}, this build is {}",
@@ -267,4 +266,69 @@ pub fn install_notes(ptf: &str, product: &str, lic: bool) -> String {
    APYPTF LICPGM({product}) SELECT({ptf}) APY(*PERM) keeps it.
 "
     )
+}
+
+/// Where a stream's objects are: from the end of its `Parameters`
+/// record to its index (or its trailer, with no index).
+fn objects_span(stream: &[u8]) -> Result<std::ops::Range<usize>> {
+    let len = |at: usize| -> Result<usize> {
+        let b = stream
+            .get(at..at + 4)
+            .context("a stream shorter than its Parameters record")?;
+        Ok(u32::from_be_bytes(b.try_into()?) as usize)
+    };
+    let start = savfmt::header::LEN + savfmt::record::LEN + len(savfmt::header::LEN + 8)?;
+    let (_, trailer, _) = savfmt::read_index(&mut std::io::Cursor::new(stream))
+        .map_err(|e| anyhow::anyhow!("the trailer: {e}"))?;
+    let end = if trailer.index_offset == 0 {
+        trailer.bytes
+    } else {
+        trailer.index_offset
+    };
+    Ok(start..usize::try_from(end)?)
+}
+
+/// `build ptf-repad DIR`: every `QSnnnnn.savf` in `DIR` in whole save
+/// file records (`docs/SAVE_FORMAT.md` "Whole records"), its object
+/// records byte for byte as they were, so every signature still holds
+/// with no key; its `.sha256` and notes written again.
+pub fn repad(dir: &Path) -> Result<()> {
+    let mut files: Vec<PathBuf> = fs::read_dir(dir)
+        .with_context(|| format!("cannot read {}", dir.display()))?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "savf"))
+        .collect();
+    files.sort();
+    if files.is_empty() {
+        bail!("no PTF save files in {}", dir.display());
+    }
+    for f in &files {
+        let old = fs::read(f)?;
+        let (h, cover) = ptf::package::peek(&old)
+            .map_err(|e| anyhow::anyhow!("{}: not a PTF: {e}", f.display()))?;
+        let new = savfmt::pad::pad(&old, savfmt::pad::SAVF_RECORD)
+            .map_err(|e| anyhow::anyhow!("{}: {e}", f.display()))?;
+        let (a, b) = (objects_span(&old)?, objects_span(&new)?);
+        if old[a] != new[b] {
+            bail!("{}: padding changed the object records", f.display());
+        }
+        fmtcheck::savf::check(&new)
+            .map_err(|v| anyhow::anyhow!("{}: not the frozen save format: {v}", f.display()))?;
+        let name = format!("{}.savf", h.ptf);
+        let sum = sha256_bytes(&new);
+        fs::write(f, &new)?;
+        fs::write(dir.join(format!("{name}.sha256")), format!("{sum}  {name}\n"))?;
+        let notes = install_notes(&h.ptf, release::product_id(&h.product), h.lic);
+        fs::write(
+            dir.join(format!("{}.txt", h.ptf)),
+            format!("{}\n\n{notes}", cover.trim()),
+        )?;
+        info!(
+            "ptf-repad: {} {} -> {} bytes, sha256 {sum}",
+            h.ptf,
+            old.len(),
+            new.len()
+        );
+    }
+    Ok(())
 }
