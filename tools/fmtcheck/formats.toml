@@ -175,6 +175,11 @@ files = [
 # neutral reader QS/MC takes; both formats were re-locked without a bump:
 # the bytes written and read are unchanged (ptf-update's tests sign and
 # read the same catalogs and manifests as before).
+# package.rs was re-locked without a bump after V1R1M0 (Cody, 2026-11-22):
+# the stream ID carries the PTF ID instead of a constant, and a PTF is
+# padded to whole 528-byte records with blanks in its Parameters record
+# (docs/SAVE_FORMAT.md "Whole records"). No layout or reading rule changed;
+# every V1R1M0 reader reads both the old and the new PTFs.
 [[format]]
 name = "ptf"
 frozen_at = "V1R1M0"

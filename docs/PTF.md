@@ -264,7 +264,19 @@ installed system as a LIC PTF.
   signed for Secure Boot with the db key, and the whole PTF with the
   build's ed25519 key (`QS400_SIGNING_KEY`, else the development key).
   The result, `target/images/ptf/QSnnnnn.savf`, is checked to open
-  against that key; its cover letter is beside it as `QSnnnnn.txt`.
+  against that key; its cover letter is beside it as `QSnnnnn.txt`,
+  followed by how to install it, which is the PTF release's notes. A PTF
+  is padded to whole 528-byte records (`docs/SAVE_FORMAT.md`, "Whole
+  records") so that the FTP server of every V1R1M0 system takes it into
+  a save file.
+
+A PTF is installed from a save file `QGPL/QSnnnnn`: `CRTSAVF`, then an
+FTP `put` in binary (`put QSnnnnn.savf QGPL/QSnnnnn`), or `SNDPTFORD`
+from the update service; then `LODPTF LICPGM(QS00SS1) DEV(*SAVF)
+SELECT(QSnnnnn)` and `APYPTF`. `INSPTF DEV(*SAVF)` takes the same save
+files. A PTF does not load from a stream file directly; copy it into the
+save file first (`CPYFRMSTMF` to `/QSYS.LIB/QGPL.LIB/QSnnnnn.FILE`, from
+the PTF that brings that copy).
 - `cargo run -p build -- ptf-catalog DIR` publishes every PTF under
   `DIR/ptf/` as the update service's directory
   (`docs/UPDATE_PROTOCOL.md` §7): the signed catalog one sequence past

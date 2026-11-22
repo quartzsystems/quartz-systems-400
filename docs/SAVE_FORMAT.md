@@ -114,6 +114,22 @@ level changes only the bytes, never the format. Both crates are pure
 Rust and pinned. The CRC covers the stored bytes,
 so damage is found before anything is decompressed.
 
+### Whole records
+
+A stream is as long as its records; nothing pads it. A save file
+keeps the stream at its exact length and counts it as 528-byte records
+(rounded up) for `MAXRCDS` and `DSPFD`, so a stream read out of a save
+file is generally not a multiple of 528 bytes, and a reader must not
+require one.
+
+A stream made to be carried to other systems (a PTF) is padded to a
+multiple of 528 bytes, because a V1R1M0 system's FTP server refuses
+save file data that is not whole records. The padding is blanks at the
+end of the `Parameters` payload, so the format is unchanged: the index
+offsets and the trailer's `index_offset` and `bytes` move by as many
+bytes, and no object digest or signature changes
+(`savfmt::pad::pad`, which can also pad a stream already signed).
+
 ## 2. Objects
 
 One group of records per object. The library object of a library save

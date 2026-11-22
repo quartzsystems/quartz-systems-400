@@ -169,7 +169,9 @@ pub fn build(store: &mut Store, qsys: ObjectId, b: &Build<'_>, now: u64) -> Resu
         }
         pseudo(&mut w, b.key, LIC_TYPE, "LIC", &parts)?;
     }
-    Ok(w.finish(0)?.1)
+    // Whole save file records, so a file transfer into a *SAVF takes it.
+    let stream = w.finish(0)?.1;
+    Ok(savfmt::pad::pad(&stream, savfmt::pad::SAVF_RECORD)?)
 }
 
 /// A PTF opened from its stream.

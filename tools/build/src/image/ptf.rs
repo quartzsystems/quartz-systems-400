@@ -5,7 +5,7 @@
 //! `build ptf` and `build ptf-catalog` (`docs/PTF.md` §8). `build ptf
 //! MANIFEST` packages a PTF from a manifest in the tree
 //! (`ptf/fixes/QSnnnnn.toml`) into `target/images/ptf/QSnnnnn.savf`
-//! (its cover letter beside it, `.txt`), signed with the build key; `lic = "*BUILD"` takes this build's slot
+//! (its cover letter and how to install it beside it, `.txt`), signed with the build key; `lic = "*BUILD"` takes this build's slot
 //! UKIs, signed for Secure Boot first. `build ptf-catalog DIR` publishes
 //! every PTF under `DIR/ptf/` as the update service's directory: the
 //! signed catalog one sequence past the last, and a cumulative package
@@ -122,7 +122,11 @@ pub fn ptf(ctx: &Ctx, manifest: &Path) -> Result<PathBuf> {
     fs::create_dir_all(&out)?;
     let path = out.join(format!("{}.savf", built.ptf));
     fs::write(&path, &built.stream)?;
-    fs::write(out.join(format!("{}.txt", built.ptf)), cover.trim_start())?;
+    let notes = install_notes(&built.ptf, release::product_id(&m.product), lic.is_some());
+    fs::write(
+        out.join(format!("{}.txt", built.ptf)),
+        format!("{}\n\n{notes}", cover.trim()),
+    )?;
     info!(
         "ptf: {} ({} bytes{}, sha256 {})",
         path.display(),
@@ -217,4 +221,44 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
         ids.len()
     );
     Ok(())
+}
+
+/// How to install a PTF, after its cover letter in the release notes.
+/// Every step works on the release the PTF is for, as shipped.
+#[must_use]
+pub fn install_notes(ptf: &str, product: &str, lic: bool) -> String {
+    let ipl = if lic {
+        "   The PTF replaces the Licensed Internal Code: APYPTF puts the new\n   \
+         image in the slot not in use, and the next IPL starts from it:\n\n   \
+         PWRDWNSYS OPTION(*IMMED) RESTART(*YES)\n\n"
+    } else {
+        ""
+    };
+    format!(
+        "Installing this PTF:
+1. Check the download: sha256sum -c {ptf}.savf.sha256
+2. Make a save file for it on the system:
+
+   CRTSAVF FILE(QGPL/{ptf})
+
+3. Send the file into it by FTP, in binary:
+
+   ftp yoursystem
+   binary
+   put {ptf}.savf QGPL/{ptf}
+
+   (with NAMEFMT 1: put {ptf}.savf /QSYS.LIB/QGPL.LIB/{ptf}.FILE)
+   A system that reaches the update service can order it instead:
+   SNDPTFORD PTFID(({ptf})) puts it in QGPL/{ptf}.
+4. Load it, apply it and check it:
+
+   LODPTF LICPGM({product}) DEV(*SAVF) SELECT({ptf})
+   APYPTF LICPGM({product}) SELECT({ptf})
+
+{ipl}   DSPPTF LICPGM({product}) SELECT({ptf})
+
+   RMVPTF LICPGM({product}) SELECT({ptf}) takes it off again;
+   APYPTF LICPGM({product}) SELECT({ptf}) APY(*PERM) keeps it.
+"
+    )
 }

@@ -146,6 +146,8 @@ fn the_stream_id_names_the_ptf() {
     let h = savfmt::MediaHeader::decode(&one).unwrap();
     assert_eq!(&h.stream_id[..8], b"QS00001 ");
     assert_eq!(&h.stream_id[8..], &NOW.to_be_bytes());
+    // Whole save file records, so a file transfer into a *SAVF takes it.
+    assert!(savfmt::pad::whole(&one), "{} bytes", one.len());
 }
 
 #[test]

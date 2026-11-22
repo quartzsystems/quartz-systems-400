@@ -390,3 +390,40 @@ fn a_version_1_stream_still_reads() {
         Err(Error::Version(9))
     ));
 }
+
+#[test]
+fn padded_stream_reads_the_same_both_ways() {
+    let mut rng = Rng(528);
+    let objs = corpus(&mut rng, 20);
+    let bytes = write(&objs, Compression::Low);
+    assert!(!savfmt::pad::whole(&bytes), "pick another seed");
+    let padded = savfmt::pad::pad(&bytes, savfmt::pad::SAVF_RECORD).unwrap();
+    assert!(savfmt::pad::whole(&padded));
+    assert!(padded.len() - bytes.len() < savfmt::pad::SAVF_RECORD);
+    // Padding twice changes nothing.
+    assert_eq!(savfmt::pad::pad(&padded, 528).unwrap(), padded);
+    // Forward: the same objects, the command blank padded.
+    let (scans, err) = read_all(&padded);
+    assert!(err.is_none(), "{err:?}");
+    for (i, (o, s)) in objs.iter().zip(&scans).enumerate() {
+        let Scan::Object(s) = s else { panic!("object {i}") };
+        same(o, s, i);
+    }
+    // From the trailer: every index offset still names its object.
+    let mut cur = Cursor::new(padded.clone());
+    let (head, trailer, index) = read_index(&mut cur).unwrap();
+    assert_eq!(trailer.objects, 20);
+    for (i, e) in index.iter().enumerate() {
+        let (d, _) = savfmt::descriptor_at(&mut cur, e.offset).unwrap();
+        assert_eq!(d.name, objs[i].desc.name);
+    }
+    assert_eq!(head.stream_id, *b"0123456789abcdef");
+}
+
+#[test]
+fn pad_refuses_what_is_not_a_stream() {
+    assert!(matches!(
+        savfmt::pad::pad(b"not a save stream at all", 528),
+        Err(Error::NotSave)
+    ));
+}
