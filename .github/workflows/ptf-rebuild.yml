@@ -137,7 +137,7 @@ jobs:
           name: rebuilt
           path: dist
       - name: The released media
-        run: ci/gate-media.sh media
+        run: ci/gate-media.sh media "$(awk '$1 == "release" {print $2}' ptf/rebuild.txt)"
       - name: The gate
         run: |
           cargo run -q --release -p conformance -- --media iso \

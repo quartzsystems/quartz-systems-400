@@ -4,3 +4,5 @@
 # before their notes said how to install them; refused by FTP into a *SAVF.
 QS00001
 # QS00002 to QS00004 wait for the removal fix (they need QS00001 and its chain)
+# The release these PTFs are for: its media gates them.
+release 1.1.0

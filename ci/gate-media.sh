@@ -7,10 +7,10 @@
 # SHA256SUMS: the ISO of the GitHub release v<VERSION>, into DIR. The PTF
 # gate installs it (docs/releasing.md "PTFs").
 #
-#   ci/gate-media.sh DIR
+#   ci/gate-media.sh DIR [X.Y.Z]   (VERSION when not given)
 set -euo pipefail
-dir=${1:?usage: ci/gate-media.sh DIR}
-version=$(ci/version.sh)
+dir=${1:?usage: ci/gate-media.sh DIR [X.Y.Z]}
+version=${2:-$(ci/version.sh)}
 mkdir -p "$dir"
 gh release download "v$version" -D "$dir" -p 'QS400-*.iso' -p SHA256SUMS --clobber
 cd "$dir"

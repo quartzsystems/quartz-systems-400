@@ -6,3 +6,5 @@
 QS00002 ptf-rebuild/QS00002
 QS00003 ptf-rebuild/QS00003
 QS00004 ptf-rebuild/QS00004
+# The release these PTFs are for: its media gates them.
+release 1.1.0
