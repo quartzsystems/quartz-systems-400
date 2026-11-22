@@ -17,7 +17,7 @@ fn tree(tag: &str) -> PathBuf {
     fs::create_dir_all(dir.join("docs")).unwrap();
     fs::create_dir_all(dir.join("src")).unwrap();
     fs::write(
-        dir.join("docs/RELEASE_NOTES_V1R1M0.md"),
+        dir.join("docs/RELEASE_NOTES_V1R2M0.md"),
         "# Notes\n\nProse the lead writes.\n\n\
          <!-- sql-refused:begin: imported from docs/SQL.md section 10 by `cargo run -p kcbuild -- notes --update`; do not edit -->\n\
          <!-- sql-refused:end -->\n\n\

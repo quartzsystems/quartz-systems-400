@@ -35,7 +35,11 @@ impl Marker {
 
 /// Files the scan leaves out: the notes it writes into, and the
 /// scanner with its fixtures.
-pub const SKIP: &[&str] = &["docs/RELEASE_NOTES_V1R1M0.md", "tools/kcbuild/"];
+pub const SKIP: &[&str] = &[
+    "docs/RELEASE_NOTES_V1R1M0.md",
+    "docs/RELEASE_NOTES_V1R2M0.md",
+    "tools/kcbuild/",
+];
 
 const PARENS: &[&str] = &["BLOCKED(", "TODO(", "MIGRATE("];
 const PLAIN: &str = "NEEDS-CODY";

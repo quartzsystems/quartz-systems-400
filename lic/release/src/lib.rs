@@ -26,7 +26,11 @@ pub const RELEASE: Release = vrm::release_from_env!("QS400_");
 
 /// Every release Quartz has defined, ascending: what `*PRV` and the
 /// upgrade rule look in.
-pub const KNOWN: &[Release] = &[Release { v: 1, r: 0, m: 0 }, Release { v: 1, r: 1, m: 0 }];
+pub const KNOWN: &[Release] = &[
+    Release { v: 1, r: 0, m: 0 },
+    Release { v: 1, r: 1, m: 0 },
+    Release { v: 1, r: 2, m: 0 },
+];
 
 /// The operating system's product identifier (`DSPSFWRSC`, `DSPPTF`,
 /// `QSZRTVPR`). IBM's `5770SS1` is accepted for it on input

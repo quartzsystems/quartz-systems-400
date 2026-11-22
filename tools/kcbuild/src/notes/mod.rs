@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The release notes' generated blocks (`docs/RELEASE_NOTES_V1R1M0.md`):
+//! The release notes' generated blocks (`docs/RELEASE_NOTES_V1R2M0.md`):
 //! the SQL refusal list imported from `docs/SQL.md` §10, and the marker
 //! inventory of the tree. The prose around them is written by hand; the
 //! blocks between their comment lines only by `kcbuild notes --update`.
@@ -18,7 +18,7 @@ use std::io;
 use std::path::Path;
 
 /// The notes, relative to the tree.
-pub const NOTES: &str = "docs/RELEASE_NOTES_V1R1M0.md";
+pub const NOTES: &str = "docs/RELEASE_NOTES_V1R2M0.md";
 /// The SQL document, relative to the tree.
 pub const SQL: &str = "docs/SQL.md";
 /// Allows the marker forms of before the rename when set to `legacy`.

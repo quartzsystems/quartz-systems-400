@@ -9,13 +9,44 @@ section (see `docs/releasing.md`). The full notes of a release are
 
 ## Unreleased
 
-- Access for Web: the 5250 display connects its WebSocket and takes keys,
-  clicks and typing; its menu bar and scale switch without leaving the page.
-- HTTP Server Administration, Navigator and Access for Web move between
-  pages in place (`qsweb`'s `qsnav.js`); pages still work without script.
-- PTFs are built on the host (`build ptf`, `build ptf-catalog`) and
-  published from a `ptf-QSnnnnn` tag; QEMU step 164 takes a LIC PTF from
-  the update service through slot B and back.
+## 1.2.0 (2026-11-22)
+
+### QS/400 V1R2M0
+
+Three of the features V1R1M0 left out, NetServer, NFS and the Directory
+Server, and every fix since V1R1M0. The full notes are
+`docs/RELEASE_NOTES_V1R2M0.md`, also at the root of the install media.
+
+- Upgrades in place from V1R1M0 (slip install). Each user changes their
+  password once before using NetServer (the NT hash is made then).
+- NetServer: SMB 2.0.2 to 3.1.1 file and print serving over the IFS for
+  Windows, macOS and Linux clients, with signing, encryption, leases,
+  durable handles, change notification and point and print; sign-on by
+  NTLMv2 against user profiles; `QZLS*` APIs, Navigator and QAP.
+- NFS: the server (versions 3, 4.0 and 4.1, with MOUNT, NLM and NSM) and
+  the client (`MOUNT TYPE(*NFS)`), `EXPORTFS` and `/etc/exports`, file
+  handles that survive an IPL, Navigator and QAP.
+- Directory Server: an LDAPv3 server in the base OS (`STRTCPSVR
+  SERVER(*DIRSRV)`) with ACLs, password policy, the user profiles
+  projected as entries, TLS and SASL `EXTERNAL`, publishing, `QGLDCLNT`
+  and the QSH `ldap*` tools.
+- QSI: a standalone system answers a paired management console
+  (`QSIDSRV`, `STRQSIPAIR`, `WRKQSICSL`): its state, power down, reference
+  codes, problems, dumps and its console. In a partition of QS/VS the
+  system has a service channel to the hypervisor.
+- PTFs install the way IBM i users try first: `CRTSAVF`, an FTP `put` in
+  binary into the save file, `LODPTF`, `APYPTF`. The FTP server takes a
+  save stream of any length, `CPYFRMSTMF` fills a save file, and every
+  refusal of a save file says why. Each PTF's notes say how to install it,
+  and no PTF is published unless it installs on its release as shipped
+  (the gate, `releasing.md`).
+- After `RMVPTF` of a LIC PTF IPLed an older LIC, the PTF database was
+  empty; its records are again as V1R1M0 reads them.
+- Navigator's Fixes page has Check now and says when no check was made.
+- Access for Web's 5250 display takes keys, clicks and typing; the three
+  web products move between pages in place.
+- Not in V1R2M0: an SNMP agent (the definitions only), and the rest the
+  notes list under "Deliberately not in V1R2M0".
 
 ## 1.1.0 (2026-11-08)
 

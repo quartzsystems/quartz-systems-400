@@ -175,7 +175,7 @@ fn media_root(ctx: &Ctx, key: &pesign::DbKey) -> Result<String> {
 }
 
 /// The release notes, at the media's root by this name.
-pub const NOTES: &str = "RELEASE_NOTES_V1R1M0.md";
+pub const NOTES: &str = "RELEASE_NOTES_V1R2M0.md";
 /// The db key's certificate and signature list on the media.
 pub const KEYS: &str = "QS400/EFI/keys";
 
