@@ -1,0 +1,225 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# A tag ptf-rebuild-N rebuilds, under their own IDs, the PTFs listed in
+# ptf/rebuild.txt at the tagged commit, each from the branch named beside
+# it (its ptf-QSnnnnn commit and the fix it needs; docs/releasing.md,
+# "Rebuilding a PTF"). Each is built and signed with the `release`
+# environment's keys, padded and given its notes by this commit's
+# build ptf-repad, gated on the release it is for with its prerequisites
+# (the published ones, or those rebuilt beside it), and only then are the
+# releases' files replaced and the update service's catalog signed again.
+
+name: ptf-rebuild
+
+on:
+  push:
+    tags: ["ptf-rebuild-*"]
+
+permissions:
+  contents: read
+
+# With ptf.yml and ptf-republish.yml: each run takes the catalog further.
+concurrency:
+  group: ptf
+  cancel-in-progress: false
+
+jobs:
+  list:
+    name: the PTFs to rebuild
+    runs-on: ubuntu-24.04
+    outputs:
+      ptfs: ${{ steps.l.outputs.ptfs }}
+      matrix: ${{ steps.l.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: l
+        run: |
+          rows=$(grep -E '^QS[0-9]{5} ' ptf/rebuild.txt)
+          [ -n "$rows" ] || { echo "ptf/rebuild.txt names no PTF" >&2; exit 1; }
+          echo "ptfs=$(echo "$rows" | awk '{print $1}' | jq -Rnc '[inputs]')" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(echo "$rows" | jq -Rnc '[inputs | split(" ") | {ptf: .[0], ref: .[1]}]')" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build ${{ matrix.p.ptf }} from ${{ matrix.p.ref }}
+    needs: list
+    runs-on: ubuntu-24.04
+    environment: release
+    timeout-minutes: 240
+    strategy:
+      matrix:
+        p: ${{ fromJSON(needs.list.outputs.matrix) }}
+    env:
+      QS400_TARGET_DIR: ${{ github.workspace }}/target
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.p.ref }}
+      - uses: ./.github/actions/qs400-host
+      - name: Release keys from the release environment
+        env:
+          SIGNING_KEY: ${{ secrets.QS400_SIGNING_KEY }}
+          SB_KEY: ${{ secrets.QS400_SB_KEY }}
+          SB_CERT_B64: ${{ secrets.QS400_SB_CERT_B64 }}
+        run: |
+          for k in SIGNING_KEY SB_KEY SB_CERT_B64; do
+            [ -n "${!k}" ] || { echo "secret for $k is missing in the release environment" >&2; exit 1; }
+          done
+          umask 077
+          dir=$(mktemp -d)
+          printf '%s' "$SIGNING_KEY" > "$dir/release.ed25519"
+          printf '%s\n' "$SB_KEY" > "$dir/qs400-db.key"
+          printf '%s' "$SB_CERT_B64" | base64 -d > "$dir/qs400-db.cer"
+          echo "KEYDIR=$dir" >> "$GITHUB_ENV"
+      - name: build all --release, build ptf (signed)
+        run: |
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+            cargo run -q -p build -- all --release
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+          QS400_SB_KEY="$KEYDIR/qs400-db.key" \
+          QS400_SB_CERT="$KEYDIR/qs400-db.cer" \
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
+            cargo run -q -p build -- ptf "ptf/fixes/${{ matrix.p.ptf }}.toml"
+      - name: Remove the keys
+        if: always()
+        run: '[ -z "${KEYDIR:-}" ] || rm -rf "$KEYDIR"'
+      - run: |
+          mkdir -p built
+          cp "$QS400_TARGET_DIR/images/ptf/${{ matrix.p.ptf }}.savf" built/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: built-${{ matrix.p.ptf }}
+          path: built/
+
+  repad:
+    name: pad, notes, the prerequisites beside them
+    needs: [list, build]
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: built-*
+          path: dist
+          merge-multiple: true
+      - name: The published PTFs not rebuilt, as prerequisites
+        run: |
+          gh release download ptf-catalog -D prev -p 'QS*.savf'
+          for f in prev/*.savf; do [ -f "dist/$(basename "$f")" ] || cp "$f" dist/; done
+      - uses: ./.github/actions/qs400-host
+      - run: |
+          cargo run -q -p build -- ptf-repad dist
+          cargo run -q -p fmtcheck -- savf dist/*.savf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rebuilt
+          path: dist/
+
+  gate:
+    name: gate ${{ matrix.ptf }}
+    needs: [list, repad]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        ptf: ${{ fromJSON(needs.list.outputs.ptfs) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
+      - uses: actions/download-artifact@v4
+        with:
+          name: rebuilt
+          path: dist
+      - name: The released media
+        run: ci/gate-media.sh media
+      - name: The gate
+        run: |
+          cargo run -q --release -p conformance -- --media iso \
+            --iso media/QS400-*.iso --ptf-gate "dist/${{ matrix.ptf }}.savf"
+      - name: Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-logs-${{ matrix.ptf }}
+          path: target/conformance/
+          if-no-files-found: ignore
+
+  catalog:
+    name: sign the catalog again
+    needs: [list, gate]
+    runs-on: ubuntu-24.04
+    environment: release
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rebuilt
+          path: dist
+      - name: The catalog so far, the rebuilt PTFs in it
+        run: |
+          mkdir -p pub/ptf pub/group prev
+          gh release download ptf-catalog -D prev
+          mv prev/*.savf pub/ptf/ 2>/dev/null || true
+          mv prev/C*.toml pub/group/ 2>/dev/null || true
+          [ ! -f prev/catalog.toml ] || mv prev/catalog.toml pub/
+          for p in $(echo '${{ needs.list.outputs.ptfs }}' | jq -r '.[]'); do cp "dist/$p.savf" pub/ptf/; done
+      - uses: ./.github/actions/qs400-host
+      - name: Release key from the release environment
+        env:
+          SIGNING_KEY: ${{ secrets.QS400_SIGNING_KEY }}
+        run: |
+          [ -n "$SIGNING_KEY" ] || { echo "QS400_SIGNING_KEY is missing in the release environment" >&2; exit 1; }
+          umask 077
+          dir=$(mktemp -d)
+          printf '%s' "$SIGNING_KEY" > "$dir/release.ed25519"
+          echo "KEYDIR=$dir" >> "$GITHUB_ENV"
+      - name: build ptf-catalog (signed)
+        run: |
+          cargo run -q -p build -- ptf-repad pub/ptf
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+            cargo run -q -p build -- ptf-catalog pub
+      - name: Remove the key
+        if: always()
+        run: '[ -z "${KEYDIR:-}" ] || rm -rf "$KEYDIR"'
+      - run: |
+          mkdir -p catalog
+          cp pub/catalog.toml pub/ptf/*.savf pub/group/*.toml catalog/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalog
+          path: catalog/
+
+  publish:
+    name: replace the published files
+    needs: [list, gate, catalog]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rebuilt
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: catalog
+          path: catalog
+      - name: Each PTF's release, under its own ID
+        run: |
+          for p in $(echo '${{ needs.list.outputs.ptfs }}' | jq -r '.[]'); do
+            gh release upload "ptf-$p" "dist/$p.savf" "dist/$p.savf.sha256" "dist/$p.txt" --clobber
+            gh release edit "ptf-$p" --notes-file "dist/$p.txt"
+          done
+      - name: The update service's directory
+        run: gh release upload ptf-catalog catalog/* --clobber

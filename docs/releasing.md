@@ -185,3 +185,17 @@ as signed, so the signatures hold and no key signs it again; its
 `.sha256` and notes written again), runs the gate on each, and only
 then signs the catalog again with the `release` environment's key and
 replaces the files on each `ptf-QSnnnnn` release and on `ptf-catalog`.
+
+### Rebuilding a PTF
+
+A published PTF whose own code is wrong is rebuilt under its own ID from
+a branch: its `ptf-QSnnnnn` commit and the fix it needs, nothing else
+(`ptf-rebuild/QSnnnnn`). List it with its branch in `ptf/rebuild.txt`,
+push the branches, then a tag `ptf-rebuild-N` on main
+(`.github/workflows/ptf-rebuild.yml`): each PTF is built and signed from
+its branch, padded and given its notes by main's `build ptf-repad`,
+gated with its prerequisites (the published ones, or those rebuilt
+beside it), and only then are its release's files and the catalog
+replaced. QS00002 to QS00004 were rebuilt this way (2026-11-22): their
+LIC wrote PTF database records V1R1M0 drops, so `RMVPTF` back to an
+older LIC emptied the database.

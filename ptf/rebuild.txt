@@ -1,0 +1,8 @@
+# PTFs a tag ptf-rebuild-N rebuilds under their own IDs, each from the
+# branch beside it (.github/workflows/ptf-rebuild.yml, docs/releasing.md).
+# 2026-11-22: their LIC wrote PTF database records V1R1M0 cannot read, so
+# RMVPTF back to an older LIC lost every record; each branch is its
+# ptf-QSnnnnn commit and that fix (ptf/ptf/src/db.rs).
+QS00002 ptf-rebuild/QS00002
+QS00003 ptf-rebuild/QS00003
+QS00004 ptf-rebuild/QS00004
