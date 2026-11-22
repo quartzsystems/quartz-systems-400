@@ -42,8 +42,11 @@ pub struct Build<'a> {
 
 fn media_header(ptf: &str, system: &str, now: u64) -> MediaHeader {
     let r = release::RELEASE;
-    let mut id = [0u8; 16];
-    id[..8].copy_from_slice(ptf.as_bytes().get(..8).unwrap_or(b"QS000000"));
+    // The PTF ID, blank padded, then the time.
+    let mut id = [b' '; 16];
+    for (d, s) in id[..8].iter_mut().zip(ptf.bytes()) {
+        *d = s;
+    }
     id[8..].copy_from_slice(&now.to_be_bytes());
     MediaHeader {
         release: (r.v, r.r, r.m),

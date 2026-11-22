@@ -141,6 +141,14 @@ fn rplobj_count(s: &mut Store, q: ObjectId) -> usize {
 }
 
 #[test]
+fn the_stream_id_names_the_ptf() {
+    let one = make("QS00001", "level1", &[], &[]);
+    let h = savfmt::MediaHeader::decode(&one).unwrap();
+    assert_eq!(&h.stream_id[..8], b"QS00001 ");
+    assert_eq!(&h.stream_id[8..], &NOW.to_be_bytes());
+}
+
+#[test]
 fn load_apply_remove_and_make_permanent() {
     let one = make("QS00001", "level1", &[], &[]);
     let pkg = package::open(&one, &trusted()).unwrap();
