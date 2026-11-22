@@ -240,3 +240,18 @@ fn walk(d: &std::path::Path) -> Vec<std::path::PathBuf> {
     }
     out
 }
+
+#[test]
+fn fixes_before_any_check_and_check_now() {
+    let mut b = Browser::signed_on();
+    b.fx.sw.state.lock().unwrap().attrs.last = 0;
+    let t = b.get("/fixes").text();
+    assert!(t.contains("No check has been made yet."), "{t}");
+    assert!(!t.contains("The last check found"), "{t}");
+    assert!(t.contains("value=\"Check now\""), "{t}");
+    let r = b.post("/fixes", &[("check", "Check now")]);
+    assert!(r.status == 200 || r.status == 303, "{}", r.status);
+    assert!(b.fx.sw.ran.lock().unwrap().iter().any(|c| c == "QSCHKUPD"));
+    let t = b.get("/fixes").text();
+    assert!(!t.contains("No check has been made yet."), "{t}");
+}

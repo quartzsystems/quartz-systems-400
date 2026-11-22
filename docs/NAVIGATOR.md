@@ -447,7 +447,10 @@ attributes (`QSYS/QSUPDATTR`), and runs every change through
 - Fixes: Download is `SNDPTFORD PTFID((<id>))` (`*CUMPKG` for a
   cumulative package), confirmed. The settings run `QSCHGUPDA`; the
   Server field is the URL's host (a host alone becomes
-  `https://<host>/qs400`), an empty proxy `*NONE`.
+  `https://<host>/qs400`), an empty proxy `*NONE`. Check now runs
+  `QSCHKUPD` and comes back to the page. Before any check (Last check
+  Never) the list says no check has been made yet, not that none is
+  missing.
 
 ## Golden comparison
 

@@ -469,6 +469,10 @@ impl Software for FixtureSoftware {
     }
 
     fn fixes(&self, _user: &str) -> Vec<Fix> {
+        // Nothing is known before the first check.
+        if self.state.lock().expect("state").attrs.last == 0 {
+            return Vec::new();
+        }
         let f =
             |id: &str, kind: &str, product: &str, d: u32, size: u64, text: &str, on: &str| Fix {
                 id: id.into(),

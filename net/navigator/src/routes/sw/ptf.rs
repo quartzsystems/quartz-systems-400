@@ -665,6 +665,9 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
         if f.has("cancel") {
             return rq.redirect("/ptf");
         }
+        if f.has("check") {
+            return run_all(rq, &["QSCHKUPD".to_string()], "/fixes");
+        }
         let server = f.str("s").trim();
         let url = if server.contains("://") {
             server.to_string()
@@ -737,7 +740,11 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
         .map(|c| Col::plain(c))
         .collect(),
         rows,
-        empty: "The last check found no fixes this system lacks.".into(),
+        empty: if attrs.last == 0 {
+            "No check has been made yet.".into()
+        } else {
+            "The last check found no fixes this system lacks.".into()
+        },
         keep: Vec::new(),
     };
     let chosen = choices
@@ -770,6 +777,7 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
             ],
         }],
         &[
+            Button::new("check", "Check now"),
             Button::new("apply", "Apply"),
             Button::new("ok", "OK"),
             Button::new("cancel", "Cancel"),
