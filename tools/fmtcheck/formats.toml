@@ -180,6 +180,10 @@ files = [
 # padded to whole 528-byte records with blanks in its Parameters record
 # (docs/SAVE_FORMAT.md "Whole records"). No layout or reading rule changed;
 # every V1R1M0 reader reads both the old and the new PTFs.
+# db.rs (the PTF database in QSYS/QSPTFDB) joined the freeze 2026-11-22: a
+# fifteenth field added after V1R1M0 made V1R1M0's reader drop every
+# record after RMVPTF IPLed an older LIC; records are fourteen fields again,
+# the load times on lines of their own that older readers skip.
 [[format]]
 name = "ptf"
 frozen_at = "V1R1M0"
@@ -188,6 +192,7 @@ version = ["ptf/ptf/src/header.rs::VERSION"]
 files = [
     "ptf/ptf/src/header.rs",
     "ptf/ptf/src/package.rs",
+    "ptf/ptf/src/db.rs",
     "ptf/ptf/src/manifest.rs",
     "ptf/ptf/src/group.rs",
     "net/updcat/src/signed.rs",
