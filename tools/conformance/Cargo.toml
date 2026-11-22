@@ -77,6 +77,8 @@ ftp = { path = "../../net/ftp", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 ptf = { path = "../../ptf/ptf", version = "0.1.0" }
+sha2.workspace = true
+hex.workspace = true
 ptf-update = { path = "../../ptf/update", version = "0.1.0" }
 ptfbuild = { path = "../../ptf/ptfbuild", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }

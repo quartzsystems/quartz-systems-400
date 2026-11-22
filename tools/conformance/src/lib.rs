@@ -76,6 +76,8 @@ mod phase8;
 mod phase9;
 #[cfg(unix)]
 mod png;
+#[cfg(unix)]
+mod ptfgate;
 mod ptfstep;
 mod qap;
 mod qemu;
@@ -107,6 +109,8 @@ use std::path::{Path, PathBuf};
 
 pub use error::HarnessError;
 pub use phase2::SYSTEM_LIBRARIES;
+#[cfg(unix)]
+pub use ptfgate::GateReport;
 pub use qemu::firmware;
 pub use qemu::session::{PROMPT, Session};
 pub use steps::{Media, SRC_SEQUENCE, SRC_SEQUENCE_MEDIA, StepReport, Suite};

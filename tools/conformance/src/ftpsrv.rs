@@ -36,14 +36,14 @@ fn expect(s: &mut Session, line: &str, want: &str) -> Result<String, String> {
 }
 
 /// A host-side FTP client, enough for the step.
-struct Ftp<'a> {
+pub(crate) struct Ftp<'a> {
     suite: &'a Suite,
     ctl: BufReader<TcpStream>,
     log: Vec<String>,
 }
 
 impl<'a> Ftp<'a> {
-    fn connect(suite: &'a Suite, port: u16) -> Result<Self, String> {
+    pub(crate) fn connect(suite: &'a Suite, port: u16) -> Result<Self, String> {
         let end = Instant::now() + Duration::from_secs(30);
         loop {
             // Slirp accepts before the guest does: a banner shows the
@@ -66,7 +66,7 @@ impl<'a> Ftp<'a> {
         }
     }
 
-    fn reply(&mut self) -> Result<(u16, String), String> {
+    pub(crate) fn reply(&mut self) -> Result<(u16, String), String> {
         let mut first: Option<u16> = None;
         let mut text = String::new();
         loop {
@@ -91,7 +91,7 @@ impl<'a> Ftp<'a> {
         }
     }
 
-    fn cmd(&mut self, line: &str, want: u16) -> Result<String, String> {
+    pub(crate) fn cmd(&mut self, line: &str, want: u16) -> Result<String, String> {
         self.log.push(format!("C: {line}"));
         self.ctl
             .get_mut()
@@ -147,7 +147,7 @@ impl<'a> Ftp<'a> {
         Ok(out)
     }
 
-    fn stor(&mut self, line: &str, data: &[u8]) -> Result<(), String> {
+    pub(crate) fn stor(&mut self, line: &str, data: &[u8]) -> Result<(), String> {
         let mut d = self.data()?;
         self.cmd(line, 150)?;
         d.write_all(data).map_err(|e| e.to_string())?;

@@ -47,6 +47,11 @@ struct Cli {
     /// Instead of the suite: the soak, for this many seconds.
     #[arg(long)]
     soak: Option<u64>,
+    /// Instead of the suite: the PTF release gate for these PTF save
+    /// files (their `.savf.sha256` and `.txt` notes beside them) against
+    /// the release media `--iso` names (`--media iso`).
+    #[arg(long, num_args = 1..)]
+    ptf_gate: Vec<PathBuf>,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -65,6 +70,35 @@ fn main() -> Result<ExitCode> {
     suite.set_only(cli.only.clone());
     if cli.only.is_some() {
         suite.set_phase2(cli.bench, 0);
+    }
+    #[cfg(unix)]
+    if !cli.ptf_gate.is_empty() {
+        let reports = suite.run_ptf_gate(&cli.ptf_gate)?;
+        let mut failed = 0;
+        for r in &reports {
+            println!(
+                "{} {}: {}",
+                if r.passed { "PASS" } else { "FAIL" },
+                r.ptf,
+                r.detail
+            );
+            if !r.passed {
+                failed += 1;
+                eprintln!(
+                    "----- {} serial log -----\n{}\n----- end -----",
+                    r.ptf, r.log
+                );
+            }
+        }
+        return Ok(if failed == 0 {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        });
+    }
+    #[cfg(not(unix))]
+    if !cli.ptf_gate.is_empty() {
+        anyhow::bail!("the PTF gate needs a Unix host (QMP)");
     }
     if let Some(secs) = cli.soak {
         let r = suite.run_soak(std::time::Duration::from_secs(secs))?;

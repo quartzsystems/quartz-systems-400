@@ -141,8 +141,23 @@ Pushing the tag runs `.github/workflows/ptf.yml`:
    it), `build ptf` signed with the release and Secure Boot keys, then
    `build ptf-catalog` over every PTF the `ptf-catalog` release holds
    plus this one.
-4. **publish**: a GitHub release `ptf-QSnnnnn` (not marked latest) with
-   the save file, its SHA-256 and the cover letter as its notes, and the
+4. **gate**: the PTF on the release it is for, as shipped. The ISO of
+   the GitHub release `v<VERSION>` (checked against its `SHA256SUMS`,
+   `ci/gate-media.sh`) is installed under QEMU on a blank disk with a
+   writable variable store, and the harness does what a customer does,
+   over telnet and FTP (a release has no service console):
+   `cargo run -p conformance -- --media iso --iso RELEASE.iso
+   --ptf-gate QSnnnnn.savf` (`tools/conformance/src/ptfgate.rs`). It
+   checks the download against its `.sha256`, that the notes give the
+   steps it runs (`CRTSAVF`, the FTP `put` into `QGPL/QSnnnnn`, `LODPTF`,
+   `APYPTF`), then runs them: the FTP put in binary into the save file,
+   `LODPTF`, `APYPTF APY(*TEMP)`, an IPL (on the other slot for a LIC
+   PTF), `DSPPTF` showing it temporarily applied, `RMVPTF`, an IPL,
+   `DSPPTF` temporarily removed, `APYPTF APY(*PERM)`, an IPL, `DSPPTF`
+   permanently applied. Nothing is published unless it passes.
+5. **publish**: a GitHub release `ptf-QSnnnnn` (not marked latest) with
+   the save file, its SHA-256 and the notes (the cover letter and how to
+   install it, `build ptf`'s `QSnnnnn.txt`) as its notes, and the
    update service's whole directory uploaded again to the rolling
    `ptf-catalog` release: `catalog.toml`, every `QSnnnnn.savf`, the
    cumulative package manifests. `ptfs.quartzsystems.net/qs400/v1/` serves
@@ -154,5 +169,7 @@ branches and tags); until it does, GitHub refuses the build job the
 environment and the run fails before anything is signed. Runs are one at a time, since each takes the catalog one sequence
 further.
 
-On a system the PTF arrives with `SNDPTFORD PTFID((QSnnnnn))` (or the
-save file by hand), then `LODPTF`, `APYPTF` and, for a LIC PTF, an IPL.
+On a system the PTF arrives with `SNDPTFORD PTFID((QSnnnnn))`, or by FTP
+into a save file as its notes say (`CRTSAVF FILE(QGPL/QSnnnnn)`, then
+`put QSnnnnn.savf QGPL/QSnnnnn` in binary); then `LODPTF LICPGM(QS00SS1)
+DEV(*SAVF) SELECT(QSnnnnn)`, `APYPTF` and, for a LIC PTF, an IPL.

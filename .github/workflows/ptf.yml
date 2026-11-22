@@ -132,9 +132,42 @@ jobs:
           name: ptf
           path: dist/
 
+  # Nothing is published unless the PTF installs on the release it is for,
+  # as shipped: its media installed under QEMU, the PTF sent as its notes
+  # say (FTP into a *SAVF), LODPTF, APYPTF *TEMP, IPL, DSPPTF, RMVPTF,
+  # APYPTF *PERM (docs/releasing.md "PTFs").
+  gate:
+    name: gate ${{ needs.manifest.outputs.ptf }} on the released ${{ needs.manifest.outputs.release }}
+    needs: [manifest, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      PTF: ${{ needs.manifest.outputs.ptf }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
+      - uses: actions/download-artifact@v4
+        with:
+          name: ptf
+          path: dist
+      - name: The released media
+        run: ci/gate-media.sh media
+      - name: The gate
+        run: |
+          cargo run -q --release -p conformance -- --media iso \
+            --iso media/QS400-*.iso --ptf-gate "dist/ptf/$PTF.savf"
+      - name: Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-logs
+          path: target/conformance/
+          if-no-files-found: ignore
+
   publish:
     name: publish ${{ needs.manifest.outputs.ptf }}
-    needs: [manifest, build]
+    needs: [manifest, build, gate]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

@@ -381,6 +381,7 @@ dependencies = [
  "release",
  "reqwest",
  "rustls-graviola",
+ "savfmt",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -683,6 +684,7 @@ dependencies = [
  "dspf",
  "ed25519-dalek",
  "ftp",
+ "hex",
  "hwqual",
  "ifs",
  "ile",
@@ -722,6 +724,7 @@ dependencies = [
  "sec",
  "serde_json",
  "servers",
+ "sha2 0.11.0",
  "spool",
  "sql",
  "sqlcli",
@@ -2036,6 +2039,7 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "ifs",
+ "savfmt",
  "sec",
  "store",
 ]
