@@ -121,6 +121,8 @@ jobs:
           echo "KEYDIR=$dir" >> "$GITHUB_ENV"
       - name: build ptf-catalog (signed)
         run: |
+          # Every PTF the catalog serves in whole records (no key needed).
+          cargo run -q -p build -- ptf-repad pub/ptf
           QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
             cargo run -q -p build -- ptf-catalog pub
       - name: Remove the key

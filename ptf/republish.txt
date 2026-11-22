@@ -3,6 +3,4 @@
 # 2026-11-22: published before PTFs were whole 528-byte records and
 # before their notes said how to install them; refused by FTP into a *SAVF.
 QS00001
-QS00002
-QS00003
-QS00004
+# QS00002 to QS00004 wait for the removal fix (they need QS00001 and its chain)
