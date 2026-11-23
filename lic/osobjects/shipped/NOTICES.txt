@@ -1,4 +1,4 @@
-QS/400 V1R1M0 third-party notices
+QS/400 V1R2M0 third-party notices
 
 QS/400 is licensed under the MIT license (the LICENSE file of its source).
 It contains the work of others, listed here with their licenses:
