@@ -285,6 +285,18 @@ impl Suite {
         let _ = s.command("DLTJRN JRN(QSYS/QACGJRN)", CMD);
         let _ = s.command("DLTJRNRCV JRNRCV(QSYS/ACGRCV0001)", CMD);
         let _ = s.command("endwtr QSCAPTURE OPTION(*IMMED)", CMD);
+        // The writer gone before the next step counts the jobs.
+        let until = Instant::now() + Duration::from_secs(30);
+        while s
+            .command("svc.wrkactjob VIEW(3)", CMD)?
+            .lines()
+            .any(|l| l.contains("QSCAPTURE") && l.contains("WTR"))
+        {
+            if Instant::now() > until {
+                return Err("endwtr: QSCAPTURE still active after 30s".into());
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
         Ok(format!(
             "{} JB rows for the test jobs, SP entry for QPSYSSEC under PRINTACG",
             rows.len()
