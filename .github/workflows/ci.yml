@@ -213,6 +213,10 @@ jobs:
       - if: matrix.suite != 'disk'
         run: cargo run -q -p build -- iso
       - run: cargo run -q -p build -- test ${{ matrix.args }}
+        env:
+          # After every other step the 4 GiB disk has no room for 100 000
+          # entries; DIRSRV.md's 100 000 are measured with --only 193,186,194.
+          QS400_DIRSRV_BENCH_ENTRIES: "10000"
       - name: Logs
         if: always()
         uses: actions/upload-artifact@v4
