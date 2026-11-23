@@ -43,6 +43,8 @@ Server, and every fix since V1R1M0. The full notes are
 - After `RMVPTF` of a LIC PTF IPLed an older LIC, the PTF database was
   empty; its records are again as V1R1M0 reads them.
 - Navigator's Fixes page has Check now and says when no check was made.
+- NetServer: a Linux client's whole-file lock now holds against clients
+  on other connections.
 - Access for Web's 5250 display takes keys, clicks and typing; the three
   web products move between pages in place.
 - Not in V1R2M0: an SNMP agent (the definitions only), and the rest the

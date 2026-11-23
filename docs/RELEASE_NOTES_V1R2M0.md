@@ -387,6 +387,10 @@ client trusting what its caller gives and streaming a download
   rebuilt with the fix under their own IDs.
 - Navigator's Fixes page has Check now, and before any check says so
   instead of saying the check found nothing.
+- NetServer: a lock on a whole file from a Linux client (`flock`, sent as
+  a range to 2^63) was kept in the connection's own job only, so a client
+  on another connection could take a conflicting lock. It now reaches the
+  IFS, where every job sees it.
 
 ## Deliberately not in V1R2M0
 
@@ -795,8 +799,6 @@ The NetServer `NEEDS-CODY` items (`NETSERVER.md`):
   with Notepad, Word and Excel, and print; Windows point and print with
   an in-box class driver; a wrong password `QMAXSIGN` times disables the
   user for NetServer.
-- The kernel CIFS mounts of QEMU step 171 need root: confirm they pass on
-  CI (Samba's `smbclient` passes locally).
 - On an IBM i 7.5 system: whether the NetServer password is kept at
   `QPWDLVL` 4; the date format of a `VP` audit entry; the `QZLSCHSI`
   length bounds, the share-name characters, the `ZLSL0101` extension

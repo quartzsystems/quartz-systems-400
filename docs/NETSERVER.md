@@ -1648,7 +1648,7 @@ oracle change the rules forbid.
 | V1R1M0 to V1R2M0 slip install with NetServer working on the upgraded system | install step 10 (`INSTALL.md` §4; needs a development build of tag `v1.1.0` as `QS400_OLD_ISO`) | built |
 | Windows 11, macOS, Linux kernel clients; Office documents; `QMAXSIGN` disabling from a real client | section 11 | `NEEDS-CODY` |
 | Samba `smbclient` interop: share list over `srvsvc`, every dialect signed and sealed, print, a wrong password | QEMU 171 (smbclient 4.23.6) | built |
-| Linux kernel CIFS client: two mounts' writes and byte-range locks | QEMU 171 where the harness can mount (CI) | written; passes on CI to be confirmed |
+| Linux kernel CIFS client: two mounts' writes and byte-range locks | QEMU 171 where the harness can mount (CI) | built |
 
 [MS-SMB2]: https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2
 [MS-NLMP]: https://learn.microsoft.com/openspecs/windows_protocols/ms-nlmp
