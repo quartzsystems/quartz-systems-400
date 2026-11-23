@@ -64,7 +64,9 @@ runs:
       shell: bash
       run: |
         mkdir -p "$RUNNER_TEMP/jtopen"
-        curl -fsSLo "$RUNNER_TEMP/jtopen/jt400.jar" \
+        # Maven Central answers 429 at times: retry with a pause.
+        curl -fsSL --retry 8 --retry-delay 15 --retry-all-errors \
+          -o "$RUNNER_TEMP/jtopen/jt400.jar" \
           https://repo1.maven.org/maven2/net/sf/jt400/jt400/20.0.7/jt400-20.0.7.jar
         echo "QS_JT400_JAR=$RUNNER_TEMP/jtopen/jt400.jar" >> "$GITHUB_ENV"
         echo "QS_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
