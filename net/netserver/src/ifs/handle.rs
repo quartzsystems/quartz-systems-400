@@ -121,6 +121,21 @@ fn err<T>(r: ifs::Result<T>) -> SmbResult<T> {
     r.map_err(smb_error)
 }
 
+/// An SMB byte range as the IFS's `l_start` and `l_len`, `None` when it
+/// locks nothing or starts past what the IFS addresses. A range that runs
+/// past `i64::MAX` (Linux sends `flock` as 0 for 2^63) runs to the end.
+fn ifs_range(offset: u64, len: u64) -> Option<(i64, i64)> {
+    let start = i64::try_from(offset).ok()?;
+    if len == 0 {
+        return None;
+    }
+    let len = offset
+        .checked_add(len)
+        .and_then(|end| i64::try_from(end).ok())
+        .map_or(0, |_| len.cast_signed());
+    Some((start, len))
+}
+
 impl IfsHandle {
     fn path(&self) -> String {
         self.path
@@ -412,13 +427,10 @@ impl Handle for IfsHandle {
 
     async fn lock_range(&self, offset: u64, len: u64, exclusive: bool) -> SmbResult<()> {
         self.unprime();
-        let (Ok(start), Ok(len)) = (i64::try_from(offset), i64::try_from(len)) else {
-            // Past what the IFS can lock: the server's own table holds it.
+        let Some((start, len)) = ifs_range(offset, len) else {
+            // Nothing the IFS can lock: the server's own table holds it.
             return Ok(());
         };
-        if len == 0 {
-            return Ok(());
-        }
         let Fd { fd, write } = self.fd().await?;
         // An exclusive lock through a read-only open is taken shared.
         let kind = if exclusive && write {
@@ -470,16 +482,13 @@ impl Handle for IfsHandle {
 
     async fn unlock_range(&self, offset: u64, len: u64) -> SmbResult<()> {
         self.unprime();
-        let (Ok(start), Ok(len)) = (i64::try_from(offset), i64::try_from(len)) else {
+        let Some((start, len)) = ifs_range(offset, len) else {
             return Ok(());
         };
         let fd = *self.fd.lock().unwrap_or_else(PoisonError::into_inner);
         let Some(Fd { fd, .. }) = fd else {
             return Ok(());
         };
-        if len == 0 {
-            return Ok(());
-        }
         err(self
             .io
             .call(move |c| {
@@ -509,5 +518,20 @@ impl Drop for IfsHandle {
                 let _ = c.close(fd);
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ifs_range;
+
+    #[test]
+    fn a_range_past_the_ifs_runs_to_the_end() {
+        // Linux's flock over cifs: 0 for 2^63.
+        assert_eq!(ifs_range(0, 1 << 63), Some((0, 0)));
+        assert_eq!(ifs_range(10, u64::MAX), Some((10, 0)));
+        assert_eq!(ifs_range(5, 100), Some((5, 100)));
+        assert_eq!(ifs_range(5, 0), None);
+        assert_eq!(ifs_range(1 << 63, 1), None);
     }
 }

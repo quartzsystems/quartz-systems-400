@@ -211,9 +211,10 @@ impl Mount {
             .output()
             .is_ok_and(|o| o.stdout.starts_with(b"0"));
         let at = tmp(tag);
-        // nosharesock: each mount is its own TCP connection and session.
+        // nosharesock: each mount is its own TCP connection and session;
+        // actimeo=0: no attribute cache hides the other mount's changes.
         let opts = format!(
-            "port={},credentials={},vers={vers},nosharesock,cache=none,uid={},gid={}",
+            "port={},credentials={},vers={vers},nosharesock,cache=none,actimeo=0,uid={},gid={}",
             e.port,
             creds.display(),
             id("-u"),
