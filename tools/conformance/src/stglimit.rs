@@ -39,6 +39,12 @@ fn poll(
     }
 }
 
+/// `id` in a history log entry, not in the command's own echo.
+fn logged(out: &str, id: &str) -> bool {
+    out.lines()
+        .any(|l| l.contains(id) && !l.to_ascii_lowercase().contains("dsplog"))
+}
+
 /// ASP 1's pages and free pages, from `svc.asp`'s first line.
 fn asp_pages(s: &mut Session) -> Result<(u64, u64), String> {
     let out = s.command("svc.asp", CMD)?;
@@ -78,8 +84,8 @@ impl Suite {
             &format!("svc.obj fill STGFILL 8 {each}"),
             Duration::from_mins(5),
         )?;
-        let hist = poll(s, "dsplog MSGID(CPF0907)", 60, |o| o.contains("CPF0907"))?;
-        if !hist.contains("CPF0907") {
+        let hist = poll(s, "dsplog MSGID(CPF0907)", 60, |o| logged(o, "CPF0907"))?;
+        if !logged(&hist, "CPF0907") {
             let asp = s.command("svc.asp", CMD)?;
             return Err(format!(
                 "no CPF0907 at {threshold}%:\n{hist}\n--- fill\n{filled}\n--- asp\n{asp}"
@@ -93,8 +99,8 @@ impl Suite {
         let free_pct = 100 - (used * 100 / pages);
         let limit = (free_pct + 1).min(100);
         s.command(&format!("CHGSYSVAL SYSVAL(QSTGLOWLMT) VALUE({limit})"), CMD)?;
-        let low = poll(s, "dsplog MSGID(CPI099C)", 60, |o| o.contains("CPI099C"))?;
-        if !low.contains("CPI099C") {
+        let low = poll(s, "dsplog MSGID(CPI099C)", 60, |o| logged(o, "CPI099C"))?;
+        if !logged(&low, "CPI099C") {
             return Err(format!("no CPI099C below QSTGLOWLMT({limit}):\n{low}"));
         }
         // *CRITMSG: CPI099B to QSECOFR's queue at once (the value changed).
