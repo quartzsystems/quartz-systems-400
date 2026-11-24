@@ -191,7 +191,7 @@ pub fn tick(system: &mut System) {
         && let Some(sv) = served().as_mut()
     {
         // Not tried again for a minute.
-        sv.checked = Instant::now() + RETRY_AFTER - CHECK_EVERY;
+        sv.checked = Instant::now() + RETRY_AFTER.saturating_sub(CHECK_EVERY);
     }
     match grown {
         Ok((added, total)) => eprintln!(
