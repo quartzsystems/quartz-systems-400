@@ -407,6 +407,13 @@ fn walk_file_ids_and_attributes() {
     let v = s.ifs.statvfs(&cx, "/home").unwrap();
     assert!(v.blocks > 0 && v.bfree > 0);
     assert_eq!(s.ifs.statvfs(&cx, "/QOPT").unwrap().flag, 1);
+    // The room the volume grows into counts as total and free.
+    s.ifs.set_headroom(1 << 30);
+    let g = s.ifs.statvfs(&cx, "/home").unwrap();
+    let extra = (1u64 << 30) / g.frsize;
+    assert_eq!(g.blocks, v.blocks + extra);
+    assert_eq!(g.bfree, v.bfree + extra);
+    assert_eq!(g.bavail, v.bavail + extra);
 }
 
 #[test]

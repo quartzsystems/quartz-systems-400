@@ -152,7 +152,7 @@ metadata, and the store's page checksums do not apply to them.
 | Event | Size |
 |---|---|
 | Created | a tenth of ASP 1's usable pages, at least 1 GiB, never past the ASP threshold; not created below 64 MiB |
-| Grows | when less than a tenth of the filesystem is free: 2% of ASP 1 per step (whole parity blocks in a parity set), or what is left below the ASP threshold |
+| Grows | when less than a tenth of the filesystem, or less than one step, is free: 2% of ASP 1 per step (whole parity blocks in a parity set), or what is left below the ASP threshold |
 | Never | shrinks: pages given to the IFS stay the IFS's |
 
 The ASP threshold is DST's (Work with ASP threshold, 90% unless
@@ -174,11 +174,18 @@ ASP is too full to hold 64 MiB, A6001271 and the IPL goes on without
 the IFS.
 
 **Growth.** The storage service checks the filesystem's free space once
-a minute. A growth holds the new extents and checkpoints the new map,
+a second (a minute after a growth fails). A growth holds the new extents and checkpoints the new map,
 tells the kernel the device's new size (`UBLK_U_CMD_UPDATE_SIZE`), then
 grows xfs over it (`XFS_IOC_FSGROWFSDATA`, the call `xfs_growfs`
 makes). The command `QSGROWIFS` grows it now: `SIZE(*STEP)` by one
 step, or `SIZE(n)` by `n` MiB (at least 64), within the same limits.
+
+**Reported size.** `statvfs` on the root's filesystem counts the room
+the volume can still grow into (below the ASP threshold) as both total
+and free space, refreshed with each check. NetServer's share capacity,
+NFS's `FSSTAT` and QSH's `df` all come from it, so a client sees the
+space it can really use: a Windows copy larger than the volume's
+current free space is not refused up front.
 
 | Message | Sent | Meaning |
 |---|---|---|

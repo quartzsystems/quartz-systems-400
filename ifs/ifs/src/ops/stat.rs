@@ -311,11 +311,17 @@ impl<B: Backend> Ifs<B> {
         };
         if backed {
             let s = self.b.statfs()?;
+            // The room the volume grows into counts as free space.
+            let extra = self
+                .headroom
+                .load(std::sync::atomic::Ordering::Relaxed)
+                .checked_div(s.block_size)
+                .unwrap_or(0);
             v.bsize = s.block_size;
             v.frsize = s.block_size;
-            v.blocks = s.blocks;
-            v.bfree = s.bfree;
-            v.bavail = s.bavail;
+            v.blocks = s.blocks + extra;
+            v.bfree = s.bfree + extra;
+            v.bavail = s.bavail + extra;
             v.files = s.files;
             v.ffree = s.ffree;
             v.favail = s.ffree;

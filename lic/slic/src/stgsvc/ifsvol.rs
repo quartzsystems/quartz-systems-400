@@ -22,9 +22,13 @@ use crate::platform::ifs as plat;
 use crate::src;
 
 const MIB: u64 = 1024 * 1024;
-/// How often the free space is looked at.
-const CHECK_EVERY: Duration = Duration::from_secs(60);
-/// The volume grows when less than this share of it is free (1/10).
+/// How often the free space is looked at: often enough that a copy at
+/// full speed does not fill the volume's last step before it grows.
+const CHECK_EVERY: Duration = Duration::from_secs(1);
+/// How long after a failed growth the next is tried.
+const RETRY_AFTER: Duration = Duration::from_secs(60);
+/// The volume grows when less than this share of it is free (1/10), or
+/// less than one step.
 const FREE_DIVISOR: u64 = 10;
 /// The IFS needs to grow and ASP 1 has no room (to `QSYSOPR`).
 pub const NO_ROOM_MSG: &str = "CPI3E21";
@@ -144,8 +148,21 @@ pub fn start(system: &mut System) -> Option<String> {
     Some(line)
 }
 
-/// Between requests: once a minute, grow the volume when less than a
-/// tenth of the filesystem is free.
+/// Tell the IFS how much the volume can still grow by, which its
+/// `statvfs` (SMB, NFS, `df`) counts as free.
+fn publish_room(system: &System) {
+    let Some(s) = system.storage.as_ref() else {
+        return;
+    };
+    let room = s.store.ifs_room(s.store.asp_threshold());
+    if let Some(ifs) = super::ifs::get() {
+        ifs.set_headroom(room * 4096);
+    }
+}
+
+/// Between requests: once a second, publish the room left in ASP 1 and
+/// grow the volume when less than a tenth of it, or less than a step,
+/// is free.
 pub fn tick(system: &mut System) {
     {
         let mut g = served();
@@ -157,13 +174,26 @@ pub fn tick(system: &mut System) {
         }
         sv.checked = Instant::now();
     }
+    publish_room(system);
     let Some((size, free, _)) = plat::capacity(MOUNT_POINT) else {
         return;
     };
-    if free >= size / FREE_DIVISOR {
+    let step = system
+        .storage
+        .as_ref()
+        .map_or(0, |s| s.store.ifs_step() * 4096);
+    if free >= (size / FREE_DIVISOR).max(step) {
         return;
     }
-    match grow(system, None) {
+    let grown = grow(system, None);
+    publish_room(system);
+    if grown.is_err()
+        && let Some(sv) = served().as_mut()
+    {
+        // Not tried again for a minute.
+        sv.checked = Instant::now() + RETRY_AFTER - CHECK_EVERY;
+    }
+    match grown {
         Ok((added, total)) => eprintln!(
             "qsstg: IFS grew by {} MiB to {} MiB",
             added * 4096 / MIB,

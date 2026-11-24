@@ -315,6 +315,9 @@ pub struct Ifs<B: Backend> {
     /// Paths of file IDs seen, for [`Ifs::stat_by_id`].
     ids: Mutex<byid::IdCache>,
     remote: crate::remote::Registry,
+    /// Bytes the backend's filesystem can still grow by, counted as free
+    /// in `statvfs` ([`Ifs::set_headroom`]).
+    headroom: std::sync::atomic::AtomicU64,
 }
 
 /// The directories every system has, with their `*PUBLIC` data
@@ -364,12 +367,21 @@ impl<B: Backend> Ifs<B> {
             leases: std::sync::Arc::default(),
             ids: Mutex::default(),
             remote: crate::remote::Registry::default(),
+            headroom: std::sync::atomic::AtomicU64::new(0),
         }
     }
 
     /// The backend.
     pub fn backend(&self) -> &B {
         &self.b
+    }
+
+    /// Bytes the backend's filesystem will grow by on demand (the IFS
+    /// volume's room in ASP 1): `statvfs` counts them as total and free,
+    /// so a client sees the space it can really use.
+    pub fn set_headroom(&self, bytes: u64) {
+        self.headroom
+            .store(bytes, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// The settings.
