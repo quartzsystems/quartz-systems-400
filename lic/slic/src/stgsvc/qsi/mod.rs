@@ -120,6 +120,7 @@ pub fn request(system: &mut System, ctx: &JobCtx, op: QsiOp) -> QsiReply {
         } => system::power(system, ctx, immediate, delay, restart, &user),
         QsiOp::Time => system::time(system),
         QsiOp::FixLevel => system::fix_level(system),
+        QsiOp::Resources => system::usage(system),
         QsiOp::Service { op, body, user } => system::service(system, op, &body, &user),
         QsiOp::Problems => system::problems(system),
         QsiOp::Dumps => system::dumps(system),

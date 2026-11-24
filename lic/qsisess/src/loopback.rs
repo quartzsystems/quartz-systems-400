@@ -24,7 +24,8 @@ pub const CAPS: u64 = caps::HOST_V1
     | caps::PANEL_FUNCTIONS
     | caps::PROBLEM_NOTES
     | caps::DUMP_SPACE
-    | caps::FIX_LEVEL;
+    | caps::FIX_LEVEL
+    | caps::RESOURCES;
 
 /// A console's hello for tests.
 #[must_use]

@@ -144,6 +144,9 @@ pub mod caps {
     pub const DUMP_SPACE: u64 = 1 << 26;
     /// The cumulative fix level: base's operation `0x0008`.
     pub const FIX_LEVEL: u64 = 1 << 27;
+    /// What the system has and uses (processors, main storage, the
+    /// system ASP, jobs): base's operation `0x0009`.
+    pub const RESOURCES: u64 = 1 << 28;
 
     /// What every managed system and console has.
     pub const MANAGED: u64 = BASE | PAIR;
@@ -163,7 +166,8 @@ pub mod caps {
     pub const SERVICING: u64 = SERVICE | UPDATE | SYSTEM_DUMPS;
     /// What a standalone system will say: base and pair, its problems
     /// with their notes, its own dumps and their space, its control
-    /// panel and its functions, its console, its fix level. No code
+    /// panel and its functions, its console, its fix level and its
+    /// resources. No code
     /// update (its LIC's slots are changed by PTFs) and no other host
     /// family.
     pub const STANDALONE: u64 = MANAGED
@@ -174,7 +178,8 @@ pub mod caps {
         | PROBLEM_NOTES
         | DUMP_SPACE
         | PANEL_FUNCTIONS
-        | FIX_LEVEL;
+        | FIX_LEVEL
+        | RESOURCES;
 
     /// The capability of a family's version 1, by the family's number;
     /// 0 for a family this crate does not know.
@@ -211,6 +216,7 @@ pub mod caps {
             f::BASE if b::is_dump(op) => BASE | SYSTEM_DUMPS,
             f::BASE if b::is_dump_space(op) => BASE | SYSTEM_DUMPS | DUMP_SPACE,
             f::BASE if b::is_fix_level(op) => BASE | FIX_LEVEL,
+            f::BASE if b::is_resources(op) => BASE | RESOURCES,
             f::SERVICE if crate::service::op::is_v2(op) => SERVICE | PROBLEM_NOTES,
             f::HOST if host::op::is_physical_io(op) => HOST | PHYSICAL_IO,
             f::HOST if host::op::is_power_on(op) => HOST | POWER_ON,

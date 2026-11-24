@@ -130,6 +130,8 @@ pub enum QsiOp {
     LoadEvents,
     /// Keep the event log file.
     SaveEvents { bytes: Vec<u8> },
+    /// What the system has and uses.
+    Resources,
 }
 
 wire_enum!(QsiOp {
@@ -158,6 +160,7 @@ wire_enum!(QsiOp {
     22 => DumpRead { name, offset, len },
     23 => LoadEvents,
     24 => SaveEvents { bytes },
+    25 => Resources,
 });
 
 /// A problem with its notes, for the events.
@@ -216,6 +219,8 @@ pub enum QsiReply {
     Space { space: qsi::base::Space },
     /// Bytes, and the whole's length.
     Bytes { bytes: Vec<u8>, total: u64 },
+    /// What the system has and uses.
+    Resources { resources: qsi::base::Resources },
 }
 
 wire_enum!(QsiReply {
@@ -239,6 +244,7 @@ wire_enum!(QsiReply {
     17 => Name { name },
     18 => Space { space },
     19 => Bytes { bytes, total },
+    20 => Resources { resources },
 });
 
 impl QsiReply {

@@ -26,8 +26,8 @@ fn both_ways() {
     assert_eq!(peer, &host_hello());
     assert_eq!(agreed.version, 1);
     assert_eq!(agreed.caps, qsisess::loopback::CAPS);
-    // Bits 0 to 4 and 8 to 27.
-    assert_eq!(agreed.caps, 0x0fff_ff1f);
+    // Bits 0 to 4 and 8 to 28.
+    assert_eq!(agreed.caps, 0x1fff_ff1f);
     let (peer, _) = ready(&l.at_managed).unwrap();
     assert_eq!(peer, &console_hello());
     assert!(l.console.is_open() && l.managed.is_open());

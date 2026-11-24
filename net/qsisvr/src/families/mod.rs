@@ -105,6 +105,7 @@ fn base(host: &mut dyn Host, request: base::Request, user: &str) -> Answer {
         base::Request::Refcodes(q) => host.refcodes(q.before, q.limit).map(R::Refcodes),
         base::Request::Time(_) => host.time().map(R::Time),
         base::Request::FixLevel(_) => host.fix_level().map(R::FixLevel),
+        base::Request::Resources(_) => host.resources().map(R::Resources),
         base::Request::Dumps(_) => host.dumps().map(R::Dumps),
         base::Request::TakeDump(t) => {
             if t.kind != DumpKind::ServiceData {

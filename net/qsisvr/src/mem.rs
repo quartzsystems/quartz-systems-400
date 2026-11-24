@@ -9,8 +9,8 @@ use std::sync::{Mutex, PoisonError};
 
 use qsi::PeerKind;
 use qsi::base::{
-    DumpKind, Identity, Keylock, Level, Power, PowerState, Refcode, RefcodeList, Space, State,
-    SystemDump, Time,
+    DumpKind, Identity, Keylock, Level, Power, PowerState, Refcode, RefcodeList, Resources, Space,
+    State, SystemDump, Time,
 };
 use qsi::host::console::Capture;
 use qsi::service::{self, Line, ProblemStatus, Severity, Source, SourceKind, Summary};
@@ -147,6 +147,24 @@ impl Host for MemHost {
         Ok(Level {
             level: "C6320110".into(),
             date: 0,
+        })
+    }
+
+    fn resources(&mut self) -> Result<Resources, Refusal> {
+        Ok(Resources {
+            processors: 2,
+            cpu_used: 830,
+            memory_kb: 8 * 1024 * 1024,
+            memory_used_kb: 5 * 1024 * 1024,
+            asp_mb: 64_000,
+            asp_used: 2210,
+            temp_mb: 420,
+            total_jobs: 120,
+            active_jobs: 98,
+            signed_on: 1,
+            batch_running: 4,
+            threads: 310,
+            up_secs: 7_200,
         })
     }
 

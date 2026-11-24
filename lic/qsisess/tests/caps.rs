@@ -47,10 +47,10 @@ const H24: u64 = caps::SWITCHES
     | caps::FIX_LEVEL;
 
 /// Every bit added beside `HOST_V1`.
-const NEW: u64 = caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2 | H24;
+const NEW: u64 = caps::SERVICING | caps::PHYSICAL_IO | caps::PARTITION_V2 | H24 | caps::RESOURCES;
 
 /// Each of them alone.
-const BITS: [u64; 14] = [
+const BITS: [u64; 15] = [
     caps::SERVICE,
     caps::UPDATE,
     caps::SYSTEM_DUMPS,
@@ -65,6 +65,7 @@ const BITS: [u64; 14] = [
     caps::PROBLEM_NOTES,
     caps::DUMP_SPACE,
     caps::FIX_LEVEL,
+    caps::RESOURCES,
 ];
 
 /// The requests that need any of `bits`.
@@ -129,13 +130,14 @@ fn the_new_messages_are_these() {
         (caps::PROBLEM_NOTES, 3, 1),
         (caps::DUMP_SPACE, 2, 0),
         (caps::FIX_LEVEL, 1, 0),
+        (caps::RESOURCES, 1, 0),
     ] {
         assert_eq!(requests_of(bit).len(), requests, "{bit:#x}");
         assert_eq!(events_of(bit).len(), events, "{bit:#x}");
     }
     assert_eq!(requests_of(H24).len(), 29);
     assert_eq!(events_of(H24).len(), 2);
-    assert_eq!(new_requests().len(), 45);
+    assert_eq!(new_requests().len(), 46);
     assert_eq!(new_events().len(), 22);
 }
 

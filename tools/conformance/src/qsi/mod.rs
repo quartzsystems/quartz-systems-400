@@ -358,6 +358,22 @@ impl Suite {
                 qsi::base::Reply::FixLevel(l) => l,
                 other => return Err(format!("fix level: {other:?}")),
             };
+            // What it has and uses: the guest's processors, its memory,
+            // a system ASP partly used, active jobs.
+            let res = match base(&mut c, qsi::base::Request::Resources(Empty))? {
+                qsi::base::Reply::Resources(r) => r,
+                other => return Err(format!("resources: {other:?}")),
+            };
+            if res.processors == 0
+                || res.memory_kb == 0
+                || res.asp_mb == 0
+                || res.asp_used == 0
+                || res.active_jobs == 0
+                || res.cpu_used > 10_000
+                || res.memory_used_kb > res.memory_kb
+            {
+                return Err(format!("resources: {res:?}"));
+            }
             // The panel at the system's own ID.
             let f = |n: u8| {
                 AnyRequest::Panel(panel::Request::Function(panel::Function {
@@ -473,9 +489,14 @@ impl Suite {
             st.last_event = seen.iter().map(|(n, _)| *n).max().or(Some(sub.next - 1));
             c.close();
             Ok(format!(
-                "identify, state (running, normal), {} codes with {complete}, time, fix level {:?}, function 01 {shown:?}, 21 and 08 QSI0452, 34 QSI0451, partition 1 QSI0331, {} functions, dump {name} of {} bytes listed, its space, downloaded whole, deleted, with its events",
+                "identify, state (running, normal), {} codes with {complete}, time, fix level {:?}, {} processors, {} MB main storage, ASP {} MB {}% used, {} active jobs, function 01 {shown:?}, 21 and 08 QSI0452, 34 QSI0451, partition 1 QSI0331, {} functions, dump {name} of {} bytes listed, its space, downloaded whole, deleted, with its events",
                 codes.codes.len(),
                 level.level,
+                res.processors,
+                res.memory_kb / 1024,
+                res.asp_mb,
+                f64::from(res.asp_used) / 100.0,
+                res.active_jobs,
                 funcs.len(),
                 d.bytes
             ))

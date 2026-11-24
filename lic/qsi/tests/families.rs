@@ -237,6 +237,11 @@ fn bits() -> Vec<(u64, fn(u16, u16) -> bool, fn(u16, u16) -> bool)> {
             |f, op| f == BASE && base::op::is_fix_level(op),
             |_, _| false,
         ),
+        (
+            caps::RESOURCES,
+            |f, op| f == BASE && base::op::is_resources(op),
+            |_, _| false,
+        ),
     ]
 }
 
@@ -268,10 +273,10 @@ fn the_families_and_their_capabilities() {
     assert_eq!(caps::SERVICING, 0x1c);
     assert_eq!(caps::MANAGED, 0x3);
     assert_eq!(caps::PHYSICAL_IO | caps::PARTITION_V2, 0x6_0000);
-    // Bits 19 to 27 (handoff 24).
+    // Bits 19 to 27 (handoff 24), then 28 (a system's resources).
     assert_eq!(
         extra & !(caps::SYSTEM_DUMPS | caps::PHYSICAL_IO | caps::PARTITION_V2),
-        0x0ff8_0000
+        0x1ff8_0000
     );
     // What a standalone system will say: no code update, no host family
     // but its panel and console.
@@ -283,7 +288,8 @@ fn the_families_and_their_capabilities() {
         | caps::PROBLEM_NOTES
         | caps::DUMP_SPACE
         | caps::PANEL_FUNCTIONS
-        | caps::FIX_LEVEL;
+        | caps::FIX_LEVEL
+        | caps::RESOURCES;
     assert_eq!(caps::STANDALONE, standalone);
     assert_eq!(caps::STANDALONE & caps::UPDATE, 0);
     assert_eq!(
@@ -343,6 +349,7 @@ fn what_each_message_needs() {
             // Base's and the dumps family's.
             (caps::DUMP_SPACE, (2, 0)),
             (caps::FIX_LEVEL, (1, 0)),
+            (caps::RESOURCES, (1, 0)),
         ]
     );
     // Base's dump space needs both its bits.

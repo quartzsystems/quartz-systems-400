@@ -84,6 +84,8 @@ pub struct Stats {
     sysact: Option<Sample>,
     syssts: Option<Sample>,
     dsksts: Option<Sample>,
+    /// A management console's last ask (QSI's resources).
+    qsi: Option<Sample>,
     /// Storage requests each job made: its auxiliary I/O.
     pub aux_io: BTreeMap<u32, u64>,
     /// When each queued job was taken off its queue.
@@ -1456,6 +1458,43 @@ pub fn sql_status(system: &mut System) -> sql::exec::catalog::services::host::Sy
             system.joblog_pending.len() as u32,
         ],
         scheduler_active: jobs.iter().any(|j| j.name == "QEJSCHED"),
+    }
+}
+
+/// What the system has and uses for a management console (QSI's
+/// resources): the processor used since the console's previous ask,
+/// as `WRKSYSACT` measures from its previous use.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // percent * 100 fits
+pub fn qsi_resources(system: &mut System) -> qsi::base::Resources {
+    let (now, base) = interval(system, |s| &mut s.qsi, true);
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
+    let (asp_mb, asp_pct, temp_mb) = asp_figures(system);
+    let jobs = system.jobs.all();
+    let hundredths = |p: f64| (p * 100.0).round().clamp(0.0, 10_000.0) as u32;
+    let up_secs = read("/proc/uptime")
+        .and_then(|t| {
+            t.split_whitespace()
+                .next()
+                .and_then(|s| s.parse::<f64>().ok())
+        })
+        .map_or(0, |s| s as u64);
+    qsi::base::Resources {
+        processors: std::thread::available_parallelism().map_or(1, |n| n.get() as u32),
+        cpu_used: hundredths(d.cpu_used()),
+        memory_kb: now.main_kb,
+        memory_used_kb: now.main_kb.saturating_sub(now.avail_kb),
+        asp_mb,
+        asp_used: hundredths(asp_pct),
+        temp_mb,
+        total_jobs: (jobs.len() + system.queued.len() + system.joblog_pending.len()) as u32,
+        active_jobs: jobs.len() as u32,
+        signed_on: jobs.iter().filter(|j| j.kind == 'I').count() as u32,
+        batch_running: jobs.iter().filter(|j| j.kind == 'B').count() as u32,
+        threads: now.procs.values().map(|p| p.threads.max(1)).sum(),
+        up_secs,
     }
 }
 

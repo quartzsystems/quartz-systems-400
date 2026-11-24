@@ -294,6 +294,7 @@ operation it does not know (`QSI0001`).
 | service version 2: operations `0x0004` to `0x0006`, event `0x0005` | `0x0003` | 25 |
 | dump space: base's operation `0x0014` (with bit 4), dumps' `0x0005` | `0x0001`, `0x0016` | 26 |
 | the fix level: base's operation `0x0008` | `0x0001` | 27 |
+| a system's resources: base's operation `0x0009` | `0x0001` | 28 |
 
 A console and a standalone system say `caps::MANAGED` (base and pair);
 a QS/VS host says `caps::HOST_V1`, base, pair and the nine host
@@ -305,8 +306,8 @@ answers them and by a console that asks them; `caps::PHYSICAL_IO`
 are unchanged. `caps::STANDALONE` is what a standalone system says
 (section 11): base and pair, service with its version 2 (bits 2 and
 25), the system's dumps and their space (4 and 26), the panel with its
-version 2 (12 and 24), the console (15) and the fix level (27); no code
-update and no other host family.
+version 2 (12 and 24), the console (15), the fix level (27) and its
+resources (28); no code update and no other host family.
 
 A bit need not be a whole family: base's version 1 gained the system's
 own dumps as operations behind bit 4, the host and vres families gained
@@ -425,6 +426,17 @@ The dumps family's `0x0005` gives the same of each partition's dumps.
 A standalone system says its cumulative PTF package; a host answers
 with its own level if it has one. Base's `State` does not carry it: an
 older side's state has no such field (section 5).
+
+#### A system's resources (bit 28, `caps::RESOURCES`)
+
+| Op | Request | Reply |
+|---|---|---|
+| `0x0009` | `Resources` (empty) | `Resources` {`processors u32`, `cpu_used u32` (hundredths of a percent, since the previous ask), `memory_kb u64`, `memory_used_kb u64` (0 when not known), `asp_mb u64` (the system ASP), `asp_used u32` (hundredths of a percent), `temp_mb u64`, `total_jobs u32`, `active_jobs u32`, `signed_on u32`, `batch_running u32`, `threads u32`, `up_secs u64` (since the IPL; 0 when not known)} |
+
+What a standalone system has and uses, as its `WRKSYSSTS` shows it: a
+console shows it as the system's processors and memory, which a host
+gives by its host family instead. The processor used is measured from
+the previous ask, as `WRKSYSACT` measures from its previous use.
 
 ### pair (`0x0002`)
 
@@ -626,6 +638,7 @@ console asks each of them.
 | service | `0x0003` | 2 | `PROBLEM_NOTES` | 25 | both |
 | base's and dumps' dump space | `0x0001`, `0x0016` | 1 | `DUMP_SPACE` | 26 | both (a standalone system has base's `0x0014`, a host dumps' `0x0005` too) |
 | base's fix level | `0x0001` | 1 | `FIX_LEVEL` | 27 | standalone (a host with a level of its own may) |
+| base's resources | `0x0001` | 1 | `RESOURCES` | 28 | standalone |
 
 A QS/VS host says `caps::HOST_V1`, bits 0, 1 and 8 to 16, and with its
 next phase `caps::SERVICING` (bits 2 to 4) beside it, then
@@ -1433,7 +1446,8 @@ sees of it.
   serial number, and `caps::STANDALONE`: base and pair, service with its
   version 2 (bits 2 and 25), the system's dumps and their space (4 and
   26), its own panel and console at ID 0 with the panel's version 2
-  (12, 15 and 24) and its fix level (27). No code update (bit 3 clear:
+  (12, 15 and 24), its fix level (27) and its resources (28). No code
+  update (bit 3 clear:
   the system takes fixes by PTF) and no other host family; a request
   of either is `QSI0003`.
 - **Base.** `Identify` (kind standalone; the model is `QMODEL`);
@@ -1447,7 +1461,8 @@ sees of it.
   removed), the log kept on disk and taken up again with
   `EventLog::resume`, so a console that reconnects after an IPL is
   given the IPL's codes; `Time`; `FixLevel`, the cumulative PTF package;
-  the system's dumps (one kind, service data) with their space.
+  `Resources`, its processors, main storage, system ASP and jobs as
+  `WRKSYSSTS` counts them; the system's dumps (one kind, service data) with their space.
 - **Service** is the problem log: a problem's number is its ten-digit
   identifier; its severity from the log's; `Note` writes into the
   problem's notes naming the request's user, `Close` notes who closed
@@ -1474,7 +1489,7 @@ sees of it.
 
 **The messages.** `cargo test -p qsi`: every sample of every family
 (`qsi::samples`, every operation and event of base with its system
-dumps, dump space and fix level, pair, service with its version 2,
+dumps, dump space, fix level and resources, pair, service with its version 2,
 update and the nine host families with every later bit) encoded and
 decoded by number, and again with a later
 version's bytes after it; an unknown operation or family is `None`, a

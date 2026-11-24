@@ -9,6 +9,11 @@ section (see `docs/releasing.md`). The full notes of a release are
 
 ## Unreleased
 
+- QSI: a standalone system answers base's `Resources` (`0x0009`, bit 28,
+  `caps::RESOURCES`): its processors, processor used, main storage, the
+  system ASP and its use, temporary storage, jobs and threads, as
+  `WRKSYSSTS` counts them, so a management console shows them.
+
 ## 1.2.0 (2026-11-22)
 
 ### QS/400 V1R2M0

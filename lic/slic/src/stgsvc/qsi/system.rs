@@ -81,6 +81,13 @@ pub fn fix_level(system: &mut System) -> QsiReply {
     }
 }
 
+/// What the system has and uses.
+pub fn usage(system: &mut System) -> QsiReply {
+    QsiReply::Resources {
+        resources: crate::stgsvc::stats::qsi_resources(system),
+    }
+}
+
 /// Power down, as `PWRDWNSYS` from a job: the job's profile needs
 /// `*JOBCTL`; a power down under way is refused.
 pub fn power(

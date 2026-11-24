@@ -10,7 +10,8 @@
 //! the system's own dumps: list, take, delete and download
 //! ([`TakeDump`]), and the space they take ([`Space`],
 //! [`crate::caps::DUMP_SPACE`]). Behind [`crate::caps::FIX_LEVEL`], the
-//! cumulative fix level it runs ([`Level`]).
+//! cumulative fix level it runs ([`Level`]). Behind
+//! [`crate::caps::RESOURCES`], what it has and uses ([`Resources`]).
 //!
 //! Every identifier a console shows (a state's words, a reference code,
 //! its text) is the managed side's, passed through as it gives it.
@@ -393,6 +394,58 @@ pub struct Level {
 }
 wire_struct!(Level { level, date });
 
+/// Ask what the system has and uses now ([`crate::caps::RESOURCES`]),
+/// as its own status display shows it.
+pub type GetResources = Empty;
+
+/// What a system has and uses. Percentages are hundredths of a percent
+/// (`1250` is 12.5 %).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Resources {
+    /// Processors the system sees.
+    pub processors: u32,
+    /// Processor used since the previous ask (or over the managed
+    /// side's own last interval), hundredths of a percent.
+    pub cpu_used: u32,
+    /// Main storage, kilobytes.
+    pub memory_kb: u64,
+    /// Main storage in use, kilobytes; 0 when not known.
+    pub memory_used_kb: u64,
+    /// The system ASP's capacity, megabytes.
+    pub asp_mb: u64,
+    /// The system ASP used, hundredths of a percent.
+    pub asp_used: u32,
+    /// Temporary storage, megabytes.
+    pub temp_mb: u64,
+    /// Jobs in the system: active, queued, with output.
+    pub total_jobs: u32,
+    /// Active jobs.
+    pub active_jobs: u32,
+    /// Interactive jobs signed on.
+    pub signed_on: u32,
+    /// Batch jobs running.
+    pub batch_running: u32,
+    /// Threads of every active job.
+    pub threads: u32,
+    /// Seconds since the IPL; 0 when not known.
+    pub up_secs: u64,
+}
+wire_struct!(Resources {
+    processors,
+    cpu_used,
+    memory_kb,
+    memory_used_kb,
+    asp_mb,
+    asp_used,
+    temp_mb,
+    total_jobs,
+    active_jobs,
+    signed_on,
+    batch_running,
+    threads,
+    up_secs
+});
+
 /// Operation numbers.
 pub mod op {
     /// [`super::Identify`].
@@ -411,6 +464,8 @@ pub mod op {
     pub const TIME: u16 = 0x0007;
     /// [`super::GetFixLevel`] ([`crate::caps::FIX_LEVEL`]).
     pub const FIX_LEVEL: u16 = 0x0008;
+    /// [`super::GetResources`] ([`crate::caps::RESOURCES`]).
+    pub const RESOURCES: u16 = 0x0009;
     /// [`super::ListDumps`] ([`crate::caps::SYSTEM_DUMPS`]).
     pub const DUMPS: u16 = 0x0010;
     /// [`super::TakeDump`] ([`crate::caps::SYSTEM_DUMPS`]).
@@ -442,6 +497,13 @@ pub mod op {
     #[must_use]
     pub fn is_fix_level(op: u16) -> bool {
         op == FIX_LEVEL
+    }
+
+    /// Whether `op` is the resources', which needs
+    /// [`crate::caps::RESOURCES`].
+    #[must_use]
+    pub fn is_resources(op: u16) -> bool {
+        op == RESOURCES
     }
 }
 
@@ -496,6 +558,8 @@ messages! {
         0x0007 => Time(GetTime),
         /// The cumulative fix level.
         0x0008 => FixLevel(GetFixLevel),
+        /// What it has and uses.
+        0x0009 => Resources(GetResources),
         /// The system's own dumps.
         0x0010 => Dumps(ListDumps),
         /// Take one now.
@@ -528,6 +592,8 @@ messages! {
         0x0007 => Time(Time),
         /// The fix level.
         0x0008 => FixLevel(Level),
+        /// What it has and uses.
+        0x0009 => Resources(Resources),
         /// The dumps, oldest first.
         0x0010 => Dumps(Vec<SystemDump>),
         /// Begun.

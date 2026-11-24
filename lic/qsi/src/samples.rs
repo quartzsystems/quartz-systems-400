@@ -504,14 +504,7 @@ fn base_exchanges() -> Vec<(AnyRequest, AnyReply)> {
             }),
         ),
         w(Q::Unsubscribe(Empty), P::Unsubscribe(Empty)),
-        w(
-            Q::Time(Empty),
-            P::Time(base::Time {
-                unix_ns: 1_794_700_000_123_456_789,
-                offset_s: -18_000,
-                zone: s("America/New_York"),
-            }),
-        ),
+        w(Q::Time(Empty), P::Time(time())),
         w(
             Q::FixLevel(Empty),
             P::FixLevel(base::Level {
@@ -519,6 +512,7 @@ fn base_exchanges() -> Vec<(AnyRequest, AnyReply)> {
                 date: T - 86_400 * 4,
             }),
         ),
+        w(Q::Resources(Empty), P::Resources(resources())),
         w(Q::Dumps(Empty), P::Dumps(vec![system_dump()])),
         w(
             Q::TakeDump(base::TakeDump {
@@ -550,6 +544,32 @@ fn base_exchanges() -> Vec<(AnyRequest, AnyReply)> {
 
 /// The system's own dumps' space: one dump of three, under a 4 GiB
 /// limit.
+fn time() -> base::Time {
+    base::Time {
+        unix_ns: 1_794_700_000_123_456_789,
+        offset_s: -18_000,
+        zone: s("America/New_York"),
+    }
+}
+
+fn resources() -> base::Resources {
+    base::Resources {
+        processors: 4,
+        cpu_used: 1250,
+        memory_kb: 16 * 1024 * 1024,
+        memory_used_kb: 9 * 1024 * 1024,
+        asp_mb: 512_000,
+        asp_used: 4137,
+        temp_mb: 1_840,
+        total_jobs: 212,
+        active_jobs: 187,
+        signed_on: 3,
+        batch_running: 11,
+        threads: 640,
+        up_secs: 86_400 * 3 + 3_600,
+    }
+}
+
 fn space() -> base::Space {
     base::Space {
         bytes: 41_943_040,

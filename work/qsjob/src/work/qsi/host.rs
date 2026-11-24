@@ -198,6 +198,13 @@ impl Host for JobHost {
         }
     }
 
+    fn resources(&mut self) -> Result<qsi::base::Resources, Refusal> {
+        match ask(&self.link, QsiOp::Resources) {
+            QsiReply::Resources { resources } => Ok(resources),
+            r => Err(notes(r)),
+        }
+    }
+
     fn dumps(&mut self) -> Result<Vec<SystemDump>, Refusal> {
         match ask(&self.link, QsiOp::Dumps) {
             QsiReply::Dumps { list } => Ok(list),

@@ -7,7 +7,7 @@
 //! them through the storage service; [`crate::mem`] answers them in
 //! memory.
 
-use qsi::base::{Identity, Level, Power, RefcodeList, Space, State, SystemDump, Time};
+use qsi::base::{Identity, Level, Power, RefcodeList, Resources, Space, State, SystemDump, Time};
 use qsi::host::console::Capture;
 use qsi::service;
 use qsisess::Note;
@@ -57,6 +57,11 @@ pub trait Host {
     /// # Errors
     /// The system could not be asked.
     fn fix_level(&mut self) -> Result<Level, Refusal>;
+    /// What the system has and uses now.
+    ///
+    /// # Errors
+    /// The system could not be asked.
+    fn resources(&mut self) -> Result<Resources, Refusal>;
     /// The system's dumps, oldest first.
     ///
     /// # Errors
