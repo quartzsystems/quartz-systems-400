@@ -8,8 +8,9 @@
 //! (its cover letter and how to install it beside it, `.txt`), signed with the build key; `lic = "*BUILD"` takes this build's slot
 //! UKIs, signed for Secure Boot first. `build ptf-catalog DIR` publishes
 //! every PTF under `DIR/ptf/` as the update service's directory: the
-//! signed catalog one sequence past the last, and a cumulative package
-//! listing them all.
+//! signed catalog one sequence past the last, every release's PTFs, and
+//! a cumulative package listing this release's (other releases' groups
+//! kept as they were).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -146,7 +147,9 @@ pub fn ptf(ctx: &Ctx, manifest: &Path) -> Result<PathBuf> {
 }
 
 /// `build ptf-catalog DIR`: the update service's directory over the
-/// PTFs in `DIR/ptf/`. `hiper` names the high-impact ones.
+/// PTFs in `DIR/ptf/`. `hiper` names the high-impact ones. The catalog
+/// holds every release's PTFs; this build's release gets a new
+/// cumulative package, the others keep the groups they had.
 pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
     let mut files: Vec<PathBuf> = fs::read_dir(dir.join("ptf"))
         .with_context(|| format!("cannot read {}", dir.join("ptf").display()))?
@@ -164,15 +167,11 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
             .map_err(|e| anyhow::anyhow!("{}: {e}", f.display()))?;
         fmtcheck::savf::check(&bytes)
             .map_err(|v| anyhow::anyhow!("{}: not the frozen save format: {v}", f.display()))?;
-        if p.header.release != release::RELEASE.to_string() {
-            bail!(
-                "{}: release {}, this build is {}",
-                f.display(),
-                p.header.release,
-                release::RELEASE
-            );
+        // Another release's PTFs stay in the catalog, outside this
+        // release's package.
+        if p.header.release == release::RELEASE.to_string() {
+            ids.push(p.header.ptf.clone());
         }
-        ids.push(p.header.ptf.clone());
         streams.push(bytes);
     }
     if streams.is_empty() {
@@ -197,22 +196,8 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let (year, day) = crate::image::release::year_day(now);
     let name = release::Cumulative { year, day }.to_string();
-    let level = prev
-        .as_ref()
-        .and_then(|c| c.group(&name))
-        .map_or(1, |g| g.level + 1);
-    let groups = [ptf_update::publish::GroupDef {
-        name: name.clone(),
-        kind: ptf_update::catalog::GroupKind::Cumulative,
-        level,
-        release: release::RELEASE.to_string(),
-        text: format!(
-            "Cumulative PTF package of {}: {}",
-            release::RELEASE,
-            ids.join(", ")
-        ),
-        ptfs: ids.clone(),
-    }];
+    let this = release::RELEASE.to_string();
+    let groups = groups(prev.as_ref(), &ids, &name, &this)?;
     let cat = ptf_update::publish::publish(
         dir,
         &ptf_update::publish::Publication {
@@ -225,12 +210,61 @@ pub fn catalog(ctx: &Ctx, dir: &Path, hiper: &[String]) -> Result<()> {
         &key,
     )?;
     info!(
-        "ptf-catalog: {} sequence {}, {} PTF(s), cumulative package {name} level {level}",
+        "ptf-catalog: {} sequence {}, {} PTF(s), {} of {this}; groups {}",
         dir.join("catalog.toml").display(),
         cat.sequence,
-        ids.len()
+        streams.len(),
+        ids.len(),
+        cat.groups
+            .iter()
+            .map(|g| format!("{} {} level {}", g.release, g.name, g.level))
+            .collect::<Vec<_>>()
+            .join(", ")
     );
     Ok(())
+}
+
+/// The catalog's groups: the previous catalog's groups of other
+/// releases as they were, and `this` release's cumulative package
+/// `name` over `ids` (one level up when republished the same day). With
+/// no PTF of `this` release its groups stay as they were.
+fn groups(
+    prev: Option<&ptf_update::Catalog>,
+    ids: &[String],
+    name: &str,
+    this: &str,
+) -> Result<Vec<ptf_update::publish::GroupDef>> {
+    let def = |g: &ptf_update::CatalogGroup| ptf_update::publish::GroupDef {
+        name: g.name.clone(),
+        kind: g.kind,
+        level: g.level,
+        release: g.release.clone(),
+        text: g.text.clone(),
+        ptfs: g.ptfs.clone(),
+    };
+    let old = prev.into_iter().flat_map(|c| &c.groups);
+    if ids.is_empty() {
+        return Ok(old.map(def).collect());
+    }
+    let mut out: Vec<_> = old.filter(|g| g.release != this).map(def).collect();
+    // A name is the day alone (`Cyyddd110`), so two releases' packages
+    // of one day would share it.
+    if let Some(g) = out.iter().find(|g| g.name == name) {
+        bail!(
+            "cumulative package {name} is {}'s; publish {this}'s another day",
+            g.release
+        );
+    }
+    let level = prev.and_then(|c| c.group(name)).map_or(1, |g| g.level + 1);
+    out.push(ptf_update::publish::GroupDef {
+        name: name.to_string(),
+        kind: ptf_update::GroupKind::Cumulative,
+        level,
+        release: this.to_string(),
+        text: format!("Cumulative PTF package of {this}: {}", ids.join(", ")),
+        ptfs: ids.to_vec(),
+    });
+    Ok(out)
 }
 
 /// How to install a PTF, after its cover letter in the release notes.
@@ -350,4 +384,104 @@ pub fn repad(dir: &Path) -> Result<()> {
         );
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::groups;
+    use ptf_update::{Catalog, CatalogGroup, GroupKind};
+
+    fn cum(name: &str, release: &str, level: u32, ptfs: &[&str]) -> CatalogGroup {
+        CatalogGroup {
+            name: name.into(),
+            kind: GroupKind::Cumulative,
+            level,
+            release: release.into(),
+            text: String::new(),
+            ptfs: ptfs.iter().map(|p| (*p).to_string()).collect(),
+            related: Vec::new(),
+        }
+    }
+
+    fn cat(groups: Vec<CatalogGroup>) -> Catalog {
+        Catalog {
+            format: 1,
+            sequence: 7,
+            generated: 0,
+            products: Vec::new(),
+            ptfs: Vec::new(),
+            groups,
+        }
+    }
+
+    fn ids(v: &[&str]) -> Vec<String> {
+        v.iter().map(|p| (*p).to_string()).collect()
+    }
+
+    #[test]
+    fn a_new_release_keeps_the_old_package() {
+        let prev = cat(vec![cum("C26327110", "V1R1M0", 1, &["QS00001", "QS00004"])]);
+        let g = groups(Some(&prev), &ids(&["QS00005"]), "C26328110", "V1R2M0").unwrap();
+        assert_eq!(g.len(), 2);
+        assert_eq!(
+            (g[0].name.as_str(), g[0].release.as_str(), g[0].level),
+            ("C26327110", "V1R1M0", 1)
+        );
+        assert_eq!(g[0].ptfs, ids(&["QS00001", "QS00004"]));
+        assert_eq!(
+            (g[1].name.as_str(), g[1].release.as_str(), g[1].level),
+            ("C26328110", "V1R2M0", 1)
+        );
+        assert_eq!(g[1].ptfs, ids(&["QS00005"]));
+    }
+
+    #[test]
+    fn the_same_day_goes_up_a_level() {
+        let prev = cat(vec![
+            cum("C26327110", "V1R1M0", 1, &["QS00004"]),
+            cum("C26330110", "V1R2M0", 1, &["QS00005"]),
+        ]);
+        let g = groups(
+            Some(&prev),
+            &ids(&["QS00005", "QS00006"]),
+            "C26330110",
+            "V1R2M0",
+        )
+        .unwrap();
+        assert_eq!(g.len(), 2);
+        assert_eq!(g[1].level, 2);
+        assert_eq!(g[1].ptfs, ids(&["QS00005", "QS00006"]));
+    }
+
+    #[test]
+    fn another_day_replaces_the_package() {
+        let prev = cat(vec![cum("C26330110", "V1R2M0", 1, &["QS00005"])]);
+        let g = groups(
+            Some(&prev),
+            &ids(&["QS00005", "QS00006"]),
+            "C26335110",
+            "V1R2M0",
+        )
+        .unwrap();
+        assert_eq!(g.len(), 1);
+        assert_eq!((g[0].name.as_str(), g[0].level), ("C26335110", 1));
+    }
+
+    #[test]
+    fn another_release_on_the_same_day_is_refused() {
+        let prev = cat(vec![cum("C26328110", "V1R1M0", 1, &["QS00004"])]);
+        let e = groups(Some(&prev), &ids(&["QS00005"]), "C26328110", "V1R2M0").unwrap_err();
+        assert!(e.to_string().contains("V1R1M0's"), "{e}");
+    }
+
+    #[test]
+    fn no_ptf_of_this_release_keeps_every_group() {
+        let prev = cat(vec![
+            cum("C26327110", "V1R1M0", 1, &["QS00004"]),
+            cum("C26330110", "V1R2M0", 1, &["QS00005"]),
+        ]);
+        let g = groups(Some(&prev), &[], "C26340110", "V1R2M0").unwrap();
+        assert_eq!(g.len(), 2);
+        assert_eq!(g[1].name, "C26330110");
+    }
 }

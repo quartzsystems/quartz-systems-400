@@ -282,7 +282,11 @@ the PTF that brings that copy).
   (`docs/UPDATE_PROTOCOL.md` §7): the signed catalog one sequence past
   the one already in `DIR` (the release's baseline is 1), the HIPER marks
   it had plus `--hiper`, and a cumulative package `Cyyddd110` of the day
-  listing every PTF, a level higher when republished the same day.
+  listing every PTF of the build's release, a level higher when
+  republished the same day. The catalog holds every release's PTFs;
+  another release's groups stay as they were (a system reads only its
+  own release's). The name carries the day alone, so a package of the
+  day another release's package already has is refused.
 - A tag `ptf-QSnnnnn` runs `.github/workflows/ptf.yml`: the manifest must
   name the PTF, `VERSION` must be a published release, `ci.yml` runs, then
   the PTF and the catalog are built with the `release` environment's keys
