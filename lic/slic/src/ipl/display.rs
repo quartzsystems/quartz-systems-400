@@ -122,14 +122,25 @@ fn viewers(system: &mut System, con: &mut console::Console, tx: &mpsc::Sender<Co
     }
 }
 
-/// The console mode the LIC record keeps; the local console when it
-/// says nothing.
+/// The console mode the LIC record keeps. When it says nothing (no
+/// record yet: a D IPL onto a blank disk in a partition), the console
+/// port when the hypervisor gave one, else the local console.
 pub fn console_mode(system: &System) -> ConsoleMode {
-    system
-        .lic
-        .as_ref()
-        .and_then(|(_, r)| ConsoleMode::of(r))
-        .unwrap_or_default()
+    mode_of(
+        system.lic.as_ref().and_then(|(_, r)| ConsoleMode::of(r)),
+        std::path::Path::new("/sys"),
+    )
+}
+
+/// The recorded mode, else the console port if `sys` has it.
+fn mode_of(recorded: Option<ConsoleMode>, sys: &std::path::Path) -> ConsoleMode {
+    recorded.unwrap_or_else(|| {
+        if console::qsi::find_port(sys, qsipart::CONSOLE_PORT).is_some() {
+            ConsoleMode::Partition
+        } else {
+            ConsoleMode::default()
+        }
+    })
 }
 
 /// The display's mode and the scale chosen, asked of the console thread.
@@ -158,4 +169,58 @@ pub fn dump(system: &System) -> String {
     reply_rx
         .recv_timeout(Duration::from_secs(2))
         .unwrap_or_else(|_| "Console did not answer\n".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sys_with(port: Option<&str>) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "slic-mode-{}-{}",
+            std::process::id(),
+            port.unwrap_or("none")
+        ));
+        let _ = std::fs::remove_dir_all(&d);
+        let ports = d.join("class/virtio-ports");
+        std::fs::create_dir_all(ports.join("vport0p1")).unwrap();
+        std::fs::write(
+            ports.join("vport0p1/name"),
+            "org.qemu.guest_agent.0
+",
+        )
+        .unwrap();
+        if let Some(name) = port {
+            std::fs::create_dir_all(ports.join("vport0p2")).unwrap();
+            std::fs::write(
+                ports.join("vport0p2/name"),
+                format!(
+                    "{name}
+"
+                ),
+            )
+            .unwrap();
+        }
+        d
+    }
+
+    #[test]
+    fn no_record_in_a_partition_is_the_console_port() {
+        let sys = sys_with(Some(qsipart::CONSOLE_PORT));
+        assert_eq!(mode_of(None, &sys), ConsoleMode::Partition);
+        // What the record says wins.
+        assert_eq!(
+            mode_of(Some(ConsoleMode::Serial), &sys),
+            ConsoleMode::Serial
+        );
+        let _ = std::fs::remove_dir_all(sys);
+    }
+
+    #[test]
+    fn no_record_and_no_port_is_the_local_console() {
+        let sys = sys_with(None);
+        assert_eq!(mode_of(None, &sys), ConsoleMode::Local);
+        assert_eq!(mode_of(None, &sys.join("absent")), ConsoleMode::Local);
+        let _ = std::fs::remove_dir_all(sys);
+    }
 }

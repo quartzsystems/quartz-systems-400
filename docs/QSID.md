@@ -294,6 +294,14 @@ unchanged: the TLV is one byte, and `lic/licpart/src/console.rs` is not
 among the files `tools/fmtcheck` holds frozen, so the additive value
 needs no version.
 
+**No record yet.** A D IPL onto a blank disk in a partition has no LIC
+record for the hypervisor to write, so no mode. A record that says
+nothing is the console port when the partition has one (its name in
+`/sys/class/virtio-ports`), and the local console otherwise
+(`slic::ipl::display::console_mode`). Without that, the installer's
+first screens went to the serial port alone, `A6005008` posted, and the
+hypervisor's terminal window stayed empty.
+
 **The display.** In that mode `slic` opens no framebuffer and reads no
 keyboards; it gives the console a third display,
 `console::qsi::QsiDisplay`, over the console port opened without
